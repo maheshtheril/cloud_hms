@@ -5,8 +5,7 @@ import { createCategory } from "@/app/actions/inventory"
 import { Plus, Save } from "lucide-react"
 
 const initialState = {
-    error: "",
-    success: false
+    error: ""
 }
 
 interface CreateCategoryFormProps {
