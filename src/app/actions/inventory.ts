@@ -270,7 +270,7 @@ export async function getCategories() {
     }
 }
 
-export async function createCategory(prevState: any, formData: FormData) {
+export async function createCategory(prevState: any, formData: FormData): Promise<{ error: string } | { success: boolean }> {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
 
