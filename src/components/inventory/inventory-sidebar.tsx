@@ -34,7 +34,6 @@ const purchasingItems = [
 export function InventorySidebar() {
     const pathname = usePathname()
 
-    return (
     const [isOpen, setIsOpen] = useState(false)
 
     // Helper to close on navigation
