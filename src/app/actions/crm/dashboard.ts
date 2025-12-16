@@ -26,7 +26,7 @@ export async function getDashboardData() {
             deleted_at: null
         }
     })
-    const totalRevenue = wonDeals.reduce((sum, deal) => sum + (deal.value || 0), 0)
+    const totalRevenue = wonDeals.reduce((sum, deal) => sum + Number(deal.value || 0), 0)
 
     // 2. KPI: Active Pipeline
     const activeDeals = await prisma.crm_deals.findMany({
@@ -36,7 +36,7 @@ export async function getDashboardData() {
             deleted_at: null
         }
     })
-    const pipelineValue = activeDeals.reduce((sum, deal) => sum + (deal.value || 0), 0)
+    const pipelineValue = activeDeals.reduce((sum, deal) => sum + Number(deal.value || 0), 0)
 
     // 3. KPI: Avg Lead Score
     const leads = await prisma.crm_leads.findMany({
