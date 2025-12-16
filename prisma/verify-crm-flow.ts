@@ -61,7 +61,9 @@ async function main() {
             sentiment_score: 88, // AI Field
             location_lat: 34.0522, // Geo Field
             location_lng: -118.2437, // Geo Field
-            deal_id: deal.id
+            deal_id: deal.id,
+            related_to_type: 'deal',
+            related_to_id: deal.id
         }
     })
     console.log(`✅ Activity Logged: ${activity.subject}`)
