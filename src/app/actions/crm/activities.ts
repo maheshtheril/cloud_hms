@@ -35,7 +35,7 @@ export async function createActivity(prevState: ActivityFormState, formData: For
     const session = await auth()
     const user = session?.user
 
-    if (!user || !user.tenant_id) {
+    if (!user || !user.tenantId) {
         return { message: 'Unauthorized' }
     }
 
@@ -67,7 +67,7 @@ export async function createActivity(prevState: ActivityFormState, formData: For
 
         await prisma.crm_activities.create({
             data: {
-                tenant_id: user.tenant_id,
+                tenant_id: user.tenantId,
                 owner_id: user.id,
                 subject,
                 type,
