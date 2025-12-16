@@ -4,13 +4,7 @@ import { PrismaClient } from '@prisma/client';
 config({ path: '.env' });
 
 async function main() {
-    const prisma = new PrismaClient({
-        datasources: {
-            db: {
-                url: process.env.DATABASE_URL,
-            },
-        },
-    });
+    const prisma = new PrismaClient();
 
     try {
         const receipt = await prisma.hms_purchase_receipt.findFirst({
