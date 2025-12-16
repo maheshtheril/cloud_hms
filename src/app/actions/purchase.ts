@@ -169,7 +169,18 @@ export async function createPurchaseOrder(data: PurchaseOrderData) {
             let subtotal = 0
             let totalTax = 0
 
+            // 0. Fetch Products for Names
+            const productIds = data.items.map(i => i.productId)
+            const products = await tx.hms_product.findMany({
+                where: { id: { in: productIds }, company_id: companyId },
+                select: { id: true, name: true }
+            })
+            const productMap = new Map(products.map(p => [p.id, p]))
+
             const linesData = data.items.map(item => {
+                const product = productMap.get(item.productId)
+                if (!product) throw new Error(`Product not found: ${item.productId}`)
+
                 const lineTotal = item.qty * item.unitPrice
                 // Basic tax logic (could be more complex)
                 const taxAmount = lineTotal * ((item.taxRate || 0) / 100)
@@ -181,6 +192,7 @@ export async function createPurchaseOrder(data: PurchaseOrderData) {
                     tenant_id: session.user.tenantId!,
                     company_id: session.user.companyId!,
                     product_id: item.productId,
+                    product_name: product.name,
                     qty: item.qty,
                     unit_price: item.unitPrice,
                     tax: taxAmount,
