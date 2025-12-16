@@ -201,7 +201,7 @@ export async function createPurchaseOrder(data: PurchaseOrderData) {
                     company_id: session.user.companyId!,
                     supplier_id: data.supplierId,
                     name: poNumber,
-                    reference: data.reference,
+                    supplier_reference: data.reference,
                     order_date: data.date,
                     expected_date: data.expectedDate,
                     currency: data.currency || 'USD',
