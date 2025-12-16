@@ -10,7 +10,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { upsertCustomFieldDefinition } from '@/app/actions/crm/custom-fields'
 import { Plus } from 'lucide-react'
-import { toast } from 'sonner' // Assuming sonner or similar toast lib is used, fallback to alert if not
 
 export function UpsertFieldDialog({
     entity = 'lead',
