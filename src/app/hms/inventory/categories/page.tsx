@@ -34,7 +34,10 @@ export default async function CategoryMasterPage() {
                         <Plus className="h-4 w-4" />
                         New Category
                     </h2>
-                    <form action={createCategory} className="space-y-4">
+                    <form action={async (formData) => {
+                        'use server'
+                        await createCategory(formData)
+                    }} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
                             <input
