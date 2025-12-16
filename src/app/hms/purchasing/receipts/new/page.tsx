@@ -119,7 +119,7 @@ export default function NewPurchaseReceiptPage() {
 
     // Also fetch full PO details if mode switches back to PO and ID is selected? 
     // Simplified: handle selection
-    const handlePoSelect = async (id: string, opt: Option | undefined) => {
+    const handlePoSelect = async (id: string | null, opt: Option | null | undefined) => {
         setPoId(id);
         if (!id) {
             // If cleared, maybe clear items?
@@ -158,11 +158,11 @@ export default function NewPurchaseReceiptPage() {
         }
     };
 
-    const handleProductSelect = (index: number, productId: string, opt: Option | undefined) => {
+    const handleProductSelect = (index: number, productId: string | null, opt: Option | null | undefined) => {
         const newItems = [...items];
         newItems[index] = {
             ...newItems[index],
-            productId,
+            productId: productId || "",
             productName: opt?.label || ""
         };
         setItems(newItems);
