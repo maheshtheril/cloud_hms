@@ -1,8 +1,7 @@
+import { config } from 'dotenv';
+import { PrismaClient } from '@prisma/client';
 
-// Use dotenv to load env if available, assuming .env in root
-require('dotenv').config({ path: '.env' });
-
-const { PrismaClient } = require('@prisma/client');
+config({ path: '.env' });
 
 async function main() {
     const prisma = new PrismaClient({
