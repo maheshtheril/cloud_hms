@@ -16,7 +16,10 @@ export default function NewDoctorPage() {
             </div>
 
             <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-                <form action={createDoctor} className="space-y-6">
+                <form action={async (formData) => {
+                    'use server'
+                    await createDoctor(formData)
+                }} className="space-y-6">
 
                     {/* Name Fields */}
                     <div className="grid grid-cols-2 gap-6">
