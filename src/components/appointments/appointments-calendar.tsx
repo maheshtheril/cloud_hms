@@ -13,7 +13,16 @@ import 'react-big-calendar/lib/addons/dragAndDrop/styles.css'
 import { DndProvider } from 'react-dnd'
 import { HTML5Backend } from 'react-dnd-html5-backend'
 
-const DragAndDropCalendar = withDragAndDrop(Calendar)
+interface AppointmentEvent {
+    id: string;
+    title: string;
+    start: Date;
+    end: Date;
+    resource?: any;
+    status?: string;
+}
+
+const DragAndDropCalendar = withDragAndDrop<AppointmentEvent>(Calendar)
 
 const locales = {
     'en-US': enUS,
@@ -27,16 +36,7 @@ const localizer = dateFnsLocalizer({
     locales,
 })
 
-interface Event {
-    id: string;
-    title: string;
-    start: Date;
-    end: Date;
-    resource?: any;
-    status?: string;
-}
-
-const CustomEvent = ({ event }: EventProps<Event>) => {
+const CustomEvent = ({ event }: EventProps<AppointmentEvent>) => {
     const statusColor = event.resource?.status === 'confirmed' ? 'bg-green-500' :
         event.resource?.status === 'cancelled' ? 'bg-red-500' : 'bg-blue-500';
 
@@ -55,7 +55,7 @@ const CustomEvent = ({ event }: EventProps<Event>) => {
     )
 }
 
-const CustomToolbar = (toolbar: ToolbarProps) => {
+const CustomToolbar = (toolbar: ToolbarProps<AppointmentEvent>) => {
     const goToBack = () => {
         toolbar.onNavigate('PREV');
     };
@@ -121,8 +121,8 @@ export default function AppointmentsCalendar() {
 }
 
 function DraggableCalendar() {
-    const [events, setEvents] = useState<Event[]>([])
-    const [view, setView] = useState(Views.MONTH)
+    const [events, setEvents] = useState<AppointmentEvent[]>([])
+    const [view, setView] = useState<any>(Views.MONTH)
     const [date, setDate] = useState(new Date())
     const router = useRouter()
 
@@ -154,7 +154,7 @@ function DraggableCalendar() {
         router.push(`/hms/appointments/new?date=${dateStr}&time=${timeStr}`)
     }
 
-    const handleSelectEvent = (event: Event) => {
+    const handleSelectEvent = (event: AppointmentEvent) => {
         router.push(`/hms/appointments/${event.id}`)
     }
 
