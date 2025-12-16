@@ -32,27 +32,24 @@ export async function upsertCustomFieldDefinition(data: z.infer<typeof fieldSche
     try {
         if (id) {
             // Update
-            await prisma.custom_field_definition.update({
+            await prisma.crm_custom_fields.update({
                 where: { id },
                 data: {
                     label,
                     field_type,
                     options,
                     required,
-                    visible,
                     sort_order
                 }
             })
         } else {
             // Create
             // Check if key exists for this entity/tenant
-            const existing = await prisma.custom_field_definition.findUnique({
+            const existing = await prisma.crm_custom_fields.findFirst({
                 where: {
-                    tenant_id_entity_key: {
-                        tenant_id: session.user.tenantId,
-                        entity,
-                        key
-                    }
+                    tenant_id: session.user.tenantId,
+                    entity_type: entity,
+                    key
                 }
             })
 
@@ -62,22 +59,21 @@ export async function upsertCustomFieldDefinition(data: z.infer<typeof fieldSche
             }
 
             // Get max sort order
-            const maxSort = await prisma.custom_field_definition.aggregate({
-                where: { tenant_id: session.user.tenantId, entity },
+            const maxSort = await prisma.crm_custom_fields.aggregate({
+                where: { tenant_id: session.user.tenantId, entity_type: entity },
                 _max: { sort_order: true }
             })
             const nextSort = (maxSort._max.sort_order || 0) + 1
 
-            await prisma.custom_field_definition.create({
+            await prisma.crm_custom_fields.create({
                 data: {
                     tenant_id: session.user.tenantId,
-                    entity,
+                    entity_type: entity,
                     key: finalKey,
                     label,
                     field_type,
                     options,
                     required,
-                    visible: visible ?? true,
                     sort_order: sort_order ?? nextSort
                 }
             })
@@ -97,8 +93,8 @@ export async function deleteCustomFieldDefinition(id: string) {
     if (!session?.user?.tenantId) return { error: "Unauthorized" }
 
     try {
-        await prisma.custom_field_definition.delete({
-            where: { id, tenant_id: session.user.tenantId }
+        await prisma.crm_custom_fields.delete({
+            where: { id }
         })
         revalidatePath('/settings/custom-fields')
         return { success: true }
@@ -112,11 +108,11 @@ export async function getCustomFieldDefinitions(entity: string) {
     if (!session?.user?.tenantId) return []
 
     // Fetch definitions for this tenant and entity
-    const definitions = await prisma.custom_field_definition.findMany({
+    const definitions = await prisma.crm_custom_fields.findMany({
         where: {
             tenant_id: session.user.tenantId,
-            entity: entity,
-            visible: true
+            entity_type: entity,
+            deleted_at: null
         },
         orderBy: {
             sort_order: 'asc'
@@ -129,10 +125,10 @@ export async function getCustomFieldDefinitions(entity: string) {
 // Utility to process custom field values from FormData
 export async function processCustomFields(formData: FormData, tenantId: string, entityId: string, entityType: string) {
     // 1. Fetch definitions to know what to look for
-    const definitions = await prisma.custom_field_definition.findMany({
+    const definitions = await prisma.crm_custom_fields.findMany({
         where: {
             tenant_id: tenantId,
-            entity: entityType
+            entity_type: entityType
         }
     })
 
