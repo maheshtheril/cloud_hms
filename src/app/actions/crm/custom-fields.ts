@@ -174,21 +174,14 @@ export async function processCustomFields(formData: FormData, tenantId: string, 
 
         // Only save if we have a value (or if it was explicitly cleared? For creation we only care about values)
         if (valueText !== null || valueNumber !== null || valueBoolean !== null || valueJson !== null) {
-            results.push(prisma.custom_field_value.create({
+            results.push(prisma.crm_custom_values.create({
                 data: {
-                    tenant_id: tenantId,
-                    definition_id: def.id,
-                    lead_id: entityId, // Currently assuming lead_id, but schema has specific ID fields. Schema check needed.
-                    // Ideally the table should have polymorphic 'entity_id' or specific columns.
-                    // Schema shows: lead_id String @db.Uuid. 
-                    // So currently strictly bound to Lead. WE NEED TO HANDLE THIS IF WE WANT OTHER MASTERS.
-                    // For now, adhering to User Request "CRM related masters... includes leads". 
-                    // If schema only has lead_id, we can only support leads easily right now.
-
+                    field_id: def.id,
+                    record_id: entityId, // Using record_id as per schema crm_custom_values
                     value_text: valueText,
                     value_number: valueNumber,
                     value_boolean: valueBoolean,
-                    value_json: valueJson
+                    value_json: valueJson ?? undefined
                 }
             }))
         }
