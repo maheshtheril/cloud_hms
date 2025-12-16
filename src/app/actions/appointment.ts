@@ -17,27 +17,30 @@ export async function getAppointmentsProp(start: Date, end: Date) {
                     lte: end
                 },
                 deleted_at: null
-            },
-            include: {
-                hms_patient: {
-                    select: {
-                        first_name: true,
-                        last_name: true,
-                        patient_number: true
-                    }
-                }
             }
         });
 
+        // Manual fetch of patients
+        const patientIds = appointments.map(a => a.patient_id).filter(id => id) as string[];
+        const patients = await prisma.hms_patient.findMany({
+            where: { id: { in: patientIds } },
+            select: { id: true, first_name: true, last_name: true, patient_number: true }
+        });
+
+        const patientMap = new Map(patients.map(p => [p.id, p]));
+
         // Transform for calendar
-        const events = appointments.map(apt => ({
-            id: apt.id,
-            title: `${apt.hms_patient?.first_name} ${apt.hms_patient?.last_name}`,
-            start: apt.starts_at,
-            end: apt.ends_at,
-            resource: apt,
-            status: apt.status
-        }));
+        const events = appointments.map(apt => {
+            const patient = apt.patient_id ? patientMap.get(apt.patient_id) : null;
+            return {
+                id: apt.id,
+                title: patient ? `${patient.first_name} ${patient.last_name}` : 'Unknown Patient',
+                start: apt.starts_at,
+                end: apt.ends_at,
+                resource: apt,
+                status: apt.status
+            };
+        });
 
         return { success: true, data: events };
     } catch (error) {
