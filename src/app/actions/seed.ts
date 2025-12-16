@@ -20,7 +20,7 @@ export async function seedSuppliers(targetEmail?: string) {
         });
         if (user) {
             companyId = user.company_id;
-            tenantId = user.tenantId;
+            tenantId = user.tenant_id;
         } else {
             return { error: `User with email ${targetEmail} not found.` };
         }

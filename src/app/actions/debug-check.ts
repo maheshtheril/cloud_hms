@@ -10,14 +10,14 @@ export async function runDiagnostics(email: string) {
 
     const company = await prisma.company.findFirst({ where: { id: user.company_id } })
     const tenantModules = await prisma.tenant_module.findMany({
-        where: { tenant_id: user.tenantId, enabled: true }
+        where: { tenant_id: user.tenant_id, enabled: true }
     })
 
     // Check Master Modules Table
     const masterModules = await prisma.modules.findMany();
 
     return {
-        user: { id: user.id, email: user.email, companyId: user.company_id, tenantId: user.tenantId },
+        user: { id: user.id, email: user.email, companyId: user.company_id, tenantId: user.tenant_id },
         company: company ? { id: company.id, name: company.name, industry: company.industry } : null,
         modules: tenantModules.map(m => m.module_key),
         masterModules: masterModules.map(m => m.key),
@@ -46,7 +46,7 @@ export async function enableCRM(email: string) {
 
     await prisma.tenant_module.create({
         data: {
-            tenant_id: user.tenantId,
+            tenant_id: user.tenant_id,
             module_key: 'crm',
             enabled: true
         }
