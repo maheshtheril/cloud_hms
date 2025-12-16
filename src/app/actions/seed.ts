@@ -19,8 +19,8 @@ export async function seedSuppliers(targetEmail?: string) {
             where: { email: targetEmail }
         });
         if (user) {
-            companyId = user.company_id;
-            tenantId = user.tenant_id;
+            companyId = user.company_id || undefined;
+            tenantId = user.tenant_id || undefined;
         } else {
             return { error: `User with email ${targetEmail} not found.` };
         }
