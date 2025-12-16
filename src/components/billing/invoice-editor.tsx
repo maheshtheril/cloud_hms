@@ -25,12 +25,6 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
     // Removed global tax state
     // const [selectedTaxId, setSelectedTaxId] = useState('')
 
-    useEffect(() => {
-        if (taxConfig.defaultTax && !selectedTaxId) {
-            setSelectedTaxId(taxConfig.defaultTax.id)
-        }
-    }, [taxConfig.defaultTax])
-
     // Derived State
     const activePatient = patients.find(p => p.id === selectedPatientId)
     const subtotal = lines.reduce((sum, line) => sum + ((line.quantity * line.unit_price) - (line.discount_amount || 0)), 0)
