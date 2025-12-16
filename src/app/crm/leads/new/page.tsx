@@ -10,7 +10,7 @@ export default async function NewLeadPage() {
     const customFields = rawDefinitions.map(d => ({
         ...d,
         required: d.required === null ? false : d.required,
-        visible: d.visible === null ? true : d.visible,
+        visible: true,
     }))
 
     const pipelines = await getPipelines(true) // include stages
