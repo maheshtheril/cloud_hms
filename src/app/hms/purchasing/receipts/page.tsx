@@ -8,12 +8,12 @@ import { ArrowLeft, Loader2, Plus, FileText, Calendar, Box, Search } from 'lucid
 
 type Receipt = {
     id: string;
-    number: string;
+    number: string | null;
     date: Date;
     supplierName: string;
-    reference: string;
+    reference: any;
     itemCount: number;
-    status: string;
+    status: string | null;
 };
 
 export default function PurchaseReceiptsPage() {
@@ -39,9 +39,9 @@ export default function PurchaseReceiptsPage() {
     }, []);
 
     const filteredReceipts = receipts.filter(r =>
-        r.supplierName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.reference.toLowerCase().includes(searchQuery.toLowerCase())
+        r.supplierName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        r.reference?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
