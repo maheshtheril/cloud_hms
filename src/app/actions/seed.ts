@@ -15,7 +15,7 @@ export async function seedSuppliers(targetEmail?: string) {
         tenantId = session.user.tenantId || session.user.id;
     } else if (targetEmail) {
         // Validation/Lookup bypass for debug
-        const user = await prisma.app_user.findUnique({
+        const user = await prisma.app_user.findFirst({
             where: { email: targetEmail }
         });
         if (user) {
