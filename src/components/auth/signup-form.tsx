@@ -47,7 +47,7 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
 
     // Auto-login on success
     useEffect(() => {
-        if (state?.success && formData.email && formData.password) {
+        if (state && !('error' in state) && formData.email && formData.password) {
             let callbackUrl = "/";
             if (formData.modules.includes('crm') && !formData.modules.includes('hms')) {
                 callbackUrl = "/crm/dashboard";
@@ -231,10 +231,10 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
                         )}
 
                         {/* Error/Success Messages */}
-                        {step === 3 && state?.error && (
+                        {step === 3 && state && 'error' in state && (
                             <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm mt-2">{state.error}</div>
                         )}
-                        {step === 3 && state?.success && (
+                        {step === 3 && state && !('error' in state) && (
                             <div className="p-3 bg-green-50 text-green-600 rounded-lg text-sm mt-2">
                                 Account created successfully! <button type="button" onClick={() => setIsLogin(true)} className="underline font-bold">Sign In</button>
                             </div>
