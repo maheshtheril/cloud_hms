@@ -98,7 +98,7 @@ const CustomToolbar = (toolbar: ToolbarProps) => {
                 {['month', 'week', 'day', 'agenda'].map(view => (
                     <button
                         key={view}
-                        onClick={() => toolbar.onView(view)}
+                        onClick={() => toolbar.onView(view as any)}
                         className={`px-3 py-1.5 text-xs font-medium rounded-md capitalize transition-all ${toolbar.view === view
                             ? 'bg-white text-blue-600 shadow-sm ring-1 ring-black/5'
                             : 'text-gray-500 hover:text-gray-700'
