@@ -1,0 +1,228 @@
+{
+  "maps": [
+    {
+      "id": "0f9f5aaf-47fe-4505-9733-1fc18a186dea",
+      "tenant_id": "17fd4b03-fe30-49a0-a7b8-523dc30f4b54",
+      "company_id": "d4461fe7-7ce0-405c-a9bc-9065afe772b8",
+      "country_id": "3e8878c1-1757-4e08-9506-63d457c1256c",
+      "tax_type_id": "2bb7e47e-b8bd-43be-987c-3d2f081f25b8",
+      "tax_rate_id": "a6c99e2a-f2be-4a5f-b922-e65161e40d71",
+      "is_default": true,
+      "is_active": true,
+      "created_at": "2025-12-09T08:15:07.997Z",
+      "updated_at": "2025-12-09T08:15:07.997Z",
+      "account_id": null,
+      "refund_account_id": null,
+      "tax_rates": {
+        "id": "a6c99e2a-f2be-4a5f-b922-e65161e40d71",
+        "tax_type_id": "2bb7e47e-b8bd-43be-987c-3d2f081f25b8",
+        "name": "GST Standard 18%",
+        "rate": "18",
+        "is_active": true,
+        "created_at": "2025-11-16T15:20:43.049Z",
+        "updated_at": "2025-11-17T01:45:28.078Z"
+      },
+      "tax_types": {
+        "id": "2bb7e47e-b8bd-43be-987c-3d2f081f25b8",
+        "name": "GST Standard",
+        "description": "Standard GST rate",
+        "is_active": true,
+        "created_at": "2025-11-16T15:09:57.011Z",
+        "updated_at": "2025-11-17T01:45:28.078Z"
+      }
+    },
+    {
+      "id": "158f3127-55a7-4d7c-9c1a-c7cc9c434669",
+      "tenant_id": "e69e7908-07d0-4620-a255-e16655b3eda2",
+      "company_id": "86b5c463-2736-4ee3-ae92-37065c6140b0",
+      "country_id": "3e8878c1-1757-4e08-9506-63d457c1256c",
+      "tax_type_id": "d19163d9-d359-4338-a17a-7c3e554e2ac1",
+      "tax_rate_id": "ba2d115c-1dfa-4c47-a821-3ee7d536c529",
+      "is_default": false,
+      "is_active": true,
+      "created_at": "2025-12-09T03:05:02.267Z",
+      "updated_at": "2025-12-09T03:05:02.267Z",
+      "account_id": null,
+      "refund_account_id": null,
+      "tax_rates": {
+        "id": "ba2d115c-1dfa-4c47-a821-3ee7d536c529",
+        "tax_type_id": "d19163d9-d359-4338-a17a-7c3e554e2ac1",
+        "name": "GST Zero Rated 0%",
+        "rate": "0",
+        "is_active": true,
+        "created_at": "2025-11-16T15:20:43.049Z",
+        "updated_at": "2025-11-17T01:45:28.078Z"
+      },
+      "tax_types": {
+        "id": "d19163d9-d359-4338-a17a-7c3e554e2ac1",
+        "name": "GST Zero Rated",
+        "description": "Zero rated GST",
+        "is_active": true,
+        "created_at": "2025-11-16T15:09:57.011Z",
+        "updated_at": "2025-11-17T01:45:28.078Z"
+      }
+    },
+    {
+      "id": "18722a78-5ecb-4bf4-b1cc-40f206b2839e",
+      "tenant_id": "7d8ddcf6-12f9-45ab-a4d1-7f99bf64595b",
+      "company_id": "86512be8-80ed-4551-8ec1-28ad5a160cf7",
+      "country_id": "3e8878c1-1757-4e08-9506-63d457c1256c",
+      "tax_type_id": "33333333-3333-4333-8333-333333333333",
+      "tax_rate_id": "77777777-7777-4777-8777-777777777771",
+      "is_default": false,
+      "is_active": true,
+      "created_at": "2025-11-18T15:53:22.118Z",
+      "updated_at": "2025-11-18T15:53:22.118Z",
+      "account_id": null,
+      "refund_account_id": null,
+      "tax_rates": {
+        "id": "77777777-7777-4777-8777-777777777771",
+        "tax_type_id": "33333333-3333-4333-8333-333333333333",
+        "name": "Composition 1%",
+        "rate": "1",
+        "is_active": true,
+        "created_at": "2025-11-17T01:45:28.078Z",
+        "updated_at": "2025-11-17T01:45:28.078Z"
+      },
+      "tax_types": {
+        "id": "33333333-3333-4333-8333-333333333333",
+        "name": "GST Composition Scheme",
+        "description": "Composition scheme slabs",
+        "is_active": true,
+        "created_at": "2025-11-17T01:45:28.078Z",
+        "updated_at": "2025-11-17T01:45:28.078Z"
+      }
+    },
+    {
+      "id": "1c91868a-78b1-4e2d-8f31-60152878123f",
+      "tenant_id": "9a3960da-d9d7-4bd3-bde1-675bcff750ca",
+      "company_id": "c7525b91-7f6f-4ea4-af1a-cc112c7d0c9f",
+      "country_id": "3e8878c1-1757-4e08-9506-63d457c1256c",
+      "tax_type_id": "cd9367c7-5532-47fd-a362-fcdcc8f35048",
+      "tax_rate_id": "091c22dc-fb0a-46c8-bbd0-0e941b50da54",
+      "is_default": false,
+      "is_active": true,
+      "created_at": "2025-12-11T12:12:01.325Z",
+      "updated_at": "2025-12-11T12:12:01.325Z",
+      "account_id": null,
+      "refund_account_id": null,
+      "tax_rates": {
+        "id": "091c22dc-fb0a-46c8-bbd0-0e941b50da54",
+        "tax_type_id": "cd9367c7-5532-47fd-a362-fcdcc8f35048",
+        "name": "GST Reduced 5%",
+        "rate": "5",
+        "is_active": true,
+        "created_at": "2025-11-16T15:20:43.049Z",
+        "updated_at": "2025-11-17T01:45:28.078Z"
+      },
+      "tax_types": {
+        "id": "cd9367c7-5532-47fd-a362-fcdcc8f35048",
+        "name": "GST Reduced",
+        "description": "Reduced GST rate",
+        "is_active": true,
+        "created_at": "2025-11-16T15:09:57.011Z",
+        "updated_at": "2025-11-17T01:45:28.078Z"
+      }
+    },
+    {
+      "id": "20a56165-6157-4004-9f56-4bd42681a621",
+      "tenant_id": "e69e7908-07d0-4620-a255-e16655b3eda2",
+      "company_id": "86b5c463-2736-4ee3-ae92-37065c6140b0",
+      "country_id": "3e8878c1-1757-4e08-9506-63d457c1256c",
+      "tax_type_id": "33333333-3333-4333-8333-333333333333",
+      "tax_rate_id": "77777777-7777-4777-8777-777777777771",
+      "is_default": false,
+      "is_active": true,
+      "created_at": "2025-12-09T03:05:02.267Z",
+      "updated_at": "2025-12-09T03:05:02.267Z",
+      "account_id": null,
+      "refund_account_id": null,
+      "tax_rates": {
+        "id": "77777777-7777-4777-8777-777777777771",
+        "tax_type_id": "33333333-3333-4333-8333-333333333333",
+        "name": "Composition 1%",
+        "rate": "1",
+        "is_active": true,
+        "created_at": "2025-11-17T01:45:28.078Z",
+        "updated_at": "2025-11-17T01:45:28.078Z"
+      },
+      "tax_types": {
+        "id": "33333333-3333-4333-8333-333333333333",
+        "name": "GST Composition Scheme",
+        "description": "Composition scheme slabs",
+        "is_active": true,
+        "created_at": "2025-11-17T01:45:28.078Z",
+        "updated_at": "2025-11-17T01:45:28.078Z"
+      }
+    }
+  ],
+  "settings": [
+    {
+      "company_id": "3be966c0-624f-4ba2-9ee3-15a8c85ea39e",
+      "default_rate_id": null
+    },
+    {
+      "company_id": "40cb7deb-7496-4961-99e9-5b330ff68f99",
+      "default_rate_id": null
+    },
+    {
+      "company_id": "6af43532-a153-4e5f-8e06-6b33cda1d859",
+      "default_rate_id": null
+    },
+    {
+      "company_id": "241f8c1b-4cdd-47c4-bc75-3528aae4dbad",
+      "default_rate_id": null
+    },
+    {
+      "company_id": "2299eb5f-9c1c-430a-ab74-a28fa5049278",
+      "default_rate_id": null
+    }
+  ],
+  "rates": [
+    {
+      "id": "029506d4-f540-46a3-ae17-f08d946e3243",
+      "tax_type_id": "9e5e207c-381f-44f0-a851-8669770c5c82",
+      "name": "Tobacco Duty 55%",
+      "rate": "55",
+      "is_active": true,
+      "created_at": "2025-11-16T15:21:05.919Z",
+      "updated_at": "2025-11-16T15:21:05.919Z"
+    },
+    {
+      "id": "03ee9798-4790-4315-b6f5-2d2e0859c973",
+      "tax_type_id": "eff8b425-1857-43ab-85c4-6750cbaf22c5",
+      "name": "VAT Reduced 7%",
+      "rate": "7",
+      "is_active": true,
+      "created_at": "2025-11-16T15:20:34.854Z",
+      "updated_at": "2025-11-16T15:20:34.854Z"
+    },
+    {
+      "id": "0807149a-ca9b-423c-8639-00d71ccb3645",
+      "tax_type_id": "2d7dc3a7-6a86-4a58-94fb-3eb4c5361514",
+      "name": "Countervailing Duty 10%",
+      "rate": "10",
+      "is_active": true,
+      "created_at": "2025-11-16T15:20:58.594Z",
+      "updated_at": "2025-11-16T15:20:58.594Z"
+    },
+    {
+      "id": "091c22dc-fb0a-46c8-bbd0-0e941b50da54",
+      "tax_type_id": "cd9367c7-5532-47fd-a362-fcdcc8f35048",
+      "name": "GST Reduced 5%",
+      "rate": "5",
+      "is_active": true,
+      "created_at": "2025-11-16T15:20:43.049Z",
+      "updated_at": "2025-11-17T01:45:28.078Z"
+    },
+    {
+      "id": "0c9e34db-d2ea-4307-aa94-7f1e08452539",
+      "tax_type_id": "70eca340-b398-4aec-bbc2-35ac8fb7197a",
+      "name": "Securities Transaction Tax 0.1%",
+      "rate": "0.1",
+      "is_active": true,
+      "created_at": "2025-11-16T15:21:20.069Z",
+      "updated_at": "2025-11-16T15:21:20.069Z"
+    }
+  ]
+}

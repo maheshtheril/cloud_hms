@@ -1,0 +1,93 @@
+'use client';
+
+import Link from 'next/link';
+import { Plus, ArrowUpRight, Search, LayoutGrid, List } from 'lucide-react';
+
+export default function PurchaseOrdersPage() {
+    // Mock data for visual verification - in real app would verify via getPurchaseOrders
+    const orders = [
+        { id: 'PO-2024-001', supplier: 'Acme Corp', date: '2024-12-12', total: '12,450.00', status: 'Sent', currency: 'USD' },
+        { id: 'PO-2024-002', supplier: 'Globex Inc', date: '2024-12-10', total: '4,200.50', status: 'Draft', currency: 'USD' },
+        { id: 'PO-2024-003', supplier: 'Soylent Corp', date: '2024-12-08', total: '890.00', status: 'Received', currency: 'EUR' },
+    ];
+
+    return (
+        <div className="min-h-screen bg-white text-slate-900 font-sans tracking-tight">
+            {/* Header */}
+            <div className="px-12 pt-16 pb-12 border-b-2 border-slate-900 flex justify-between items-end max-w-[1600px] mx-auto">
+                <div>
+                    <p className="text-xs font-bold tracking-widest text-slate-500 uppercase mb-2">Procurement / Overview</p>
+                    <h1 className="text-6xl font-black tracking-tighter text-slate-900 leading-none">PURCHASE<br />ORDERS.</h1>
+                </div>
+                <div>
+                    <Link href="/hms/purchasing/orders/new" className="bg-slate-900 text-white px-8 py-4 font-black uppercase tracking-widest hover:bg-indigo-600 transition-all flex items-center gap-3 text-xs shadow-xl shadow-slate-200">
+                        <Plus className="h-4 w-4" /> New Order
+                    </Link>
+                </div>
+            </div>
+
+            {/* Content Grid */}
+            <div className="max-w-[1600px] mx-auto px-12 py-12">
+
+                {/* Filters */}
+                <div className="flex gap-8 mb-12 items-center">
+                    <div className="relative group w-96">
+                        <Search className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-indigo-600 transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="SEARCH ORDERS..."
+                            className="w-full pl-8 bg-transparent border-b border-slate-200 py-2 text-xl font-bold focus:outline-none focus:border-indigo-600 placeholder:text-slate-200 uppercase tracking-wide transition-colors"
+                        />
+                    </div>
+                    <div className="flex gap-4">
+                        <button className="text-xs font-bold uppercase tracking-widest text-slate-900 border-b-2 border-slate-900 pb-1">All</button>
+                        <button className="text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors pb-1">Drafts</button>
+                        <button className="text-xs font-bold uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-colors pb-1">Pending</button>
+                    </div>
+                </div>
+
+                {/* List */}
+                <div className="grid grid-cols-1 gap-0">
+                    <div className="grid grid-cols-12 border-b border-slate-900 pb-4 mb-4 opacity-50">
+                        <div className="col-span-3 text-xs font-bold uppercase tracking-widest">Order #</div>
+                        <div className="col-span-4 text-xs font-bold uppercase tracking-widest">Supplier</div>
+                        <div className="col-span-2 text-xs font-bold uppercase tracking-widest">Status</div>
+                        <div className="col-span-3 text-right text-xs font-bold uppercase tracking-widest">Total Value</div>
+                    </div>
+
+                    {orders.map((po, i) => (
+                        <div key={po.id} className="group grid grid-cols-12 py-6 border-b border-slate-100 hover:bg-slate-50 transition-all items-center cursor-pointer relative overflow-hidden">
+                            <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-indigo-600 transform -translate-x-full group-hover:translate-x-0 transition-transform"></div>
+
+                            <div className="col-span-3 font-mono text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
+                                {po.id}
+                            </div>
+                            <div className="col-span-4 text-2xl font-bold tracking-tight">
+                                {po.supplier}
+                            </div>
+                            <div className="col-span-2">
+                                <span className={`
+                                    text-xs font-black uppercase tracking-widest py-1 px-3 
+                                    ${po.status === 'Sent' ? 'bg-indigo-100 text-indigo-700' :
+                                        po.status === 'Received' ? 'bg-emerald-100 text-emerald-800' :
+                                            'bg-slate-100 text-slate-500'}
+                                `}>
+                                    {po.status}
+                                </span>
+                            </div>
+                            <div className="col-span-3 text-right font-mono text-2xl font-bold tracking-tighter">
+                                <span className="text-sm text-slate-400 mr-2 align-middle font-sans font-bold">{po.currency}</span>
+                                {po.total}
+                            </div>
+                        </div>
+                    ))}
+
+                    {/* Empty State / More Loader */}
+                    <div className="py-12 text-center">
+                        <p className="text-xs font-bold uppercase tracking-widest text-slate-300">End of List</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}

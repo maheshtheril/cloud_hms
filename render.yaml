@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: saas-erp-core
+    env: node
+    plan: free
+    buildCommand: npm install && prisma generate && npm run build
+    startCommand: npm start
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: saas-erp-db
+          property: connectionString
+      - key: NODE_VERSION
+        value: 20.10.0
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: GOOGLE_GENERATIVE_AI_API_KEY
+        sync: false
+
+databases:
+  - name: saas-erp-db
+    plan: free
+    databaseName: saas_erp
+    user: admin
+
+version: "1"
