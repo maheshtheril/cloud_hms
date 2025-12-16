@@ -25,7 +25,7 @@ async function main() {
 
     for (const p of products) {
         // Calculate current stock or check if used
-        const hasStock = p.hms_product_stock_ledger.some(l => l.qty > 0);
+        const hasStock = p.hms_product_stock_ledger.some(l => Number(l.change_qty) > 0);
         // We could also check `hms_stock_levels` if existed, but ledger is source of truth for "used".
 
         console.log(`[${p.sku}] ${p.name} | Price: ${p.price} | Used/Stocked: ${hasStock}`)
