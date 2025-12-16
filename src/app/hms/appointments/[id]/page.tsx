@@ -123,7 +123,7 @@ export default async function AppointmentDetailPage({ params }: { params: { id: 
                                 </Link>
                             </p>
                             <p className="text-sm text-gray-500">Number: {appointment.hms_patient.patient_number}</p>
-                            <p className="text-sm text-gray-500">Phone: {appointment.hms_patient.phone}</p>
+                            <p className="text-sm text-gray-500">Phone: {(appointment.hms_patient.contact as any)?.mobile || 'N/A'}</p>
                         </div>
                     ) : (
                         <p className="text-red-500">Patient information not found</p>
