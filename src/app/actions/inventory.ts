@@ -728,7 +728,8 @@ export async function getProduct(id: string) {
                 hms_product_image: {
                     take: 1,
                     orderBy: { created_at: 'desc' }
-                }
+                },
+                hms_product_category_rel: true
             }
         });
 
