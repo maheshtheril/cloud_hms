@@ -1657,6 +1657,7 @@ model hms_product {
   hms_product_uom_conversion hms_product_uom_conversion[]
   hms_stock_levels           hms_stock_levels[]
   product_tax_rules          product_tax_rules[]
+  hms_stock_ledger           hms_stock_ledger[]
 
   @@unique([tenant_id, sku], map: "ux_hms_product_tenant_sku")
   @@index([company_id], map: "ix_hms_product_company")
@@ -2111,8 +2112,9 @@ model hms_stock_ledger {
   batch_id         String?  @db.Uuid
   lot_number       String?
   reference        String?
-  created_at       DateTime @default(now()) @db.Timestamptz(6)
-  metadata         Json?    @default("{}")
+  created_at       DateTime    @default(now()) @db.Timestamptz(6)
+  metadata         Json?       @default("{}")
+  hms_product      hms_product @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([company_id, product_id, created_at(sort: Desc)], map: "idx_hms_stock_ledger_product_time")
   @@index([related_type, related_id], map: "idx_hms_stock_ledger_related")
