@@ -14,9 +14,12 @@ async function main() {
 
     console.log('User:', user.email, 'Tenant:', user.tenant_id)
 
-    const company = await prisma.company.findFirst({
-        where: { id: user.company_id }
-    })
+    let company = null;
+    if (user.company_id) {
+        company = await prisma.company.findFirst({
+            where: { id: user.company_id }
+        })
+    }
     console.log('Company Industry:', company?.industry)
 
     const modules = await prisma.tenant_module.findMany({
