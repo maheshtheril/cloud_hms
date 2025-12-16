@@ -32,7 +32,9 @@ export function SupplierDialog({ isOpen, onClose, onSuccess }: SupplierDialogPro
 
         try {
             const result = await createSupplier(formData);
-            if (result.error) {
+            if (!result) {
+                setError("Failed to create supplier.");
+            } else if (result.error) {
                 setError(result.error);
             } else if (result.success && result.data) {
                 onSuccess(result.data);
