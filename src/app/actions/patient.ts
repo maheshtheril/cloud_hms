@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 
-export async function createPatient(formData: FormData) {
+export async function createPatient(prevState: any, formData: FormData) {
     const firstName = formData.get("first_name") as string
     const lastName = formData.get("last_name") as string
     // TODO: Get Tenant ID from session

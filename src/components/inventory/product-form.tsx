@@ -1,9 +1,10 @@
 'use client'
 
-import { createProduct, updateProduct, createManufacturer, createCategory, createUOM } from "@/app/actions/inventory"
+import { createProduct, updateProduct, createUOM } from "@/app/actions/inventory"
 import { uploadProductImage } from "@/app/actions/upload-image"
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useActionState } from "react"
 import { useRouter } from "next/navigation"
+import { QuickCategoryForm, QuickManufacturerForm } from "@/components/inventory/quick-create-wrappers"
 import {
     Box, Tag, DollarSign, Layers, Image as ImageIcon, Barcode, Factory, Check, Zap, Info, Plus, X, Cpu
 } from "lucide-react"
@@ -39,11 +40,7 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
     const category = categories.find(c => c.id === selectedCategoryId);
 
     // Quick Create Form States
-    const quickForms = {
-        category: useRef<HTMLFormElement>(null),
-        manufacturer: useRef<HTMLFormElement>(null),
-        uom: useRef<HTMLFormElement>(null)
-    }
+    // Removed refs as we use components now
 
 
     // Auto-select Tax Rate when Category changes
@@ -56,26 +53,9 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
         }
     }, [selectedCategoryId, categories]);
 
-    async function handleQuickCreate(type: 'category' | 'manufacturer' | 'uom') {
-        const formRef = quickForms[type];
-        if (!formRef.current) return;
-
-        const formData = new FormData(formRef.current);
-        let res;
-
-        if (type === 'category') res = await createCategory(formData);
-        if (type === 'manufacturer') res = await createManufacturer(formData);
-        if (type === 'uom') res = await createUOM(formData);
-
-        if (res?.error) {
-            alert(res.error);
-        } else {
-            setModalOpen('none');
-            // Hard refresh might be needed to re-fetch server data fully if router.refresh() isn't enough for sub-components
-            router.refresh();
-            // Also explicitly close to be safe
-            setModalOpen('none');
-        }
+    function handleQuickSuccess() {
+        setModalOpen('none');
+        router.refresh();
     }
 
     // ... (rest of code)
@@ -493,32 +473,11 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                         </div>
 
                         {modalOpen === 'category' && (
-                            <form ref={quickForms.category} action={() => handleQuickCreate('category')} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
-                                    <input name="name" required className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-black outline-none" />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Default Tax Rate</label>
-                                    <select name="taxRateId" className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-black outline-none cursor-pointer">
-                                        <option value="">No Tax</option>
-                                        {taxRates.map(t => (
-                                            <option key={t.id} value={t.id}>{t.name} ({Number(t.rate)}%)</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <button type="submit" className="w-full py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">Create Category</button>
-                            </form>
+                            <QuickCategoryForm onSuccess={handleQuickSuccess} />
                         )}
 
                         {modalOpen === 'manufacturer' && (
-                            <form ref={quickForms.manufacturer} action={() => handleQuickCreate('manufacturer')} className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Manufacturer Name</label>
-                                    <input name="name" required className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-black outline-none" />
-                                </div>
-                                <button type="submit" className="w-full py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">Create Manufacturer</button>
-                            </form>
+                            <QuickManufacturerForm onSuccess={handleQuickSuccess} />
                         )}
 
 
@@ -547,16 +506,20 @@ function UOMQuickCreate({ categories, uoms, onClose, onRefresh }: { categories: 
     const refUom = uoms.find(u => u.category_id === catId && u.uom_type === 'reference');
     const refName = refUom ? refUom.name : "Ref Unit";
 
+    const [state, action, isPending] = useActionState(createUOM, { error: "", success: false });
+
+    useEffect(() => {
+        if (state?.success) {
+            onClose();
+            onRefresh();
+        }
+    }, [state?.success, onClose, onRefresh]);
+
     return (
-        <form action={async (formData) => {
-            const res = await createUOM(formData);
-            if (res?.error) {
-                alert(res.error);
-            } else {
-                onClose();
-                onRefresh();
-            }
-        }} className="space-y-4">
+        <form action={action} className="space-y-4">
+            {state?.error && (
+                <div className="text-red-500 text-sm bg-red-50 p-2 rounded">{state.error}</div>
+            )}
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">UOM Name (e.g. Box)</label>
                 <input

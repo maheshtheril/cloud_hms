@@ -7,7 +7,7 @@ import { uploadFile } from "@/app/actions/upload-file";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "");
 
-export async function scanInvoiceAction(formData: FormData) {
+export async function scanInvoiceAction(formData: FormData): Promise<{ success?: boolean; data?: any; error?: string }> {
     const res = await uploadFile(formData, 'invoices');
     if (res.error) return { error: res.error };
     if (!res.url) return { error: "Upload failed" };

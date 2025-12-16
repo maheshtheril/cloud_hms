@@ -202,7 +202,7 @@ export async function getUOMCategories() {
     }
 }
 
-export async function createUOMCategory(formData: FormData) {
+export async function createUOMCategory(prevState: any, formData: FormData) {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
     const name = formData.get("name") as string;
@@ -222,7 +222,7 @@ export async function createUOMCategory(formData: FormData) {
     }
 }
 
-export async function createUOM(formData: FormData) {
+export async function createUOM(prevState: any, formData: FormData) {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
 
@@ -270,7 +270,7 @@ export async function getCategories() {
     }
 }
 
-export async function createCategory(formData: FormData) {
+export async function createCategory(prevState: any, formData: FormData) {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
 
@@ -355,7 +355,7 @@ export async function getManufacturers() {
     }
 }
 
-export async function createManufacturer(formData: FormData) {
+export async function createManufacturer(prevState: any, formData: FormData) {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
 

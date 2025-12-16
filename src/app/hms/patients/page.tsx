@@ -21,8 +21,7 @@ export default async function PatientsPage({
             OR: [
                 { first_name: { contains: query, mode: 'insensitive' } },
                 { last_name: { contains: query, mode: 'insensitive' } },
-                { patient_number: { contains: query, mode: 'insensitive' } },
-                { phone: { contains: query, mode: 'insensitive' } }
+                { patient_number: { contains: query, mode: 'insensitive' } }
             ]
         } : undefined
     })
