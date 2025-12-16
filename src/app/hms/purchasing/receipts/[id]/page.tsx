@@ -158,7 +158,7 @@ export default function EditPurchaseReceiptPage() {
         async function loadPos() {
             const res = await getPendingPurchaseOrders();
             if (res && res.data) {
-                setPoOptions(res.data.map((po: any) => ({ label: `${po.poNumber} - ${po.supplierName}`, value: po.id })));
+                setPoOptions(res.data.map((po: any) => ({ id: po.id, label: `${po.poNumber} - ${po.supplierName}` })));
             }
         }
         loadPos();
