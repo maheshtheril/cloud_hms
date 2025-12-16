@@ -159,6 +159,7 @@ export async function createProductQuick(name: string) {
 export async function createPurchaseOrder(data: PurchaseOrderData) {
     const session = await auth()
     if (!session?.user?.companyId) return { error: "Unauthorized" }
+    const companyId = session.user.companyId;
 
     if (!data.items || data.items.length === 0) return { error: "Order must have at least one item" }
 
@@ -190,7 +191,7 @@ export async function createPurchaseOrder(data: PurchaseOrderData) {
             const totalAmount = subtotal + totalTax
 
             // 2. Generate PO Number
-            const count = await tx.hms_purchase_order.count({ where: { company_id: session.user.companyId } })
+            const count = await tx.hms_purchase_order.count({ where: { company_id: companyId } })
             const poNumber = `PO-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(count + 1).padStart(4, '0')}`
 
             // 3. Create Header
