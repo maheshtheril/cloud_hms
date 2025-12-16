@@ -22,7 +22,7 @@ export function CreateCategoryForm({ taxRates }: CreateCategoryFormProps) {
                 New Category
             </h2>
             <form action={action} className="space-y-4">
-                {state?.error && (
+                {state && 'error' in state && state.error && (
                     <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100">
                         {state.error}
                     </div>
