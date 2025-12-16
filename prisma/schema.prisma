@@ -1959,6 +1959,7 @@ model hms_purchase_order_line {
   updated_at                DateTime?                   @db.Timestamptz(6)
   hms_purchase_invoice_line hms_purchase_invoice_line[]
   hms_purchase_order        hms_purchase_order          @relation(fields: [purchase_order_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "hms_po_line_po_fkey")
+  hms_product               hms_product                 @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_purchase_receipt_line hms_purchase_receipt_line[]
 
   @@index([purchase_order_id], map: "ix_hms_purchase_order_line_po")
