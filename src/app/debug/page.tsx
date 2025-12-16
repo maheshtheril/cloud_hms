@@ -38,9 +38,9 @@ export default async function DebugPage() {
                                 {JSON.stringify(dbResult, null, 2)}
                             </pre>
                             <div className="mt-4 pt-4 border-t border-blue-200 text-blue-900">
-                                <p>DB Has CRM? <strong>{String(dbResult.analysis.hasCRM)}</strong></p>
-                                <p>DB Has HMS? <strong>{String(dbResult.analysis.hasHMS)}</strong></p>
-                                <p>DB Is Healthcare? <strong>{String(dbResult.analysis.isHealthcare)}</strong></p>
+                                <p>DB Has CRM? <strong>{String(dbResult.analysis?.hasCRM)}</strong></p>
+                                <p>DB Has HMS? <strong>{String(dbResult.analysis?.hasHMS)}</strong></p>
+                                <p>DB Is Healthcare? <strong>{String(dbResult.analysis?.isHealthcare)}</strong></p>
                             </div>
                         </>
                     ) : (
