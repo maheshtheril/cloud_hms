@@ -62,44 +62,43 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
 
         let lastError = null;
 
+        const prompt = `
+            Analyze this purchase invoice and extract data into strict JSON.
+            
+            Header Details:
+            - "supplierName": The Vendor/Supplier Name. LOCATION: Top-Left corner of the page. It is usually the very first text block you read. It is usually BOLD or LARGEST text. Look for keywords: 'Traders', 'Agencies', 'Enterprises', 'Pharma', 'Stores'. It is NOT 'Tax Invoice'. It is NOT the Buyer.
+            - "gstin": Supplier GSTIN / VAT Number.
+            - "address": Supplier Full Address.
+            - "contact": Sales Executive Name or Phone (if available).
+            - "date": Invoice Date in YYYY-MM-DD format.
+            - "reference": Invoice Number / Bill Number.
+            - "defaultHsn": Common HSN/SAC code if listed in header/footer/summary (fallback).
+            - "grandTotal": Final Invoice Grand Total Amount (Numeric).
+            
+            Line Items (Table rows):
+            - "items": Array of objects:
+                - "productName": Full item description.
+                - "sku": Product Code / SKU.
+                - "hsn": HSN/SAC Code. extract the numeric code (e.g. 300490, 8517). Do NOT return the word 'HSN' or 'SAC'.
+                - "batch": Batch Number.
+                - "expiry": Expiry Date (YYYY-MM-DD or MM/YY).
+                - "qty": Quantity (numeric).
+                - "uom": Unit of Measure (e.g., NOS, STRIPS).
+                - "packing": Packing details (e.g. 1x10).
+                - "unitPrice": Unit Rate/Price (before tax). Do NOT Use MRP. Look for 'Rate' or 'Price'.
+                - "mrp": Maximum Retail Price (MRP). Extract the numeric value. Do NOT return the words 'MRP' or 'Rate' or 'Price'. Return 0 if not found.
+                - "discount": Discount Amount.
+                - "taxRate": Tax Percentage. IMPORTANT: If tax is split (e.g. CGST 2.5% + SGST 2.5%), return the SUM (e.g. 5.0). Return the TOTAL tax rate.
+                - "taxAmount": Total Tax Amount for line.
+                - "amount": Final Line Amount.
+            
+            Return ONLY raw JSON. No markdown formatting.
+        `;
+
         for (const modelName of candidateModels) {
             try {
                 console.log(`[ScanInvoice] Trying model: ${modelName}`);
                 const model = genAI.getGenerativeModel({ model: modelName });
-
-                const prompt = `
-                    Analyze this purchase invoice and extract data into strict JSON.
-                    
-                    Header Details:
-                    - "supplierName": The Vendor/Supplier Name. LOCATION: Top-Left corner of the page. It is usually the very first text block you read. It is usually BOLD or LARGEST text. Look for keywords: 'Traders', 'Agencies', 'Enterprises', 'Pharma', 'Stores'. It is NOT 'Tax Invoice'. It is NOT the Buyer.
-                    - "gstin": Supplier GSTIN / VAT Number.
-                    - "address": Supplier Full Address.
-                    - "contact": Sales Executive Name or Phone (if available).
-                    - "date": Invoice Date in YYYY-MM-DD format.
-                    - "reference": Invoice Number / Bill Number.
-                    - "defaultHsn": Common HSN/SAC code if listed in header/footer/summary (fallback).
-                    - "grandTotal": Final Invoice Grand Total Amount (Numeric).
-                    
-                    Line Items (Table rows):
-                    - "items": Array of objects:
-                        - "productName": Full item description.
-                        - "sku": Product Code / SKU.
-                        - "hsn": HSN/SAC Code. extract the numeric code (e.g. 300490, 8517). Do NOT return the word 'HSN' or 'SAC'.
-                        - "batch": Batch Number.
-                        - "expiry": Expiry Date (YYYY-MM-DD or MM/YY).
-                        - "qty": Quantity (numeric).
-                        - "uom": Unit of Measure (e.g., NOS, STRIPS).
-                        - "packing": Packing details (e.g. 1x10).
-                        - "unitPrice": Unit Rate/Price (before tax). Do NOT Use MRP. Look for 'Rate' or 'Price'.
-                        - "mrp": Maximum Retail Price (MRP). Extract the numeric value. Do NOT return the words 'MRP' or 'Rate' or 'Price'. Return 0 if not found.
-                        - "discount": Discount Amount.
-                        - "taxRate": Tax Percentage. IMPORTANT: If tax is split (e.g. CGST 2.5% + SGST 2.5%), return the SUM (e.g. 5.0). Return the TOTAL tax rate.
-                        - "taxAmount": Total Tax Amount for line.
-                        - "amount": Final Line Amount.
-                    
-                    Return ONLY raw JSON. No markdown formatting.
-                `;
-
                 const result = await model.generateContent([
                     prompt,
                     {
@@ -376,4 +375,44 @@ function parseNumber(val: any): number {
     // Simple approach: remove typical currency symbols and non-digits
     const clean = String(val).replace(/[^0-9.-]/g, '');
     return Number(clean);
+}
+
+function getSimilarity(s1: string, s2: string): number {
+    let longer = s1;
+    let shorter = s2;
+    if (s1.length < s2.length) {
+        longer = s2;
+        shorter = s1;
+    }
+    const longerLength = longer.length;
+    if (longerLength === 0) {
+        return 1.0;
+    }
+    return (longerLength - editDistance(longer, shorter)) / parseFloat(String(longerLength));
+}
+
+function editDistance(s1: string, s2: string): number {
+    s1 = s1.toLowerCase();
+    s2 = s2.toLowerCase();
+
+    const costs = new Array();
+    for (let i = 0; i <= s1.length; i++) {
+        let lastValue = i;
+        for (let j = 0; j <= s2.length; j++) {
+            if (i == 0)
+                costs[j] = j;
+            else {
+                if (j > 0) {
+                    let newValue = costs[j - 1];
+                    if (s1.charAt(i - 1) != s2.charAt(j - 1))
+                        newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
+                    costs[j - 1] = lastValue;
+                    lastValue = newValue;
+                }
+            }
+        }
+        if (i > 0)
+            costs[s2.length] = lastValue;
+    }
+    return costs[s2.length];
 }
