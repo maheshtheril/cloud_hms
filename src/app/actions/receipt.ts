@@ -87,6 +87,7 @@ export async function getPurchaseOrder(id: string) {
 export async function createPurchaseReceipt(data: PurchaseReceiptData) {
     const session = await auth()
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized: Missing Company or Tenant ID. Please relogin." }
+    const companyId = session.user.companyId;
 
     if (!data.supplierId) return { error: "Supplier is required." }
     if (!data.items || data.items.length === 0) return { error: "Receipt must have items" }
@@ -115,7 +116,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
 
         const result = await prisma.$transaction(async (tx) => {
             // 1. Generate Receipt Number
-            const count = await tx.hms_purchase_receipt.count({ where: { company_id: session.user.companyId } })
+            const count = await tx.hms_purchase_receipt.count({ where: { company_id: companyId } })
             const receiptNumber = `GRN-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`
 
             // 2. Create Receipt Header
