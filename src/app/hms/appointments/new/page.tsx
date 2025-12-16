@@ -31,7 +31,10 @@ export default async function NewAppointmentPage({
     const selectedPatientId = patient_id || ''
 
     return (
-        <form action={createAppointment} className="max-w-5xl mx-auto space-y-8 pb-12">
+        <form action={async (formData) => {
+            'use server'
+            await createAppointment(formData)
+        }} className="max-w-5xl mx-auto space-y-8 pb-12">
 
             {/* Sticky Header */}
             <div className="flex items-center justify-between sticky top-0 z-10 bg-white/80 backdrop-blur-md p-4 -mx-4 border-b border-gray-100">
