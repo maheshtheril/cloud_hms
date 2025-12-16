@@ -179,6 +179,12 @@ export default function NewPurchaseReceiptPage() {
         }]);
     };
 
+    const removeItem = (index: number) => {
+        const newItems = [...items];
+        newItems.splice(index, 1);
+        setItems(newItems);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         console.log("Submit button clicked");
@@ -403,7 +409,7 @@ export default function NewPurchaseReceiptPage() {
                                         const res = await scanInvoiceFromUrl(url);
                                         console.log("Scan Result Client-Side:", res);
 
-                                        if (res.success && res.data) {
+                                        if (!('error' in res) && res.data) {
                                             const { supplierId, supplierName, date, reference, items: scannedItems } = res.data;
 
                                             console.log("Mapping Items:", scannedItems);
@@ -485,10 +491,10 @@ export default function NewPurchaseReceiptPage() {
 
                                             toast({ title: "Invoice Extract Success", description: "Data auto-filled. Please review the items below." });
                                         } else {
-                                            console.error("Scan Failed:", res.error);
+                                            console.error("Scan Failed:", 'error' in res ? res.error : 'Unknown error');
                                             toast({
                                                 title: "Scan Failed",
-                                                description: res.error || "Could not read invoice data.",
+                                                description: ('error' in res ? res.error : undefined) || "Could not read invoice data.",
                                                 variant: "destructive"
                                             });
                                         }
