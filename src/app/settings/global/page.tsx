@@ -29,7 +29,7 @@ export default async function GlobalSettingsPage() {
                                 {countries.map(c => (
                                     <li key={c.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded">
                                         <span>{c.name}</span>
-                                        <span className="text-sm text-gray-400">{c.code}</span>
+                                        <span className="text-sm text-gray-400">{c.iso2}</span>
                                     </li>
                                 ))}
                             </ul>
