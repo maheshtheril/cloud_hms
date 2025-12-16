@@ -1,18 +1,5 @@
 import type { NextAuthConfig } from "next-auth"
 
-declare module "next-auth" {
-    interface User {
-        isAdmin?: boolean;
-        isTenantAdmin?: boolean;
-        industry?: string;
-        hasCRM?: boolean;
-        hasHMS?: boolean;
-    }
-    interface Session {
-        user: User;
-    }
-}
-
 
 export const authConfig = {
     pages: {
