@@ -13,7 +13,7 @@ async function listModels() {
         // Actually, the JS SDK doesn't expose listModels easily in the main class. 
         // Let's try 'gemini-1.5-pro' and 'gemini-pro' as fallbacks by just running them.
 
-        const models toTry = ["gemini-1.5-flash", "gemini-1.5-flash-001", "gemini-1.5-pro", "gemini-pro", "gemini-2.0-flash-exp"];
+        const models = ["gemini-1.5-flash", "gemini-1.5-flash-001", "gemini-1.5-pro", "gemini-pro", "gemini-2.0-flash-exp"];
 
         for (const m of models) {
             console.log(`Testing model: ${m}...`);
