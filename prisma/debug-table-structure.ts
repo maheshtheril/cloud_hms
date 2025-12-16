@@ -6,13 +6,7 @@ import path from 'path'
 // Load .env from project root
 dotenv.config({ path: path.resolve(__dirname, '../.env') })
 
-const prisma = new PrismaClient({
-    datasources: {
-        db: {
-            url: process.env.DATABASE_URL
-        }
-    }
-})
+const prisma = new PrismaClient()
 
 async function main() {
     console.log('Fetching table structure for hms_purchase_receipt_line... (URL length: ' + (process.env.DATABASE_URL?.length || 0) + ')')
