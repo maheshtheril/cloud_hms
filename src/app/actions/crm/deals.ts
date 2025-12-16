@@ -33,7 +33,7 @@ export async function createDeal(prevState: DealFormState, formData: FormData): 
     const session = await auth()
     const user = session?.user
 
-    if (!user || !user.tenant_id) {
+    if (!user || !user.tenantId) {
         return { message: 'Unauthorized' }
     }
 
@@ -56,7 +56,7 @@ export async function createDeal(prevState: DealFormState, formData: FormData): 
     try {
         await prisma.crm_deals.create({
             data: {
-                tenant_id: user.tenant_id,
+                tenant_id: user.tenantId,
                 owner_id: user.id,
                 title,
                 value,

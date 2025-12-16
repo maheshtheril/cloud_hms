@@ -29,7 +29,7 @@ export async function logAttendance(prevState: AttendanceFormState, formData: Fo
     const session = await auth()
     const user = session?.user
 
-    if (!user || !user.tenant_id) {
+    if (!user || !user.tenantId) {
         return { message: 'Unauthorized' }
     }
 
@@ -65,7 +65,7 @@ export async function logAttendance(prevState: AttendanceFormState, formData: Fo
             }
             await prisma.crm_attendance.create({
                 data: {
-                    tenant_id: user.tenant_id,
+                    tenant_id: user.tenantId,
                     user_id: user.id,
                     date: new Date(),
                     check_in: new Date(),

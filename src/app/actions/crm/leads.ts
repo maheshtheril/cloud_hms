@@ -44,7 +44,7 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
 
     // Ensure consistency with masters.ts (tenantId vs tenant_id). Using tenantId based on masters.ts
     // Check if user object has tenantId or tenant_id. NextAuth usually puts it in user.
-    // If previous code in this file used user.tenant_id, and masters used tenantId...
+    // If previous code in this file used user.tenantId, and masters used tenantId...
     // I will use session.user.tenantId as per masters.ts which I believe is more recent/correct for this project 
     // or type check user.
     const tenantId = user?.tenantId || (user as any)?.tenant_id
@@ -100,7 +100,7 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
         })
 
         // Process Custom Fields
-        await processCustomFields(formData, user.tenant_id, newLead.id, 'lead')
+        await processCustomFields(formData, user.tenantId, newLead.id, 'lead')
 
     } catch (error) {
         console.error('Database Error:', error)
