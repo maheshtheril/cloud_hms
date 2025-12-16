@@ -11,15 +11,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "@/components/ui/button"
 
 export default async function SuppliersPage(props: { searchParams: Promise<{ q?: string, page?: string }> }) {
     const searchParams = await props.searchParams;
