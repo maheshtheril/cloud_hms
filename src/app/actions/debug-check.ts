@@ -8,7 +8,9 @@ export async function runDiagnostics(email: string) {
     const user = await prisma.app_user.findFirst({ where: { email } })
     if (!user) return { error: 'User not found in DB' }
 
-    const company = await prisma.company.findFirst({ where: { id: user.company_id } })
+    const company = user.company_id
+        ? await prisma.company.findFirst({ where: { id: user.company_id } })
+        : null
     const tenantModules = await prisma.tenant_module.findMany({
         where: { tenant_id: user.tenant_id, enabled: true }
     })
