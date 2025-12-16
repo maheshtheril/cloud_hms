@@ -123,7 +123,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
             const receipt = await tx.hms_purchase_receipt.create({
                 data: {
                     tenant_id: session.user.tenantId!,
-                    company_id: session.user.companyId!,
+                    company_id: companyId!,
                     purchase_order_id: data.purchaseOrderId,
                     supplier_id: data.supplierId, // Added missing supplier_id
                     name: receiptNumber,
@@ -140,14 +140,14 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
 
             // 2b. ensure default location exists for stock
             let defaultLocation = await tx.hms_stock_location.findFirst({
-                where: { company_id: session.user.companyId, name: 'Main Warehouse' }
+                where: { company_id: companyId, name: 'Main Warehouse' }
             });
 
             if (!defaultLocation) {
                 defaultLocation = await tx.hms_stock_location.create({
                     data: {
                         tenant_id: session.user.tenantId!,
-                        company_id: session.user.companyId!,
+                        company_id: companyId!,
                         name: 'Main Warehouse',
                         code: 'WH-MAIN',
                         location_type: 'warehouse'
@@ -165,7 +165,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     // Try find
                     const existingBatch = await tx.hms_product_batch.findFirst({
                         where: {
-                            company_id: session.user.companyId,
+                            company_id: companyId,
                             product_id: item.productId,
                             batch_no: item.batch
                         }
@@ -185,7 +185,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                         const newBatch = await tx.hms_product_batch.create({
                             data: {
                                 tenant_id: session.user.tenantId!,
-                                company_id: session.user.companyId!,
+                                company_id: companyId!,
                                 product_id: item.productId,
                                 batch_no: item.batch,
                                 expiry_date: validExpiry,
@@ -219,7 +219,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     ) VALUES (
                         gen_random_uuid(),
                         ${session.user.tenantId}::uuid,
-                        ${session.user.companyId}::uuid,
+                        ${companyId}::uuid,
                         ${receipt.id}::uuid,
                         ${item.productId}::uuid,
                         ${poLineIdVal}::uuid,
@@ -244,7 +244,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 await tx.hms_product_stock_ledger.create({
                     data: {
                         tenant_id: session.user.tenantId!,
-                        company_id: session.user.companyId!,
+                        company_id: companyId!,
                         product_id: item.productId,
                         location: defaultLocation.id, // Schema uses 'location' (string)
                         movement_type: 'in',
