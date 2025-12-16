@@ -1658,6 +1658,7 @@ model hms_product {
   hms_stock_levels           hms_stock_levels[]
   product_tax_rules          product_tax_rules[]
   hms_stock_ledger           hms_stock_ledger[]
+  hms_purchase_order_line    hms_purchase_order_line[]
 
   @@unique([tenant_id, sku], map: "ux_hms_product_tenant_sku")
   @@index([company_id], map: "ix_hms_product_company")
