@@ -355,7 +355,7 @@ export async function getManufacturers() {
     }
 }
 
-export async function createManufacturer(prevState: any, formData: FormData) {
+export async function createManufacturer(prevState: any, formData: FormData): Promise<{ error: string } | { success: boolean }> {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
 

@@ -5,8 +5,7 @@ import { createManufacturer } from "@/app/actions/inventory"
 import { Plus, Globe } from "lucide-react"
 
 const initialState = {
-    error: "",
-    success: false
+    error: ""
 }
 
 export function CreateManufacturerForm() {
@@ -19,7 +18,7 @@ export function CreateManufacturerForm() {
                 New Manufacturer
             </h2>
             <form action={action} className="space-y-4">
-                {state?.error && (
+                {state && 'error' in state && state.error && (
                     <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100">
                         {state.error}
                     </div>
