@@ -157,13 +157,13 @@ export async function createInvoice(data: any) {
                         tenant_id: session.user.tenantId,
                         company_id: session.user.companyId,
                         line_idx: index + 1,
-                        product_id: item.product_id, // Link to product if selected
+                        product_id: item.product_id || null, // Convert empty string to null
                         description: item.description,
                         quantity: item.quantity,
                         unit_price: item.unit_price,
                         net_amount: (item.quantity * item.unit_price) - (item.discount_amount || 0),
                         // Tax details
-                        tax_rate_id: item.tax_rate_id,
+                        tax_rate_id: item.tax_rate_id || null, // Convert empty string to null
                         tax_amount: item.tax_amount || 0,
                         discount_amount: item.discount_amount || 0
                     }))
