@@ -10,12 +10,11 @@ async function main() {
     console.log("Starting Verification...")
 
     try {
-        // 1. Fetch a valid tenant/company/user to act as
+        // 1. Fetch a valid tenant/company to act as
         const company = await prisma.company.findFirst()
-        const user = await prisma.user.findFirst({ where: { company_id: company?.id } })
 
-        if (!company || !user) {
-            console.error("No company or user found!")
+        if (!company) {
+            console.error("No company found!")
             return
         }
 
@@ -71,7 +70,8 @@ async function main() {
                 invoice_date: new Date(),
                 status: 'draft',
                 total: 200, // Dummy
-                tax_amount: 0,
+                subtotal: 200,
+                total_tax: 0,
                 hms_invoice_lines: {
                     create: [
                         {

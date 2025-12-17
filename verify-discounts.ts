@@ -35,7 +35,6 @@ async function main() {
                 subtotal: 290,
                 total_tax: 29,
                 total_discount: globalDiscount,
-                tax_amount: 29, // Legacy field
                 hms_invoice_lines: {
                     create: [
                         {

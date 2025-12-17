@@ -16,6 +16,9 @@ interface PhoneInputProps {
     className?: string
     placeholder?: string
     disabled?: boolean
+    id?: string
+    name?: string
+    defaultCountry?: any
 }
 
 export const PhoneInputComponent = forwardRef<any, PhoneInputProps>(({ className, value, onChange, ...props }, ref) => {

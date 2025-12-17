@@ -2,19 +2,7 @@
 
 import { Search } from "lucide-react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useTransition } from "react"
-import { useDebouncedCallback } from "use-debounce" // We need to check if use-debounce is installed or use custom. The codebase had `useDebouncedCallback` in `searchable-select`.
-
-// Let's implement a simple custom hook to avoid dependency issues if not installed globally
-// Actually, `searchable-select` used a custom implementation in-file or imported? 
-// Checking `searchable-select.tsx` view... it had `function useDebouncedCallback...` internal definition in the snippet I saw earlier? 
-// Ah, `searchable-select.tsx` line 10 had `import { useDebouncedCallback } ...` NO, line 27 in viewed file showed custom implementation? 
-// Wait, Step 18 view showed: 
-// `function useDebouncedCallback...` was in `viewed_code_item` snippet but NOT in the full file view of `receipts/new/page.tsx`.
-// `searchable-select.tsx` file view was NOT performed fully in this session, only `receipts/new/page`.
-// But I edited `searchable-select` earlier. Let's assume I can write a simple hook here.
-
-import { useEffect, useRef, useState, useCallback } from "react"
+import { useTransition, useEffect, useRef, useState, useCallback } from "react"
 
 function useDebounce<T extends (...args: any[]) => void>(callback: T, delay: number) {
     const timeoutRef = useRef<NodeJS.Timeout>(null);
