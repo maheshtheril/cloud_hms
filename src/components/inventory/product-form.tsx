@@ -506,18 +506,18 @@ function UOMQuickCreate({ categories, uoms, onClose, onRefresh }: { categories: 
     const refUom = uoms.find(u => u.category_id === catId && u.uom_type === 'reference');
     const refName = refUom ? refUom.name : "Ref Unit";
 
-    const [state, action, isPending] = useActionState(createUOM, { error: "", success: false });
+    const [state, action, isPending] = useActionState(createUOM, { error: "" });
 
     useEffect(() => {
-        if (state?.success) {
+        if (state && !('error' in state)) {
             onClose();
             onRefresh();
         }
-    }, [state?.success, onClose, onRefresh]);
+    }, [state, onClose, onRefresh]);
 
     return (
         <form action={action} className="space-y-4">
-            {state?.error && (
+            {state && 'error' in state && state.error && (
                 <div className="text-red-500 text-sm bg-red-50 p-2 rounded">{state.error}</div>
             )}
             <div>
