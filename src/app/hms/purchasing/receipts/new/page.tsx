@@ -12,6 +12,8 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { useToast } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { SupplierDialog } from '@/components/hms/purchasing/supplier-dialog';
+import { SupplierPricingDefaults } from '@/components/hms/purchasing/supplier-pricing-defaults';
+import { updateSupplierPricingDefaults, getSupplierPricingDefaults } from '@/app/actions/supplier-pricing';
 
 const PACKING_OPTIONS = ['1 Strip', '1 Box', '1 Bottle', '10x10', '1x10', '1x15', '1 Unit', '1 kg', '1 L'];
 const TAX_OPTIONS = ['0', '5', '12', '18', '28'];
@@ -51,6 +53,8 @@ export default function NewPurchaseReceiptPage() {
     const [supplierId, setSupplierId] = useState<string | null>(null);
     const [supplierName, setSupplierName] = useState('');
     const [supplierMeta, setSupplierMeta] = useState<any>(null); // { gstin, address, contact }
+    const [pricingDefaultsOpen, setPricingDefaultsOpen] = useState(false);
+    const [supplierPricingDefaults, setSupplierPricingDefaults] = useState<any>(null);
     const [receivedDate, setReceivedDate] = useState(new Date().toISOString().split('T')[0]);
     const [reference, setReference] = useState('');
     const [notes, setNotes] = useState('');

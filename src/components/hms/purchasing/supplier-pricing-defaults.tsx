@@ -33,19 +33,28 @@ export function SupplierPricingDefaults({
     const [mrpDiscountPct, setMrpDiscountPct] = useState(currentDefaults?.defaultMrpDiscountPct || 10);
     const [markupPct, setMarkupPct] = useState(currentDefaults?.defaultMarkupPct || 25);
 
-    const handleSave = () => {
+    const handleSave = async () => {
         const defaults = {
-            defaultPricingStrategy: strategy,
-            defaultMrpDiscountPct: strategy === 'mrp_discount' ? mrpDiscountPct : undefined,
-            defaultMarkupPct: strategy === 'cost_markup' ? markupPct : undefined,
+            strategy: strategy as 'mrp_discount' | 'cost_markup' | 'none',
+            percentage: strategy === 'mrp_discount' ? mrpDiscountPct :
+                strategy === 'cost_markup' ? markupPct : 0
         };
 
-        onSave(defaults);
-        toast({
-            title: "Pricing Defaults Saved",
-            description: `Default pricing for ${supplierName} has been updated.`
-        });
-        onClose();
+        const result = await onSave(defaults);
+
+        if (result?.error) {
+            toast({
+                title: "Error",
+                description: result.error,
+                variant: "destructive"
+            });
+        } else {
+            toast({
+                title: "Pricing Defaults Saved",
+                description: `Default pricing for ${supplierName} has been updated.`
+            });
+            onClose();
+        }
     };
 
     return (
