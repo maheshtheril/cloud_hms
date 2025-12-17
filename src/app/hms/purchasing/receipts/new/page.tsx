@@ -61,6 +61,10 @@ export default function NewPurchaseReceiptPage() {
     const [isAutoRound, setIsAutoRound] = useState(true);
     const [scannedTotal, setScannedTotal] = useState(0);
 
+    // AI Scanning State
+    const [isScanning, setIsScanning] = useState(false);
+    const [scanProgress, setScanProgress] = useState('');
+
     // Company & Tax Logic
     const [companyDetails, setCompanyDetails] = useState<{ gstin?: string, state?: string } | null>(null);
     const [taxType, setTaxType] = useState<'INTRA' | 'INTER'>('INTRA');
@@ -396,107 +400,142 @@ export default function NewPurchaseReceiptPage() {
                         {/* 4. Attachments */}
                         <div className="space-y-4 pt-4 border-t border-white/5">
                             <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Invoice / Attachment</label>
+
+                            {/* Loading Indicator */}
+                            {isScanning && (
+                                <div className="flex items-center gap-3 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-lg animate-pulse">
+                                    <div className="h-5 w-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                                    <div className="flex-1">
+                                        <p className="text-sm font-medium text-indigo-400">{scanProgress}</p>
+                                        <p className="text-xs text-neutral-500 mt-0.5">This may take 10-30 seconds...</p>
+                                    </div>
+                                </div>
+                            )}
+
                             <FileUpload
+                                disabled={isScanning}
                                 onUploadComplete={async (url) => {
                                     setAttachmentUrl(url);
                                     if (url) {
-                                        // Trigger AI Scan
-                                        toast({ title: "Analyzing Invoice...", description: "Extracting data from your document..." });
+                                        try {
+                                            // Start loading
+                                            setIsScanning(true);
+                                            setScanProgress('📤 Uploading file...');
 
-                                        // Dynamic import or ensure action is available
-                                        const { scanInvoiceFromUrl } = await import('@/app/actions/scan-invoice');
-                                        console.log("Calling scanInvoiceFromUrl...", url);
-                                        const res = await scanInvoiceFromUrl(url);
-                                        console.log("Scan Result Client-Side:", res);
+                                            // Wait a moment for upload
+                                            await new Promise(resolve => setTimeout(resolve, 500));
 
-                                        if (!('error' in res) && res.data) {
-                                            const { supplierId, supplierName, date, reference, items: scannedItems } = res.data;
+                                            setScanProgress('🤖 Analyzing with AI...');
+                                            toast({ title: "AI Scanning Started", description: "Extracting invoice data..." });
 
-                                            console.log("Mapping Items:", scannedItems);
+                                            // Dynamic import
+                                            const { scanInvoiceFromUrl } = await import('@/app/actions/scan-invoice');
+                                            console.log("Calling scanInvoiceFromUrl...", url);
 
-                                            // 1. Auto-select mode to Direct (since it's an invoice upload usually)
-                                            setMode('direct');
+                                            setScanProgress('📊 Extracting data...');
+                                            const res = await scanInvoiceFromUrl(url);
+                                            console.log("Scan Result Client-Side:", res);
 
-                                            // 2. Set Header Data
-                                            if (supplierId) {
-                                                setSupplierId(supplierId);
-                                                setSupplierName(supplierName);
-                                                setSupplierMeta({
-                                                    gstin: res.data.gstin,
-                                                    address: res.data.address,
-                                                    contact: res.data.contact
-                                                });
-                                            }
-                                            if (date) setReceivedDate(date);
-                                            if (reference) setReference(reference);
+                                            if (!('error' in res) && res.data) {
+                                                setScanProgress('✅ Populating form...');
+                                                const { supplierId, supplierName, date, reference, items: scannedItems } = res.data;
 
-                                            // 3. Populate Items
-                                            if (scannedItems && scannedItems.length > 0) {
-                                                const mappedItems = scannedItems.map((item: any) => {
-                                                    const qty = Number(String(item.qty || 0).replace(/[^0-9.-]/g, '')) || 0;
-                                                    const unitPrice = Number(String(item.unitPrice || 0).replace(/[^0-9.-]/g, '')) || 0;
-                                                    const taxRate = Number(String(item.taxRate || 0).replace(/[^0-9.-]/g, '')) || 0;
-                                                    const taxAmount = (qty * unitPrice * (taxRate / 100));
+                                                console.log("Mapping Items:", scannedItems);
 
-                                                    return {
-                                                        productId: item.productId,
-                                                        productName: item.productName,
-                                                        receivedQty: qty,
-                                                        unitPrice: unitPrice,
-                                                        pendingQty: 0,
-                                                        orderedQty: 0,
-                                                        batch: item.batch,
-                                                        expiry: item.expiry,
-                                                        mrp: Number(String(item.mrp || 0).replace(/[^0-9.-]/g, '')) || 0,
-                                                        taxRate: taxRate,
-                                                        taxAmount: taxAmount,
-                                                        hsn: item.hsn,
-                                                        packing: item.packing
-                                                    };
-                                                });
-                                                setItems(mappedItems);
+                                                // 1. Auto-select mode to Direct
+                                                setMode('direct');
 
-                                                // 4. Smart Rounding: Match the PDF's Grand Total exactly
-                                                if (res.data.grandTotal) {
-                                                    const extractedTotal = Number(res.data.grandTotal);
-                                                    setScannedTotal(extractedTotal);
+                                                // 2. Set Header Data
+                                                if (supplierId) {
+                                                    setSupplierId(supplierId);
+                                                    setSupplierName(supplierName);
+                                                    setSupplierMeta({
+                                                        gstin: res.data.gstin,
+                                                        address: res.data.address,
+                                                        contact: res.data.contact
+                                                    });
+                                                }
+                                                if (date) setReceivedDate(date);
+                                                if (reference) setReference(reference);
 
-                                                    // Re-calculate local total for these items
-                                                    const localTaxable = mappedItems.reduce((sum: number, item: any) => sum + (item.unitPrice * item.receivedQty), 0);
-                                                    const localTax = mappedItems.reduce((sum: number, item: any) => sum + (item.taxAmount || 0), 0);
-                                                    const localTotal = localTaxable + localTax;
+                                                // 3. Populate Items
+                                                if (scannedItems && scannedItems.length > 0) {
+                                                    const mappedItems = scannedItems.map((item: any) => {
+                                                        const qty = Number(String(item.qty || 0).replace(/[^0-9.-]/g, '')) || 0;
+                                                        const unitPrice = Number(String(item.unitPrice || 0).replace(/[^0-9.-]/g, '')) || 0;
+                                                        const taxRate = Number(String(item.taxRate || 0).replace(/[^0-9.-]/g, '')) || 0;
+                                                        const taxAmount = (qty * unitPrice * (taxRate / 100));
 
-                                                    const diff = extractedTotal - localTotal;
+                                                        return {
+                                                            productId: item.productId,
+                                                            productName: item.productName,
+                                                            receivedQty: qty,
+                                                            unitPrice: unitPrice,
+                                                            pendingQty: 0,
+                                                            orderedQty: 0,
+                                                            batch: item.batch,
+                                                            expiry: item.expiry,
+                                                            mrp: Number(String(item.mrp || 0).replace(/[^0-9.-]/g, '')) || 0,
+                                                            taxRate: taxRate,
+                                                            taxAmount: taxAmount,
+                                                            hsn: item.hsn,
+                                                            packing: item.packing
+                                                        };
+                                                    });
+                                                    setItems(mappedItems);
 
-                                                    // If there's a difference, assume it's round off, set it, and LOCK auto-round to false (Manual)
-                                                    // to preserver the document's truth.
-                                                    if (Math.abs(diff) <= 0.5) {
-                                                        setRoundOff(Number(diff.toFixed(2)));
-                                                        setIsAutoRound(false);
-                                                        toast({ description: `Round off adjusted to match Invoice Total: ${extractedTotal}` });
-                                                    } else {
-                                                        setRoundOff(0);
-                                                        setIsAutoRound(true);
-                                                        toast({
-                                                            title: "Total Mismatch Warning",
-                                                            description: `Invoice Total (${extractedTotal}) differs from calculated (${localTotal.toFixed(2)}) by ${diff.toFixed(2)}. Please check item prices/taxes.`,
-                                                            variant: "destructive"
-                                                        });
+                                                    // 4. Smart Rounding: Match the PDF's Grand Total exactly
+                                                    if (res.data.grandTotal) {
+                                                        const extractedTotal = Number(res.data.grandTotal);
+                                                        setScannedTotal(extractedTotal);
+
+                                                        // Re-calculate local total for these items
+                                                        const localTaxable = mappedItems.reduce((sum: number, item: any) => sum + (item.unitPrice * item.receivedQty), 0);
+                                                        const localTax = mappedItems.reduce((sum: number, item: any) => sum + (item.taxAmount || 0), 0);
+                                                        const localTotal = localTaxable + localTax;
+
+                                                        const diff = extractedTotal - localTotal;
+
+                                                        // If there's a difference, assume it's round off, set it, and LOCK auto-round to false (Manual)
+                                                        // to preserver the document's truth.
+                                                        if (Math.abs(diff) <= 0.5) {
+                                                            setRoundOff(Number(diff.toFixed(2)));
+                                                            setIsAutoRound(false);
+                                                            toast({ description: `Round off adjusted to match Invoice Total: ${extractedTotal}` });
+                                                        } else {
+                                                            setRoundOff(0);
+                                                            setIsAutoRound(true);
+                                                            toast({
+                                                                title: "Total Mismatch Warning",
+                                                                description: `Invoice Total (${extractedTotal}) differs from calculated (${localTotal.toFixed(2)}) by ${diff.toFixed(2)}. Please check item prices/taxes.`,
+                                                                variant: "destructive"
+                                                            });
+                                                        }
                                                     }
+
+                                                } else {
+                                                    toast({ title: "Warning", description: "Invoice scanned but no items found.", variant: "default" });
                                                 }
 
+                                                toast({ title: "Invoice Extract Success", description: "Data auto-filled. Please review the items below." });
                                             } else {
-                                                toast({ title: "Warning", description: "Invoice scanned but no items found.", variant: "default" });
+                                                console.error("Scan Failed:", 'error' in res ? res.error : 'Unknown error');
+                                                toast({
+                                                    title: "❌ Scan Failed",
+                                                    description: ('error' in res ? res.error : undefined) || "Could not read invoice data.",
+                                                    variant: "destructive"
+                                                });
                                             }
-
-                                            toast({ title: "Invoice Extract Success", description: "Data auto-filled. Please review the items below." });
-                                        } else {
-                                            console.error("Scan Failed:", 'error' in res ? res.error : 'Unknown error');
+                                        } catch (error) {
+                                            console.error("Error during scan:", error);
                                             toast({
-                                                title: "Scan Failed",
-                                                description: ('error' in res ? res.error : undefined) || "Could not read invoice data.",
+                                                title: "❌ Error",
+                                                description: "Failed to scan invoice. Please try again.",
                                                 variant: "destructive"
                                             });
+                                        } finally {
+                                            setIsScanning(false);
+                                            setScanProgress('');
                                         }
                                     }
                                 }}
