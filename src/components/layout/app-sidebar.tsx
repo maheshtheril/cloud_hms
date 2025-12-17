@@ -13,6 +13,7 @@ const IconMap: any = {
 
 export function AppSidebar({ menuItems, currentCompany, children }: { menuItems: any[], currentCompany: any, children: React.ReactNode }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [collapsed, setCollapsed] = useState(false);
 
     return (
         <div className="flex h-screen bg-neutral-950 text-white font-sans overflow-hidden">
