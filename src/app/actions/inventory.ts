@@ -1075,3 +1075,91 @@ export async function getStockReport(query?: string, page: number = 1) {
         return { error: "Failed to generate stock report" };
     }
 }
+
+// --- Smart Product Matching & Auto-Creation ---
+
+export async function findOrCreateProduct(productName: string, additionalData?: {
+    mrp?: number;
+    hsn?: string;
+    packing?: string;
+}) {
+    const session = await auth();
+    if (!session?.user?.companyId || !session?.user?.tenantId) {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        const companyId = session.user.companyId;
+        const tenantId = session.user.tenantId;
+
+        // 1. Try to find existing product by exact name match
+        let product = await prisma.hms_product.findFirst({
+            where: {
+                company_id: companyId,
+                name: {
+                    equals: productName,
+                    mode: 'insensitive'
+                }
+            }
+        });
+
+        if (product) {
+            return {
+                productId: product.id,
+                productName: product.name,
+                created: false
+            };
+        }
+
+        // 2. If not found, try fuzzy match
+        const similarProducts = await prisma.hms_product.findMany({
+            where: {
+                company_id: companyId,
+                name: {
+                    contains: productName,
+                    mode: 'insensitive'
+                }
+            },
+            take: 1
+        });
+
+        if (similarProducts.length > 0) {
+            product = similarProducts[0];
+            return {
+                productId: product.id,
+                productName: product.name,
+                created: false,
+                fuzzyMatch: true
+            };
+        }
+
+        // 3. Auto-create new product
+        const newProduct = await prisma.hms_product.create({
+            data: {
+                tenant_id: tenantId,
+                company_id: companyId,
+                name: productName,
+                description: `Auto-created from invoice scan`,
+                price: additionalData?.mrp || 0,
+                cost: 0,
+                sku: `AUTO-${Date.now()}`,
+                is_active: true,
+                is_service: false,
+                ...(additionalData?.hsn && { hsn_code: additionalData.hsn }),
+                ...(additionalData?.packing && { packing: additionalData.packing })
+            }
+        });
+
+        console.log(`✅ Auto-created product: ${productName}`);
+
+        return {
+            productId: newProduct.id,
+            productName: newProduct.name,
+            created: true
+        };
+
+    } catch (error) {
+        console.error("Failed to find/create product:", error);
+        return { error: "Failed to process product" };
+    }
+}

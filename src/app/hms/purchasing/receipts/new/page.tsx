@@ -458,16 +458,40 @@ export default function NewPurchaseReceiptPage() {
                                                 if (date) setReceivedDate(date);
                                                 if (reference) setReference(reference);
 
-                                                // 3. Populate Items
+                                                // 3. Populate Items with Smart Product Matching
                                                 if (scannedItems && scannedItems.length > 0) {
-                                                    const mappedItems = scannedItems.map((item: any) => {
+                                                    setScanProgress('🔍 Matching products...');
+
+                                                    // Auto-match or create products
+                                                    const mappedItems = await Promise.all(scannedItems.map(async (item: any) => {
                                                         const qty = Number(String(item.qty || 0).replace(/[^0-9.-]/g, '')) || 0;
                                                         const unitPrice = Number(String(item.unitPrice || 0).replace(/[^0-9.-]/g, '')) || 0;
                                                         const taxRate = Number(String(item.taxRate || 0).replace(/[^0-9.-]/g, '')) || 0;
                                                         const taxAmount = (qty * unitPrice * (taxRate / 100));
 
+                                                        let productId = item.productId;
+
+                                                        // If no productId, try to find or create product
+                                                        if (!productId && item.productName) {
+                                                            try {
+                                                                const { findOrCreateProduct } = await import('@/app/actions/inventory');
+                                                                const result = await findOrCreateProduct(item.productName, {
+                                                                    mrp: Number(String(item.mrp || 0).replace(/[^0-9.-]/g, '')) || 0,
+                                                                    hsn: item.hsn,
+                                                                    packing: item.packing
+                                                                });
+
+                                                                if (result.productId) {
+                                                                    productId = result.productId;
+                                                                    console.log(`✅ ${result.created ? 'Created' : 'Found'} product: ${item.productName}`);
+                                                                }
+                                                            } catch (err) {
+                                                                console.error('Failed to find/create product:', err);
+                                                            }
+                                                        }
+
                                                         return {
-                                                            productId: item.productId,
+                                                            productId: productId,
                                                             productName: item.productName,
                                                             receivedQty: qty,
                                                             unitPrice: unitPrice,
