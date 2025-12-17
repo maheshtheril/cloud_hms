@@ -5,22 +5,21 @@ import { createCategory, createManufacturer, createUOM } from "@/app/actions/inv
 import { useEffect } from "react"
 
 const initialState = {
-    error: "",
-    success: false
+    error: ""
 }
 
 export function QuickCategoryForm({ onSuccess }: { onSuccess: () => void }) {
     const [state, action, isPending] = useActionState(createCategory, initialState)
 
     useEffect(() => {
-        if (state?.success) {
+        if (state && !('error' in state)) {
             onSuccess();
         }
-    }, [state?.success, onSuccess]);
+    }, [state, onSuccess]);
 
     return (
         <form action={action} className="space-y-4">
-            {state?.error && (
+            {state && 'error' in state && state.error && (
                 <div className="text-red-500 text-sm bg-red-50 p-2 rounded">{state.error}</div>
             )}
             <div>
@@ -41,14 +40,14 @@ export function QuickManufacturerForm({ onSuccess }: { onSuccess: () => void }) 
     const [state, action, isPending] = useActionState(createManufacturer, initialState)
 
     useEffect(() => {
-        if (state?.success) {
+        if (state && !('error' in state)) {
             onSuccess();
         }
-    }, [state?.success, onSuccess]);
+    }, [state, onSuccess]);
 
     return (
         <form action={action} className="space-y-4">
-            {state?.error && (
+            {state && 'error' in state && state.error && (
                 <div className="text-red-500 text-sm bg-red-50 p-2 rounded">{state.error}</div>
             )}
             <div>
