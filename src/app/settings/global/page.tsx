@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma"
 
+// Force dynamic rendering - disable static generation
+export const dynamic = 'force-dynamic'
+
 export default async function GlobalSettingsPage() {
     const countries = await prisma.countries.findMany({
         take: 10,
