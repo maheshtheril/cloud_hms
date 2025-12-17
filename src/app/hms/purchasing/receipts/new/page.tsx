@@ -27,6 +27,11 @@ type ReceiptItem = {
     batch?: string;
     expiry?: string;
     mrp?: number;
+    salePrice?: number;
+    marginPct?: number;
+    markupPct?: number;
+    pricingStrategy?: 'mrp_discount' | 'cost_markup' | 'custom' | 'manual';
+    mrpDiscountPct?: number;
     taxRate?: number;
     taxAmount?: number;
     hsn?: string;
@@ -162,6 +167,61 @@ export default function NewPurchaseReceiptPage() {
         }
     };
 
+    // Pricing calculation helpers
+    const calculateMargin = (salePrice: number, cost: number): number => {
+        if (salePrice <= 0) return 0;
+        return ((salePrice - cost) / salePrice) * 100;
+    };
+
+    const calculateMarkup = (salePrice: number, cost: number): number => {
+        if (cost <= 0) return 0;
+        return ((salePrice - cost) / cost) * 100;
+    };
+
+    const handleSalePriceChange = (index: number, salePrice: number) => {
+        const newItems = [...items];
+        const item = newItems[index];
+
+        if (item.mrp && salePrice > item.mrp) {
+            toast({
+                title: "Invalid Price",
+                description: `Sale price cannot exceed MRP (₹${item.mrp})`,
+                variant: "destructive"
+            });
+            return;
+        }
+
+        item.salePrice = salePrice;
+        item.pricingStrategy = 'manual';
+
+        if (item.unitPrice > 0) {
+            item.marginPct = Number(calculateMargin(salePrice, item.unitPrice).toFixed(2));
+            item.markupPct = Number(calculateMarkup(salePrice, item.unitPrice).toFixed(2));
+        }
+
+        setItems(newItems);
+    };
+
+    const applyQuickMargin = (marginTemplate: 'mrp-5' | 'mrp-10' | 'mrp-15' | 'mrp-20') => {
+        const discountPct = parseInt(marginTemplate.split('-')[1]);
+        const newItems = items.map(item => {
+            if (item.mrp && item.mrp > 0) {
+                const salePrice = Number((item.mrp * (1 - discountPct / 100)).toFixed(2));
+                return {
+                    ...item,
+                    salePrice,
+                    mrpDiscountPct: discountPct,
+                    pricingStrategy: 'mrp_discount' as any,
+                    marginPct: item.unitPrice > 0 ? Number(calculateMargin(salePrice, item.unitPrice).toFixed(2)) : undefined,
+                    markupPct: item.unitPrice > 0 ? Number(calculateMarkup(salePrice, item.unitPrice).toFixed(2)) : undefined,
+                };
+            }
+            return item;
+        });
+        setItems(newItems);
+        toast({ title: "Pricing Applied", description: `MRP-${discountPct}% applied to all items` });
+    };
+
     const handleProductSelect = (index: number, productId: string | null, opt: Option | null | undefined) => {
         const newItems = [...items];
         newItems[index] = {
@@ -232,6 +292,10 @@ export default function NewPurchaseReceiptPage() {
                 batch: i.batch,
                 expiry: i.expiry,
                 mrp: Number(i.mrp),
+                salePrice: i.salePrice ? Number(i.salePrice) : undefined,
+                marginPct: i.marginPct ? Number(i.marginPct) : undefined,
+                markupPct: i.markupPct ? Number(i.markupPct) : undefined,
+                pricingStrategy: i.pricingStrategy,
                 taxRate: Number(i.taxRate),
                 taxAmount: Number(i.taxAmount),
                 hsn: i.hsn,
@@ -587,6 +651,44 @@ export default function NewPurchaseReceiptPage() {
                             )}
                         </div>
 
+                        {/* Quick Pricing Templates */}
+                        {items.length > 0 && items.some(i => i.mrp && i.mrp > 0) && (
+                            <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-lg p-3 flex items-center gap-2">
+                                <span className="text-xs text-emerald-400 font-medium">Quick Apply:</span>
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickMargin('mrp-5')}
+                                    className="px-3 py-1 text-xs rounded bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition-colors font-mono"
+                                >
+                                    MRP - 5%
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickMargin('mrp-10')}
+                                    className="px-3 py-1 text-xs rounded bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition-colors font-mono"
+                                >
+                                    MRP - 10%
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickMargin('mrp-15')}
+                                    className="px-3 py-1 text-xs rounded bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition-colors font-mono"
+                                >
+                                    MRP - 15%
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickMargin('mrp-20')}
+                                    className="px-3 py-1 text-xs rounded bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition-colors font-mono"
+                                >
+                                    MRP - 20%
+                                </button>
+                                <span className="text-xs text-neutral-500 ml-2">
+                                    Applies to {items.filter(i => i.mrp && i.mrp > 0).length} items
+                                </span>
+                            </div>
+                        )}
+
                         <div className="min-h-[400px] rounded-lg border border-white/5 bg-black/20">
                             <table className="w-full text-left border-collapse min-w-[1400px]">
                                 <thead>
@@ -598,6 +700,8 @@ export default function NewPurchaseReceiptPage() {
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-left w-20 text-white">Batch</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-left w-20 text-white">Exp</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-white">MRP</th>
+                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-emerald-400">Sale Price</th>
+                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-emerald-400">Margin %</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-white">Qty</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-white">Price</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-24 text-white">Taxable</th>
@@ -695,6 +799,37 @@ export default function NewPurchaseReceiptPage() {
                                                     className="w-full bg-transparent border-b border-white/10 text-[10px] font-mono text-right focus:border-indigo-500"
                                                 />
                                             </td>
+
+                                            {/* Sale Price Input */}
+                                            <td className="py-3 px-2 text-right">
+                                                <input
+                                                    placeholder="Sale"
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={item.salePrice || ''}
+                                                    onChange={(e) => {
+                                                        const salePrice = Number(e.target.value);
+                                                        handleSalePriceChange(index, salePrice);
+                                                    }}
+                                                    className={`w-full bg-transparent border-b text-[10px] font-mono text-right focus:border-emerald-500 ${item.mrp && item.salePrice && item.salePrice > item.mrp
+                                                        ? 'border-red-500 text-red-400'
+                                                        : 'border-emerald-500/30 text-emerald-300'
+                                                        }`}
+                                                />
+                                            </td>
+
+                                            {/* Margin % Display */}
+                                            <td className="py-3 px-2 text-right">
+                                                <div className={`text-xs font-bold ${!item.marginPct ? 'text-neutral-600' :
+                                                    item.marginPct >= 25 ? 'text-green-400' :
+                                                        item.marginPct >= 15 ? 'text-yellow-400' :
+                                                            item.marginPct >= 10 ? 'text-orange-400' :
+                                                                'text-red-400'
+                                                    }`}>
+                                                    {item.marginPct !== undefined ? `${item.marginPct.toFixed(1)}%` : '-'}
+                                                </div>
+                                            </td>
+
                                             <td className="py-3 px-2 text-right">
                                                 <input
                                                     type="number"
