@@ -481,9 +481,11 @@ export default function NewPurchaseReceiptPage() {
                                                                     packing: item.packing
                                                                 });
 
-                                                                if (result.productId) {
+                                                                if (!('error' in result) && result.productId) {
                                                                     productId = result.productId;
                                                                     console.log(`✅ ${result.created ? 'Created' : 'Found'} product: ${item.productName}`);
+                                                                } else if ('error' in result) {
+                                                                    console.error(`❌ Error creating product "${item.productName}":`, result.error);
                                                                 }
                                                             } catch (err) {
                                                                 console.error('Failed to find/create product:', err);
