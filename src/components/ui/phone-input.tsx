@@ -10,14 +10,20 @@ const CustomInput = forwardRef<HTMLInputElement, any>((props, ref) => {
 })
 CustomInput.displayName = 'CustomInput'
 
-interface PhoneInputProps extends React.ComponentProps<typeof PhoneInput> {
+interface PhoneInputProps {
+    value?: string
+    onChange: (value?: string) => void
     className?: string
+    placeholder?: string
+    disabled?: boolean
 }
 
-export const PhoneInputComponent = forwardRef<any, PhoneInputProps>(({ className, ...props }, ref) => {
+export const PhoneInputComponent = forwardRef<any, PhoneInputProps>(({ className, value, onChange, ...props }, ref) => {
     return (
         <div className={cn("flex", className)}>
             <PhoneInput
+                value={value}
+                onChange={onChange}
                 {...props}
                 ref={ref}
                 inputComponent={CustomInput}
