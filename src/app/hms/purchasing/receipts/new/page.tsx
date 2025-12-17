@@ -505,7 +505,7 @@ export default function NewPurchaseReceiptPage() {
                                                             hsn: item.hsn,
                                                             packing: item.packing
                                                         };
-                                                    });
+                                                    }));
                                                     setItems(mappedItems);
 
                                                     // 4. Smart Rounding: Match the PDF's Grand Total exactly
