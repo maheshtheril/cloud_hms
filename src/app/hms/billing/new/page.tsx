@@ -35,6 +35,11 @@ export default async function NewInvoicePage() {
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
 
+    console.log('=== BILLING PAGE DEBUG ===');
+    console.log('Patients count:', patients.length);
+    console.log('Billable items count:', billableItems.length);
+    console.log('First patient:', patients[0]);
+
     return (
         <div className="max-w-5xl mx-auto space-y-6">
             <div className="flex items-center gap-4">
@@ -43,7 +48,10 @@ export default async function NewInvoicePage() {
                 </Link>
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800">New Invoice</h1>
-                    <p className="text-gray-500">Create a new invoice for a patient.</p>
+                    <p className="text-gray-500">
+                        Create a new invoice for a patient.
+                        {patients.length === 0 && <span className="text-red-600 font-bold"> ⚠️ No patients found!</span>}
+                    </p>
                 </div>
             </div>
 
