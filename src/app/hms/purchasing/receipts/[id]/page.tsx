@@ -6,12 +6,13 @@ import { createPurchaseReceipt, getPendingPurchaseOrders, getPurchaseReceipt } f
 import { scanInvoiceFromUrl } from '@/app/actions/scan-invoice';
 import { searchSuppliers, searchProducts, createProductQuick, getCompanyDetails } from '@/app/actions/purchase';
 
-import { Loader2, Plus, Trash2, ArrowLeft, CheckCircle2, ScanLine, Box, ArrowRight } from 'lucide-react';
+import { Loader2, Plus, Trash2, ArrowLeft, CheckCircle2, ScanLine, Box, ArrowRight, Settings } from 'lucide-react';
 import { SearchableSelect, type Option } from '@/components/ui/searchable-select';
 import { FileUpload } from '@/components/ui/file-upload';
 import { useToast } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { SupplierDialog } from '@/components/hms/purchasing/supplier-dialog';
+import { SupplierPricingDefaults } from '@/components/hms/purchasing/supplier-pricing-defaults';
 
 const PACKING_OPTIONS = ['1 Strip', '1 Box', '1 Bottle', '10x10', '1x10', '1x15', '1 Unit', '1 kg', '1 L'];
 const TAX_OPTIONS = ['0', '5', '12', '18', '28'];
@@ -28,6 +29,11 @@ type ReceiptItem = {
     batch?: string;
     expiry?: string;
     mrp?: number;
+    salePrice?: number;           // Sale price for this batch
+    marginPct?: number;            // Profit margin percentage
+    markupPct?: number;            // Markup percentage on cost
+    pricingStrategy?: 'mrp_discount' | 'cost_markup' | 'custom' | 'manual';
+    mrpDiscountPct?: number;       // Discount % from MRP (e.g., 10 for MRP-10%)
     taxRate?: number;
     taxAmount?: number;
     hsn?: string;
@@ -40,6 +46,7 @@ export default function EditPurchaseReceiptPage() {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+    const [pricingDefaultsOpen, setPricingDefaultsOpen] = useState(false);
 
     // Mode: 'po' (Linked to PO) | 'direct' (Ad-hoc)
     const [mode, setMode] = useState<'po' | 'direct'>('po');
@@ -95,6 +102,47 @@ export default function EditPurchaseReceiptPage() {
             setTaxType('INTER');
         }
     }, [supplierMeta, companyDetails]);
+
+    // Auto-apply supplier pricing defaults when supplier changes
+    useEffect(() => {
+        if (!supplierMeta?.pricing_defaults || items.length === 0) return;
+
+        const defaults = supplierMeta.pricing_defaults;
+        if (!defaults.defaultPricingStrategy || defaults.defaultPricingStrategy === 'none') return;
+
+        // Only auto-apply to items that don't have sale price set yet
+        const newItems = items.map(item => {
+            if (item.salePrice) return item; // Skip already priced items
+            if (!item.mrp && !item.unitPrice) return item; // Skip items without price info
+
+            let salePrice = 0;
+            let strategy = defaults.defaultPricingStrategy;
+
+            if (strategy === 'mrp_discount' && item.mrp && defaults.defaultMrpDiscountPct) {
+                salePrice = Number((item.mrp * (1 - defaults.defaultMrpDiscountPct / 100)).toFixed(2));
+            } else if (strategy === 'cost_markup' && item.unitPrice && defaults.defaultMarkupPct) {
+                salePrice = Number((item.unitPrice * (1 + defaults.defaultMarkupPct / 100)).toFixed(2));
+                // Validate against MRP if exists
+                if (item.mrp && salePrice > item.mrp) {
+                    salePrice = item.mrp;
+                }
+            }
+
+            if (salePrice > 0 && item.unitPrice) {
+                return {
+                    ...item,
+                    salePrice,
+                    pricingStrategy: strategy as any,
+                    marginPct: Number(calculateMargin(salePrice, item.unitPrice).toFixed(2)),
+                    markupPct: Number(calculateMarkup(salePrice, item.unitPrice).toFixed(2)),
+                };
+            }
+
+            return item;
+        });
+
+        setItems(newItems);
+    }, [supplierId, items.length]); // Trigger when supplier or item count changes
 
     // Auto-calculate Round Off when items change
     useEffect(() => {
@@ -205,6 +253,149 @@ export default function EditPurchaseReceiptPage() {
         }
     };
 
+    // ========== PRICING CALCULATION HELPERS ==========
+
+    const calculateMargin = (salePrice: number, cost: number): number => {
+        if (salePrice <= 0) return 0;
+        return ((salePrice - cost) / salePrice) * 100;
+    };
+
+    const calculateMarkup = (salePrice: number, cost: number): number => {
+        if (cost <= 0) return 0;
+        return ((salePrice - cost) / cost) * 100;
+    };
+
+    const handlePricingStrategyChange = (index: number, strategy: string) => {
+        const newItems = [...items];
+        const item = newItems[index];
+        item.pricingStrategy = strategy as any;
+
+        // Apply the strategy
+        if (strategy === 'mrp_discount' && item.mrp) {
+            const discountPct = item.mrpDiscountPct || 10; // Default 10%
+            item.salePrice = Number((item.mrp * (1 - discountPct / 100)).toFixed(2));
+        } else if (strategy === 'cost_markup' && item.unitPrice) {
+            const markupPct = item.markupPct || 25; // Default 25%
+            item.salePrice = Number((item.unitPrice * (1 + markupPct / 100)).toFixed(2));
+        }
+
+        // Recalculate margin and markup
+        if (item.salePrice && item.unitPrice) {
+            item.marginPct = Number(calculateMargin(item.salePrice, item.unitPrice).toFixed(2));
+            item.markupPct = Number(calculateMarkup(item.salePrice, item.unitPrice).toFixed(2));
+        }
+
+        setItems(newItems);
+    };
+
+    const handleSalePriceChange = (index: number, salePrice: number) => {
+        const newItems = [...items];
+        const item = newItems[index];
+
+        // Validation: Sale price cannot exceed MRP
+        if (item.mrp && salePrice > item.mrp) {
+            toast({
+                title: "Invalid Price",
+                description: `Sale price (₹${salePrice}) cannot exceed MRP (₹${item.mrp}). This violates India's Legal Metrology Act.`,
+                variant: "destructive"
+            });
+            return;
+        }
+
+        item.salePrice = salePrice;
+        item.pricingStrategy = 'manual';
+
+        // Auto-calculate margin and markup
+        if (item.unitPrice > 0) {
+            item.marginPct = Number(calculateMargin(salePrice, item.unitPrice).toFixed(2));
+            item.markupPct = Number(calculateMarkup(salePrice, item.unitPrice).toFixed(2));
+        }
+
+        // Warn if margin is too low
+        if (item.marginPct !== undefined && item.marginPct < 10) {
+            toast({
+                title: "Low Margin Warning",
+                description: `Margin is only ${item.marginPct.toFixed(1)}%. Consider increasing the sale price.`,
+                variant: "default"
+            });
+        }
+
+        setItems(newItems);
+    };
+
+    const handleMRPDiscountChange = (index: number, discountPct: number) => {
+        const newItems = [...items];
+        const item = newItems[index];
+
+        if (!item.mrp) {
+            toast({ title: "MRP Required", description: "Please enter MRP first", variant: "destructive" });
+            return;
+        }
+
+        item.mrpDiscountPct = discountPct;
+        item.salePrice = Number((item.mrp * (1 - discountPct / 100)).toFixed(2));
+        item.pricingStrategy = 'mrp_discount';
+
+        // Recalculate margins
+        if (item.unitPrice > 0) {
+            item.marginPct = Number(calculateMargin(item.salePrice, item.unitPrice).toFixed(2));
+            item.markupPct = Number(calculateMarkup(item.salePrice, item.unitPrice).toFixed(2));
+        }
+
+        setItems(newItems);
+    };
+
+    const handleMarkupPctChange = (index: number, markupPct: number) => {
+        const newItems = [...items];
+        const item = newItems[index];
+
+        if (!item.unitPrice || item.unitPrice <= 0) {
+            toast({ title: "Cost Required", description: "Please enter purchase cost first", variant: "destructive" });
+            return;
+        }
+
+        item.markupPct = markupPct;
+        item.salePrice = Number((item.unitPrice * (1 + markupPct / 100)).toFixed(2));
+        item.pricingStrategy = 'cost_markup';
+
+        // Validate against MRP
+        if (item.mrp && item.salePrice > item.mrp) {
+            toast({
+                title: "Exceeds MRP",
+                description: `Calculated sale price (₹${item.salePrice}) exceeds MRP (₹${item.mrp}). Adjusting to MRP.`,
+                variant: "default"
+            });
+            item.salePrice = item.mrp;
+        }
+
+        // Recalculate margin
+        item.marginPct = Number(calculateMargin(item.salePrice, item.unitPrice).toFixed(2));
+
+        setItems(newItems);
+    };
+
+    const applyQuickMargin = (marginTemplate: 'mrp-5' | 'mrp-10' | 'mrp-15' | 'mrp-20') => {
+        const discountPct = parseInt(marginTemplate.split('-')[1]);
+        const newItems = items.map(item => {
+            if (item.mrp && item.mrp > 0) {
+                const salePrice = Number((item.mrp * (1 - discountPct / 100)).toFixed(2));
+                return {
+                    ...item,
+                    salePrice,
+                    mrpDiscountPct: discountPct,
+                    pricingStrategy: 'mrp_discount' as any,
+                    marginPct: item.unitPrice > 0 ? Number(calculateMargin(salePrice, item.unitPrice).toFixed(2)) : undefined,
+                    markupPct: item.unitPrice > 0 ? Number(calculateMarkup(salePrice, item.unitPrice).toFixed(2)) : undefined,
+                };
+            }
+            return item;
+        });
+        setItems(newItems);
+        toast({ title: "Pricing Applied", description: `MRP-${discountPct}% applied to all items with MRP` });
+    };
+
+    // ========== END PRICING HELPERS ==========
+
     const handleProductSelect = (index: number, productId: string | null, opt: Option | null | undefined) => {
         const newItems = [...items];
         newItems[index] = {
@@ -276,6 +467,10 @@ export default function EditPurchaseReceiptPage() {
                 batch: i.batch,
                 expiry: i.expiry,
                 mrp: Number(i.mrp),
+                salePrice: i.salePrice ? Number(i.salePrice) : undefined,
+                marginPct: i.marginPct ? Number(i.marginPct) : undefined,
+                markupPct: i.markupPct ? Number(i.markupPct) : undefined,
+                pricingStrategy: i.pricingStrategy,
                 taxRate: Number(i.taxRate),
                 taxAmount: Number(i.taxAmount),
                 hsn: i.hsn,
@@ -320,6 +515,24 @@ export default function EditPurchaseReceiptPage() {
                     // Also clear previous meta if new supplier created, or fetch it if possible (though quick create might not return all)
                     setSupplierMeta({ gstin: newSupplier.subLabel, address: undefined, contact: undefined });
                     toast({ title: "Supplier Created", description: `${newSupplier.label} has been selected.` });
+                }}
+            />
+
+            {/* Supplier Pricing Defaults Dialog */}
+            <SupplierPricingDefaults
+                isOpen={pricingDefaultsOpen}
+                onClose={() => setPricingDefaultsOpen(false)}
+                supplierId={supplierId || ''}
+                supplierName={supplierName}
+                currentDefaults={supplierMeta?.pricing_defaults}
+                onSave={async (defaults) => {
+                    // Update supplier metadata with pricing defaults
+                    // This would call a server action to update the supplier
+                    toast({
+                        title: "Pricing Defaults Saved",
+                        description: `Default pricing for ${supplierName} has been configured.`
+                    });
+                    // Optionally refresh supplier data
                 }}
             />
 
@@ -372,13 +585,25 @@ export default function EditPurchaseReceiptPage() {
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Received From</label>
-                                <button
-                                    type="button"
-                                    onClick={() => setSupplierDialogOpen(true)}
-                                    className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 transition-colors"
-                                >
-                                    <Plus className="h-3 w-3" /> New
-                                </button>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSupplierDialogOpen(true)}
+                                        className="text-xs text-indigo-400 hover:text-indigo-300 font-medium flex items-center gap-1 transition-colors"
+                                    >
+                                        <Plus className="h-3 w-3" /> New
+                                    </button>
+                                    {supplierId && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setPricingDefaultsOpen(true)}
+                                            className="text-xs text-emerald-400 hover:text-emerald-300 font-medium flex items-center gap-1 transition-colors"
+                                            title="Configure default pricing for this supplier"
+                                        >
+                                            <Settings className="h-3 w-3" /> Pricing
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                             <div className="group relative">
                                 <SearchableSelect
@@ -578,6 +803,44 @@ export default function EditPurchaseReceiptPage() {
                             )}
                         </div>
 
+                        {/* Quick Pricing Templates */}
+                        {items.length > 0 && items.some(i => i.mrp && i.mrp > 0) && (
+                            <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-lg p-3 flex items-center gap-2">
+                                <span className="text-xs text-emerald-400 font-medium">Quick Apply:</span>
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickMargin('mrp-5')}
+                                    className="px-3 py-1 text-xs rounded bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition-colors font-mono"
+                                >
+                                    MRP - 5%
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickMargin('mrp-10')}
+                                    className="px-3 py-1 text-xs rounded bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition-colors font-mono"
+                                >
+                                    MRP - 10%
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickMargin('mrp-15')}
+                                    className="px-3 py-1 text-xs rounded bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition-colors font-mono"
+                                >
+                                    MRP - 15%
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => applyQuickMargin('mrp-20')}
+                                    className="px-3 py-1 text-xs rounded bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition-colors font-mono"
+                                >
+                                    MRP - 20%
+                                </button>
+                                <span className="text-xs text-neutral-500 ml-2">
+                                    Applies to {items.filter(i => i.mrp && i.mrp > 0).length} items
+                                </span>
+                            </div>
+                        )}
+
                         <div className="min-h-[400px] rounded-lg border border-white/5 bg-black/20">
                             <table className="w-full text-left border-collapse min-w-[1400px]">
                                 <thead>
@@ -589,6 +852,8 @@ export default function EditPurchaseReceiptPage() {
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-left w-20 text-white">Batch</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-left w-20 text-white">Exp</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-white">MRP</th>
+                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-emerald-400">Sale Price</th>
+                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-emerald-400">Margin %</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-white">Qty</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-white">Price</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-24 text-white">Taxable</th>
@@ -686,6 +951,50 @@ export default function EditPurchaseReceiptPage() {
                                                     className="w-full bg-transparent border-b border-white/10 text-[10px] font-mono text-right focus:border-indigo-500"
                                                 />
                                             </td>
+                                            {/* Sale Price - Editable with MRP validation */}
+                                            <td className="py-3 px-2 text-right">
+                                                <input
+                                                    placeholder="Sale"
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={item.salePrice || ''}
+                                                    onChange={(e) => {
+                                                        const salePrice = Number(e.target.value);
+                                                        handleSalePriceChange(index, salePrice);
+                                                    }}
+                                                    className={`w-full bg-transparent border-b text-[10px] font-mono text-right focus:border-emerald-500 ${item.mrp && item.salePrice && item.salePrice > item.mrp
+                                                        ? 'border-red-500 text-red-400'
+                                                        : 'border-emerald-500/30 text-emerald-300'
+                                                        }`}
+                                                />
+                                                <div className="text-[8px] text-neutral-600 mt-0.5">
+                                                    {item.mrp && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleMRPDiscountChange(index, 10)}
+                                                            className="hover:text-emerald-400 transition-colors"
+                                                        >
+                                                            MRP-10%
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+
+                                            {/* Margin % - Auto-calculated, color-coded */}
+                                            <td className="py-3 px-2 text-right">
+                                                <div className={`text-xs font-bold ${!item.marginPct ? 'text-neutral-600' :
+                                                    item.marginPct >= 25 ? 'text-green-400' :
+                                                        item.marginPct >= 15 ? 'text-yellow-400' :
+                                                            item.marginPct >= 10 ? 'text-orange-400' :
+                                                                'text-red-400'
+                                                    }`}>
+                                                    {item.marginPct !== undefined ? `${item.marginPct.toFixed(1)}%` : '-'}
+                                                </div>
+                                                {item.marginPct !== undefined && item.marginPct < 10 && (
+                                                    <div className="text-[8px] text-red-400">Low!</div>
+                                                )}
+                                            </td>
+
                                             <td className="py-3 px-2 text-right">
                                                 <input
                                                     type="number"

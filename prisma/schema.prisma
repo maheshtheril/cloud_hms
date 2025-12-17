@@ -1677,6 +1677,10 @@ model hms_product_batch {
   expiry_date              DateTime?                  @db.Date
   mrp                      Decimal?                   @db.Decimal(14, 2)
   cost                     Decimal?                   @db.Decimal(14, 4)
+  sale_price               Decimal?                   @db.Decimal(14, 2)
+  margin_percentage        Decimal?                   @db.Decimal(5, 2)
+  markup_percentage        Decimal?                   @db.Decimal(5, 2)
+  pricing_strategy         String?
   qty_on_hand              Decimal                    @default(0) @db.Decimal(16, 6)
   vendor_barcode           String?
   internal_barcode         String?

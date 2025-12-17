@@ -20,6 +20,10 @@ export type PurchaseReceiptData = {
         batch?: string
         expiry?: string
         mrp?: number
+        salePrice?: number           // Sale price for this batch
+        marginPct?: number            // Profit margin percentage
+        markupPct?: number            // Markup percentage on cost
+        pricingStrategy?: string      // How the price was set
         taxRate?: number
         taxAmount?: number
         hsn?: string
@@ -191,6 +195,10 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                                 expiry_date: validExpiry,
                                 mrp: item.mrp || 0,
                                 cost: item.unitPrice || 0,
+                                sale_price: item.salePrice,
+                                margin_percentage: item.marginPct,
+                                markup_percentage: item.markupPct,
+                                pricing_strategy: item.pricingStrategy,
                                 qty_on_hand: 0 // Ledger will update calculation usually, or we initialize
                             }
                         });
@@ -231,6 +239,10 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     batch: item.batch,
                     expiry: item.expiry,
                     mrp: item.mrp,
+                    sale_price: item.salePrice,
+                    margin_pct: item.marginPct,
+                    markup_pct: item.markupPct,
+                    pricing_strategy: item.pricingStrategy,
                     tax_rate: item.taxRate,
                     tax_amount: item.taxAmount,
                     hsn: item.hsn,
