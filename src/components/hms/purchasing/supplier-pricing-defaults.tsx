@@ -17,7 +17,7 @@ type SupplierPricingDefaultsProps = {
         defaultMrpDiscountPct?: number;
         defaultMarkupPct?: number;
     };
-    onSave: (defaults: any) => void;
+    onSave: (defaults: any) => Promise<{ error?: string } | void>;
 };
 
 export function SupplierPricingDefaults({
