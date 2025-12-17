@@ -1141,12 +1141,17 @@ export async function findOrCreateProduct(productName: string, additionalData?: 
                 name: productName,
                 description: `Auto-created from invoice scan`,
                 price: additionalData?.mrp || 0,
-                cost: 0,
+                default_cost: 0,
                 sku: `AUTO-${Date.now()}`,
                 is_active: true,
                 is_service: false,
-                ...(additionalData?.hsn && { hsn_code: additionalData.hsn }),
-                ...(additionalData?.packing && { packing: additionalData.packing })
+                is_stockable: true,
+                metadata: {
+                    ...(additionalData?.hsn && { hsn: additionalData.hsn }),
+                    ...(additionalData?.packing && { packing: additionalData.packing }),
+                    autoCreated: true,
+                    source: 'invoice_scan'
+                }
             }
         });
 
