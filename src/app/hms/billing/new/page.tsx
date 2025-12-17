@@ -12,9 +12,7 @@ export default async function NewInvoicePage() {
     // Parallel data fetching
     const [patients, itemsRes, taxRes] = await Promise.all([
         prisma.hms_patient.findMany({
-            where: {
-                tenant_id: session.user.tenantId,
-            },
+            // Removed tenant_id filter to match how patients page works
             select: {
                 id: true,
                 first_name: true,
