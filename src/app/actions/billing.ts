@@ -145,6 +145,7 @@ export async function createInvoice(data: any) {
                 patient_id: patient_id,
                 invoice_number: invoiceNo,
                 invoice_date: new Date(date),
+                currency: 'INR', // Indian Rupee
                 status: status, // 'draft' or 'posted'
                 total: total,
                 subtotal: subtotal,
