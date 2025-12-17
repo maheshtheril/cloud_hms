@@ -55,6 +55,7 @@ export default function NewPurchaseReceiptPage() {
     const [supplierMeta, setSupplierMeta] = useState<any>(null); // { gstin, address, contact }
     const [pricingDefaultsOpen, setPricingDefaultsOpen] = useState(false);
     const [supplierPricingDefaults, setSupplierPricingDefaults] = useState<any>(null);
+    const [lastAppliedPercentage, setLastAppliedPercentage] = useState<number | null>(null);
     const [receivedDate, setReceivedDate] = useState(new Date().toISOString().split('T')[0]);
     const [reference, setReference] = useState('');
     const [notes, setNotes] = useState('');
@@ -223,6 +224,7 @@ export default function NewPurchaseReceiptPage() {
             return item;
         });
         setItems(newItems);
+        setLastAppliedPercentage(discountPct); // Track for smart defaults
         const msg = discountPct === 0 ? 'Sale Price = MRP' : `MRP-${discountPct}%`;
         toast({ title: "Pricing Applied", description: `${msg} applied to all items` });
     };
