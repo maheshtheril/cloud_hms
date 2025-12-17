@@ -6,28 +6,15 @@ export async function getCountries() {
     console.log("Fetching countries...");
     try {
         const countries = await prisma.countries.findMany({
-            // where: { is_active: true }, // Temporarily removed for debugging
+            where: { is_active: true },
             orderBy: { name: 'asc' },
             select: { id: true, name: true, iso2: true }
         });
         console.log(`Fetched ${countries.length} countries`);
-        if (countries.length > 0) return countries;
-
-        // Fallback
-        return [
-            { id: 'us-fallback', name: 'United States', iso2: 'US' },
-            { id: 'in-fallback', name: 'India', iso2: 'IN' },
-            { id: 'uk-fallback', name: 'United Kingdom', iso2: 'GB' },
-            { id: 'au-fallback', name: 'Australia', iso2: 'AU' },
-            { id: 'ca-fallback', name: 'Canada', iso2: 'CA' },
-            { id: 'ae-fallback', name: 'United Arab Emirates', iso2: 'AE' },
-        ];
+        return countries;
     } catch (error) {
         console.error("Failed to fetch countries:", error);
-        return [
-            { id: 'us-fallback', name: 'United States', iso2: 'US' },
-            { id: 'in-fallback', name: 'India', iso2: 'IN' },
-        ];
+        return [];
     }
 }
 
@@ -38,21 +25,10 @@ export async function getCurrencies() {
             orderBy: { code: 'asc' },
             select: { id: true, code: true, name: true, symbol: true }
         });
-        if (currencies.length > 0) return currencies;
-
-        // Fallback
-        return [
-            { id: 'usd-fallback', code: 'USD', name: 'US Dollar', symbol: '$' },
-            { id: 'inr-fallback', code: 'INR', name: 'Indian Rupee', symbol: '₹' },
-            { id: 'gbp-fallback', code: 'GBP', name: 'British Pound', symbol: '£' },
-            { id: 'eur-fallback', code: 'EUR', name: 'Euro', symbol: '€' },
-            { id: 'aed-fallback', code: 'AED', name: 'UAE Dirham', symbol: 'dh' },
-        ];
+        return currencies;
     } catch (error) {
         console.error("Failed to fetch currencies:", error);
-        return [
-            { id: 'usd-fallback', code: 'USD', name: 'US Dollar', symbol: '$' },
-        ];
+        return [];
     }
 }
 
