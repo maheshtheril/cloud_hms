@@ -10,6 +10,7 @@ interface FileUploadProps {
     label?: string;
     accept?: string;
     currentFileUrl?: string | null;
+    disabled?: boolean;
 }
 
 export function FileUpload({
@@ -17,7 +18,8 @@ export function FileUpload({
     folder = 'documents',
     label = "Upload Document",
     accept = "application/pdf,image/*",
-    currentFileUrl
+    currentFileUrl,
+    disabled = false
 }: FileUploadProps) {
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
@@ -97,11 +99,12 @@ export function FileUpload({
                             : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
                     }
                 `}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
+                onDragEnter={disabled ? undefined : handleDrag}
+                onDragLeave={disabled ? undefined : handleDrag}
+                onDragOver={disabled ? undefined : handleDrag}
+                onDrop={disabled ? undefined : handleDrop}
+                onClick={disabled ? undefined : () => fileInputRef.current?.click()}
+                style={{ cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1 }}
             >
                 <input
                     ref={fileInputRef}
