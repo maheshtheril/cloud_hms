@@ -3,11 +3,14 @@
 import { useState } from "react"
 import { createInvoice } from "@/app/actions/billing"
 import { Plus, Trash2, Receipt, User, Calendar, Save } from "lucide-react"
+import { useRouter } from "next/navigation"
 
 export default function InvoiceGenerator({ patients }: { patients: any[] }) {
+    const router = useRouter()
     const [lineItems, setLineItems] = useState([
         { description: '', quantity: 1, unit_price: 0 }
     ])
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     const addItem = () => {
         setLineItems([...lineItems, { description: '', quantity: 1, unit_price: 0 }])
@@ -25,8 +28,21 @@ export default function InvoiceGenerator({ patients }: { patients: any[] }) {
 
     const total = lineItems.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0)
 
+    const handleSubmit = async (formData: FormData) => {
+        setIsSubmitting(true)
+        const result = await createInvoice(formData)
+
+        if (result && 'error' in result) {
+            alert(result.error)
+            setIsSubmitting(false)
+        } else {
+            router.push('/hms/billing')
+            router.refresh()
+        }
+    }
+
     return (
-        <form action={createInvoice} className="max-w-5xl mx-auto space-y-8 pb-12">
+        <form action={handleSubmit} className="max-w-5xl mx-auto space-y-8 pb-12">
             <input type="hidden" name="line_items" value={JSON.stringify(lineItems)} />
 
             {/* Header */}
@@ -40,9 +56,9 @@ export default function InvoiceGenerator({ patients }: { patients: any[] }) {
                         <p className="text-gray-500 text-sm">Create and issue a new invoice.</p>
                     </div>
                 </div>
-                <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm flex items-center gap-2 shadow-sm">
+                <button type="submit" disabled={isSubmitting} className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium text-sm flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
                     <Save className="h-4 w-4" />
-                    Issue Invoice
+                    {isSubmitting ? 'Creating...' : 'Issue Invoice'}
                 </button>
             </div>
 
