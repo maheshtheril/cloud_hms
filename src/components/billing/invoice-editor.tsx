@@ -131,7 +131,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                                     <option value="">Choose patient...</option>
                                     {patients.map(p => (
                                         <option key={p.id} value={p.id} className="text-gray-900">
-                                            {p.first_name} {p.last_name} - {p.contact || 'No Contact'}
+                                            {p.first_name} {p.last_name} - {(p.contact as any)?.phone || 'No Contact'}
                                         </option>
                                     ))}
                                 </select>
@@ -162,7 +162,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                                 </div>
                                 <div>
                                     <h3 className="font-bold text-lg">{activePatient.first_name} {activePatient.last_name}</h3>
-                                    <p className="text-blue-100 text-sm">Contact: {activePatient.contact || 'N/A'} • ID: {activePatient.patient_number || activePatient.id.slice(0, 8)}</p>
+                                    <p className="text-blue-100 text-sm">Contact: {(activePatient.contact as any)?.phone || 'No Phone'} • ID: {activePatient.patient_number || activePatient.id.slice(0, 8)}</p>
                                 </div>
                             </div>
                         </div>
