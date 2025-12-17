@@ -444,7 +444,7 @@ export async function getLocations() {
     }
 }
 
-export async function createLocation(prevState: any, formData: FormData) {
+export async function createLocation(prevState: any, formData: FormData): Promise<{ error: string } | { success: boolean }> {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
 
