@@ -14,8 +14,8 @@ export async function getBillableItems() {
             where: {
                 tenant_id: session.user.tenantId,
                 company_id: session.user.companyId,
-                is_service: true,
                 is_active: true
+                // Removed is_service filter - show all products (pharmacy + services)
             },
             select: {
                 id: true,
