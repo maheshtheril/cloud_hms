@@ -80,7 +80,7 @@ export default async function BillingPage({
                 <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-start justify-between">
                     <div>
                         <p className="text-sm font-medium text-gray-500">Total Revenue</p>
-                        <h3 className="text-2xl font-bold text-gray-900 mt-1">${totalRevenue.toLocaleString()}</h3>
+                        <h3 className="text-2xl font-bold text-gray-900 mt-1">₹{totalRevenue.toLocaleString('en-IN')}</h3>
                         <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
                             <TrendingUp className="h-3 w-3" />
                             Collected to date
@@ -94,7 +94,7 @@ export default async function BillingPage({
                 <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-start justify-between">
                     <div>
                         <p className="text-sm font-medium text-gray-500">Outstanding</p>
-                        <h3 className="text-2xl font-bold text-gray-900 mt-1">${totalOutstanding.toLocaleString()}</h3>
+                        <h3 className="text-2xl font-bold text-gray-900 mt-1">₹{totalOutstanding.toLocaleString('en-IN')}</h3>
                         <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
                             <AlertCircle className="h-3 w-3" />
                             Pending payments
@@ -108,7 +108,7 @@ export default async function BillingPage({
                 <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-start justify-between">
                     <div>
                         <p className="text-sm font-medium text-gray-500">Total Billed</p>
-                        <h3 className="text-2xl font-bold text-gray-900 mt-1">${totalBilled.toLocaleString()}</h3>
+                        <h3 className="text-2xl font-bold text-gray-900 mt-1">₹{totalBilled.toLocaleString('en-IN')}</h3>
                         <p className="text-xs text-gray-500 mt-2">
                             Across {stats._count.id} invoices
                         </p>
@@ -169,7 +169,7 @@ export default async function BillingPage({
                                         </span>
                                     </td>
                                     <td className="p-4 text-right font-mono text-sm font-medium text-gray-900">
-                                        ${Number(inv.total || 0).toFixed(2)}
+                                        ₹{Number(inv.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </td>
                                 </tr>
                             ))
