@@ -280,7 +280,22 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     )
                 `;
 
-                // B. Create Stock Ledger Entry (Inward)
+                // B. Convert UOM to Base for Stock Tracking
+                let stockQty = Number(item.qtyReceived) || 0;
+                let avgCostPerBaseUnit = Number(item.unitPrice) || 0;
+
+                // If item has UOM conversion data, convert to base units
+                if (item.purchaseUOM && item.conversionFactor && item.conversionFactor > 1) {
+                    // Example: 5 PACK-10 @ ₹45 per pack
+                    // stockQty = 5 × 10 = 50 PCS
+                    // avgCostPerBaseUnit = (5 × 45) / 50 = ₹4.50 per PCS
+                    stockQty = stockQty * item.conversionFactor;
+                    avgCostPerBaseUnit = (Number(item.qtyReceived) * Number(item.unitPrice)) / stockQty;
+
+                    console.log(`[UOM Conversion] ${item.qtyReceived} ${item.purchaseUOM} = ${stockQty} PCS @ ₹${avgCostPerBaseUnit.toFixed(2)} per PCS`);
+                }
+
+                // C. Create Stock Ledger Entry (Inward) - Using BASE units
                 await tx.hms_product_stock_ledger.create({
                     data: {
                         tenant_id: session.user.tenantId!,
@@ -288,21 +303,25 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                         product_id: item.productId,
                         location: defaultLocation.id, // Schema uses 'location' (string)
                         movement_type: 'in',
-                        change_qty: Number(item.qtyReceived) || 0, // Schema uses change_qty
+                        change_qty: stockQty, // ← Stock tracked in BASE units (PCS)
                         balance_qty: 0, // Placeholder, strict balance requires calc
                         reference: receiptNumber,
-                        cost: Number(item.unitPrice) || 0,
+                        cost: avgCostPerBaseUnit, // ← Average cost per BASE unit
                         batch_id: batchId,
                         created_at: new Date(),
                         metadata: {
                             related_type: 'purchase_receipt',
                             related_id: receipt.id,
-                            unit_cost: item.unitPrice
+                            unit_cost: avgCostPerBaseUnit,
+                            // Store original purchase details
+                            purchase_qty: item.qtyReceived,
+                            purchase_uom: item.purchaseUOM || 'PCS',
+                            conversion_factor: item.conversionFactor || 1
                         }
                     }
                 })
 
-                // C. Update Product with Purchase Tax Rate (GST Compliance: Sale tax = Purchase tax for local)
+                // D. Update Product with Purchase Tax Rate (GST Compliance: Sale tax = Purchase tax for local)
                 if (item.taxRate) {
                     const currentProduct = await tx.hms_product.findUnique({
                         where: { id: item.productId },
