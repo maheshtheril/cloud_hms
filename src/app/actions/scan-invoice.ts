@@ -92,7 +92,12 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
                     * If you see "Bottle" → return "BOTTLE"
                     * If you see "NOS" or "PCS" or "Pieces" → return "PCS"
                     * If you see "1x10" in packing, the UOM is what's being sold (usually STRIP or PACK-10)
-                - "packing": Packing details (e.g. 1x10, 10x10). This tells you how many pieces per pack.
+                - "packing": Packing details. CRITICAL - Extract ALL packing information you see:
+                    * For tablets/capsules: "1x10", "10x10", "1x15", "2x15", etc.
+                    * For bottles/syrups: "200ml", "100ml", "60ml", "500ml", etc.
+                    * For sachets: "5gm", "10gm", etc.
+                    * Look in these columns: "Pack", "Packing", "Pkg", "Size", or near the product name
+                    * IMPORTANT: Do NOT leave this empty. Extract whatever packing/size info you see!
                 - "unitPrice": Unit Rate/Price PER PACK (before tax). Do NOT Use MRP. Look for 'Rate' or 'Price'. This is price per UOM.
                 - "mrp": Maximum Retail Price (MRP). Extract the numeric value. Do NOT return the words 'MRP' or 'Rate' or 'Price'. Return 0 if not found.
                 - "schemeDiscount": Scheme Discount Amount (if shown separately).
@@ -108,6 +113,11 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
             
             If invoice shows: "Amoxicillin 250mg | Strip | Packing: 1x15 | Qty: 20 | Rate: 12.50"
             Return: { "productName": "Amoxicillin 250mg", "uom": "PACK-15", "packing": "1x15", "qty": 20, "unitPrice": 12.50 }
+            
+            If invoice shows: "Rabemac OS Syrup | Bottle | 200ml | Qty: 30 | Rate: 85.00"
+            Return: { "productName": "Rabemac OS Syrup", "uom": "BOTTLE", "packing": "200ml", "qty": 30, "unitPrice": 85.00 }
+            
+            Return ONLY raw JSON. No markdown formatting.
             
             Return ONLY raw JSON. No markdown formatting.
         `;
