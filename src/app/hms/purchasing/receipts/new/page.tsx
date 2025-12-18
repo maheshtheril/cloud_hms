@@ -38,6 +38,9 @@ type ReceiptItem = {
     taxAmount?: number;
     hsn?: string;
     packing?: string;
+    schemeDiscount?: number;    // Scheme Discount (₹)
+    discountPct?: number;        // Discount %
+    discountAmt?: number;        // Discount Amount (₹)
 };
 
 export default function NewPurchaseReceiptPage() {
@@ -306,7 +309,10 @@ export default function NewPurchaseReceiptPage() {
                 taxRate: Number(i.taxRate),
                 taxAmount: Number(i.taxAmount),
                 hsn: i.hsn,
-                packing: i.packing
+                packing: i.packing,
+                schemeDiscount: i.schemeDiscount ? Number(i.schemeDiscount) : undefined,
+                discountPct: i.discountPct ? Number(i.discountPct) : undefined,
+                discountAmt: i.discountAmt ? Number(i.discountAmt) : undefined
             }))
         };
 
@@ -747,6 +753,9 @@ export default function NewPurchaseReceiptPage() {
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-white">MRP</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-emerald-400">Sale Price</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-emerald-400">Margin %</th>
+                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-yellow-400">Sch Disc</th>
+                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-yellow-400">Disc %</th>
+                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-yellow-400">Disc Amt</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-white">Qty</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-white">Price</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-24 text-white">Taxable</th>
@@ -873,6 +882,57 @@ export default function NewPurchaseReceiptPage() {
                                                     }`}>
                                                     {item.marginPct !== undefined ? `${item.marginPct.toFixed(1)}%` : '-'}
                                                 </div>
+                                            </td>
+
+                                            {/* Scheme Discount */}
+                                            <td className="py-3 px-2 text-right">
+                                                <input
+                                                    placeholder="Sch"
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={item.schemeDiscount || ''}
+                                                    onChange={(e) => {
+                                                        const n = [...items];
+                                                        n[index].schemeDiscount = Number(e.target.value) || 0;
+                                                        setItems(n);
+                                                    }}
+                                                    className="w-full bg-transparent border-b border-yellow-500/30 text-[10px] font-mono text-right text-yellow-300 focus:border-yellow-500"
+                                                />
+                                            </td>
+
+                                            {/* Discount % */}
+                                            <td className="py-3 px-2 text-right">
+                                                <input
+                                                    placeholder="%"
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={item.discountPct || ''}
+                                                    onChange={(e) => {
+                                                        const n = [...items];
+                                                        const pct = Number(e.target.value) || 0;
+                                                        n[index].discountPct = pct;
+                                                        // Auto-calculate discount amount
+                                                        n[index].discountAmt = (n[index].unitPrice * n[index].receivedQty * pct) / 100;
+                                                        setItems(n);
+                                                    }}
+                                                    className="w-full bg-transparent border-b border-yellow-500/30 text-[10px] font-mono text-right text-yellow-300 focus:border-yellow-500"
+                                                />
+                                            </td>
+
+                                            {/* Discount Amount */}
+                                            <td className="py-3 px-2 text-right">
+                                                <input
+                                                    placeholder="Amt"
+                                                    type="number"
+                                                    step="0.01"
+                                                    value={item.discountAmt || ''}
+                                                    onChange={(e) => {
+                                                        const n = [...items];
+                                                        n[index].discountAmt = Number(e.target.value) || 0;
+                                                        setItems(n);
+                                                    }}
+                                                    className="w-full bg-transparent border-b border-yellow-500/30 text-[10px] font-mono text-right text-yellow-300 focus:border-yellow-500"
+                                                />
                                             </td>
 
                                             <td className="py-3 px-2 text-right">
