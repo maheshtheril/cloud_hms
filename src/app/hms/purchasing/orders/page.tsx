@@ -108,7 +108,7 @@ export default async function PurchaseOrdersPage() {
                                     <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-indigo-600 transform -translate-x-full group-hover:translate-x-0 transition-transform"></div>
 
                                     <div className="col-span-3 font-mono text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
-                                        {po.number || `PO-${po.id.slice(0, 8)}`}
+                                        {po.name || `PO-${po.id.slice(0, 8)}`}
                                     </div>
                                     <div className="col-span-4 text-2xl font-bold tracking-tight">
                                         {po.hms_supplier?.name || 'Unknown Supplier'}
