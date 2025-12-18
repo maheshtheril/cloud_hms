@@ -897,6 +897,11 @@ export default function NewPurchaseReceiptPage() {
                                                     onChange={(e) => {
                                                         const n = [...items];
                                                         n[index].schemeDiscount = Number(e.target.value) || 0;
+                                                        // Recalc tax since discount changed
+                                                        const baseAmount = n[index].unitPrice * n[index].receivedQty;
+                                                        const totalDiscount = (n[index].schemeDiscount || 0) + (n[index].discountAmt || 0);
+                                                        const taxable = Math.max(0, baseAmount - totalDiscount);
+                                                        n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
                                                         setItems(n);
                                                     }}
                                                     className="w-full bg-transparent border-b border-yellow-500/30 text-[10px] font-mono text-right text-yellow-300 focus:border-yellow-500"
@@ -916,6 +921,11 @@ export default function NewPurchaseReceiptPage() {
                                                         n[index].discountPct = pct;
                                                         // Auto-calculate discount amount
                                                         n[index].discountAmt = (n[index].unitPrice * n[index].receivedQty * pct) / 100;
+                                                        // Recalc tax since discount changed
+                                                        const baseAmount = n[index].unitPrice * n[index].receivedQty;
+                                                        const totalDiscount = (n[index].schemeDiscount || 0) + (n[index].discountAmt || 0);
+                                                        const taxable = Math.max(0, baseAmount - totalDiscount);
+                                                        n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
                                                         setItems(n);
                                                     }}
                                                     className="w-full bg-transparent border-b border-yellow-500/30 text-[10px] font-mono text-right text-yellow-300 focus:border-yellow-500"
@@ -932,6 +942,11 @@ export default function NewPurchaseReceiptPage() {
                                                     onChange={(e) => {
                                                         const n = [...items];
                                                         n[index].discountAmt = Number(e.target.value) || 0;
+                                                        // Recalc tax since discount changed
+                                                        const baseAmount = n[index].unitPrice * n[index].receivedQty;
+                                                        const totalDiscount = (n[index].schemeDiscount || 0) + (n[index].discountAmt || 0);
+                                                        const taxable = Math.max(0, baseAmount - totalDiscount);
+                                                        n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
                                                         setItems(n);
                                                     }}
                                                     className="w-full bg-transparent border-b border-yellow-500/30 text-[10px] font-mono text-right text-yellow-300 focus:border-yellow-500"
@@ -946,8 +961,10 @@ export default function NewPurchaseReceiptPage() {
                                                         const n = [...items];
                                                         const qty = Number(e.target.value);
                                                         n[index].receivedQty = qty;
-                                                        // Auto-calc tax amount
-                                                        const taxable = qty * n[index].unitPrice;
+                                                        // Auto-calc tax amount (taxable = qty × price - discounts)
+                                                        const baseAmount = qty * n[index].unitPrice;
+                                                        const totalDiscount = (n[index].schemeDiscount || 0) + (n[index].discountAmt || 0);
+                                                        const taxable = Math.max(0, baseAmount - totalDiscount);
                                                         n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
                                                         setItems(n);
                                                     }}
@@ -962,8 +979,10 @@ export default function NewPurchaseReceiptPage() {
                                                         const n = [...items];
                                                         const price = Number(e.target.value);
                                                         n[index].unitPrice = price;
-                                                        // Auto-calc tax amount
-                                                        const taxable = n[index].receivedQty * price;
+                                                        // Auto-calc tax amount (taxable = qty × price - discounts)
+                                                        const baseAmount = n[index].receivedQty * price;
+                                                        const totalDiscount = (n[index].schemeDiscount || 0) + (n[index].discountAmt || 0);
+                                                        const taxable = Math.max(0, baseAmount - totalDiscount);
                                                         n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
                                                         setItems(n);
                                                     }}
@@ -972,9 +991,13 @@ export default function NewPurchaseReceiptPage() {
                                                 <div className="text-[10px] text-neutral-600 mt-1">Cost</div>
                                             </td>
 
-                                            {/* Taxable Value (Calculated) */}
+                                            {/* Taxable Value (Calculated - after discounts) */}
                                             <td className="py-3 px-2 text-right text-sm font-mono text-neutral-300">
-                                                {(item.unitPrice * item.receivedQty).toFixed(2)}
+                                                {(() => {
+                                                    const baseAmount = item.unitPrice * item.receivedQty;
+                                                    const totalDiscount = (item.schemeDiscount || 0) + (item.discountAmt || 0);
+                                                    return Math.max(0, baseAmount - totalDiscount).toFixed(2);
+                                                })()}
                                             </td>
 
                                             {/* Tax % */}
@@ -986,8 +1009,10 @@ export default function NewPurchaseReceiptPage() {
                                                         const rate = Number(id);
                                                         if (!isNaN(rate)) {
                                                             n[index].taxRate = rate;
-                                                            // Auto-calc tax amount
-                                                            const taxable = (n[index].unitPrice || 0) * (n[index].receivedQty || 0);
+                                                            // Auto-calc tax amount (taxable = qty × price - discounts)
+                                                            const baseAmount = (n[index].unitPrice || 0) * (n[index].receivedQty || 0);
+                                                            const totalDiscount = (n[index].schemeDiscount || 0) + (n[index].discountAmt || 0);
+                                                            const taxable = Math.max(0, baseAmount - totalDiscount);
                                                             n[index].taxAmount = taxable * (rate / 100);
                                                             setItems(n);
                                                         }
