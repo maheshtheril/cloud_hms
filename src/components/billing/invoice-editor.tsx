@@ -33,7 +33,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
     console.log('Available Tax Rates:', taxConfig.taxRates);
 
     const [lines, setLines] = useState<any[]>([
-        { id: 1, product_id: '', description: '', quantity: 1, unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0 }
+        { id: 1, product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0 }
     ])
 
     const [globalDiscount, setGlobalDiscount] = useState(0)
@@ -51,6 +51,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
             description: '',
             quantity: 1,
             unit_price: 0,
+            uom: 'PCS',
             tax_rate_id: defaultTaxId, // Use smart fallback
             tax_amount: 0,
             discount_amount: 0
@@ -74,8 +75,8 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                     if (product) {
                         updated.description = product.description || product.label
                         updated.unit_price = product.price
-                        updated.base_price = product.price // Store base (Unit) price
-                        updated.uom = updated.uom || 'Unit' // Default to Unit
+                        updated.base_price = product.price // Store base (PCS) price
+                        updated.uom = updated.uom || 'PCS' // Default to PCS
 
                         // Store UOM conversion factor from product metadata
                         // This is the ACTUAL pack size for this product
@@ -308,15 +309,34 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                                                 />
                                                 <select
                                                     className="p-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-sm text-gray-700 bg-white"
-                                                    value={line.uom || 'Unit'}
-                                                    onChange={(e) => updateLine(line.id, 'uom', e.target.value)}
+                                                    value={line.uom || 'PCS'}
+                                                    onChange={(e) => {
+                                                        const newUom = e.target.value;
+                                                        updateLine(line.id, 'uom', newUom);
+
+                                                        // Auto-calculate price based on UOM
+                                                        if (line.base_price && line.conversion_factor) {
+                                                            let newPrice = line.base_price; // Default to base price (Unit/PCS)
+
+                                                            // If selecting pack UOM, multiply by conversion factor
+                                                            if (newUom !== 'PCS' && newUom !== 'Unit') {
+                                                                newPrice = line.base_price * line.conversion_factor;
+                                                            }
+
+                                                            updateLine(line.id, 'unit_price', newPrice);
+                                                            console.log(`UOM changed to ${newUom}, price: ₹${newPrice}`);
+                                                        }
+                                                    }}
                                                     title="Unit of Measure"
                                                 >
-                                                    <option value="Unit">Unit</option>
-                                                    <option value="Strip">Strip</option>
-                                                    <option value="Box">Box</option>
-                                                    <option value="Bottle">Bottle</option>
-                                                    <option value="Pack">Pack</option>
+                                                    <option value="PCS">PCS</option>
+                                                    <option value="PACK-10">Pack-10</option>
+                                                    <option value="PACK-15">Pack-15</option>
+                                                    <option value="PACK-20">Pack-20</option>
+                                                    <option value="PACK-30">Pack-30</option>
+                                                    <option value="STRIP">Strip</option>
+                                                    <option value="BOX">Box</option>
+                                                    <option value="BOTTLE">Bottle</option>
                                                 </select>
                                             </div>
                                         </td>
