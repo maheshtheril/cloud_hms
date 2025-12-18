@@ -1,8 +1,8 @@
-
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/auth'
 import { Button } from '@/components/ui/button'
-import { Plus, Building2, Globe, Phone } from 'lucide-react'
+import { Plus, Building2, Users, DollarSign, TrendingUp, Globe, Phone } from 'lucide-react'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -13,8 +13,14 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function AccountsPage() {
+    const session = await auth()
+    const tenantId = session?.user?.tenantId
+
     const accounts = await prisma.crm_accounts.findMany({
-        where: { deleted_at: null },
+        where: {
+            ...(tenantId ? { tenant_id: tenantId } : {}),
+            deleted_at: null
+        },
         orderBy: { created_at: 'desc' },
         include: {
             // Count related contacts/deals if needed, for now keep simple
@@ -71,7 +77,7 @@ export default async function AccountsPage() {
                             {account.phone && (
                                 <div className="flex items-center gap-2 text-sm text-gray-600">
                                     <Phone className="w-4 h-4 text-gray-400" />
-                                    <a href={`tel:${account.phone}`} className="hover:text-blue-600 transition-colors">
+                                    <a href={`tel:${account.phone} `} className="hover:text-blue-600 transition-colors">
                                         {account.phone}
                                     </a>
                                 </div>

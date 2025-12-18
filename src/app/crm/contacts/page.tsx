@@ -1,8 +1,8 @@
-
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/auth'
 import { Button } from '@/components/ui/button'
-import { Plus, User, Phone, Mail, Briefcase } from 'lucide-react'
+import { Plus, User, Phone, Mail, Building2, Briefcase } from 'lucide-react'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -13,8 +13,14 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic'
 
 export default async function ContactsPage() {
+    const session = await auth()
+    const tenantId = session?.user?.tenantId
+
     const contacts = await prisma.crm_contacts.findMany({
-        where: { deleted_at: null },
+        where: {
+            ...(tenantId ? { tenant_id: tenantId } : {}),
+            deleted_at: null
+        },
         orderBy: { created_at: 'desc' },
         include: {
             account: {
@@ -69,7 +75,7 @@ export default async function ContactsPage() {
                             {contact.email && (
                                 <div className="flex items-center gap-2 text-sm text-gray-600">
                                     <Mail className="w-4 h-4 text-gray-400" />
-                                    <a href={`mailto:${contact.email}`} className="hover:text-blue-600 transition-colors">
+                                    <a href={`mailto:${contact.email} `} className="hover:text-blue-600 transition-colors">
                                         {contact.email}
                                     </a>
                                 </div>
@@ -77,7 +83,7 @@ export default async function ContactsPage() {
                             {contact.phone && (
                                 <div className="flex items-center gap-2 text-sm text-gray-600">
                                     <Phone className="w-4 h-4 text-gray-400" />
-                                    <a href={`tel:${contact.phone}`} className="hover:text-blue-600 transition-colors">
+                                    <a href={`tel:${contact.phone} `} className="hover:text-blue-600 transition-colors">
                                         {contact.phone}
                                     </a>
                                 </div>

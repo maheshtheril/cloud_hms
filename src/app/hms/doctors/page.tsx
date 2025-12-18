@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/auth"
 import Link from "next/link"
 import { Stethoscope, Plus } from "lucide-react"
 
@@ -14,23 +15,27 @@ export default async function DoctorsPage({
     const { q } = await searchParams;
     const query = q || ''
 
+    // Get session for tenant filtering
+    const session = await auth()
+    const tenantId = session?.user?.tenantId
+
     // Fetch clinicians with their related role and specialization
     const doctors = await prisma.hms_clinicians.findMany({
-        orderBy: { created_at: 'desc' },
-        where: query ? {
-            OR: [
-                { first_name: { contains: query, mode: 'insensitive' } },
-                { last_name: { contains: query, mode: 'insensitive' } },
-                { email: { contains: query, mode: 'insensitive' } },
-                // Check related specialization name if possible, or local field if used. 
-                // Based on previous schema inspection, relation is hms_specializations.
-                {
-                    hms_specializations: {
-                        name: { contains: query, mode: 'insensitive' }
+        where: {
+            ...(tenantId ? { tenant_id: tenantId } : {}),
+            ...(query ? {
+                OR: [
+                    { first_name: { contains: query, mode: 'insensitive' } },
+                    { last_name: { contains: query, mode: 'insensitive' } },
+                    { email: { contains: query, mode: 'insensitive' } },
+                    {
+                        hms_specializations: {
+                            name: { contains: query, mode: 'insensitive' }
+                        }
                     }
-                }
-            ]
-        } : undefined,
+                ]
+            } : {})
+        },
         include: {
             hms_roles: true,
             hms_specializations: true

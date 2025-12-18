@@ -1,14 +1,21 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/auth'
 import { Button } from '@/components/ui/button'
-import { Plus, BrainCircuit, MapPin } from 'lucide-react'
+import { Plus, Calendar, Phone, Mail, CheckCircle2, Clock, BrainCircuit, MapPin } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
 export const dynamic = 'force-dynamic'
 
 export default async function ActivitiesPage() {
+    const session = await auth()
+    const tenantId = session?.user?.tenantId
+
     const activities = await prisma.crm_activities.findMany({
-        where: { deleted_at: null },
+        where: {
+            deleted_at: null,
+            ...(tenantId ? { tenant_id: tenantId } : {}),
+        },
         orderBy: { created_at: 'desc' },
     })
 

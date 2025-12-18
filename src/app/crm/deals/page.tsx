@@ -1,14 +1,21 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/auth'
 import { Button } from '@/components/ui/button'
-import { Plus, DollarSign } from 'lucide-react'
+import { Plus, Target, TrendingUp, DollarSign } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 
 export const dynamic = 'force-dynamic'
 
 export default async function DealsPage() {
+    const session = await auth()
+    const tenantId = session?.user?.tenantId
+
     const deals = await prisma.crm_deals.findMany({
-        where: { deleted_at: null },
+        where: {
+            deleted_at: null,
+            ...(tenantId && { tenant_id: tenantId })
+        },
         orderBy: { created_at: 'desc' },
         include: { stage: true, pipeline: true }
     })

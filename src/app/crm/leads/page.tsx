@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/auth'
 import { Button } from '@/components/ui/button'
 import { Plus, Sparkles } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
@@ -7,8 +8,14 @@ import { formatDistanceToNow } from 'date-fns'
 export const dynamic = 'force-dynamic'
 
 export default async function LeadsPage() {
+    const session = await auth()
+    const tenantId = session?.user?.tenantId
+
     const leads = await prisma.crm_leads.findMany({
-        where: { deleted_at: null },
+        where: {
+            ...(tenantId ? { tenant_id: tenantId } : {}),
+            deleted_at: null
+        },
         orderBy: { created_at: 'desc' },
         include: { stage: true }
     })
@@ -58,7 +65,7 @@ export default async function LeadsPage() {
                                     <div className="w-24 h-2 bg-gray-100 rounded-full overflow-hidden">
                                         <div
                                             className={`h-full rounded-full ${(lead.lead_score || 0) > 70 ? 'bg-green-500' :
-                                                    (lead.lead_score || 0) > 40 ? 'bg-yellow-500' : 'bg-red-500'
+                                                (lead.lead_score || 0) > 40 ? 'bg-yellow-500' : 'bg-red-500'
                                                 }`}
                                             style={{ width: `${lead.lead_score || 0}%` }}
                                         />
