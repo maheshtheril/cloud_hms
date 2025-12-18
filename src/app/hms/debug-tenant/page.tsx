@@ -14,8 +14,8 @@ export default async function DebugTenantPage() {
     // Get MY purchase orders
     const myOrders = await prisma.hms_purchase_order.findMany({
         where: {
-            tenant_id: myTenantId,
-            company_id: myCompanyId
+            tenant_id: myTenantId!,
+            company_id: myCompanyId!
         },
         include: {
             hms_supplier: { select: { name: true } }
@@ -63,7 +63,7 @@ export default async function DebugTenantPage() {
                     {myTenant ? (
                         <div className="font-mono text-sm">
                             <p><strong>Name:</strong> {myTenant.name}</p>
-                            <p><strong>Created:</strong> {myTenant.created_at.toLocaleString()}</p>
+                            <p><strong>Created:</strong> {myTenant.created_at?.toLocaleString() || 'N/A'}</p>
                             <p className="text-red-600 font-bold mt-2">
                                 👆 This shows when YOUR tenant was created
                             </p>
@@ -176,7 +176,7 @@ export default async function DebugTenantPage() {
                                     <tr key={tenant.id} className={`border-b ${isMe ? 'bg-yellow-100' : ''}`}>
                                         <td className="px-4 py-2">{tenant.name}</td>
                                         <td className="px-4 py-2 font-mono text-xs">{tenant.id.slice(0, 16)}...</td>
-                                        <td className="px-4 py-2">{tenant.created_at.toLocaleString()}</td>
+                                        <td className="px-4 py-2">{tenant.created_at?.toLocaleString() || 'N/A'}</td>
                                         <td className="px-4 py-2">
                                             {isMe && <span className="bg-yellow-600 text-white px-2 py-1 text-xs">YOU</span>}
                                         </td>
@@ -192,7 +192,7 @@ export default async function DebugTenantPage() {
                 <div className="bg-blue-50 border-2 border-blue-600 p-6 rounded-lg">
                     <h2 className="text-2xl font-bold mb-4">🔬 DIAGNOSIS</h2>
                     <div className="space-y-2">
-                        <p><strong>Your Tenant Created:</strong> {myTenant?.created_at.toLocaleString()}</p>
+                        <p><strong>Your Tenant Created:</strong> {myTenant?.created_at?.toLocaleString() || 'N/A'}</p>
                         <p><strong>Purchase Orders for Your Tenant:</strong> {myOrders.length}</p>
 
                         {myOrders.length > 0 && (
@@ -203,7 +203,7 @@ export default async function DebugTenantPage() {
 
                                 <div className="mt-4 bg-red-100 p-4 rounded">
                                     <p className="font-bold">🚨 CONCLUSION:</p>
-                                    {myTenant && myOrders[0] && myOrders[0].created_at > myTenant.created_at ? (
+                                    {myTenant && myTenant.created_at && myOrders[0] && myOrders[0].created_at > myTenant.created_at ? (
                                         <p>These orders were created AFTER your tenant signup → You or someone created them</p>
                                     ) : (
                                         <p>These orders existed BEFORE your tenant signup → Database has old data OR you're using an old tenant</p>
