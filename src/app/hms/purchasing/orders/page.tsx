@@ -1,15 +1,35 @@
-'use client';
+import { auth } from '@/auth'
+import { prisma } from '@/lib/prisma'
+import Link from 'next/link'
+import { Plus, Search } from 'lucide-react'
 
-import Link from 'next/link';
-import { Plus, ArrowUpRight, Search, LayoutGrid, List } from 'lucide-react';
+export default async function PurchaseOrdersPage() {
+    const session = await auth()
+    if (!session?.user?.companyId || !session?.user?.tenantId) {
+        return <div>Unauthorized</div>
+    }
 
-export default function PurchaseOrdersPage() {
-    // Mock data for visual verification - in real app would verify via getPurchaseOrders
-    const orders = [
-        { id: 'PO-2024-001', supplier: 'Acme Corp', date: '2024-12-12', total: '12,450.00', status: 'Sent', currency: 'USD' },
-        { id: 'PO-2024-002', supplier: 'Globex Inc', date: '2024-12-10', total: '4,200.50', status: 'Draft', currency: 'USD' },
-        { id: 'PO-2024-003', supplier: 'Soylent Corp', date: '2024-12-08', total: '890.00', status: 'Received', currency: 'EUR' },
-    ];
+    const tenantId = session.user.tenantId
+    const companyId = session.user.companyId
+
+    // REAL DATA - Filtered by tenant
+    const orders = await prisma.hms_purchase_order.findMany({
+        where: {
+            tenant_id: tenantId,
+            company_id: companyId
+        },
+        include: {
+            hms_supplier: {
+                select: {
+                    name: true
+                }
+            }
+        },
+        orderBy: {
+            created_at: 'desc'
+        },
+        take: 50
+    })
 
     return (
         <div className="min-h-screen bg-white text-slate-900 font-sans tracking-tight">
@@ -55,39 +75,55 @@ export default function PurchaseOrdersPage() {
                         <div className="col-span-3 text-right text-xs font-bold uppercase tracking-widest">Total Value</div>
                     </div>
 
-                    {orders.map((po, i) => (
-                        <div key={po.id} className="group grid grid-cols-12 py-6 border-b border-slate-100 hover:bg-slate-50 transition-all items-center cursor-pointer relative overflow-hidden">
-                            <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-indigo-600 transform -translate-x-full group-hover:translate-x-0 transition-transform"></div>
-
-                            <div className="col-span-3 font-mono text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
-                                {po.id}
-                            </div>
-                            <div className="col-span-4 text-2xl font-bold tracking-tight">
-                                {po.supplier}
-                            </div>
-                            <div className="col-span-2">
-                                <span className={`
-                                    text-xs font-black uppercase tracking-widest py-1 px-3 
-                                    ${po.status === 'Sent' ? 'bg-indigo-100 text-indigo-700' :
-                                        po.status === 'Received' ? 'bg-emerald-100 text-emerald-800' :
-                                            'bg-slate-100 text-slate-500'}
-                                `}>
-                                    {po.status}
-                                </span>
-                            </div>
-                            <div className="col-span-3 text-right font-mono text-2xl font-bold tracking-tighter">
-                                <span className="text-sm text-slate-400 mr-2 align-middle font-sans font-bold">{po.currency}</span>
-                                {po.total}
-                            </div>
+                    {orders.length === 0 ? (
+                        <div className="py-24 text-center">
+                            <p className="text-lg font-bold text-slate-300 mb-2">No Purchase Orders Yet</p>
+                            <p className="text-sm text-slate-400">Create your first purchase order to get started</p>
+                            <Link href="/hms/purchasing/orders/new" className="inline-block mt-6 bg-slate-900 text-white px-6 py-3 font-bold uppercase tracking-widest hover:bg-indigo-600 transition-all text-xs">
+                                <Plus className="h-4 w-4 inline mr-2" /> Create Order
+                            </Link>
                         </div>
-                    ))}
+                    ) : (
+                        <>
+                            {orders.map((po, i) => (
+                                <Link
+                                    key={po.id}
+                                    href={`/hms/purchasing/orders/${po.id}`}
+                                    className="group grid grid-cols-12 py-6 border-b border-slate-100 hover:bg-slate-50 transition-all items-center cursor-pointer relative overflow-hidden"
+                                >
+                                    <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-indigo-600 transform -translate-x-full group-hover:translate-x-0 transition-transform"></div>
 
-                    {/* Empty State / More Loader */}
-                    <div className="py-12 text-center">
-                        <p className="text-xs font-bold uppercase tracking-widest text-slate-300">End of List</p>
-                    </div>
+                                    <div className="col-span-3 font-mono text-lg font-bold text-slate-400 group-hover:text-slate-900 transition-colors">
+                                        {po.number || `PO-${po.id.slice(0, 8)}`}
+                                    </div>
+                                    <div className="col-span-4 text-2xl font-bold tracking-tight">
+                                        {po.hms_supplier?.name || 'Unknown Supplier'}
+                                    </div>
+                                    <div className="col-span-2">
+                                        <span className={`
+                                            text-xs font-black uppercase tracking-widest py-1 px-3 
+                                            ${po.status === 'sent' || po.status === 'approved' ? 'bg-indigo-100 text-indigo-700' :
+                                                po.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
+                                                    'bg-slate-100 text-slate-500'}
+                                        `}>
+                                            {po.status}
+                                        </span>
+                                    </div>
+                                    <div className="col-span-3 text-right font-mono text-2xl font-bold tracking-tighter">
+                                        <span className="text-sm text-slate-400 mr-2 align-middle font-sans font-bold">₹</span>
+                                        {Number(po.total_amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </div>
+                                </Link>
+                            ))}
+
+                            {/* End of List */}
+                            <div className="py-12 text-center">
+                                <p className="text-xs font-bold uppercase tracking-widest text-slate-300">End of List</p>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </div>
-    );
+    )
 }
