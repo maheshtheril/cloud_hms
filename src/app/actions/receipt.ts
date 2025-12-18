@@ -274,7 +274,26 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     }
                 })
 
-                // C. Update Main Product Stock (Optional)
+                // C. Update Product with Purchase Tax Rate (GST Compliance: Sale tax = Purchase tax for local)
+                if (item.taxRate) {
+                    const currentProduct = await tx.hms_product.findUnique({
+                        where: { id: item.productId },
+                        select: { metadata: true }
+                    });
+
+                    await tx.hms_product.update({
+                        where: { id: item.productId },
+                        data: {
+                            metadata: {
+                                ...(currentProduct?.metadata as any || {}),
+                                purchase_tax_rate: item.taxRate,
+                                last_purchase_date: new Date().toISOString()
+                            }
+                        }
+                    });
+                }
+
+                // D. Update Main Product Stock (Optional)
                 // await tx.hms_stock_levels.upsert(...) - Skipping for now, relying on ledger
             }
 

@@ -85,14 +85,23 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                         updated.unit_price = product.price
 
                         // AUTO-FILL TAX: Priority order:
-                        // 1. Product's purchase tax (stored during receiving)
+                        // 1. Product's purchase tax (stored as % during receiving)
                         // 2. Product's category tax
                         // 3. Smart default (system default, common GST rate, or first available)
-                        const purchaseTaxId = product.metadata?.purchase_tax_id || product.metadata?.tax_rate_id;
+                        const purchaseTaxRate = product.metadata?.purchase_tax_rate; // This is a NUMBER (e.g., 5, 12, 18)
+                        let purchaseTaxId = null;
+
+                        // Find the tax rate ID that matches the purchase tax percentage
+                        if (purchaseTaxRate) {
+                            const matchingTax = taxConfig.taxRates.find(t => t.rate === Number(purchaseTaxRate));
+                            purchaseTaxId = matchingTax?.id;
+                            console.log('Purchase tax match:', { purchaseTaxRate, matchingTax, purchaseTaxId });
+                        }
+
                         const taxToUse = purchaseTaxId || product.categoryTaxId || defaultTaxId;
                         updated.tax_rate_id = taxToUse;
 
-                        console.log('Tax auto-fill:', { purchaseTaxId, categoryTax: product.categoryTaxId, defaultTaxId, final: updated.tax_rate_id });
+                        console.log('Tax auto-fill:', { purchaseTaxRate, purchaseTaxId, categoryTax: product.categoryTaxId, defaultTaxId, final: updated.tax_rate_id });
                     }
                 }
 
