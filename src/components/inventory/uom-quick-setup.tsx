@@ -1,8 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { seedDefaultUOMs } from '@/app/actions/uom'
-import { createProductUOMConversion } from '@/app/actions/uom'
+import { seedPharmacyUOMs } from '@/app/actions/uom'
 
 export function UOMQuickSetup() {
     const [loading, setLoading] = useState(false)
@@ -13,7 +12,7 @@ export function UOMQuickSetup() {
         setMessage('')
 
         try {
-            const result = await seedDefaultUOMs()
+            const result = await seedPharmacyUOMs()
             if (result.success) {
                 setMessage('✅ Default UOMs created successfully!')
             } else {
