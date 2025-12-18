@@ -471,6 +471,25 @@ export async function updatePurchaseReceipt(id: string, data: PurchaseReceiptDat
                         }
                     }
                 });
+
+                // Update Product Tax Rate (GST Compliance: Sale tax = Purchase tax)
+                if (item.productId && item.taxRate) {
+                    const currentProduct = await prisma.hms_product.findUnique({
+                        where: { id: item.productId },
+                        select: { metadata: true }
+                    });
+
+                    await prisma.hms_product.update({
+                        where: { id: item.productId },
+                        data: {
+                            metadata: {
+                                ...(currentProduct?.metadata as any || {}),
+                                purchase_tax_rate: item.taxRate,
+                                last_purchase_date: new Date().toISOString()
+                            }
+                        }
+                    });
+                }
             }
         }
 
