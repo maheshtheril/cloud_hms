@@ -230,7 +230,7 @@ export async function getStockInUOM(
         })
 
         const totalBaseStock = stockLevels.reduce(
-            (sum, level) => sum + Number(level.qty_on_hand),
+            (sum, level) => sum + Number(level.quantity),
             0
         )
 
