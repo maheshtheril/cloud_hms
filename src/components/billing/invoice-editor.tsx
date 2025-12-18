@@ -17,20 +17,10 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
     // State
     const [selectedPatientId, setSelectedPatientId] = useState('')
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
-    // Smart fallback: Use default tax, or first available tax, or find common GST rate (5%, 12%, 18%)
+    // Use configured default or empty (force user to select)
     const getDefaultTaxId = () => {
         if (taxConfig.defaultTax?.id) return taxConfig.defaultTax.id;
-        if (taxConfig.taxRates.length > 0) {
-            // Try to find common GST rates in order: 18%, 12%, 5%
-            const common18 = taxConfig.taxRates.find(t => t.rate === 18);
-            if (common18) return common18.id;
-            const common12 = taxConfig.taxRates.find(t => t.rate === 12);
-            if (common12) return common12.id;
-            const common5 = taxConfig.taxRates.find(t => t.rate === 5);
-            if (common5) return common5.id;
-            // Otherwise use first available
-            return taxConfig.taxRates[0].id;
-        }
+        // No auto-selection - user must choose tax
         return '';
     };
 
