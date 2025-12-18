@@ -105,7 +105,7 @@ export function CreatePatientForm() {
                                     <input
                                         name="first_name"
                                         required
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all duration-300 font-medium placeholder:text-gray-400 hover:border-gray-300"
+                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all duration-300 font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-300"
                                         placeholder="John"
                                     />
                                 </div>
@@ -117,7 +117,7 @@ export function CreatePatientForm() {
                                     <input
                                         name="last_name"
                                         required
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all duration-300 font-medium placeholder:text-gray-400 hover:border-gray-300"
+                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all duration-300 font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-300"
                                         placeholder="Doe"
                                     />
                                 </div>
@@ -130,14 +130,14 @@ export function CreatePatientForm() {
                                     <input
                                         type="date"
                                         name="dob"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all duration-300 font-medium hover:border-gray-300"
+                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300"
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Gender</label>
                                     <select
                                         name="gender"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all duration-300 font-medium hover:border-gray-300 cursor-pointer"
+                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300 cursor-pointer"
                                     >
                                         <option value="">Select Gender</option>
                                         <option value="male">Male</option>
@@ -170,7 +170,7 @@ export function CreatePatientForm() {
                                         name="phone"
                                         required
                                         type="tel"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium placeholder:text-gray-400 hover:border-gray-300"
+                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-300"
                                         placeholder="+1 (555) 000-0000"
                                     />
                                 </div>
@@ -182,7 +182,7 @@ export function CreatePatientForm() {
                                     <input
                                         name="email"
                                         type="email"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 font-medium placeholder:text-gray-400 hover:border-gray-300"
+                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-300"
                                         placeholder="john@example.com"
                                     />
                                 </div>
@@ -190,7 +190,7 @@ export function CreatePatientForm() {
                                     <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Street Address</label>
                                     <input
                                         name="street"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium placeholder:text-gray-400 hover:border-gray-300"
+                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-300"
                                         placeholder="123 Main St, Apt 4B"
                                     />
                                 </div>
@@ -198,28 +198,28 @@ export function CreatePatientForm() {
                                     <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">City</label>
                                     <input
                                         name="city"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium hover:border-gray-300"
+                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300"
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">State / Province</label>
                                     <input
                                         name="state"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium hover:border-gray-300"
+                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300"
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Postal / Zip Code</label>
                                     <input
                                         name="zip"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium hover:border-gray-300"
+                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300"
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Country</label>
                                     <select
                                         name="country"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium hover:border-gray-300 cursor-pointer"
+                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300 cursor-pointer"
                                     >
                                         <option value="US">United States</option>
                                         <option value="CA">Canada</option>
@@ -251,7 +251,7 @@ export function CreatePatientForm() {
                                     <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Blood Group</label>
                                     <select
                                         name="blood_group"
-                                        className="w-full px-4 py-3 bg-white/70 border-2 border-rose-200 rounded-xl focus:ring-4 focus:ring-rose-500/20 focus:border-rose-500 outline-none transition-all duration-300 font-medium hover:border-rose-300 cursor-pointer"
+                                        className="w-full px-4 py-3 bg-white/70 border-2 border-rose-200 rounded-xl focus:ring-4 focus:ring-rose-500/20 focus:border-rose-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-rose-300 cursor-pointer"
                                     >
                                         <option value="">Unknown</option>
                                         <option value="A+">A+</option>
@@ -293,14 +293,14 @@ export function CreatePatientForm() {
                                     <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Contact Name</label>
                                     <input
                                         name="emergency_name"
-                                        className="w-full px-4 py-3 bg-white/70 border-2 border-amber-200 rounded-xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all duration-300 font-medium hover:border-amber-300"
+                                        className="w-full px-4 py-3 bg-white/70 border-2 border-amber-200 rounded-xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-amber-300"
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Relation</label>
                                     <input
                                         name="emergency_relation"
-                                        className="w-full px-4 py-3 bg-white/70 border-2 border-amber-200 rounded-xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all duration-300 font-medium placeholder:text-gray-400 hover:border-amber-300"
+                                        className="w-full px-4 py-3 bg-white/70 border-2 border-amber-200 rounded-xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all duration-300 font-medium text-gray-900 placeholder:text-gray-400 hover:border-amber-300"
                                         placeholder="e.g. Spouse, Parent"
                                     />
                                 </div>
@@ -309,7 +309,7 @@ export function CreatePatientForm() {
                                     <input
                                         name="emergency_phone"
                                         type="tel"
-                                        className="w-full px-4 py-3 bg-white/70 border-2 border-amber-200 rounded-xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all duration-300 font-medium hover:border-amber-300"
+                                        className="w-full px-4 py-3 bg-white/70 border-2 border-amber-200 rounded-xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-amber-300"
                                     />
                                 </div>
                             </div>
