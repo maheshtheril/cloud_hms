@@ -577,6 +577,19 @@ export default function NewPurchaseReceiptPage() {
                                                             }
                                                         }
 
+                                                        // Auto-generate packing from UOM if not provided
+                                                        let packing = item.packing || '';
+                                                        if (!packing && item.uom) {
+                                                            // Convert UOM to packing format
+                                                            // PACK-10 → 1x10, PACK-15 → 1x15, etc.
+                                                            const match = item.uom.match(/PACK-(\d+)/i);
+                                                            if (match) {
+                                                                packing = `1x${match[1]}`;
+                                                            } else if (item.uom === 'STRIP') {
+                                                                packing = '1x10'; // Default strip size
+                                                            }
+                                                        }
+
                                                         return {
                                                             productId: productId,
                                                             productName: item.productName,
@@ -589,7 +602,7 @@ export default function NewPurchaseReceiptPage() {
                                                             mrp: Number(String(item.mrp || 0).replace(/[^0-9.-]/g, '')) || 0,
                                                             taxRate: taxRate,
                                                             hsn: item.hsn,
-                                                            packing: item.packing || '',  // Ensure it's a string
+                                                            packing: packing,  // Use auto-generated or original
                                                             schemeDiscount: item.schemeDiscount ? Number(String(item.schemeDiscount).replace(/[^0-9.-]/g, '')) : 0,
                                                             discountPct: item.discountPct ? Number(String(item.discountPct).replace(/[^0-9.-]/g, '')) : 0,
                                                             discountAmt: item.discountAmt ? Number(String(item.discountAmt).replace(/[^0-9.-]/g, '')) : 0,
@@ -605,7 +618,7 @@ export default function NewPurchaseReceiptPage() {
                                                         };
                                                     }));
 
-                                                    console.log('📦 MAPPED ITEMS WITH PACKING:', mappedItems.map(i => ({ name: i.productName, packing: i.packing })));
+                                                    console.log('📦 MAPPED ITEMS WITH PACKING:', mappedItems.map(i => ({ name: i.productName, packing: i.packing, uom: i.uom })));
                                                     setItems(mappedItems);
 
                                                     // 4. Smart Rounding: Match the PDF's Grand Total exactly
