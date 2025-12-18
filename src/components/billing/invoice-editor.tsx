@@ -113,28 +113,42 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                     }
                 }
 
+
                 // Handle UOM change - Auto-calculate price
                 if (field === 'uom') {
                     const selectedUom = value;
+
+                    console.log('🔄 UOM CHANGE:', {
+                        selectedUom,
+                        base_price: line.base_price,
+                        pack_price: line.pack_price,
+                        pack_uom: line.pack_uom,
+                        conversion_factor: line.conversion_factor
+                    });
 
                     if (line.base_price && line.conversion_factor) {
                         // Calculate price based on UOM
                         if (selectedUom === 'PCS') {
                             // Selling individual pieces
                             updated.unit_price = line.base_price;
+                            console.log(`✅ PCS selected → Price: ₹${line.base_price}`);
                         } else if (selectedUom === line.pack_uom && line.pack_price) {
                             // Selling full pack (PACK-10, PACK-15, etc.)
                             updated.unit_price = line.pack_price;
+                            console.log(`✅ ${selectedUom} selected → Price: ₹${line.pack_price}`);
                         } else {
                             // Fallback: calculate from base price
                             const match = selectedUom.match(/PACK-(\d+)/i);
                             if (match) {
                                 const packSize = parseInt(match[1]);
                                 updated.unit_price = line.base_price * packSize;
+                                console.log(`✅ ${selectedUom} calculated → Price: ₹${updated.unit_price}`);
                             }
                         }
 
-                        console.log(`UOM changed to ${selectedUom}, price: ₹${updated.unit_price}`);
+                        console.log(`💰 Final price: ₹${updated.unit_price}`);
+                    } else {
+                        console.warn('⚠️ Missing pricing data for UOM calculation');
                     }
                 }
 
