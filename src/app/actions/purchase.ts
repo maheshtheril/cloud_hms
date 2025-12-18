@@ -26,10 +26,11 @@ export type PurchaseOrderData = {
 
 export async function getPurchaseOrders(params?: { status?: string, supplierId?: string, page?: number }) {
     const session = await auth()
-    if (!session?.user?.companyId) return { error: "Unauthorized" }
+    if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" }
 
     try {
         const where: any = {
+            tenant_id: session.user.tenantId,
             company_id: session.user.companyId,
         }
         if (params?.status) where.status = params.status
@@ -261,7 +262,7 @@ export async function deletePurchaseOrder(id: string) {
 
 export async function getSuppliers(params?: { query?: string, page?: number, limit?: number }) {
     const session = await auth()
-    if (!session?.user?.companyId) return { success: false, error: "Unauthorized" }
+    if (!session?.user?.companyId || !session?.user?.tenantId) return { success: false, error: "Unauthorized" }
 
     try {
         const page = params?.page || 1
@@ -269,6 +270,7 @@ export async function getSuppliers(params?: { query?: string, page?: number, lim
         const skip = (page - 1) * limit
 
         const where: any = {
+            tenant_id: session.user.tenantId,
             company_id: session.user.companyId,
             is_active: true
         }
@@ -306,8 +308,8 @@ export async function searchSuppliers(query: string) {
     const session = await auth()
     console.log("[searchSuppliers] Session:", session?.user?.email, "Company:", session?.user?.companyId);
 
-    if (!session?.user?.companyId) {
-        console.log("[searchSuppliers] No company ID");
+    if (!session?.user?.companyId || !session?.user?.tenantId) {
+        console.log("[searchSuppliers] No company ID or tenant ID");
         return []
     }
 
@@ -315,6 +317,7 @@ export async function searchSuppliers(query: string) {
         console.log(`[searchSuppliers] Searching for: "${query}"`);
         const suppliers = await prisma.hms_supplier.findMany({
             where: {
+                tenant_id: session.user.tenantId,
                 company_id: session.user.companyId,
                 is_active: true,
                 name: { contains: query, mode: 'insensitive' }
@@ -363,11 +366,12 @@ export async function createSupplierQuick(name: string) {
 
 export async function searchProducts(query: string) {
     const session = await auth()
-    if (!session?.user?.companyId) return []
+    if (!session?.user?.companyId || !session?.user?.tenantId) return []
 
     try {
         const products = await prisma.hms_product.findMany({
             where: {
+                tenant_id: session.user.tenantId,
                 company_id: session.user.companyId,
                 is_active: true,
                 OR: [

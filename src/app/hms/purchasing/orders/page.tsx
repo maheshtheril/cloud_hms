@@ -12,6 +12,10 @@ export default async function PurchaseOrdersPage() {
     const tenantId = session.user.tenantId
     const companyId = session.user.companyId
 
+    console.log('🔍 [PURCHASE ORDERS PAGE] User:', session.user.email)
+    console.log('🔍 [PURCHASE ORDERS PAGE] Tenant ID:', tenantId)
+    console.log('🔍 [PURCHASE ORDERS PAGE] Company ID:', companyId)
+
     // REAL DATA - Filtered by tenant
     const orders = await prisma.hms_purchase_order.findMany({
         where: {
@@ -30,6 +34,16 @@ export default async function PurchaseOrdersPage() {
         },
         take: 50
     })
+
+    console.log('🔍 [PURCHASE ORDERS PAGE] Found orders:', orders.length)
+    console.log('🔍 [PURCHASE ORDERS PAGE] Orders tenant_ids:', orders.map(o => o.tenant_id))
+    console.log('🔍 [PURCHASE ORDERS PAGE] First 3 orders:', orders.slice(0, 3).map(o => ({
+        id: o.id,
+        name: o.name,
+        tenant_id: o.tenant_id,
+        company_id: o.company_id,
+        supplier: o.hms_supplier?.name
+    })))
 
     return (
         <div className="min-h-screen bg-white text-slate-900 font-sans tracking-tight">
