@@ -3,15 +3,73 @@
 import { createPatient } from "@/app/actions/patient"
 import Link from "next/link"
 import { ArrowLeft, Save, User, MapPin, ShieldAlert, HeartPulse, Sparkles, Phone, Mail, Calendar, UserCircle2, Activity } from "lucide-react"
-import { useActionState } from "react"
+import { useActionState, useState, useEffect } from "react"
 
 const initialState = {
     error: "",
     success: false
 }
 
-export function CreatePatientForm() {
+// Country and State Data
+const COUNTRIES = [
+    { code: 'IN', name: 'India' },
+    { code: 'US', name: 'United States' },
+    { code: 'CA', name: 'Canada' },
+    { code: 'UK', name: 'United Kingdom' },
+    { code: 'AU', name: 'Australia' },
+]
+
+const STATES_BY_COUNTRY: Record<string, string[]> = {
+    'IN': [
+        'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
+        'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
+        'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
+        'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
+        'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
+        'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
+        'Andaman and Nicobar Islands', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu',
+        'Delhi', 'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry'
+    ],
+    'US': [
+        'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
+        'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
+        'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
+        'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
+        'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
+        'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
+        'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon',
+        'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
+        'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
+        'West Virginia', 'Wisconsin', 'Wyoming'
+    ],
+    'CA': [
+        'Alberta', 'British Columbia', 'Manitoba', 'New Brunswick',
+        'Newfoundland and Labrador', 'Nova Scotia', 'Ontario',
+        'Prince Edward Island', 'Quebec', 'Saskatchewan',
+        'Northwest Territories', 'Nunavut', 'Yukon'
+    ],
+    'UK': [
+        'England', 'Scotland', 'Wales', 'Northern Ireland'
+    ],
+    'AU': [
+        'New South Wales', 'Queensland', 'South Australia', 'Tasmania',
+        'Victoria', 'Western Australia', 'Australian Capital Territory',
+        'Northern Territory'
+    ]
+}
+
+interface CreatePatientFormProps {
+    tenantCountry?: string
+}
+
+export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormProps) {
     const [state, action, isPending] = useActionState(createPatient, initialState);
+    const [selectedCountry, setSelectedCountry] = useState(tenantCountry);
+    const [availableStates, setAvailableStates] = useState<string[]>(STATES_BY_COUNTRY[tenantCountry] || []);
+
+    useEffect(() => {
+        setAvailableStates(STATES_BY_COUNTRY[selectedCountry] || []);
+    }, [selectedCountry]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
@@ -171,7 +229,7 @@ export function CreatePatientForm() {
                                         required
                                         type="tel"
                                         className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-300"
-                                        placeholder="+1 (555) 000-0000"
+                                        placeholder="+91 98765 43210"
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -199,32 +257,40 @@ export function CreatePatientForm() {
                                     <input
                                         name="city"
                                         className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300"
+                                        placeholder="Mumbai"
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">State / Province</label>
-                                    <input
+                                    <select
                                         name="state"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300"
-                                    />
+                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300 cursor-pointer"
+                                    >
+                                        <option value="">Select State</option>
+                                        {availableStates.map(state => (
+                                            <option key={state} value={state}>{state}</option>
+                                        ))}
+                                    </select>
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Postal / Zip Code</label>
                                     <input
                                         name="zip"
                                         className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300"
+                                        placeholder="400001"
                                     />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Country</label>
                                     <select
                                         name="country"
+                                        value={selectedCountry}
+                                        onChange={(e) => setSelectedCountry(e.target.value)}
                                         className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300 cursor-pointer"
                                     >
-                                        <option value="US">United States</option>
-                                        <option value="CA">Canada</option>
-                                        <option value="UK">United Kingdom</option>
-                                        <option value="IN">India</option>
+                                        {COUNTRIES.map(country => (
+                                            <option key={country.code} value={country.code}>{country.name}</option>
+                                        ))}
                                     </select>
                                 </div>
                             </div>
@@ -269,7 +335,7 @@ export function CreatePatientForm() {
                                     <textarea
                                         name="allergies"
                                         rows={4}
-                                        className="w-full px-4 py-3 bg-white/70 border-2 border-rose-200 rounded-xl focus:ring-4 focus:ring-rose-500/20 focus:border-rose-500 outline-none transition-all duration-300 font-medium resize-none placeholder:text-gray-400 hover:border-rose-300"
+                                        className="w-full px-4 py-3 bg-white/70 border-2 border-rose-200 rounded-xl focus:ring-4 focus:ring-rose-500/20 focus:border-rose-500 outline-none transition-all duration-300 font-medium text-gray-900 resize-none placeholder:text-gray-400 hover:border-rose-300"
                                         placeholder="List any known allergies..."
                                     ></textarea>
                                 </div>
