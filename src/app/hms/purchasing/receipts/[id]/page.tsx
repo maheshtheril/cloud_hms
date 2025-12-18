@@ -180,7 +180,12 @@ export default function EditPurchaseReceiptPage() {
                             batch: i.batch,
                             expiry: i.expiry,
                             mrp: i.mrp,
-                            pack: i.pack,
+                            salePrice: i.salePrice,
+                            marginPct: i.marginPct,
+                            markupPct: i.markupPct,
+                            pricingStrategy: i.pricingStrategy || 'manual',
+                            mrpDiscountPct: i.mrpDiscountPct,
+                            packing: i.pack || i.packing,  // Fixed: use 'packing' field name
                             taxRate: i.taxRate,
                             taxAmount: (i.qty * i.unitPrice * (i.taxRate / 100)),
                             hsn: i.hsn,
