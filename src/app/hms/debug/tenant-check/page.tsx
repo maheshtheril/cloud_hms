@@ -14,13 +14,12 @@ export default async function TenantDebugPage() {
     // Get purchase orders for this tenant
     const myOrders = await prisma.hms_purchase_order.findMany({
         where: {
-            tenant_id: tenantId,
-            company_id: companyId
+            tenant_id: tenantId!,
+            company_id: companyId!
         },
         select: {
             id: true,
             name: true,
-            number: true,
             tenant_id: true,
             company_id: true,
             created_at: true
@@ -80,7 +79,7 @@ export default async function TenantDebugPage() {
                     {tenantInfo ? (
                         <div className="text-sm">
                             <p><strong>Name:</strong> {tenantInfo.name}</p>
-                            <p><strong>Created:</strong> {new Date(tenantInfo.created_at).toLocaleString()}</p>
+                            <p><strong>Created:</strong> {tenantInfo.created_at ? new Date(tenantInfo.created_at).toLocaleString() : 'N/A'}</p>
                         </div>
                     ) : (
                         <p className="text-red-600">⚠️ Tenant not found!</p>
@@ -104,7 +103,7 @@ export default async function TenantDebugPage() {
                                 <tbody>
                                     {myOrders.map((order) => (
                                         <tr key={order.id} className="border-b">
-                                            <td className="px-4 py-2 font-mono">{order.name || order.number}</td>
+                                            <td className="px-4 py-2 font-mono">{order.name}</td>
                                             <td className="px-4 py-2 font-mono">
                                                 <span className={`px-2 py-1 rounded ${order.tenant_id === tenantId ? 'bg-green-100' : 'bg-red-100'}`}>
                                                     {order.tenant_id?.slice(0, 8)}...
@@ -165,7 +164,7 @@ export default async function TenantDebugPage() {
                                 <tr key={tenant.id} className={`border-b ${tenant.id === tenantId ? 'bg-yellow-50' : ''}`}>
                                     <td className="px-4 py-2">{tenant.name}</td>
                                     <td className="px-4 py-2 font-mono">{tenant.id.slice(0, 8)}...</td>
-                                    <td className="px-4 py-2">{new Date(tenant.created_at).toLocaleString()}</td>
+                                    <td className="px-4 py-2">{tenant.created_at ? new Date(tenant.created_at).toLocaleString() : 'N/A'}</td>
                                 </tr>
                             ))}
                         </tbody>
