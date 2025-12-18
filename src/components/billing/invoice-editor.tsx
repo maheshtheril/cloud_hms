@@ -356,21 +356,8 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                                                     className="p-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-sm text-gray-700 bg-white"
                                                     value={line.uom || 'PCS'}
                                                     onChange={(e) => {
-                                                        const newUom = e.target.value;
-                                                        updateLine(line.id, 'uom', newUom);
-
-                                                        // Auto-calculate price based on UOM
-                                                        if (line.base_price && line.conversion_factor) {
-                                                            let newPrice = line.base_price; // Default to base price (Unit/PCS)
-
-                                                            // If selecting pack UOM, multiply by conversion factor
-                                                            if (newUom !== 'PCS' && newUom !== 'Unit') {
-                                                                newPrice = line.base_price * line.conversion_factor;
-                                                            }
-
-                                                            updateLine(line.id, 'unit_price', newPrice);
-                                                            console.log(`UOM changed to ${newUom}, price: ₹${newPrice}`);
-                                                        }
+                                                        // Only update UOM - the updateLine handler will calculate price
+                                                        updateLine(line.id, 'uom', e.target.value);
                                                     }}
                                                     title="Unit of Measure"
                                                 >
