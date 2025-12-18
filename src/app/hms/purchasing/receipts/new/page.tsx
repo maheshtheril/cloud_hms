@@ -588,12 +588,20 @@ export default function NewPurchaseReceiptPage() {
                                                             expiry: item.expiry,
                                                             mrp: Number(String(item.mrp || 0).replace(/[^0-9.-]/g, '')) || 0,
                                                             taxRate: taxRate,
-                                                            taxAmount: taxAmount,
                                                             hsn: item.hsn,
                                                             packing: item.packing,
                                                             schemeDiscount: item.schemeDiscount ? Number(String(item.schemeDiscount).replace(/[^0-9.-]/g, '')) : 0,
                                                             discountPct: item.discountPct ? Number(String(item.discountPct).replace(/[^0-9.-]/g, '')) : 0,
-                                                            discountAmt: item.discountAmt ? Number(String(item.discountAmt).replace(/[^0-9.-]/g, '')) : 0
+                                                            discountAmt: item.discountAmt ? Number(String(item.discountAmt).replace(/[^0-9.-]/g, '')) : 0,
+                                                            // Recalculate taxAmount based on taxable value (after discounts)
+                                                            taxAmount: (() => {
+                                                                const baseAmount = unitPrice * qty;
+                                                                const schDisc = item.schemeDiscount ? Number(String(item.schemeDiscount).replace(/[^0-9.-]/g, '')) : 0;
+                                                                const discAmt = item.discountAmt ? Number(String(item.discountAmt).replace(/[^0-9.-]/g, '')) : 0;
+                                                                const totalDiscount = schDisc + discAmt;
+                                                                const taxableValue = Math.max(0, baseAmount - totalDiscount);
+                                                                return taxableValue * (taxRate / 100);
+                                                            })()
                                                         };
                                                     }));
                                                     setItems(mappedItems);
