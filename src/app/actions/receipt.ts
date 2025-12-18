@@ -328,10 +328,31 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                         select: { metadata: true, price: true }
                     });
 
+                    // Extract UOM and calculate conversion factor
+                    const purchaseUOM = (item as any).uom || 'PCS';
+                    let conversionFactor = 1;
+
+                    // Parse PACK-10, PACK-15, etc.
+                    const match = purchaseUOM.match(/PACK-(\d+)/i);
+                    if (match) {
+                        conversionFactor = parseInt(match[1]);
+                    } else if (purchaseUOM === 'STRIP') {
+                        conversionFactor = 10; // Default strip size
+                    }
+
                     // Calculate UOM pricing data for sales
-                    const conversionFactor = item.conversionFactor || 1;
-                    const salePricePerPCS = item.salePrice ? item.salePrice / conversionFactor : null;
+                    const salePricePerPCS = item.salePrice && conversionFactor > 1
+                        ? item.salePrice / conversionFactor
+                        : item.salePrice;
                     const salePricePerPack = item.salePrice || null;
+
+                    console.log('💰 SAVING UOM PRICING:', {
+                        product: item.productId,
+                        purchaseUOM,
+                        conversionFactor,
+                        salePricePerPack,
+                        salePricePerPCS
+                    });
 
                     await tx.hms_product.update({
                         where: { id: item.productId },
@@ -347,7 +368,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                                     base_uom: 'PCS',
                                     base_price: salePricePerPCS, // Price per PCS
                                     conversion_factor: conversionFactor, // e.g., 10 for PACK-10
-                                    pack_uom: item.purchaseUOM || 'PCS', // e.g., PACK-10
+                                    pack_uom: purchaseUOM, // e.g., PACK-10
                                     pack_price: salePricePerPack, // Price per pack
                                     pack_size: conversionFactor // Same as conversion factor
                                 }

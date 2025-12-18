@@ -315,6 +315,7 @@ export default function NewPurchaseReceiptPage() {
                 taxAmount: Number(i.taxAmount),
                 hsn: i.hsn,
                 packing: i.packing,
+                uom: i.uom, // ← ADD UOM!
                 schemeDiscount: i.schemeDiscount ? Number(i.schemeDiscount) : undefined,
                 discountPct: i.discountPct ? Number(i.discountPct) : undefined,
                 discountAmt: i.discountAmt ? Number(i.discountAmt) : undefined
