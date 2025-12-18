@@ -38,6 +38,7 @@ type ReceiptItem = {
     taxAmount?: number;
     hsn?: string;
     packing?: string;
+    uom?: string;  // Add UOM field
     schemeDiscount?: number;    // Scheme Discount (₹)
     discountPct?: number;        // Discount %
     discountAmt?: number;        // Discount Amount (₹)
@@ -603,6 +604,7 @@ export default function NewPurchaseReceiptPage() {
                                                             taxRate: taxRate,
                                                             hsn: item.hsn,
                                                             packing: packing,  // Use auto-generated or original
+                                                            uom: item.uom,  // Include UOM
                                                             schemeDiscount: item.schemeDiscount ? Number(String(item.schemeDiscount).replace(/[^0-9.-]/g, '')) : 0,
                                                             discountPct: item.discountPct ? Number(String(item.discountPct).replace(/[^0-9.-]/g, '')) : 0,
                                                             discountAmt: item.discountAmt ? Number(String(item.discountAmt).replace(/[^0-9.-]/g, '')) : 0,
