@@ -18,7 +18,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
     const [selectedPatientId, setSelectedPatientId] = useState('')
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
     const [lines, setLines] = useState<any[]>([
-        { id: 1, product_id: '', description: '', quantity: 1, unit_price: 0, tax_rate_id: '', tax_amount: 0, discount_amount: 0 }
+        { id: 1, product_id: '', description: '', quantity: 1, unit_price: 0, tax_rate_id: taxConfig.defaultTax?.id || '', tax_amount: 0, discount_amount: 0 }
     ])
 
     const [globalDiscount, setGlobalDiscount] = useState(0)
@@ -60,9 +60,15 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                         updated.description = product.description || product.label
                         updated.unit_price = product.price
 
-                        // AUTO-FILL TAX: Use purchase tax rate if available (GST rule: local purchase sale tax = purchase tax)
-                        const purchaseTaxId = product.metadata?.purchase_tax_id || product.categoryTaxId;
-                        updated.tax_rate_id = purchaseTaxId || taxConfig.defaultTax?.id || '';
+                        // AUTO-FILL TAX: Priority order:
+                        // 1. Product's purchase tax (stored during receiving)
+                        // 2. Product's category tax
+                        // 3. System default tax
+                        const purchaseTaxId = product.metadata?.purchase_tax_id || product.metadata?.tax_rate_id;
+                        const taxToUse = purchaseTaxId || product.categoryTaxId || taxConfig.defaultTax?.id;
+                        updated.tax_rate_id = taxToUse || '';
+
+                        console.log('Tax auto-fill:', { purchaseTaxId, categoryTax: product.categoryTaxId, default: taxConfig.defaultTax?.id, final: updated.tax_rate_id });
                     }
                 }
 
