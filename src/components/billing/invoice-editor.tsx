@@ -74,46 +74,69 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                     const product = billableItems.find(i => i.id === value)
                     if (product) {
                         updated.description = product.description || product.label
-                        updated.unit_price = product.price
-                        updated.base_price = product.price // Store base (PCS) price
-                        updated.uom = updated.uom || 'PCS' // Default to PCS
 
-                        // Store UOM conversion factor from product metadata
-                        // This is the ACTUAL pack size for this product
-                        updated.conversion_factor = product.metadata?.conversionFactor || product.metadata?.conversion_factor || null
+                        // Get UOM pricing data (Industry Standard)
+                        const basePrice = product.metadata?.basePrice || product.price || 0;
+                        const packPrice = product.metadata?.packPrice || product.price || 0;
+                        const conversionFactor = product.metadata?.conversionFactor || 1;
+                        const packUom = product.metadata?.packUom || 'PCS';
+
+                        // Store pricing data for UOM calculations
+                        updated.base_price = basePrice; // Price per PCS
+                        updated.pack_price = packPrice; // Price per pack
+                        updated.conversion_factor = conversionFactor;
+                        updated.pack_uom = packUom;
+
+                        // Default to base UOM (PCS) with base price
+                        updated.uom = 'PCS';
+                        updated.unit_price = basePrice;
 
                         console.log('Product selected:', {
                             product: product.label,
-                            basePrice: product.price,
-                            conversionFactor: updated.conversion_factor,
-                            metadata: product.metadata
+                            basePrice,
+                            packPrice,
+                            conversionFactor,
+                            packUom
                         });
 
-                        // AUTO-FILL TAX: Priority order:
-                        // 1. Product's purchase tax (stored as % during receiving)
-                        // 2. Product's category tax
-                        // 3. Smart default (system default, common GST rate, or first available)
-                        const purchaseTaxRate = product.metadata?.purchase_tax_rate; // This is a NUMBER (e.g., 5, 12, 18)
+                        // AUTO-FILL TAX
+                        const purchaseTaxRate = product.metadata?.purchase_tax_rate;
                         let purchaseTaxId = null;
 
-                        // Find the tax rate ID that matches the purchase tax percentage
                         if (purchaseTaxRate) {
                             const matchingTax = taxConfig.taxRates.find(t => t.rate === Number(purchaseTaxRate));
                             purchaseTaxId = matchingTax?.id;
-                            console.log('Purchase tax match:', { purchaseTaxRate, matchingTax, purchaseTaxId });
                         }
 
                         const taxToUse = purchaseTaxId || product.categoryTaxId || defaultTaxId;
                         updated.tax_rate_id = taxToUse;
-
-                        console.log('Tax auto-fill:', { purchaseTaxRate, purchaseTaxId, categoryTax: product.categoryTaxId, defaultTaxId, final: updated.tax_rate_id });
                     }
                 }
 
+                // Handle UOM change - Auto-calculate price
+                if (field === 'uom') {
+                    const selectedUom = value;
 
-                // Note: UOM is stored as a label only
-                // Price must be entered manually for now
-                // TODO: Implement proper product-specific conversion factors
+                    if (line.base_price && line.conversion_factor) {
+                        // Calculate price based on UOM
+                        if (selectedUom === 'PCS') {
+                            // Selling individual pieces
+                            updated.unit_price = line.base_price;
+                        } else if (selectedUom === line.pack_uom && line.pack_price) {
+                            // Selling full pack (PACK-10, PACK-15, etc.)
+                            updated.unit_price = line.pack_price;
+                        } else {
+                            // Fallback: calculate from base price
+                            const match = selectedUom.match(/PACK-(\d+)/i);
+                            if (match) {
+                                const packSize = parseInt(match[1]);
+                                updated.unit_price = line.base_price * packSize;
+                            }
+                        }
+
+                        console.log(`UOM changed to ${selectedUom}, price: ₹${updated.unit_price}`);
+                    }
+                }
 
 
                 // Recalculate Tax

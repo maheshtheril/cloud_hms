@@ -321,20 +321,36 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     }
                 })
 
-                // D. Update Product with Purchase Tax Rate (GST Compliance: Sale tax = Purchase tax for local)
-                if (item.taxRate) {
+                // D. Update Product with Tax Rate AND UOM Pricing Data
+                if (item.taxRate || item.salePrice) {
                     const currentProduct = await tx.hms_product.findUnique({
                         where: { id: item.productId },
-                        select: { metadata: true }
+                        select: { metadata: true, price: true }
                     });
+
+                    // Calculate UOM pricing data for sales
+                    const conversionFactor = item.conversionFactor || 1;
+                    const salePricePerPCS = item.salePrice ? item.salePrice / conversionFactor : null;
+                    const salePricePerPack = item.salePrice || null;
 
                     await tx.hms_product.update({
                         where: { id: item.productId },
                         data: {
+                            // Update base price (per PCS)
+                            price: salePricePerPCS || currentProduct?.price,
                             metadata: {
                                 ...(currentProduct?.metadata as any || {}),
                                 purchase_tax_rate: item.taxRate,
-                                last_purchase_date: new Date().toISOString()
+                                last_purchase_date: new Date().toISOString(),
+                                // UOM Pricing Data (Industry Standard)
+                                uom_data: {
+                                    base_uom: 'PCS',
+                                    base_price: salePricePerPCS, // Price per PCS
+                                    conversion_factor: conversionFactor, // e.g., 10 for PACK-10
+                                    pack_uom: item.purchaseUOM || 'PCS', // e.g., PACK-10
+                                    pack_price: salePricePerPack, // Price per pack
+                                    pack_size: conversionFactor // Same as conversion factor
+                                }
                             }
                         }
                     });

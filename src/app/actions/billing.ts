@@ -50,6 +50,10 @@ export async function getBillableItems() {
             const category = categoryRel?.hms_product_category;
             const taxRate = category?.tax_rates;
 
+            // Extract UOM pricing data from metadata
+            const metadata = item.metadata as any || {};
+            const uomData = metadata.uom_data || {};
+
             return {
                 id: item.id,
                 sku: item.sku || '',
@@ -57,7 +61,16 @@ export async function getBillableItems() {
                 description: item.description || '',
                 uom: item.uom || 'Unit',
                 price: priceHistory?.price?.toNumber() || Number(item.price) || 0,
-                metadata: item.metadata, // Include for purchase_tax_rate
+                metadata: {
+                    ...metadata,
+                    // UOM Pricing (Industry Standard)
+                    baseUom: uomData.base_uom || 'PCS',
+                    basePrice: uomData.base_price || Number(item.price) || 0,
+                    conversionFactor: uomData.conversion_factor || 1,
+                    packUom: uomData.pack_uom || 'PCS',
+                    packPrice: uomData.pack_price || (Number(item.price) * (uomData.conversion_factor || 1)),
+                    packSize: uomData.pack_size || 1
+                },
                 // Extract category tax for auto-suggest
                 categoryTaxId: category?.default_tax_rate_id || null,
                 categoryTaxRate: taxRate?.rate ? taxRate.rate.toNumber() : 0
