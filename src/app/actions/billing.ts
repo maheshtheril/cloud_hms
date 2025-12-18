@@ -24,6 +24,7 @@ export async function getBillableItems() {
                 description: true,
                 uom: true,
                 price: true, // Fetch base price
+                metadata: true, // Include metadata for purchase_tax_rate
                 // We'll need to join with price history to get current price
                 hms_product_price_history: {
                     orderBy: { valid_from: 'desc' },
@@ -56,6 +57,7 @@ export async function getBillableItems() {
                 description: item.description || '',
                 uom: item.uom || 'Unit',
                 price: priceHistory?.price?.toNumber() || Number(item.price) || 0,
+                metadata: item.metadata, // Include for purchase_tax_rate
                 // Extract category tax for auto-suggest
                 categoryTaxId: category?.default_tax_rate_id || null,
                 categoryTaxRate: taxRate?.rate ? taxRate.rate.toNumber() : 0
