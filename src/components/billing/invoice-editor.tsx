@@ -17,8 +17,27 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
     // State
     const [selectedPatientId, setSelectedPatientId] = useState('')
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+    // Smart fallback: Use default tax, or first available tax, or find common GST rate (5%, 12%, 18%)
+    const getDefaultTaxId = () => {
+        if (taxConfig.defaultTax?.id) return taxConfig.defaultTax.id;
+        if (taxConfig.taxRates.length > 0) {
+            // Try to find common GST rates in order: 18%, 12%, 5%
+            const common18 = taxConfig.taxRates.find(t => t.rate === 18);
+            if (common18) return common18.id;
+            const common12 = taxConfig.taxRates.find(t => t.rate === 12);
+            if (common12) return common12.id;
+            const common5 = taxConfig.taxRates.find(t => t.rate === 5);
+            if (common5) return common5.id;
+            // Otherwise use first available
+            return taxConfig.taxRates[0].id;
+        }
+        return '';
+    };
+
+    const defaultTaxId = getDefaultTaxId();
+
     const [lines, setLines] = useState<any[]>([
-        { id: 1, product_id: '', description: '', quantity: 1, unit_price: 0, tax_rate_id: taxConfig.defaultTax?.id || '', tax_amount: 0, discount_amount: 0 }
+        { id: 1, product_id: '', description: '', quantity: 1, unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0 }
     ])
 
     const [globalDiscount, setGlobalDiscount] = useState(0)
@@ -36,7 +55,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
             description: '',
             quantity: 1,
             unit_price: 0,
-            tax_rate_id: taxConfig.defaultTax?.id || '',
+            tax_rate_id: defaultTaxId, // Use smart fallback
             tax_amount: 0,
             discount_amount: 0
         }])
@@ -63,12 +82,12 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                         // AUTO-FILL TAX: Priority order:
                         // 1. Product's purchase tax (stored during receiving)
                         // 2. Product's category tax
-                        // 3. System default tax
+                        // 3. Smart default (system default, common GST rate, or first available)
                         const purchaseTaxId = product.metadata?.purchase_tax_id || product.metadata?.tax_rate_id;
-                        const taxToUse = purchaseTaxId || product.categoryTaxId || taxConfig.defaultTax?.id;
-                        updated.tax_rate_id = taxToUse || '';
+                        const taxToUse = purchaseTaxId || product.categoryTaxId || defaultTaxId;
+                        updated.tax_rate_id = taxToUse;
 
-                        console.log('Tax auto-fill:', { purchaseTaxId, categoryTax: product.categoryTaxId, default: taxConfig.defaultTax?.id, final: updated.tax_rate_id });
+                        console.log('Tax auto-fill:', { purchaseTaxId, categoryTax: product.categoryTaxId, defaultTaxId, final: updated.tax_rate_id });
                     }
                 }
 
