@@ -7,7 +7,6 @@ async function debugPurchaseOrders() {
             select: {
                 id: true,
                 name: true,
-                number: true,
                 tenant_id: true,
                 company_id: true,
                 created_at: true,
@@ -48,7 +47,7 @@ async function debugPurchaseOrders() {
             console.log(`   Orders:`)
 
             tenantOrders.forEach(order => {
-                console.log(`      - ${order.name || order.number || order.id.slice(0, 8)}: ${order.hms_supplier.name} (${new Date(order.created_at).toISOString().split('T')[0]})`)
+                console.log(`      - ${order.name || order.id.slice(0, 8)}: ${order.hms_supplier.name} (${new Date(order.created_at).toISOString().split('T')[0]})`)
             })
             console.log('')
         }
