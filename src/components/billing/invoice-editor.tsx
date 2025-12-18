@@ -74,6 +74,8 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                     if (product) {
                         updated.description = product.description || product.label
                         updated.unit_price = product.price
+                        updated.base_price = product.price // Store base (Unit) price
+                        updated.uom = updated.uom || 'Unit' // Default to Unit
 
                         // AUTO-FILL TAX: Priority order:
                         // 1. Product's purchase tax (stored as % during receiving)
@@ -96,8 +98,34 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                     }
                 }
 
+                // Auto-adjust price when UOM changes
+                if (field === 'uom' && line.base_price) {
+                    const basePrice = line.base_price;
+                    const newUOM = value;
+
+                    // Simple conversion factors (you can make this dynamic later)
+                    const conversionFactors: Record<string, number> = {
+                        'Unit': 1,
+                        'Strip': 15,    // 1 Strip = 15 Units
+                        'Box': 150,     // 1 Box = 150 Units (10 strips)
+                        'Bottle': 100,  // 1 Bottle = 100 Units
+                        'Pack': 10      // 1 Pack = 10 Units
+                    };
+
+                    const factor = conversionFactors[newUOM] || 1;
+                    updated.unit_price = basePrice * factor;
+
+                    console.log('UOM changed:', {
+                        from: line.uom,
+                        to: newUOM,
+                        basePrice,
+                        factor,
+                        newPrice: updated.unit_price
+                    });
+                }
+
                 // Recalculate Tax
-                if (['product_id', 'quantity', 'unit_price', 'tax_rate_id', 'discount_amount'].includes(field)) {
+                if (['product_id', 'quantity', 'unit_price', 'tax_rate_id', 'discount_amount', 'uom'].includes(field)) {
                     const currentTaxId = field === 'tax_rate_id' ? value : updated.tax_rate_id;
                     const taxRateObj = taxConfig.taxRates.find(t => t.id === currentTaxId);
                     const rate = taxRateObj ? taxRateObj.rate : 0;
