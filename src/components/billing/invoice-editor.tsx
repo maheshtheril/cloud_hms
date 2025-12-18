@@ -36,6 +36,11 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
 
     const defaultTaxId = getDefaultTaxId();
 
+    console.log('=== BILLING TAX DEBUG ===');
+    console.log('Tax Config:', { defaultTax: taxConfig.defaultTax, taxRatesCount: taxConfig.taxRates.length });
+    console.log('Default Tax ID Selected:', defaultTaxId);
+    console.log('Available Tax Rates:', taxConfig.taxRates);
+
     const [lines, setLines] = useState<any[]>([
         { id: 1, product_id: '', description: '', quantity: 1, unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0 }
     ])
