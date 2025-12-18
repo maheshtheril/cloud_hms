@@ -153,6 +153,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                 }
 
 
+
                 // Recalculate Tax
                 if (['product_id', 'quantity', 'unit_price', 'tax_rate_id', 'discount_amount', 'uom'].includes(field)) {
                     const currentTaxId = field === 'tax_rate_id' ? value : updated.tax_rate_id;
@@ -162,6 +163,13 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                     const baseTotal = (updated.quantity * updated.unit_price) - (updated.discount_amount || 0);
                     updated.tax_amount = (Math.max(0, baseTotal) * rate) / 100;
                 }
+
+                // CRITICAL: Explicitly preserve UOM pricing fields
+                // These must persist through all updates
+                if (!updated.base_price && line.base_price) updated.base_price = line.base_price;
+                if (!updated.pack_price && line.pack_price) updated.pack_price = line.pack_price;
+                if (!updated.pack_uom && line.pack_uom) updated.pack_uom = line.pack_uom;
+                if (!updated.conversion_factor && line.conversion_factor) updated.conversion_factor = line.conversion_factor;
 
                 return updated
             }
