@@ -227,7 +227,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                                 <tr>
                                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-10">#</th>
                                     <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[35%]">Item / Service</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Qty</th>
+                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Qty / UOM</th>
                                     <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Price</th>
                                     <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Discount</th>
                                     <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Tax</th>
@@ -276,15 +276,30 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                                             />
                                         </td>
 
-                                        {/* Quantity */}
+                                        {/* Quantity + UOM */}
                                         <td className="px-6 py-4">
-                                            <input
-                                                type="number"
-                                                min="1"
-                                                className="w-20 text-right p-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none font-mono text-gray-900 font-bold"
-                                                value={line.quantity}
-                                                onChange={(e) => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
-                                            />
+                                            <div className="flex items-center gap-2">
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    step="0.01"
+                                                    className="w-20 text-right p-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none font-mono text-gray-900 font-bold"
+                                                    value={line.quantity}
+                                                    onChange={(e) => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                                />
+                                                <select
+                                                    className="p-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-sm text-gray-700 bg-white"
+                                                    value={line.uom || 'Unit'}
+                                                    onChange={(e) => updateLine(line.id, 'uom', e.target.value)}
+                                                    title="Unit of Measure"
+                                                >
+                                                    <option value="Unit">Unit</option>
+                                                    <option value="Strip">Strip</option>
+                                                    <option value="Box">Box</option>
+                                                    <option value="Bottle">Bottle</option>
+                                                    <option value="Pack">Pack</option>
+                                                </select>
+                                            </div>
                                         </td>
 
                                         {/* Price */}
