@@ -589,7 +589,7 @@ export default function NewPurchaseReceiptPage() {
                                                             mrp: Number(String(item.mrp || 0).replace(/[^0-9.-]/g, '')) || 0,
                                                             taxRate: taxRate,
                                                             hsn: item.hsn,
-                                                            packing: item.packing,
+                                                            packing: item.packing || '',  // Ensure it's a string
                                                             schemeDiscount: item.schemeDiscount ? Number(String(item.schemeDiscount).replace(/[^0-9.-]/g, '')) : 0,
                                                             discountPct: item.discountPct ? Number(String(item.discountPct).replace(/[^0-9.-]/g, '')) : 0,
                                                             discountAmt: item.discountAmt ? Number(String(item.discountAmt).replace(/[^0-9.-]/g, '')) : 0,
@@ -604,6 +604,8 @@ export default function NewPurchaseReceiptPage() {
                                                             })()
                                                         };
                                                     }));
+
+                                                    console.log('📦 MAPPED ITEMS WITH PACKING:', mappedItems.map(i => ({ name: i.productName, packing: i.packing })));
                                                     setItems(mappedItems);
 
                                                     // 4. Smart Rounding: Match the PDF's Grand Total exactly
