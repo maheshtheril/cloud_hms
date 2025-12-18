@@ -826,24 +826,16 @@ export default function NewPurchaseReceiptPage() {
                                                 />
                                             </td>
                                             <td className="py-3 px-2">
-                                                <SearchableSelect
-                                                    value={item.packing}
-                                                    onChange={(id, opt) => {
-                                                        const n = [...items];
-                                                        n[index].packing = opt?.label || id || '';
-                                                        setItems(n);
-                                                    }}
-                                                    onSearch={async (q) => PACKING_OPTIONS.filter(o => o.toLowerCase().includes(q.toLowerCase())).map(o => ({ id: o, label: o }))}
-                                                    onCreate={async (q) => ({ id: q, label: q })}
-                                                    defaultOptions={[
-                                                        ...PACKING_OPTIONS.map(o => ({ id: o, label: o })),
-                                                        ...(item.packing && !PACKING_OPTIONS.includes(item.packing) ? [{ id: item.packing, label: item.packing }] : [])
-                                                    ]}
+                                                <input
                                                     placeholder="Pack"
-                                                    variant="ghost"
-                                                    className="w-full text-[10px] font-mono text-white placeholder:text-neutral-600 dark"
-                                                    isDark={true}
+                                                    list={`packing-options-${index}`}
+                                                    value={item.packing || ''}
+                                                    onChange={(e) => { const n = [...items]; n[index].packing = e.target.value; setItems(n); }}
+                                                    className="w-full bg-transparent border-b border-white/10 text-[10px] font-mono focus:border-indigo-500"
                                                 />
+                                                <datalist id={`packing-options-${index}`}>
+                                                    {PACKING_OPTIONS.map(opt => <option key={opt} value={opt} />)}
+                                                </datalist>
                                             </td>
                                             {mode === 'po' && (
                                                 <td className="py-3 px-2 text-center">
