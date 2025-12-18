@@ -352,14 +352,15 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                                                     }}
                                                     title="Unit of Measure"
                                                 >
+                                                    {/* Always show PCS (base unit) */}
                                                     <option value="PCS">PCS</option>
-                                                    <option value="PACK-10">Pack-10</option>
-                                                    <option value="PACK-15">Pack-15</option>
-                                                    <option value="PACK-20">Pack-20</option>
-                                                    <option value="PACK-30">Pack-30</option>
-                                                    <option value="STRIP">Strip</option>
-                                                    <option value="BOX">Box</option>
-                                                    <option value="BOTTLE">Bottle</option>
+
+                                                    {/* Show product's configured pack UOM if available */}
+                                                    {line.pack_uom && line.pack_uom !== 'PCS' && (
+                                                        <option value={line.pack_uom}>
+                                                            {line.pack_uom.replace('PACK-', 'Pack-')}
+                                                        </option>
+                                                    )}
                                                 </select>
                                             </div>
                                         </td>
