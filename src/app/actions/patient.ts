@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
+import { auth } from "@/auth"
 
 export async function createPatient(prevState: any, formData: FormData) {
     const firstName = formData.get("first_name") as string
@@ -60,10 +61,14 @@ export async function createPatient(prevState: any, formData: FormData) {
         insurance
     }
 
-    const tenant = await prisma.tenant.findFirst();
+    // Get current user's tenant and company from session
+    const session = await auth()
+    const tenantId = session?.user?.tenantId
+    const companyId = session?.user?.companyId
+    const userId = session?.user?.id
 
-    if (!tenant) {
-        throw new Error("No tenant found. Please signup first.");
+    if (!tenantId) {
+        return { error: "No tenant found. Please login again." }
     }
 
     if (!firstName || !lastName) {
@@ -73,15 +78,17 @@ export async function createPatient(prevState: any, formData: FormData) {
     await prisma.hms_patient.create({
         data: {
             id: crypto.randomUUID(),
-            tenant_id: tenant.id,
-            company_id: tenant.id, // Assuming 1-1 for now, practically needs logic
+            tenant_id: tenantId,
+            company_id: companyId || tenantId, // Use companyId from session, fallback to tenantId
             first_name: firstName,
             last_name: lastName,
             dob: dob ? new Date(dob) : null,
             gender,
             contact: contact as any, // Type cast for Prisma Json
             metadata: metadata as any,
-            patient_number: `PAT-${Date.now()}` // Simple ID generation
+            patient_number: `PAT-${Date.now()}`, // Simple ID generation
+            created_by: userId,
+            updated_by: userId
         }
     })
 

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { Plus } from "lucide-react"
+import { auth } from "@/auth"
 
 import SearchInput from "@/components/search-input"
 
@@ -14,16 +15,33 @@ export default async function PatientsPage({
     const { q } = await searchParams;
     const query = q || ''
 
+    // Get current user's tenant
+    const session = await auth()
+    const tenantId = session?.user?.tenantId
+
+    if (!tenantId) {
+        return (
+            <div className="space-y-6">
+                <div className="bg-red-50 border border-red-200 text-red-800 p-4 rounded-lg">
+                    <p>No tenant found. Please login again.</p>
+                </div>
+            </div>
+        )
+    }
+
     const patients = await prisma.hms_patient.findMany({
         take: 20,
         orderBy: { updated_at: 'desc' },
-        where: query ? {
-            OR: [
-                { first_name: { contains: query, mode: 'insensitive' } },
-                { last_name: { contains: query, mode: 'insensitive' } },
-                { patient_number: { contains: query, mode: 'insensitive' } }
-            ]
-        } : undefined
+        where: {
+            tenant_id: tenantId, // Filter by current user's tenant
+            ...(query ? {
+                OR: [
+                    { first_name: { contains: query, mode: 'insensitive' } },
+                    { last_name: { contains: query, mode: 'insensitive' } },
+                    { patient_number: { contains: query, mode: 'insensitive' } }
+                ]
+            } : {})
+        }
     })
 
     return (
