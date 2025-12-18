@@ -770,7 +770,10 @@ export default function NewPurchaseReceiptPage() {
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-left w-20 text-white">Batch</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-left w-20 text-white">Exp</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-white">MRP</th>
-                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-emerald-400">Sale Price</th>
+                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-emerald-400" title="Sale Price (Tax Exclusive)">
+                                            <div>Sale Price</div>
+                                            <div className="text-[8px] text-emerald-500 font-normal normal-case">(Excl. Tax)</div>
+                                        </th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-emerald-400">Margin %</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-yellow-400">Sch Disc</th>
                                         <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-yellow-400">Disc %</th>
@@ -873,22 +876,32 @@ export default function NewPurchaseReceiptPage() {
                                                 />
                                             </td>
 
-                                            {/* Sale Price Input */}
-                                            <td className="py-3 px-2 text-right">
-                                                <input
-                                                    placeholder="Sale"
-                                                    type="number"
-                                                    step="0.01"
-                                                    value={item.salePrice || ''}
-                                                    onChange={(e) => {
-                                                        const salePrice = Number(e.target.value);
-                                                        handleSalePriceChange(index, salePrice);
-                                                    }}
-                                                    className={`w-full bg-transparent border-b text-[10px] font-mono text-right focus:border-emerald-500 ${item.mrp && item.salePrice && item.salePrice > item.mrp
-                                                        ? 'border-red-500 text-red-400'
-                                                        : 'border-emerald-500/30 text-emerald-300'
-                                                        }`}
-                                                />
+                                            {/* Sale Price Input - TAX EXCLUSIVE */}
+                                            <td className="py-3 px-2">
+                                                <div className="space-y-1">
+                                                    {/* Sale Price Input */}
+                                                    <input
+                                                        placeholder="Sale (Excl Tax)"
+                                                        type="number"
+                                                        step="0.01"
+                                                        value={item.salePrice || ''}
+                                                        onChange={(e) => {
+                                                            const salePrice = Number(e.target.value);
+                                                            handleSalePriceChange(index, salePrice);
+                                                        }}
+                                                        className={`w-full bg-transparent border-b text-[10px] font-mono text-right focus:border-emerald-500 ${item.mrp && item.salePrice && item.salePrice > item.mrp
+                                                            ? 'border-red-500 text-red-400'
+                                                            : 'border-emerald-500/30 text-emerald-300'
+                                                            }`}
+                                                        title="Sale Price (Tax Exclusive)"
+                                                    />
+                                                    {/* Customer Price Calculator */}
+                                                    {item.salePrice && item.salePrice > 0 && item.taxRate && item.taxRate > 0 && (
+                                                        <div className="text-[9px] text-blue-400 font-mono text-right">
+                                                            Cust: ₹{(item.salePrice + (item.salePrice * item.taxRate / 100)).toFixed(2)}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </td>
 
                                             {/* Margin % Display */}
