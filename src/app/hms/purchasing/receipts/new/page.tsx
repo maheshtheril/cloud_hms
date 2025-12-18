@@ -582,7 +582,10 @@ export default function NewPurchaseReceiptPage() {
                                                             taxRate: taxRate,
                                                             taxAmount: taxAmount,
                                                             hsn: item.hsn,
-                                                            packing: item.packing
+                                                            packing: item.packing,
+                                                            schemeDiscount: item.schemeDiscount ? Number(String(item.schemeDiscount).replace(/[^0-9.-]/g, '')) : 0,
+                                                            discountPct: item.discountPct ? Number(String(item.discountPct).replace(/[^0-9.-]/g, '')) : 0,
+                                                            discountAmt: item.discountAmt ? Number(String(item.discountAmt).replace(/[^0-9.-]/g, '')) : 0
                                                         };
                                                     }));
                                                     setItems(mappedItems);

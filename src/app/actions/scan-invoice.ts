@@ -87,7 +87,9 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
                 - "packing": Packing details (e.g. 1x10).
                 - "unitPrice": Unit Rate/Price (before tax). Do NOT Use MRP. Look for 'Rate' or 'Price'.
                 - "mrp": Maximum Retail Price (MRP). Extract the numeric value. Do NOT return the words 'MRP' or 'Rate' or 'Price'. Return 0 if not found.
-                - "discount": Discount Amount.
+                - "schemeDiscount": Scheme Discount Amount (if shown separately).
+                - "discountPct": Discount Percentage (if shown).
+                - "discountAmt": Total Discount Amount.
                 - "taxRate": Tax Percentage. IMPORTANT: If tax is split (e.g. CGST 2.5% + SGST 2.5%), return the SUM (e.g. 5.0). Return the TOTAL tax rate.
                 - "taxAmount": Total Tax Amount for line.
                 - "amount": Final Line Amount.
@@ -347,7 +349,10 @@ async function processInvoiceData(session: any, data: any) {
                 taxRate: item.taxRate,
                 taxAmount: item.taxAmount,
                 hsn: item.hsn || data.defaultHsn,
-                packing: item.packing
+                packing: item.packing,
+                schemeDiscount: parseNumber(item.schemeDiscount),
+                discountPct: parseNumber(item.discountPct),
+                discountAmt: parseNumber(item.discountAmt)
             });
         }
     }
