@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt } from 'lucide-react'
 import { createInvoice } from '@/app/actions/billing'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 
 export function InvoiceEditor({ patients, billableItems, taxConfig }: {
     patients: any[],
@@ -59,8 +60,9 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                         updated.description = product.description || product.label
                         updated.unit_price = product.price
 
-                        const taxToApply = product.categoryTaxId || taxConfig.defaultTax?.id;
-                        updated.tax_rate_id = taxToApply || '';
+                        // AUTO-FILL TAX: Use purchase tax rate if available (GST rule: local purchase sale tax = purchase tax)
+                        const purchaseTaxId = product.metadata?.purchase_tax_id || product.categoryTaxId;
+                        updated.tax_rate_id = purchaseTaxId || taxConfig.defaultTax?.id || '';
                     }
                 }
 
@@ -184,8 +186,8 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                         <table className="w-full">
                             <thead className="bg-gray-50 border-b-2 border-gray-200">
                                 <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">#</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Item / Service</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-10">#</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[35%]">Item / Service</th>
                                     <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Qty</th>
                                     <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Price</th>
                                     <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Discount</th>
@@ -199,20 +201,33 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                                     <tr key={line.id} className="hover:bg-blue-50/50 transition-colors group">
                                         <td className="px-6 py-4 text-gray-500 font-mono text-sm">{idx + 1}</td>
 
-                                        {/* Item Column */}
+                                        {/* Item Column - Wider & Searchable */}
                                         <td className="px-6 py-4">
-                                            <select
-                                                className="w-full mb-2 p-2.5 bg-white border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none font-medium text-gray-900"
+                                            <SearchableSelect
                                                 value={line.product_id}
-                                                onChange={(e) => updateLine(line.id, 'product_id', e.target.value)}
-                                            >
-                                                <option value="" className="text-gray-500">Select item...</option>
-                                                {billableItems.map(item => (
-                                                    <option key={item.id} value={item.id} className="text-gray-900">
-                                                        {item.label} - ₹{item.price}
-                                                    </option>
-                                                ))}
-                                            </select>
+                                                onChange={(id, option) => {
+                                                    updateLine(line.id, 'product_id', id);
+                                                }}
+                                                onSearch={async (query) => {
+                                                    return billableItems
+                                                        .filter(item =>
+                                                            item.label.toLowerCase().includes(query.toLowerCase()) ||
+                                                            item.description?.toLowerCase().includes(query.toLowerCase())
+                                                        )
+                                                        .map(item => ({
+                                                            id: item.id,
+                                                            label: `${item.label} - ₹${item.price}`,
+                                                            subLabel: item.description
+                                                        }));
+                                                }}
+                                                defaultOptions={billableItems.map(item => ({
+                                                    id: item.id,
+                                                    label: `${item.label} - ₹${item.price}`,
+                                                    subLabel: item.description
+                                                }))}
+                                                placeholder="Search product/service..."
+                                                className="w-full mb-2"
+                                            />
                                             <input
                                                 type="text"
                                                 placeholder="Additional description..."
