@@ -28,6 +28,11 @@ export type PurchaseReceiptData = {
         taxAmount?: number
         hsn?: string
         packing?: string
+        // UOM Pack/Unit Support
+        purchaseUOM?: string          // UOM used for purchase (e.g., "Strip")
+        baseUOM?: string              // Product's base UOM (e.g., "Unit")
+        conversionFactor?: number     // Conversion factor (e.g., 1 Strip = 15 Units)
+        salePricePerUnit?: number     // Sale price for base UOM (calculated)
     }[]
 }
 
@@ -95,6 +100,24 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
 
     if (!data.supplierId) return { error: "Supplier is required." }
     if (!data.items || data.items.length === 0) return { error: "Receipt must have items" }
+
+    // Validate sale price for all items
+    for (const item of data.items) {
+        // 1. Sale price is required
+        if (!item.salePrice || item.salePrice <= 0) {
+            return { error: "Sale price is required for all items and must be greater than 0." };
+        }
+
+        // 2. Sale price should not be greater than MRP
+        if (item.mrp && item.salePrice > item.mrp) {
+            return { error: `Sale price (${item.salePrice}) cannot be greater than MRP (${item.mrp}).` };
+        }
+
+        // 3. Sale price should not be less than net cost (unit price)
+        if (item.unitPrice && item.salePrice < item.unitPrice) {
+            return { error: `Sale price (${item.salePrice}) cannot be less than net cost/unit price (${item.unitPrice}).` };
+        }
+    }
 
     console.log("createPurchaseReceipt payload:", JSON.stringify(data, null, 2));
 
@@ -246,7 +269,12 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     tax_rate: item.taxRate,
                     tax_amount: item.taxAmount,
                     hsn: item.hsn,
-                    packing: item.packing
+                    packing: item.packing,
+                    // UOM data
+                    purchase_uom: item.purchaseUOM,
+                    base_uom: item.baseUOM,
+                    conversion_factor: item.conversionFactor,
+                    sale_price_per_unit: item.salePricePerUnit
                 })}::jsonb,
                         NOW()
                     )
@@ -440,6 +468,24 @@ export async function updatePurchaseReceipt(id: string, data: PurchaseReceiptDat
     const session = await auth();
     if (!session?.user?.companyId) return { error: "Unauthorized" };
 
+    // Validate sale price for all items
+    for (const item of data.items) {
+        // 1. Sale price is required
+        if (!item.salePrice || item.salePrice <= 0) {
+            return { error: "Sale price is required for all items and must be greater than 0." };
+        }
+
+        // 2. Sale price should not be greater than MRP
+        if (item.mrp && item.salePrice > item.mrp) {
+            return { error: `Sale price (${item.salePrice}) cannot be greater than MRP (${item.mrp}).` };
+        }
+
+        // 3. Sale price should not be less than net cost (unit price)
+        if (item.unitPrice && item.salePrice < item.unitPrice) {
+            return { error: `Sale price (${item.salePrice}) cannot be less than net cost/unit price (${item.unitPrice}).` };
+        }
+    }
+
     try {
         await prisma.hms_purchase_receipt.update({
             where: { id, company_id: session.user.companyId },
@@ -464,10 +510,19 @@ export async function updatePurchaseReceipt(id: string, data: PurchaseReceiptDat
                             batch: item.batch,
                             expiry: item.expiry,
                             mrp: item.mrp,
+                            sale_price: item.salePrice,
+                            margin_pct: item.marginPct,
+                            markup_pct: item.markupPct,
+                            pricing_strategy: item.pricingStrategy,
                             tax_rate: item.taxRate,
                             tax_amount: item.taxAmount,
                             hsn: item.hsn,
-                            packing: item.packing
+                            packing: item.packing,
+                            // UOM data
+                            purchase_uom: item.purchaseUOM,
+                            base_uom: item.baseUOM,
+                            conversion_factor: item.conversionFactor,
+                            sale_price_per_unit: item.salePricePerUnit
                         }
                     }
                 });
