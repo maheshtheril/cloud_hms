@@ -23,7 +23,10 @@ export async function getAppointmentsProp(start: Date, end: Date) {
         // Manual fetch of patients
         const patientIds = appointments.map(a => a.patient_id).filter(id => id) as string[];
         const patients = await prisma.hms_patient.findMany({
-            where: { id: { in: patientIds } },
+            where: {
+                id: { in: patientIds },
+                tenant_id: session.user.tenantId // Filter by tenant
+            },
             select: { id: true, first_name: true, last_name: true, patient_number: true }
         });
 

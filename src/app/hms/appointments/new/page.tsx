@@ -1,5 +1,6 @@
 import { createAppointment } from "@/app/actions/appointment"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/auth"
 import Link from "next/link"
 import { ArrowLeft, Save, Calendar, User, Stethoscope, FileText, CheckCircle } from "lucide-react"
 
@@ -16,8 +17,13 @@ export default async function NewAppointmentPage({
     const resolvedParams = await searchParams;
     const { patient_id, date, time } = resolvedParams;
 
+    // Get session for tenant filtering
+    const session = await auth()
+    const tenantId = session?.user?.tenantId
+
     // Fetch data for dropdowns
     const patients = await prisma.hms_patient.findMany({
+        where: tenantId ? { tenant_id: tenantId } : undefined,
         take: 50,
         orderBy: { updated_at: 'desc' },
         select: { id: true, first_name: true, last_name: true, patient_number: true }

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt } from 'lucide-react'
+import Link from 'next/link'
+import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, UserPlus } from 'lucide-react'
 import { createInvoice } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 
@@ -151,7 +152,16 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {/* Patient Selector */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">Select Patient</label>
+                            <div className="flex items-center justify-between mb-3">
+                                <label className="block text-sm font-semibold text-gray-700">Select Patient</label>
+                                <Link
+                                    href="/hms/patients/new"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-white bg-blue-50 hover:bg-blue-600 rounded-lg transition-all"
+                                >
+                                    <UserPlus className="h-3.5 w-3.5" />
+                                    New Patient
+                                </Link>
+                            </div>
                             <div className="relative">
                                 <User className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
                                 <select

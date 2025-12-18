@@ -7,12 +7,16 @@ import { auth } from "@/auth"
 
 export default async function NewInvoicePage() {
     const session = await auth();
-    if (!session?.user?.companyId) return <div>Unauthorized</div>;
+    if (!session?.user?.companyId || !session?.user?.tenantId) return <div>Unauthorized</div>;
+
+    const tenantId = session.user.tenantId;
 
     // Parallel data fetching
     const [patients, itemsRes, taxRes] = await Promise.all([
         prisma.hms_patient.findMany({
-            // Removed tenant_id filter to match how patients page works
+            where: {
+                tenant_id: tenantId // Filter by current user's tenant
+            },
             select: {
                 id: true,
                 first_name: true,

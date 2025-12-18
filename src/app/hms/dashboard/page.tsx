@@ -1,10 +1,17 @@
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/auth"
 import Link from "next/link"
 import { Users, Calendar, TrendingUp, Plus, Clock, ChevronRight, CheckCircle, IndianRupee, Activity } from 'lucide-react'
 
 export default async function HMSDashboard() {
+    // Get session for tenant filtering
+    const session = await auth()
+    const tenantId = session?.user?.tenantId
+
     // 1. Fetch Stats
-    const patientCount = await prisma.hms_patient.count()
+    const patientCount = await prisma.hms_patient.count({
+        where: tenantId ? { tenant_id: tenantId } : undefined
+    })
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -24,7 +31,10 @@ export default async function HMSDashboard() {
     // Manual join since relation fields are missing in schema
     const patientIds = todaysAppointmentsRaw.map(a => a.patient_id);
     const patients = await prisma.hms_patient.findMany({
-        where: { id: { in: patientIds } }
+        where: {
+            id: { in: patientIds },
+            ...(tenantId ? { tenant_id: tenantId } : {})
+        }
     });
 
     const todaysAppointments = todaysAppointmentsRaw.map(apt => {
@@ -47,6 +57,7 @@ export default async function HMSDashboard() {
     const todaysRevenue = todaysInvoices.reduce((sum, inv) => sum + Number(inv.outstanding_amount || 0), 0)
 
     const recentPatients = await prisma.hms_patient.findMany({
+        where: tenantId ? { tenant_id: tenantId } : undefined,
         take: 5,
         orderBy: { created_at: 'desc' }
     })
