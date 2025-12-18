@@ -115,7 +115,11 @@ export default function NewPurchaseReceiptPage() {
     useEffect(() => {
         if (!isAutoRound) return; // Skip if manual mode
 
-        const taxable = items.reduce((sum, item) => sum + (item.unitPrice * Number(item.receivedQty)), 0);
+        const taxable = items.reduce((sum, item) => {
+            const baseAmount = item.unitPrice * Number(item.receivedQty);
+            const totalDiscount = (item.schemeDiscount || 0) + (item.discountAmt || 0);
+            return sum + Math.max(0, baseAmount - totalDiscount);
+        }, 0);
         const tax = items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
         const rawTotal = taxable + tax;
         const rounded = Math.round(rawTotal);
@@ -329,7 +333,11 @@ export default function NewPurchaseReceiptPage() {
         setIsSubmitting(false);
     };
 
-    const totalTaxable = items.reduce((sum, item) => sum + (item.unitPrice * Number(item.receivedQty)), 0);
+    const totalTaxable = items.reduce((sum, item) => {
+        const baseAmount = item.unitPrice * Number(item.receivedQty);
+        const totalDiscount = (item.schemeDiscount || 0) + (item.discountAmt || 0);
+        return sum + Math.max(0, baseAmount - totalDiscount);
+    }, 0);
     const totalTax = items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
     const netTotal = totalTaxable + totalTax + roundOff;
 
@@ -1050,9 +1058,14 @@ export default function NewPurchaseReceiptPage() {
                                                 </td>
                                             )}
 
-                                            {/* Total */}
+                                            {/* Total (after tax) */}
                                             <td className="py-3 px-2 text-right text-sm font-mono font-bold text-white">
-                                                {((item.unitPrice * item.receivedQty) + (item.taxAmount || 0)).toFixed(2)}
+                                                {(() => {
+                                                    const baseAmount = item.unitPrice * item.receivedQty;
+                                                    const totalDiscount = (item.schemeDiscount || 0) + (item.discountAmt || 0);
+                                                    const taxable = Math.max(0, baseAmount - totalDiscount);
+                                                    return (taxable + (item.taxAmount || 0)).toFixed(2);
+                                                })()}
                                             </td>
 
                                             <td className="py-3 pl-2 pr-4 text-right">
