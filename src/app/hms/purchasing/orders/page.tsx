@@ -116,8 +116,8 @@ export default async function PurchaseOrdersPage() {
                                     <div className="col-span-2">
                                         <span className={`
                                             text-xs font-black uppercase tracking-widest py-1 px-3 
-                                            ${po.status === 'sent' || po.status === 'approved' ? 'bg-indigo-100 text-indigo-700' :
-                                                po.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
+                                            ${po.status === 'confirmed' || po.status === 'billed' ? 'bg-indigo-100 text-indigo-700' :
+                                                po.status === 'received' || po.status === 'closed' ? 'bg-emerald-100 text-emerald-800' :
                                                     'bg-slate-100 text-slate-500'}
                                         `}>
                                             {po.status}
