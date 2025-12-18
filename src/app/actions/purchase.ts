@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache"
 export type PurchaseOrderLineItem = {
     productId: string
     qty: number
+    uom?: string // Unit of Measure (PCS, PACK-10, etc.)
     unitPrice: number
     taxRate?: number // Optional tax override per line
 }
@@ -195,6 +196,7 @@ export async function createPurchaseOrder(data: PurchaseOrderData) {
                     product_id: item.productId,
                     product_name: product.name,
                     qty: item.qty,
+                    uom: item.uom || 'PCS', // Save UOM
                     unit_price: item.unitPrice,
                     tax: taxAmount,
                     line_total: lineTotal + taxAmount

@@ -99,6 +99,7 @@ export default function NewPurchaseOrderPage() {
             items: validItems.map(item => ({
                 productId: item.productId,
                 qty: Number(item.qty),
+                uom: item.uom || 'PCS', // Include UOM
                 unitPrice: Number(item.unitPrice)
             }))
         };
