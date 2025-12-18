@@ -30,7 +30,7 @@ export default function NewPurchaseOrderPage() {
         getCompanyDefaults().then(defaults => {
             if (defaults.currency) setCurrency(defaults.currency);
         });
-        setItems([{ productId: '', productName: '', qty: 1, unitPrice: 0 }]);
+        setItems([{ productId: '', productName: '', qty: 1, uom: 'PCS', unitPrice: 0 }]);
     }, []);
 
     const handleScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,11 +60,12 @@ export default function NewPurchaseOrderPage() {
                         productId: item.productId || '',
                         productName: item.productName || item.name,
                         qty: item.qty || 1,
+                        uom: item.uom || 'PCS', // ← Extract UOM from scan
                         unitPrice: item.unitPrice || 0,
                         sku: item.sku || ''
                     })));
                 } else if (items.length === 0) {
-                    setItems([{ productId: '', productName: '', qty: 1, unitPrice: 0 }]);
+                    setItems([{ productId: '', productName: '', qty: 1, uom: 'PCS', unitPrice: 0 }]);
                 }
                 toast({ title: "Invoice Processed", description: "Data auto-filled from document." });
             }
@@ -112,7 +113,7 @@ export default function NewPurchaseOrderPage() {
         setIsSubmitting(false);
     };
 
-    const addItem = () => setItems([...items, { productId: '', productName: '', qty: 1, unitPrice: 0 }]);
+    const addItem = () => setItems([...items, { productId: '', productName: '', qty: 1, uom: 'PCS', unitPrice: 0 }]);
     const removeItem = (index: number) => {
         const newItems = [...items];
         newItems.splice(index, 1);
@@ -253,10 +254,11 @@ export default function NewPurchaseOrderPage() {
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="border-b border-white/5 bg-neutral-900/50">
-                                        <th className="py-4 pl-6 pr-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-[45%]">Item</th>
-                                        <th className="py-4 px-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-24 text-center">Qty</th>
-                                        <th className="py-4 px-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-32 text-right">Price</th>
-                                        <th className="py-4 px-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-40 text-right">Total</th>
+                                        <th className="py-4 pl-6 pr-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-[40%]">Item</th>
+                                        <th className="py-4 px-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-20 text-center">Qty</th>
+                                        <th className="py-4 px-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-28 text-center">UOM</th>
+                                        <th className="py-4 px-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-28 text-right">Price</th>
+                                        <th className="py-4 px-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-32 text-right">Total</th>
                                         <th className="w-12"></th>
                                     </tr>
                                 </thead>
@@ -281,6 +283,22 @@ export default function NewPurchaseOrderPage() {
                                                     className="w-full bg-transparent text-center font-mono text-sm text-neutral-300 focus:text-white outline-none placeholder:text-neutral-800"
                                                     placeholder="0"
                                                 />
+                                            </td>
+                                            <td className="py-2 px-4">
+                                                <select
+                                                    value={item.uom || 'PCS'}
+                                                    onChange={(e) => updateItem(index, 'uom', e.target.value)}
+                                                    className="w-full bg-transparent text-center font-mono text-xs text-neutral-300 focus:text-white outline-none cursor-pointer"
+                                                >
+                                                    <option value="PCS" className="bg-neutral-900">PCS</option>
+                                                    <option value="PACK-10" className="bg-neutral-900">PACK-10</option>
+                                                    <option value="PACK-15" className="bg-neutral-900">PACK-15</option>
+                                                    <option value="PACK-20" className="bg-neutral-900">PACK-20</option>
+                                                    <option value="PACK-30" className="bg-neutral-900">PACK-30</option>
+                                                    <option value="STRIP" className="bg-neutral-900">STRIP</option>
+                                                    <option value="BOX" className="bg-neutral-900">BOX</option>
+                                                    <option value="BOTTLE" className="bg-neutral-900">BOTTLE</option>
+                                                </select>
                                             </td>
                                             <td className="py-2 px-4 text-right">
                                                 <input

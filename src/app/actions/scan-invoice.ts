@@ -82,10 +82,18 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
                 - "hsn": HSN/SAC Code. extract the numeric code (e.g. 300490, 8517). Do NOT return the word 'HSN' or 'SAC'.
                 - "batch": Batch Number.
                 - "expiry": Expiry Date (YYYY-MM-DD or MM/YY).
-                - "qty": Quantity (numeric).
-                - "uom": Unit of Measure (e.g., NOS, STRIPS).
-                - "packing": Packing details (e.g. 1x10).
-                - "unitPrice": Unit Rate/Price (before tax). Do NOT Use MRP. Look for 'Rate' or 'Price'.
+                - "qty": Quantity (numeric). This is the NUMBER of packs/units, not individual pieces.
+                - "uom": Unit of Measure. CRITICAL - Follow these rules:
+                    * If you see "10's" or "10S" or "Pack of 10" → return "PACK-10"
+                    * If you see "15's" or "15S" or "Pack of 15" → return "PACK-15"
+                    * If you see "20's" or "20S" or "Pack of 20" → return "PACK-20"
+                    * If you see "Strip" or "Blister" → return "STRIP"
+                    * If you see "Box" → return "BOX"
+                    * If you see "Bottle" → return "BOTTLE"
+                    * If you see "NOS" or "PCS" or "Pieces" → return "PCS"
+                    * If you see "1x10" in packing, the UOM is what's being sold (usually STRIP or PACK-10)
+                - "packing": Packing details (e.g. 1x10, 10x10). This tells you how many pieces per pack.
+                - "unitPrice": Unit Rate/Price PER PACK (before tax). Do NOT Use MRP. Look for 'Rate' or 'Price'. This is price per UOM.
                 - "mrp": Maximum Retail Price (MRP). Extract the numeric value. Do NOT return the words 'MRP' or 'Rate' or 'Price'. Return 0 if not found.
                 - "schemeDiscount": Scheme Discount Amount (if shown separately).
                 - "discountPct": Discount Percentage (if shown).
@@ -93,6 +101,13 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
                 - "taxRate": Tax Percentage. IMPORTANT: If tax is split (e.g. CGST 2.5% + SGST 2.5%), return the SUM (e.g. 5.0). Return the TOTAL tax rate.
                 - "taxAmount": Total Tax Amount for line.
                 - "amount": Final Line Amount.
+            
+            EXAMPLES:
+            If invoice shows: "Paracetamol 500mg | 10's | Qty: 5 | Rate: 45.00"
+            Return: { "productName": "Paracetamol 500mg", "uom": "PACK-10", "packing": "1x10", "qty": 5, "unitPrice": 45.00 }
+            
+            If invoice shows: "Amoxicillin 250mg | Strip | Packing: 1x15 | Qty: 20 | Rate: 12.50"
+            Return: { "productName": "Amoxicillin 250mg", "uom": "PACK-15", "packing": "1x15", "qty": 20, "unitPrice": 12.50 }
             
             Return ONLY raw JSON. No markdown formatting.
         `;
@@ -342,6 +357,8 @@ async function processInvoiceData(session: any, data: any) {
                 productName: finalName,
                 sku: item.sku,
                 qty: parseNumber(item.qty) || 1,
+                uom: item.uom || 'PCS', // ← Add UOM
+                packing: item.packing, // ← Add packing
                 unitPrice: parseNumber(item.unitPrice) || 0,
                 mrp: parseNumber(item.mrp) || 0,
                 batch: item.batch,
@@ -349,7 +366,6 @@ async function processInvoiceData(session: any, data: any) {
                 taxRate: item.taxRate,
                 taxAmount: item.taxAmount,
                 hsn: item.hsn || data.defaultHsn,
-                packing: item.packing,
                 schemeDiscount: parseNumber(item.schemeDiscount),
                 discountPct: parseNumber(item.discountPct),
                 discountAmt: parseNumber(item.discountAmt)
