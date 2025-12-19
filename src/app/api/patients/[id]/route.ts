@@ -5,11 +5,12 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params
     try {
         const patient = await prisma.hms_patient.findUnique({
-            where: { id: params.id },
+            where: { id },
             select: {
                 id: true,
                 first_name: true,
