@@ -450,24 +450,24 @@ export default function NewPrescriptionPage() {
                                     <div key={idx} className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg">
                                         <div className="font-bold text-gray-700 w-8">{idx + 1}.</div>
                                         <div className="flex-1">
-                                            <div className="font-semibold text-gray-900">{med.name}</div>
+                                            <div className="font-bold text-black text-base">{med.name}</div>
                                             <div className="flex gap-2 mt-1 print:hidden">
                                                 <input
                                                     type="text"
                                                     value={med.dosage}
                                                     onChange={(e) => updateMedicine(idx, 'dosage', e.target.value)}
                                                     placeholder="1-0-1"
-                                                    className="w-20 px-2 py-1 border border-gray-300 rounded text-xs"
+                                                    className="w-20 px-2 py-1 border border-gray-300 rounded text-xs text-black bg-white"
                                                 />
                                                 <input
                                                     type="text"
                                                     value={med.days}
                                                     onChange={(e) => updateMedicine(idx, 'days', e.target.value)}
                                                     placeholder="Days"
-                                                    className="w-16 px-2 py-1 border border-gray-300 rounded text-xs"
+                                                    className="w-16 px-2 py-1 border border-gray-300 rounded text-xs text-black bg-white"
                                                 />
                                             </div>
-                                            <div className="text-sm text-gray-600 hidden print:block">
+                                            <div className="text-base text-black hidden print:block font-medium">
                                                 {med.dosage} × {med.days} Days
                                             </div>
                                         </div>
