@@ -158,7 +158,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                     </button>
                                 ))}
                             </div>
-                            <input type="hidden" name="gender" value={gender.toLowerCase()} />
+                            <input type="hidden" name="gender" value={gender} />
                         </div>
 
                         {/* Age or DOB */}
