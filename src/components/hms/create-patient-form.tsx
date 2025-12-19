@@ -2,60 +2,12 @@
 
 import { createPatient } from "@/app/actions/patient"
 import Link from "next/link"
-import { ArrowLeft, Save, User, MapPin, ShieldAlert, HeartPulse, Sparkles, Phone, Mail, Calendar, UserCircle2, Activity } from "lucide-react"
-import { useActionState, useState, useEffect } from "react"
+import { X, User, Phone, Calendar, ChevronDown, Camera, Upload } from "lucide-react"
+import { useActionState, useState } from "react"
 
 const initialState = {
     error: "",
     success: false
-}
-
-// Country and State Data
-const COUNTRIES = [
-    { code: 'IN', name: 'India' },
-    { code: 'US', name: 'United States' },
-    { code: 'CA', name: 'Canada' },
-    { code: 'UK', name: 'United Kingdom' },
-    { code: 'AU', name: 'Australia' },
-]
-
-const STATES_BY_COUNTRY: Record<string, string[]> = {
-    'IN': [
-        'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh',
-        'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
-        'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
-        'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab',
-        'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura',
-        'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
-        'Andaman and Nicobar Islands', 'Chandigarh', 'Dadra and Nagar Haveli and Daman and Diu',
-        'Delhi', 'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry'
-    ],
-    'US': [
-        'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado',
-        'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii', 'Idaho',
-        'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana',
-        'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota',
-        'Mississippi', 'Missouri', 'Montana', 'Nebraska', 'Nevada',
-        'New Hampshire', 'New Jersey', 'New Mexico', 'New York',
-        'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon',
-        'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota',
-        'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington',
-        'West Virginia', 'Wisconsin', 'Wyoming'
-    ],
-    'CA': [
-        'Alberta', 'British Columbia', 'Manitoba', 'New Brunswick',
-        'Newfoundland and Labrador', 'Nova Scotia', 'Ontario',
-        'Prince Edward Island', 'Quebec', 'Saskatchewan',
-        'Northwest Territories', 'Nunavut', 'Yukon'
-    ],
-    'UK': [
-        'England', 'Scotland', 'Wales', 'Northern Ireland'
-    ],
-    'AU': [
-        'New South Wales', 'Queensland', 'South Australia', 'Tasmania',
-        'Victoria', 'Western Australia', 'Australian Capital Territory',
-        'Northern Territory'
-    ]
 }
 
 interface CreatePatientFormProps {
@@ -64,265 +16,278 @@ interface CreatePatientFormProps {
 
 export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormProps) {
     const [state, action, isPending] = useActionState(createPatient, initialState);
-    const [selectedCountry, setSelectedCountry] = useState(tenantCountry);
-    const [availableStates, setAvailableStates] = useState<string[]>(STATES_BY_COUNTRY[tenantCountry] || []);
+    const [showMoreDetails, setShowMoreDetails] = useState(false);
+    const [useAge, setUseAge] = useState(true); // Toggle between Age and DOB
+    const [age, setAge] = useState('');
+    const [ageUnit, setAgeUnit] = useState('Years');
+    const [dob, setDob] = useState('');
+    const [gender, setGender] = useState('');
 
-    useEffect(() => {
-        setAvailableStates(STATES_BY_COUNTRY[selectedCountry] || []);
-    }, [selectedCountry]);
+    // Auto-calculate DOB from Age
+    const handleAgeChange = (value: string, unit: string) => {
+        setAge(value);
+        setAgeUnit(unit);
+
+        if (value) {
+            const currentDate = new Date();
+            let years = 0;
+
+            if (unit === 'Years') {
+                years = parseInt(value);
+            } else if (unit === 'Months') {
+                years = parseInt(value) / 12;
+            } else if (unit === 'Days') {
+                years = parseInt(value) / 365;
+            }
+
+            const birthYear = currentDate.getFullYear() - Math.floor(years);
+            const calculatedDob = new Date(birthYear, currentDate.getMonth(), currentDate.getDate());
+            setDob(calculatedDob.toISOString().split('T')[0]);
+        }
+    };
+
+    // Auto-calculate Age from DOB
+    const handleDobChange = (value: string) => {
+        setDob(value);
+
+        if (value) {
+            const birthDate = new Date(value);
+            const today = new Date();
+            let ageYears = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                ageYears--;
+            }
+
+            setAge(ageYears.toString());
+            setAgeUnit('Years');
+        }
+    };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 relative overflow-hidden">
-            {/* Animated Background Elements */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-                <div className="absolute top-0 -right-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
-                <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-4000"></div>
-            </div>
-
-            <form action={action} className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
-
-                {state?.error && (
-                    <div className="bg-red-500/10 backdrop-blur-sm border border-red-500/20 text-red-600 px-6 py-4 rounded-2xl shadow-lg shadow-red-500/10 animate-in slide-in-from-top">
-                        <p className="font-medium flex items-center gap-2">
-                            <span className="inline-block w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-                            {state.error}
-                        </p>
-                    </div>
-                )}
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
 
                 {/* Header */}
-                <div className="bg-white/60 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl shadow-indigo-500/10 p-6 sticky top-4 z-20">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-6">
-                            <Link
-                                href="/hms/patients"
-                                className="group p-3 bg-gradient-to-br from-gray-100 to-gray-50 hover:from-gray-200 hover:to-gray-100 rounded-2xl transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105"
-                            >
-                                <ArrowLeft className="h-5 w-5 text-gray-700 group-hover:text-gray-900 transition-colors" />
-                            </Link>
-                            <div>
-                                <h1 className="text-3xl font-black bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center gap-3">
-                                    <Sparkles className="h-8 w-8 text-indigo-500 animate-pulse" />
-                                    New Patient Registration
-                                </h1>
-                                <p className="text-gray-600 mt-1 font-medium">Create a comprehensive patient profile with care</p>
-                            </div>
-                        </div>
-                        <div className="flex gap-3">
-                            <Link
-                                href="/hms/patients"
-                                className="px-6 py-3 text-gray-700 bg-white/80 backdrop-blur-sm border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 font-semibold transition-all duration-300 shadow-lg hover:shadow-xl"
-                            >
-                                Cancel
-                            </Link>
-                            <button
-                                type="submit"
-                                disabled={isPending}
-                                className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-xl font-semibold shadow-2xl shadow-indigo-500/50 hover:shadow-indigo-500/60 transition-all duration-300 flex items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed hover:scale-105 active:scale-95"
-                            >
-                                {isPending ? (
-                                    <>
-                                        <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        Saving Patient...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Save className="h-5 w-5" />
-                                        Save Patient Record
-                                    </>
-                                )}
-                            </button>
-                        </div>
-                    </div>
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
+                    <h2 className="text-2xl font-bold text-white">Add New Patient</h2>
+                    <Link href="/hms/patients" className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
+                        <X className="h-6 w-6" />
+                    </Link>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <form action={action} className="flex-1 overflow-y-auto p-6 space-y-6">
 
-                    {/* Main Content */}
-                    <div className="lg:col-span-8 space-y-6">
+                    {state?.error && (
+                        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+                            {state.error}
+                        </div>
+                    )}
 
-                        {/* Personal Information */}
-                        <section className="group bg-white/70 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl shadow-blue-500/10 p-8 hover:shadow-blue-500/20 transition-all duration-500">
-                            <div className="flex items-center gap-3 pb-6 border-b-2 border-gradient-to-r from-blue-500 to-indigo-500 mb-6">
-                                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg">
-                                    <UserCircle2 className="h-6 w-6 text-white" />
-                                </div>
-                                <div>
-                                    <h2 className="text-2xl font-bold text-gray-900">Personal Information</h2>
-                                    <p className="text-sm text-gray-600 mt-0.5">Basic details about the patient</p>
-                                </div>
+                    {/* Basic Details */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                        {/* Patient Name */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-700">
+                                Patient Name<span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                <input
+                                    name="first_name"
+                                    required
+                                    placeholder="Enter Name"
+                                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
+                                />
                             </div>
+                            <p className="text-xs text-red-500">Enter the Name of the Patient</p>
+                        </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2 group/input">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">
-                                        <User className="h-4 w-4 text-indigo-500" />
-                                        First Name <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        name="first_name"
-                                        required
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all duration-300 font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-300"
-                                        placeholder="John"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">
-                                        <User className="h-4 w-4 text-indigo-500" />
-                                        Last Name <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        name="last_name"
-                                        required
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all duration-300 font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-300"
-                                        placeholder="Doe"
-                                    />
-                                </div>
+                        {/* Phone Number */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-700">
+                                Phone Number<span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                <input
+                                    name="phone"
+                                    required
+                                    type="tel"
+                                    placeholder="Enter Number"
+                                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
+                                />
+                            </div>
+                        </div>
 
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">
-                                        <Calendar className="h-4 w-4 text-purple-500" />
-                                        Date of Birth
-                                    </label>
-                                    <input
-                                        type="date"
-                                        name="dob"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-purple-500/20 focus:border-purple-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Gender</label>
-                                    <select
-                                        name="gender"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300 cursor-pointer"
+                        {/* Gender */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-700">
+                                Gender<span className="text-red-500">*</span>
+                            </label>
+                            <div className="flex gap-2">
+                                {['M', 'F', 'Other'].map((g) => (
+                                    <button
+                                        key={g}
+                                        type="button"
+                                        onClick={() => setGender(g)}
+                                        className={`flex-1 py-3 rounded-lg border-2 font-semibold transition-all ${gender === g
+                                                ? 'bg-blue-500 border-blue-500 text-white'
+                                                : 'bg-white border-gray-300 text-gray-700 hover:border-blue-300'
+                                            }`}
                                     >
-                                        <option value="">Select Gender</option>
-                                        <option value="male">Male</option>
-                                        <option value="female">Female</option>
-                                        <option value="other">Other</option>
-                                    </select>
-                                </div>
+                                        {g === 'M' ? 'Male' : g === 'F' ? 'Female' : 'Other'}
+                                    </button>
+                                ))}
                             </div>
-                        </section>
+                            <input type="hidden" name="gender" value={gender.toLowerCase()} />
+                        </div>
 
-                        {/* Contact Details */}
-                        <section className="group bg-white/70 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl shadow-emerald-500/10 p-8 hover:shadow-emerald-500/20 transition-all duration-500">
-                            <div className="flex items-center gap-3 pb-6 border-b-2 border-gradient-to-r from-emerald-500 to-teal-500 mb-6">
-                                <div className="p-3 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg">
-                                    <MapPin className="h-6 w-6 text-white" />
-                                </div>
-                                <div>
-                                    <h2 className="text-2xl font-bold text-gray-900">Contact Details</h2>
-                                    <p className="text-sm text-gray-600 mt-0.5">How to reach the patient</p>
-                                </div>
+                        {/* Age or DOB */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-700">
+                                Age or DOB<span className="text-red-500">*</span>
+                            </label>
+                            <div className="flex gap-2">
+                                {useAge ? (
+                                    <>
+                                        <input
+                                            type="number"
+                                            value={age}
+                                            onChange={(e) => handleAgeChange(e.target.value, ageUnit)}
+                                            placeholder="Age"
+                                            className="w-32 px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900 text-blue-500 font-medium"
+                                        />
+                                        <select
+                                            value={ageUnit}
+                                            onChange={(e) => handleAgeChange(age, e.target.value)}
+                                            className="px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer"
+                                        >
+                                            <option>Years</option>
+                                            <option>Months</option>
+                                            <option>Days</option>
+                                        </select>
+                                    </>
+                                ) : (
+                                    <div className="relative flex-1">
+                                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                        <input
+                                            type="date"
+                                            name="dob"
+                                            value={dob}
+                                            onChange={(e) => handleDobChange(e.target.value)}
+                                            placeholder="DOB"
+                                            className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
+                                        />
+                                    </div>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => setUseAge(!useAge)}
+                                    className="px-4 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg border-2 border-gray-300 transition-colors"
+                                >
+                                    <Calendar className="h-5 w-5 text-gray-600" />
+                                </button>
                             </div>
+                            {!useAge && <input type="hidden" name="dob" value={dob} />}
+                        </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">
-                                        <Phone className="h-4 w-4 text-emerald-500" />
-                                        Phone Number <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        name="phone"
-                                        required
-                                        type="tel"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-300"
-                                        placeholder="+91 98765 43210"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">
-                                        <Mail className="h-4 w-4 text-blue-500" />
-                                        Email Address
-                                    </label>
-                                    <input
-                                        name="email"
-                                        type="email"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all duration-300 font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-300"
-                                        placeholder="john@example.com"
-                                    />
-                                </div>
-                                <div className="col-span-full space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Street Address</label>
-                                    <input
-                                        name="street"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 placeholder:text-gray-400 hover:border-gray-300"
-                                        placeholder="123 Main St, Apt 4B"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">City</label>
-                                    <input
-                                        name="city"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300"
-                                        placeholder="Mumbai"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">State / Province</label>
-                                    <select
-                                        name="state"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300 cursor-pointer"
-                                    >
-                                        <option value="">Select State</option>
-                                        {availableStates.map(state => (
-                                            <option key={state} value={state}>{state}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Postal / Zip Code</label>
-                                    <input
-                                        name="zip"
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300"
-                                        placeholder="400001"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Country</label>
-                                    <select
-                                        name="country"
-                                        value={selectedCountry}
-                                        onChange={(e) => setSelectedCountry(e.target.value)}
-                                        className="w-full px-4 py-3.5 bg-white/50 border-2 border-gray-200 rounded-xl focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-gray-300 cursor-pointer"
-                                    >
-                                        {COUNTRIES.map(country => (
-                                            <option key={country.code} value={country.code}>{country.name}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                        </section>
+                        {/* Preferred Language */}
+                        <div className="space-y-2 md:col-span-2">
+                            <label className="text-sm font-semibold text-gray-700">Preferred Language</label>
+                            <select className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none bg-white text-gray-900 cursor-pointer">
+                                <option>English</option>
+                                <option>Hindi</option>
+                                <option>Tamil</option>
+                                <option>Telugu</option>
+                                <option>Marathi</option>
+                            </select>
+                        </div>
+
+                        {/* City */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-700">City</label>
+                            <input
+                                name="city"
+                                placeholder="Enter City"
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
+                            />
+                        </div>
+
+                        {/* Address */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-gray-700">Address</label>
+                            <input
+                                name="street"
+                                placeholder="Enter Address"
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
+                            />
+                        </div>
+
+                        {/* Pin */}
+                        <div className="space-y-2 md:col-span-2">
+                            <label className="text-sm font-semibold text-gray-700">Pin</label>
+                            <input
+                                name="zip"
+                                placeholder="Enter Pin"
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
+                            />
+                        </div>
                     </div>
 
-                    {/* Sidebar */}
-                    <div className="lg:col-span-4 space-y-6">
+                    {/* More Details Toggle */}
+                    <div className="text-center">
+                        <button
+                            type="button"
+                            onClick={() => setShowMoreDetails(!showMoreDetails)}
+                            className="text-blue-600 hover:text-blue-700 font-semibold text-sm"
+                        >
+                            If you want to add more details, <span className="underline">Click Here</span>
+                        </button>
+                    </div>
 
-                        {/* Medical Profile */}
-                        <section className="group bg-gradient-to-br from-rose-50 to-pink-50 backdrop-blur-xl border-2 border-rose-200/50 rounded-3xl shadow-2xl shadow-rose-500/10 p-6 hover:shadow-rose-500/20 transition-all duration-500">
-                            <div className="flex items-center gap-3 pb-4 mb-4 border-b-2 border-rose-300">
-                                <div className="p-2.5 bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl shadow-lg">
-                                    <Activity className="h-5 w-5 text-white" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-gray-900">Medical Profile</h2>
-                                    <p className="text-xs text-gray-600 mt-0.5">Health information</p>
-                                </div>
-                            </div>
+                    {/* Additional Details Section */}
+                    {showMoreDetails && (
+                        <div className="space-y-6 border-t-2 border-gray-200 pt-6">
+                            <h3 className="font-bold text-gray-800 text-lg">Additional Information</h3>
 
-                            <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                                {/* Marital Status */}
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Blood Group</label>
+                                    <label className="text-sm font-semibold text-gray-700">Marital Status</label>
+                                    <div className="flex gap-2">
+                                        <select className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer">
+                                            <option>Marital Status</option>
+                                            <option>Single</option>
+                                            <option>Married</option>
+                                            <option>Divorced</option>
+                                            <option>Widowed</option>
+                                        </select>
+                                        <div className="relative w-40">
+                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                            <input
+                                                type="date"
+                                                placeholder="Since"
+                                                className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Blood Group */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-700">Blood Group</label>
                                     <select
                                         name="blood_group"
-                                        className="w-full px-4 py-3 bg-white/70 border-2 border-rose-200 rounded-xl focus:ring-4 focus:ring-rose-500/20 focus:border-rose-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-rose-300 cursor-pointer"
+                                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer"
                                     >
-                                        <option value="">Unknown</option>
+                                        <option value="">Blood group</option>
                                         <option value="A+">A+</option>
                                         <option value="A-">A-</option>
-                                        <option value="B+">B+</option>
+                                        <option>B+</option>
                                         <option value="B-">B-</option>
                                         <option value="AB+">AB+</option>
                                         <option value="AB-">AB-</option>
@@ -330,78 +295,181 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                         <option value="O-">O-</option>
                                     </select>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Known Allergies</label>
-                                    <textarea
-                                        name="allergies"
-                                        rows={4}
-                                        className="w-full px-4 py-3 bg-white/70 border-2 border-rose-200 rounded-xl focus:ring-4 focus:ring-rose-500/20 focus:border-rose-500 outline-none transition-all duration-300 font-medium text-gray-900 resize-none placeholder:text-gray-400 hover:border-rose-300"
-                                        placeholder="List any known allergies..."
-                                    ></textarea>
-                                </div>
-                            </div>
-                        </section>
 
-                        {/* Emergency Contact */}
-                        <section className="group bg-gradient-to-br from-amber-50 to-orange-50 backdrop-blur-xl border-2 border-amber-200/50 rounded-3xl shadow-2xl shadow-amber-500/10 p-6 hover:shadow-amber-500/20 transition-all duration-500">
-                            <div className="flex items-center gap-3 pb-4 mb-4 border-b-2 border-amber-300">
-                                <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl shadow-lg">
-                                    <ShieldAlert className="h-5 w-5 text-white" />
-                                </div>
-                                <div>
-                                    <h2 className="text-xl font-bold text-gray-900">Emergency Contact</h2>
-                                    <p className="text-xs text-gray-600 mt-0.5">In case of emergency</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
+                                {/* Spouse Name */}
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Contact Name</label>
+                                    <label className="text-sm font-semibold text-gray-700">Spouse Name</label>
+                                    <div className="relative">
+                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                        <input
+                                            placeholder="Enter Spouse Name"
+                                            className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Spouse Blood Group */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-700">Spouse Blood Group</label>
+                                    <select className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer">
+                                        <option>Blood group</option>
+                                        <option>A+</option>
+                                        <option>A-</option>
+                                        <option>B+</option>
+                                        <option>B-</option>
+                                        <option>AB+</option>
+                                        <option>AB-</option>
+                                        <option>O+</option>
+                                        <option>O-</option>
+                                    </select>
+                                </div>
+
+                                {/* Referred By */}
+                                <div className="space-y-2 md:col-span-2">
+                                    <label className="text-sm font-semibold text-gray-700">Referred By</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            placeholder="Doctor Name"
+                                            className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900 text-blue-400"
+                                        />
+                                        <select className="w-48 px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer">
+                                            <option>Speciality</option>
+                                            <option>Cardiology</option>
+                                            <option>Neurology</option>
+                                            <option>Orthopedics</option>
+                                            <option>Pediatrics</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* Existing ID */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-700">Existing ID (if any)</label>
                                     <input
-                                        name="emergency_name"
-                                        className="w-full px-4 py-3 bg-white/70 border-2 border-amber-200 rounded-xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-amber-300"
+                                        placeholder="Enter ID"
+                                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
+
+                                {/* Email */}
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Relation</label>
+                                    <label className="text-sm font-semibold text-gray-700">Email</label>
                                     <input
-                                        name="emergency_relation"
-                                        className="w-full px-4 py-3 bg-white/70 border-2 border-amber-200 rounded-xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all duration-300 font-medium text-gray-900 placeholder:text-gray-400 hover:border-amber-300"
-                                        placeholder="e.g. Spouse, Parent"
+                                        name="email"
+                                        type="email"
+                                        placeholder="Enter Email"
+                                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
+
+                                {/* Channel */}
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 uppercase tracking-wide">Phone Number</label>
+                                    <label className="text-sm font-semibold text-gray-700">Channel (How did the patient hear about you?)</label>
                                     <input
-                                        name="emergency_phone"
+                                        placeholder="Enter Channel"
+                                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                    />
+                                </div>
+
+                                {/* C/O */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-700">C/O</label>
+                                    <input
+                                        placeholder="Enter C/O"
+                                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                    />
+                                </div>
+
+                                {/* Occupation */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-700">Occupation</label>
+                                    <input
+                                        placeholder="Enter Occupation"
+                                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                    />
+                                </div>
+
+                                {/* Tag */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-700">Tag</label>
+                                    <input
+                                        placeholder="Enter Tag"
+                                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                    />
+                                </div>
+
+                                {/* Mobile 2 */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-700">Mobile 2</label>
+                                    <input
                                         type="tel"
-                                        className="w-full px-4 py-3 bg-white/70 border-2 border-amber-200 rounded-xl focus:ring-4 focus:ring-amber-500/20 focus:border-amber-500 outline-none transition-all duration-300 font-medium text-gray-900 hover:border-amber-300"
+                                        placeholder="Enter Secondary Number"
+                                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
+
+                                {/* Aadhar Number */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-gray-700">Aadhar Number</label>
+                                    <input
+                                        placeholder="Aadhar Card Number"
+                                        className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                    />
+                                </div>
+
+                                {/* Photo Upload */}
+                                <div className="space-y-2 md:col-span-2">
+                                    <label className="text-sm font-semibold text-gray-700">Patient Photo</label>
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="button"
+                                            className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                                        >
+                                            <Camera className="h-5 w-5" />
+                                            Camera
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-600 rounded-lg font-semibold transition-colors"
+                                        >
+                                            <Upload className="h-5 w-5" />
+                                            Upload
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                        </section>
+                        </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="border-t-2 border-gray-200 pt-6 space-y-4">
+                        <button
+                            type="submit"
+                            disabled={isPending}
+                            className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-lg shadow-lg transition-colors disabled:opacity-50"
+                        >
+                            {isPending ? 'Creating...' : 'Add & Create Rx'}
+                        </button>
+
+                        <p className="text-center text-gray-500 font-medium">or</p>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <button
+                                type="button"
+                                className="py-3 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors"
+                            >
+                                Add & Create Bill
+                            </button>
+                            <button
+                                type="button"
+                                className="py-3 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors"
+                            >
+                                Add & Create Appointment
+                            </button>
+                        </div>
                     </div>
-
-                </div>
-            </form>
-
-            <style jsx>{`
-                @keyframes blob {
-                    0% { transform: translate(0px, 0px) scale(1); }
-                    33% { transform: translate(30px, -50px) scale(1.1); }
-                    66% { transform: translate(-20px, 20px) scale(0.9); }
-                    100% { transform: translate(0px, 0px) scale(1); }
-                }
-                .animate-blob {
-                    animation: blob 7s infinite;
-                }
-                .animation-delay-2000 {
-                    animation-delay: 2s;
-                }
-                .animation-delay-4000 {
-                    animation-delay: 4s;
-                }
-            `}</style>
+                </form>
+            </div>
         </div>
     )
 }
