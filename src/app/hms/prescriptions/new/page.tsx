@@ -355,7 +355,7 @@ export default function NewPrescriptionPage() {
 
                     {/* Medicines Section - FUTURISTIC */}
                     <div className="mb-6 mt-8">
-                        <h3 className="font-bold text-gray-800 text-sm mb-4 uppercase tracking-wide">PRESCRIPTION (MEDICINES)</h3>
+                        <h3 className="font-bold text-gray-800 text-sm mb-4 uppercase tracking-wide">PRESCRIPTION</h3>
 
                         {/* Smart Medicine Search */}
                         <div className="mb-4 print:hidden relative">
