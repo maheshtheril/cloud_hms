@@ -449,8 +449,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                     <div className="border-t-2 border-gray-200 pt-6 space-y-2">
                         <button
                             type="submit"
-                            disabled={isPending}
-                            }
+                            name="next_action" value="rx" disabled={isPending}
                             className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm shadow-lg transition-colors disabled:opacity-50"
                         >
                             {isPending ? 'Creating...' : 'Save Patient Record'}
@@ -484,5 +483,6 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
         </div>
     )
 }
+
 
 
