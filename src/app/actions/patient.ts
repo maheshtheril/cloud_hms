@@ -76,33 +76,38 @@ export async function createPatient(prevState: any, formData: FormData) {
         return { error: "Name is required" }
     }
 
-    const patient = await prisma.hms_patient.create({
-        data: {
-            id: crypto.randomUUID(),
-            tenant_id: tenantId,
-            company_id: companyId || tenantId, // Use companyId from session, fallback to tenantId
-            first_name: firstName,
-            last_name: lastName || '',
-            dob: dob ? new Date(dob) : null,
-            gender,
-            contact: contact as any, // Type cast for Prisma Json
-            metadata: metadata as any,
-            patient_number: `PAT-${Date.now()}`, // Simple ID generation
-            created_by: userId,
-            updated_by: userId
-        }
-    })
+    try {
+        const patient = await prisma.hms_patient.create({
+            data: {
+                id: crypto.randomUUID(),
+                tenant_id: tenantId,
+                company_id: companyId || tenantId, // Use companyId from session, fallback to tenantId
+                first_name: firstName,
+                last_name: lastName || '',
+                dob: dob ? new Date(dob) : null,
+                gender,
+                contact: contact as any, // Type cast for Prisma Json
+                metadata: metadata as any,
+                patient_number: `PAT-${Date.now()}`, // Simple ID generation
+                created_by: userId,
+                updated_by: userId
+            }
+        })
 
-    // Redirect based on next_action
-    if (nextAction === 'bill') {
-        redirect("/hms/billing")
-    } else if (nextAction === 'appointment') {
-        redirect("/hms/appointments")
-    } else if (nextAction === 'rx') {
-        // Redirect to new prescription with patient ID
-        redirect(`/hms/prescriptions/new?patientId=${patient.id}`)
-    } else {
-        // Default: redirect to patients list
-        redirect("/hms/patients")
+        // Redirect based on next_action
+        if (nextAction === 'bill') {
+            redirect("/hms/billing")
+        } else if (nextAction === 'appointment') {
+            redirect("/hms/appointments")
+        } else if (nextAction === 'rx') {
+            // Redirect to new prescription with patient ID
+            redirect(`/hms/prescriptions/new?patientId=${patient.id}`)
+        } else {
+            // Default: redirect to patients list
+            redirect("/hms/patients")
+        }
+    } catch (error: any) {
+        console.error('Patient creation error:', error)
+        return { error: `Failed to create patient: ${error.message}` }
     }
 }
