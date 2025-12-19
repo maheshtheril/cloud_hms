@@ -72,7 +72,7 @@ export async function createPatient(prevState: any, formData: FormData) {
         return { error: "No tenant found. Please login again." }
     }
 
-    if (!firstName || !lastName) {
+    if (!firstName) {
         return { error: "Name is required" }
     }
 
@@ -82,7 +82,7 @@ export async function createPatient(prevState: any, formData: FormData) {
             tenant_id: tenantId,
             company_id: companyId || tenantId, // Use companyId from session, fallback to tenantId
             first_name: firstName,
-            last_name: lastName,
+            last_name: lastName || '',
             dob: dob ? new Date(dob) : null,
             gender,
             contact: contact as any, // Type cast for Prisma Json
