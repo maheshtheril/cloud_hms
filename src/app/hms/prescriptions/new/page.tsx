@@ -21,6 +21,15 @@ export default function NewPrescriptionPage() {
         days: '3'
     }])
 
+    // Prescription data
+    const [prescriptionData, setPrescriptionData] = useState({
+        vitals: '',
+        diagnosis: '',
+        complaint: '',
+        examination: '',
+        plan: ''
+    })
+
     // Fetch patient data
     useEffect(() => {
         if (!patientId) return;
@@ -81,6 +90,16 @@ export default function NewPrescriptionPage() {
 
                 {/* Action Buttons */}
                 <div className="mb-4 flex gap-3 print:hidden">
+                    <button
+                        onClick={async () => {
+                            // TODO: Save to database
+                            alert('Prescription saved! (Database integration pending)')
+                            console.log('Prescription Data:', { prescriptionData, medicines: selectedMedicines, patientId })
+                        }}
+                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold"
+                    >
+                        Save Prescription
+                    </button>
                     <button onClick={() => window.print()} className="px-6 py-2 bg-green-600 text-white rounded font-semibold flex items-center gap-2">
                         <Printer className="h-4 w-4" /> Print
                     </button>
@@ -103,51 +122,56 @@ export default function NewPrescriptionPage() {
                     {/* VITALS */}
                     <div className="mb-8">
                         <h3 className="font-bold text-base mb-3">VITALS</h3>
-                        <div className="space-y-4">
-                            {[1, 2, 3].map(i => (
-                                <div key={i} className="border-b border-gray-400 h-6"></div>
-                            ))}
-                        </div>
+                        <textarea
+                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[80px] focus:border-blue-500 focus:outline-none"
+                            placeholder="Type vitals here..."
+                            value={prescriptionData.vitals}
+                            onChange={e => setPrescriptionData({ ...prescriptionData, vitals: e.target.value })}
+                        ></textarea>
                     </div>
 
                     {/* DIAGNOSIS */}
                     <div className="mb-8">
                         <h3 className="font-bold text-base mb-3">DIAGNOSIS:</h3>
-                        <div className="space-y-4">
-                            {[1, 2, 3].map(i => (
-                                <div key={i} className="border-b border-gray-400 h-6"></div>
-                            ))}
-                        </div>
+                        <textarea
+                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[80px] focus:border-blue-500 focus:outline-none"
+                            placeholder="Type diagnosis here..."
+                            value={prescriptionData.diagnosis}
+                            onChange={e => setPrescriptionData({ ...prescriptionData, diagnosis: e.target.value })}
+                        ></textarea>
                     </div>
 
                     {/* PRESENTING COMPLAINT */}
                     <div className="mb-8">
                         <h3 className="font-bold text-base mb-3">PRESENTING COMPLAINT:</h3>
-                        <div className="space-y-4">
-                            {[1, 2, 3, 4].map(i => (
-                                <div key={i} className="border-b border-gray-400 h-6"></div>
-                            ))}
-                        </div>
+                        <textarea
+                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[100px] focus:border-blue-500 focus:outline-none"
+                            placeholder="Type presenting complaint here..."
+                            value={prescriptionData.complaint}
+                            onChange={e => setPrescriptionData({ ...prescriptionData, complaint: e.target.value })}
+                        ></textarea>
                     </div>
 
                     {/* GENERAL EXAMINATION */}
                     <div className="mb-8">
                         <h3 className="font-bold text-base mb-3">GENERAL EXAMINATION:</h3>
-                        <div className="space-y-4">
-                            {[1, 2, 3, 4, 5, 6, 7].map(i => (
-                                <div key={i} className="border-b border-gray-400 h-6"></div>
-                            ))}
-                        </div>
+                        <textarea
+                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[150px] focus:border-blue-500 focus:outline-none"
+                            placeholder="Type general examination findings here..."
+                            value={prescriptionData.examination}
+                            onChange={e => setPrescriptionData({ ...prescriptionData, examination: e.target.value })}
+                        ></textarea>
                     </div>
 
                     {/* PLAN */}
                     <div className="mb-8">
                         <h3 className="font-bold text-base mb-3">PLAN:</h3>
-                        <div className="space-y-4">
-                            {[1, 2, 3, 4].map(i => (
-                                <div key={i} className="border-b border-gray-400 h-6"></div>
-                            ))}
-                        </div>
+                        <textarea
+                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[100px] focus:border-blue-500 focus:outline-none"
+                            placeholder="Type plan here..."
+                            value={prescriptionData.plan}
+                            onChange={e => setPrescriptionData({ ...prescriptionData, plan: e.target.value })}
+                        ></textarea>
                     </div>
 
                     {/* PRESCRIPTION */}
