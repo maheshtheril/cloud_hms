@@ -2,14 +2,11 @@
 
 import { createPatient } from "@/app/actions/patient"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { X, User, Phone, Calendar, ChevronDown, Camera, Upload } from "lucide-react"
-import { useActionState, useState, useEffect } from "react"
+import { useActionState, useState } from "react"
 
 const initialState = {
-    error: "",
-    success: false,
-    patientId: undefined as string | undefined
+    error: ""
 }
 
 interface CreatePatientFormProps {
@@ -17,7 +14,6 @@ interface CreatePatientFormProps {
 }
 
 export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormProps) {
-    const router = useRouter();
     const [state, action, isPending] = useActionState(createPatient, initialState);
     const [showMoreDetails, setShowMoreDetails] = useState(false);
     const [useAge, setUseAge] = useState(true); // Toggle between Age and DOB
@@ -68,20 +64,6 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
             setAgeUnit('Years');
         }
     };
-
-    // Handle redirect after successful patient creation
-    useEffect(() => {
-        if (state?.success) {
-            // Redirect based on the selected action
-            if (nextAction === 'rx') {
-                router.push('/hms/patients'); // TODO: Redirect to Rx/Prescription page
-            } else if (nextAction === 'bill') {
-                router.push('/hms/billing');
-            } else if (nextAction === 'appointment') {
-                router.push('/hms/appointments'); // TODO: Update to appointments page
-            }
-        }
-    }, [state?.success, nextAction, router]);
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
