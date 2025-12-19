@@ -67,7 +67,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col">
 
                 {/* Header */}
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
@@ -77,7 +77,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                     </Link>
                 </div>
 
-                <form action={action} className="flex-1 overflow-y-auto p-6 space-y-6">
+                <form action={action} className="flex-1 overflow-y-auto p-4 space-y-3">
 
                     {state?.error && (
                         <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg">
@@ -94,7 +94,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                 Patient Name<span className="text-red-500">*</span>
                             </label>
                             <div className="flex gap-2">
-                                <select className="w-28 px-2 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer text-sm">
+                                <select className="w-28 px-2 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer text-sm">
                                     <option value="">Title</option>
                                     <option>Mr</option>
                                     <option>Mrs</option>
@@ -113,7 +113,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                         name="first_name"
                                         required
                                         placeholder="Enter Name"
-                                        className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
+                                        className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
                                     />
                                 </div>
                             </div>
@@ -132,7 +132,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                     required
                                     type="tel"
                                     placeholder="Enter Number"
-                                    className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
+                                    className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
                                 />
                             </div>
                         </div>
@@ -148,7 +148,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                         key={g}
                                         type="button"
                                         onClick={() => setGender(g)}
-                                        className={`flex-1 py-2.5 rounded-lg border-2 font-semibold transition-all ${gender === g
+                                        className={`flex-1 py-2 rounded-lg border-2 font-semibold transition-all ${gender === g
                                             ? 'bg-blue-500 border-blue-500 text-white'
                                             : 'bg-white border-gray-300 text-gray-700 hover:border-blue-300'
                                             }`}
@@ -197,9 +197,9 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                         </div>
 
                         {/* Preferred Language */}
-                        <div className="space-y-1 md:col-span-2">
+                        <div className="space-y-1">
                             <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Preferred Language</label>
-                            <select className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none bg-white text-gray-900 cursor-pointer">
+                            <select className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none bg-white text-gray-900 cursor-pointer text-sm">
                                 <option>English</option>
                                 <option>Hindi</option>
                                 <option>Tamil</option>
@@ -214,7 +214,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                             <input
                                 name="city"
                                 placeholder="Enter City"
-                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
+                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none transition-all text-gray-900 text-sm"
                             />
                         </div>
 
@@ -224,7 +224,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                             <input
                                 name="street"
                                 placeholder="Enter Address"
-                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
+                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none transition-all text-gray-900 text-sm"
                             />
                         </div>
 
@@ -234,7 +234,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                             <input
                                 name="zip"
                                 placeholder="Enter Pin"
-                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
+                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none transition-all text-gray-900 text-sm"
                             />
                         </div>
                     </div>
@@ -273,7 +273,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                             <input
                                                 type="date"
                                                 placeholder="Since"
-                                                className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                                className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
                                             />
                                         </div>
                                     </div>
@@ -305,7 +305,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                                         <input
                                             placeholder="Enter Spouse Name"
-                                            className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                            className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
                                         />
                                     </div>
                                 </div>
@@ -425,14 +425,14 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                     <div className="flex gap-3">
                                         <button
                                             type="button"
-                                            className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                                            className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
                                         >
                                             <Camera className="h-5 w-5" />
                                             Camera
                                         </button>
                                         <button
                                             type="button"
-                                            className="flex items-center gap-2 px-6 py-2.5 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-600 rounded-lg font-semibold transition-colors"
+                                            className="flex items-center gap-2 px-6 py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-600 rounded-lg font-semibold transition-colors"
                                         >
                                             <Upload className="h-5 w-5" />
                                             Upload
@@ -444,11 +444,11 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                     )}
 
                     {/* Action Buttons */}
-                    <div className="border-t-2 border-gray-200 pt-6 space-y-4">
+                    <div className="border-t-2 border-gray-200 pt-6 space-y-3">
                         <button
                             type="submit"
                             disabled={isPending}
-                            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-base shadow-lg transition-colors disabled:opacity-50"
+                            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-base shadow-lg transition-colors disabled:opacity-50"
                         >
                             {isPending ? 'Creating...' : 'Add & Create Rx'}
                         </button>
@@ -458,13 +458,13 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                         <div className="grid grid-cols-2 gap-4">
                             <button
                                 type="button"
-                                className="py-2.5 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors"
+                                className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors"
                             >
                                 Add & Create Bill
                             </button>
                             <button
                                 type="button"
-                                className="py-2.5 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors"
+                                className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors"
                             >
                                 Add & Create Appointment
                             </button>
