@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Printer, Plus, Trash2, Pen, X, Copy } from 'lucide-react'
+import { Printer, Plus, Trash2, Copy } from 'lucide-react'
 
 export default function NewPrescriptionPage() {
     const router = useRouter()
@@ -30,11 +30,7 @@ export default function NewPrescriptionPage() {
         plan: ''
     })
 
-    // Handwriting state
-    const canvasRef = useRef<HTMLCanvasElement>(null)
-    const [isDrawing, setIsDrawing] = useState(false)
-    const [showCanvas, setShowCanvas] = useState(false)
-    const [isProcessing, setIsProcessing] = useState(false)
+    // State for loading previous prescription
     const [loadingPrevious, setLoadingPrevious] = useState(false)
 
     // Fetch patient data
@@ -58,85 +54,7 @@ export default function NewPrescriptionPage() {
             .catch(err => console.error(err))
     }, [])
 
-    // Canvas drawing
-    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        const canvas = canvasRef.current
-        if (!canvas) return
-        const ctx = canvas.getContext('2d')
-        if (!ctx) return
 
-        setIsDrawing(true)
-        const rect = canvas.getBoundingClientRect()
-        ctx.beginPath()
-        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top)
-        ctx.lineWidth = 2
-        ctx.lineCap = 'round'
-        ctx.strokeStyle = '#000'
-    }
-
-    const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (!isDrawing) return
-        const canvas = canvasRef.current
-        if (!canvas) return
-        const ctx = canvas.getContext('2d')
-        if (!ctx) return
-
-        const rect = canvas.getBoundingClientRect()
-        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top)
-        ctx.stroke()
-    }
-
-    const stopDrawing = () => {
-        setIsDrawing(false)
-    }
-
-    const recognizeAllText = async () => {
-        const canvas = canvasRef.current
-        if (!canvas) return
-
-        setIsProcessing(true)
-        try {
-            canvas.toBlob(async (blob) => {
-                if (!blob) return
-
-                const formData = new FormData()
-                formData.append('image', blob, 'prescription.jpg')
-
-                const res = await fetch('/api/recognize-prescription', {
-                    method: 'POST',
-                    body: formData
-                })
-
-                const data = await res.json()
-                if (data.success) {
-                    // AI returns structured data for each section
-                    setPrescriptionData({
-                        vitals: data.vitals || '',
-                        diagnosis: data.diagnosis || '',
-                        complaint: data.complaint || '',
-                        examination: data.examination || '',
-                        plan: data.plan || ''
-                    })
-                    clearCanvas()
-                    setShowCanvas(false)
-                    alert('Prescription recognized and filled!')
-                }
-            }, 'image/jpeg', 0.7)
-        } catch (err) {
-            console.error('Recognition error:', err)
-            alert('Failed to recognize. Please type manually.')
-        } finally {
-            setIsProcessing(false)
-        }
-    }
-
-    const clearCanvas = () => {
-        const canvas = canvasRef.current
-        if (!canvas) return
-        const ctx = canvas.getContext('2d')
-        if (!ctx) return
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
-    }
 
     const loadLastPrescription = async () => {
         if (!patientId) {
@@ -233,12 +151,6 @@ export default function NewPrescriptionPage() {
                         <Copy className="h-4 w-4" /> {loadingPrevious ? 'Loading...' : 'Copy Last Prescription'}
                     </button>
                     <button
-                        onClick={() => setShowCanvas(!showCanvas)}
-                        className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded font-semibold flex items-center gap-2"
-                    >
-                        <Pen className="h-4 w-4" /> {showCanvas ? 'Hide' : 'Write Prescription'}
-                    </button>
-                    <button
                         onClick={async () => {
                             alert('Prescription saved!')
                             console.log('Data:', { prescriptionData, medicines: selectedMedicines, patientId })
@@ -252,41 +164,6 @@ export default function NewPrescriptionPage() {
                     </button>
                     <button onClick={() => router.back()} className="px-6 py-2 bg-gray-500 text-white rounded font-semibold">Back</button>
                 </div>
-
-                {/* Handwriting Canvas - Shows when clicked */}
-                {showCanvas && (
-                    <div className="bg-white p-6 rounded-lg shadow-lg mb-6 print:hidden">
-                        <h3 className="text-xl font-bold text-black mb-4">✍️ Write Complete Prescription Here</h3>
-                        <p className="text-sm text-gray-600 mb-4">Draw the entire prescription. AI will recognize and fill all sections automatically.</p>
-
-                        <canvas
-                            ref={canvasRef}
-                            width={900}
-                            height={600}
-                            className="border-4 border-purple-300 rounded cursor-crosshair w-full bg-white"
-                            onMouseDown={startDrawing}
-                            onMouseMove={draw}
-                            onMouseUp={stopDrawing}
-                            onMouseLeave={stopDrawing}
-                        ></canvas>
-
-                        <div className="mt-4 flex gap-3">
-                            <button
-                                onClick={recognizeAllText}
-                                disabled={isProcessing}
-                                className="px-6 py-3 bg-green-600 text-white rounded font-semibold disabled:bg-gray-400 hover:bg-green-700"
-                            >
-                                {isProcessing ? '🔄 Processing...' : '✨ Recognize & Fill All Sections'}
-                            </button>
-                            <button
-                                onClick={clearCanvas}
-                                className="px-6 py-3 bg-gray-500 text-white rounded font-semibold hover:bg-gray-600"
-                            >
-                                Clear Canvas
-                            </button>
-                        </div>
-                    </div>
-                )}
 
                 {/* Prescription Form */}
                 <div className="bg-white shadow-lg p-8">
