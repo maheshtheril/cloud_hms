@@ -89,10 +89,12 @@ export default function NewPrescriptionPage() {
 
     // Filter medicines as user types
     useEffect(() => {
+        console.log('Medicine search:', medicineSearch, 'Available medicines:', medicines.length)
         if (medicineSearch.length >= 2) {
             const filtered = medicines.filter(m =>
                 m.name.toLowerCase().includes(medicineSearch.toLowerCase())
             ).slice(0, 10)
+            console.log('Filtered medicines:', filtered.length, filtered)
             setFilteredMedicines(filtered)
             setShowMedicineDropdown(true)
         } else {
@@ -366,18 +368,29 @@ export default function NewPrescriptionPage() {
                                 placeholder="🔍 Type medicine name (at least 2 letters)..."
                                 className="w-full px-4 py-3 border-2 border-blue-300 rounded-xl focus:border-blue-500 focus:outline-none text-sm"
                             />
-                            {showMedicineDropdown && filteredMedicines.length > 0 && (
+                            <div className="text-xs text-gray-500 mt-1">
+                                {medicines.length > 0 ? `${medicines.length} medicines available` : 'Loading medicines...'}
+                            </div>
+
+                            {/* Dropdown with results */}
+                            {showMedicineDropdown && (
                                 <div className="absolute z-10 w-full mt-1 bg-white border-2 border-blue-300 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                                    {filteredMedicines.map((med, idx) => (
-                                        <div
-                                            key={idx}
-                                            onClick={() => addMedicineFromSearch(med)}
-                                            className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0"
-                                        >
-                                            <div className="font-semibold text-gray-800">{med.name}</div>
-                                            <div className="text-xs text-gray-500">Click to add</div>
+                                    {filteredMedicines.length > 0 ? (
+                                        filteredMedicines.map((med, idx) => (
+                                            <div
+                                                key={idx}
+                                                onClick={() => addMedicineFromSearch(med)}
+                                                className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0"
+                                            >
+                                                <div className="font-semibold text-gray-800">{med.name}</div>
+                                                <div className="text-xs text-gray-500">Click to add</div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="px-4 py-3 text-gray-500 text-sm">
+                                            No medicines found matching "{medicineSearch}"
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
                             )}
                         </div>
