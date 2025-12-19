@@ -396,8 +396,9 @@ export default function NewPrescriptionPage() {
                                         value={medicineSearch}
                                         onChange={(e) => setMedicineSearch(e.target.value)}
                                         onKeyPress={handleMedicineKeyPress}
+                                        autoFocus
                                         placeholder="🔍 Start typing medicine name (dropdown will appear)..."
-                                        className="w-full px-4 py-3 border-2 border-blue-300 rounded-xl focus:border-blue-500 focus:outline-none text-sm"
+                                        className="w-full px-6 py-4 text-base border-2 border-blue-400 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-200 focus:outline-none font-medium"
                                     />
 
 
