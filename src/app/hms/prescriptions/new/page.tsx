@@ -92,11 +92,12 @@ export default function NewPrescriptionPage() {
 
         setIsProcessing(true)
         try {
+            // Compress image as JPEG with 60% quality to reduce size
             canvas.toBlob(async (blob) => {
                 if (!blob) return
 
                 const formData = new FormData()
-                formData.append('image', blob, 'handwriting.png')
+                formData.append('image', blob, 'handwriting.jpg')
 
                 const res = await fetch('/api/recognize-handwriting', {
                     method: 'POST',
@@ -109,7 +110,7 @@ export default function NewPrescriptionPage() {
                     clearCanvas()
                     setCurrentField(null)
                 }
-            })
+            }, 'image/jpeg', 0.6) // JPEG with 60% quality
         } catch (err) {
             console.error('Handwriting recognition error:', err)
         } finally {
