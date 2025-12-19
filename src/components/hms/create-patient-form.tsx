@@ -3,7 +3,7 @@
 import { createPatient } from "@/app/actions/patient"
 import Link from "next/link"
 import { X, User, Phone, Calendar, ChevronDown, Camera, Upload } from "lucide-react"
-import { useActionState, useState, useRef } from "react"
+import { useActionState, useState } from "react"
 
 const initialState = {
     error: ""
@@ -14,7 +14,7 @@ interface CreatePatientFormProps {
 }
 
 export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormProps) {
-    const formRef = useRef<HTMLFormElement>(null);
+    
     const [state, action, isPending] = useActionState(createPatient, initialState);
     const [showMoreDetails, setShowMoreDetails] = useState(false);
     const [useAge, setUseAge] = useState(true); // Toggle between Age and DOB
@@ -78,7 +78,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                     </Link>
                 </div>
 
-                <form ref={formRef} action={action} className="flex-1 overflow-y-auto p-3 space-y-2">
+                <form action={action} className="flex-1 overflow-y-auto p-3 space-y-2">
 
                     {state?.error && (
                         <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg">
@@ -485,6 +485,8 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
         </div>
     )
 }
+
+
 
 
 
