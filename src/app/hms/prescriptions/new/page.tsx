@@ -121,7 +121,7 @@ export default function NewPrescriptionPage() {
 
                     {/* VITALS */}
                     <div className="mb-8">
-                        <h3 className="font-bold text-base mb-3">VITALS</h3>
+                        <h3 className="font-bold text-black text-lg mb-3">VITALS</h3>
                         <textarea
                             className="w-full border-2 border-gray-300 rounded p-2 min-h-[80px] focus:border-blue-500 focus:outline-none"
                             placeholder="Type vitals here..."
@@ -132,7 +132,7 @@ export default function NewPrescriptionPage() {
 
                     {/* DIAGNOSIS */}
                     <div className="mb-8">
-                        <h3 className="font-bold text-base mb-3">DIAGNOSIS:</h3>
+                        <h3 className="font-bold text-black text-lg mb-3">DIAGNOSIS:</h3>
                         <textarea
                             className="w-full border-2 border-gray-300 rounded p-2 min-h-[80px] focus:border-blue-500 focus:outline-none"
                             placeholder="Type diagnosis here..."
@@ -143,7 +143,7 @@ export default function NewPrescriptionPage() {
 
                     {/* PRESENTING COMPLAINT */}
                     <div className="mb-8">
-                        <h3 className="font-bold text-base mb-3">PRESENTING COMPLAINT:</h3>
+                        <h3 className="font-bold text-black text-lg mb-3">PRESENTING COMPLAINT:</h3>
                         <textarea
                             className="w-full border-2 border-gray-300 rounded p-2 min-h-[100px] focus:border-blue-500 focus:outline-none"
                             placeholder="Type presenting complaint here..."
@@ -154,7 +154,7 @@ export default function NewPrescriptionPage() {
 
                     {/* GENERAL EXAMINATION */}
                     <div className="mb-8">
-                        <h3 className="font-bold text-base mb-3">GENERAL EXAMINATION:</h3>
+                        <h3 className="font-bold text-black text-lg mb-3">GENERAL EXAMINATION:</h3>
                         <textarea
                             className="w-full border-2 border-gray-300 rounded p-2 min-h-[150px] focus:border-blue-500 focus:outline-none"
                             placeholder="Type general examination findings here..."
@@ -165,7 +165,7 @@ export default function NewPrescriptionPage() {
 
                     {/* PLAN */}
                     <div className="mb-8">
-                        <h3 className="font-bold text-base mb-3">PLAN:</h3>
+                        <h3 className="font-bold text-black text-lg mb-3">PLAN:</h3>
                         <textarea
                             className="w-full border-2 border-gray-300 rounded p-2 min-h-[100px] focus:border-blue-500 focus:outline-none"
                             placeholder="Type plan here..."
@@ -176,7 +176,7 @@ export default function NewPrescriptionPage() {
 
                     {/* PRESCRIPTION */}
                     <div className="mb-8">
-                        <h3 className="font-bold text-base mb-3">PRESCRIPTION</h3>
+                        <h3 className="font-bold text-black text-lg mb-3">PRESCRIPTION</h3>
 
                         {/* Selected Medicines - Will be printed */}
                         <div className="mb-4">
