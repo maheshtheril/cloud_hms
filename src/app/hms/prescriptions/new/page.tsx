@@ -203,7 +203,7 @@ export default function NewPrescriptionPage() {
                             </button>
                         </div>
                         <textarea
-                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[80px] focus:border-blue-500 focus:outline-none print:border-0"
+                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[80px] text-black focus:border-blue-500 focus:outline-none print:border-0"
                             placeholder="Type or use handwriting..."
                             value={prescriptionData.vitals}
                             onChange={e => setPrescriptionData({ ...prescriptionData, vitals: e.target.value })}
@@ -222,7 +222,7 @@ export default function NewPrescriptionPage() {
                             </button>
                         </div>
                         <textarea
-                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[80px] focus:border-blue-500 focus:outline-none print:border-0"
+                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[80px] text-black focus:border-blue-500 focus:outline-none print:border-0"
                             placeholder="Type or use handwriting..."
                             value={prescriptionData.diagnosis}
                             onChange={e => setPrescriptionData({ ...prescriptionData, diagnosis: e.target.value })}
@@ -241,7 +241,7 @@ export default function NewPrescriptionPage() {
                             </button>
                         </div>
                         <textarea
-                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[100px] focus:border-blue-500 focus:outline-none print:border-0"
+                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[100px] text-black focus:border-blue-500 focus:outline-none print:border-0"
                             placeholder="Type or use handwriting..."
                             value={prescriptionData.complaint}
                             onChange={e => setPrescriptionData({ ...prescriptionData, complaint: e.target.value })}
@@ -260,7 +260,7 @@ export default function NewPrescriptionPage() {
                             </button>
                         </div>
                         <textarea
-                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[150px] focus:border-blue-500 focus:outline-none print:border-0"
+                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[150px] text-black focus:border-blue-500 focus:outline-none print:border-0"
                             placeholder="Type or use handwriting..."
                             value={prescriptionData.examination}
                             onChange={e => setPrescriptionData({ ...prescriptionData, examination: e.target.value })}
@@ -279,7 +279,7 @@ export default function NewPrescriptionPage() {
                             </button>
                         </div>
                         <textarea
-                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[100px] focus:border-blue-500 focus:outline-none print:border-0"
+                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[100px] text-black focus:border-blue-500 focus:outline-none print:border-0"
                             placeholder="Type or use handwriting..."
                             value={prescriptionData.plan}
                             onChange={e => setPrescriptionData({ ...prescriptionData, plan: e.target.value })}
