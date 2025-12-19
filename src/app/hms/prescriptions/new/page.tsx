@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Printer, Plus, Trash2, Copy, Eraser, Mic, Zap, Clock } from 'lucide-react'
+import { Printer, Plus, Trash2, Copy, Eraser, Clock, Zap, X } from 'lucide-react'
 
 export default function NewPrescriptionPage() {
     const router = useRouter()
@@ -13,10 +13,18 @@ export default function NewPrescriptionPage() {
     const [medicines, setMedicines] = useState<any[]>([])
     const [selectedMedicines, setSelectedMedicines] = useState<any[]>([])
 
-    // Medicine search
+    // Medicine search & modal
     const [medicineSearch, setMedicineSearch] = useState('')
     const [filteredMedicines, setFilteredMedicines] = useState<any[]>([])
     const [showMedicineDropdown, setShowMedicineDropdown] = useState(false)
+    const [showMedicineModal, setShowMedicineModal] = useState(false)
+    const [currentMedicine, setCurrentMedicine] = useState<any>(null)
+    const [editingIndex, setEditingIndex] = useState<number | null>(null)
+
+    // Medicine config in modal
+    const [modalDosage, setModalDosage] = useState('1-0-1')
+    const [modalDays, setModalDays] = useState('5')
+    const [modalTiming, setModalTiming] = useState('After Food')
 
     // Handwriting canvases
     const vitalsCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -42,28 +50,9 @@ export default function NewPrescriptionPage() {
 
     // Quick Templates
     const templates = [
-        {
-            name: 'Common Cold',
-            meds: [
-                { name: 'Paracetamol 650mg', dosage: '1-0-1', days: '3' },
-                { name: 'Cetirizine 10mg', dosage: '0-0-1', days: '5' },
-                { name: 'Vitamin C', dosage: '1-0-0', days: '7' }
-            ]
-        },
-        {
-            name: 'Fever',
-            meds: [
-                { name: 'Paracetamol 650mg', dosage: '1-1-1', days: '3' },
-                { name: 'Pantoprazole 40mg', dosage: '1-0-0', days: '5' }
-            ]
-        },
-        {
-            name: 'Gastritis',
-            meds: [
-                { name: 'Pantoprazole 40mg', dosage: '1-0-1', days: '7' },
-                { name: 'Domperidone 10mg', dosage: '1-0-1', days: '5' }
-            ]
-        }
+        { name: 'Common Cold', meds: [{ name: 'Paracetamol 650mg', dosage: '1-0-1', days: '3' }] },
+        { name: 'Fever', meds: [{ name: 'Paracetamol 650mg', dosage: '1-1-1', days: '3' }] },
+        { name: 'Gastritis', meds: [{ name: 'Pantoprazole 40mg', dosage: '1-0-1', days: '7' }] }
     ]
 
     // Fetch patient data
@@ -163,7 +152,8 @@ export default function NewPrescriptionPage() {
                         id: m.medicineId,
                         name: m.medicineName,
                         dosage: `${m.morning}-${m.afternoon}-${m.evening}-${m.night}`,
-                        days: m.days
+                        days: m.days,
+                        timing: 'After Food'
                     })))
                 }
                 alert(`✅ Loaded prescription from ${new Date(data.date).toLocaleDateString()}!`)
@@ -183,60 +173,58 @@ export default function NewPrescriptionPage() {
             id: '',
             name: m.name,
             dosage: m.dosage,
-            days: m.days
+            days: m.days,
+            timing: 'After Food'
         })))
         alert(`✅ Applied "${template.name}" template`)
     }
 
-
-    const addMedicineFromSearch = (med: any) => {
-        setSelectedMedicines([...selectedMedicines, {
-            id: med.id,
-            name: med.name,
-            dosage: '1-0-1-0',
-            days: '5',
-            timing: 'After Food'
-        }])
-        setMedicineSearch('')
-        setShowMedicineDropdown(false)
-    }
-
-    const addCustomMedicine = () => {
-        if (medicineSearch.trim().length === 0) return
-
-        // Add as custom medicine (not from database)
-        setSelectedMedicines([...selectedMedicines, {
-            id: '', // No ID since it's custom
-            name: medicineSearch.trim(),
-            dosage: '1-0-1-0',
-            days: '5',
-            timing: 'After Food'
-        }])
-        setMedicineSearch('')
-        setShowMedicineDropdown(false)
-    }
-
-    const handleMedicineKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter') {
-            e.preventDefault()
-            // If there are filtered results, add the first one
-            if (filteredMedicines.length > 0) {
-                addMedicineFromSearch(filteredMedicines[0])
-            } else {
-                // Otherwise add as custom medicine
-                addCustomMedicine()
-            }
+    const openMedicineModal = (med: any, editIdx: number | null = null) => {
+        setCurrentMedicine(med)
+        setEditingIndex(editIdx)
+        if (editIdx !== null) {
+            // Editing existing
+            const existing = selectedMedicines[editIdx]
+            setModalDosage(existing.dosage)
+            setModalDays(existing.days)
+            setModalTiming(existing.timing || 'After Food')
+        } else {
+            // Adding new
+            setModalDosage('1-0-1')
+            setModalDays('5')
+            setModalTiming('After Food')
         }
+        setShowMedicineModal(true)
+        setMedicineSearch('')
+        setShowMedicineDropdown(false)
+    }
+
+    const saveMedicineFromModal = () => {
+        const medicineData = {
+            id: currentMedicine?.id || '',
+            name: currentMedicine?.name || '',
+            dosage: modalDosage,
+            days: modalDays,
+            timing: modalTiming
+        }
+
+        if (editingIndex !== null) {
+            // Update existing
+            const updated = [...selectedMedicines]
+            updated[editingIndex] = medicineData
+            setSelectedMedicines(updated)
+        } else {
+            // Add new
+            setSelectedMedicines([...selectedMedicines, medicineData])
+        }
+
+        setShowMedicineModal(false)
+        setCurrentMedicine(null)
+        setEditingIndex(null)
     }
 
     const removeMedicine = (index: number) => {
         setSelectedMedicines(selectedMedicines.filter((_, i) => i !== index))
-    }
-
-    const updateMedicine = (index: number, field: string, value: string) => {
-        const updated = [...selectedMedicines]
-        updated[index][field] = value
-        setSelectedMedicines(updated)
     }
 
     const convertAndPrint = async () => {
@@ -292,7 +280,7 @@ export default function NewPrescriptionPage() {
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
             <div className="max-w-6xl mx-auto">
 
-                {/* Patient Header - Prominent */}
+                {/* Patient Header */}
                 <div className="bg-white shadow-xl rounded-2xl p-6 mb-6 border-l-4 border-blue-600">
                     <div className="grid grid-cols-4 gap-6 text-sm">
                         <div>
@@ -320,7 +308,7 @@ export default function NewPrescriptionPage() {
                     </div>
                 </div>
 
-                {/* Quick Actions - Templates & Copy Last */}
+                {/* Quick Actions */}
                 <div className="bg-white shadow-lg rounded-xl p-4 mb-6 print:hidden">
                     <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
                         <Zap className="h-4 w-4 text-yellow-500" /> QUICK START
@@ -385,158 +373,83 @@ export default function NewPrescriptionPage() {
                         </div>
                     ))}
 
-                    {/* Medicines Section - FUTURISTIC */}
+                    {/* PRESCRIPTION Section */}
                     <div className="mb-6 mt-8">
                         <h3 className="font-bold text-black text-base mb-4 uppercase tracking-wide">PRESCRIPTION</h3>
 
-                        {/* Smart Medicine Search */}
+                        {/* Medicine Search */}
                         <div className="mb-4 print:hidden">
-                            <div className="flex gap-2">
-                                <div className="flex-1 relative">
-                                    <input
-                                        type="text"
-                                        value={medicineSearch}
-                                        onChange={(e) => setMedicineSearch(e.target.value)}
-                                        onKeyPress={handleMedicineKeyPress}
-                                        autoFocus
-                                        placeholder="🔍 Start typing medicine name (dropdown will appear)..."
-                                        className="w-full px-6 py-4 text-base text-black border-2 border-blue-400 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-200 focus:outline-none font-medium bg-white"
-                                    />
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    value={medicineSearch}
+                                    onChange={(e) => setMedicineSearch(e.target.value)}
+                                    autoFocus
+                                    placeholder="🔍 Start typing medicine name..."
+                                    className="w-full px-6 py-4 text-base text-black border-2 border-blue-400 rounded-xl focus:border-blue-600 focus:ring-2 focus:ring-blue-200 focus:outline-none font-medium bg-white"
+                                />
 
-
-                                    {/* Dropdown with results */}
-                                    {showMedicineDropdown && (
-                                        <div className="absolute z-50 w-full mt-1 bg-white border-2 border-blue-500 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
-                                            {filteredMedicines.length > 0 && (
-                                                filteredMedicines.map((med, idx) => (
-                                                    <div
-                                                        key={idx}
-                                                        onClick={() => addMedicineFromSearch(med)}
-                                                        className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100"
-                                                    >
-                                                        <div className="font-bold text-black text-base">{med.name}</div>
-                                                        <div className="text-sm text-gray-700">From database</div>
-                                                    </div>
-                                                ))
-                                            )}
-                                            {/* Custom medicine option */}
-                                            {medicineSearch.trim().length > 0 && (
+                                {/* Dropdown */}
+                                {showMedicineDropdown && (
+                                    <div className="absolute z-50 w-full mt-1 bg-white border-2 border-blue-500 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
+                                        {filteredMedicines.length > 0 && (
+                                            filteredMedicines.map((med, idx) => (
                                                 <div
-                                                    onClick={addCustomMedicine}
-                                                    className="px-4 py-3 hover:bg-green-50 cursor-pointer bg-green-50 border-t-2 border-green-300"
+                                                    key={idx}
+                                                    onClick={() => openMedicineModal(med)}
+                                                    className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100"
                                                 >
-                                                    <div className="font-bold text-green-800 text-base">✚ Add "{medicineSearch}" (Custom)</div>
-                                                    <div className="text-sm text-green-700">Click or press Enter to add</div>
+                                                    <div className="font-bold text-black text-base">{med.name}</div>
+                                                    <div className="text-sm text-gray-700">Click to configure & add</div>
                                                 </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                                <button
-                                    onClick={addCustomMedicine}
-                                    disabled={medicineSearch.trim().length === 0}
-                                    className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
-                                >
-                                    <Plus className="h-5 w-5" /> Add
-                                </button>
+                                            ))
+                                        )}
+                                        {medicineSearch.trim().length > 0 && (
+                                            <div
+                                                onClick={() => openMedicineModal({ name: medicineSearch.trim(), id: '' })}
+                                                className="px-4 py-3 hover:bg-green-50 cursor-pointer bg-green-50 border-t-2 border-green-300"
+                                            >
+                                                <div className="font-bold text-green-800 text-base">✚ Add "{medicineSearch}" (Custom)</div>
+                                                <div className="text-sm text-green-700">Click to configure & add</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                             <div className="text-xs text-gray-500 mt-2" suppressHydrationWarning>
-                                💡 {medicines.length} medicines in database • Press Enter or click + to add custom
+                                💡 {medicines.length} medicines in database • Click medicine to configure
                             </div>
                         </div>
 
-
-                        {/* Selected Medicines List */}
+                        {/* Selected Medicines - COMPACT LIST */}
                         {selectedMedicines.length > 0 && (
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 {selectedMedicines.map((med, idx) => (
-                                    <div key={idx} className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl border-2 border-blue-200">
-                                        <div className="flex items-start gap-3">
-                                            <div className="font-bold text-black w-8 mt-1">{idx + 1}.</div>
-                                            <div className="flex-1 space-y-3">
-                                                {/* Medicine Name */}
-                                                <div className="font-bold text-black text-lg">{med.name}</div>
-
-                                                {/* Quick Dosage Buttons */}
-                                                <div className="space-y-1 print:hidden">
-                                                    <div className="text-xs font-semibold text-gray-700 uppercase">Dosage (M-A-E-N)</div>
-                                                    <div className="flex gap-2 flex-wrap">
-                                                        {['1-0-1-0', '1-1-1-0', '0-0-1-0', '1-0-0-0', '0-1-0-0', '1-1-1-1'].map((dose) => (
-                                                            <button
-                                                                key={dose}
-                                                                type="button"
-                                                                onClick={() => updateMedicine(idx, 'dosage', dose)}
-                                                                className={`px-3 py-1.5 rounded-lg text-sm font-bold transition ${med.dosage === dose
-                                                                    ? 'bg-blue-600 text-white'
-                                                                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400'
-                                                                    }`}
-                                                            >
-                                                                {dose}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-
-                                                {/* Quick Days Buttons */}
-                                                <div className="space-y-1 print:hidden">
-                                                    <div className="text-xs font-semibold text-gray-700 uppercase">Days</div>
-                                                    <div className="flex gap-2">
-                                                        {['3', '5', '7', '10', '15'].map((day) => (
-                                                            <button
-                                                                key={day}
-                                                                type="button"
-                                                                onClick={() => updateMedicine(idx, 'days', day)}
-                                                                className={`px-4 py-1.5 rounded-lg text-sm font-bold transition ${med.days === day
-                                                                    ? 'bg-green-600 text-white'
-                                                                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-400'
-                                                                    }`}
-                                                            >
-                                                                {day}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-
-                                                {/* Before/After Food */}
-                                                <div className="space-y-1 print:hidden">
-                                                    <div className="text-xs font-semibold text-gray-700 uppercase">When</div>
-                                                    <div className="flex gap-2">
-                                                        {['Before Food', 'After Food', 'Empty Stomach'].map((timing) => (
-                                                            <button
-                                                                key={timing}
-                                                                type="button"
-                                                                onClick={() => updateMedicine(idx, 'timing', timing)}
-                                                                className={`px-4 py-1.5 rounded-lg text-sm font-bold transition ${med.timing === timing
-                                                                    ? 'bg-purple-600 text-white'
-                                                                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-purple-400'
-                                                                    }`}
-                                                            >
-                                                                {timing}
-                                                            </button>
-                                                        ))}
-                                                    </div>
-                                                </div>
-
-                                                {/* Print View */}
-                                                <div className="hidden print:block text-base text-black font-medium">
-                                                    {med.dosage} × {med.days} Days {med.timing ? `- ${med.timing}` : ''}
-                                                </div>
+                                    <div key={idx} className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg border border-blue-200">
+                                        <div className="font-bold text-black w-8">{idx + 1}.</div>
+                                        <div className="flex-1">
+                                            <div className="font-bold text-black text-base">{med.name}</div>
+                                            <div className="text-sm text-gray-700">
+                                                {med.dosage} × {med.days} Days - {med.timing}
                                             </div>
-
-                                            {/* Delete Button */}
-                                            <button
-                                                onClick={() => removeMedicine(idx)}
-                                                className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs print:hidden font-bold"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </button>
                                         </div>
+                                        <button
+                                            onClick={() => openMedicineModal(med, idx)}
+                                            className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs print:hidden font-bold"
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            onClick={() => removeMedicine(idx)}
+                                            className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-xs print:hidden font-bold"
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </button>
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
-
 
                     {/* Footer Signature */}
                     <div className="mt-16 pt-6 border-t-2 border-gray-800 flex justify-between">
@@ -549,7 +462,7 @@ export default function NewPrescriptionPage() {
                     </div>
                 </div>
 
-                {/* Bottom Action Buttons */}
+                {/* Bottom Buttons */}
                 <div className="sticky bottom-6 bg-white shadow-2xl rounded-2xl p-4 flex gap-3 justify-center print:hidden border-t-4 border-blue-500">
                     <button
                         onClick={convertAndPrint}
@@ -565,7 +478,7 @@ export default function NewPrescriptionPage() {
                         }}
                         className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-bold text-lg flex items-center gap-3 shadow-lg transform hover:scale-105 transition"
                     >
-                        <Printer className="h-6 w-6" /> Print Handwritten
+                        <Printer className="h-6 w-6" /> Print
                     </button>
                     <button
                         onClick={() => router.back()}
@@ -575,6 +488,101 @@ export default function NewPrescriptionPage() {
                     </button>
                 </div>
             </div>
+
+            {/* Medicine Configuration Modal */}
+            {showMedicineModal && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <h2 className="text-2xl font-bold text-gray-900">Configure Medicine</h2>
+                            <button
+                                onClick={() => setShowMedicineModal(false)}
+                                className="p-2 hover:bg-gray-100 rounded-lg"
+                            >
+                                <X className="h-6 w-6" />
+                            </button>
+                        </div>
+
+                        <div className="mb-6">
+                            <div className="text-xl font-bold text-blue-600 mb-4">{currentMedicine?.name}</div>
+
+                            {/* Dosage Dropdown */}
+                            <div className="mb-4">
+                                <label className="block text-sm font-bold text-gray-700 mb-2">DOSAGE (Morning-Afternoon-Evening-Night)</label>
+                                <select
+                                    value={modalDosage}
+                                    onChange={(e) => setModalDosage(e.target.value)}
+                                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black font-medium focus:border-blue-500 outline-none"
+                                >
+                                    <option value="1-0-1">1-0-1 (Morning & Evening)</option>
+                                    <option value="1-1-1">1-1-1 (Three times a day)</option>
+                                    <option value="1-1-1-1">1-1-1-1 (Four times a day)</option>
+                                    <option value="0-0-1">0-0-1 (Night only)</option>
+                                    <option value="1-0-0">1-0-0 (Morning only)</option>
+                                    <option value="0-1-0">0-1-0 (Afternoon only)</option>
+                                    <option value="0-0-0-1">0-0-0-1 (Night only)</option>
+                                </select>
+                            </div>
+
+                            {/* Days Dropdown */}
+                            <div className="mb-4">
+                                <label className="block text-sm font-bold text-gray-700 mb-2">DAYS</label>
+                                <select
+                                    value={modalDays}
+                                    onChange={(e) => setModalDays(e.target.value)}
+                                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black font-medium focus:border-blue-500 outline-none"
+                                >
+                                    <option value="3">3 Days</option>
+                                    <option value="5">5 Days</option>
+                                    <option value="7">7 Days (1 Week)</option>
+                                    <option value="10">10 Days</option>
+                                    <option value="15">15 Days</option>
+                                    <option value="30">30 Days (1 Month)</option>
+                                </select>
+                            </div>
+
+                            {/* Timing Dropdown */}
+                            <div className="mb-6">
+                                <label className="block text-sm font-bold text-gray-700 mb-2">WHEN TO TAKE</label>
+                                <select
+                                    value={modalTiming}
+                                    onChange={(e) => setModalTiming(e.target.value)}
+                                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg text-black font-medium focus:border-blue-500 outline-none"
+                                >
+                                    <option value="After Food">After Food</option>
+                                    <option value="Before Food">Before Food</option>
+                                    <option value="Empty Stomach">Empty Stomach</option>
+                                    <option value="With Food">With Food</option>
+                                    <option value="Anytime">Anytime</option>
+                                </select>
+                            </div>
+
+                            {/* Preview */}
+                            <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
+                                <div className="text-sm text-gray-600 mb-1">Preview:</div>
+                                <div className="font-bold text-black text-lg">
+                                    {modalDosage} × {modalDays} Days - {modalTiming}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={saveMedicineFromModal}
+                                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-lg"
+                            >
+                                {editingIndex !== null ? 'Update Medicine' : 'Add Medicine'}
+                            </button>
+                            <button
+                                onClick={() => setShowMedicineModal(false)}
+                                className="px-6 py-3 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded-xl font-bold"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
