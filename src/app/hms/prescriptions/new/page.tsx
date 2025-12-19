@@ -437,7 +437,7 @@ export default function NewPrescriptionPage() {
                                     <Plus className="h-5 w-5" /> Add
                                 </button>
                             </div>
-                            <div className="text-xs text-gray-500 mt-2">
+                            <div className="text-xs text-gray-500 mt-2" suppressHydrationWarning>
                                 💡 {medicines.length} medicines in database • Press Enter or click + to add custom
                             </div>
                         </div>
