@@ -193,8 +193,9 @@ export default function NewPrescriptionPage() {
         setSelectedMedicines([...selectedMedicines, {
             id: med.id,
             name: med.name,
-            dosage: '1-0-1',
-            days: '5'
+            dosage: '1-0-1-0',
+            days: '5',
+            timing: 'After Food'
         }])
         setMedicineSearch('')
         setShowMedicineDropdown(false)
@@ -207,8 +208,9 @@ export default function NewPrescriptionPage() {
         setSelectedMedicines([...selectedMedicines, {
             id: '', // No ID since it's custom
             name: medicineSearch.trim(),
-            dosage: '1-0-1',
-            days: '5'
+            dosage: '1-0-1-0',
+            days: '5',
+            timing: 'After Food'
         }])
         setMedicineSearch('')
         setShowMedicineDropdown(false)
@@ -443,45 +445,98 @@ export default function NewPrescriptionPage() {
                             </div>
                         </div>
 
+
                         {/* Selected Medicines List */}
                         {selectedMedicines.length > 0 && (
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 {selectedMedicines.map((med, idx) => (
-                                    <div key={idx} className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg">
-                                        <div className="font-bold text-gray-700 w-8">{idx + 1}.</div>
-                                        <div className="flex-1">
-                                            <div className="font-bold text-black text-base">{med.name}</div>
-                                            <div className="flex gap-2 mt-1 print:hidden">
-                                                <input
-                                                    type="text"
-                                                    value={med.dosage}
-                                                    onChange={(e) => updateMedicine(idx, 'dosage', e.target.value)}
-                                                    placeholder="1-0-1"
-                                                    className="w-20 px-2 py-1 border border-gray-300 rounded text-xs text-black bg-white"
-                                                />
-                                                <input
-                                                    type="text"
-                                                    value={med.days}
-                                                    onChange={(e) => updateMedicine(idx, 'days', e.target.value)}
-                                                    placeholder="Days"
-                                                    className="w-16 px-2 py-1 border border-gray-300 rounded text-xs text-black bg-white"
-                                                />
+                                    <div key={idx} className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-xl border-2 border-blue-200">
+                                        <div className="flex items-start gap-3">
+                                            <div className="font-bold text-black w-8 mt-1">{idx + 1}.</div>
+                                            <div className="flex-1 space-y-3">
+                                                {/* Medicine Name */}
+                                                <div className="font-bold text-black text-lg">{med.name}</div>
+
+                                                {/* Quick Dosage Buttons */}
+                                                <div className="space-y-1 print:hidden">
+                                                    <div className="text-xs font-semibold text-gray-700 uppercase">Dosage (M-A-E-N)</div>
+                                                    <div className="flex gap-2 flex-wrap">
+                                                        {['1-0-1-0', '1-1-1-0', '0-0-1-0', '1-0-0-0', '0-1-0-0', '1-1-1-1'].map((dose) => (
+                                                            <button
+                                                                key={dose}
+                                                                type="button"
+                                                                onClick={() => updateMedicine(idx, 'dosage', dose)}
+                                                                className={`px-3 py-1.5 rounded-lg text-sm font-bold transition ${med.dosage === dose
+                                                                    ? 'bg-blue-600 text-white'
+                                                                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-blue-400'
+                                                                    }`}
+                                                            >
+                                                                {dose}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                {/* Quick Days Buttons */}
+                                                <div className="space-y-1 print:hidden">
+                                                    <div className="text-xs font-semibold text-gray-700 uppercase">Days</div>
+                                                    <div className="flex gap-2">
+                                                        {['3', '5', '7', '10', '15'].map((day) => (
+                                                            <button
+                                                                key={day}
+                                                                type="button"
+                                                                onClick={() => updateMedicine(idx, 'days', day)}
+                                                                className={`px-4 py-1.5 rounded-lg text-sm font-bold transition ${med.days === day
+                                                                    ? 'bg-green-600 text-white'
+                                                                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-green-400'
+                                                                    }`}
+                                                            >
+                                                                {day}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                {/* Before/After Food */}
+                                                <div className="space-y-1 print:hidden">
+                                                    <div className="text-xs font-semibold text-gray-700 uppercase">When</div>
+                                                    <div className="flex gap-2">
+                                                        {['Before Food', 'After Food', 'Empty Stomach'].map((timing) => (
+                                                            <button
+                                                                key={timing}
+                                                                type="button"
+                                                                onClick={() => updateMedicine(idx, 'timing', timing)}
+                                                                className={`px-4 py-1.5 rounded-lg text-sm font-bold transition ${med.timing === timing
+                                                                    ? 'bg-purple-600 text-white'
+                                                                    : 'bg-white text-gray-700 border-2 border-gray-300 hover:border-purple-400'
+                                                                    }`}
+                                                            >
+                                                                {timing}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                {/* Print View */}
+                                                <div className="hidden print:block text-base text-black font-medium">
+                                                    {med.dosage} × {med.days} Days {med.timing ? `- ${med.timing}` : ''}
+                                                </div>
                                             </div>
-                                            <div className="text-base text-black hidden print:block font-medium">
-                                                {med.dosage} × {med.days} Days
-                                            </div>
+
+                                            {/* Delete Button */}
+                                            <button
+                                                onClick={() => removeMedicine(idx)}
+                                                className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs print:hidden font-bold"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
                                         </div>
-                                        <button
-                                            onClick={() => removeMedicine(idx)}
-                                            className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs print:hidden"
-                                        >
-                                            <Trash2 className="h-3 w-3" />
-                                        </button>
                                     </div>
                                 ))}
                             </div>
                         )}
                     </div>
+
 
                     {/* Footer Signature */}
                     <div className="mt-16 pt-6 border-t-2 border-gray-800 flex justify-between">
