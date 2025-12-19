@@ -107,6 +107,10 @@ export async function createPatient(prevState: any, formData: FormData) {
             redirect("/hms/patients")
         }
     } catch (error: any) {
+        // Re-throw redirect errors (they're not real errors)
+        if (error.message === 'NEXT_REDIRECT' || error.digest?.startsWith('NEXT_REDIRECT')) {
+            throw error;
+        }
         console.error('Patient creation error:', error)
         return { error: `Failed to create patient: ${error.message}` }
     }
