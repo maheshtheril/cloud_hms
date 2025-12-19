@@ -188,6 +188,7 @@ export default function NewPrescriptionPage() {
         alert(`✅ Applied "${template.name}" template`)
     }
 
+
     const addMedicineFromSearch = (med: any) => {
         setSelectedMedicines([...selectedMedicines, {
             id: med.id,
@@ -197,6 +198,33 @@ export default function NewPrescriptionPage() {
         }])
         setMedicineSearch('')
         setShowMedicineDropdown(false)
+    }
+
+    const addCustomMedicine = () => {
+        if (medicineSearch.trim().length === 0) return
+
+        // Add as custom medicine (not from database)
+        setSelectedMedicines([...selectedMedicines, {
+            id: '', // No ID since it's custom
+            name: medicineSearch.trim(),
+            dosage: '1-0-1',
+            days: '5'
+        }])
+        setMedicineSearch('')
+        setShowMedicineDropdown(false)
+    }
+
+    const handleMedicineKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault()
+            // If there are filtered results, add the first one
+            if (filteredMedicines.length > 0) {
+                addMedicineFromSearch(filteredMedicines[0])
+            } else {
+                // Otherwise add as custom medicine
+                addCustomMedicine()
+            }
+        }
     }
 
     const removeMedicine = (index: number) => {
@@ -360,39 +388,58 @@ export default function NewPrescriptionPage() {
                         <h3 className="font-bold text-gray-800 text-sm mb-4 uppercase tracking-wide">PRESCRIPTION</h3>
 
                         {/* Smart Medicine Search */}
-                        <div className="mb-4 print:hidden relative">
-                            <input
-                                type="text"
-                                value={medicineSearch}
-                                onChange={(e) => setMedicineSearch(e.target.value)}
-                                placeholder="🔍 Type medicine name (at least 2 letters)..."
-                                className="w-full px-4 py-3 border-2 border-blue-300 rounded-xl focus:border-blue-500 focus:outline-none text-sm"
-                            />
-                            <div className="text-xs text-gray-500 mt-1">
-                                {medicines.length > 0 ? `${medicines.length} medicines available` : 'Loading medicines...'}
-                            </div>
+                        <div className="mb-4 print:hidden">
+                            <div className="flex gap-2">
+                                <div className="flex-1 relative">
+                                    <input
+                                        type="text"
+                                        value={medicineSearch}
+                                        onChange={(e) => setMedicineSearch(e.target.value)}
+                                        onKeyPress={handleMedicineKeyPress}
+                                        placeholder="🔍 Search from database OR type custom medicine name..."
+                                        className="w-full px-4 py-3 border-2 border-blue-300 rounded-xl focus:border-blue-500 focus:outline-none text-sm"
+                                    />
 
-                            {/* Dropdown with results */}
-                            {showMedicineDropdown && (
-                                <div className="absolute z-10 w-full mt-1 bg-white border-2 border-blue-300 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                                    {filteredMedicines.length > 0 ? (
-                                        filteredMedicines.map((med, idx) => (
-                                            <div
-                                                key={idx}
-                                                onClick={() => addMedicineFromSearch(med)}
-                                                className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0"
-                                            >
-                                                <div className="font-semibold text-gray-800">{med.name}</div>
-                                                <div className="text-xs text-gray-500">Click to add</div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="px-4 py-3 text-gray-500 text-sm">
-                                            No medicines found matching "{medicineSearch}"
+
+                                    {/* Dropdown with results */}
+                                    {showMedicineDropdown && (
+                                        <div className="absolute z-10 w-full mt-1 bg-white border-2 border-blue-300 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                                            {filteredMedicines.length > 0 && (
+                                                filteredMedicines.map((med, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        onClick={() => addMedicineFromSearch(med)}
+                                                        className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100"
+                                                    >
+                                                        <div className="font-semibold text-gray-800">{med.name}</div>
+                                                        <div className="text-xs text-gray-500">From database</div>
+                                                    </div>
+                                                ))
+                                            )}
+                                            {/* Custom medicine option */}
+                                            {medicineSearch.trim().length > 0 && (
+                                                <div
+                                                    onClick={addCustomMedicine}
+                                                    className="px-4 py-3 hover:bg-green-50 cursor-pointer bg-green-50 border-t-2 border-green-300"
+                                                >
+                                                    <div className="font-semibold text-green-700">✚ Add "{medicineSearch}" (Custom)</div>
+                                                    <div className="text-xs text-green-600">Click or press Enter to add</div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
-                            )}
+                                <button
+                                    onClick={addCustomMedicine}
+                                    disabled={medicineSearch.trim().length === 0}
+                                    className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    <Plus className="h-5 w-5" /> Add
+                                </button>
+                            </div>
+                            <div className="text-xs text-gray-500 mt-2">
+                                💡 {medicines.length} medicines in database • Press Enter or click + to add custom
+                            </div>
                         </div>
 
                         {/* Selected Medicines List */}
