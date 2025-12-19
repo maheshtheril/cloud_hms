@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
                                 id: true,
                                 name: true,
                                 sku: true,
-                                sale_price: true
+                                price: true
                             }
                         }
                     }
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
                 id: item.hms_product.id,
                 name: item.hms_product.name,
                 sku: item.hms_product.sku,
-                price: item.hms_product.sale_price,
+                price: item.hms_product.price,
                 quantity: (item.morning + item.afternoon + item.evening + item.night) * item.days
             }))
         })
