@@ -90,7 +90,7 @@ export default function NewPrescriptionPage() {
     // Filter medicines as user types
     useEffect(() => {
         console.log('Medicine search:', medicineSearch, 'Available medicines:', medicines.length)
-        if (medicineSearch.length >= 2) {
+        if (medicineSearch.length >= 1) {
             const filtered = medicines.filter(m =>
                 m.name.toLowerCase().includes(medicineSearch.toLowerCase())
             ).slice(0, 10)
@@ -396,14 +396,14 @@ export default function NewPrescriptionPage() {
                                         value={medicineSearch}
                                         onChange={(e) => setMedicineSearch(e.target.value)}
                                         onKeyPress={handleMedicineKeyPress}
-                                        placeholder="🔍 Search from database OR type custom medicine name..."
+                                        placeholder="🔍 Start typing medicine name (dropdown will appear)..."
                                         className="w-full px-4 py-3 border-2 border-blue-300 rounded-xl focus:border-blue-500 focus:outline-none text-sm"
                                     />
 
 
                                     {/* Dropdown with results */}
                                     {showMedicineDropdown && (
-                                        <div className="absolute z-10 w-full mt-1 bg-white border-2 border-blue-300 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                                        <div className="absolute z-50 w-full mt-1 bg-white border-2 border-blue-500 rounded-xl shadow-2xl max-h-60 overflow-y-auto">
                                             {filteredMedicines.length > 0 && (
                                                 filteredMedicines.map((med, idx) => (
                                                     <div
