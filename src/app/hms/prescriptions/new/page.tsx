@@ -10,14 +10,6 @@ export default function NewPrescriptionPage() {
     const patientId = searchParams.get('patientId')
 
     const [patientInfo, setPatientInfo] = useState<any>(null)
-    const [prescriptionData, setPrescriptionData] = useState({
-        vitals: '',
-        diagnosis: '',
-        complaint: '',
-        examination: '',
-        plan: '',
-        prescription: ''
-    })
 
     // Fetch patient data
     useEffect(() => {
@@ -33,24 +25,12 @@ export default function NewPrescriptionPage() {
             .catch(err => console.error('Failed to fetch patient:', err))
     }, [patientId])
 
-    const savePrescription = async () => {
-        // TODO: Implement save to database
-        alert('Prescription saved!')
-    }
-
     return (
         <div className="min-h-screen bg-gray-100 p-4">
             <div className="max-w-5xl mx-auto">
 
-                {/* Action Buttons - Top */}
+                {/* Action Buttons */}
                 <div className="mb-4 flex gap-3 print:hidden">
-                    <button
-                        onClick={savePrescription}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold flex items-center gap-2"
-                    >
-                        <Save className="h-4 w-4" />
-                        Save
-                    </button>
                     <button
                         onClick={() => window.print()}
                         className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-semibold flex items-center gap-2"
@@ -67,123 +47,121 @@ export default function NewPrescriptionPage() {
                 </div>
 
                 {/* Prescription Pad */}
-                <div className="bg-white shadow-lg" style={{ minHeight: '1000px' }}>
+                <div className="bg-white shadow-lg border-2 border-gray-800">
 
-                    {/* Header - Patient Info */}
-                    <div className="border-b-2 border-black p-4">
-                        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-                            <div className="flex">
-                                <span className="font-bold w-32">Name</span>
-                                <span className="mx-2">:</span>
-                                <span>{patientInfo ? `${patientInfo.first_name} ${patientInfo.last_name}` : 'Loading...'}</span>
-                            </div>
-                            <div className="flex">
-                                <span className="font-bold w-32">UHID</span>
-                                <span className="mx-2">:</span>
-                                <span>{patientId?.substring(0, 12) || 'N/A'}</span>
-                            </div>
-                            <div className="flex">
-                                <span className="font-bold w-32">Age/Gender</span>
-                                <span className="mx-2">:</span>
-                                <span>{patientInfo?.age || 'N/A'} / {patientInfo?.gender || 'N/A'}</span>
-                            </div>
-                            <div className="flex">
-                                <span className="font-bold w-32">Speciality</span>
-                                <span className="mx-2">:</span>
-                                <span>EMERGENCY MEDICINE</span>
-                            </div>
-                            <div className="flex">
-                                <span className="font-bold w-32">Phone</span>
-                                <span className="mx-2">:</span>
-                                <span>{patientInfo?.contact?.phone || 'N/A'}</span>
-                            </div>
-                            <div className="flex col-span-2">
-                                <span className="font-bold w-32">Assessment Date & Time</span>
-                                <span className="mx-2">:</span>
-                                <span>ED PHYSICIAN</span>
-                                <span className="ml-16">{new Date().toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true })}</span>
-                            </div>
-                        </div>
+                    {/* Header */}
+                    <div className="border-b-4 border-black p-6">
+                        <table className="w-full text-sm">
+                            <tbody>
+                                <tr>
+                                    <td className="font-bold py-1 w-32">Name</td>
+                                    <td className="px-2">:</td>
+                                    <td className="py-1">{patientInfo ? `${patientInfo.first_name} ${patientInfo.last_name}`.toUpperCase() : 'Loading...'}</td>
+                                    <td className="font-bold py-1 w-32">UHID</td>
+                                    <td className="px-2">:</td>
+                                    <td className="py-1">{patientId?.substring(0, 12) || 'N/A'}</td>
+                                </tr>
+                                <tr>
+                                    <td className="font-bold py-1">Age/Gender</td>
+                                    <td className="px-2">:</td>
+                                    <td className="py-1">{patientInfo?.age || 'N/A'}Y / {patientInfo?.gender || 'N/A'}</td>
+                                    <td className="font-bold py-1">Speciality:</td>
+                                    <td className="px-2"></td>
+                                    <td className="py-1">EMERGENCY MEDICINE</td>
+                                </tr>
+                                <tr>
+                                    <td className="font-bold py-1">Phone</td>
+                                    <td className="px-2">:</td>
+                                    <td className="py-1">{patientInfo?.contact?.phone || 'N/A'}</td>
+                                    <td colSpan={3}></td>
+                                </tr>
+                                <tr>
+                                    <td className="font-bold py-1">Assessment by:</td>
+                                    <td className="px-2"></td>
+                                    <td className="py-1">ED PHYSICIAN</td>
+                                    <td colSpan={3}></td>
+                                </tr>
+                                <tr>
+                                    <td className="font-bold py-1">Assessment Date & Time:</td>
+                                    <td className="px-2"></td>
+                                    <td className="py-1" colSpan={4}>{new Date().toLocaleString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })} {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
 
-                    {/* Writing Pad Area */}
+                    {/* Body - Writing Areas */}
                     <div className="p-6">
 
                         {/* VITALS */}
-                        <div className="mb-6">
-                            <h3 className="font-bold text-sm mb-2">VITALS</h3>
-                            <div
-                                contentEditable
-                                suppressContentEditableWarning
-                                className="min-h-[60px] border-b border-gray-300 focus:outline-none focus:border-blue-500 p-2"
-                                onInput={(e) => setPrescriptionData({ ...prescriptionData, vitals: e.currentTarget.textContent || '' })}
-                            ></div>
+                        <div className="mb-8">
+                            <h3 className="font-bold text-base mb-2">VITALS</h3>
+                            <div className="space-y-4">
+                                {[1, 2].map(i => (
+                                    <div key={i} className="border-b border-gray-400 h-6"></div>
+                                ))}
+                            </div>
                         </div>
 
                         {/* DIAGNOSIS */}
-                        <div className="mb-6">
-                            <h3 className="font-bold text-sm">DIAGNOSIS:</h3>
-                            <div
-                                contentEditable
-                                suppressContentEditableWarning
-                                className="min-h-[50px] border-b border-gray-300 focus:outline-none focus:border-blue-500 p-2"
-                                onInput={(e) => setPrescriptionData({ ...prescriptionData, diagnosis: e.currentTarget.textContent || '' })}
-                            ></div>
+                        <div className="mb-8">
+                            <h3 className="font-bold text-base mb-2">DIAGNOSIS:</h3>
+                            <div className="space-y-4">
+                                {[1, 2].map(i => (
+                                    <div key={i} className="border-b border-gray-400 h-6"></div>
+                                ))}
+                            </div>
                         </div>
 
                         {/* PRESENTING COMPLAINT */}
-                        <div className="mb-6">
-                            <h3 className="font-bold text-sm">PRESENTING COMPLAINT :</h3>
-                            <div
-                                contentEditable
-                                suppressContentEditableWarning
-                                className="min-h-[60px] border-b border-gray-300 focus:outline-none focus:border-blue-500 p-2"
-                                onInput={(e) => setPrescriptionData({ ...prescriptionData, complaint: e.currentTarget.textContent || '' })}
-                            ></div>
+                        <div className="mb-8">
+                            <h3 className="font-bold text-base mb-2">PRESENTING COMPLAINT :</h3>
+                            <div className="space-y-4">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className="border-b border-gray-400 h-6"></div>
+                                ))}
+                            </div>
                         </div>
 
                         {/* GENERAL EXAMINATION */}
-                        <div className="mb-6">
-                            <h3 className="font-bold text-sm">GENERAL EXAMINATION :</h3>
-                            <div
-                                contentEditable
-                                suppressContentEditableWarning
-                                className="min-h-[100px] border-b border-gray-300 focus:outline-none focus:border-blue-500 p-2"
-                                onInput={(e) => setPrescriptionData({ ...prescriptionData, examination: e.currentTarget.textContent || '' })}
-                            ></div>
+                        <div className="mb-8">
+                            <h3 className="font-bold text-base mb-2">GENERAL EXAMINATION :</h3>
+                            <div className="space-y-4">
+                                {[1, 2, 3, 4, 5].map(i => (
+                                    <div key={i} className="border-b border-gray-400 h-6"></div>
+                                ))}
+                            </div>
                         </div>
 
                         {/* PLAN */}
-                        <div className="mb-6">
-                            <h3 className="font-bold text-sm">PLAN:</h3>
-                            <div
-                                contentEditable
-                                suppressContentEditableWarning
-                                className="min-h-[60px] border-b border-gray-300 focus:outline-none focus:border-blue-500 p-2"
-                                onInput={(e) => setPrescriptionData({ ...prescriptionData, plan: e.currentTarget.textContent || '' })}
-                            ></div>
+                        <div className="mb-8">
+                            <h3 className="font-bold text-base mb-2">PLAN:</h3>
+                            <div className="space-y-4">
+                                {[1, 2, 3].map(i => (
+                                    <div key={i} className="border-b border-gray-400 h-6"></div>
+                                ))}
+                            </div>
                         </div>
 
                         {/* PRESCRIPTION */}
-                        <div className="mb-8">
-                            <h3 className="font-bold text-sm mb-3">PRESCRIPTION</h3>
-                            <div
-                                contentEditable
-                                suppressContentEditableWarning
-                                className="min-h-[150px] border-b border-gray-300 focus:outline-none focus:border-blue-500 p-2"
-                                onInput={(e) => setPrescriptionData({ ...prescriptionData, prescription: e.currentTarget.textContent || '' })}
-                            ></div>
+                        <div className="mb-12">
+                            <h3 className="font-bold text-base mb-3">PRESCRIPTION</h3>
+                            <div className="space-y-4">
+                                {[1, 2, 3, 4, 5, 6].map(i => (
+                                    <div key={i} className="border-b border-gray-400 h-6"></div>
+                                ))}
+                            </div>
                         </div>
 
-                        {/* Footer - Doctor Signature */}
-                        <div className="mt-16 pt-6 border-t-2 border-black flex justify-between">
+                        {/* Footer */}
+                        <div className="mt-24 pt-6 border-t-4 border-black flex justify-between">
                             <div>
                                 <p className="font-bold">Ed Physician</p>
-                                <p className="text-sm">Emergency Medicine</p>
+                                <p className="text-sm mt-1">Emergency Medicine</p>
                             </div>
                             <div className="text-right">
-                                <p className="font-bold mb-12">SIGNATURE:</p>
-                                <p className="text-sm">_________________</p>
+                                <p className="font-bold mb-16">SIGNATURE:</p>
+                                <div className="border-b-2 border-black w-48"></div>
                             </div>
                         </div>
                     </div>
