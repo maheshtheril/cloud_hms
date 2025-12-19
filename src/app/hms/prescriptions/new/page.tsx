@@ -11,7 +11,15 @@ export default function NewPrescriptionPage() {
 
     const [patientInfo, setPatientInfo] = useState<any>(null)
     const [medicines, setMedicines] = useState<any[]>([])
-    const [selectedMedicines, setSelectedMedicines] = useState<any[]>([])
+    const [selectedMedicines, setSelectedMedicines] = useState<any[]>([{
+        medicineId: '',
+        medicineName: '',
+        morning: '1',
+        afternoon: '0',
+        evening: '1',
+        night: '0',
+        days: '3'
+    }])
 
     // Fetch patient data
     useEffect(() => {
