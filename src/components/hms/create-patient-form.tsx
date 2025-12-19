@@ -3,7 +3,7 @@
 import { createPatient } from "@/app/actions/patient"
 import Link from "next/link"
 import { X, User, Phone, Calendar, ChevronDown, Camera, Upload } from "lucide-react"
-import { useActionState, useState } from "react"
+import { useActionState, useState, useRef } from "react"
 
 const initialState = {
     error: ""
@@ -14,6 +14,7 @@ interface CreatePatientFormProps {
 }
 
 export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormProps) {
+    const formRef = useRef<HTMLFormElement>(null);
     const [state, action, isPending] = useActionState(createPatient, initialState);
     const [showMoreDetails, setShowMoreDetails] = useState(false);
     const [useAge, setUseAge] = useState(true); // Toggle between Age and DOB
@@ -77,7 +78,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                     </Link>
                 </div>
 
-                <form action={action} className="flex-1 overflow-y-auto p-3 space-y-2">
+                <form ref={formRef} action={action} className="flex-1 overflow-y-auto p-3 space-y-2">
 
                     {state?.error && (
                         <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg">
@@ -454,14 +455,8 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                             disabled={isPending}
                             onClick={() => {
                                 setNextAction('rx');
-                                // Wait for state to update, then submit
-                                setTimeout(() => {
-                                    const form = document.querySelector('form');
-                                    if (form) {
-                                        const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-                                        form.dispatchEvent(submitEvent);
-                                    }
-                                }, 0);
+                                // Use requestSubmit to trigger form submission with validation
+                                setTimeout(() => formRef.current?.requestSubmit(), 10);
                             }}
                             className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm shadow-lg transition-colors disabled:opacity-50"
                         >
@@ -476,13 +471,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                 disabled={isPending}
                                 onClick={() => {
                                     setNextAction('bill');
-                                    setTimeout(() => {
-                                        const form = document.querySelector('form');
-                                        if (form) {
-                                            const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-                                            form.dispatchEvent(submitEvent);
-                                        }
-                                    }, 0);
+                                    setTimeout(() => formRef.current?.requestSubmit(), 10);
                                 }}
                                 className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
                             >
@@ -493,13 +482,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                 disabled={isPending}
                                 onClick={() => {
                                     setNextAction('appointment');
-                                    setTimeout(() => {
-                                        const form = document.querySelector('form');
-                                        if (form) {
-                                            const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-                                            form.dispatchEvent(submitEvent);
-                                        }
-                                    }, 0);
+                                    setTimeout(() => formRef.current?.requestSubmit(), 10);
                                 }}
                                 className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
                             >
