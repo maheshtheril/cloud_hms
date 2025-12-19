@@ -10,7 +10,7 @@ export async function GET() {
         }
 
         // Fetch medicines/products from inventory
-        const medicines = await prisma.hms_item.findMany({
+        const medicines = await prisma.hms_product.findMany({
             where: {
                 tenant_id: session.user.tenantId,
                 // Optionally filter by category if you have a "Medicine" category
@@ -32,3 +32,4 @@ export async function GET() {
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }
+
