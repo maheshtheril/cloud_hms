@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Printer, Plus, Trash2, Copy } from 'lucide-react'
+import { Printer, Plus, Trash2, Copy, Eraser } from 'lucide-react'
 
 export default function NewPrescriptionPage() {
     const router = useRouter()
@@ -21,17 +21,28 @@ export default function NewPrescriptionPage() {
         days: '3'
     }])
 
-    // Prescription data
-    const [prescriptionData, setPrescriptionData] = useState({
+    // Handwriting canvases for each section
+    const vitalsCanvasRef = useRef<HTMLCanvasElement>(null)
+    const diagnosisCanvasRef = useRef<HTMLCanvasElement>(null)
+    const complaintCanvasRef = useRef<HTMLCanvasElement>(null)
+    const examinationCanvasRef = useRef<HTMLCanvasElement>(null)
+    const planCanvasRef = useRef<HTMLCanvasElement>(null)
+    const medicinesCanvasRef = useRef<HTMLCanvasElement>(null)
+
+    const [isDrawing, setIsDrawing] = useState(false)
+    const [currentCanvas, setCurrentCanvas] = useState<HTMLCanvasElement | null>(null)
+    const [isConverting, setIsConverting] = useState(false)
+
+    // Converted text
+    const [convertedText, setConvertedText] = useState({
         vitals: '',
         diagnosis: '',
         complaint: '',
         examination: '',
-        plan: ''
+        plan: '',
+        medicines: ''
     })
-
-    // State for loading previous prescription
-    const [loadingPrevious, setLoadingPrevious] = useState(false)
+    const [showConverted, setShowConverted] = useState(false)
 
     // Fetch patient data
     useEffect(() => {
@@ -54,54 +65,124 @@ export default function NewPrescriptionPage() {
             .catch(err => console.error(err))
     }, [])
 
+    // Initialize all canvases
+    useEffect(() => {
+        const canvases = [
+            vitalsCanvasRef.current,
+            diagnosisCanvasRef.current,
+            complaintCanvasRef.current,
+            examinationCanvasRef.current,
+            planCanvasRef.current,
+            medicinesCanvasRef.current
+        ]
 
-
-    const loadLastPrescription = async () => {
-        if (!patientId) {
-            alert('No patient selected')
-            return
-        }
-
-        setLoadingPrevious(true)
-        try {
-            const res = await fetch(`/api/prescriptions/last?patientId=${patientId}`)
-            const data = await res.json()
-
-            if (data.success && data.data) {
-                // Fill prescription data
-                setPrescriptionData({
-                    vitals: data.data.vitals || '',
-                    diagnosis: data.data.diagnosis || '',
-                    complaint: data.data.complaint || '',
-                    examination: data.data.examination || '',
-                    plan: data.data.plan || ''
-                })
-
-                // Fill medicines
-                if (data.data.medicines && data.data.medicines.length > 0) {
-                    setSelectedMedicines(data.data.medicines)
-                } else {
-                    setSelectedMedicines([{
-                        medicineId: '',
-                        medicineName: '',
-                        morning: '1',
-                        afternoon: '0',
-                        evening: '1',
-                        night: '0',
-                        days: '3'
-                    }])
+        canvases.forEach(canvas => {
+            if (canvas) {
+                const ctx = canvas.getContext('2d')
+                if (ctx) {
+                    ctx.fillStyle = '#ffffff'
+                    ctx.fillRect(0, 0, canvas.width, canvas.height)
                 }
-
-                const lastDate = new Date(data.date).toLocaleDateString()
-                alert(`✅ Loaded prescription from ${lastDate}!\n\nReview and modify as needed.`)
-            } else {
-                alert('ℹ️ No previous prescription found for this patient.')
             }
+        })
+    }, [])
+
+    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+
+        setIsDrawing(true)
+        setCurrentCanvas(canvas)
+        const rect = canvas.getBoundingClientRect()
+        ctx.beginPath()
+        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top)
+        ctx.lineWidth = 2
+        ctx.lineCap = 'round'
+        ctx.strokeStyle = '#000'
+    }
+
+    const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        if (!isDrawing || !currentCanvas) return
+        const ctx = currentCanvas.getContext('2d')
+        if (!ctx) return
+
+        const rect = currentCanvas.getBoundingClientRect()
+        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top)
+        ctx.stroke()
+    }
+
+    const stopDrawing = () => {
+        setIsDrawing(false)
+        setCurrentCanvas(null)
+    }
+
+    const clearCanvas = (canvas: HTMLCanvasElement | null) => {
+        if (!canvas) return
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+        ctx.fillStyle = '#ffffff'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+    }
+
+    const convertHandwritingToText = async () => {
+        setIsConverting(true)
+        try {
+            const canvases = [
+                { ref: vitalsCanvasRef, field: 'vitals', label: 'Vitals' },
+                { ref: diagnosisCanvasRef, field: 'diagnosis', label: 'Diagnosis' },
+                { ref: complaintCanvasRef, field: 'complaint', label: 'Presenting Complaint' },
+                { ref: examinationCanvasRef, field: 'examination', label: 'General Examination' },
+                { ref: planCanvasRef, field: 'plan', label: 'Plan' },
+                { ref: medicinesCanvasRef, field: 'medicines', label: 'Medicines' }
+            ]
+
+            const converted: any = {}
+
+            for (const { ref, field, label } of canvases) {
+                if (!ref.current) continue
+
+                await new Promise((resolve) => {
+                    ref.current!.toBlob(async (blob) => {
+                        if (!blob) {
+                            converted[field] = ''
+                            resolve(null)
+                            return
+                        }
+
+                        const formData = new FormData()
+                        formData.append('image', blob, `${field}.jpg`)
+
+                        try {
+                            const res = await fetch('/api/recognize-handwriting', {
+                                method: 'POST',
+                                body: formData
+                            })
+
+                            const data = await res.json()
+                            converted[field] = data.text || ''
+                        } catch (err) {
+                            console.error(`Error converting ${field}:`, err)
+                            converted[field] = ''
+                        }
+                        resolve(null)
+                    }, 'image/jpeg', 0.8)
+                })
+            }
+
+            setConvertedText(converted)
+            setShowConverted(true)
+
+            // Wait a bit then trigger print
+            setTimeout(() => {
+                window.print()
+            }, 500)
+
         } catch (error) {
-            console.error('Error loading previous prescription:', error)
-            alert('❌ Failed to load previous prescription')
+            console.error('Conversion error:', error)
+            alert('Failed to convert handwriting. Printing as handwritten.')
+            window.print()
         } finally {
-            setLoadingPrevious(false)
+            setIsConverting(false)
         }
     }
 
@@ -133,10 +214,6 @@ export default function NewPrescriptionPage() {
         setSelectedMedicines(selectedMedicines.filter((_, i) => i !== index))
     }
 
-    const getDosageString = (med: any) => {
-        return `${med.morning}-${med.afternoon}-${med.evening}-${med.night}`
-    }
-
     return (
         <div className="min-h-screen bg-gray-100 p-4">
             <div className="max-w-5xl mx-auto">
@@ -144,23 +221,20 @@ export default function NewPrescriptionPage() {
                 {/* Action Buttons */}
                 <div className="mb-4 flex gap-3 print:hidden">
                     <button
-                        onClick={loadLastPrescription}
-                        disabled={loadingPrevious || !patientId}
-                        className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded font-semibold flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        onClick={convertHandwritingToText}
+                        disabled={isConverting}
+                        className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-semibold flex items-center gap-2 disabled:bg-gray-400"
                     >
-                        <Copy className="h-4 w-4" /> {loadingPrevious ? 'Loading...' : 'Copy Last Prescription'}
+                        <Printer className="h-4 w-4" /> {isConverting ? 'Converting...' : 'Convert & Print'}
                     </button>
                     <button
-                        onClick={async () => {
-                            alert('Prescription saved!')
-                            console.log('Data:', { prescriptionData, medicines: selectedMedicines, patientId })
+                        onClick={() => {
+                            setShowConverted(false)
+                            window.print()
                         }}
                         className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold"
                     >
-                        Save
-                    </button>
-                    <button onClick={() => window.print()} className="px-6 py-2 bg-green-600 text-white rounded font-semibold flex items-center gap-2">
-                        <Printer className="h-4 w-4" /> Print
+                        Print Handwritten
                     </button>
                     <button onClick={() => router.back()} className="px-6 py-2 bg-gray-500 text-white rounded font-semibold">Back</button>
                 </div>
@@ -181,129 +255,163 @@ export default function NewPrescriptionPage() {
                     {/* VITALS */}
                     <div className="mb-8">
                         <h3 className="font-bold text-black text-lg mb-3">VITALS</h3>
-                        <textarea
-                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[80px] text-black focus:border-blue-500 focus:outline-none print:border-0"
-                            placeholder="Type or use handwriting above..."
-                            value={prescriptionData.vitals}
-                            onChange={e => setPrescriptionData({ ...prescriptionData, vitals: e.target.value })}
-                        ></textarea>
+                        {showConverted ? (
+                            <div className="min-h-[100px] p-3 border border-gray-300 rounded whitespace-pre-wrap">{convertedText.vitals || 'No text recognized'}</div>
+                        ) : (
+                            <>
+                                <canvas
+                                    ref={vitalsCanvasRef}
+                                    width={800}
+                                    height={100}
+                                    className="border-2 border-blue-300 rounded cursor-crosshair w-full bg-white print:hidden"
+                                    onMouseDown={(e) => startDrawing(e, vitalsCanvasRef.current!)}
+                                    onMouseMove={draw}
+                                    onMouseUp={stopDrawing}
+                                    onMouseLeave={stopDrawing}
+                                />
+                                <button
+                                    onClick={() => clearCanvas(vitalsCanvasRef.current)}
+                                    className="mt-2 px-3 py-1 bg-gray-400 text-white rounded text-sm print:hidden"
+                                >
+                                    <Eraser className="h-3 w-3 inline mr-1" /> Clear
+                                </button>
+                            </>
+                        )}
                     </div>
 
                     {/* DIAGNOSIS */}
                     <div className="mb-8">
                         <h3 className="font-bold text-black text-lg mb-3">DIAGNOSIS:</h3>
-                        <textarea
-                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[80px] text-black focus:border-blue-500 focus:outline-none print:border-0"
-                            placeholder="Type or use handwriting above..."
-                            value={prescriptionData.diagnosis}
-                            onChange={e => setPrescriptionData({ ...prescriptionData, diagnosis: e.target.value })}
-                        ></textarea>
+                        {showConverted ? (
+                            <div className="min-h-[100px] p-3 border border-gray-300 rounded whitespace-pre-wrap">{convertedText.diagnosis || 'No text recognized'}</div>
+                        ) : (
+                            <>
+                                <canvas
+                                    ref={diagnosisCanvasRef}
+                                    width={800}
+                                    height={100}
+                                    className="border-2 border-blue-300 rounded cursor-crosshair w-full bg-white print:hidden"
+                                    onMouseDown={(e) => startDrawing(e, diagnosisCanvasRef.current!)}
+                                    onMouseMove={draw}
+                                    onMouseUp={stopDrawing}
+                                    onMouseLeave={stopDrawing}
+                                />
+                                <button
+                                    onClick={() => clearCanvas(diagnosisCanvasRef.current)}
+                                    className="mt-2 px-3 py-1 bg-gray-400 text-white rounded text-sm print:hidden"
+                                >
+                                    <Eraser className="h-3 w-3 inline mr-1" /> Clear
+                                </button>
+                            </>
+                        )}
                     </div>
 
                     {/* PRESENTING COMPLAINT */}
                     <div className="mb-8">
                         <h3 className="font-bold text-black text-lg mb-3">PRESENTING COMPLAINT:</h3>
-                        <textarea
-                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[100px] text-black focus:border-blue-500 focus:outline-none print:border-0"
-                            placeholder="Type or use handwriting above..."
-                            value={prescriptionData.complaint}
-                            onChange={e => setPrescriptionData({ ...prescriptionData, complaint: e.target.value })}
-                        ></textarea>
+                        {showConverted ? (
+                            <div className="min-h-[120px] p-3 border border-gray-300 rounded whitespace-pre-wrap">{convertedText.complaint || 'No text recognized'}</div>
+                        ) : (
+                            <>
+                                <canvas
+                                    ref={complaintCanvasRef}
+                                    width={800}
+                                    height={120}
+                                    className="border-2 border-blue-300 rounded cursor-crosshair w-full bg-white print:hidden"
+                                    onMouseDown={(e) => startDrawing(e, complaintCanvasRef.current!)}
+                                    onMouseMove={draw}
+                                    onMouseUp={stopDrawing}
+                                    onMouseLeave={stopDrawing}
+                                />
+                                <button
+                                    onClick={() => clearCanvas(complaintCanvasRef.current)}
+                                    className="mt-2 px-3 py-1 bg-gray-400 text-white rounded text-sm print:hidden"
+                                >
+                                    <Eraser className="h-3 w-3 inline mr-1" /> Clear
+                                </button>
+                            </>
+                        )}
                     </div>
 
                     {/* GENERAL EXAMINATION */}
                     <div className="mb-8">
                         <h3 className="font-bold text-black text-lg mb-3">GENERAL EXAMINATION:</h3>
-                        <textarea
-                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[150px] text-black focus:border-blue-500 focus:outline-none print:border-0"
-                            placeholder="Type or use handwriting above..."
-                            value={prescriptionData.examination}
-                            onChange={e => setPrescriptionData({ ...prescriptionData, examination: e.target.value })}
-                        ></textarea>
+                        {showConverted ? (
+                            <div className="min-h-[150px] p-3 border border-gray-300 rounded whitespace-pre-wrap">{convertedText.examination || 'No text recognized'}</div>
+                        ) : (
+                            <>
+                                <canvas
+                                    ref={examinationCanvasRef}
+                                    width={800}
+                                    height={150}
+                                    className="border-2 border-blue-300 rounded cursor-crosshair w-full bg-white print:hidden"
+                                    onMouseDown={(e) => startDrawing(e, examinationCanvasRef.current!)}
+                                    onMouseMove={draw}
+                                    onMouseUp={stopDrawing}
+                                    onMouseLeave={stopDrawing}
+                                />
+                                <button
+                                    onClick={() => clearCanvas(examinationCanvasRef.current)}
+                                    className="mt-2 px-3 py-1 bg-gray-400 text-white rounded text-sm print:hidden"
+                                >
+                                    <Eraser className="h-3 w-3 inline mr-1" /> Clear
+                                </button>
+                            </>
+                        )}
                     </div>
 
                     {/* PLAN */}
                     <div className="mb-8">
                         <h3 className="font-bold text-black text-lg mb-3">PLAN:</h3>
-                        <textarea
-                            className="w-full border-2 border-gray-300 rounded p-2 min-h-[100px] text-black focus:border-blue-500 focus:outline-none print:border-0"
-                            placeholder="Type or use handwriting above..."
-                            value={prescriptionData.plan}
-                            onChange={e => setPrescriptionData({ ...prescriptionData, plan: e.target.value })}
-                        ></textarea>
+                        {showConverted ? (
+                            <div className="min-h-[100px] p-3 border border-gray-300 rounded whitespace-pre-wrap">{convertedText.plan || 'No text recognized'}</div>
+                        ) : (
+                            <>
+                                <canvas
+                                    ref={planCanvasRef}
+                                    width={800}
+                                    height={100}
+                                    className="border-2 border-blue-300 rounded cursor-crosshair w-full bg-white print:hidden"
+                                    onMouseDown={(e) => startDrawing(e, planCanvasRef.current!)}
+                                    onMouseMove={draw}
+                                    onMouseUp={stopDrawing}
+                                    onMouseLeave={stopDrawing}
+                                />
+                                <button
+                                    onClick={() => clearCanvas(planCanvasRef.current)}
+                                    className="mt-2 px-3 py-1 bg-gray-400 text-white rounded text-sm print:hidden"
+                                >
+                                    <Eraser className="h-3 w-3 inline mr-1" /> Clear
+                                </button>
+                            </>
+                        )}
                     </div>
 
-                    {/* PRESCRIPTION */}
+                    {/* PRESCRIPTION/MEDICINES */}
                     <div className="mb-8">
                         <h3 className="font-bold text-black text-lg mb-3">PRESCRIPTION</h3>
-
-                        {/* Selected Medicines */}
-                        <div className="mb-4">
-                            {selectedMedicines.map((med, index) => (
-                                <div key={index} className="flex items-start mb-2">
-                                    <span className="font-semibold mr-2">{index + 1}.</span>
-                                    <div className="flex-1">
-                                        <div className="font-medium">{med.medicineName || 'Select medicine'}</div>
-                                        <div className="text-sm text-gray-600">
-                                            {getDosageString(med)} x {med.days} Days
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={() => removeMedicine(index)}
-                                        className="text-red-600 print:hidden"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Medicine Selector */}
-                        <div className="print:hidden border-t-2 pt-4 mt-6">
-                            <h4 className="font-semibold mb-3">Add Medicines:</h4>
-
-                            {selectedMedicines.map((med, index) => (
-                                <div key={index} className="grid grid-cols-12 gap-2 mb-3 p-3 bg-gray-50 rounded">
-                                    <select
-                                        value={med.medicineId}
-                                        onChange={e => updateMedicine(index, 'medicineId', e.target.value)}
-                                        className="col-span-4 border rounded p-2 text-sm"
-                                    >
-                                        <option value="">Select Medicine</option>
-                                        {medicines.map(m => (
-                                            <option key={m.id} value={m.id}>{m.name}</option>
-                                        ))}
-                                    </select>
-
-                                    <select value={med.morning} onChange={e => updateMedicine(index, 'morning', e.target.value)} className="col-span-1 border rounded p-2 text-sm">
-                                        {[0, 1, 2].map(n => <option key={n} value={n}>{n}</option>)}
-                                    </select>
-                                    <span className="col-span-1 text-center text-gray-500">-</span>
-                                    <select value={med.afternoon} onChange={e => updateMedicine(index, 'afternoon', e.target.value)} className="col-span-1 border rounded p-2 text-sm">
-                                        {[0, 1, 2].map(n => <option key={n} value={n}>{n}</option>)}
-                                    </select>
-                                    <span className="col-span-1 text-center text-gray-500">-</span>
-                                    <select value={med.evening} onChange={e => updateMedicine(index, 'evening', e.target.value)} className="col-span-1 border rounded p-2 text-sm">
-                                        {[0, 1, 2].map(n => <option key={n} value={n}>{n}</option>)}
-                                    </select>
-                                    <span className="col-span-1 text-center text-gray-500">-</span>
-                                    <select value={med.night} onChange={e => updateMedicine(index, 'night', e.target.value)} className="col-span-1 border rounded p-2 text-sm">
-                                        {[0, 1, 2].map(n => <option key={n} value={n}>{n}</option>)}
-                                    </select>
-
-                                    <select value={med.days} onChange={e => updateMedicine(index, 'days', e.target.value)} className="col-span-1 border rounded p-2 text-sm">
-                                        {[1, 2, 3, 4, 5, 6, 7, 10, 14, 21, 30].map(d => <option key={d} value={d}>{d}d</option>)}
-                                    </select>
-                                </div>
-                            ))}
-
-                            <button
-                                onClick={addMedicine}
-                                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded flex items-center gap-2"
-                            >
-                                <Plus className="h-4 w-4" /> Add Medicine
-                            </button>
-                        </div>
+                        {showConverted ? (
+                            <div className="min-h-[200px] p-3 border border-gray-300 rounded whitespace-pre-wrap">{convertedText.medicines || 'No medicines recognized'}</div>
+                        ) : (
+                            <>
+                                <canvas
+                                    ref={medicinesCanvasRef}
+                                    width={800}
+                                    height={200}
+                                    className="border-2 border-blue-300 rounded cursor-crosshair w-full bg-white print:hidden"
+                                    onMouseDown={(e) => startDrawing(e, medicinesCanvasRef.current!)}
+                                    onMouseMove={draw}
+                                    onMouseUp={stopDrawing}
+                                    onMouseLeave={stopDrawing}
+                                />
+                                <button
+                                    onClick={() => clearCanvas(medicinesCanvasRef.current)}
+                                    className="mt-2 px-3 py-1 bg-gray-400 text-white rounded text-sm print:hidden"
+                                >
+                                    <Eraser className="h-3 w-3 inline mr-1" /> Clear
+                                </button>
+                            </>
+                        )}
                     </div>
 
                     {/* Footer */}
