@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Printer, Plus, Trash2, Pen, X } from 'lucide-react'
+import { Printer, Plus, Trash2, Pen, X, Copy } from 'lucide-react'
 
 export default function NewPrescriptionPage() {
     const router = useRouter()
@@ -35,6 +35,7 @@ export default function NewPrescriptionPage() {
     const [isDrawing, setIsDrawing] = useState(false)
     const [showCanvas, setShowCanvas] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
+    const [loadingPrevious, setLoadingPrevious] = useState(false)
 
     // Fetch patient data
     useEffect(() => {
@@ -137,6 +138,55 @@ export default function NewPrescriptionPage() {
         ctx.clearRect(0, 0, canvas.width, canvas.height)
     }
 
+    const loadLastPrescription = async () => {
+        if (!patientId) {
+            alert('No patient selected')
+            return
+        }
+
+        setLoadingPrevious(true)
+        try {
+            const res = await fetch(`/api/prescriptions/last?patientId=${patientId}`)
+            const data = await res.json()
+
+            if (data.success && data.data) {
+                // Fill prescription data
+                setPrescriptionData({
+                    vitals: data.data.vitals || '',
+                    diagnosis: data.data.diagnosis || '',
+                    complaint: data.data.complaint || '',
+                    examination: data.data.examination || '',
+                    plan: data.data.plan || ''
+                })
+
+                // Fill medicines
+                if (data.data.medicines && data.data.medicines.length > 0) {
+                    setSelectedMedicines(data.data.medicines)
+                } else {
+                    setSelectedMedicines([{
+                        medicineId: '',
+                        medicineName: '',
+                        morning: '1',
+                        afternoon: '0',
+                        evening: '1',
+                        night: '0',
+                        days: '3'
+                    }])
+                }
+
+                const lastDate = new Date(data.date).toLocaleDateString()
+                alert(`✅ Loaded prescription from ${lastDate}!\n\nReview and modify as needed.`)
+            } else {
+                alert('ℹ️ No previous prescription found for this patient.')
+            }
+        } catch (error) {
+            console.error('Error loading previous prescription:', error)
+            alert('❌ Failed to load previous prescription')
+        } finally {
+            setLoadingPrevious(false)
+        }
+    }
+
     const addMedicine = () => {
         setSelectedMedicines([...selectedMedicines, {
             medicineId: '',
@@ -175,6 +225,13 @@ export default function NewPrescriptionPage() {
 
                 {/* Action Buttons */}
                 <div className="mb-4 flex gap-3 print:hidden">
+                    <button
+                        onClick={loadLastPrescription}
+                        disabled={loadingPrevious || !patientId}
+                        className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded font-semibold flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                        <Copy className="h-4 w-4" /> {loadingPrevious ? 'Loading...' : 'Copy Last Prescription'}
+                    </button>
                     <button
                         onClick={() => setShowCanvas(!showCanvas)}
                         className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded font-semibold flex items-center gap-2"
