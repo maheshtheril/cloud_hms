@@ -33,7 +33,7 @@ export default function NewPrescriptionPage() {
     // Handwriting state
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [isDrawing, setIsDrawing] = useState(false)
-    const [currentField, setCurrentField] = useState<string | null>(null)
+    const [showCanvas, setShowCanvas] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
 
     // Fetch patient data
@@ -57,7 +57,7 @@ export default function NewPrescriptionPage() {
             .catch(err => console.error(err))
     }, [])
 
-    // Canvas drawing functions
+    // Canvas drawing
     const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current
         if (!canvas) return
@@ -68,6 +68,9 @@ export default function NewPrescriptionPage() {
         const rect = canvas.getBoundingClientRect()
         ctx.beginPath()
         ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top)
+        ctx.lineWidth = 2
+        ctx.lineCap = 'round'
+        ctx.strokeStyle = '#000'
     }
 
     const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -86,33 +89,41 @@ export default function NewPrescriptionPage() {
         setIsDrawing(false)
     }
 
-    const recognizeHandwriting = async () => {
+    const recognizeAllText = async () => {
         const canvas = canvasRef.current
-        if (!canvas || !currentField) return
+        if (!canvas) return
 
         setIsProcessing(true)
         try {
-            // Compress image as JPEG with 60% quality to reduce size
             canvas.toBlob(async (blob) => {
                 if (!blob) return
 
                 const formData = new FormData()
-                formData.append('image', blob, 'handwriting.jpg')
+                formData.append('image', blob, 'prescription.jpg')
 
-                const res = await fetch('/api/recognize-handwriting', {
+                const res = await fetch('/api/recognize-prescription', {
                     method: 'POST',
                     body: formData
                 })
 
                 const data = await res.json()
-                if (data.success && data.text) {
-                    setPrescriptionData({ ...prescriptionData, [currentField]: data.text })
+                if (data.success) {
+                    // AI returns structured data for each section
+                    setPrescriptionData({
+                        vitals: data.vitals || '',
+                        diagnosis: data.diagnosis || '',
+                        complaint: data.complaint || '',
+                        examination: data.examination || '',
+                        plan: data.plan || ''
+                    })
                     clearCanvas()
-                    setCurrentField(null)
+                    setShowCanvas(false)
+                    alert('Prescription recognized and filled!')
                 }
-            }, 'image/jpeg', 0.6) // JPEG with 60% quality
+            }, 'image/jpeg', 0.7)
         } catch (err) {
-            console.error('Handwriting recognition error:', err)
+            console.error('Recognition error:', err)
+            alert('Failed to recognize. Please type manually.')
         } finally {
             setIsProcessing(false)
         }
@@ -165,13 +176,19 @@ export default function NewPrescriptionPage() {
                 {/* Action Buttons */}
                 <div className="mb-4 flex gap-3 print:hidden">
                     <button
+                        onClick={() => setShowCanvas(!showCanvas)}
+                        className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded font-semibold flex items-center gap-2"
+                    >
+                        <Pen className="h-4 w-4" /> {showCanvas ? 'Hide' : 'Write Prescription'}
+                    </button>
+                    <button
                         onClick={async () => {
                             alert('Prescription saved!')
-                            console.log('Prescription Data:', { prescriptionData, medicines: selectedMedicines, patientId })
+                            console.log('Data:', { prescriptionData, medicines: selectedMedicines, patientId })
                         }}
                         className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold"
                     >
-                        Save Prescription
+                        Save
                     </button>
                     <button onClick={() => window.print()} className="px-6 py-2 bg-green-600 text-white rounded font-semibold flex items-center gap-2">
                         <Printer className="h-4 w-4" /> Print
@@ -179,7 +196,42 @@ export default function NewPrescriptionPage() {
                     <button onClick={() => router.back()} className="px-6 py-2 bg-gray-500 text-white rounded font-semibold">Back</button>
                 </div>
 
-                {/* Prescription Pad */}
+                {/* Handwriting Canvas - Shows when clicked */}
+                {showCanvas && (
+                    <div className="bg-white p-6 rounded-lg shadow-lg mb-6 print:hidden">
+                        <h3 className="text-xl font-bold text-black mb-4">✍️ Write Complete Prescription Here</h3>
+                        <p className="text-sm text-gray-600 mb-4">Draw the entire prescription. AI will recognize and fill all sections automatically.</p>
+
+                        <canvas
+                            ref={canvasRef}
+                            width={900}
+                            height={600}
+                            className="border-4 border-purple-300 rounded cursor-crosshair w-full bg-white"
+                            onMouseDown={startDrawing}
+                            onMouseMove={draw}
+                            onMouseUp={stopDrawing}
+                            onMouseLeave={stopDrawing}
+                        ></canvas>
+
+                        <div className="mt-4 flex gap-3">
+                            <button
+                                onClick={recognizeAllText}
+                                disabled={isProcessing}
+                                className="px-6 py-3 bg-green-600 text-white rounded font-semibold disabled:bg-gray-400 hover:bg-green-700"
+                            >
+                                {isProcessing ? '🔄 Processing...' : '✨ Recognize & Fill All Sections'}
+                            </button>
+                            <button
+                                onClick={clearCanvas}
+                                className="px-6 py-3 bg-gray-500 text-white rounded font-semibold hover:bg-gray-600"
+                            >
+                                Clear Canvas
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Prescription Form */}
                 <div className="bg-white shadow-lg p-8">
 
                     {/* Patient Info */}
@@ -194,18 +246,10 @@ export default function NewPrescriptionPage() {
 
                     {/* VITALS */}
                     <div className="mb-8">
-                        <div className="flex justify-between items-center mb-3">
-                            <h3 className="font-bold text-black text-lg">VITALS</h3>
-                            <button
-                                onClick={() => setCurrentField('vitals')}
-                                className="print:hidden px-3 py-1 bg-purple-600 text-white rounded flex items-center gap-2 text-sm"
-                            >
-                                <Pen className="h-3 w-3" /> Write
-                            </button>
-                        </div>
+                        <h3 className="font-bold text-black text-lg mb-3">VITALS</h3>
                         <textarea
                             className="w-full border-2 border-gray-300 rounded p-2 min-h-[80px] text-black focus:border-blue-500 focus:outline-none print:border-0"
-                            placeholder="Type or use handwriting..."
+                            placeholder="Type or use handwriting above..."
                             value={prescriptionData.vitals}
                             onChange={e => setPrescriptionData({ ...prescriptionData, vitals: e.target.value })}
                         ></textarea>
@@ -213,18 +257,10 @@ export default function NewPrescriptionPage() {
 
                     {/* DIAGNOSIS */}
                     <div className="mb-8">
-                        <div className="flex justify-between items-center mb-3">
-                            <h3 className="font-bold text-black text-lg">DIAGNOSIS:</h3>
-                            <button
-                                onClick={() => setCurrentField('diagnosis')}
-                                className="print:hidden px-3 py-1 bg-purple-600 text-white rounded flex items-center gap-2 text-sm"
-                            >
-                                <Pen className="h-3 w-3" /> Write
-                            </button>
-                        </div>
+                        <h3 className="font-bold text-black text-lg mb-3">DIAGNOSIS:</h3>
                         <textarea
                             className="w-full border-2 border-gray-300 rounded p-2 min-h-[80px] text-black focus:border-blue-500 focus:outline-none print:border-0"
-                            placeholder="Type or use handwriting..."
+                            placeholder="Type or use handwriting above..."
                             value={prescriptionData.diagnosis}
                             onChange={e => setPrescriptionData({ ...prescriptionData, diagnosis: e.target.value })}
                         ></textarea>
@@ -232,18 +268,10 @@ export default function NewPrescriptionPage() {
 
                     {/* PRESENTING COMPLAINT */}
                     <div className="mb-8">
-                        <div className="flex justify-between items-center mb-3">
-                            <h3 className="font-bold text-black text-lg">PRESENTING COMPLAINT:</h3>
-                            <button
-                                onClick={() => setCurrentField('complaint')}
-                                className="print:hidden px-3 py-1 bg-purple-600 text-white rounded flex items-center gap-2 text-sm"
-                            >
-                                <Pen className="h-3 w-3" /> Write
-                            </button>
-                        </div>
+                        <h3 className="font-bold text-black text-lg mb-3">PRESENTING COMPLAINT:</h3>
                         <textarea
                             className="w-full border-2 border-gray-300 rounded p-2 min-h-[100px] text-black focus:border-blue-500 focus:outline-none print:border-0"
-                            placeholder="Type or use handwriting..."
+                            placeholder="Type or use handwriting above..."
                             value={prescriptionData.complaint}
                             onChange={e => setPrescriptionData({ ...prescriptionData, complaint: e.target.value })}
                         ></textarea>
@@ -251,18 +279,10 @@ export default function NewPrescriptionPage() {
 
                     {/* GENERAL EXAMINATION */}
                     <div className="mb-8">
-                        <div className="flex justify-between items-center mb-3">
-                            <h3 className="font-bold text-black text-lg">GENERAL EXAMINATION:</h3>
-                            <button
-                                onClick={() => setCurrentField('examination')}
-                                className="print:hidden px-3 py-1 bg-purple-600 text-white rounded flex items-center gap-2 text-sm"
-                            >
-                                <Pen className="h-3 w-3" /> Write
-                            </button>
-                        </div>
+                        <h3 className="font-bold text-black text-lg mb-3">GENERAL EXAMINATION:</h3>
                         <textarea
                             className="w-full border-2 border-gray-300 rounded p-2 min-h-[150px] text-black focus:border-blue-500 focus:outline-none print:border-0"
-                            placeholder="Type or use handwriting..."
+                            placeholder="Type or use handwriting above..."
                             value={prescriptionData.examination}
                             onChange={e => setPrescriptionData({ ...prescriptionData, examination: e.target.value })}
                         ></textarea>
@@ -270,18 +290,10 @@ export default function NewPrescriptionPage() {
 
                     {/* PLAN */}
                     <div className="mb-8">
-                        <div className="flex justify-between items-center mb-3">
-                            <h3 className="font-bold text-black text-lg">PLAN:</h3>
-                            <button
-                                onClick={() => setCurrentField('plan')}
-                                className="print:hidden px-3 py-1 bg-purple-600 text-white rounded flex items-center gap-2 text-sm"
-                            >
-                                <Pen className="h-3 w-3" /> Write
-                            </button>
-                        </div>
+                        <h3 className="font-bold text-black text-lg mb-3">PLAN:</h3>
                         <textarea
                             className="w-full border-2 border-gray-300 rounded p-2 min-h-[100px] text-black focus:border-blue-500 focus:outline-none print:border-0"
-                            placeholder="Type or use handwriting..."
+                            placeholder="Type or use handwriting above..."
                             value={prescriptionData.plan}
                             onChange={e => setPrescriptionData({ ...prescriptionData, plan: e.target.value })}
                         ></textarea>
@@ -360,7 +372,7 @@ export default function NewPrescriptionPage() {
                         </div>
                     </div>
 
-                    {/* Footer - Doctor Signature */}
+                    {/* Footer */}
                     <div className="mt-16 pt-6 border-t-2 border-black flex justify-between print:mt-32">
                         <div></div>
                         <div className="text-right">
@@ -371,47 +383,6 @@ export default function NewPrescriptionPage() {
                     </div>
                 </div>
             </div>
-
-            {/* Handwriting Modal */}
-            {currentField && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:hidden">
-                    <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold text-black">Write {currentField.toUpperCase()}</h3>
-                            <button onClick={() => setCurrentField(null)} className="text-gray-500">
-                                <X className="h-6 w-6" />
-                            </button>
-                        </div>
-
-                        <canvas
-                            ref={canvasRef}
-                            width={700}
-                            height={400}
-                            className="border-2 border-gray-300 rounded cursor-crosshair"
-                            onMouseDown={startDrawing}
-                            onMouseMove={draw}
-                            onMouseUp={stopDrawing}
-                            onMouseLeave={stopDrawing}
-                        ></canvas>
-
-                        <div className="mt-4 flex gap-3">
-                            <button
-                                onClick={recognizeHandwriting}
-                                disabled={isProcessing}
-                                className="px-4 py-2 bg-green-600 text-white rounded disabled:bg-gray-400"
-                            >
-                                {isProcessing ? 'Processing...' : 'Recognize Text'}
-                            </button>
-                            <button
-                                onClick={clearCanvas}
-                                className="px-4 py-2 bg-gray-500 text-white rounded"
-                            >
-                                Clear
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     )
 }
