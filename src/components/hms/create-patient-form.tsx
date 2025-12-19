@@ -14,7 +14,7 @@ interface CreatePatientFormProps {
 }
 
 export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormProps) {
-    
+
     const [state, action, isPending] = useActionState(createPatient, initialState);
     const [showMoreDetails, setShowMoreDetails] = useState(false);
     const [useAge, setUseAge] = useState(true); // Toggle between Age and DOB
@@ -22,7 +22,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
     const [age, setAge] = useState('');
     const [ageUnit, setAgeUnit] = useState('Years');
     const [dob, setDob] = useState('');
-    const [gender, setGender] = useState('');
+    const [gender, setGender] = useState('M');
 
     // Auto-calculate DOB from Age
     const handleAgeChange = (value: string, unit: string) => {
