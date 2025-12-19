@@ -8,6 +8,7 @@ export default function NewPrescriptionPage() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const patientId = searchParams.get('patientId')
+    const appointmentId = searchParams.get('appointmentId') // For billing integration
 
     const [patientInfo, setPatientInfo] = useState<any>(null)
     const [medicines, setMedicines] = useState<any[]>([])
@@ -303,9 +304,10 @@ export default function NewPrescriptionPage() {
                 alert('✅ Prescription saved successfully!')
 
                 if (redirectToBill && data.medicines && data.medicines.length > 0) {
-                    // Redirect to billing with medicines
+                    // Redirect to billing with medicines AND appointment info
                     const medicineParams = encodeURIComponent(JSON.stringify(data.medicines))
-                    router.push(`/hms/billing/new?patientId=${patientId}&medicines=${medicineParams}`)
+                    const appointmentParam = appointmentId ? `&appointmentId=${appointmentId}` : ''
+                    router.push(`/hms/billing/new?patientId=${patientId}&medicines=${medicineParams}${appointmentParam}`)
                 } else {
                     // Just go back to patient list
                     router.push('/hms/patients')
