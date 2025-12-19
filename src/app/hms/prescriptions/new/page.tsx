@@ -355,9 +355,9 @@ export default function NewPrescriptionPage() {
                         { title: 'PLAN', ref: planCanvasRef, height: 80 }
                     ].map((section, idx) => (
                         <div key={idx} className="mb-6">
-                            <h3 className="font-bold text-gray-800 text-sm mb-2 uppercase tracking-wide">{section.title}</h3>
+                            <h3 className="font-bold text-black text-base mb-2 uppercase tracking-wide">{section.title}</h3>
                             {showConverted ? (
-                                <div className="min-h-[80px] p-4 bg-gray-50 border border-gray-200 rounded-lg whitespace-pre-wrap text-sm">
+                                <div className="min-h-[80px] p-4 bg-gray-50 border border-gray-300 rounded-lg whitespace-pre-wrap text-base text-black">
                                     {convertedText[section.title.toLowerCase().split(' ')[0] as keyof typeof convertedText] || 'No text recognized'}
                                 </div>
                             ) : (
@@ -385,7 +385,7 @@ export default function NewPrescriptionPage() {
 
                     {/* Medicines Section - FUTURISTIC */}
                     <div className="mb-6 mt-8">
-                        <h3 className="font-bold text-gray-800 text-sm mb-4 uppercase tracking-wide">PRESCRIPTION</h3>
+                        <h3 className="font-bold text-black text-base mb-4 uppercase tracking-wide">PRESCRIPTION</h3>
 
                         {/* Smart Medicine Search */}
                         <div className="mb-4 print:hidden">
@@ -412,8 +412,8 @@ export default function NewPrescriptionPage() {
                                                         onClick={() => addMedicineFromSearch(med)}
                                                         className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100"
                                                     >
-                                                        <div className="font-semibold text-gray-800">{med.name}</div>
-                                                        <div className="text-xs text-gray-500">From database</div>
+                                                        <div className="font-bold text-black text-base">{med.name}</div>
+                                                        <div className="text-sm text-gray-700">From database</div>
                                                     </div>
                                                 ))
                                             )}
@@ -423,8 +423,8 @@ export default function NewPrescriptionPage() {
                                                     onClick={addCustomMedicine}
                                                     className="px-4 py-3 hover:bg-green-50 cursor-pointer bg-green-50 border-t-2 border-green-300"
                                                 >
-                                                    <div className="font-semibold text-green-700">✚ Add "{medicineSearch}" (Custom)</div>
-                                                    <div className="text-xs text-green-600">Click or press Enter to add</div>
+                                                    <div className="font-bold text-green-800 text-base">✚ Add "{medicineSearch}" (Custom)</div>
+                                                    <div className="text-sm text-green-700">Click or press Enter to add</div>
                                                 </div>
                                             )}
                                         </div>
