@@ -276,6 +276,49 @@ export default function NewPrescriptionPage() {
         }
     }
 
+    const savePrescription = async (redirectToBill = false) => {
+        if (selectedMedicines.length === 0) {
+            alert('❌ Please add at least one medicine')
+            return
+        }
+
+        try {
+            const res = await fetch('/api/prescriptions/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    patientId,
+                    vitals: convertedText.vitals || '',
+                    diagnosis: convertedText.diagnosis || '',
+                    complaint: convertedText.complaint || '',
+                    examination: convertedText.examination || '',
+                    plan: convertedText.plan || '',
+                    medicines: selectedMedicines
+                })
+            })
+
+            const data = await res.json()
+
+            if (data.success) {
+                alert('✅ Prescription saved successfully!')
+
+                if (redirectToBill && data.medicines && data.medicines.length > 0) {
+                    // Redirect to billing with medicines
+                    const medicineParams = encodeURIComponent(JSON.stringify(data.medicines))
+                    router.push(`/hms/billing/new?patientId=${patientId}&medicines=${medicineParams}`)
+                } else {
+                    // Just go back to patient list
+                    router.push('/hms/patients')
+                }
+            } else {
+                alert('❌ Failed to save: ' + (data.error || 'Unknown error'))
+            }
+        } catch (error) {
+            console.error('Save error:', error)
+            alert('❌ Failed to save prescription')
+        }
+    }
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
             <div className="max-w-6xl mx-auto">
@@ -462,30 +505,37 @@ export default function NewPrescriptionPage() {
                     </div>
                 </div>
 
-                {/* Bottom Buttons */}
-                <div className="sticky bottom-6 bg-white shadow-2xl rounded-2xl p-4 flex gap-3 justify-center print:hidden border-t-4 border-blue-500">
-                    <button
-                        onClick={convertAndPrint}
-                        disabled={isConverting}
-                        className="px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-bold text-lg flex items-center gap-3 disabled:from-gray-400 disabled:to-gray-400 shadow-lg transform hover:scale-105 transition"
-                    >
-                        <Printer className="h-6 w-6" /> {isConverting ? 'Converting...' : 'Convert & Print'}
-                    </button>
-                    <button
-                        onClick={() => {
-                            setShowConverted(false)
-                            window.print()
-                        }}
-                        className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-bold text-lg flex items-center gap-3 shadow-lg transform hover:scale-105 transition"
-                    >
-                        <Printer className="h-6 w-6" /> Print
-                    </button>
-                    <button
-                        onClick={() => router.back()}
-                        className="px-6 py-4 bg-gray-500 hover:bg-gray-600 text-white rounded-xl font-semibold shadow-lg"
-                    >
-                        Back
-                    </button>
+
+                {/* Bottom Action Buttons */}
+                <div className="bg-white shadow-2xl rounded-2xl p-4 mb-6 print:hidden border-t-4 border-blue-500">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <button
+                            onClick={() => savePrescription(false)}
+                            className="px-6 py-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-bold text-sm shadow-lg transform hover:scale-105 transition"
+                        >
+                            💾 Save Prescription
+                        </button>
+                        <button
+                            onClick={() => savePrescription(true)}
+                            className="px-6 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-bold text-sm shadow-lg transform hover:scale-105 transition"
+                        >
+                            💊 Save & Create Bill
+                        </button>
+                        <button
+                            onClick={convertAndPrint}
+                            disabled={isConverting}
+                            className="px-6 py-4 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl font-bold text-sm shadow-lg transform hover:scale-105 transition disabled:from-gray-400 disabled:to-gray-400"
+                        >
+                            <Printer className="inline h-5 w-5 mr-2" />
+                            {isConverting ? 'Converting...' : 'Print'}
+                        </button>
+                        <button
+                            onClick={() => router.back()}
+                            className="px-6 py-4 bg-gray-500 hover:bg-gray-600 text-white rounded-xl font-bold text-sm shadow-lg"
+                        >
+                            ← Back
+                        </button>
+                    </div>
                 </div>
             </div>
 
