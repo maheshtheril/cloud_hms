@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/auth.config'
+import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 
 export async function GET(request: NextRequest) {
     try {
-        const session = await getServerSession(authOptions)
+        const session = await auth()
         if (!session?.user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
@@ -17,11 +16,23 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Patient ID required' }, { status: 400 })
         }
 
+        // Check if prescription table exists
+        // @ts-ignore - prescription table doesn't exist yet in schema
+        const prescriptionTableExists = prisma.prescription !== undefined
+
+        if (!prescriptionTableExists) {
+            return NextResponse.json({
+                success: false,
+                message: 'Prescription feature not yet configured. Database tables needed.'
+            })
+        }
+
         // Fetch the most recent prescription for this patient
+        // @ts-ignore - prescription table doesn't exist yet in schema
         const lastPrescription = await prisma.prescription.findFirst({
             where: {
                 patient_id: patientId,
-                tenant_id: session.user.tenant_id
+                tenant_id: session.user.tenantId
             },
             orderBy: {
                 created_at: 'desc'
