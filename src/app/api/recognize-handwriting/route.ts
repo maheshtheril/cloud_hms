@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
                     data: base64Image
                 }
             },
-            "Extract all handwritten and printed text from this image. Return only the text content, nothing else."
+            "You are an OCR system. Extract ALL handwritten text from this image. Return ONLY the extracted text with NO explanations, apologies, or conversational text. If no text is found, return empty string."
         ])
 
         const text = result.response.text()
