@@ -29,8 +29,7 @@ export default function NewPrescriptionPage() {
         fetch(`/api/patients/${patientId}`)
             .then(res => res.json())
             .then(data => {
-                if (data.patient) setPatient
-                Info(data.patient)
+                if (data.patient) setPatientInfo(data.patient)
             })
             .catch(err => console.error(err))
     }, [patientId])
@@ -149,3 +148,4 @@ export default function NewPrescriptionPage() {
         </div>
     )
 }
+
