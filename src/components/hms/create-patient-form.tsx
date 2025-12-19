@@ -2,12 +2,14 @@
 
 import { createPatient } from "@/app/actions/patient"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { X, User, Phone, Calendar, ChevronDown, Camera, Upload } from "lucide-react"
-import { useActionState, useState } from "react"
+import { useActionState, useState, useEffect } from "react"
 
 const initialState = {
     error: "",
-    success: false
+    success: false,
+    patientId: undefined as string | undefined
 }
 
 interface CreatePatientFormProps {
@@ -15,9 +17,11 @@ interface CreatePatientFormProps {
 }
 
 export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormProps) {
+    const router = useRouter();
     const [state, action, isPending] = useActionState(createPatient, initialState);
     const [showMoreDetails, setShowMoreDetails] = useState(false);
     const [useAge, setUseAge] = useState(true); // Toggle between Age and DOB
+    const [nextAction, setNextAction] = useState<'rx' | 'bill' | 'appointment'>('rx');
     const [age, setAge] = useState('');
     const [ageUnit, setAgeUnit] = useState('Years');
     const [dob, setDob] = useState('');
@@ -64,6 +68,20 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
             setAgeUnit('Years');
         }
     };
+
+    // Handle redirect after successful patient creation
+    useEffect(() => {
+        if (state?.success) {
+            // Redirect based on the selected action
+            if (nextAction === 'rx') {
+                router.push('/hms/patients'); // TODO: Redirect to Rx/Prescription page
+            } else if (nextAction === 'bill') {
+                router.push('/hms/billing');
+            } else if (nextAction === 'appointment') {
+                router.push('/hms/appointments'); // TODO: Update to appointments page
+            }
+        }
+    }, [state?.success, nextAction, router]);
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -449,25 +467,30 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                         <button
                             type="submit"
                             disabled={isPending}
-                            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-base shadow-lg transition-colors disabled:opacity-50"
+                            onClick={() => setNextAction('rx')}
+                            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm shadow-lg transition-colors disabled:opacity-50"
                         >
-                            {isPending ? 'Creating...' : 'Add & Create Rx'}
+                            {isPending && nextAction === 'rx' ? 'Creating...' : 'Add & Create Rx'}
                         </button>
 
-                        <p className="text-center text-gray-500 font-medium">or</p>
+                        <p className="text-center text-gray-500 font-medium text-xs">or</p>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-2">
                             <button
-                                type="button"
-                                className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors"
+                                type="submit"
+                                disabled={isPending}
+                                onClick={() => setNextAction('bill')}
+                                className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
                             >
-                                Add & Create Bill
+                                {isPending && nextAction === 'bill' ? 'Creating...' : 'Add & Create Bill'}
                             </button>
                             <button
-                                type="button"
-                                className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors"
+                                type="submit"
+                                disabled={isPending}
+                                onClick={() => setNextAction('appointment')}
+                                className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
                             >
-                                Add & Create Appointment
+                                {isPending && nextAction === 'appointment' ? 'Creating...' : 'Add & Create Appointment'}
                             </button>
                         </div>
                     </div>
