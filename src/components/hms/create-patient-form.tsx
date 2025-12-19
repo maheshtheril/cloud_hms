@@ -450,9 +450,19 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                     {/* Action Buttons */}
                     <div className="border-t-2 border-gray-200 pt-6 space-y-2">
                         <button
-                            type="submit"
+                            type="button"
                             disabled={isPending}
-                            onClick={() => setNextAction('rx')}
+                            onClick={() => {
+                                setNextAction('rx');
+                                // Wait for state to update, then submit
+                                setTimeout(() => {
+                                    const form = document.querySelector('form');
+                                    if (form) {
+                                        const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+                                        form.dispatchEvent(submitEvent);
+                                    }
+                                }, 0);
+                            }}
                             className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm shadow-lg transition-colors disabled:opacity-50"
                         >
                             {isPending && nextAction === 'rx' ? 'Creating...' : 'Add & Create Rx'}
@@ -462,17 +472,35 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
 
                         <div className="grid grid-cols-2 gap-2">
                             <button
-                                type="submit"
+                                type="button"
                                 disabled={isPending}
-                                onClick={() => setNextAction('bill')}
+                                onClick={() => {
+                                    setNextAction('bill');
+                                    setTimeout(() => {
+                                        const form = document.querySelector('form');
+                                        if (form) {
+                                            const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+                                            form.dispatchEvent(submitEvent);
+                                        }
+                                    }, 0);
+                                }}
                                 className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
                             >
                                 {isPending && nextAction === 'bill' ? 'Creating...' : 'Add & Create Bill'}
                             </button>
                             <button
-                                type="submit"
+                                type="button"
                                 disabled={isPending}
-                                onClick={() => setNextAction('appointment')}
+                                onClick={() => {
+                                    setNextAction('appointment');
+                                    setTimeout(() => {
+                                        const form = document.querySelector('form');
+                                        if (form) {
+                                            const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+                                            form.dispatchEvent(submitEvent);
+                                        }
+                                    }, 0);
+                                }}
                                 className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
                             >
                                 {isPending && nextAction === 'appointment' ? 'Creating...' : 'Add & Create Appointment'}
@@ -484,4 +512,3 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
         </div>
     )
 }
-
