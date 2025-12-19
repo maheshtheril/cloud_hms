@@ -13,7 +13,7 @@ export default function NewPrescriptionPage() {
     const [recognizedText, setRecognizedText] = useState('')
     const [isProcessing, setIsProcessing] = useState(false)
     const [medicines, setMedicines] = useState<any[]>([])
-    const [patientName, setPatientName] = useState('Loading...')
+    const [patientInfo, setPatientInfo] = useState<any>(null)
 
     // Canvas drawing setup
     useEffect(() => {
@@ -32,6 +32,23 @@ export default function NewPrescriptionPage() {
         ctx.lineCap = 'round'
         ctx.strokeStyle = '#1e40af'
     }, [])
+
+    // Fetch patient data
+    useEffect(() => {
+        if (!patientId) return;
+
+        fetch(`/api/patients/${patientId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.patient) {
+                    setPatientInfo(data.patient)
+                }
+            })
+            .catch(err => {
+                console.error('Failed to fetch patient:', err)
+                setPatientInfo({ first_name: 'Unknown', last_name: 'Patient' })
+            })
+    }, [patientId])
 
     const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current
@@ -122,7 +139,7 @@ export default function NewPrescriptionPage() {
                                 <Sparkles className="h-8 w-8 text-indigo-500 animate-pulse" />
                                 AI-Powered Prescription
                             </h1>
-                            <p className="text-gray-600 mt-1">Patient ID: {patientId || 'Not specified'}</p>
+                            <p className="text-gray-600 mt-1">Patient: {patientInfo ? ${patientInfo.first_name}  : 'Loading...'} | Age: {patientInfo?.age || 'N/A'} | Gender: {patientInfo?.gender || 'N/A'}</p>
                         </div>
                         <button
                             onClick={() => router.back()}
@@ -216,3 +233,4 @@ export default function NewPrescriptionPage() {
         </div>
     )
 }
+
