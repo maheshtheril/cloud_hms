@@ -67,7 +67,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[85vh] overflow-hidden flex flex-col">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-hidden flex flex-col">
 
                 {/* Header */}
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
@@ -77,7 +77,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                     </Link>
                 </div>
 
-                <form action={action} className="flex-1 overflow-y-auto p-4 space-y-3">
+                <form action={action} className="flex-1 overflow-y-auto p-3 space-y-2">
 
                     {state?.error && (
                         <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg">
@@ -218,6 +218,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                             />
                         </div>
 
+
                         {/* Address */}
                         <div className="space-y-1">
                             <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Address</label>
@@ -229,7 +230,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                         </div>
 
                         {/* Pin */}
-                        <div className="space-y-1 md:col-span-2">
+                        <div className="space-y-1">
                             <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Pin</label>
                             <input
                                 name="zip"
@@ -422,7 +423,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                 {/* Photo Upload */}
                                 <div className="space-y-1 md:col-span-2">
                                     <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Patient Photo</label>
-                                    <div className="flex gap-3">
+                                    <div className="flex gap-2">
                                         <button
                                             type="button"
                                             className="flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
@@ -444,7 +445,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                     )}
 
                     {/* Action Buttons */}
-                    <div className="border-t-2 border-gray-200 pt-6 space-y-3">
+                    <div className="border-t-2 border-gray-200 pt-6 space-y-2">
                         <button
                             type="submit"
                             disabled={isPending}
