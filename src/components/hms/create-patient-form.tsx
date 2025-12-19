@@ -93,14 +93,29 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                             <label className="text-sm font-semibold text-gray-700">
                                 Patient Name<span className="text-red-500">*</span>
                             </label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                <input
-                                    name="first_name"
-                                    required
-                                    placeholder="Enter Name"
-                                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
-                                />
+                            <div className="flex gap-2">
+                                <select className="w-28 px-2 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer text-sm">
+                                    <option value="">Title</option>
+                                    <option>Mr</option>
+                                    <option>Mrs</option>
+                                    <option>Ms</option>
+                                    <option>Dr</option>
+                                    <option>Md</option>
+                                    <option>Smt</option>
+                                    <option>Baby</option>
+                                    <option>Master</option>
+                                    <option>Sri</option>
+                                    <option>Kumari</option>
+                                </select>
+                                <div className="relative flex-1">
+                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                                    <input
+                                        name="first_name"
+                                        required
+                                        placeholder="Enter Name"
+                                        className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
+                                    />
+                                </div>
                             </div>
                             <p className="text-xs text-red-500">Enter the Name of the Patient</p>
                         </div>
@@ -473,3 +488,4 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
         </div>
     )
 }
+
