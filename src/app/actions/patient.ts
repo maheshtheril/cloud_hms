@@ -98,6 +98,9 @@ export async function createPatient(prevState: any, formData: FormData) {
         redirect("/hms/billing")
     } else if (nextAction === 'appointment') {
         redirect("/hms/appointments")
+    } else if (nextAction === 'rx') {
+        // Redirect to new prescription with patient ID
+        redirect(`/hms/prescriptions/new?patientId=${patient.id}`)
     } else {
         // Default: redirect to patients list
         redirect("/hms/patients")
