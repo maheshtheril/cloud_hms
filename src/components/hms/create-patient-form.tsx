@@ -453,14 +453,17 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                         <button
                             type="button"
                             disabled={isPending}
-                            onClick={() => {
-                                setNextAction('rx');
-                                // Use requestSubmit to trigger form submission with validation
-                                setTimeout(() => formRef.current?.requestSubmit(), 10);
+                            onClick={(e) => {
+                                e.preventDefault();
+                                // Directly set the hidden input value
+                                const hiddenInput = formRef.current?.querySelector('input[name="next_action"]') as HTMLInputElement;
+                                if (hiddenInput) hiddenInput.value = 'rx';
+                                // Submit the form
+                                formRef.current?.requestSubmit();
                             }}
                             className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm shadow-lg transition-colors disabled:opacity-50"
                         >
-                            {isPending && nextAction === 'rx' ? 'Creating...' : 'Add & Create Rx'}
+                            {isPending ? 'Creating...' : 'Add & Create Rx'}
                         </button>
 
                         <p className="text-center text-gray-500 font-medium text-xs">or</p>
@@ -469,24 +472,28 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                             <button
                                 type="button"
                                 disabled={isPending}
-                                onClick={() => {
-                                    setNextAction('bill');
-                                    setTimeout(() => formRef.current?.requestSubmit(), 10);
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    const hiddenInput = formRef.current?.querySelector('input[name="next_action"]') as HTMLInputElement;
+                                    if (hiddenInput) hiddenInput.value = 'bill';
+                                    formRef.current?.requestSubmit();
                                 }}
                                 className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
                             >
-                                {isPending && nextAction === 'bill' ? 'Creating...' : 'Add & Create Bill'}
+                                {isPending ? 'Creating...' : 'Add & Create Bill'}
                             </button>
                             <button
                                 type="button"
                                 disabled={isPending}
-                                onClick={() => {
-                                    setNextAction('appointment');
-                                    setTimeout(() => formRef.current?.requestSubmit(), 10);
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    const hiddenInput = formRef.current?.querySelector('input[name="next_action"]') as HTMLInputElement;
+                                    if (hiddenInput) hiddenInput.value = 'appointment';
+                                    formRef.current?.requestSubmit();
                                 }}
                                 className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
                             >
-                                {isPending && nextAction === 'appointment' ? 'Creating...' : 'Add & Create Appointment'}
+                                {isPending ? 'Creating...' : 'Add & Create Appointment'}
                             </button>
                         </div>
                     </div>
