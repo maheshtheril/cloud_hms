@@ -16,19 +16,7 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ error: 'Patient ID required' }, { status: 400 })
         }
 
-        // Check if prescription table exists
-        // @ts-ignore - prescription table doesn't exist yet in schema
-        const prescriptionTableExists = prisma.prescription !== undefined
-
-        if (!prescriptionTableExists) {
-            return NextResponse.json({
-                success: false,
-                message: 'Prescription feature not yet configured. Database tables needed.'
-            })
-        }
-
         // Fetch the most recent prescription for this patient
-        // @ts-ignore - prescription table doesn't exist yet in schema
         const lastPrescription = await prisma.prescription.findFirst({
             where: {
                 patient_id: patientId,
@@ -40,7 +28,7 @@ export async function GET(request: NextRequest) {
             include: {
                 prescription_items: {
                     include: {
-                        medicine: true
+                        hms_product: true
                     }
                 }
             }
@@ -62,7 +50,7 @@ export async function GET(request: NextRequest) {
             plan: lastPrescription.plan || '',
             medicines: lastPrescription.prescription_items?.map((item: any) => ({
                 medicineId: item.medicine_id,
-                medicineName: item.medicine?.name || '',
+                medicineName: item.hms_product?.name || '',
                 morning: item.morning?.toString() || '0',
                 afternoon: item.afternoon?.toString() || '0',
                 evening: item.evening?.toString() || '0',

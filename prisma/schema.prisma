@@ -922,31 +922,31 @@ model hms_appointment_tags {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model hms_appointments {
-  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id        String    @db.Uuid
-  company_id       String?   @db.Uuid
-  patient_id       String    @db.Uuid
-  clinician_id     String    @db.Uuid
-  department_id    String?   @db.Uuid
-  location_id      String?   @db.Uuid
-  room_id          String?   @db.Uuid
-  starts_at        DateTime  @db.Timestamptz(6)
-  ends_at          DateTime  @db.Timestamptz(6)
-  duration_minutes Int?      @default(dbgenerated("((EXTRACT(epoch FROM (ends_at - starts_at)) / (60)::numeric))::integer"))
-  status           String    @default("scheduled")
-  type             String?   @default("consultation")
-  mode             String?   @default("in_person")
-  priority         String?   @default("normal")
+  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id        String      @db.Uuid
+  company_id       String?     @db.Uuid
+  patient_id       String      @db.Uuid
+  clinician_id     String      @db.Uuid
+  department_id    String?     @db.Uuid
+  location_id      String?     @db.Uuid
+  room_id          String?     @db.Uuid
+  starts_at        DateTime    @db.Timestamptz(6)
+  ends_at          DateTime    @db.Timestamptz(6)
+  duration_minutes Int?        @default(dbgenerated("((EXTRACT(epoch FROM (ends_at - starts_at)) / (60)::numeric))::integer"))
+  status           String      @default("scheduled")
+  type             String?     @default("consultation")
+  mode             String?     @default("in_person")
+  priority         String?     @default("normal")
   notes            String?
-  source           String?   @default("manual")
+  source           String?     @default("manual")
   ai_suggestion    Json?
   external_ref     String?
-  created_at       DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime? @default(now()) @db.Timestamptz(6)
-  created_by       String?      @db.Uuid
-  updated_by       String?      @db.Uuid
-  deleted_at       DateTime?    @db.Timestamptz(6)
-  hms_patient      hms_patient  @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  created_at       DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime?   @default(now()) @db.Timestamptz(6)
+  created_by       String?     @db.Uuid
+  updated_by       String?     @db.Uuid
+  deleted_at       DateTime?   @db.Timestamptz(6)
+  hms_patient      hms_patient @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([clinician_id, starts_at], map: "idx_hms_appointments_clinician_starts_at")
   @@index([patient_id], map: "idx_hms_appointments_patient")
@@ -1659,6 +1659,7 @@ model hms_product {
   product_tax_rules          product_tax_rules[]
   hms_stock_ledger           hms_stock_ledger[]
   hms_purchase_order_line    hms_purchase_order_line[]
+  prescription_items         prescription_items[]
 
   @@unique([tenant_id, sku], map: "ux_hms_product_tenant_sku")
   @@index([company_id], map: "ix_hms_product_company")
@@ -2102,20 +2103,20 @@ model hms_staff {
 }
 
 model hms_stock_ledger {
-  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id        String   @db.Uuid
-  company_id       String   @db.Uuid
-  product_id       String   @db.Uuid
+  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id        String      @db.Uuid
+  company_id       String      @db.Uuid
+  product_id       String      @db.Uuid
   related_type     String?
-  related_id       String?  @db.Uuid
+  related_id       String?     @db.Uuid
   movement_type    String
-  qty              Decimal  @db.Decimal(20, 6)
+  qty              Decimal     @db.Decimal(20, 6)
   uom              String?
-  unit_cost        Decimal? @default(0) @db.Decimal(18, 6)
-  total_cost       Decimal? @default(0) @db.Decimal(22, 6)
-  from_location_id String?  @db.Uuid
-  to_location_id   String?  @db.Uuid
-  batch_id         String?  @db.Uuid
+  unit_cost        Decimal?    @default(0) @db.Decimal(18, 6)
+  total_cost       Decimal?    @default(0) @db.Decimal(22, 6)
+  from_location_id String?     @db.Uuid
+  to_location_id   String?     @db.Uuid
+  batch_id         String?     @db.Uuid
   lot_number       String?
   reference        String?
   created_at       DateTime    @default(now()) @db.Timestamptz(6)
@@ -3204,14 +3205,14 @@ model permission {
 }
 
 model crm_leads {
-  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id          String              @db.Uuid
-  company_id         String?             @db.Uuid
+  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id          String           @db.Uuid
+  company_id         String?          @db.Uuid
   /// Link to app_user
-  owner_id           String?             @db.Uuid
-  pipeline_id        String?             @db.Uuid
-  stage_id           String?             @db.Uuid
-  source_id          String?             @db.Uuid
+  owner_id           String?          @db.Uuid
+  pipeline_id        String?          @db.Uuid
+  stage_id           String?          @db.Uuid
+  source_id          String?          @db.Uuid
   /// Lead Name / Title
   name               String
   /// Person Name
@@ -3221,24 +3222,24 @@ model crm_leads {
   email              String?
   phone              String?
   /// new, contacted, qualified, lost, converted
-  status             String?             @default("new")
-  estimated_value    Decimal?            @default(0) @db.Decimal(18, 2)
-  probability        Decimal?            @default(0) @db.Decimal(5, 2)
-  next_followup_date DateTime?           @db.Timestamptz(6)
-  last_activity_date DateTime?           @db.Timestamptz(6)
-  lead_score         Int?                @default(0)
+  status             String?          @default("new")
+  estimated_value    Decimal?         @default(0) @db.Decimal(18, 2)
+  probability        Decimal?         @default(0) @db.Decimal(5, 2)
+  next_followup_date DateTime?        @db.Timestamptz(6)
+  last_activity_date DateTime?        @db.Timestamptz(6)
+  lead_score         Int?             @default(0)
   ai_summary         String?
-  is_hot             Boolean?            @default(false)
+  is_hot             Boolean?         @default(false)
   /// Soft Delete
-  deleted_at         DateTime?           @db.Timestamptz(6)
-  metadata           Json?               @default("{}")
-  created_at         DateTime            @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime            @default(now()) @db.Timestamptz(6)
+  deleted_at         DateTime?        @db.Timestamptz(6)
+  metadata           Json?            @default("{}")
+  created_at         DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime         @default(now()) @db.Timestamptz(6)
   activities         crm_activities[]
   // custom_values      crm_custom_values[]
-  pipeline           crm_pipelines?      @relation(fields: [pipeline_id], references: [id])
-  source             crm_sources?        @relation(fields: [source_id], references: [id])
-  stage              crm_stages?         @relation(fields: [stage_id], references: [id])
+  pipeline           crm_pipelines?   @relation(fields: [pipeline_id], references: [id])
+  source             crm_sources?     @relation(fields: [source_id], references: [id])
+  stage              crm_stages?      @relation(fields: [stage_id], references: [id])
 
   @@index([tenant_id, status])
   @@index([next_followup_date])
@@ -3246,65 +3247,65 @@ model crm_leads {
 }
 
 model crm_contacts {
-  id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id     String              @db.Uuid
-  company_id    String?             @db.Uuid
-  owner_id      String?             @db.Uuid
-  first_name    String
-  last_name     String?
-  email         String?
-  phone         String?
-  job_title     String?
-  account_id    String?             @db.Uuid
-  deleted_at    DateTime?           @db.Timestamptz(6)
-  created_at    DateTime            @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime            @default(now()) @db.Timestamptz(6)
-  account       crm_accounts?       @relation(fields: [account_id], references: [id])
+  id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id  String        @db.Uuid
+  company_id String?       @db.Uuid
+  owner_id   String?       @db.Uuid
+  first_name String
+  last_name  String?
+  email      String?
+  phone      String?
+  job_title  String?
+  account_id String?       @db.Uuid
+  deleted_at DateTime?     @db.Timestamptz(6)
+  created_at DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at DateTime      @default(now()) @db.Timestamptz(6)
+  account    crm_accounts? @relation(fields: [account_id], references: [id])
   // custom_values crm_custom_values[]
 }
 
 model crm_accounts {
-  id            String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id     String              @db.Uuid
-  owner_id      String?             @db.Uuid
-  name          String
-  industry      String?
-  website       String?
-  phone         String?
-  deleted_at    DateTime?           @db.Timestamptz(6)
-  created_at    DateTime            @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime            @default(now()) @db.Timestamptz(6)
-  contacts      crm_contacts[]
+  id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id  String         @db.Uuid
+  owner_id   String?        @db.Uuid
+  name       String
+  industry   String?
+  website    String?
+  phone      String?
+  deleted_at DateTime?      @db.Timestamptz(6)
+  created_at DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at DateTime       @default(now()) @db.Timestamptz(6)
+  contacts   crm_contacts[]
   // custom_values crm_custom_values[]
-  deals         crm_deals[]
+  deals      crm_deals[]
 }
 
 model crm_deals {
-  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id           String              @db.Uuid
-  owner_id            String?             @db.Uuid
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id           String            @db.Uuid
+  owner_id            String?           @db.Uuid
   title               String
-  value               Decimal             @default(0) @db.Decimal(18, 2)
-  currency            String              @default("USD")
-  pipeline_id         String?             @db.Uuid
-  stage_id            String?             @db.Uuid
-  account_id          String?             @db.Uuid
-  contact_id          String?             @db.Uuid
-  expected_close_date DateTime?           @db.Date
-  probability         Decimal?            @default(0) @db.Decimal(5, 2)
+  value               Decimal           @default(0) @db.Decimal(18, 2)
+  currency            String            @default("USD")
+  pipeline_id         String?           @db.Uuid
+  stage_id            String?           @db.Uuid
+  account_id          String?           @db.Uuid
+  contact_id          String?           @db.Uuid
+  expected_close_date DateTime?         @db.Date
+  probability         Decimal?          @default(0) @db.Decimal(5, 2)
   /// open, won, lost
-  status              String?             @default("open")
-  lost_reason_id      String?             @db.Uuid
-  deleted_at          DateTime?           @db.Timestamptz(6)
-  created_at          DateTime            @default(now()) @db.Timestamptz(6)
-  updated_at          DateTime            @default(now()) @db.Timestamptz(6)
+  status              String?           @default("open")
+  lost_reason_id      String?           @db.Uuid
+  deleted_at          DateTime?         @db.Timestamptz(6)
+  created_at          DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime          @default(now()) @db.Timestamptz(6)
   activities          crm_activities[]
   commissions         crm_commissions[]
   // custom_values       crm_custom_values[]
-  account             crm_accounts?       @relation(fields: [account_id], references: [id])
-  lost_reason         crm_lost_reasons?   @relation(fields: [lost_reason_id], references: [id])
-  pipeline            crm_pipelines?      @relation(fields: [pipeline_id], references: [id])
-  stage               crm_stages?         @relation(fields: [stage_id], references: [id])
+  account             crm_accounts?     @relation(fields: [account_id], references: [id])
+  lost_reason         crm_lost_reasons? @relation(fields: [lost_reason_id], references: [id])
+  pipeline            crm_pipelines?    @relation(fields: [pipeline_id], references: [id])
+  stage               crm_stages?       @relation(fields: [stage_id], references: [id])
 }
 
 model crm_pipelines {
@@ -3395,23 +3396,23 @@ model crm_attendance {
 }
 
 model crm_targets {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id      String    @db.Uuid
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id        String    @db.Uuid
   /// user, role, team
-  assignee_type  String
+  assignee_type    String
   /// user_id or role_id
-  assignee_id    String    @db.Uuid
+  assignee_id      String    @db.Uuid
   /// week, month, quarter, year
-  period_type    String
-  period_start   DateTime  @db.Date
-  period_end     DateTime  @db.Date
+  period_type      String
+  period_start     DateTime  @db.Date
+  period_end       DateTime  @db.Date
   /// revenue, count
-  target_type    String
-  target_value   Decimal   @db.Decimal(18, 2)
-  achieved_value Decimal?  @default(0) @db.Decimal(18, 2)
-  incentive_amount Decimal? @default(0) @db.Decimal(18, 2)
-  deleted_at     DateTime? @db.Timestamptz(6)
-  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+  target_type      String
+  target_value     Decimal   @db.Decimal(18, 2)
+  achieved_value   Decimal?  @default(0) @db.Decimal(18, 2)
+  incentive_amount Decimal?  @default(0) @db.Decimal(18, 2)
+  deleted_at       DateTime? @db.Timestamptz(6)
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
 }
 
 model crm_commission_rules {
@@ -4131,3 +4132,44 @@ enum visit_status {
   no_show
 }
 
+// ============================================
+// PRESCRIPTION TABLES (HMS Module)
+// ============================================
+
+model prescription {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id          String               @db.Uuid
+  company_id         String?              @db.Uuid
+  patient_id         String               @db.Uuid
+  doctor_id          String?              @db.Uuid
+  visit_date         DateTime             @default(now()) @db.Timestamptz(6)
+  vitals             String?
+  diagnosis          String?
+  complaint          String?
+  examination        String?
+  plan               String?
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  prescription_items prescription_items[]
+
+  @@index([patient_id], map: "idx_prescription_patient")
+  @@index([tenant_id], map: "idx_prescription_tenant")
+  @@index([created_at(sort: Desc)], map: "idx_prescription_created")
+}
+
+model prescription_items {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  prescription_id String       @db.Uuid
+  medicine_id     String       @db.Uuid
+  morning         Int          @default(0)
+  afternoon       Int          @default(0)
+  evening         Int          @default(0)
+  night           Int          @default(0)
+  days            Int          @default(3)
+  created_at      DateTime     @default(now()) @db.Timestamptz(6)
+  prescription    prescription @relation(fields: [prescription_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hms_product     hms_product  @relation(fields: [medicine_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([prescription_id], map: "idx_prescription_items_prescription")
+  @@index([medicine_id], map: "idx_prescription_items_medicine")
+}
