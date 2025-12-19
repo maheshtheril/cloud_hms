@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import vision from '@google-cloud/vision'
+import { GoogleGenerativeAI } from "@google/generative-ai"
+
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "")
 
 export async function POST(request: NextRequest) {
     try {
@@ -10,23 +12,28 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'No image provided' }, { status: 400 })
         }
 
-        // Convert file to buffer
+        // Convert file to base64
         const buffer = Buffer.from(await imageFile.arrayBuffer())
+        const base64Image = buffer.toString('base64')
 
-        // Initialize Google Vision client
-        const client = new vision.ImageAnnotatorClient({
-            credentials: JSON.parse(process.env.GOOGLE_CLOUD_VISION_CREDENTIALS || '{}')
-        })
+        // Use Gemini Vision to extract text  
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
 
-        // Perform handwriting/text detection
-        const [result] = await client.documentTextDetection(buffer)
-        const fullTextAnnotation = result.fullTextAnnotation
-        const text = fullTextAnnotation?.text || ''
+        const result = await model.generateContent([
+            {
+                inlineData: {
+                    mimeType: imageFile.type || 'image/png',
+                    data: base64Image
+                }
+            },
+            "Extract all handwritten and printed text from this image. Return only the text content, nothing else."
+        ])
+
+        const text = result.response.text()
 
         return NextResponse.json({
             success: true,
-            text: text,
-            confidence: fullTextAnnotation?.pages?.[0]?.confidence || 0
+            text: text.trim()
         })
 
     } catch (error: any) {
