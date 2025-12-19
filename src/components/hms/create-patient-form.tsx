@@ -447,15 +447,10 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
 
                     {/* Action Buttons */}
                     <div className="border-t-2 border-gray-200 pt-6 space-y-2">
-                        <input type="hidden" name="next_action" value="rx" id="next-action-input" />
-
                         <button
                             type="submit"
                             disabled={isPending}
-                            onClick={() => {
-                                const input = document.getElementById('next-action-input') as HTMLInputElement;
-                                if (input) input.value = 'rx';
-                            }}
+                            }
                             className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm shadow-lg transition-colors disabled:opacity-50"
                         >
                             {isPending ? 'Creating...' : 'Save Patient Record'}
@@ -466,22 +461,18 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 type="submit"
+                                name="next_action"
+                                value="bill"
                                 disabled={isPending}
-                                onClick={() => {
-                                    const input = document.getElementById('next-action-input') as HTMLInputElement;
-                                    if (input) input.value = 'bill';
-                                }}
                                 className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
                             >
                                 {isPending ? 'Creating...' : 'Add & Create Bill'}
                             </button>
                             <button
                                 type="submit"
+                                name="next_action"
+                                value="appointment"
                                 disabled={isPending}
-                                onClick={() => {
-                                    const input = document.getElementById('next-action-input') as HTMLInputElement;
-                                    if (input) input.value = 'appointment';
-                                }}
                                 className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
                             >
                                 {isPending ? 'Creating...' : 'Add & Create Appointment'}
@@ -493,3 +484,5 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
         </div>
     )
 }
+
+
