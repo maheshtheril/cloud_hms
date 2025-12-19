@@ -115,7 +115,7 @@ export default function NewPrescriptionPage() {
                             <div><span className="font-bold">Name:</span> {patientInfo ? `${patientInfo.first_name} ${patientInfo.last_name}`.toUpperCase() : 'Loading...'}</div>
                             <div><span className="font-bold">Age/Gender:</span> {patientInfo?.age || 'N/A'}Y / {patientInfo?.gender || 'N/A'}</div>
                             <div><span className="font-bold">UHID:</span> {patientId?.substring(0, 12) || 'N/A'}</div>
-                            <div><span className="font-bold">Date:</span> {new Date().toLocaleDateString()}</div>
+                            <div><span className="font-bold">Date:</span> {typeof window !== 'undefined' ? new Date().toLocaleDateString() : ''}</div>
                         </div>
                     </div>
 
