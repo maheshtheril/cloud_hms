@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Printer, Plus, Trash2, Copy, Eraser } from 'lucide-react'
+import { Printer, Plus, Trash2, Copy, Eraser, Mic, Zap, Clock } from 'lucide-react'
 
 export default function NewPrescriptionPage() {
     const router = useRouter()
@@ -11,27 +11,24 @@ export default function NewPrescriptionPage() {
 
     const [patientInfo, setPatientInfo] = useState<any>(null)
     const [medicines, setMedicines] = useState<any[]>([])
-    const [selectedMedicines, setSelectedMedicines] = useState<any[]>([{
-        medicineId: '',
-        medicineName: '',
-        morning: '1',
-        afternoon: '0',
-        evening: '1',
-        night: '0',
-        days: '3'
-    }])
+    const [selectedMedicines, setSelectedMedicines] = useState<any[]>([])
 
-    // Handwriting canvases for each section
+    // Medicine search
+    const [medicineSearch, setMedicineSearch] = useState('')
+    const [filteredMedicines, setFilteredMedicines] = useState<any[]>([])
+    const [showMedicineDropdown, setShowMedicineDropdown] = useState(false)
+
+    // Handwriting canvases
     const vitalsCanvasRef = useRef<HTMLCanvasElement>(null)
     const diagnosisCanvasRef = useRef<HTMLCanvasElement>(null)
     const complaintCanvasRef = useRef<HTMLCanvasElement>(null)
     const examinationCanvasRef = useRef<HTMLCanvasElement>(null)
     const planCanvasRef = useRef<HTMLCanvasElement>(null)
-    const medicinesCanvasRef = useRef<HTMLCanvasElement>(null)
 
     const [isDrawing, setIsDrawing] = useState(false)
     const [currentCanvas, setCurrentCanvas] = useState<HTMLCanvasElement | null>(null)
     const [isConverting, setIsConverting] = useState(false)
+    const [loadingPrevious, setLoadingPrevious] = useState(false)
 
     // Converted text
     const [convertedText, setConvertedText] = useState({
@@ -39,10 +36,35 @@ export default function NewPrescriptionPage() {
         diagnosis: '',
         complaint: '',
         examination: '',
-        plan: '',
-        medicines: ''
+        plan: ''
     })
     const [showConverted, setShowConverted] = useState(false)
+
+    // Quick Templates
+    const templates = [
+        {
+            name: 'Common Cold',
+            meds: [
+                { name: 'Paracetamol 650mg', dosage: '1-0-1', days: '3' },
+                { name: 'Cetirizine 10mg', dosage: '0-0-1', days: '5' },
+                { name: 'Vitamin C', dosage: '1-0-0', days: '7' }
+            ]
+        },
+        {
+            name: 'Fever',
+            meds: [
+                { name: 'Paracetamol 650mg', dosage: '1-1-1', days: '3' },
+                { name: 'Pantoprazole 40mg', dosage: '1-0-0', days: '5' }
+            ]
+        },
+        {
+            name: 'Gastritis',
+            meds: [
+                { name: 'Pantoprazole 40mg', dosage: '1-0-1', days: '7' },
+                { name: 'Domperidone 10mg', dosage: '1-0-1', days: '5' }
+            ]
+        }
+    ]
 
     // Fetch patient data
     useEffect(() => {
@@ -65,23 +87,28 @@ export default function NewPrescriptionPage() {
             .catch(err => console.error(err))
     }, [])
 
-    // Initialize all canvases
+    // Filter medicines as user types
     useEffect(() => {
-        const canvases = [
-            vitalsCanvasRef.current,
-            diagnosisCanvasRef.current,
-            complaintCanvasRef.current,
-            examinationCanvasRef.current,
-            planCanvasRef.current,
-            medicinesCanvasRef.current
-        ]
+        if (medicineSearch.length >= 2) {
+            const filtered = medicines.filter(m =>
+                m.name.toLowerCase().includes(medicineSearch.toLowerCase())
+            ).slice(0, 10)
+            setFilteredMedicines(filtered)
+            setShowMedicineDropdown(true)
+        } else {
+            setShowMedicineDropdown(false)
+        }
+    }, [medicineSearch, medicines])
 
-        canvases.forEach(canvas => {
-            if (canvas) {
-                const ctx = canvas.getContext('2d')
+    // Initialize canvases
+    useEffect(() => {
+        const canvases = [vitalsCanvasRef, diagnosisCanvasRef, complaintCanvasRef, examinationCanvasRef, planCanvasRef]
+        canvases.forEach(ref => {
+            if (ref.current) {
+                const ctx = ref.current.getContext('2d')
                 if (ctx) {
                     ctx.fillStyle = '#ffffff'
-                    ctx.fillRect(0, 0, canvas.width, canvas.height)
+                    ctx.fillRect(0, 0, ref.current.width, ref.current.height)
                 }
             }
         })
@@ -90,7 +117,6 @@ export default function NewPrescriptionPage() {
     const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
         const ctx = canvas.getContext('2d')
         if (!ctx) return
-
         setIsDrawing(true)
         setCurrentCanvas(canvas)
         const rect = canvas.getBoundingClientRect()
@@ -105,7 +131,6 @@ export default function NewPrescriptionPage() {
         if (!isDrawing || !currentCanvas) return
         const ctx = currentCanvas.getContext('2d')
         if (!ctx) return
-
         const rect = currentCanvas.getBoundingClientRect()
         ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top)
         ctx.stroke()
@@ -124,23 +149,78 @@ export default function NewPrescriptionPage() {
         ctx.fillRect(0, 0, canvas.width, canvas.height)
     }
 
-    const convertHandwritingToText = async () => {
+    const loadLastPrescription = async () => {
+        if (!patientId) return
+        setLoadingPrevious(true)
+        try {
+            const res = await fetch(`/api/prescriptions/last?patientId=${patientId}`)
+            const data = await res.json()
+            if (data.success && data.data) {
+                if (data.data.medicines && data.data.medicines.length > 0) {
+                    setSelectedMedicines(data.data.medicines.map((m: any) => ({
+                        id: m.medicineId,
+                        name: m.medicineName,
+                        dosage: `${m.morning}-${m.afternoon}-${m.evening}-${m.night}`,
+                        days: m.days
+                    })))
+                }
+                alert(`✅ Loaded prescription from ${new Date(data.date).toLocaleDateString()}!`)
+            } else {
+                alert('ℹ️ No previous prescription found')
+            }
+        } catch (error) {
+            console.error('Error:', error)
+            alert('❌ Failed to load')
+        } finally {
+            setLoadingPrevious(false)
+        }
+    }
+
+    const applyTemplate = (template: any) => {
+        setSelectedMedicines(template.meds.map((m: any) => ({
+            id: '',
+            name: m.name,
+            dosage: m.dosage,
+            days: m.days
+        })))
+        alert(`✅ Applied "${template.name}" template`)
+    }
+
+    const addMedicineFromSearch = (med: any) => {
+        setSelectedMedicines([...selectedMedicines, {
+            id: med.id,
+            name: med.name,
+            dosage: '1-0-1',
+            days: '5'
+        }])
+        setMedicineSearch('')
+        setShowMedicineDropdown(false)
+    }
+
+    const removeMedicine = (index: number) => {
+        setSelectedMedicines(selectedMedicines.filter((_, i) => i !== index))
+    }
+
+    const updateMedicine = (index: number, field: string, value: string) => {
+        const updated = [...selectedMedicines]
+        updated[index][field] = value
+        setSelectedMedicines(updated)
+    }
+
+    const convertAndPrint = async () => {
         setIsConverting(true)
         try {
             const canvases = [
-                { ref: vitalsCanvasRef, field: 'vitals', label: 'Vitals' },
-                { ref: diagnosisCanvasRef, field: 'diagnosis', label: 'Diagnosis' },
-                { ref: complaintCanvasRef, field: 'complaint', label: 'Presenting Complaint' },
-                { ref: examinationCanvasRef, field: 'examination', label: 'General Examination' },
-                { ref: planCanvasRef, field: 'plan', label: 'Plan' },
-                { ref: medicinesCanvasRef, field: 'medicines', label: 'Medicines' }
+                { ref: vitalsCanvasRef, field: 'vitals' },
+                { ref: diagnosisCanvasRef, field: 'diagnosis' },
+                { ref: complaintCanvasRef, field: 'complaint' },
+                { ref: examinationCanvasRef, field: 'examination' },
+                { ref: planCanvasRef, field: 'plan' }
             ]
 
             const converted: any = {}
-
-            for (const { ref, field, label } of canvases) {
+            for (const { ref, field } of canvases) {
                 if (!ref.current) continue
-
                 await new Promise((resolve) => {
                     ref.current!.toBlob(async (blob) => {
                         if (!blob) {
@@ -148,281 +228,235 @@ export default function NewPrescriptionPage() {
                             resolve(null)
                             return
                         }
-
                         const formData = new FormData()
                         formData.append('image', blob, `${field}.jpg`)
-
                         try {
                             const res = await fetch('/api/recognize-handwriting', {
                                 method: 'POST',
                                 body: formData
                             })
-
                             const data = await res.json()
                             converted[field] = data.text || ''
                         } catch (err) {
-                            console.error(`Error converting ${field}:`, err)
                             converted[field] = ''
                         }
                         resolve(null)
                     }, 'image/jpeg', 0.8)
                 })
             }
-
             setConvertedText(converted)
             setShowConverted(true)
-
-            // Wait a bit then trigger print
-            setTimeout(() => {
-                window.print()
-            }, 500)
-
+            setTimeout(() => window.print(), 500)
         } catch (error) {
-            console.error('Conversion error:', error)
-            alert('Failed to convert handwriting. Printing as handwritten.')
+            console.error('Error:', error)
+            alert('Failed to convert. Printing as handwritten.')
             window.print()
         } finally {
             setIsConverting(false)
         }
     }
 
-    const addMedicine = () => {
-        setSelectedMedicines([...selectedMedicines, {
-            medicineId: '',
-            medicineName: '',
-            morning: '1',
-            afternoon: '0',
-            evening: '1',
-            night: '0',
-            days: '3'
-        }])
-    }
-
-    const updateMedicine = (index: number, field: string, value: string) => {
-        const updated = [...selectedMedicines]
-        updated[index][field] = value
-
-        if (field === 'medicineId') {
-            const med = medicines.find(m => m.id === value)
-            if (med) updated[index].medicineName = med.name
-        }
-
-        setSelectedMedicines(updated)
-    }
-
-    const removeMedicine = (index: number) => {
-        setSelectedMedicines(selectedMedicines.filter((_, i) => i !== index))
-    }
-
     return (
-        <div className="min-h-screen bg-gray-100 p-4">
-            <div className="max-w-5xl mx-auto">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-6">
+            <div className="max-w-6xl mx-auto">
 
-                {/* Action Buttons */}
-                <div className="mb-4 flex gap-3 print:hidden">
+                {/* Patient Header - Prominent */}
+                <div className="bg-white shadow-xl rounded-2xl p-6 mb-6 border-l-4 border-blue-600">
+                    <div className="grid grid-cols-4 gap-6 text-sm">
+                        <div>
+                            <div className="text-gray-500 text-xs font-medium mb-1">PATIENT NAME</div>
+                            <div className="text-xl font-bold text-gray-900">
+                                {patientInfo ? `${patientInfo.first_name} ${patientInfo.last_name}`.toUpperCase() : 'Loading...'}
+                            </div>
+                        </div>
+                        <div>
+                            <div className="text-gray-500 text-xs font-medium mb-1">AGE / GENDER</div>
+                            <div className="text-lg font-semibold text-gray-700">
+                                {patientInfo?.age || 'N/A'} Years / {patientInfo?.gender || 'N/A'}
+                            </div>
+                        </div>
+                        <div>
+                            <div className="text-gray-500 text-xs font-medium mb-1">UHID</div>
+                            <div className="text-lg font-mono text-gray-700">{patientId?.substring(0, 12) || 'N/A'}</div>
+                        </div>
+                        <div>
+                            <div className="text-gray-500 text-xs font-medium mb-1">DATE</div>
+                            <div className="text-lg font-semibold text-gray-700">
+                                {typeof window !== 'undefined' ? new Date().toLocaleDateString('en-IN') : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Quick Actions - Templates & Copy Last */}
+                <div className="bg-white shadow-lg rounded-xl p-4 mb-6 print:hidden">
+                    <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-yellow-500" /> QUICK START
+                    </h3>
+                    <div className="flex gap-2 flex-wrap">
+                        <button
+                            onClick={loadLastPrescription}
+                            disabled={loadingPrevious}
+                            className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium flex items-center gap-2 disabled:bg-gray-400"
+                        >
+                            <Clock className="h-4 w-4" /> {loadingPrevious ? 'Loading...' : 'Copy Last Prescription'}
+                        </button>
+                        {templates.map((template, idx) => (
+                            <button
+                                key={idx}
+                                onClick={() => applyTemplate(template)}
+                                className="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg text-sm font-medium"
+                            >
+                                {template.name}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Main Prescription Form */}
+                <div className="bg-white shadow-xl rounded-2xl p-8 mb-6">
+
+                    {/* Handwriting Sections */}
+                    {[
+                        { title: 'VITALS', ref: vitalsCanvasRef, height: 80 },
+                        { title: 'DIAGNOSIS', ref: diagnosisCanvasRef, height: 80 },
+                        { title: 'PRESENTING COMPLAINT', ref: complaintCanvasRef, height: 100 },
+                        { title: 'GENERAL EXAMINATION', ref: examinationCanvasRef, height: 120 },
+                        { title: 'PLAN', ref: planCanvasRef, height: 80 }
+                    ].map((section, idx) => (
+                        <div key={idx} className="mb-6">
+                            <h3 className="font-bold text-gray-800 text-sm mb-2 uppercase tracking-wide">{section.title}</h3>
+                            {showConverted ? (
+                                <div className="min-h-[80px] p-4 bg-gray-50 border border-gray-200 rounded-lg whitespace-pre-wrap text-sm">
+                                    {convertedText[section.title.toLowerCase().split(' ')[0] as keyof typeof convertedText] || 'No text recognized'}
+                                </div>
+                            ) : (
+                                <>
+                                    <canvas
+                                        ref={section.ref}
+                                        width={900}
+                                        height={section.height}
+                                        className="border-2 border-blue-200 rounded-lg cursor-crosshair w-full bg-white hover:border-blue-400 transition print:hidden"
+                                        onMouseDown={(e) => startDrawing(e, section.ref.current!)}
+                                        onMouseMove={draw}
+                                        onMouseUp={stopDrawing}
+                                        onMouseLeave={stopDrawing}
+                                    />
+                                    <button
+                                        onClick={() => clearCanvas(section.ref.current)}
+                                        className="mt-2 px-3 py-1 bg-gray-300 hover:bg-gray-400 text-gray-700 rounded text-xs flex items-center gap-1 print:hidden"
+                                    >
+                                        <Eraser className="h-3 w-3" /> Clear
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    ))}
+
+                    {/* Medicines Section - FUTURISTIC */}
+                    <div className="mb-6 mt-8">
+                        <h3 className="font-bold text-gray-800 text-sm mb-4 uppercase tracking-wide">PRESCRIPTION (MEDICINES)</h3>
+
+                        {/* Smart Medicine Search */}
+                        <div className="mb-4 print:hidden relative">
+                            <input
+                                type="text"
+                                value={medicineSearch}
+                                onChange={(e) => setMedicineSearch(e.target.value)}
+                                placeholder="🔍 Type medicine name (at least 2 letters)..."
+                                className="w-full px-4 py-3 border-2 border-blue-300 rounded-xl focus:border-blue-500 focus:outline-none text-sm"
+                            />
+                            {showMedicineDropdown && filteredMedicines.length > 0 && (
+                                <div className="absolute z-10 w-full mt-1 bg-white border-2 border-blue-300 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                                    {filteredMedicines.map((med, idx) => (
+                                        <div
+                                            key={idx}
+                                            onClick={() => addMedicineFromSearch(med)}
+                                            className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-0"
+                                        >
+                                            <div className="font-semibold text-gray-800">{med.name}</div>
+                                            <div className="text-xs text-gray-500">Click to add</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Selected Medicines List */}
+                        {selectedMedicines.length > 0 && (
+                            <div className="space-y-2">
+                                {selectedMedicines.map((med, idx) => (
+                                    <div key={idx} className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg">
+                                        <div className="font-bold text-gray-700 w-8">{idx + 1}.</div>
+                                        <div className="flex-1">
+                                            <div className="font-semibold text-gray-900">{med.name}</div>
+                                            <div className="flex gap-2 mt-1 print:hidden">
+                                                <input
+                                                    type="text"
+                                                    value={med.dosage}
+                                                    onChange={(e) => updateMedicine(idx, 'dosage', e.target.value)}
+                                                    placeholder="1-0-1"
+                                                    className="w-20 px-2 py-1 border border-gray-300 rounded text-xs"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={med.days}
+                                                    onChange={(e) => updateMedicine(idx, 'days', e.target.value)}
+                                                    placeholder="Days"
+                                                    className="w-16 px-2 py-1 border border-gray-300 rounded text-xs"
+                                                />
+                                            </div>
+                                            <div className="text-sm text-gray-600 hidden print:block">
+                                                {med.dosage} × {med.days} Days
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => removeMedicine(idx)}
+                                            className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs print:hidden"
+                                        >
+                                            <Trash2 className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer Signature */}
+                    <div className="mt-16 pt-6 border-t-2 border-gray-800 flex justify-between">
+                        <div></div>
+                        <div className="text-right">
+                            <p className="font-bold mb-8 text-gray-800">SIGNATURE:</p>
+                            <div className="border-b-2 border-gray-400 w-48"></div>
+                            <p className="text-sm mt-2 text-gray-600">Dr. _________________</p>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Bottom Action Buttons */}
+                <div className="sticky bottom-6 bg-white shadow-2xl rounded-2xl p-4 flex gap-3 justify-center print:hidden border-t-4 border-blue-500">
                     <button
-                        onClick={convertHandwritingToText}
+                        onClick={convertAndPrint}
                         disabled={isConverting}
-                        className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-semibold flex items-center gap-2 disabled:bg-gray-400"
+                        className="px-8 py-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-bold text-lg flex items-center gap-3 disabled:from-gray-400 disabled:to-gray-400 shadow-lg transform hover:scale-105 transition"
                     >
-                        <Printer className="h-4 w-4" /> {isConverting ? 'Converting...' : 'Convert & Print'}
+                        <Printer className="h-6 w-6" /> {isConverting ? 'Converting...' : 'Convert & Print'}
                     </button>
                     <button
                         onClick={() => {
                             setShowConverted(false)
                             window.print()
                         }}
-                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold"
+                        className="px-8 py-4 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-bold text-lg flex items-center gap-3 shadow-lg transform hover:scale-105 transition"
                     >
-                        Print Handwritten
+                        <Printer className="h-6 w-6" /> Print Handwritten
                     </button>
-                    <button onClick={() => router.back()} className="px-6 py-2 bg-gray-500 text-white rounded font-semibold">Back</button>
-                </div>
-
-                {/* Prescription Form */}
-                <div className="bg-white shadow-lg p-8">
-
-                    {/* Patient Info */}
-                    <div className="text-sm mb-6 pb-4 border-b-2 border-gray-800">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div><span className="font-bold">Name:</span> {patientInfo ? `${patientInfo.first_name} ${patientInfo.last_name}`.toUpperCase() : 'Loading...'}</div>
-                            <div><span className="font-bold">Age/Gender:</span> {patientInfo?.age || 'N/A'}Y / {patientInfo?.gender || 'N/A'}</div>
-                            <div><span className="font-bold">UHID:</span> {patientId?.substring(0, 12) || 'N/A'}</div>
-                            <div><span className="font-bold">Date:</span> {typeof window !== 'undefined' ? new Date().toLocaleDateString() : ''}</div>
-                        </div>
-                    </div>
-
-                    {/* VITALS */}
-                    <div className="mb-8">
-                        <h3 className="font-bold text-black text-lg mb-3">VITALS</h3>
-                        {showConverted ? (
-                            <div className="min-h-[100px] p-3 border border-gray-300 rounded whitespace-pre-wrap">{convertedText.vitals || 'No text recognized'}</div>
-                        ) : (
-                            <>
-                                <canvas
-                                    ref={vitalsCanvasRef}
-                                    width={800}
-                                    height={100}
-                                    className="border-2 border-blue-300 rounded cursor-crosshair w-full bg-white print:hidden"
-                                    onMouseDown={(e) => startDrawing(e, vitalsCanvasRef.current!)}
-                                    onMouseMove={draw}
-                                    onMouseUp={stopDrawing}
-                                    onMouseLeave={stopDrawing}
-                                />
-                                <button
-                                    onClick={() => clearCanvas(vitalsCanvasRef.current)}
-                                    className="mt-2 px-3 py-1 bg-gray-400 text-white rounded text-sm print:hidden"
-                                >
-                                    <Eraser className="h-3 w-3 inline mr-1" /> Clear
-                                </button>
-                            </>
-                        )}
-                    </div>
-
-                    {/* DIAGNOSIS */}
-                    <div className="mb-8">
-                        <h3 className="font-bold text-black text-lg mb-3">DIAGNOSIS:</h3>
-                        {showConverted ? (
-                            <div className="min-h-[100px] p-3 border border-gray-300 rounded whitespace-pre-wrap">{convertedText.diagnosis || 'No text recognized'}</div>
-                        ) : (
-                            <>
-                                <canvas
-                                    ref={diagnosisCanvasRef}
-                                    width={800}
-                                    height={100}
-                                    className="border-2 border-blue-300 rounded cursor-crosshair w-full bg-white print:hidden"
-                                    onMouseDown={(e) => startDrawing(e, diagnosisCanvasRef.current!)}
-                                    onMouseMove={draw}
-                                    onMouseUp={stopDrawing}
-                                    onMouseLeave={stopDrawing}
-                                />
-                                <button
-                                    onClick={() => clearCanvas(diagnosisCanvasRef.current)}
-                                    className="mt-2 px-3 py-1 bg-gray-400 text-white rounded text-sm print:hidden"
-                                >
-                                    <Eraser className="h-3 w-3 inline mr-1" /> Clear
-                                </button>
-                            </>
-                        )}
-                    </div>
-
-                    {/* PRESENTING COMPLAINT */}
-                    <div className="mb-8">
-                        <h3 className="font-bold text-black text-lg mb-3">PRESENTING COMPLAINT:</h3>
-                        {showConverted ? (
-                            <div className="min-h-[120px] p-3 border border-gray-300 rounded whitespace-pre-wrap">{convertedText.complaint || 'No text recognized'}</div>
-                        ) : (
-                            <>
-                                <canvas
-                                    ref={complaintCanvasRef}
-                                    width={800}
-                                    height={120}
-                                    className="border-2 border-blue-300 rounded cursor-crosshair w-full bg-white print:hidden"
-                                    onMouseDown={(e) => startDrawing(e, complaintCanvasRef.current!)}
-                                    onMouseMove={draw}
-                                    onMouseUp={stopDrawing}
-                                    onMouseLeave={stopDrawing}
-                                />
-                                <button
-                                    onClick={() => clearCanvas(complaintCanvasRef.current)}
-                                    className="mt-2 px-3 py-1 bg-gray-400 text-white rounded text-sm print:hidden"
-                                >
-                                    <Eraser className="h-3 w-3 inline mr-1" /> Clear
-                                </button>
-                            </>
-                        )}
-                    </div>
-
-                    {/* GENERAL EXAMINATION */}
-                    <div className="mb-8">
-                        <h3 className="font-bold text-black text-lg mb-3">GENERAL EXAMINATION:</h3>
-                        {showConverted ? (
-                            <div className="min-h-[150px] p-3 border border-gray-300 rounded whitespace-pre-wrap">{convertedText.examination || 'No text recognized'}</div>
-                        ) : (
-                            <>
-                                <canvas
-                                    ref={examinationCanvasRef}
-                                    width={800}
-                                    height={150}
-                                    className="border-2 border-blue-300 rounded cursor-crosshair w-full bg-white print:hidden"
-                                    onMouseDown={(e) => startDrawing(e, examinationCanvasRef.current!)}
-                                    onMouseMove={draw}
-                                    onMouseUp={stopDrawing}
-                                    onMouseLeave={stopDrawing}
-                                />
-                                <button
-                                    onClick={() => clearCanvas(examinationCanvasRef.current)}
-                                    className="mt-2 px-3 py-1 bg-gray-400 text-white rounded text-sm print:hidden"
-                                >
-                                    <Eraser className="h-3 w-3 inline mr-1" /> Clear
-                                </button>
-                            </>
-                        )}
-                    </div>
-
-                    {/* PLAN */}
-                    <div className="mb-8">
-                        <h3 className="font-bold text-black text-lg mb-3">PLAN:</h3>
-                        {showConverted ? (
-                            <div className="min-h-[100px] p-3 border border-gray-300 rounded whitespace-pre-wrap">{convertedText.plan || 'No text recognized'}</div>
-                        ) : (
-                            <>
-                                <canvas
-                                    ref={planCanvasRef}
-                                    width={800}
-                                    height={100}
-                                    className="border-2 border-blue-300 rounded cursor-crosshair w-full bg-white print:hidden"
-                                    onMouseDown={(e) => startDrawing(e, planCanvasRef.current!)}
-                                    onMouseMove={draw}
-                                    onMouseUp={stopDrawing}
-                                    onMouseLeave={stopDrawing}
-                                />
-                                <button
-                                    onClick={() => clearCanvas(planCanvasRef.current)}
-                                    className="mt-2 px-3 py-1 bg-gray-400 text-white rounded text-sm print:hidden"
-                                >
-                                    <Eraser className="h-3 w-3 inline mr-1" /> Clear
-                                </button>
-                            </>
-                        )}
-                    </div>
-
-                    {/* PRESCRIPTION/MEDICINES */}
-                    <div className="mb-8">
-                        <h3 className="font-bold text-black text-lg mb-3">PRESCRIPTION</h3>
-                        {showConverted ? (
-                            <div className="min-h-[200px] p-3 border border-gray-300 rounded whitespace-pre-wrap">{convertedText.medicines || 'No medicines recognized'}</div>
-                        ) : (
-                            <>
-                                <canvas
-                                    ref={medicinesCanvasRef}
-                                    width={800}
-                                    height={200}
-                                    className="border-2 border-blue-300 rounded cursor-crosshair w-full bg-white print:hidden"
-                                    onMouseDown={(e) => startDrawing(e, medicinesCanvasRef.current!)}
-                                    onMouseMove={draw}
-                                    onMouseUp={stopDrawing}
-                                    onMouseLeave={stopDrawing}
-                                />
-                                <button
-                                    onClick={() => clearCanvas(medicinesCanvasRef.current)}
-                                    className="mt-2 px-3 py-1 bg-gray-400 text-white rounded text-sm print:hidden"
-                                >
-                                    <Eraser className="h-3 w-3 inline mr-1" /> Clear
-                                </button>
-                            </>
-                        )}
-                    </div>
-
-                    {/* Footer */}
-                    <div className="mt-16 pt-6 border-t-2 border-black flex justify-between print:mt-32">
-                        <div></div>
-                        <div className="text-right">
-                            <p className="font-bold mb-8">SIGNATURE:</p>
-                            <div className="border-b-2 border-gray-400 w-48"></div>
-                            <p className="text-sm mt-2">Dr. _________________</p>
-                        </div>
-                    </div>
+                    <button
+                        onClick={() => router.back()}
+                        className="px-6 py-4 bg-gray-500 hover:bg-gray-600 text-white rounded-xl font-semibold shadow-lg"
+                    >
+                        Back
+                    </button>
                 </div>
             </div>
         </div>
