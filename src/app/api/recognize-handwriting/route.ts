@@ -5,6 +5,15 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY ||
 
 export async function POST(request: NextRequest) {
     try {
+        // Check if API key exists
+        if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
+            console.error('GOOGLE_GENERATIVE_AI_API_KEY is missing')
+            return NextResponse.json({
+                error: 'AI service not configured. Please add handwriting text manually.',
+                details: 'Gemini API key not found in environment'
+            }, { status: 503 })
+        }
+
         const formData = await request.formData()
         const imageFile = formData.get('image') as File
 
@@ -40,7 +49,7 @@ export async function POST(request: NextRequest) {
         console.error('Handwriting recognition error:', error)
         return NextResponse.json({
             error: 'Failed to recognize handwriting',
-            details: error.message
+            details: error.message || 'Unknown error'
         }, { status: 500 })
     }
 }
