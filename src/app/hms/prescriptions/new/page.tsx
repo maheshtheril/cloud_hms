@@ -139,7 +139,7 @@ export default function NewPrescriptionPage() {
                                 <Sparkles className="h-8 w-8 text-indigo-500 animate-pulse" />
                                 AI-Powered Prescription
                             </h1>
-                            <p className="text-gray-600 mt-1">Patient: {patientInfo ? ${patientInfo.first_name}  : 'Loading...'} | Age: {patientInfo?.age || 'N/A'} | Gender: {patientInfo?.gender || 'N/A'}</p>
+                            <p className="text-gray-600 mt-1">Patient: {patientInfo ? ` ` : 'Loading...'} | Age: {patientInfo?.age || 'N/A'} | Gender: {patientInfo?.gender || 'N/A'}</p>
                         </div>
                         <button
                             onClick={() => router.back()}
@@ -233,4 +233,5 @@ export default function NewPrescriptionPage() {
         </div>
     )
 }
+
 
