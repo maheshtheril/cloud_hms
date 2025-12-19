@@ -1,16 +1,19 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Pen, Eraser, Trash2, Sparkles, Camera, Plus, X } from 'lucide-react'
 
 export default function NewPrescriptionPage() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const patientId = searchParams.get('patientId')
     const canvasRef = useRef<HTMLCanvasElement>(null)
     const [isDrawing, setIsDrawing] = useState(false)
     const [recognizedText, setRecognizedText] = useState('')
     const [isProcessing, setIsProcessing] = useState(false)
     const [medicines, setMedicines] = useState<any[]>([])
+    const [patientName, setPatientName] = useState('Loading...')
 
     // Canvas drawing setup
     useEffect(() => {
@@ -119,7 +122,7 @@ export default function NewPrescriptionPage() {
                                 <Sparkles className="h-8 w-8 text-indigo-500 animate-pulse" />
                                 AI-Powered Prescription
                             </h1>
-                            <p className="text-gray-600 mt-1">Write naturally, AI converts to text</p>
+                            <p className="text-gray-600 mt-1">Patient ID: {patientId || 'Not specified'}</p>
                         </div>
                         <button
                             onClick={() => router.back()}
