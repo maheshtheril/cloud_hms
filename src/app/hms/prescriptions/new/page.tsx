@@ -376,7 +376,7 @@ export default function NewPrescriptionPage() {
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:hidden">
                     <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold">Write {currentField.toUpperCase()}</h3>
+                            <h3 className="text-lg font-bold text-black">Write {currentField.toUpperCase()}</h3>
                             <button onClick={() => setCurrentField(null)} className="text-gray-500">
                                 <X className="h-6 w-6" />
                             </button>
