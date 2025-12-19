@@ -80,17 +80,17 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                 <form action={action} className="flex-1 overflow-y-auto p-6 space-y-6">
 
                     {state?.error && (
-                        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2.5 rounded-lg">
+                        <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg">
                             {state.error}
                         </div>
                     )}
 
                     {/* Basic Details */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                         {/* Patient Name */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-gray-700">
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">
                                 Patient Name<span className="text-red-500">*</span>
                             </label>
                             <div className="flex gap-2">
@@ -117,12 +117,12 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                     />
                                 </div>
                             </div>
-                            <p className="text-xs text-red-500">Enter the Name of the Patient</p>
+                            <p className="text-[10px] text-red-500">Enter the Name of the Patient</p>
                         </div>
 
                         {/* Phone Number */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-gray-700">
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">
                                 Phone Number<span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
@@ -138,8 +138,8 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                         </div>
 
                         {/* Gender */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-gray-700">
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">
                                 Gender<span className="text-red-500">*</span>
                             </label>
                             <div className="flex gap-2">
@@ -149,8 +149,8 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                         type="button"
                                         onClick={() => setGender(g)}
                                         className={`flex-1 py-2.5 rounded-lg border-2 font-semibold transition-all ${gender === g
-                                                ? 'bg-blue-500 border-blue-500 text-white'
-                                                : 'bg-white border-gray-300 text-gray-700 hover:border-blue-300'
+                                            ? 'bg-blue-500 border-blue-500 text-white'
+                                            : 'bg-white border-gray-300 text-gray-700 hover:border-blue-300'
                                             }`}
                                     >
                                         {g === 'M' ? 'Male' : g === 'F' ? 'Female' : 'Other'}
@@ -161,58 +161,45 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                         </div>
 
                         {/* Age or DOB */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-gray-700">
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">
                                 Age or DOB<span className="text-red-500">*</span>
                             </label>
-                            <div className="flex gap-2">
-                                {useAge ? (
-                                    <>
-                                        <input
-                                            type="number"
-                                            value={age}
-                                            onChange={(e) => handleAgeChange(e.target.value, ageUnit)}
-                                            placeholder="Age"
-                                            className="w-32 px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900 text-blue-500 font-medium"
-                                        />
-                                        <select
-                                            value={ageUnit}
-                                            onChange={(e) => handleAgeChange(age, e.target.value)}
-                                            className="px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer"
-                                        >
-                                            <option>Years</option>
-                                            <option>Months</option>
-                                            <option>Days</option>
-                                        </select>
-                                    </>
-                                ) : (
-                                    <div className="relative flex-1">
-                                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                        <input
-                                            type="date"
-                                            name="dob"
-                                            value={dob}
-                                            onChange={(e) => handleDobChange(e.target.value)}
-                                            placeholder="DOB"
-                                            className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
-                                        />
-                                    </div>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={() => setUseAge(!useAge)}
-                                    className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 rounded-lg border-2 border-gray-300 transition-colors"
+                            <div className="flex gap-1.5">
+                                <input
+                                    type="number"
+                                    value={age}
+                                    onChange={(e) => handleAgeChange(e.target.value, ageUnit)}
+                                    placeholder="Age"
+                                    className="w-16 px-2 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none transition-all text-blue-500 font-medium text-sm text-center"
+                                />
+                                <select
+                                    value={ageUnit}
+                                    onChange={(e) => handleAgeChange(age, e.target.value)}
+                                    className="px-2 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer text-xs"
                                 >
-                                    <Calendar className="h-5 w-5 text-gray-600" />
-                                </button>
+                                    <option>Years</option>
+                                    <option>Months</option>
+                                    <option>Days</option>
+                                </select>
+                                <div className="relative flex-1">
+                                    <Calendar className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    <input
+                                        type="date"
+                                        name="dob"
+                                        value={dob}
+                                        onChange={(e) => handleDobChange(e.target.value)}
+                                        placeholder="DOB"
+                                        className="w-full pl-8 pr-2 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none transition-all text-gray-900 text-xs"
+                                    />
+                                </div>
                             </div>
-                            {!useAge && <input type="hidden" name="dob" value={dob} />}
                         </div>
 
                         {/* Preferred Language */}
-                        <div className="space-y-2 md:col-span-2">
-                            <label className="text-xs font-semibold text-gray-700">Preferred Language</label>
-                            <select className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none bg-white text-gray-900 cursor-pointer">
+                        <div className="space-y-1 md:col-span-2">
+                            <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Preferred Language</label>
+                            <select className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none bg-white text-gray-900 cursor-pointer">
                                 <option>English</option>
                                 <option>Hindi</option>
                                 <option>Tamil</option>
@@ -222,32 +209,32 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                         </div>
 
                         {/* City */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-gray-700">City</label>
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">City</label>
                             <input
                                 name="city"
                                 placeholder="Enter City"
-                                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
+                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
                             />
                         </div>
 
                         {/* Address */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-semibold text-gray-700">Address</label>
+                        <div className="space-y-1">
+                            <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Address</label>
                             <input
                                 name="street"
                                 placeholder="Enter Address"
-                                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
+                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
                             />
                         </div>
 
                         {/* Pin */}
-                        <div className="space-y-2 md:col-span-2">
-                            <label className="text-xs font-semibold text-gray-700">Pin</label>
+                        <div className="space-y-1 md:col-span-2">
+                            <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Pin</label>
                             <input
                                 name="zip"
                                 placeholder="Enter Pin"
-                                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
+                                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
                             />
                         </div>
                     </div>
@@ -268,13 +255,13 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                         <div className="space-y-6 border-t-2 border-gray-200 pt-6">
                             <h3 className="font-bold text-gray-800 text-base">Additional Information</h3>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                                 {/* Marital Status */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-700">Marital Status</label>
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Marital Status</label>
                                     <div className="flex gap-2">
-                                        <select className="flex-1 px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer">
+                                        <select className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer">
                                             <option>Marital Status</option>
                                             <option>Single</option>
                                             <option>Married</option>
@@ -293,11 +280,11 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                 </div>
 
                                 {/* Blood Group */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-700">Blood Group</label>
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Blood Group</label>
                                     <select
                                         name="blood_group"
-                                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer"
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer"
                                     >
                                         <option value="">Blood group</option>
                                         <option value="A+">A+</option>
@@ -312,8 +299,8 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                 </div>
 
                                 {/* Spouse Name */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-700">Spouse Name</label>
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Spouse Name</label>
                                     <div className="relative">
                                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                                         <input
@@ -324,9 +311,9 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                 </div>
 
                                 {/* Spouse Blood Group */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-700">Spouse Blood Group</label>
-                                    <select className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer">
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Spouse Blood Group</label>
+                                    <select className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer">
                                         <option>Blood group</option>
                                         <option>A+</option>
                                         <option>A-</option>
@@ -340,14 +327,14 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                 </div>
 
                                 {/* Referred By */}
-                                <div className="space-y-2 md:col-span-2">
-                                    <label className="text-xs font-semibold text-gray-700">Referred By</label>
+                                <div className="space-y-1 md:col-span-2">
+                                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Referred By</label>
                                     <div className="flex gap-2">
                                         <input
                                             placeholder="Doctor Name"
-                                            className="flex-1 px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900 text-blue-400"
+                                            className="flex-1 px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900 text-blue-400"
                                         />
-                                        <select className="w-48 px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer">
+                                        <select className="w-48 px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none bg-white text-gray-900 cursor-pointer">
                                             <option>Speciality</option>
                                             <option>Cardiology</option>
                                             <option>Neurology</option>
@@ -358,83 +345,83 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                                 </div>
 
                                 {/* Existing ID */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-700">Existing ID (if any)</label>
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Existing ID (if any)</label>
                                     <input
                                         placeholder="Enter ID"
-                                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
 
                                 {/* Email */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-700">Email</label>
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Email</label>
                                     <input
                                         name="email"
                                         type="email"
                                         placeholder="Enter Email"
-                                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
 
                                 {/* Channel */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-700">Channel (How did the patient hear about you?)</label>
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Channel (How did the patient hear about you?)</label>
                                     <input
                                         placeholder="Enter Channel"
-                                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
 
                                 {/* C/O */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-700">C/O</label>
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">C/O</label>
                                     <input
                                         placeholder="Enter C/O"
-                                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
 
                                 {/* Occupation */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-700">Occupation</label>
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Occupation</label>
                                     <input
                                         placeholder="Enter Occupation"
-                                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
 
                                 {/* Tag */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-700">Tag</label>
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Tag</label>
                                     <input
                                         placeholder="Enter Tag"
-                                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
 
                                 {/* Mobile 2 */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-700">Mobile 2</label>
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Mobile 2</label>
                                     <input
                                         type="tel"
                                         placeholder="Enter Secondary Number"
-                                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
 
                                 {/* Aadhar Number */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-semibold text-gray-700">Aadhar Number</label>
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Aadhar Number</label>
                                     <input
                                         placeholder="Aadhar Card Number"
-                                        className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
+                                        className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 outline-none text-gray-900"
                                     />
                                 </div>
 
                                 {/* Photo Upload */}
-                                <div className="space-y-2 md:col-span-2">
-                                    <label className="text-xs font-semibold text-gray-700">Patient Photo</label>
+                                <div className="space-y-1 md:col-span-2">
+                                    <label className="text-[11px] font-semibold text-gray-700 uppercase tracking-wide">Patient Photo</label>
                                     <div className="flex gap-3">
                                         <button
                                             type="button"
