@@ -85,6 +85,9 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                         </div>
                     )}
 
+                    {/* Hidden input to pass the next action to server */}
+                    <input type="hidden" name="next_action" value={nextAction} />
+
                     {/* Basic Details */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 

@@ -7,6 +7,7 @@ import { auth } from "@/auth"
 export async function createPatient(prevState: any, formData: FormData) {
     const firstName = formData.get("first_name") as string
     const lastName = formData.get("last_name") as string
+    const nextAction = formData.get("next_action") as string // Get the next action
     // TODO: Get Tenant ID from session
     // For now, we will fetch the first tenant casually or fail if none
     const dob = formData.get('dob') as string
@@ -75,7 +76,7 @@ export async function createPatient(prevState: any, formData: FormData) {
         return { error: "Name is required" }
     }
 
-    await prisma.hms_patient.create({
+    const patient = await prisma.hms_patient.create({
         data: {
             id: crypto.randomUUID(),
             tenant_id: tenantId,
@@ -92,5 +93,13 @@ export async function createPatient(prevState: any, formData: FormData) {
         }
     })
 
-    redirect("/hms/patients")
+    // Redirect based on next_action
+    if (nextAction === 'bill') {
+        redirect("/hms/billing")
+    } else if (nextAction === 'appointment') {
+        redirect("/hms/appointments")
+    } else {
+        // Default: redirect to patients list
+        redirect("/hms/patients")
+    }
 }
