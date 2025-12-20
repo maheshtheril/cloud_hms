@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import Link from "next/link"
 import { ArrowLeft, Calendar, User, Stethoscope, FileText, CheckCircle, Clock, MapPin, Video, Phone, AlertCircle } from "lucide-react"
+import { PatientDoctorSelectors } from "@/components/appointments/patient-doctor-selectors"
 
 export default async function NewAppointmentPage({
     searchParams
@@ -96,138 +97,11 @@ export default async function NewAppointmentPage({
                     {/* Left Column - Patient & Doctor (2 cols) */}
                     <div className="lg:col-span-2 space-y-6">
 
-                        {/* Patient Selection Card */}
-                        <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white shadow-xl shadow-blue-100/50 p-6">
-                            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
-                                <div className="h-10 w-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-                                    <User className="h-5 w-5 text-white" />
-                                </div>
-                                <div>
-                                    <h2 className="text-lg font-bold text-gray-900">Patient Information</h2>
-                                    <p className="text-sm text-gray-600">Select the patient for this appointment</p>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <label className="block text-sm font-semibold text-gray-900">
-                                            Patient <span className="text-red-500">*</span>
-                                        </label>
-                                        <Link
-                                            href="/hms/patients/new"
-                                            target="_blank"
-                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-medium rounded-lg hover:shadow-md transition-all"
-                                        >
-                                            <User className="h-3.5 w-3.5" />
-                                            Quick Add Patient
-                                        </Link>
-                                    </div>
-                                    <input
-                                        type="text"
-                                        name="patient_search"
-                                        list="patients-list"
-                                        placeholder="Start typing patient name or number..."
-                                        defaultValue={selectedPatientId ? patients.find(p => p.id === selectedPatientId)?.first_name + ' ' + patients.find(p => p.id === selectedPatientId)?.last_name : ''}
-                                        className="w-full p-3.5 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium transition-all"
-                                    />
-                                    <input type="hidden" name="patient_id" id="patient_id" value={selectedPatientId} required />
-                                    <datalist id="patients-list">
-                                        {patients.map(p => (
-                                            <option
-                                                key={p.id}
-                                                value={`${p.first_name} ${p.last_name}`}
-                                                data-id={p.id}
-                                            >
-                                                {p.patient_number} • {p.gender || 'N/A'}
-                                            </option>
-                                        ))}
-                                    </datalist>
-                                    <script dangerouslySetInnerHTML={{
-                                        __html: `
-                                        document.addEventListener('DOMContentLoaded', function() {
-                                            const input = document.querySelector('input[name="patient_search"]');
-                                            const hiddenInput = document.getElementById('patient_id');
-                                            const patients = ${JSON.stringify(patients.map(p => ({
-                                            id: p.id,
-                                            name: `${p.first_name} ${p.last_name}`,
-                                            number: p.patient_number
-                                        })))};
-                                            
-                                            input.addEventListener('input', function() {
-                                                const match = patients.find(p => p.name === this.value || p.number === this.value);
-                                                if (match) {
-                                                    hiddenInput.value = match.id;
-                                                } else {
-                                                    hiddenInput.value = '';
-                                                }
-                                            });
-                                        });
-                                    `}} />
-                                    <p className="mt-2 text-xs text-gray-500">
-                                        💡 Tip: Type patient name or number to search. Use Quick Add button to register new patients.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Doctor Selection Card */}
-                        <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white shadow-xl shadow-blue-100/50 p-6">
-                            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
-                                <div className="h-10 w-10 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
-                                    <Stethoscope className="h-5 w-5 text-white" />
-                                </div>
-                                <div>
-                                    <h2 className="text-lg font-bold text-gray-900">Healthcare Provider</h2>
-                                    <p className="text-sm text-gray-600">Select attending doctor or clinician</p>
-                                </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                                    Doctor / Clinician <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    name="doctor_search"
-                                    list="doctors-list"
-                                    placeholder="Start typing doctor name..."
-                                    className="w-full p-3.5 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium transition-all"
-                                />
-                                <input type="hidden" name="clinician_id" id="clinician_id" required />
-                                <datalist id="doctors-list">
-                                    {doctors.map(d => (
-                                        <option
-                                            key={d.id}
-                                            value={`Dr. ${d.first_name} ${d.last_name}`}
-                                            data-id={d.id}
-                                        >
-                                            {d.hms_specializations?.name || d.role || 'General Practice'}
-                                        </option>
-                                    ))}
-                                </datalist>
-                                <script dangerouslySetInnerHTML={{
-                                    __html: `
-                                    document.addEventListener('DOMContentLoaded', function() {
-                                        const input = document.querySelector('input[name="doctor_search"]');
-                                        const hiddenInput = document.getElementById('clinician_id');
-                                        const doctors = ${JSON.stringify(doctors.map(d => ({
-                                        id: d.id,
-                                        name: `Dr. ${d.first_name} ${d.last_name}`
-                                    })))};
-                                        
-                                        input.addEventListener('input', function() {
-                                            const match = doctors.find(d => d.name === this.value);
-                                            if (match) {
-                                                hiddenInput.value = match.id;
-                                            } else {
-                                                hiddenInput.value = '';
-                                            }
-                                        });
-                                    });
-                                `}} />
-                            </div>
-                        </div>
+                        <PatientDoctorSelectors
+                            patients={patients}
+                            doctors={doctors}
+                            selectedPatientId={selectedPatientId}
+                        />
 
                         {/* Date & Time Card */}
                         <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white shadow-xl shadow-blue-100/50 p-6">
