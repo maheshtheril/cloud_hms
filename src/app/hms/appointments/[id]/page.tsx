@@ -28,9 +28,9 @@ export default async function AppointmentDetailPage({ params }: { params: { id: 
     }
 
     // Manual fetch for clinician since relation might not be named `clinician`
-    const doctor = await prisma.hms_clinicians.findUnique({
+    const doctor = appointment.clinician_id ? await prisma.hms_clinicians.findUnique({
         where: { id: appointment.clinician_id }
-    })
+    }) : null
 
     return (
         <div className="max-w-4xl mx-auto space-y-6">

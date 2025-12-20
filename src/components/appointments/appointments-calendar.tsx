@@ -37,17 +37,28 @@ const localizer = dateFnsLocalizer({
 })
 
 const CustomEvent = ({ event }: EventProps<AppointmentEvent>) => {
-    const statusColor = event.resource?.status === 'confirmed' ? 'bg-green-500' :
-        event.resource?.status === 'cancelled' ? 'bg-red-500' : 'bg-blue-500';
+    const getStatusStyles = () => {
+        switch (event.resource?.status) {
+            case 'confirmed':
+                return 'bg-green-100 border-green-300 text-green-900'
+            case 'cancelled':
+                return 'bg-red-100 border-red-300 text-red-900'
+            default:
+                return 'bg-blue-100 border-blue-300 text-blue-900'
+        }
+    }
+
+    const statusDotColor = event.resource?.status === 'confirmed' ? 'bg-green-600' :
+        event.resource?.status === 'cancelled' ? 'bg-red-600' : 'bg-blue-600';
 
     return (
-        <div className="h-full w-full p-1 flex flex-col gap-0.5 overflow-hidden">
-            <div className="flex items-center gap-1.5">
-                <div className={`h-1.5 w-1.5 rounded-full ${statusColor} shrink-0`} />
-                <span className="text-xs font-semibold truncate leading-none">{event.title}</span>
+        <div className={`h-full w-full p-2 rounded-md border-l-2 ${getStatusStyles()}`}>
+            <div className="flex items-center gap-1.5 mb-0.5">
+                <div className={`h-2 w-2 rounded-full ${statusDotColor} shrink-0`} />
+                <span className="text-xs font-bold truncate leading-none">{event.title}</span>
             </div>
             {event.resource?.type && (
-                <span className="text-[10px] opacity-75 truncate capitalize pl-3">
+                <span className="text-[10px] font-medium truncate capitalize pl-3.5 block">
                     {event.resource.type.replace('_', ' ')}
                 </span>
             )}
