@@ -71,6 +71,66 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
         }
     }, [urlMedicines])
 
+    // Auto-load appointment fee and lab tests from appointmentId
+    useEffect(() => {
+        if (urlAppointmentId) {
+            const loadAppointmentData = async () => {
+                try {
+                    console.log('🏥 Fetching appointment data:', urlAppointmentId)
+                    const res = await fetch(`/api/appointments/${urlAppointmentId}`)
+                    const data = await res.json()
+
+                    if (data.success && data.appointment) {
+                        const appointment = data.appointment
+                        const appointmentLines: any[] = []
+
+                        // Add Consultation Fee
+                        if (appointment.consultation_fee) {
+                            appointmentLines.push({
+                                id: Date.now() + 1000,
+                                product_id: '', // Service, not a product
+                                description: 'Consultation Fee',
+                                quantity: 1,
+                                unit_price: parseFloat(appointment.consultation_fee.toString()),
+                                uom: 'Service',
+                                tax_rate_id: defaultTaxId,
+                                tax_amount: 0,
+                                discount_amount: 0
+                            })
+                        }
+
+                        // Add Lab Tests
+                        if (appointment.lab_tests && appointment.lab_tests.length > 0) {
+                            appointment.lab_tests.forEach((test: any, idx: number) => {
+                                appointmentLines.push({
+                                    id: Date.now() + 2000 + idx,
+                                    product_id: '', // Service
+                                    description: test.test_name,
+                                    quantity: 1,
+                                    unit_price: parseFloat(test.test_fee.toString()),
+                                    uom: 'Test',
+                                    tax_rate_id: defaultTaxId,
+                                    tax_amount: 0,
+                                    discount_amount: 0
+                                })
+                            })
+                        }
+
+                        // Prepend appointment items to existing lines
+                        if (appointmentLines.length > 0) {
+                            setLines(prev => [...appointmentLines, ...prev])
+                            console.log('✅ Auto-added appointment fee & lab tests:', appointmentLines.length, 'items')
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error loading appointment data:', error)
+                }
+            }
+
+            loadAppointmentData()
+        }
+    }, [urlAppointmentId])
+
     // Derived State
     const activePatient = patients.find(p => p.id === selectedPatientId)
     const subtotal = lines.reduce((sum, line) => sum + ((line.quantity * line.unit_price) - (line.discount_amount || 0)), 0)

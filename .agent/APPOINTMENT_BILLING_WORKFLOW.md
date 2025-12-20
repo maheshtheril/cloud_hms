@@ -1,228 +1,244 @@
-# COMPLETE APPOINTMENT → PRESCRIPTION → BILLING WORKFLOW
+# APPOINTMENT TO BILLING AUTO-FILL - COMPLETE INTEGRATION
 
 ## Overview
-This document explains the complete patient journey from appointment booking to final billing.
+This document explains how the complete appointment → prescription → billing workflow works with auto-fill.
 
-## Workflow Steps
+## Current Implementation Status
 
-### 1. APPOINTMENT BOOKING
-Patient books appointment with:
-- Consultation fee
-- Optional lab tests
-- Gets **Appointment Number** or **QR Code**
+### ✅ WORKING NOW (with mock data):
+1. **Prescription saves** → Passes `appointmentId` to billing
+2. **Billing fetches appointment** from API
+3. **Auto-adds:**
+   - Consultation Fee
+   - Lab Tests
+   - Medicines (from prescription)
 
-```
-Example: APT-2024-001
-```
+### 📋 TODO: Replace Mock Data with Real Database
 
-### 2. DOCTOR CONSULTATION
-Doctor receives patient by:
-- **Scanning QR code**, OR
-- **Entering appointment number**, OR
-- **Searching patient name/phone**
+## API Endpoint (Already Created)
 
-Opens prescription page:
-```
-/hms/prescriptions/new?patientId=xxx&appointmentId=xxx
-```
+**File:** `src/app/api/appointments/[appointmentId]/route.ts`
 
-### 3. PRESCRIPTION WRITING
-Doctor:
-1. Writes vitals, diagnosis, complaint, etc. (handwriting or typed)
-2. Searches and adds medicines via modal
-3. Configures dosage, days, timing for each medicine
+**Current:** Returns mock data
+**TODO:** Connect to real `hms_appointment` table
 
-### 4. SAVE & CREATE BILL
-Doctor clicks **"💊 Save & Create Bill"** button
+## Database Schema Needed
 
-**Backend Process:**
-1. Saves prescription to database
-2. Saves all medicine items
-3. Calculates medicine quantities:
-   - Dosage: 1-1-1 = 3 tablets/day
-   - Days: 5 days
-   - Total: 15 tablets
-4. Returns medicine list with prices
+### 1. Appointments Table
 
-**Redirect to Billing:**
-```
-/hms/billing/new?patientId=xxx&appointmentId=xxx&medicines=[...]
-```
-
-### 5. AUTO-FILLED BILLING PAGE
-Billing page receives:
-- `patientId` - Patient information
-- `appointmentId` - Links to appointment
-- `medicines` - Already calculated quantities and prices
-
-**Billing page should fetch and auto-add:**
-
-#### A. Consultation Fee (From Appointment)
-```javascript
-const appointment = await fetch(`/api/appointments/${appointmentId}`)
-// Add: Consultation Fee - ₹500
+```prisma
+model hms_appointment {
+  id                  String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id           String     @db.Uuid
+  patient_id          String     @db.Uuid
+  doctor_id           String?    @db.Uuid
+  appointment_date    DateTime   @db.Timestamptz(6)
+  appointment_time    String?
+  consultation_fee    Decimal    @default(500) @db.Decimal(14, 2)
+  status              String     @default("scheduled") // scheduled, completed, cancelled
+  notes               String?
+  created_at          DateTime   @default(now()) @db.Timestamptz(6)
+  
+  // Relations
+  lab_tests           hms_appointment_lab_test[]
+  
+  @@index([patient_id])
+  @@index([doctor_id])
+  @@index([appointment_date])
+}
 ```
 
-#### B. Lab Tests/Fees (If ordered in appointment)
-```javascript
-const labTests = await fetch(`/api/appointments/${appointmentId}/lab-tests`)
-// Add: CBC Test - ₹800
-// Add: X-Ray - ₹1200
+### 2. Appointment Lab Tests Table
+
+```prisma
+model hms_appointment_lab_test {
+  id              String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  appointment_id  String          @db.Uuid
+  test_name       String
+  test_fee        Decimal         @db.Decimal(14, 2)
+  test_status     String          @default("pending") // pending, completed, cancelled
+  created_at      DateTime        @default(now()) @db.Timestamptz(6)
+  
+  // Relations
+  appointment     hms_appointment @relation(fields: [appointment_id], references: [id], onDelete: Cascade)
+  
+  @@index([appointment_id])
+}
 ```
 
-#### C. Medicines (Already passed from prescription)
-```javascript
-// Already in URL params
-medicines = [
-  { id: 'med1', name: 'Paracetamol 650mg', quantity: 15, price: 2 },
-  { id: 'med2', name: 'Pantoprazole 40mg', quantity: 14, price: 5 }
-]
+## How to Integrate with Real Appointments
+
+### Step 1: Add Tables to Schema
+
+Add the above models to `prisma/schema.prisma`
+
+### Step 2: Run Migration
+
+```bash
+npx prisma migrate dev --name add_appointments
+npx prisma generate
 ```
 
-### 6. FINAL BILL
-Auto-generated bill includes:
-```
-1. Consultation Fee         ₹500
-2. CBC Test                 ₹800
-3. X-Ray                    ₹1200
-4. Paracetamol 650mg (15)   ₹30
-5. Pantoprazole 40mg (14)   ₹70
-                    ---------------
-   TOTAL:                   ₹2600
-```
+### Step 3: Update API Endpoint
 
-Doctor just clicks **"Generate Invoice"**!
+**In:** `src/app/api/appointments/[appointmentId]/route.ts`
 
-## URL Parameters
-
-### Prescription Page
-```
-/hms/prescriptions/new?patientId=xxx&appointmentId=xxx
-```
-- `patientId` - Required for patient info
-- `appointmentId` - Optional, links to appointment for billing
-
-### Billing Page
-```
-/hms/billing/new?patientId=xxx&appointmentId=xxx&medicines=[...]
-```
-- `patientId` - Patient info
-- `appointmentId` - Fetch consultation fee & lab tests
-- `medicines` - Pre-calculated medicine list (JSON encoded)
-
-## Database Tables Involved
-
-### 1. `appointments`
-- id
-- patient_id
-- consultation_fee
-- status
-- appointment_date
-
-### 2. `appointment_lab_tests` (if exists)
-- id
-- appointment_id
-- test_name
-- test_fee
-
-### 3. `prescription`
-- id
-- patient_id
-- vitals, diagnosis, complaint, examination, plan
-- created_at
-
-### 4. `prescription_items`
-- id
-- prescription_id
-- medicine_id
-- morning, afternoon, evening, night
-- days
-
-### 5. `hms_product` (medicines)
-- id
-- name
-- sku
-- sale_price
-
-## Time Savings
-- ⚡ **Before:** 10-15 minutes per patient (manual entry)
-- ⚡ **After:** 30 seconds (just click generate)
-- 🎯 **Saved:** ~90% time on billing
-
-## Implementation Checklist
-
-### ✅ Already Implemented
-- Prescription page with modal medicine selection
-- Save prescription to database
-- Calculate medicine quantities
-- Pass medicines to billing page
-
-### 📋 TODO (Billing Page)
-- [ ] Fetch appointment by appointmentId
-- [ ] Extract consultation_fee from appointment
-- [ ] Fetch lab tests linked to appointment
-- [ ] Auto-add all items to billing form
-- [ ] Pre-fill patient info
-- [ ] Support both "from prescription" and "manual" billing
-
-## Example Code for Billing Page
-
+**Replace this:**
 ```typescript
-// In billing page
-useEffect(() => {
-  const appointmentId = searchParams.get('appointmentId')
-  const medicinesParam = searchParams.get('medicines')
-  
-  if (appointmentId) {
-    // Fetch appointment
-    fetch(`/api/appointments/${appointmentId}`)
-      .then(res => res.json())
-      .then(appointment => {
-        // Add consultation fee
-        addItem({
-          name: 'Consultation Fee',
-          type: 'service',
-          price: appointment.consultation_fee,
-          quantity: 1
-        })
-        
-        // Add lab tests if any
-        if (appointment.lab_tests) {
-          appointment.lab_tests.forEach(test => {
-            addItem({
-              name: test.test_name,
-              type: 'lab_test',
-              price: test.test_fee,
-              quantity: 1
-            })
-          })
-        }
-      })
-  }
-  
-  if (medicinesParam) {
-    // Add medicines
-    const medicines = JSON.parse(decodeURIComponent(medicinesParam))
-    medicines.forEach(med => {
-      addItem({
-        name: med.name,
-        type: 'medicine',
-        price: med.price,
-        quantity: med.quantity
-      })
-    })
-  }
-}, [appointmentId, medicinesParam])
+// TEMPORARY: Mock data
+const mockAppointment = { ... }
 ```
 
-## QR Code Integration (Future)
-Generate QR code for appointment containing:
-```
-APT-2024-001|PatientID|AppointmentID
+**With this:**
+```typescript
+const appointment = await prisma.hms_appointment.findFirst({
+    where: {
+        id: appointmentId,
+        tenant_id: session.user.tenantId
+    },
+    include: {
+        lab_tests: true
+    }
+})
+
+if (!appointment) {
+    return NextResponse.json({ error: 'Appointment not found' }, { status: 404 })
+}
+
+return NextResponse.json({
+    success: true,
+    appointment: {
+        id: appointment.id,
+        patient_id: appointment.patient_id,
+        consultation_fee: appointment.consultation_fee.toNumber(),
+        status: appointment.status,
+        appointment_date: appointment.appointment_date,
+        doctor_id: appointment.doctor_id,
+        lab_tests: appointment.lab_tests.map(test => ({
+            id: test.id,
+            test_name: test.test_name,
+            test_fee: test.test_fee.toNumber()
+        }))
+    }
+})
 ```
 
-Doctor scans → Auto-opens prescription with all IDs pre-filled!
+### Step 4: Create Appointment Booking Page
+
+**TODO:** Build a page to create appointments:
+- Select patient
+- Select doctor
+- Set consultation fee
+- Add lab tests
+- Save to database
+
+## Complete Workflow (After Integration)
+
+### 1. Patient Books Appointment
+
+**Page:** `/hms/appointments/new`
+
+```
+Patient: John Doe
+Doctor: Dr. Smith
+Fee: ₹500
+Lab Tests:
+  - CBC (₹800)
+  - X-Ray (₹600)
+  
+[Book Appointment] → Saves to hms_appointment
+                   → Gets appointmentId: "apt-123"
+```
+
+### 2. Doctor Consultation
+
+**QR Code / Appointment Number:**
+```
+apt-123
+```
+
+**Doctor scans/enters** → Opens:
+```
+/hms/prescriptions/new?patientId=xxx&appointmentId=apt-123
+```
+
+### 3. Doctor Writes Prescription
+
+Adds medicines:
+- Paracetamol (1-0-1 × 5 days) = 15 tablets
+- Pantoprazole (1-0-1 × 7 days) = 14 tablets
+
+**Clicks "Save & Create Bill"**
+
+### 4. Redirect to Billing
+
+```
+/hms/billing/new?
+  patientId=xxx&
+  appointmentId=apt-123&
+  medicines=[{...}]
+```
+
+### 5. Billing Auto-Fills EVERYTHING! 🎯
+
+**Invoice automatically includes:**
+
+```
+INVOICE #INV-001
+Patient: John Doe
+
+Items:
+1. Consultation Fee       ₹500    (from appointment)
+2. CBC Blood Test         ₹800    (from appointment)
+3. X-Ray Chest            ₹600    (from appointment)
+4. Paracetamol 650mg (15) ₹30     (from prescription)
+5. Pantoprazole 40mg (14) ₹70     (from prescription)
+                        --------
+SUBTOTAL:                 ₹2000
+TAX (18%):                ₹360
+                        --------
+TOTAL:                    ₹2360
+```
+
+**Doctor clicks "Post Invoice" → DONE!** ⚡
+
+## Testing (Current - With Mock Data)
+
+You can test the workflow RIGHT NOW with mock data:
+
+1. Go to prescription page with appointmentId:
+   ```
+   /hms/prescriptions/new?patientId=xxx&appointmentId=test-123
+   ```
+
+2. Add medicines and click "Save & Create Bill"
+
+3. Billing page will show:
+   - ✅ Consultation Fee (₹500) - MOCK
+   - ✅ CBC Blood Test (₹800) - MOCK
+   - ✅ X-Ray Chest (₹600) - MOCK
+   - ✅ Your medicines (REAL)
+
+## Summary
+
+| Feature | Status | Action Needed |
+|---------|--------|---------------|
+| Prescription → Billing | ✅ Working | None |
+| Medicines auto-fill | ✅ Working | None |
+| Appointment API | ✅ Created | Replace mock with DB |
+| Consultation fee auto-add | ✅ Working | Connect to real appointment |
+| Lab tests auto-add | ✅ Working | Connect to real appointment |
+| Appointment booking | ❌ Missing | Create booking page |
+| Appointment table | ❌ Missing | Add to schema + migrate |
+
+## Next Steps
+
+1. **Create appointment tables** in schema
+2. **Run prisma migrate**
+3. **Update API** to use real data
+4. **Build appointment booking page**
+5. Test complete workflow!
 
 ---
-**Status:** Prescription side complete ✅
-**Next:** Implement billing page auto-fill from appointmentId
+
+**The code is ready! Just need to connect to real appointments database.**
