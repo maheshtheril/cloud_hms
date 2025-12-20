@@ -54,7 +54,7 @@ export default async function AppointmentDetailPage({ params }: { params: { id: 
                 </div>
                 <div className="flex gap-3">
                     <Link
-                        href={`/hms/billing/new?patient_id=${appointment.patient_id}`}
+                        href={`/hms/billing/new?patientId=${appointment.patient_id}&appointmentId=${appointment.id}`}
                         className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium flex items-center gap-2"
                     >
                         <IndianRupee className="h-4 w-4" />

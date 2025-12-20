@@ -131,6 +131,48 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
         }
     }, [urlAppointmentId])
 
+    // Load prescriptions when patient is selected
+    const loadPrescriptionMedicines = async () => {
+        if (!selectedPatientId) {
+            alert('Please select a patient first')
+            return
+        }
+
+        setLoading(true)
+        try {
+            console.log('🔍 Fetching prescriptions for patient:', selectedPatientId)
+            const res = await fetch(`/api/prescriptions/by-patient/${selectedPatientId}`)
+            const data = await res.json()
+
+            if (data.success && data.latest && data.latest.medicines.length > 0) {
+                const prescription = data.latest
+
+                // Convert prescription medicines to invoice lines
+                const medicineLines = prescription.medicines.map((med: any, idx: number) => ({
+                    id: Date.now() + idx,
+                    product_id: med.id,
+                    description: med.description,
+                    quantity: med.quantity,
+                    unit_price: med.unit_price,
+                    uom: 'PCS',
+                    tax_rate_id: defaultTaxId,
+                    tax_amount: 0,
+                    discount_amount: 0
+                }))
+
+                setLines(medicineLines)
+                console.log('✅ Auto-loaded', medicineLines.length, 'medicines from prescription')
+                alert(`✅ Loaded ${medicineLines.length} medicines from prescription (${new Date(prescription.visit_date).toLocaleDateString()})`)
+            } else {
+                alert('No recent prescriptions found for this patient (last 30 days)')
+            }
+        } catch (error) {
+            console.error('Error loading prescription:', error)
+            alert('Failed to load prescription')
+        }
+        setLoading(false)
+    }
+
     // Derived State
     const activePatient = patients.find(p => p.id === selectedPatientId)
     const subtotal = lines.reduce((sum, line) => sum + ((line.quantity * line.unit_price) - (line.discount_amount || 0)), 0)
@@ -335,6 +377,18 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                                     ))}
                                 </select>
                             </div>
+
+                            {/* Load from Prescription Button */}
+                            {selectedPatientId && (
+                                <button
+                                    onClick={loadPrescriptionMedicines}
+                                    disabled={loading}
+                                    className="mt-2 w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white text-sm font-medium rounded-xl hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50"
+                                >
+                                    <FileText className="h-4 w-4" />
+                                    {loading ? 'Loading...' : 'Load from Prescription'}
+                                </button>
+                            )}
                         </div>
 
                         {/* Date Picker */}
