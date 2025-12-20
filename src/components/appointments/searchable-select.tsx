@@ -32,9 +32,11 @@ export function SearchableSelect({
     const [isOpen, setIsOpen] = useState(false)
     const [search, setSearch] = useState('')
     const [selectedValue, setSelectedValue] = useState(initialValue || '')
+    const [highlightedIndex, setHighlightedIndex] = useState(0)
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
     const containerRef = useRef<HTMLDivElement>(null)
     const buttonRef = useRef<HTMLButtonElement>(null)
+    const searchInputRef = useRef<HTMLInputElement>(null)
 
     const selectedOption = options.find(opt => opt.id === selectedValue)
 
@@ -54,6 +56,45 @@ export function SearchableSelect({
             })
         }
     }, [isOpen])
+
+    // Reset highlighted index when filtered options change
+    useEffect(() => {
+        setHighlightedIndex(0)
+    }, [search])
+
+    // Handle keyboard navigation
+    useEffect(() => {
+        if (!isOpen) return
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            switch (e.key) {
+                case 'ArrowDown':
+                    e.preventDefault()
+                    setHighlightedIndex(prev =>
+                        prev < filteredOptions.length - 1 ? prev + 1 : prev
+                    )
+                    break
+                case 'ArrowUp':
+                    e.preventDefault()
+                    setHighlightedIndex(prev => prev > 0 ? prev - 1 : prev)
+                    break
+                case 'Enter':
+                    e.preventDefault()
+                    if (filteredOptions[highlightedIndex]) {
+                        handleSelect(filteredOptions[highlightedIndex].id)
+                    }
+                    break
+                case 'Escape':
+                    e.preventDefault()
+                    setIsOpen(false)
+                    setSearch('')
+                    break
+            }
+        }
+
+        document.addEventListener('keydown', handleKeyDown)
+        return () => document.removeEventListener('keydown', handleKeyDown)
+    }, [isOpen, highlightedIndex, filteredOptions])
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -117,12 +158,17 @@ export function SearchableSelect({
                         No results found
                     </div>
                 ) : (
-                    filteredOptions.map((option) => (
+                    filteredOptions.map((option, index) => (
                         <button
                             key={option.id}
                             type="button"
                             onClick={() => handleSelect(option.id)}
-                            className={`w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-0 ${selectedValue === option.id ? 'bg-blue-50 text-blue-700' : 'text-gray-900'
+                            onMouseEnter={() => setHighlightedIndex(index)}
+                            className={`w-full px-4 py-3 text-left transition-colors border-b border-gray-100 last:border-0 ${index === highlightedIndex
+                                    ? 'bg-blue-100'
+                                    : selectedValue === option.id
+                                        ? 'bg-blue-50 text-blue-700'
+                                        : 'hover:bg-blue-50 text-gray-900'
                                 }`}
                         >
                             <div className="font-medium">{option.label}</div>
