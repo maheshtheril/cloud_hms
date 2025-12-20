@@ -92,7 +92,7 @@ export function SearchableSelect({
 
             {/* Dropdown */}
             {isOpen && (
-                <div className="absolute z-50 w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl max-h-80 overflow-hidden">
+                <div className="absolute z-[9999] w-full mt-2 bg-white border-2 border-gray-200 rounded-xl shadow-2xl max-h-80 overflow-hidden">
                     {/* Search Input */}
                     <div className="p-3 border-b border-gray-200 bg-gray-50">
                         <div className="relative">
