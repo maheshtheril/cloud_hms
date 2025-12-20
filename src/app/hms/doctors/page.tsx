@@ -46,7 +46,7 @@ export default async function DoctorsPage({
     // Calculate stats
     const stats = {
         total: doctors.length,
-        active: doctors.filter(d => d.is_active).length,
+        active: doctors.filter(d => d.is_active === true).length,
         specializations: new Set(doctors.map(d => d.hms_specializations?.name).filter(Boolean)).size
     }
 
