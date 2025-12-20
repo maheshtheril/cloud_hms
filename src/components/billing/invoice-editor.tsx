@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, UserPlus } from 'lucide-react'
 import { createInvoice } from '@/app/actions/billing'
@@ -13,10 +13,16 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
     taxConfig: { defaultTax: any, taxRates: any[] }
 }) {
     const router = useRouter()
+    const searchParams = useSearchParams()
     const [loading, setLoading] = useState(false)
 
+    // Read URL parameters for auto-fill
+    const urlPatientId = searchParams.get('patientId')
+    const urlMedicines = searchParams.get('medicines')
+    const urlAppointmentId = searchParams.get('appointmentId')
+
     // State
-    const [selectedPatientId, setSelectedPatientId] = useState('')
+    const [selectedPatientId, setSelectedPatientId] = useState(urlPatientId || '')
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
     // Use configured default or empty (force user to select)
     const getDefaultTaxId = () => {
@@ -37,6 +43,33 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
     ])
 
     const [globalDiscount, setGlobalDiscount] = useState(0)
+
+    // Auto-load medicines from URL (from prescription)
+    useEffect(() => {
+        if (urlMedicines) {
+            try {
+                const medicines = JSON.parse(decodeURIComponent(urlMedicines))
+                console.log('📋 Auto-loading medicines from prescription:', medicines)
+
+                const medicineLines = medicines.map((med: any, idx: number) => ({
+                    id: Date.now() + idx,
+                    product_id: med.id,
+                    description: med.name,
+                    quantity: med.quantity || 1,
+                    unit_price: parseFloat(med.price?.toString() || '0'),
+                    uom: 'PCS',
+                    tax_rate_id: defaultTaxId,
+                    tax_amount: 0,
+                    discount_amount: 0
+                }))
+
+                setLines(medicineLines)
+                console.log('✅ Auto-filled', medicineLines.length, 'medicines')
+            } catch (error) {
+                console.error('Error loading medicines from URL:', error)
+            }
+        }
+    }, [urlMedicines])
 
     // Derived State
     const activePatient = patients.find(p => p.id === selectedPatientId)
