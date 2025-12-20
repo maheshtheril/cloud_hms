@@ -1,10 +1,54 @@
 import Link from "next/link"
-import { Plus, Calendar, Clock, Users, TrendingUp, Sparkles, Zap, Filter } from "lucide-react"
+import { Plus, Calendar, Sparkles, Zap, Filter } from "lucide-react"
+import { prisma } from "@/lib/prisma"
+import { auth } from "@/auth"
 
 import SearchInput from "@/components/search-input"
 import AppointmentsCalendar from "@/components/appointments/appointments-calendar"
 
 export default async function AppointmentsPage() {
+    const session = await auth()
+    const tenantId = session?.user?.tenantId
+
+    // Fetch real stats
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    const [todayCount, inProgressCount, weekStart] = await Promise.all([
+        prisma.hms_appointments.count({
+            where: {
+                tenant_id: tenantId,
+                starts_at: {
+                    gte: today,
+                    lt: tomorrow
+                }
+            }
+        }),
+        prisma.hms_appointments.count({
+            where: {
+                tenant_id: tenantId,
+                status: 'in_progress'
+            }
+        }),
+        (() => {
+            const ws = new Date()
+            ws.setDate(ws.getDate() - ws.getDay())
+            ws.setHours(0, 0, 0, 0)
+            return ws
+        })()
+    ])
+
+    const weekCount = await prisma.hms_appointments.count({
+        where: {
+            tenant_id: tenantId,
+            starts_at: {
+                gte: weekStart
+            }
+        }
+    })
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-6">
             <div className="max-w-[1800px] mx-auto space-y-6">
@@ -29,11 +73,11 @@ export default async function AppointmentsPage() {
                                     </h1>
                                     <div className="px-3 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full flex items-center gap-1">
                                         <Sparkles className="h-3 w-3" />
-                                        AI-Powered
+                                        Live Data
                                     </div>
                                 </div>
                                 <p className="text-blue-100 text-lg mt-1">
-                                    Intelligent scheduling • Real-time updates • Smart conflict detection
+                                    Real-time scheduling • Smart conflict detection • Drag & drop
                                 </p>
                             </div>
                         </div>
@@ -59,8 +103,8 @@ export default async function AppointmentsPage() {
                     </div>
                 </div>
 
-                {/* Quick Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {/* Real Stats Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
                         <div className="flex items-center justify-between mb-4">
                             <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
@@ -70,47 +114,34 @@ export default async function AppointmentsPage() {
                                 Today
                             </div>
                         </div>
-                        <div className="text-3xl font-black text-gray-900 mb-1">24</div>
+                        <div className="text-3xl font-black text-gray-900 mb-1">{todayCount}</div>
                         <div className="text-sm text-gray-600 font-medium">Scheduled Appointments</div>
                     </div>
 
                     <div className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
                         <div className="flex items-center justify-between mb-4">
                             <div className="h-12 w-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
-                                <Clock className="h-6 w-6 text-white" />
+                                <Zap className="h-6 w-6 text-white" />
                             </div>
                             <div className="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full">
                                 Live
                             </div>
                         </div>
-                        <div className="text-3xl font-black text-gray-900 mb-1">3</div>
-                        <div className="text-sm text-gray-600 font-medium">Currently In Progress</div>
+                        <div className="text-3xl font-black text-gray-900 mb-1">{inProgressCount}</div>
+                        <div className="text-sm text-gray-600 font-medium">In Progress</div>
                     </div>
 
                     <div className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
                         <div className="flex items-center justify-between mb-4">
                             <div className="h-12 w-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
-                                <Users className="h-6 w-6 text-white" />
+                                <Calendar className="h-6 w-6 text-white" />
                             </div>
                             <div className="px-3 py-1 bg-purple-50 text-purple-600 text-xs font-bold rounded-full">
-                                +12%
+                                Week
                             </div>
                         </div>
-                        <div className="text-3xl font-black text-gray-900 mb-1">156</div>
-                        <div className="text-sm text-gray-600 font-medium">Patients This Week</div>
-                    </div>
-
-                    <div className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="h-12 w-12 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
-                                <TrendingUp className="h-6 w-6 text-white" />
-                            </div>
-                            <div className="px-3 py-1 bg-orange-50 text-orange-600 text-xs font-bold rounded-full">
-                                ⚡ Fast
-                            </div>
-                        </div>
-                        <div className="text-3xl font-black text-gray-900 mb-1">92%</div>
-                        <div className="text-sm text-gray-600 font-medium">Attendance Rate</div>
+                        <div className="text-3xl font-black text-gray-900 mb-1">{weekCount}</div>
+                        <div className="text-sm text-gray-600 font-medium">This Week</div>
                     </div>
                 </div>
 
@@ -124,17 +155,6 @@ export default async function AppointmentsPage() {
                             <Filter className="h-4 w-4" />
                             Filters
                         </button>
-                        <select className="px-6 py-3 bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-xl font-medium text-gray-700 focus:ring-2 focus:ring-indigo-500 outline-none">
-                            <option>All Doctors</option>
-                            <option>Dr. Smith</option>
-                            <option>Dr. Johnson</option>
-                        </select>
-                        <select className="px-6 py-3 bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-xl font-medium text-gray-700 focus:ring-2 focus:ring-blue-500 outline-none">
-                            <option>All Status</option>
-                            <option>Scheduled</option>
-                            <option>Confirmed</option>
-                            <option>Completed</option>
-                        </select>
                     </div>
                 </div>
 
