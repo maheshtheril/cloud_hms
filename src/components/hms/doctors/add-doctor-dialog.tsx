@@ -125,14 +125,16 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                         <div>
                             <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
                                 <Building2 className="h-4 w-4" />
-                                Department <span className="text-red-500">*</span>
+                                Department {departments.length > 0 && <span className="text-red-500">*</span>}
                             </label>
                             <select
                                 name="department_id"
-                                required
+                                required={departments.length > 0}
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
                             >
-                                <option value="">Select Department</option>
+                                <option value="">
+                                    {departments.length === 0 ? 'No departments available' : 'Select Department'}
+                                </option>
                                 {/* Group by parent departments */}
                                 {departments
                                     .filter(dept => !dept.parent_id)
@@ -152,9 +154,15 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                                         </>
                                     ))}
                             </select>
-                            <p className="mt-2 text-xs text-gray-500">
-                                Sub-departments shown with ↳ under parent
-                            </p>
+                            {departments.length === 0 ? (
+                                <p className="mt-2 text-xs text-amber-600 font-medium">
+                                    ⚠️ Please add departments in system settings first
+                                </p>
+                            ) : (
+                                <p className="mt-2 text-xs text-gray-500">
+                                    Sub-departments shown with ↳ under parent
+                                </p>
+                            )}
                         </div>
 
                         <div>
