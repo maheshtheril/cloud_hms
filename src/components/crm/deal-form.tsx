@@ -19,9 +19,14 @@ const stages = [
     { id: 'lost', name: 'Lost' },
 ]
 
-export function DealForm() {
+export function DealForm({ company }: { company?: any }) {
     const initialState: DealFormState = { message: '', errors: {} }
     const [state, dispatch] = useFormState(createDeal, initialState)
+
+    // Determine default currency based on company's country
+    const defaultCurrency = company?.countries?.iso2?.toUpperCase() === 'IN' ? 'INR' :
+        company?.countries?.iso2?.toUpperCase() === 'GB' ? 'GBP' :
+            company?.countries?.iso2?.toUpperCase() === 'US' ? 'USD' : 'USD'
 
     return (
         <form action={dispatch} className="space-y-6">
@@ -51,11 +56,14 @@ export function DealForm() {
                                 <select
                                     id="currency"
                                     name="currency"
+                                    defaultValue={defaultCurrency}
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    <option value="USD">USD</option>
-                                    <option value="EUR">EUR</option>
-                                    <option value="INR">INR</option>
+                                    <option value="INR">INR (₹)</option>
+                                    <option value="USD">USD ($)</option>
+                                    <option value="EUR">EUR (€)</option>
+                                    <option value="GBP">GBP (£)</option>
+                                    <option value="AUD">AUD (A$)</option>
                                 </select>
                             </div>
                         </div>

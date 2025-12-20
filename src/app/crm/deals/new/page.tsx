@@ -1,7 +1,11 @@
 import { DealForm } from '@/components/crm/deal-form'
 import { Briefcase } from 'lucide-react'
+import { getCompanies } from '@/app/actions/crm/masters'
 
-export default function NewDealPage() {
+export default async function NewDealPage() {
+    const companies = await getCompanies()
+    const defaultCompany = companies[0]
+
     return (
         <div className="container mx-auto py-8 max-w-4xl">
             <div className="flex items-center justify-between mb-8">
@@ -16,7 +20,7 @@ export default function NewDealPage() {
                 </div>
             </div>
 
-            <DealForm />
+            <DealForm company={defaultCompany} />
         </div>
     )
 }
