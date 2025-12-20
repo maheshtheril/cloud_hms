@@ -1,10 +1,13 @@
 import { DealForm } from '@/components/crm/deal-form'
 import { Briefcase } from 'lucide-react'
 import { getCompanies } from '@/app/actions/crm/masters'
+import { getCompanyDefaultCurrency, getSupportedCurrencies } from '@/app/actions/currency'
 
 export default async function NewDealPage() {
     const companies = await getCompanies()
     const defaultCompany = companies[0]
+    const defaultCurrency = await getCompanyDefaultCurrency()
+    const supportedCurrencies = await getSupportedCurrencies()
 
     return (
         <div className="container mx-auto py-8 max-w-4xl">
