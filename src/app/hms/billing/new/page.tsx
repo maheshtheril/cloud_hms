@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react"
 import { InvoiceEditor } from "@/components/billing/invoice-editor"
 import { getBillableItems, getTaxConfiguration } from "@/app/actions/billing"
 import { auth } from "@/auth"
+import { getCompanyDefaultCurrency, getSupportedCurrencies } from "@/app/actions/currency"
 
 export default async function NewInvoicePage() {
     const session = await auth();
@@ -11,8 +12,8 @@ export default async function NewInvoicePage() {
 
     const tenantId = session.user.tenantId;
 
-    // Parallel data fetching
-    const [patients, itemsRes, taxRes] = await Promise.all([
+    // Parallel data fetching - including currency
+    const [patients, itemsRes, taxRes, defaultCurrency, currencies] = await Promise.all([
         prisma.hms_patient.findMany({
             where: {
                 tenant_id: tenantId // Filter by current user's tenant
@@ -30,7 +31,9 @@ export default async function NewInvoicePage() {
             take: 50
         }),
         getBillableItems(),
-        getTaxConfiguration()
+        getTaxConfiguration(),
+        getCompanyDefaultCurrency(),
+        getSupportedCurrencies()
     ]);
 
     const patientsReal = patients;
@@ -61,6 +64,8 @@ export default async function NewInvoicePage() {
                 patients={patientsReal}
                 billableItems={billableItems}
                 taxConfig={taxConfig}
+                defaultCurrency={defaultCurrency.code}
+                currencies={currencies}
             />
         </div>
     )
