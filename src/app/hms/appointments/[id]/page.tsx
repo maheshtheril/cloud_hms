@@ -3,23 +3,13 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Calendar, Clock, User, FileText, IndianRupee, Stethoscope } from "lucide-react"
 
-export default async function AppointmentDetailPage({ params }: { params: { id: string } }) {
+export default async function AppointmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
+
     const appointment = await prisma.hms_appointments.findUnique({
-        where: { id: params.id },
+        where: { id },
         include: {
             hms_patient: true,
-            // Determine the correct relation name for clinician. 
-            // In schema.prisma it might be defined. If standard naming, likely 'hms_clinicians'.
-            // Let's assume manual relation mapping might be needed if it fails, but standard is 'hms_clinicians' or relating back via clinician_id.
-            // Wait, looking at previous `hms_appointments` usage, I didn't see an explicit `hms_clinician` relation used yet, 
-            // but `hms_clinicians` table exists.
-            // Let's try to fetch clinician details via manual query if relation name is uncertain, 
-            // OR checks schema. logic: `clinician_id` is foreign key.
-            // Safe bet: fetch clinician separately or try `include: { clinician: true }` if properly named, but likely it's not mapped by default by introspection if names mismatch.
-            // CHECK: The schema I read earlier for `hms_appointments` has `clinician_id`. 
-            // I'll try to find the clinician manually to be safe, or just display ID if relation is missing.
-            // Actually, in `src/app/hms/appointments/page.tsx` I used `include: { hms_patient: true }`. additional relations might be missing.
-            // Let's just fetch patient. I'll fetch doctor manually to be safe.
         }
     })
 
