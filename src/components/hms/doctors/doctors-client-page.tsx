@@ -74,7 +74,7 @@ export function DoctorsClientPage({ doctors, stats }: DoctorsClientPageProps) {
                         >
                             <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-pink-400 rounded-2xl opacity-0 group-hover:opacity-20 transition-opacity"></div>
                             <Plus className="h-5 w-5" />
-                            <span>Add Doctor</span>
+                            <span>Add Staff Member</span>
                         </button>
                     </div>
                 </div>
@@ -140,14 +140,14 @@ export function DoctorsClientPage({ doctors, stats }: DoctorsClientPageProps) {
                     {filteredDoctors.length === 0 ? (
                         <div className="md:col-span-2 lg:col-span-3 bg-white/80 backdrop-blur-xl rounded-2xl p-12 text-center border border-gray-200">
                             <Stethoscope className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                            <h3 className="text-lg font-bold text-gray-900 mb-2">No doctors found</h3>
-                            <p className="text-gray-500 mb-6">Add your first healthcare professional to get started</p>
+                            <h3 className="text-lg font-bold text-gray-900 mb-2">No staff members found</h3>
+                            <p className="text-gray-500 mb-6">Add your first healthcare professional (doctor, nurse, therapist, etc.)</p>
                             <button
                                 onClick={() => setIsAddDialogOpen(true)}
                                 className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all inline-flex items-center gap-2"
                             >
                                 <Plus className="h-4 w-4" />
-                                Add Doctor
+                                Add Staff Member
                             </button>
                         </div>
                     ) : (

@@ -22,8 +22,8 @@ export function AddDoctorDialog({ isOpen, onClose }: AddDocFormProps) {
                     >
                         <X className="h-5 w-5 text-white" />
                     </button>
-                    <h2 className="text-3xl font-black text-white">Add New Doctor</h2>
-                    <p className="text-blue-100 mt-2">Register a new healthcare professional to your team</p>
+                    <h2 className="text-3xl font-black text-white">Add Clinical Staff</h2>
+                    <p className="text-blue-100 mt-2">Register a new healthcare professional (Doctor, Nurse, Therapist, etc.)</p>
                 </div>
 
                 {/* Form */}
@@ -105,19 +105,52 @@ export function AddDoctorDialog({ isOpen, onClose }: AddDocFormProps) {
 
                         <div>
                             <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Specialization <span className="text-red-500">*</span>
+                                Role / Position <span className="text-red-500">*</span>
                             </label>
                             <select
-                                name="specialization_id"
+                                name="role_id"
                                 required
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
                             >
-                                <option value="">Select Specialization</option>
+                                <option value="">Select Role</option>
+                                <option>👨‍⚕️ Doctor / Physician</option>
+                                <option>👩‍⚕️ Nurse</option>
+                                <option>🩺 Nurse Practitioner</option>
+                                <option>💉 Clinical Nurse Specialist</option>
+                                <option>🧑‍⚕️ Physician Assistant</option>
+                                <option>🧘 Physiotherapist</option>
+                                <option>🧠 Psychologist / Therapist</option>
+                                <option>🦷 Dentist</option>
+                                <option>👓 Optometrist</option>
+                                <option>💊 Pharmacist</option>
+                                <option>🔬 Lab Technician</option>
+                                <option>📸 Radiographer</option>
+                                <option>🩻 Anesthesiologist</option>
+                                <option>🏥 Surgeon</option>
+                                <option>👶 Midwife</option>
+                                <option>🧑‍🔬 Medical Assistant</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-900 mb-2">
+                                Specialization
+                            </label>
+                            <select
+                                name="specialization_id"
+                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
+                            >
+                                <option value="">Select Specialization (Optional)</option>
                                 <option>Cardiology</option>
                                 <option>Neurology</option>
                                 <option>Pediatrics</option>
                                 <option>Orthopedics</option>
                                 <option>General Practice</option>
+                                <option>Emergency Medicine</option>
+                                <option>Internal Medicine</option>
+                                <option>Oncology</option>
+                                <option>Radiology</option>
+                                <option>Anesthesiology</option>
                             </select>
                         </div>
 
@@ -176,7 +209,7 @@ export function AddDoctorDialog({ isOpen, onClose }: AddDocFormProps) {
                             type="submit"
                             className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all"
                         >
-                            Add Doctor
+                            Add Staff Member
                         </button>
                     </div>
                 </form>
