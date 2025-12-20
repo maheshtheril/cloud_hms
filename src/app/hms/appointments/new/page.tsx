@@ -113,19 +113,47 @@ export default async function NewAppointmentPage({
                                     <label className="block text-sm font-semibold text-gray-900 mb-2">
                                         Patient <span className="text-red-500">*</span>
                                     </label>
-                                    <select
-                                        name="patient_id"
-                                        required
-                                        defaultValue={selectedPatientId}
+                                    <input
+                                        type="text"
+                                        name="patient_search"
+                                        list="patients-list"
+                                        placeholder="Start typing patient name or number..."
+                                        defaultValue={selectedPatientId ? patients.find(p => p.id === selectedPatientId)?.first_name + ' ' + patients.find(p => p.id === selectedPatientId)?.last_name : ''}
                                         className="w-full p-3.5 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium transition-all"
-                                    >
-                                        <option value="" className="text-gray-500">Choose a patient...</option>
+                                    />
+                                    <input type="hidden" name="patient_id" id="patient_id" value={selectedPatientId} required />
+                                    <datalist id="patients-list">
                                         {patients.map(p => (
-                                            <option key={p.id} value={p.id} className="text-gray-900">
-                                                {p.first_name} {p.last_name} • {p.patient_number} • {p.gender || 'N/A'}
+                                            <option
+                                                key={p.id}
+                                                value={`${p.first_name} ${p.last_name}`}
+                                                data-id={p.id}
+                                            >
+                                                {p.patient_number} • {p.gender || 'N/A'}
                                             </option>
                                         ))}
-                                    </select>
+                                    </datalist>
+                                    <script dangerouslySetInnerHTML={{
+                                        __html: `
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            const input = document.querySelector('input[name="patient_search"]');
+                                            const hiddenInput = document.getElementById('patient_id');
+                                            const patients = ${JSON.stringify(patients.map(p => ({
+                                            id: p.id,
+                                            name: `${p.first_name} ${p.last_name}`,
+                                            number: p.patient_number
+                                        })))};
+                                            
+                                            input.addEventListener('input', function() {
+                                                const match = patients.find(p => p.name === this.value || p.number === this.value);
+                                                if (match) {
+                                                    hiddenInput.value = match.id;
+                                                } else {
+                                                    hiddenInput.value = '';
+                                                }
+                                            });
+                                        });
+                                    `}} />
                                     <p className="mt-2 text-xs text-gray-500">
                                         Can't find patient? <Link href="/hms/patients/new" className="text-blue-600 hover:underline font-medium">Register new patient</Link>
                                     </p>
@@ -149,18 +177,45 @@ export default async function NewAppointmentPage({
                                 <label className="block text-sm font-semibold text-gray-900 mb-2">
                                     Doctor / Clinician <span className="text-red-500">*</span>
                                 </label>
-                                <select
-                                    name="clinician_id"
-                                    required
+                                <input
+                                    type="text"
+                                    name="doctor_search"
+                                    list="doctors-list"
+                                    placeholder="Start typing doctor name..."
                                     className="w-full p-3.5 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium transition-all"
-                                >
-                                    <option value="" className="text-gray-500">Select a doctor...</option>
+                                />
+                                <input type="hidden" name="clinician_id" id="clinician_id" required />
+                                <datalist id="doctors-list">
                                     {doctors.map(d => (
-                                        <option key={d.id} value={d.id} className="text-gray-900">
-                                            Dr. {d.first_name} {d.last_name} • {d.hms_specializations?.name || d.role || 'General Practice'}
+                                        <option
+                                            key={d.id}
+                                            value={`Dr. ${d.first_name} ${d.last_name}`}
+                                            data-id={d.id}
+                                        >
+                                            {d.hms_specializations?.name || d.role || 'General Practice'}
                                         </option>
                                     ))}
-                                </select>
+                                </datalist>
+                                <script dangerouslySetInnerHTML={{
+                                    __html: `
+                                    document.addEventListener('DOMContentLoaded', function() {
+                                        const input = document.querySelector('input[name="doctor_search"]');
+                                        const hiddenInput = document.getElementById('clinician_id');
+                                        const doctors = ${JSON.stringify(doctors.map(d => ({
+                                        id: d.id,
+                                        name: `Dr. ${d.first_name} ${d.last_name}`
+                                    })))};
+                                        
+                                        input.addEventListener('input', function() {
+                                            const match = doctors.find(d => d.name === this.value);
+                                            if (match) {
+                                                hiddenInput.value = match.id;
+                                            } else {
+                                                hiddenInput.value = '';
+                                            }
+                                        });
+                                    });
+                                `}} />
                             </div>
                         </div>
 
