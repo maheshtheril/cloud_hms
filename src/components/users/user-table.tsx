@@ -2,16 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, UserPlus, Filter, MoreVertical, Mail, Shield, CheckCircle, XCircle, Trash2 } from 'lucide-react'
+import { Search, UserPlus, Filter, Edit, Power, Trash2, Mail, Shield, CheckCircle, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { updateUserStatus, deleteUser } from '@/app/actions/users'
 import { useToast } from '@/components/ui/use-toast'
 
@@ -240,29 +233,32 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="sm">
-                                                    <MoreVertical className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="w-48">
-                                                <DropdownMenuItem onClick={() => router.push(`/settings/users/${user.id}`)}>
-                                                    Edit User
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleToggleStatus(user.id, user.is_active)}>
-                                                    {user.is_active ? 'Deactivate' : 'Activate'} User
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem
-                                                    onClick={() => handleDeleteUser(user.id)}
-                                                    className="text-red-600 focus:text-red-600"
-                                                >
-                                                    <Trash2 className="h-4 w-4 mr-2" />
-                                                    Delete User
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => router.push(`/settings/users/${user.id}`)}
+                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                title="Edit user"
+                                            >
+                                                <Edit className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleToggleStatus(user.id, user.is_active)}
+                                                className={`p-2 rounded-lg transition-colors ${user.is_active
+                                                        ? 'text-orange-600 hover:bg-orange-50'
+                                                        : 'text-green-600 hover:bg-green-50'
+                                                    }`}
+                                                title={user.is_active ? 'Deactivate' : 'Activate'}
+                                            >
+                                                <Power className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteUser(user.id)}
+                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Delete user"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -286,8 +282,8 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
                                         router.push(`/settings/users?${params.toString()}`)
                                     }}
                                     className={`px-3 py-1 rounded ${page === currentPage
-                                            ? 'bg-blue-600 text-white'
-                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                         }`}
                                 >
                                     {page}
