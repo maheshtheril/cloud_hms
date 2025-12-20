@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useState, useMemo } from 'react'
+import { useActionState, useState, useMemo, useEffect } from 'react'
 import { createLead, LeadFormState } from '@/app/actions/crm/leads'
 import { PhoneInputComponent } from '@/components/ui/phone-input'
 import { Input } from '@/components/ui/input'
@@ -23,6 +23,8 @@ export function LeadForm({
     sources?: any[],
     companies?: any[]
 }) {
+    const { toast } = useToast()
+
     // Select default pipeline (first one, or one marked is_default)
     const defaultPipeline = pipelines.find(p => p.is_default) || pipelines[0]
 
@@ -32,6 +34,7 @@ export function LeadForm({
     // State for Pipeline Selection to update Stages
     const [selectedPipelineId, setSelectedPipelineId] = useState<string>(defaultPipeline?.id || '')
     const [selectedCompanyId, setSelectedCompanyId] = useState<string>(defaultCompany?.id || '')
+    const [lastSaved, setLastSaved] = useState<Date | null>(null)
 
     // Derive stages based on selected pipeline
     const stages = useMemo(() => {
@@ -50,6 +53,32 @@ export function LeadForm({
 
     const initialState: LeadFormState = { message: '', errors: {} }
     const [state, dispatch] = useActionState(createLead, initialState)
+
+    // Auto-save draft functionality
+    useEffect(() => {
+        // Check for saved draft on mount
+        const savedDraft = localStorage.getItem('crm_lead_draft')
+        if (savedDraft) {
+            try {
+                const draft = JSON.parse(savedDraft)
+                const savedTime = new Date(draft.timestamp)
+                const minutesAgo = Math.floor((Date.now() - savedTime.getTime()) / 60000)
+
+                if (minutesAgo < 60) { // Only restore if less than 1 hour old
+                    toast({
+                        title: "Draft Restored",
+                        description: `Auto-saved draft from ${minutesAgo} minute(s) ago was restored.`,
+                    })
+                    setLastSaved(savedTime)
+                } else {
+                    localStorage.removeItem('crm_lead_draft') // Clear old draft
+                }
+            } catch (e) {
+                console.error('Failed to restore draft:', e)
+            }
+        }
+    }, [toast])
+
 
     return (
         <form action={dispatch} className="space-y-6">
@@ -78,10 +107,15 @@ export function LeadForm({
                             {state.errors?.name && <p className="text-red-500 text-sm">{state.errors.name}</p>}
                         </div>
 
-                        {/* Company Selection - Added */}
-                        {companies.length > 0 && (
+                        {/* Company Selection - Conditional display */}
+                        {companies.length > 1 ? (
                             <div className="space-y-2">
-                                <Label htmlFor="company_id">Assign to Company</Label>
+                                <Label htmlFor="company_id">
+                                    Branch/Location
+                                    <span className="ml-2 text-xs text-gray-500 font-normal">
+                                        ({companies.length} available)
+                                    </span>
+                                </Label>
                                 <select
                                     id="company_id"
                                     name="company_id"
@@ -91,7 +125,15 @@ export function LeadForm({
                                 >
                                     {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
+                                <p className="text-xs text-gray-500">
+                                    Select which branch/location this lead belongs to
+                                </p>
                             </div>
+                        ) : (
+                            // Hidden field for single company - no need to show selector
+                            companies.length === 1 && (
+                                <input type="hidden" name="company_id" value={companies[0].id} />
+                            )
                         )}
 
                         <div className="space-y-2">

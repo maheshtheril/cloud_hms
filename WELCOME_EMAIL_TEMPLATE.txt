@@ -1,0 +1,90 @@
+Subject: Welcome to the CRM Team - Let's Get Started! 🚀
+
+---
+
+Hi [Trainee Name],
+
+Welcome to the team! We're excited to have you working on our CRM (Customer Relationship Management) module.
+
+📋 WHAT WE'RE BUILDING
+━━━━━━━━━━━━━━━━━━━━━━
+We're developing a SaaS ERP system with multiple modules. You'll focus on the CRM module, which includes Lead Management, Accounts, Contacts, Deals, and Sales Analytics.
+
+Tech Stack: Next.js 14, React, TypeScript, PostgreSQL, Prisma
+
+🎯 YOUR FIRST WEEK GOALS
+━━━━━━━━━━━━━━━━━━━━━━━━
+Day 1-2: Set up development environment
+Day 3-4: Explore codebase
+Day 5: Submit first bug fix PR
+
+🚀 GETTING STARTED (DO THESE IN ORDER)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. ACCEPT REPOSITORY INVITATION
+   Check your email for GitHub invitation and accept it.
+   Repository: [INSERT_YOUR_REPO_URL]
+
+2. GET CREDENTIALS
+   I'll share dev environment credentials via [1Password/Secure Method].
+   Please confirm once you receive them.
+
+3. READ DOCUMENTATION
+   After cloning the repo, read this file first:
+   📘 CRM_ONBOARDING_README.md (in root directory)
+   
+   This has EVERYTHING: setup guide, architecture, tasks, Git workflow.
+
+4. JOIN COMMUNICATION
+   Slack/Teams: [INSERT_CHANNEL_LINK]
+   Email: [YOUR_EMAIL]
+
+📅 FIRST MEETING
+━━━━━━━━━━━━━━━━
+Date: [INSERT_DATE]
+Time: [INSERT_TIME]
+Link: [INSERT_MEETING_LINK]
+
+Agenda: Project overview, team intro, Q&A, setup help
+
+✅ BEFORE OUR MEETING (OPTIONAL)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+If you have time:
+1. Accept repository invitation
+2. Clone the repository
+3. Install Node.js v18+ if needed
+4. Read CRM_ONBOARDING_README.md
+
+Don't worry if you hit issues - we'll troubleshoot together!
+
+🆘 NEED HELP?
+━━━━━━━━━━━━━
+Before meeting: Email me at [YOUR_EMAIL]
+After onboarding: Slack/Teams #crm-team
+Urgent: [YOUR_PHONE - optional]
+
+📚 QUICK LINKS
+━━━━━━━━━━━━━━
+Repository: [YOUR_REPO_URL]
+Documentation: CRM_ONBOARDING_README.md (after cloning)
+Slack/Teams: [CHANNEL_LINK]
+Meeting: [MEETING_LINK]
+
+🎉 WHAT TO EXPECT
+━━━━━━━━━━━━━━━━━
+✓ Supportive environment - no question is stupid!
+✓ Learning focus - mistakes are part of learning
+✓ Regular feedback - weekly 1-on-1s
+✓ Real impact - your code goes to production
+
+We're excited to have you on the team!
+
+Looking forward to working with you,
+
+[Your Name]
+CRM Team Lead
+[Your Email]
+[Your Phone - optional]
+
+---
+
+P.S. If you don't receive credentials within 24 hours, let me know!
