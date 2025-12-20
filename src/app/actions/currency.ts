@@ -93,7 +93,11 @@ export async function getCompanyDefaultCurrency(companyId?: string): Promise<Cur
         })
 
         if (currency) {
-            return currency
+            return {
+                code: currency.code,
+                symbol: currency.symbol || getCurrencySymbol(currency.code),
+                name: currency.name,
+            }
         }
 
         // Final fallback
@@ -124,7 +128,11 @@ export async function getSupportedCurrencies(): Promise<CurrencyInfo[]> {
             }
         })
 
-        return currencies
+        return currencies.map(c => ({
+            code: c.code,
+            symbol: c.symbol || getCurrencySymbol(c.code),
+            name: c.name,
+        }))
 
     } catch (error) {
         console.error('Error fetching currencies:', error)
