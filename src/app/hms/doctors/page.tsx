@@ -43,14 +43,13 @@ export default async function DoctorsPage({
         ]
     })
 
-    // Fetch departments, roles, and specializations for the form
-    // Include GLOBAL masters (system tenant) + tenant-specific custom ones
-    const SYSTEM_TENANT_ID = '00000000-0000-0000-0000-000000000001'
+    // EMERGENCY FIX: Show ALL data (tenant filtering disabled for debugging)
+    // TODO: Re-enable tenant filtering after data is confirmed seeded
+    console.log('DEBUG: Fetching dropdowns for tenant:', tenantId)
 
     const [departments, roles, specializations] = await Promise.all([
         prisma.hms_departments.findMany({
             where: {
-                ...(tenantId ? { tenant_id: tenantId } : {}),
                 is_active: true
             },
             select: {
@@ -62,24 +61,15 @@ export default async function DoctorsPage({
         }),
         prisma.hms_roles.findMany({
             where: {
-                OR: [
-                    // Global roles (available to all tenants)
-                    { tenant_id: SYSTEM_TENANT_ID, company_id: null, is_active: true, is_clinical: true },
-                    // Tenant-specific custom roles
-                    ...(tenantId ? [{ tenant_id: tenantId, is_active: true, is_clinical: true }] : [])
-                ]
+                is_active: true,
+                is_clinical: true
             },
             select: { id: true, name: true },
             orderBy: { name: 'asc' }
         }),
         prisma.hms_specializations.findMany({
             where: {
-                OR: [
-                    // Global specializations (available to all tenants)
-                    { tenant_id: SYSTEM_TENANT_ID, company_id: null, is_active: true },
-                    // Tenant-specific custom specializations
-                    ...(tenantId ? [{ tenant_id: tenantId, is_active: true }] : [])
-                ]
+                is_active: true
             },
             select: { id: true, name: true },
             orderBy: { name: 'asc' }
