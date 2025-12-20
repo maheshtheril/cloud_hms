@@ -14,8 +14,8 @@ interface User {
     full_name: string | null
     name: string | null
     role: string | null
-    is_active: boolean
-    created_at: Date
+    is_active: boolean | null
+    created_at: Date | null
     hms_user_roles?: Array<{
         id: string
         hms_role: {
@@ -242,7 +242,7 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
                                                 <Edit className="h-4 w-4" />
                                             </button>
                                             <button
-                                                onClick={() => handleToggleStatus(user.id, user.is_active)}
+                                                onClick={() => handleToggleStatus(user.id, user.is_active ?? false)}
                                                 className={`p-2 rounded-lg transition-colors ${user.is_active
                                                     ? 'text-orange-600 hover:bg-orange-50'
                                                     : 'text-green-600 hover:bg-green-50'
