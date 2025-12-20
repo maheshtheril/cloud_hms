@@ -36,9 +36,8 @@ export async function GET(
                             select: {
                                 id: true,
                                 name: true,
-                                price: true, // Use price field (not sale_price)
-                                active: true,
-                                category: true
+                                price: true,
+                                is_active: true
                             }
                         }
                     }
@@ -59,7 +58,7 @@ export async function GET(
 
             // Medicines with calculated quantities
             medicines: rx.prescription_items
-                .filter((item: any) => item.hms_product?.active) // Only active medicines
+                .filter((item: any) => item.hms_product?.is_active) // Only active medicines
                 .map((item: any) => {
                     // Calculate total quantity based on dosage
                     // morning + afternoon + evening + night = doses per day
@@ -74,7 +73,6 @@ export async function GET(
                     return {
                         id: item.medicine_id,
                         name: item.hms_product?.name || 'Unknown Medicine',
-                        category: item.hms_product?.category,
 
                         // Dosage info
                         morning: item.morning,
