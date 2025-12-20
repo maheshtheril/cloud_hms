@@ -6,7 +6,7 @@ import { auth } from '@/auth'
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { appointmentId: string } }
+    { params }: { params: Promise<{ appointmentId: string }> }
 ) {
     try {
         const session = await auth()
@@ -14,7 +14,7 @@ export async function GET(
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        const appointmentId = params.appointmentId
+        const { appointmentId } = await params
 
         // TODO: Replace this with actual database query when appointments table exists
         // For now, return structure for demo/testing
