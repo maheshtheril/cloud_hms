@@ -50,7 +50,11 @@ export default async function DoctorsPage({
                 ...(tenantId ? { tenant_id: tenantId } : {}),
                 is_active: true
             },
-            select: { id: true, name: true },
+            select: {
+                id: true,
+                name: true,
+                parent_id: true
+            },
             orderBy: { name: 'asc' }
         }),
         prisma.hms_roles.findMany({

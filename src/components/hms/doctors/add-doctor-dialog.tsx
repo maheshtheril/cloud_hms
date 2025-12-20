@@ -6,6 +6,7 @@ import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Buil
 interface Department {
     id: string
     name: string
+    parent_id: string | null
 }
 
 interface Role {
@@ -132,10 +133,28 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
                             >
                                 <option value="">Select Department</option>
-                                {departments.map(dept => (
-                                    <option key={dept.id} value={dept.id}>{dept.name}</option>
-                                ))}
+                                {/* Group by parent departments */}
+                                {departments
+                                    .filter(dept => !dept.parent_id)
+                                    .map(parentDept => (
+                                        <>
+                                            <option key={parentDept.id} value={parentDept.id}>
+                                                {parentDept.name}
+                                            </option>
+                                            {/* Show child departments indented */}
+                                            {departments
+                                                .filter(child => child.parent_id === parentDept.id)
+                                                .map(childDept => (
+                                                    <option key={childDept.id} value={childDept.id}>
+                                                        &nbsp;&nbsp;&nbsp;&nbsp;↳ {childDept.name}
+                                                    </option>
+                                                ))}
+                                        </>
+                                    ))}
                             </select>
+                            <p className="mt-2 text-xs text-gray-500">
+                                Sub-departments shown with ↳ under parent
+                            </p>
                         </div>
 
                         <div>

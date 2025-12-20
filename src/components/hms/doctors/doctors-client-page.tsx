@@ -20,6 +20,7 @@ interface Doctor {
 interface Department {
     id: string
     name: string
+    parent_id: string | null
 }
 
 interface Role {
