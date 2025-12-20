@@ -17,6 +17,21 @@ interface Doctor {
     hms_roles: { name: string } | null
 }
 
+interface Department {
+    id: string
+    name: string
+}
+
+interface Role {
+    id: string
+    name: string
+}
+
+interface Specialization {
+    id: string
+    name: string
+}
+
 interface DoctorsClientPageProps {
     doctors: Doctor[]
     stats: {
@@ -24,9 +39,12 @@ interface DoctorsClientPageProps {
         active: number
         specializations: number
     }
+    departments: Department[]
+    roles: Role[]
+    specializations: Specialization[]
 }
 
-export function DoctorsClientPage({ doctors, stats }: DoctorsClientPageProps) {
+export function DoctorsClientPage({ doctors, stats, departments, roles, specializations }: DoctorsClientPageProps) {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
 
@@ -209,7 +227,13 @@ export function DoctorsClientPage({ doctors, stats }: DoctorsClientPageProps) {
                 </div>
             </div>
 
-            <AddDoctorDialog isOpen={isAddDialogOpen} onClose={() => setIsAddDialogOpen(false)} />
+            <AddDoctorDialog
+                isOpen={isAddDialogOpen}
+                onClose={() => setIsAddDialogOpen(false)}
+                departments={departments}
+                roles={roles}
+                specializations={specializations}
+            />
         </div>
     )
 }

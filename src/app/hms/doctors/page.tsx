@@ -43,6 +43,35 @@ export default async function DoctorsPage({
         ]
     })
 
+    // Fetch departments, roles, and specializations for the form
+    const [departments, roles, specializations] = await Promise.all([
+        prisma.hms_departments.findMany({
+            where: {
+                ...(tenantId ? { tenant_id: tenantId } : {}),
+                is_active: true
+            },
+            select: { id: true, name: true },
+            orderBy: { name: 'asc' }
+        }),
+        prisma.hms_roles.findMany({
+            where: {
+                ...(tenantId ? { tenant_id: tenantId } : {}),
+                is_active: true,
+                is_clinical: true
+            },
+            select: { id: true, name: true },
+            orderBy: { name: 'asc' }
+        }),
+        prisma.hms_specializations.findMany({
+            where: {
+                ...(tenantId ? { tenant_id: tenantId } : {}),
+                is_active: true
+            },
+            select: { id: true, name: true },
+            orderBy: { name: 'asc' }
+        })
+    ])
+
     // Calculate stats
     const stats = {
         total: doctors.length,
@@ -50,5 +79,11 @@ export default async function DoctorsPage({
         specializations: new Set(doctors.map(d => d.hms_specializations?.name).filter(Boolean)).size
     }
 
-    return <DoctorsClientPage doctors={doctors} stats={stats} />
+    return <DoctorsClientPage
+        doctors={doctors}
+        stats={stats}
+        departments={departments}
+        roles={roles}
+        specializations={specializations}
+    />
 }

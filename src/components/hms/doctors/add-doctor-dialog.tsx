@@ -1,14 +1,32 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield } from 'lucide-react'
+import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2 } from 'lucide-react'
+
+interface Department {
+    id: string
+    name: string
+}
+
+interface Role {
+    id: string
+    name: string
+}
+
+interface Specialization {
+    id: string
+    name: string
+}
 
 interface AddDocFormProps {
     isOpen: boolean
     onClose: () => void
+    departments: Department[]
+    roles: Role[]
+    specializations: Specialization[]
 }
 
-export function AddDoctorDialog({ isOpen, onClose }: AddDocFormProps) {
+export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializations }: AddDocFormProps) {
     if (!isOpen) return null
 
     return (
@@ -104,6 +122,23 @@ export function AddDoctorDialog({ isOpen, onClose }: AddDocFormProps) {
                         </div>
 
                         <div>
+                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
+                                <Building2 className="h-4 w-4" />
+                                Department <span className="text-red-500">*</span>
+                            </label>
+                            <select
+                                name="department_id"
+                                required
+                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
+                            >
+                                <option value="">Select Department</option>
+                                {departments.map(dept => (
+                                    <option key={dept.id} value={dept.id}>{dept.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div>
                             <label className="block text-sm font-bold text-gray-900 mb-2">
                                 Role / Position <span className="text-red-500">*</span>
                             </label>
@@ -113,22 +148,9 @@ export function AddDoctorDialog({ isOpen, onClose }: AddDocFormProps) {
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
                             >
                                 <option value="">Select Role</option>
-                                <option>👨‍⚕️ Doctor / Physician</option>
-                                <option>👩‍⚕️ Nurse</option>
-                                <option>🩺 Nurse Practitioner</option>
-                                <option>💉 Clinical Nurse Specialist</option>
-                                <option>🧑‍⚕️ Physician Assistant</option>
-                                <option>🧘 Physiotherapist</option>
-                                <option>🧠 Psychologist / Therapist</option>
-                                <option>🦷 Dentist</option>
-                                <option>👓 Optometrist</option>
-                                <option>💊 Pharmacist</option>
-                                <option>🔬 Lab Technician</option>
-                                <option>📸 Radiographer</option>
-                                <option>🩻 Anesthesiologist</option>
-                                <option>🏥 Surgeon</option>
-                                <option>👶 Midwife</option>
-                                <option>🧑‍🔬 Medical Assistant</option>
+                                {roles.map(role => (
+                                    <option key={role.id} value={role.id}>{role.name}</option>
+                                ))}
                             </select>
                         </div>
 
@@ -141,16 +163,9 @@ export function AddDoctorDialog({ isOpen, onClose }: AddDocFormProps) {
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
                             >
                                 <option value="">Select Specialization (Optional)</option>
-                                <option>Cardiology</option>
-                                <option>Neurology</option>
-                                <option>Pediatrics</option>
-                                <option>Orthopedics</option>
-                                <option>General Practice</option>
-                                <option>Emergency Medicine</option>
-                                <option>Internal Medicine</option>
-                                <option>Oncology</option>
-                                <option>Radiology</option>
-                                <option>Anesthesiology</option>
+                                {specializations.map(spec => (
+                                    <option key={spec.id} value={spec.id}>{spec.name}</option>
+                                ))}
                             </select>
                         </div>
 
