@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useState, useMemo, useEffect } from 'react'
+import { useActionState, useState, useMemo } from 'react'
 import { createLead, LeadFormState } from '@/app/actions/crm/leads'
 import { PhoneInputComponent } from '@/components/ui/phone-input'
 import { Input } from '@/components/ui/input'
@@ -23,7 +23,6 @@ export function LeadForm({
     sources?: any[],
     companies?: any[]
 }) {
-    const { toast } = useToast()
 
     // Select default pipeline (first one, or one marked is_default)
     const defaultPipeline = pipelines.find(p => p.is_default) || pipelines[0]
@@ -34,7 +33,7 @@ export function LeadForm({
     // State for Pipeline Selection to update Stages
     const [selectedPipelineId, setSelectedPipelineId] = useState<string>(defaultPipeline?.id || '')
     const [selectedCompanyId, setSelectedCompanyId] = useState<string>(defaultCompany?.id || '')
-    const [lastSaved, setLastSaved] = useState<Date | null>(null)
+
 
     // Derive stages based on selected pipeline
     const stages = useMemo(() => {
@@ -54,30 +53,7 @@ export function LeadForm({
     const initialState: LeadFormState = { message: '', errors: {} }
     const [state, dispatch] = useActionState(createLead, initialState)
 
-    // Auto-save draft functionality
-    useEffect(() => {
-        // Check for saved draft on mount
-        const savedDraft = localStorage.getItem('crm_lead_draft')
-        if (savedDraft) {
-            try {
-                const draft = JSON.parse(savedDraft)
-                const savedTime = new Date(draft.timestamp)
-                const minutesAgo = Math.floor((Date.now() - savedTime.getTime()) / 60000)
 
-                if (minutesAgo < 60) { // Only restore if less than 1 hour old
-                    toast({
-                        title: "Draft Restored",
-                        description: `Auto-saved draft from ${minutesAgo} minute(s) ago was restored.`,
-                    })
-                    setLastSaved(savedTime)
-                } else {
-                    localStorage.removeItem('crm_lead_draft') // Clear old draft
-                }
-            } catch (e) {
-                console.error('Failed to restore draft:', e)
-            }
-        }
-    }, [toast])
 
 
     return (
