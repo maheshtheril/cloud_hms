@@ -169,6 +169,37 @@ export async function signup(prevState: any, formData: FormData) {
                 }
             }
 
+            // 6. Auto-seed HMS master data if HMS module is enabled
+            if (modulesToEnable.has('hms')) {
+                console.log('[Signup] HMS module detected - seeding master data...');
+
+                // Seed standard departments
+                const standardDepartments = [
+                    { name: 'Emergency Department', code: 'ED', description: '24/7 emergency care' },
+                    { name: 'Out Patient Department', code: 'OPD', description: 'Outpatient consultations' },
+                    { name: 'In Patient Department', code: 'IPD', description: 'In-patient wards' },
+                    { name: 'Intensive Care Unit', code: 'ICU', description: 'Critical care' },
+                    { name: 'Operating Theatre', code: 'OT', description: 'Surgical procedures' },
+                    { name: 'Radiology', code: 'RAD', description: 'Medical imaging' },
+                    { name: 'Pathology', code: 'PATH', description: 'Laboratory diagnostics' },
+                    { name: 'Pharmacy', code: 'PHAR', description: 'Medication dispensing' }
+                ];
+
+                await tx.hms_departments.createMany({
+                    data: standardDepartments.map(dept => ({
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        name: dept.name,
+                        code: dept.code,
+                        description: dept.description,
+                        is_active: true
+                    })),
+                    skipDuplicates: true
+                });
+
+                console.log('[Signup] Seeded 8 standard departments');
+            }
+
             return { success: true };
         }, {
             timeout: 10000
