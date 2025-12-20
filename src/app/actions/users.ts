@@ -221,7 +221,6 @@ export async function getAvailableRoles() {
         const roles = await prisma.hms_role.findMany({
             where: {
                 tenant_id: session.user.tenantId,
-                is_active: true,
             },
             select: {
                 id: true,
