@@ -25,8 +25,14 @@ export default async function UsersPage({ searchParams }: PageProps) {
 
     const roles = await getAvailableRoles()
 
-    const activeUsers = result.users?.filter(u => u.is_active).length || 0
-    const inactiveUsers = result.users?.filter(u => !u.is_active).length || 0
+    // Handle both return types from getUsers
+    const users = Array.isArray(result) ? [] : result.users || []
+    const total = Array.isArray(result) ? 0 : result.total || 0
+    const pages = Array.isArray(result) ? 0 : result.pages || 0
+    const currentPage = Array.isArray(result) ? 1 : result.currentPage || 1
+
+    const activeUsers = users.filter(u => u.is_active).length
+    const inactiveUsers = users.filter(u => !u.is_active).length
 
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -54,7 +60,7 @@ export default async function UsersPage({ searchParams }: PageProps) {
                     <div className="flex items-center justify-between">
                         <div>
                             <p className="text-sm font-medium text-gray-600">Total Users</p>
-                            <p className="text-2xl font-bold text-gray-900 mt-1">{result.total || 0}</p>
+                            <p className="text-2xl font-bold text-gray-900 mt-1">{total}</p>
                         </div>
                         <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
                             <Users className="h-6 w-6 text-blue-600" />
@@ -101,10 +107,10 @@ export default async function UsersPage({ searchParams }: PageProps) {
 
             {/* User Table */}
             <UserTable
-                users={result.users || []}
-                total={result.total || 0}
-                pages={result.pages || 0}
-                currentPage={result.currentPage || 1}
+                users={users}
+                total={total}
+                pages={pages}
+                currentPage={currentPage}
             />
         </div>
     )
