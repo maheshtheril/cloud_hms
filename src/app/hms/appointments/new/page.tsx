@@ -110,9 +110,19 @@ export default async function NewAppointmentPage({
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-900 mb-2">
-                                        Patient <span className="text-red-500">*</span>
-                                    </label>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="block text-sm font-semibold text-gray-900">
+                                            Patient <span className="text-red-500">*</span>
+                                        </label>
+                                        <Link
+                                            href="/hms/patients/new"
+                                            target="_blank"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-medium rounded-lg hover:shadow-md transition-all"
+                                        >
+                                            <User className="h-3.5 w-3.5" />
+                                            Quick Add Patient
+                                        </Link>
+                                    </div>
                                     <input
                                         type="text"
                                         name="patient_search"
@@ -155,7 +165,7 @@ export default async function NewAppointmentPage({
                                         });
                                     `}} />
                                     <p className="mt-2 text-xs text-gray-500">
-                                        Can't find patient? <Link href="/hms/patients/new" className="text-blue-600 hover:underline font-medium">Register new patient</Link>
+                                        💡 Tip: Type patient name or number to search. Use Quick Add button to register new patients.
                                     </p>
                                 </div>
                             </div>
