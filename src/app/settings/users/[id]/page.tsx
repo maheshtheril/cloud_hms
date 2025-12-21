@@ -12,7 +12,9 @@ export default async function ManageUserPage({ params }: { params: { id: string 
         notFound()
     }
 
-    const currentHMSRoleIds = user.hms_user_roles.map(ur => ur.hms_role.id)
+    const currentHMSRoleIds = user.hms_user_roles
+        .filter(ur => ur.hms_role)
+        .map(ur => ur.hms_role.id)
 
     return (
         <div className="max-w-4xl mx-auto space-y-6 p-6">

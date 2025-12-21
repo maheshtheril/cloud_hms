@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { getRoles } from '@/app/actions/rbac'
+import { getHMSRoles } from '@/app/actions/user'
 import Link from 'next/link'
 import { UserPlus, Mail, Shield, User, Loader2, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -46,10 +46,8 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
     useEffect(() => {
         if (open) {
             const fetchRoles = async () => {
-                const result = await getRoles()
-                if (result.data) {
-                    setCurrentRoles(result.data as any)
-                }
+                const roles = await getHMSRoles()
+                setCurrentRoles(roles as any)
             }
             fetchRoles()
         }
