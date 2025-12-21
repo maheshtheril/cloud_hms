@@ -433,3 +433,77 @@ export async function getAllPermissions() {
         return { error: "Failed to fetch permissions" };
     }
 }
+
+/**
+ * Get ALL Permissions for a specific User (Flattened)
+ * Merges: Table-based Role Permissions And Array-based Role Permissions
+ */
+export async function getUserPermissions(userId: string): Promise<Set<string>> {
+    try {
+        const session = await auth();
+        // Use user's tenant from session for context isolation
+        const tenantId = session?.user?.tenantId;
+
+        if (!tenantId) return new Set();
+
+        // 1. Get User's Roles
+        const userRoles = await prisma.user_role.findMany({
+            where: { user_id: userId, tenant_id: tenantId }
+        });
+
+        const roleIds = userRoles.map(ur => ur.role_id);
+
+        if (roleIds.length === 0) return new Set();
+
+        // 2. Fetch Roles (for array-based permissions)
+        const roles = await prisma.role.findMany({
+            where: { id: { in: roleIds } }
+        });
+
+        // 3. Fetch Role-Permission Mappings (for table-based permissions)
+        const rolePermissions = await prisma.role_permission.findMany({
+            where: { role_id: { in: roleIds }, is_granted: true }
+        });
+
+        const permissionSet = new Set<string>();
+
+        // Add array-based permissions
+        roles.forEach(r => {
+            if (Array.isArray(r.permissions)) {
+                r.permissions.forEach((p: string) => permissionSet.add(p));
+            }
+        });
+
+        // Add table-based permissions
+        rolePermissions.forEach(rp => permissionSet.add(rp.permission_code));
+
+        // 4. Check for User-Specific Permissions override
+        const userPermissions = await prisma.user_permission.findMany({
+            where: { user_id: userId, tenant_id: tenantId, is_granted: true }
+        });
+        userPermissions.forEach(up => permissionSet.add(up.permission_code));
+
+        return permissionSet;
+    } catch (error) {
+        console.error("Error fetching user permissions:", error);
+        return new Set();
+    }
+}
+
+/**
+ * Check if current user has a specific permission
+ */
+export async function checkPermission(permissionCode: string): Promise<boolean> {
+    const session = await auth();
+    if (!session?.user?.id) return false;
+
+    // Super Admin Bypass (optional)
+    // if (session.user.isAdmin) return true; 
+
+    const perms = await getUserPermissions(session.user.id);
+
+    if (perms.has('*')) return true;
+    if (perms.has(permissionCode)) return true;
+
+    return false;
+}

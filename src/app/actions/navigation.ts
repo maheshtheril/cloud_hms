@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
+import { getUserPermissions } from "./rbac"
 
 export async function getMenuItems() {
     const session = await auth();
@@ -9,6 +10,11 @@ export async function getMenuItems() {
 
     const isAdmin = session?.user?.isAdmin;
     let industry = ''; // we can fetch this if needed
+
+    // FETCH USER PERMISSIONS
+    const userPerms = session?.user?.id ? await getUserPermissions(session.user.id) : new Set<string>();
+    // If admin matches standard "superuser", assume wildcards are handled by getUserPermissions (e.g. '*') 
+    // or explicit roles.
 
     try {
         // Fetch all active modules
@@ -77,7 +83,7 @@ export async function getMenuItems() {
             grouped['general'] = { module: { name: 'General', module_key: 'general' }, items: [] };
         }
 
-        // 4. Assign Items to Groups (NO FILTERING - SHOW ALL)
+        // 4. Assign Items to Groups
         for (const item of rootItems) {
             const modKey = getModuleKey(item);
 
@@ -88,6 +94,28 @@ export async function getMenuItems() {
 
             grouped[modKey].items.push(item);
         }
+
+        // 5. RBAC FILTERING
+        // Helper to recursively filter items
+        const filterRestricted = (items: any[]) => {
+            return items.filter(item => {
+                // Check direct permission
+                const allowed = !item.permission_code || userPerms.has(item.permission_code) || userPerms.has('*');
+                if (!allowed) return false;
+
+                // Recursively check children
+                if (item.other_menu_items && item.other_menu_items.length > 0) {
+                    item.other_menu_items = filterRestricted(item.other_menu_items);
+                }
+
+                return true;
+            });
+        };
+
+        // Filter groups
+        Object.keys(grouped).forEach(key => {
+            grouped[key].items = filterRestricted(grouped[key].items);
+        });
 
         const result = Object.values(grouped).filter(g => g.items.length > 0);
 
