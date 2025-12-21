@@ -134,10 +134,10 @@ export async function getMenuItems() {
             const modKey = getModuleKey(item);
 
             if (!isHealthcare) {
-                // Strict whitelist for Non-Healthcare
-                if (!allowedModules.includes(modKey)) {
-                    continue;
-                }
+                // Strict whitelist for Non-Healthcare - DISABLED TO SHOW ALL DB ITEMS
+                // if (!allowedModules.includes(modKey)) {
+                //    continue;
+                // }
             } else {
                 // Healthcare Mode:
                 // Hide pure CRM Dashboard if we have HMS Dashboard? 
