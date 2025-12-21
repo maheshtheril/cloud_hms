@@ -24,10 +24,10 @@ export default async function CRMLayout({
     const loginStatus = await checkCrmLoginStatus();
 
     return (
-        <div className="flex h-screen bg-gray-50">
+        <div className="flex h-screen bg-gray-50 dark:bg-slate-950">
             {/* Sidebar */}
-            <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
-                <div className="p-4 border-b border-gray-100">
+            <aside className="w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 hidden md:flex flex-col">
+                <div className="p-4 border-b border-gray-100 dark:border-slate-800">
                     <CompanySwitcher initialActiveCompany={currentCompany} />
                 </div>
 
@@ -36,7 +36,7 @@ export default async function CRMLayout({
                         <div key={group.module.module_key}>
                             {/* Module Header */}
                             {group.module.module_key !== 'general' && (
-                                <h3 className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                                <h3 className="px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">
                                     {group.module.name}
                                 </h3>
                             )}
@@ -49,13 +49,13 @@ export default async function CRMLayout({
                         </div>
                     ))}
                 </nav>
-                <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
+                <div className="p-4 border-t border-gray-100 dark:border-slate-800 space-y-3">
                     {/* <ThemeToggle /> - Temporarily disabled */}
                     <form action={async () => {
                         'use server';
                         await signOut({ redirectTo: '/login' });
                     }}>
-                        <button className="flex items-center justify-center gap-3 w-full px-4 py-3 text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition-all shadow-sm hover:shadow-md font-medium group">
+                        <button className="flex items-center justify-center gap-3 w-full px-4 py-3 text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/10 dark:text-red-400 dark:hover:bg-red-900/20 dark:border-red-900/30 border border-red-200 rounded-xl transition-all shadow-sm hover:shadow-md font-medium group">
                             <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform" />
                             <span>Sign Out</span>
                         </button>
@@ -64,11 +64,11 @@ export default async function CRMLayout({
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-auto">
-                <header className="bg-white p-4 shadow-sm md:hidden flex justify-between items-center">
+            <main className="flex-1 overflow-auto bg-gray-50 dark:bg-slate-950">
+                <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 p-4 shadow-sm md:hidden flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                        <Activity className="text-blue-600 h-6 w-6" />
-                        <span className="font-bold text-gray-800">CRM Module</span>
+                        <Activity className="text-blue-600 dark:text-blue-400 h-6 w-6" />
+                        <span className="font-bold text-gray-800 dark:text-gray-100">CRM Module</span>
                     </div>
                 </header>
                 <div className="p-8">
@@ -91,7 +91,7 @@ function MenuItem({ item, level = 0 }: { item: any, level?: number }) {
             <details className="group/item" open>
                 {/* defaulted to open for better visibility of CRM sub-items */}
                 <summary
-                    className={`flex items-center gap-3 ${paddingLeftClass} py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors cursor-pointer list-none justify-between`}
+                    className={`flex items-center gap-3 ${paddingLeftClass} py-2 text-gray-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 rounded-md transition-colors cursor-pointer list-none justify-between`}
                 >
                     <span className="flex items-center gap-3">
                         {Icon && <Icon className="h-5 w-5" />}
@@ -115,7 +115,7 @@ function MenuItem({ item, level = 0 }: { item: any, level?: number }) {
     return (
         <Link
             href={item.url || '#'}
-            className={`flex items-center gap-3 ${paddingLeftClass} py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors`}
+            className={`flex items-center gap-3 ${paddingLeftClass} py-2 text-gray-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 rounded-md transition-colors`}
         >
             {Icon && <Icon className="h-5 w-5" />}
             <span className={level > 0 ? "text-sm" : ""}>{item.label}</span>

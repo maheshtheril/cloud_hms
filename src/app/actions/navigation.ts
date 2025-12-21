@@ -153,7 +153,16 @@ export async function getMenuItems() {
             grouped[modKey].items.push(item);
         }
 
-        return Object.values(grouped).filter(g => g.items.length > 0);
+        const result = Object.values(grouped).filter(g => g.items.length > 0);
+
+        if (result.length === 0) {
+            return [{
+                module: { name: 'General', module_key: 'general' },
+                items: getFallbackMenuItems(isAdmin, industry)
+            }];
+        }
+
+        return result;
 
     } catch (error) {
         console.error("Failed to fetch menu items:", error);
