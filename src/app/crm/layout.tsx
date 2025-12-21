@@ -1,15 +1,12 @@
 
 import Link from 'next/link'
-import { Activity, Users, Calendar, LayoutDashboard, Settings, LogOut, Stethoscope, Receipt, Shield, Menu, Kanban, Briefcase } from 'lucide-react'
+import { Activity, Users, Calendar, LayoutDashboard, Settings, LogOut, Stethoscope, Receipt, Shield, Menu, Kanban, Briefcase, ChevronRight } from 'lucide-react'
 import { signOut } from '@/auth'
 import { getMenuItems } from '../actions/navigation'
 import { CompanySwitcher } from '@/components/company-switcher'
 import { getCurrentCompany } from '../actions/company'
 import { checkCrmLoginStatus } from '@/app/actions/crm/auth'
 import { LoginWorkflowWrapper } from '@/components/crm/login-workflow/wrapper'
-
-// Import globals to ensure CSS is present (redundant but safe)
-import "@/app/globals.css";
 
 // Map icon strings to components
 const IconMap: any = {
@@ -25,55 +22,26 @@ export default async function CRMLayout({
     const currentCompany = await getCurrentCompany();
     const loginStatus = await checkCrmLoginStatus();
 
-    // Inline styles to bypass Tailwind build failures
-    const sidebarStyle = {
-        width: '260px',
-        backgroundColor: '#ffffff',
-        borderRight: '1px solid #e2e8f0',
-        display: 'flex',
-        flexDirection: 'column' as 'column',
-        zIndex: 50,
-        height: '100vh',
-        position: 'fixed' as 'fixed', // Fixed to ensure it stays
-        left: 0,
-        top: 0
-    };
-
-    const mainStyle = {
-        marginLeft: '260px', // Offset for fixed sidebar
-        flex: 1,
-        backgroundColor: '#f8fafc', // Slate 50
-        minHeight: '100vh',
-        position: 'relative' as 'relative'
-    };
-
     return (
-        <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0f172a' }}>
-            {/* Sidebar - INLINE STYLED */}
-            <aside style={sidebarStyle} className="crm-sidebar dark-sidebar">
-                <style>{`
-                    .dark-sidebar { background-color: #0f172a !important; border-right: 1px solid #1e293b !important; }
-                    .crm-link { text-decoration: none !important; color: #94a3b8 !important; display: flex !important; align-items: center !important; }
-                    .crm-link:hover { background-color: rgba(59, 130, 246, 0.1) !important; color: #60a5fa !important; }
-                    .crm-header { color: #64748b !important; font-size: 0.75rem !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; font-weight: 600 !important; margin-bottom: 0.5rem !important; padding-left: 0.75rem !important; }
-                `}</style>
-
-                <div style={{ height: '64px', display: 'flex', alignItems: 'center', padding: '0 24px', borderBottom: '1px solid #1e293b' }}>
+        <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
+            {/* Sidebar */}
+            <aside className="w-64 flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col z-40 fixed inset-y-0 left-0">
+                <div className="h-16 flex items-center px-4 border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm">
                     <CompanySwitcher initialActiveCompany={currentCompany} />
                 </div>
 
-                <nav style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
+                <nav className="flex-1 p-4 space-y-6 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
                     {menuItems.map((group: any) => (
-                        <div key={group.module.module_key} style={{ marginBottom: '24px' }}>
+                        <div key={group.module.module_key}>
                             {group.module.module_key !== 'general' && (
-                                <h3 className="crm-header">
+                                <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                                     {group.module.name}
                                 </h3>
                             )}
 
-                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                            <ul className="space-y-1">
                                 {group.items.map((item: any) => (
-                                    <li key={item.key} style={{ listStyle: 'none', margin: 0 }}>
+                                    <li key={item.key}>
                                         <MenuItem item={item} />
                                     </li>
                                 ))}
@@ -82,40 +50,30 @@ export default async function CRMLayout({
                     ))}
                 </nav>
 
-                <div style={{ padding: '16px', borderTop: '1px solid #1e293b' }}>
+                <div className="p-4 border-t border-slate-800 bg-slate-900">
                     <form action={async () => {
                         'use server';
                         await signOut({ redirectTo: '/login' });
                     }}>
-                        <button style={{
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '12px',
-                            padding: '12px',
-                            borderRadius: '12px',
-                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                            color: '#f87171',
-                            border: '1px solid rgba(239, 68, 68, 0.2)',
-                            cursor: 'pointer',
-                            fontWeight: 500
-                        }}>
-                            <LogOut size={20} />
+                        <button className="flex items-center justify-center gap-3 w-full px-4 py-2.5 text-sm text-red-400 bg-red-900/10 hover:bg-red-900/20 border border-red-900/20 rounded-lg transition-all font-medium group">
+                            <LogOut className="h-4 w-4 group-hover:scale-110 transition-transform" />
                             <span>Sign Out</span>
                         </button>
                     </form>
                 </div>
             </aside>
 
-            {/* Main Content */}
-            <main style={mainStyle} className="crm-main-content">
-                <div className="md:hidden" style={{ background: '#0f172a', padding: '16px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Activity color="#60a5fa" />
-                    <span style={{ color: 'white', fontWeight: 'bold' }}>CRM Module</span>
-                </div>
+            {/* Main Content (Pushed by sidebar) */}
+            <main className="flex-1 ml-64 bg-slate-50 dark:bg-slate-950 min-h-screen relative">
+                {/* Mobile Header (Hidden on Desktop) */}
+                <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 shadow-sm md:hidden flex justify-between items-center sticky top-0 z-30">
+                    <div className="flex items-center gap-2">
+                        <Activity className="text-blue-600 dark:text-blue-400 h-6 w-6" />
+                        <span className="font-bold text-gray-800 dark:text-gray-100">CRM Module</span>
+                    </div>
+                </header>
 
-                <div style={{ padding: '32px' }}>
+                <div className="p-8">
                     <LoginWorkflowWrapper status={loginStatus}>
                         {children}
                     </LoginWorkflowWrapper>
@@ -129,32 +87,22 @@ function MenuItem({ item, level = 0 }: { item: any, level?: number }) {
     const Icon = IconMap[item.icon] || (level === 0 ? Activity : null);
     const hasChildren = item.other_menu_items && item.other_menu_items.length > 0;
 
-    // Explicit styles
-    const paddingLeft = level === 0 ? "12px" : level === 1 ? "36px" : "56px";
-    const linkStyle = {
-        paddingTop: '8px',
-        paddingBottom: '8px',
-        paddingLeft: paddingLeft,
-        paddingRight: '12px',
-        borderRadius: '6px',
-        transition: 'all 0.2s',
-        fontSize: level > 0 ? '0.875rem' : '1rem'
-    };
+    // Dynamic indentation class
+    const paddingLeftClass = level === 0 ? "pl-3" : level === 1 ? "pl-9" : "pl-12";
 
     if (hasChildren) {
         return (
-            <details className="group/item" open style={{ marginBottom: '4px' }}>
+            <details className="group/item text-sm" open>
                 <summary
-                    className="crm-link"
-                    style={{ ...linkStyle, cursor: 'pointer', listStyle: 'none', justifyContent: 'space-between' }}
+                    className={`flex items-center justify-between gap-3 ${paddingLeftClass} pr-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer list-none select-none`}
                 >
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {Icon && <Icon size={18} strokeWidth={2} />}
-                        <span style={{ fontWeight: 500 }}>{item.label}</span>
-                    </span>
-                    <span style={{ opacity: 0.7, transform: 'rotate(90deg)', fontSize: '10px', color: '#94a3b8' }}>▶</span>
+                    <div className="flex items-center gap-3">
+                        {Icon && <Icon className="h-4 w-4" />}
+                        <span className="font-medium">{item.label}</span>
+                    </div>
+                    <ChevronRight className="h-3 w-3 transition-transform group-open/item:rotate-90 text-slate-600 group-hover:text-slate-400" />
                 </summary>
-                <div style={{ marginTop: '2px', display: 'flex', flexDirection: 'column', gap: '2px', borderLeft: '1px solid rgba(255,255,255,0.1)', marginLeft: '18px', paddingLeft: '4px' }}>
+                <div className="mt-1 space-y-0.5 border-l border-slate-800 ml-5">
                     {item.other_menu_items.map((sub: any) => (
                         <MenuItem key={sub.key} item={sub} level={level + 1} />
                     ))}
@@ -166,11 +114,10 @@ function MenuItem({ item, level = 0 }: { item: any, level?: number }) {
     return (
         <Link
             href={item.url || '#'}
-            className="crm-link"
-            style={linkStyle}
+            className={`flex items-center gap-3 ${paddingLeftClass} pr-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors block decoration-0`}
         >
-            {Icon && <Icon size={20} />}
-            <span>{item.label}</span>
+            {Icon && <Icon className="h-4 w-4" />}
+            <span className="font-medium">{item.label}</span>
         </Link>
     )
 }
