@@ -117,10 +117,10 @@ export default async function DealsPage() {
                             <div className="absolute top-4 right-4">
                                 <Badge
                                     className={`${deal.status === 'won'
-                                            ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg shadow-emerald-500/50'
-                                            : deal.status === 'lost'
-                                                ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/50'
-                                                : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/50'
+                                        ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg shadow-emerald-500/50'
+                                        : deal.status === 'lost'
+                                            ? 'bg-gradient-to-r from-red-500 to-rose-500 text-white shadow-lg shadow-red-500/50'
+                                            : 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/50'
                                         } uppercase font-bold`}
                                 >
                                     {deal.status}
@@ -171,11 +171,11 @@ export default async function DealsPage() {
                                             <div className="w-24 h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
                                                 <div
                                                     className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-cyan-500 shadow-lg shadow-emerald-500/50 transition-all duration-500"
-                                                    style={{ width: `${deal.probability || 0}%` }}
+                                                    style={{ width: `${Number(deal.probability) || 0}%` }}
                                                 />
                                             </div>
                                             <span className="font-bold text-slate-900 dark:text-white min-w-[2.5rem] text-right">
-                                                {deal.probability || 0}%
+                                                {Number(deal.probability) || 0}%
                                             </span>
                                         </div>
                                     </div>
