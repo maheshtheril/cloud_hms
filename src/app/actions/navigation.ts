@@ -8,42 +8,16 @@ export async function getMenuItems() {
     if (!session?.user) return [];
 
     const isAdmin = session.user.isAdmin;
+    let industry = ''; // we can fetch this if needed
 
     try {
-        // Fetch enabled modules for this tenant
-        const tenantId = session.user.tenantId; // Ensure type exists, or use any
-
-        let enabledModuleKeys: string[] = [];
-        let industry = '';
-
-        if (tenantId) {
-            const tenantModules = await prisma.tenant_module.findMany({
-                where: { tenant_id: tenantId, enabled: true },
-                select: { module_key: true }
-            });
-            enabledModuleKeys = tenantModules.map(tm => tm.module_key);
-
-            const company = await prisma.company.findFirst({
-                where: { tenant_id: tenantId }
-            });
-            industry = company?.industry || '';
-        }
-
         // Fetch all active modules
-        // Filter by enabled keys if we have any tenant-specific specs
-        const whereClause: any = { is_active: true };
-        if (enabledModuleKeys.length > 0) {
-            whereClause.module_key = { in: enabledModuleKeys };
-        }
-
         const activeModules = await prisma.modules.findMany({
-            where: whereClause,
-            // orderBy: { sort_order: 'asc' } 
+            where: { is_active: true }
         });
 
-        // Fetch ALL menu items (flat list) to build tree in memory for unlimited depth
+        // 1. FETCH ALL ITEMS (No filtering yet)
         const allMenuItems = await prisma.menu_items.findMany({
-            // where: { is_active: true }, // If column existed
             orderBy: { sort_order: 'asc' },
             include: {
                 module_menu_map: {
@@ -57,11 +31,11 @@ export async function getMenuItems() {
         if (allMenuItems.length === 0) {
             return [{
                 module: { name: 'General', module_key: 'general' },
-                items: getFallbackMenuItems(isAdmin, industry)
+                items: getFallbackMenuItems(isAdmin)
             }];
         }
 
-        // Build Tree
+        // 2. Build Tree
         const itemMap = new Map();
         const rootItems: any[] = [];
 
@@ -80,24 +54,19 @@ export async function getMenuItems() {
             }
         });
 
-        // Sort children recursively (if needed, though findMany sort helps)
-        // Since findMany is sorted by sort_order, the push order should be roughly correct,
-        // but explicit sort on children array is safer if desired.
-
-        // Group by module (only root items need to be grouped, children follow parents)
+        // 3. Group by Module
         const grouped: Record<string, { module: any, items: any[] }> = {};
 
-        // Helper to get module key for an item
+        // Helper to get module key
         const getModuleKey = (item: any) => {
             if (item.module_key) return item.module_key;
             if (item.module_menu_map && item.module_menu_map.length > 0) {
                 return item.module_menu_map[0].module_key;
             }
-            // If parent has a module, arguably child should inherit, but here we group roots.
             return 'general';
         };
 
-        // Initialize groups
+        // Initialize active module groups
         for (const mod of activeModules) {
             grouped[mod.module_key] = {
                 module: mod,
@@ -108,45 +77,12 @@ export async function getMenuItems() {
             grouped['general'] = { module: { name: 'General', module_key: 'general' }, items: [] };
         }
 
-        // --- FIXED LOGIC ---
-        // 1. Determine "Context" (Healthcare vs Gen/CRM)
-        // If industry is explicit, trust it.
-        // If industry is empty, check enabled modules. If 'hms' is enabled, default to Healthcare. 
-        // If 'hms' is NOT enabled but 'crm' IS, default to Non-Healthcare.
-
-        let isHealthcare = false;
-
-        if (industry) {
-            isHealthcare = (industry === 'Healthcare' || industry === 'Hospital');
-        } else {
-            // Fallback: Check modules
-            const hasHMS = enabledModuleKeys.includes('hms');
-            const hasCRM = enabledModuleKeys.includes('crm');
-
-            if (hasHMS) isHealthcare = true;
-            else if (hasCRM) isHealthcare = false; // Only CRM -> Not Healthcare
-            else isHealthcare = true; // Default to HMS if nothing known? or fallback to General? Defaulting to HMS for safety with legacy.
-        }
-
-        const allowedModules = ['crm', 'admin', 'sales', 'inventory', 'purchase'];
-
+        // 4. Assign Items to Groups (NO FILTERING - SHOW ALL)
         for (const item of rootItems) {
             const modKey = getModuleKey(item);
 
-            if (!isHealthcare) {
-                // Strict whitelist for Non-Healthcare - DISABLED TO SHOW ALL DB ITEMS
-                // if (!allowedModules.includes(modKey)) {
-                //    continue;
-                // }
-            } else {
-                // Healthcare Mode:
-                // Hide pure CRM Dashboard if we have HMS Dashboard? 
-                // For now, allow everything unless it duplicates.
-            }
-
-            // Ensure the group exists
+            // If group doesn't exist (module disabled or missing), create dynamic group
             if (!grouped[modKey]) {
-                // Fallback for items with missing module definitions
                 grouped[modKey] = { module: { name: modKey.toUpperCase(), module_key: modKey }, items: [] };
             }
 
@@ -155,10 +91,11 @@ export async function getMenuItems() {
 
         const result = Object.values(grouped).filter(g => g.items.length > 0);
 
+        // Safety check
         if (result.length === 0) {
             return [{
                 module: { name: 'General', module_key: 'general' },
-                items: getFallbackMenuItems(isAdmin, industry)
+                items: getFallbackMenuItems(isAdmin)
             }];
         }
 
@@ -166,20 +103,15 @@ export async function getMenuItems() {
 
     } catch (error) {
         console.error("Failed to fetch menu items:", error);
-        // Fallback needs to be adapted to new structure if we want consistency on error
-        // But for now returning the old flat list might break the new UI.
-        // Let's return a single 'General' group for fallback items.
         return [{
             module: { name: 'General', module_key: 'general' },
-            items: getFallbackMenuItems(isAdmin, undefined)
+            items: getFallbackMenuItems(isAdmin)
         }];
     }
 }
 
-function getFallbackMenuItems(isAdmin: boolean | undefined, industry?: string) {
-    // Simplified fallback: if industry is unknown, just assume General/CRM mix or empty.
-    // MODIFIED: ALWAYS RETURN BOTH HMS AND CRM FOR VISIBILITY IF DB FAILS
-
+function getFallbackMenuItems(isAdmin: boolean | undefined) {
+    // ALWAYS RETURN BOTH HMS AND CRM FOR VISIBILITY IF DB FAILS
     let items: any[] = [
         { key: 'crm-dashboard', label: 'CRM Dashboard', icon: 'LayoutDashboard', url: '/crm/dashboard' },
         { key: 'crm-leads', label: 'Leads', icon: 'Users', url: '/crm/leads' },
