@@ -16,9 +16,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, Plus, Shield } from "lucide-react"
+import { Loader2, Plus, Shield, Check } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
 
 export function CreateRoleDialog() {
@@ -289,11 +288,16 @@ export function CreateRoleDialog() {
                                                             className="flex items-start space-x-3 p-3 rounded-md bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 cursor-pointer transition-all group"
                                                             onClick={() => togglePermission(perm.code)}
                                                         >
-                                                            <Checkbox
-                                                                id={perm.code}
-                                                                checked={selectedPermissions.includes(perm.code)}
-                                                                className="mt-0.5 border-slate-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500 pointer-events-none"
-                                                            />
+                                                            <div className="relative flex items-center justify-center h-4 w-4">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    id={perm.code}
+                                                                    checked={selectedPermissions.includes(perm.code)}
+                                                                    readOnly
+                                                                    className="peer h-4 w-4 appearance-none rounded border border-slate-500 bg-transparent checked:bg-cyan-500 checked:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 pointer-events-none transition-all"
+                                                                />
+                                                                <Check className="absolute h-3 w-3 text-white opacity-0 peer-checked:opacity-100 pointer-events-none" />
+                                                            </div>
                                                             <div className="grid gap-0.5">
                                                                 <label className="text-sm font-medium leading-none cursor-pointer text-slate-200 group-hover:text-white transition-colors">
                                                                     {/* Format name to Title Case + Handle CRM specifically */}
