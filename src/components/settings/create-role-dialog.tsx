@@ -25,7 +25,7 @@ export function CreateRoleDialog() {
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [loadingPermissions, setLoadingPermissions] = useState(false)
-    const [permissions, setPermissions] = useState<any[]>([])
+    const [permissions, setPermissions] = useState<Array<{ code: string; name: string; module: string }>>([])
     const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
     const [formData, setFormData] = useState({
         key: '',

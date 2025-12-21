@@ -52,7 +52,7 @@ export function RoleActions({ role }: RoleActionsProps) {
     const [deleteOpen, setDeleteOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [loadingPermissions, setLoadingPermissions] = useState(false)
-    const [permissions, setPermissions] = useState<any[]>([])
+    const [permissions, setPermissions] = useState<Array<{ code: string; name: string; module: string }>>([])
     const [selectedPermissions, setSelectedPermissions] = useState<string[]>(role.permissions)
     const [name, setName] = useState(role.name)
     const { toast } = useToast()
