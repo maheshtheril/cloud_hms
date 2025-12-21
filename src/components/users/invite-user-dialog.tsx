@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { getHMSRoles } from '@/app/actions/user'
+import { getRoles } from '@/app/actions/role'
 import Link from 'next/link'
 import { UserPlus, Mail, Shield, User, Loader2, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -41,16 +41,12 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
         if (open) {
             const fetchRoles = async () => {
                 try {
-                    const roles = await getHMSRoles()
-                    console.log("Fetched Roles:", roles)
-                    setCurrentRoles(roles as any[])
-
-                    if (roles.length === 0) {
-                        // toast({ title: "Debug", description: "0 Roles returned." })
+                    const result = await getRoles()
+                    if (result.data) {
+                        setCurrentRoles(result.data as any[])
                     }
                 } catch (e) {
                     console.error(e)
-                    toast({ variant: "destructive", title: "Debug Error", description: "Failed to fetch roles" })
                 }
             }
             fetchRoles()
@@ -249,13 +245,13 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                                     placeholder="Search for a role..."
                                     defaultOptions={[
                                         { id: 'no-role', label: 'No specific role (User will have no permissions)' },
-                                        ...currentRoles.map(r => ({ id: r.id, label: r.name, subLabel: r.description || undefined }))
+                                        ...currentRoles.map(r => ({ id: r.id, label: r.name, subLabel: r.key || undefined }))
                                     ]}
                                     onSearch={async (query) => {
                                         const lowerQ = query.toLowerCase()
                                         const matches = currentRoles
                                             .filter(r => r.name.toLowerCase().includes(lowerQ))
-                                            .map(r => ({ id: r.id, label: r.name, subLabel: r.description || undefined }))
+                                            .map(r => ({ id: r.id, label: r.name, subLabel: r.key || undefined }))
 
                                         const noRole = { id: 'no-role', label: 'No specific role (User will have no permissions)' }
                                         if ('no specific role'.includes(lowerQ) || query === '') {
