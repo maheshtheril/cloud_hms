@@ -20,13 +20,7 @@ import { Label } from '@/components/ui/label'
 import { inviteUser } from '@/app/actions/users'
 import { useToast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 
 interface InviteUserDialogProps {
     roles?: Array<{
@@ -240,22 +234,27 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                                         + Create New Role
                                     </Link>
                                 </div>
-                                <Select
+                                <SearchableSelect
                                     value={formData.roleId}
-                                    onValueChange={(val) => setFormData({ ...formData, roleId: val })}
-                                >
-                                    <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Select a role..." />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="no-role">No specific role (User will have no permissions)</SelectItem>
-                                        {currentRoles.map((role) => (
-                                            <SelectItem key={role.id} value={role.id}>
-                                                {role.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    placeholder="Search for a role..."
+                                    defaultOptions={[
+                                        { id: 'no-role', label: 'No specific role (User will have no permissions)' },
+                                        ...currentRoles.map(r => ({ id: r.id, label: r.name, subLabel: r.description || undefined }))
+                                    ]}
+                                    onSearch={async (query) => {
+                                        const lowerQ = query.toLowerCase()
+                                        const matches = currentRoles
+                                            .filter(r => r.name.toLowerCase().includes(lowerQ))
+                                            .map(r => ({ id: r.id, label: r.name, subLabel: r.description || undefined }))
+
+                                        const noRole = { id: 'no-role', label: 'No specific role (User will have no permissions)' }
+                                        if ('no specific role'.includes(lowerQ) || query === '') {
+                                            return [noRole, ...matches]
+                                        }
+                                        return matches
+                                    }}
+                                    onChange={(val) => setFormData({ ...formData, roleId: val || 'no-role' })}
+                                />
                                 <p className="text-[11px] text-slate-500">
                                     You can assign multiple roles later in the user profile.
                                 </p>
