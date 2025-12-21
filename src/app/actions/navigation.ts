@@ -178,22 +178,18 @@ export async function getMenuItems() {
 
 function getFallbackMenuItems(isAdmin: boolean | undefined, industry?: string) {
     // Simplified fallback: if industry is unknown, just assume General/CRM mix or empty.
-    const isHealthcare = !industry || industry === 'Healthcare' || industry === 'Hospital'; // Keeping this for now, but UI will rely on DB mostly.
-    let items: any[] = [];
+    // MODIFIED: ALWAYS RETURN BOTH HMS AND CRM FOR VISIBILITY IF DB FAILS
 
-    if (isHealthcare) {
-        items = [
-            { key: 'dashboard', label: 'Dashboard', icon: 'LayoutDashboard', url: '/hms/dashboard' },
-            { key: 'patients', label: 'Patients', icon: 'Users', url: '/hms/patients' },
-            { key: 'appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
-            { key: 'doctors', label: 'Doctors', icon: 'Stethoscope', url: '/hms/doctors' },
-            { key: 'billing', label: 'Billing', icon: 'Receipt', url: '/hms/billing' },
-        ];
-    } else {
-        items = [
-            { key: 'crm-dashboard', label: 'Dashboard', icon: 'LayoutDashboard', url: '/crm/dashboard' },
-        ];
-    }
+    let items: any[] = [
+        { key: 'crm-dashboard', label: 'CRM Dashboard', icon: 'LayoutDashboard', url: '/crm/dashboard' },
+        { key: 'crm-leads', label: 'Leads', icon: 'Users', url: '/crm/leads' },
+        { key: 'crm-deals', label: 'Deals', icon: 'Briefcase', url: '/crm/deals' },
+        { key: 'crm-contacts', label: 'Contacts', icon: 'Users', url: '/crm/contacts' },
+        { key: 'hms-dashboard', label: 'HMS Dashboard', icon: 'LayoutDashboard', url: '/hms/dashboard' },
+        { key: 'patients', label: 'Patients', icon: 'Users', url: '/hms/patients' },
+        { key: 'appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
+        { key: 'billing', label: 'Billing', icon: 'Receipt', url: '/hms/billing' },
+    ];
 
     if (isAdmin) {
         items.push({ key: 'settings', label: 'Settings', icon: 'Settings', url: '/settings' });
