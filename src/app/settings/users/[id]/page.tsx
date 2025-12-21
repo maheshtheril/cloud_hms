@@ -4,8 +4,9 @@ import Link from "next/link"
 import { ArrowLeft, Mail, User, Shield, Activity } from "lucide-react"
 import { notFound } from "next/navigation"
 
-export default async function ManageUserPage({ params }: { params: { id: string } }) {
-    const user = await getUser(params.id)
+export default async function ManageUserPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
+    const user = await getUser(id)
     const allHMSRoles = await getHMSRoles()
 
     if (!user) {
