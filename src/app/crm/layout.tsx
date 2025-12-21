@@ -50,7 +50,7 @@ export default async function CRMLayout({
                     ))}
                 </nav>
                 <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
-                    <ThemeToggle />
+                    {/* <ThemeToggle /> - Temporarily disabled */}
                     <form action={async () => {
                         'use server';
                         await signOut({ redirectTo: '/login' });
