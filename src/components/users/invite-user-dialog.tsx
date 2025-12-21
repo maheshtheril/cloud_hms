@@ -126,7 +126,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                     Invite User
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+            <DialogContent className="sm:max-w-[600px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-3 text-xl font-bold text-slate-900 dark:text-white">
@@ -140,7 +140,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-6 py-6 pb-64">
+                    <div className="space-y-6 py-6">
                         {/* Email & Name Grid */}
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
