@@ -82,13 +82,37 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                 variant: 'destructive'
             })
         } else {
-            toast({
-                title: 'Success',
-                description: result.message || 'User invited successfully'
-            })
             setOpen(false)
             setFormData({ email: '', fullName: '', systemRole: 'user', roleId: 'no-role' })
             router.refresh()
+
+            if (result.inviteLink) {
+                toast({
+                    title: 'User Invited',
+                    description: (
+                        <div className="flex flex-col gap-2 mt-1">
+                            <p>User created successfully.</p>
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(result.inviteLink!)
+                                    // Alert or secondary toast
+                                    alert("Link copied to clipboard!")
+                                }}
+                                className="text-blue-600 hover:underline text-left font-medium text-xs flex items-center gap-1"
+                            >
+                                <Check className="h-3 w-3" />
+                                Click here to copy Invite Link
+                            </button>
+                        </div>
+                    ),
+                    duration: 10000,
+                })
+            } else {
+                toast({
+                    title: 'Success',
+                    description: result.message || 'User invited successfully'
+                })
+            }
         }
     }
 

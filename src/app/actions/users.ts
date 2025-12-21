@@ -131,6 +131,8 @@ export async function inviteUser(data: InviteUserData) {
             }
         })
 
+        let inviteLink: string | undefined;
+
         // Generate invitation token and send email
         try {
             const token = crypto.randomBytes(32).toString('hex')
@@ -150,6 +152,11 @@ export async function inviteUser(data: InviteUserData) {
             if (!emailResult.success) {
                 console.error("Failed to send email via Resend:", emailResult.error)
             }
+
+            // Generate link for manual copying
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cloud-hms.onrender.com');
+            inviteLink = `${appUrl}/auth/accept-invite?token=${token}`;
+
         } catch (e) {
             console.error("Error in invitation flow:", e)
         }
@@ -175,8 +182,9 @@ export async function inviteUser(data: InviteUserData) {
 
         return {
             success: true,
-            message: 'User invited successfully. Invitation email sent.',
-            user
+            message: 'User invited successfully.',
+            user,
+            inviteLink
         }
 
     } catch (error: any) {
