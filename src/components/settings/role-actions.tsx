@@ -24,7 +24,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, Pencil, Trash2 } from "lucide-react"
+import { Loader2, Pencil, Trash2, Search } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -55,6 +55,7 @@ export function RoleActions({ role }: RoleActionsProps) {
     const [permissions, setPermissions] = useState<Array<{ code: string; name: string; module: string }>>([])
     const [selectedPermissions, setSelectedPermissions] = useState<string[]>(role.permissions)
     const [name, setName] = useState(role.name)
+    const [searchQuery, setSearchQuery] = useState("")
     const { toast } = useToast()
     const router = useRouter()
 
@@ -210,7 +211,7 @@ export function RoleActions({ role }: RoleActionsProps) {
 
             {/* Edit Dialog */}
             <Dialog open={editOpen} onOpenChange={setEditOpen}>
-                <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+                <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
                     <DialogHeader>
                         <DialogTitle>Edit Role: {role.key}</DialogTitle>
                         <DialogDescription>
@@ -230,61 +231,99 @@ export function RoleActions({ role }: RoleActionsProps) {
                                 />
                             </div>
 
-                            <div className="space-y-2">
-                                <Label>Permissions *</Label>
-                                <p className="text-sm text-muted-foreground mb-2">
-                                    Selected {selectedPermissions.length} permission{selectedPermissions.length !== 1 ? 's' : ''}
-                                </p>
+                            <div className="space-y-4">
+                                <Label>Permissions Configuration</Label>
+
+                                {/* Search & Stats Bar */}
+                                <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
+                                    <div className="relative flex-1">
+                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+                                        <Input
+                                            placeholder="Search permissions..."
+                                            className="pl-9 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                        />
+                                    </div>
+                                    <Badge variant="outline" className="h-9 px-3 flex items-center justify-center border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
+                                        {selectedPermissions.length} selected
+                                    </Badge>
+                                </div>
 
                                 {loadingPermissions ? (
-                                    <div className="flex items-center justify-center py-8">
-                                        <Loader2 className="h-6 w-6 animate-spin" />
+                                    <div className="flex items-center justify-center py-12">
+                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
                                     </div>
                                 ) : (
-                                    <ScrollArea className="h-[400px] border rounded-lg p-4">
+                                    <ScrollArea className="h-[500px] border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 p-4">
                                         <div className="space-y-6">
                                             {Object.entries(permissionsByModule).map(([module, perms]) => {
-                                                const modulePerms = perms.map(p => p.code)
-                                                const allSelected = modulePerms.every(p => selectedPermissions.includes(p))
+                                                // Filter logic
+                                                const visiblePerms = perms.filter(p =>
+                                                    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                                    p.code.toLowerCase().includes(searchQuery.toLowerCase())
+                                                );
+
+                                                if (visiblePerms.length === 0) return null;
+
+                                                const modulePerms = visiblePerms.map(p => p.code);
+                                                const allSelected = modulePerms.every(p => selectedPermissions.includes(p));
+                                                const someSelected = modulePerms.some(p => selectedPermissions.includes(p));
 
                                                 return (
-                                                    <div key={module} className="space-y-3">
-                                                        <div className="flex items-center justify-between">
-                                                            <h4 className="font-semibold text-sm flex items-center gap-2">
-                                                                {module}
-                                                                <Badge variant="secondary" className="text-xs">
-                                                                    {perms.length}
+                                                    <div key={module} className="bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
+                                                        <div className="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
+                                                            <div className="flex items-center gap-3">
+                                                                <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
+                                                                    {module}
+                                                                </h4>
+                                                                <Badge variant="secondary" className="px-1.5 py-0 h-5 text-[10px]">
+                                                                    {visiblePerms.length}
                                                                 </Badge>
-                                                            </h4>
+                                                            </div>
                                                             <Button
                                                                 type="button"
                                                                 variant="ghost"
                                                                 size="sm"
+                                                                className="h-7 text-xs hover:bg-slate-200 dark:hover:bg-slate-800"
                                                                 onClick={() => selectAllInModule(module)}
                                                             >
                                                                 {allSelected ? 'Deselect All' : 'Select All'}
                                                             </Button>
                                                         </div>
-                                                        <div className="grid grid-cols-2 gap-2 pl-4">
-                                                            {perms.map((perm) => (
-                                                                <div key={perm.code} className="flex items-center space-x-2">
+                                                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 p-4">
+                                                            {visiblePerms.map((perm) => (
+                                                                <div
+                                                                    key={perm.code}
+                                                                    className="flex items-start space-x-3 p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer group"
+                                                                    onClick={() => togglePermission(perm.code)}
+                                                                >
                                                                     <Checkbox
                                                                         id={`edit-${perm.code}`}
                                                                         checked={selectedPermissions.includes(perm.code)}
                                                                         onCheckedChange={() => togglePermission(perm.code)}
+                                                                        className="mt-0.5"
                                                                     />
-                                                                    <label
-                                                                        htmlFor={`edit-${perm.code}`}
-                                                                        className="text-sm leading-none cursor-pointer"
-                                                                    >
-                                                                        {perm.name}
-                                                                    </label>
+                                                                    <div className="space-y-1 leading-none">
+                                                                        <label
+                                                                            htmlFor={`edit-${perm.code}`}
+                                                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white"
+                                                                        >
+                                                                            {perm.name}
+                                                                        </label>
+                                                                        {/* Optional description if available */}
+                                                                    </div>
                                                                 </div>
                                                             ))}
                                                         </div>
                                                     </div>
                                                 )
                                             })}
+                                            {permissions.length > 0 && Object.keys(permissionsByModule).length === 0 && (
+                                                <div className="text-center py-10 text-slate-500">
+                                                    No permissions found matching "{searchQuery}"
+                                                </div>
+                                            )}
                                         </div>
                                     </ScrollArea>
                                 )}
