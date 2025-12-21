@@ -483,6 +483,11 @@ export async function getUserPermissions(userId: string): Promise<Set<string>> {
         });
         userPermissions.forEach(up => permissionSet.add(up.permission_code));
 
+        // 5. Implicitly Grant Super Admin (Wildcard) if session says isAdmin
+        if (session?.user?.isAdmin) {
+            permissionSet.add('*');
+        }
+
         return permissionSet;
     } catch (error) {
         console.error("Error fetching user permissions:", error);
