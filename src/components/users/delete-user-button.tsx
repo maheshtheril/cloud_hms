@@ -67,7 +67,7 @@ export function DeleteUserButton({ userId, userName }: DeleteUserButtonProps) {
                     Delete User
                 </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent>
+            <AlertDialogContent className="bg-white dark:bg-slate-950">
                 <AlertDialogHeader>
                     <AlertDialogTitle className="flex items-center gap-2 text-destructive">
                         <AlertTriangle className="h-5 w-5" />
