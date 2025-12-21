@@ -49,5 +49,17 @@ Now emails will come from **you**!
 
 ---
 
+### 🛡️ Safety Check (Read Before Changing DNS)
+Since you have existing apps running on `zaayasoft.com`:
+1. **It is Safe:** Adding these records will **NOT** affect your website or existing apps. They act as "additional permissions" for email.
+2. **Do NOT Delete:** Never delete your existing records. Only **ADD** the new ones Resend gives you.
+3. **SPF Record:** If you already have a TXT record for `@` that starts with `v=spf1...`:
+   - Do **NOT** add a second one.
+   - Instead, **Edit** the existing one and add `include:resend.com` inside it.
+   - *Example:* `v=spf1 include:_spf.google.com include:resend.com ~all`
+
+
+---
+
 ### ⚠️ Important Note
 After saving the variables, Render will automatically restart your app. Email sending will start working immediately after the restart.
