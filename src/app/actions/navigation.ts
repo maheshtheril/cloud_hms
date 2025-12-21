@@ -17,40 +17,51 @@ export async function getMenuItems() {
     // or explicit roles.
 
     try {
-        // Fetch all active modules
-        const activeModules = await prisma.modules.findMany({
+        // Fetch active modules (Global)
+        const globalActiveModules = await prisma.modules.findMany({
             where: { is_active: true }
         });
 
-        // 1. FETCH ALL ITEMS (No filtering yet)
+        // Fetch Tenant Subscribed Modules
+        let allowedModuleKeys = new Set<string>();
+        if (session?.user?.tenantId) {
+            const tenantModules = await prisma.tenant_module.findMany({
+                where: { tenant_id: session.user.tenantId, enabled: true }
+            });
+
+            if (tenantModules.length > 0) {
+                // Strict Mode: Only allow subscribed modules
+                tenantModules.forEach(tm => allowedModuleKeys.add(tm.module_key));
+            } else {
+                // Fallback: If no tenant_module records, allow all global active modules (Trial/Legacy)
+                globalActiveModules.forEach(m => allowedModuleKeys.add(m.module_key));
+            }
+        } else {
+            // No tenant context? Allow all.
+            globalActiveModules.forEach(m => allowedModuleKeys.add(m.module_key));
+        }
+
+        // Always allow General
+        allowedModuleKeys.add('general');
+
+        // 1. FETCH ALL ITEMS ... (existing code)
         const allMenuItems = await prisma.menu_items.findMany({
             orderBy: { sort_order: 'asc' },
-            include: {
-                module_menu_map: {
-                    include: {
-                        modules: true
-                    }
-                }
-            }
+            include: { module_menu_map: { include: { modules: true } } }
         });
 
         if (allMenuItems.length === 0) {
+            // ... fallback logic
             return [{
                 module: { name: 'General', module_key: 'general' },
                 items: getFallbackMenuItems(isAdmin)
             }];
         }
 
-        // 2. Build Tree
+        // 2. Build Tree ... (existing code)
         const itemMap = new Map();
         const rootItems: any[] = [];
-
-        // First pass: map all items
-        allMenuItems.forEach(item => {
-            itemMap.set(item.id, { ...item, other_menu_items: [] });
-        });
-
-        // Second pass: attach dependencies
+        allMenuItems.forEach(item => { itemMap.set(item.id, { ...item, other_menu_items: [] }); });
         allMenuItems.forEach(item => {
             const node = itemMap.get(item.id);
             if (item.parent_id && itemMap.has(item.parent_id)) {
@@ -72,22 +83,27 @@ export async function getMenuItems() {
             return 'general';
         };
 
-        // Initialize active module groups
-        for (const mod of activeModules) {
-            grouped[mod.module_key] = {
-                module: mod,
-                items: []
-            };
+        // Initialize groups for Allowed Modules
+        for (const mod of globalActiveModules) {
+            if (allowedModuleKeys.has(mod.module_key)) {
+                grouped[mod.module_key] = { module: mod, items: [] };
+            }
         }
-        if (!grouped['general']) {
+        if (!grouped['general']) { // Always ensure General exists
             grouped['general'] = { module: { name: 'General', module_key: 'general' }, items: [] };
         }
 
-        // 4. Assign Items to Groups
+        // 4. Assign Items to Groups (WITH MODULE FILTERING)
         for (const item of rootItems) {
             const modKey = getModuleKey(item);
 
-            // If group doesn't exist (module disabled or missing), create dynamic group
+            // STRICT CHECK: Skip if module not allowed for this tenant
+            if (!allowedModuleKeys.has(modKey)) {
+                continue;
+            }
+
+            // If group doesn't exist (e.g. was global active but not in initial loop? or custom key?)
+            // We only create if allowed.
             if (!grouped[modKey]) {
                 grouped[modKey] = { module: { name: modKey.toUpperCase(), module_key: modKey }, items: [] };
             }
