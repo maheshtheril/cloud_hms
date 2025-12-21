@@ -1,63 +1,45 @@
 import Link from "next/link"
-import { Users, Settings, LayoutDashboard, Shield } from "lucide-react"
+import { LogOut } from "lucide-react"
+import { getMenuItems } from "@/app/actions/navigation"
+import { getCurrentCompany } from "@/app/actions/company"
+import { CompanySwitcher } from "@/components/company-switcher"
+import { SidebarMenu } from "@/components/crm/sidebar-menu"
+import { signOut } from "@/auth"
 
-export default function SettingsLayout({
+export default async function SettingsLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
+    const menuItems = await getMenuItems();
+    const currentCompany = await getCurrentCompany();
+
     return (
-        <div className="min-h-screen bg-gray-50 flex">
-            {/* Sidebar */}
-            <aside className="w-64 bg-white border-r border-gray-200 flex-shrink-0 hidden md:flex flex-col">
-                <div className="p-6 border-b border-gray-100">
-                    <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <Settings className="h-6 w-6 text-gray-600" />
-                        Settings
-                    </h2>
+        <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
+            {/* Sidebar - Matching CRM Layout */}
+            <aside className="w-64 flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col z-40 fixed inset-y-0 left-0">
+                <div className="h-16 flex items-center px-4 border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm">
+                    <CompanySwitcher initialActiveCompany={currentCompany} />
                 </div>
 
-                <nav className="p-4 space-y-1">
-                    <Link href="/" className="flex items-center gap-3 px-3 py-2 text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-md transition-colors mb-4">
-                        <LayoutDashboard className="h-5 w-5" />
-                        <span>Back to Dashboard</span>
-                    </Link>
+                <SidebarMenu groups={menuItems} />
 
-                    <div className="px-3 pb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        Administration
-                    </div>
-
-                    <Link href="/settings/users" className="flex items-center gap-3 px-3 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors">
-                        <Users className="h-5 w-5" />
-                        <span>Users</span>
-                    </Link>
-
-                    <Link href="/settings/roles" className="flex items-center gap-3 px-3 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors">
-                        <Shield className="h-5 w-5" />
-                        <span>Roles</span>
-                    </Link>
-
-                    <Link href="/settings/custom-fields" className="flex items-center gap-3 px-3 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors">
-                        <Settings className="h-5 w-5" />
-                        <span>Custom Fields</span>
-                    </Link>
-
-                    <Link href="/settings/crm" className="flex items-center gap-3 px-3 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors">
-                        <Settings className="h-5 w-5" />
-                        <span>CRM Masters</span>
-                    </Link>
-
-                    <Link href="/settings/global" className="flex items-center gap-3 px-3 py-2 text-gray-600 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors">
-                        <Settings className="h-5 w-5" />
-                        <span>Global Settings</span>
-                    </Link>
-                </nav>
+                <div className="p-4 border-t border-slate-800 bg-slate-900">
+                    <form action={async () => {
+                        'use server';
+                        await signOut({ redirectTo: '/login' });
+                    }}>
+                        <button className="flex items-center justify-center gap-3 w-full px-4 py-2.5 text-sm text-red-400 bg-red-900/10 hover:bg-red-900/20 border border-red-900/20 rounded-lg transition-all font-medium group">
+                            <LogOut className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                            <span>Sign Out</span>
+                        </button>
+                    </form>
+                </div>
             </aside>
 
-            {/* Mobile Nav Placeholder - for now just rely on back buttons or built-in browser nav */}
-
             {/* Main Content */}
-            <main className="flex-1 overflow-y-auto">
+            <main className="flex-1 ml-64 min-w-0 overflow-y-auto h-screen bg-slate-50 dark:bg-slate-950">
+                {/* Header usually goes here but Settings might handle its own headers per page */}
                 {children}
             </main>
         </div>
