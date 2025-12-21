@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { getRoles } from '@/app/actions/rbac'
 import Link from 'next/link'
 import { UserPlus, Mail, Shield, User, Loader2, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -40,6 +41,19 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
     const { toast } = useToast()
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
+    const [currentRoles, setCurrentRoles] = useState(roles)
+
+    useEffect(() => {
+        if (open) {
+            const fetchRoles = async () => {
+                const result = await getRoles()
+                if (result.data) {
+                    setCurrentRoles(result.data as any)
+                }
+            }
+            fetchRoles()
+        }
+    }, [open])
 
     const [formData, setFormData] = useState({
         email: '',
@@ -194,7 +208,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                              User prompt: "Tenant User has selected only CRM".
                              If System Role = User, they NEED a role to see anything.
                         */}
-                        {roles.length > 0 && formData.systemRole === 'user' && (
+                        {currentRoles.length > 0 && formData.systemRole === 'user' && (
                             <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
                                 <div className="flex items-center justify-between">
                                     <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">
@@ -213,7 +227,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="no-role">No specific role (User will have no permissions)</SelectItem>
-                                        {roles.map((role) => (
+                                        {currentRoles.map((role) => (
                                             <SelectItem key={role.id} value={role.id}>
                                                 {role.name}
                                             </SelectItem>

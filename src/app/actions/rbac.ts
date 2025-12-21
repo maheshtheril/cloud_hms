@@ -302,6 +302,38 @@ export async function deleteRole(roleId: string) {
 }
 
 /**
+ * Get all roles for the current tenant
+ */
+export async function getRoles() {
+    const session = await auth();
+
+    if (!session?.user?.id || !session.user.tenantId) {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        const roles = await prisma.role.findMany({
+            where: {
+                tenantId: session.user.tenantId
+            },
+            select: {
+                id: true,
+                name: true,
+                description: true
+            },
+            orderBy: {
+                name: 'asc'
+            }
+        });
+
+        return { data: roles };
+    } catch (error) {
+        console.error("Error fetching roles:", error);
+        return { error: "Failed to fetch roles" };
+    }
+}
+
+/**
  * Get all permissions (Combined DB + Standard Defaults)
  */
 export async function getAllPermissions() {
