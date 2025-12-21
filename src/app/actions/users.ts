@@ -9,6 +9,8 @@
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 import { revalidatePath } from 'next/cache'
+import { sendInvitationEmail } from '@/lib/email'
+import crypto from 'crypto'
 
 export interface InviteUserData {
     email: string
@@ -126,9 +128,31 @@ export async function inviteUser(data: InviteUserData) {
                 is_active: true,
                 is_tenant_admin: data.systemRole === 'admin',
                 is_admin: data.systemRole === 'admin',
-                // TODO: Send invitation email with password setup link
             }
         })
+
+        // Generate invitation token and send email
+        try {
+            const token = crypto.randomBytes(32).toString('hex')
+            const expiresAt = new Date()
+            expiresAt.setHours(expiresAt.getHours() + 48)
+
+            await prisma.email_verification_tokens.create({
+                data: {
+                    user_id: user.id,
+                    email: user.email,
+                    token: token,
+                    expires_at: expiresAt
+                }
+            })
+
+            const emailResult = await sendInvitationEmail(user.email, token, user.full_name || user.name || 'User')
+            if (!emailResult.success) {
+                console.error("Failed to send email via Resend:", emailResult.error)
+            }
+        } catch (e) {
+            console.error("Error in invitation flow:", e)
+        }
 
         // Assign role if provided
         if (data.roleId) {
@@ -279,5 +303,45 @@ export async function deleteUser(userId: string) {
     } catch (error) {
         console.error('Error deleting user:', error)
         return { error: 'Failed to delete user' }
+    }
+}
+
+/**
+ * Accept invitation and set password
+ */
+export async function acceptInvitation(token: string, password: string) {
+    try {
+        // 1. Validate token
+        const tokenRecord = await prisma.email_verification_tokens.findFirst({
+            where: { token: token }
+        })
+
+        if (!tokenRecord) {
+            return { error: 'Invalid token' }
+        }
+
+        if (new Date() > tokenRecord.expires_at) {
+            return { error: 'Token expired' }
+        }
+
+        // 2. Update user password securely using pgcrypto
+        const userId = tokenRecord.user_id
+
+        await prisma.$executeRaw`
+            UPDATE app_user 
+            SET password = crypt(${password}, gen_salt('bf')),
+                is_active = true
+            WHERE id = ${userId}::uuid
+        `
+
+        // 3. Delete token
+        await prisma.email_verification_tokens.delete({
+            where: { id: tokenRecord.id }
+        })
+
+        return { success: true }
+    } catch (error) {
+        console.error("Accept invite error:", error)
+        return { error: 'Failed to process invitation. Please try again.' }
     }
 }
