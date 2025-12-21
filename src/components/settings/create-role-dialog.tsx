@@ -228,7 +228,7 @@ export function CreateRoleDialog() {
                                     <Loader2 className="h-6 w-6 animate-spin" />
                                 </div>
                             ) : (
-                                <div className="flex h-[400px] border rounded-lg overflow-hidden border-slate-700 bg-slate-900/50">
+                                <div className="flex h-[550px] border rounded-lg overflow-hidden border-slate-700 bg-slate-900/50">
                                     {/* Left Sidebar */}
                                     <div className="w-[180px] bg-slate-900/80 border-r border-slate-700 flex flex-col">
                                         <div className="p-3 border-b border-slate-800 bg-slate-900">
@@ -296,7 +296,8 @@ export function CreateRoleDialog() {
                                                                 />
                                                                 <div className="grid gap-0.5">
                                                                     <label className="text-sm font-medium leading-none cursor-pointer text-slate-200 group-hover:text-white transition-colors">
-                                                                        {perm.name}
+                                                                        {/* Format name to Title Case to fix inconsistent data */}
+                                                                        {perm.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
                                                                     </label>
                                                                     <p className="text-[10px] text-slate-500 font-mono group-hover:text-slate-400">{perm.code}</p>
                                                                 </div>
