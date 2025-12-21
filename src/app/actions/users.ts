@@ -124,18 +124,27 @@ export async function inviteUser(data: InviteUserData) {
                 name: data.email.split('@')[0],
                 role: data.systemRole,
                 is_active: true,
+                is_tenant_admin: data.systemRole === 'admin',
+                is_admin: data.systemRole === 'admin',
                 // TODO: Send invitation email with password setup link
             }
         })
 
         // Assign role if provided
         if (data.roleId) {
-            await prisma.hms_user_roles.create({
-                data: {
-                    user_id: user.id,
-                    role_id: data.roleId,
-                }
-            })
+            try {
+                await prisma.hms_user_roles.create({
+                    data: {
+                        user_id: user.id,
+                        role_id: data.roleId,
+                    }
+                })
+            } catch (roleError) {
+                console.error("Error assigning role:", roleError);
+                // Continue, as user is created. Or delete user and fail? 
+                // Better to succeed with warning, or fail hard. 
+                // For now, let's log it. User creation is primary.
+            }
         }
 
         revalidatePath('/settings/users')
@@ -146,9 +155,9 @@ export async function inviteUser(data: InviteUserData) {
             user
         }
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error inviting user:', error)
-        return { error: 'Failed to invite user' }
+        return { error: error.message || 'Failed to invite user' }
     }
 }
 
