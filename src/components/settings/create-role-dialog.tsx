@@ -140,12 +140,24 @@ export function CreateRoleDialog() {
         }
     }
 
+    // Helper to normalize module names
+    const normalizeModule = (name: string) => {
+        if (!name) return 'Other';
+        const lower = name.toLowerCase();
+        if (lower === 'crm' || lower === 'hms' || lower === 'erp') return name.toUpperCase();
+        if (lower === 'system') return 'System';
+        // Capitalize first letter
+        return name.charAt(0).toUpperCase() + name.slice(1);
+    }
+
     // Group permissions by module
     const permissionsByModule = permissions.reduce((acc, perm) => {
-        if (!acc[perm.module]) {
-            acc[perm.module] = []
+        const moduleName = normalizeModule(perm.module);
+
+        if (!acc[moduleName]) {
+            acc[moduleName] = []
         }
-        acc[perm.module].push(perm)
+        acc[moduleName].push(perm)
         return acc
     }, {} as Record<string, typeof permissions>)
 
@@ -224,21 +236,23 @@ export function CreateRoleDialog() {
                                         </div>
                                         <ScrollArea className="flex-1">
                                             <div className="flex flex-col">
-                                                {Object.entries(permissionsByModule).map(([module, perms]) => (
-                                                    <button
-                                                        key={module}
-                                                        onClick={(e) => { e.preventDefault(); setActiveModule(module); }}
-                                                        className={cn(
-                                                            "w-full text-left px-3 py-3 text-sm flex items-center justify-between transition-colors border-l-2",
-                                                            activeModule === module
-                                                                ? "bg-cyan-950/30 text-cyan-400 border-cyan-500 font-medium"
-                                                                : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border-transparent"
-                                                        )}
-                                                    >
-                                                        <span className="truncate mr-2">{module}</span>
-                                                        <Badge variant="secondary" className="scale-75 bg-slate-800 text-slate-400 border-slate-700 h-5 px-1.5">{perms.length}</Badge>
-                                                    </button>
-                                                ))}
+                                                {Object.entries(permissionsByModule)
+                                                    .sort(([a], [b]) => a.localeCompare(b))
+                                                    .map(([module, perms]) => (
+                                                        <button
+                                                            key={module}
+                                                            onClick={(e) => { e.preventDefault(); setActiveModule(module); }}
+                                                            className={cn(
+                                                                "w-full text-left px-3 py-3 text-sm flex items-center justify-between transition-colors border-l-2",
+                                                                activeModule === module
+                                                                    ? "bg-cyan-950/30 text-cyan-400 border-cyan-500 font-medium"
+                                                                    : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border-transparent"
+                                                            )}
+                                                        >
+                                                            <span className="truncate mr-2">{module}</span>
+                                                            <Badge variant="secondary" className="scale-75 bg-slate-800 text-slate-400 border-slate-700 h-5 px-1.5">{perms.length}</Badge>
+                                                        </button>
+                                                    ))}
                                             </div>
                                         </ScrollArea>
                                     </div>
