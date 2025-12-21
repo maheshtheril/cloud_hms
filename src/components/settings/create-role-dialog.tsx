@@ -129,25 +129,28 @@ export function CreateRoleDialog() {
         )
     }
 
-    const selectAllInModule = (module: string) => {
-        const modulePerm = permissions.filter(p => p.module === module).map(p => p.code)
-        const allSelected = modulePerm.every(p => selectedPermissions.includes(p))
-
-        if (allSelected) {
-            setSelectedPermissions(prev => prev.filter(p => !modulePerm.includes(p)))
-        } else {
-            setSelectedPermissions(prev => [...new Set([...prev, ...modulePerm])])
-        }
-    }
-
     // Helper to normalize module names
     const normalizeModule = (name: string) => {
         if (!name) return 'Other';
         const lower = name.toLowerCase();
         if (lower === 'crm' || lower === 'hms' || lower === 'erp') return name.toUpperCase();
         if (lower === 'system') return 'System';
-        // Capitalize first letter
         return name.charAt(0).toUpperCase() + name.slice(1);
+    }
+
+    const selectAllInModule = (moduleKey: string) => {
+        // key matches the normalized module name
+        const modulePerms = permissions
+            .filter(p => normalizeModule(p.module) === moduleKey)
+            .map(p => p.code)
+
+        const allSelected = modulePerms.every(p => selectedPermissions.includes(p))
+
+        if (allSelected) {
+            setSelectedPermissions(prev => prev.filter(p => !modulePerms.includes(p)))
+        } else {
+            setSelectedPermissions(prev => [...new Set([...prev, ...modulePerms])])
+        }
     }
 
     // Group permissions by module
