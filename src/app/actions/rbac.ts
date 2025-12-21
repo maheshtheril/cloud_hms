@@ -319,7 +319,7 @@ export async function getRoles() {
             select: {
                 id: true,
                 name: true,
-                description: true
+
             },
             orderBy: {
                 name: 'asc'
