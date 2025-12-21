@@ -302,18 +302,18 @@ export async function deleteRole(roleId: string) {
 }
 
 /**
- * Get all permissions defined in the system
+ * Get all permissions (Combined DB + Standard Defaults)
  */
 export async function getAllPermissions() {
     const session = await auth();
-
-    if (!session?.user?.id) {
-        return { error: "Unauthorized" };
-    }
+    if (!session?.user?.id) return { error: "Unauthorized" };
 
     try {
-        // Define all available permissions in the system
-        const permissions = [
+        // 1. Fetch from Database
+        const dbPermissions = await prisma.permission.findMany();
+
+        // 2. Define Standard Hardcoded Permissions (The "Truth" for Code reliability)
+        const standardPermissions = [
             // User Management
             { code: 'users:view', name: 'View Users', module: 'User Management' },
             { code: 'users:create', name: 'Create Users', module: 'User Management' },
@@ -389,7 +389,45 @@ export async function getAllPermissions() {
             { code: 'suppliers:edit', name: 'Edit Suppliers', module: 'Purchasing' }
         ];
 
-        return { success: true, data: permissions };
+        // 3. Map DB permissions to UI format
+        const formattedDbPermissions = dbPermissions.map(p => ({
+            code: p.code,
+            name: p.name,
+            module: p.category || 'Custom'
+        }));
+
+        // 4. Merge (DB Overrides Hardcoded if duplicates exist, though code is unique key)
+        const combined = [...formattedDbPermissions];
+
+        // Add standard ones if not already in DB list
+        standardPermissions.forEach(sp => {
+            if (!combined.find(p => p.code === sp.code)) {
+                combined.push(sp);
+            }
+        });
+
+        // 5. AUTO-SEED DB with standard permissions (Background Effect) - ensures consistency
+        // Note: In production, do this via migration/seed script, but for now we do lazy-sync
+        const missingInDb = standardPermissions.filter(sp => !dbPermissions.find(dp => dp.code === sp.code));
+        if (missingInDb.length > 0) {
+            // We won't await this to keep UI fast, but it will populate for next time
+            // Actually, we must create them one by one or createMany. createMany not supported in SQLite/some Postgres modes?
+            // It is supported in Postgres.
+            try {
+                // Fire and forget catch
+                prisma.permission.createMany({
+                    data: missingInDb.map(p => ({
+                        code: p.code,
+                        name: p.name,
+                        category: p.module,
+                        description: 'System Default'
+                    })),
+                    skipDuplicates: true
+                }).catch(e => console.error("Auto-seed perm error", e));
+            } catch (e) { }
+        }
+
+        return { success: true, data: combined };
     } catch (error) {
         console.error("Failed to fetch permissions:", error);
         return { error: "Failed to fetch permissions" };

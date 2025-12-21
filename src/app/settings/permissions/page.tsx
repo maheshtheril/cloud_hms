@@ -1,113 +1,198 @@
-import { getAllPermissions } from "@/app/actions/rbac";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Shield, Key, Lock } from "lucide-react";
 
-export default async function PermissionsPage() {
-    const result = await getAllPermissions();
+'use client'
 
-    if ('error' in result) {
-        return (
-            <div className="p-4">
-                <div className="bg-red-50 text-red-600 p-4 rounded-md">
-                    Error loading permissions: {result.error}
-                </div>
-            </div>
-        );
+import { useState, useEffect } from "react"
+import { getAllPermissions } from "@/app/actions/rbac"
+import { createPermission, deletePermission } from "@/app/actions/permissions"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useToast } from "@/components/ui/use-toast"
+import { Loader2, Plus, Trash2, Shield, Key } from "lucide-react"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+
+export default function PermissionsPage() {
+    const [permissions, setPermissions] = useState<Array<{ code: string; name: string; module: string }>>([])
+    const [loading, setLoading] = useState(true)
+    const [createOpen, setCreateOpen] = useState(false)
+    const [newPermission, setNewPermission] = useState({ code: '', name: '', module: 'Custom' })
+    const [submitting, setSubmitting] = useState(false)
+    const { toast } = useToast()
+
+    const loadPermissions = async () => {
+        setLoading(true)
+        const result = await getAllPermissions()
+        if (result.success && result.data) {
+            setPermissions(result.data)
+        }
+        setLoading(false)
     }
 
-    const permissions = result.data || [];
+    useEffect(() => {
+        loadPermissions()
+    }, [])
 
-    // Group permissions by module
-    const permissionsByModule = permissions.reduce((acc, perm) => {
-        if (!acc[perm.module]) {
-            acc[perm.module] = [];
+    const handleCreate = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+
+        try {
+            // Auto-format code if empty or doesn't match convention? No, let user type.
+            const result = await createPermission({
+                code: newPermission.code,
+                name: newPermission.name,
+                category: newPermission.module
+            });
+
+            if (result.error) {
+                toast({ title: "Error", description: result.error, variant: "destructive" });
+            } else {
+                toast({ title: "Success", description: "Permission created successfully" });
+                setCreateOpen(false);
+                setNewPermission({ code: '', name: '', module: 'Custom' });
+                loadPermissions();
+            }
+        } catch (error) {
+            toast({ title: "Error", description: "Failed to create permission", variant: "destructive" });
+        } finally {
+            setSubmitting(false);
         }
-        acc[perm.module].push(perm);
+    }
+
+    const handleDelete = async (code: string) => {
+        if (!confirm(`Are you sure you want to delete permission '${code}'?`)) return;
+
+        const result = await deletePermission(code);
+        if (result.error) {
+            toast({ title: "Error", description: result.error, variant: "destructive" });
+        } else {
+            toast({ title: "Success", description: "Permission deleted" });
+            loadPermissions();
+        }
+    }
+
+    const groupedPermissions = permissions.reduce((acc, p) => {
+        if (!acc[p.module]) acc[p.module] = [];
+        acc[p.module].push(p);
         return acc;
     }, {} as Record<string, typeof permissions>);
 
     return (
-        <div className="space-y-6">
+        <div className="container mx-auto py-8 space-y-8">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold tracking-tight">Permission Registry</h1>
-                    <p className="text-muted-foreground">
-                        View all system permissions and their modules
+                    <h1 className="text-3xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <Key className="h-8 w-8" />
+                        Permissions Registry
+                    </h1>
+                    <p className="text-slate-600 dark:text-slate-400 mt-2">
+                        Define system capabilities dynamically (Major ERP Style)
                     </p>
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Key className="h-4 w-4" />
-                    <span>{permissions.length} Total Permissions</span>
-                </div>
+
+                <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+                    <DialogTrigger asChild>
+                        <Button>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create Permission
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="bg-white dark:bg-slate-900">
+                        <DialogHeader>
+                            <DialogTitle>Create New Permission</DialogTitle>
+                            <DialogDescription>
+                                Add a new capability to the system. Developers must implement checks for this code.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleCreate} className="space-y-4 py-4">
+                            <div className="space-y-2">
+                                <Label>Permission Code *</Label>
+                                <Input
+                                    placeholder="e.g. reports:leads:view"
+                                    value={newPermission.code}
+                                    onChange={e => setNewPermission({ ...newPermission, code: e.target.value })}
+                                    required
+                                />
+                                <p className="text-xs text-slate-500">Unique identifier used in code (module:feature:action)</p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Display Name *</Label>
+                                <Input
+                                    placeholder="e.g. View Leads Report"
+                                    value={newPermission.name}
+                                    onChange={e => setNewPermission({ ...newPermission, name: e.target.value })}
+                                    required
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Module Category</Label>
+                                <Input
+                                    placeholder="e.g. Reporting"
+                                    value={newPermission.module}
+                                    onChange={e => setNewPermission({ ...newPermission, module: e.target.value })}
+                                />
+                            </div>
+                            <DialogFooter>
+                                <Button type="submit" disabled={submitting}>
+                                    {submitting ? "Creating..." : "Create Permission"}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
             </div>
 
-            <div className="grid gap-6">
-                {Object.entries(permissionsByModule).map(([module, perms]) => (
-                    <Card key={module}>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <Shield className="h-5 w-5 text-blue-600" />
-                                {module}
-                                <Badge variant="secondary" className="ml-auto">
-                                    {perms.length} permissions
-                                </Badge>
-                            </CardTitle>
-                            <CardDescription>
-                                Permissions available in the {module} module
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Permission Code</TableHead>
-                                        <TableHead>Description</TableHead>
-                                        <TableHead className="text-right">Type</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {perms.map((perm) => {
-                                        const [, action] = perm.code.split(':');
-                                        const isAdmin = action === 'admin';
-                                        const isWrite = ['create', 'edit', 'delete', 'manage'].includes(action);
-
-                                        return (
-                                            <TableRow key={perm.code}>
-                                                <TableCell>
-                                                    <code className="bg-muted px-2 py-1 rounded text-sm font-mono">
-                                                        {perm.code}
+            {loading ? (
+                <div className="flex justify-center py-20"><Loader2 className="animate-spin h-8 w-8" /></div>
+            ) : (
+                <div className="grid gap-6">
+                    {Object.entries(groupedPermissions).map(([module, perms]) => (
+                        <Card key={module} className="overflow-hidden">
+                            <div className="bg-slate-50 dark:bg-slate-800/50 px-6 py-3 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+                                <h3 className="font-semibold text-slate-900 dark:text-white">{module}</h3>
+                                <Badge variant="secondary">{perms.length}</Badge>
+                            </div>
+                            <CardContent className="p-0">
+                                <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                                    {perms.map(p => (
+                                        <div key={p.code} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-md">
+                                                    <Shield className="h-4 w-4 text-slate-500" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-medium text-slate-900 dark:text-white">{p.name}</p>
+                                                    <code className="text-xs text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                                                        {p.code}
                                                     </code>
-                                                </TableCell>
-                                                <TableCell className="font-medium">
-                                                    {perm.name}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    {isAdmin ? (
-                                                        <Badge variant="destructive" className="gap-1">
-                                                            <Lock className="h-3 w-3" />
-                                                            Admin
-                                                        </Badge>
-                                                    ) : isWrite ? (
-                                                        <Badge variant="default" className="bg-orange-500">
-                                                            Write
-                                                        </Badge>
-                                                    ) : (
-                                                        <Badge variant="outline">
-                                                            Read
-                                                        </Badge>
-                                                    )}
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                onClick={() => handleDelete(p.code)}
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            )}
         </div>
-    );
+    )
 }
