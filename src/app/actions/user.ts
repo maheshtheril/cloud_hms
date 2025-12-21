@@ -109,12 +109,40 @@ export async function getHMSRoles() {
         return []
     }
 
-    return await prisma.hms_role.findMany({
+    const roles = await prisma.hms_role.findMany({
         where: {
             tenant_id: session.user.tenantId
         },
         orderBy: { name: 'asc' }
     })
+
+    if (roles.length === 0) {
+        // Auto-seed default roles for better onboarding experience
+        const defaultRoles = [
+            { name: 'Doctor', description: 'Clinical Practitioner' },
+            { name: 'Nurse', description: 'Nursing Staff' },
+            { name: 'Receptionist', description: 'Front Desk & Appointments' },
+            { name: 'Pharmacist', description: 'Pharmacy Management' },
+            { name: 'Lab Technician', description: 'Laboratory Services' },
+            { name: 'Accountant', description: 'Billing & Finance' },
+        ]
+
+        await prisma.hms_role.createMany({
+            data: defaultRoles.map(r => ({
+                tenant_id: session.user.tenantId!,
+                name: r.name,
+                description: r.description
+            })),
+            skipDuplicates: true
+        })
+
+        return await prisma.hms_role.findMany({
+            where: { tenant_id: session.user.tenantId },
+            orderBy: { name: 'asc' }
+        })
+    }
+
+    return roles
 }
 
 export async function updateUserHMSRoles(userId: string, roleIds: string[]) {
