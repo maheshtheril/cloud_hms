@@ -111,21 +111,49 @@ export async function getMenuItems() {
 }
 
 function getFallbackMenuItems(isAdmin: boolean | undefined) {
-    // ALWAYS RETURN BOTH HMS AND CRM FOR VISIBILITY IF DB FAILS
+    // TREE STRUCTURE FALLBACK
     let items: any[] = [
-        { key: 'crm-dashboard', label: 'CRM Dashboard', icon: 'LayoutDashboard', url: '/crm/dashboard' },
-        { key: 'crm-leads', label: 'Leads', icon: 'Users', url: '/crm/leads' },
-        { key: 'crm-deals', label: 'Deals', icon: 'Briefcase', url: '/crm/deals' },
-        { key: 'crm-contacts', label: 'Contacts', icon: 'Users', url: '/crm/contacts' },
-        { key: 'hms-dashboard', label: 'HMS Dashboard', icon: 'LayoutDashboard', url: '/hms/dashboard' },
-        { key: 'patients', label: 'Patients', icon: 'Users', url: '/hms/patients' },
-        { key: 'appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
-        { key: 'billing', label: 'Billing', icon: 'Receipt', url: '/hms/billing' },
+        { key: 'crm-dashboard', label: 'Command Center', icon: 'LayoutDashboard', url: '/crm/dashboard', padding_left: 0 },
+
+        // Sales Group
+        {
+            key: 'sales-group',
+            label: 'Sales Pipeline',
+            icon: 'Briefcase',
+            url: '#',
+            other_menu_items: [
+                { key: 'crm-leads', label: 'Leads', icon: 'Users', url: '/crm/leads' },
+                { key: 'crm-deals', label: 'Deals', icon: 'Target', url: '/crm/deals' },
+                { key: 'crm-contacts', label: 'Contacts', icon: 'Users', url: '/crm/contacts' },
+            ]
+        },
+
+        // HMS Group
+        {
+            key: 'hms-group',
+            label: 'Hospital Ops',
+            icon: 'Activity',
+            url: '#',
+            other_menu_items: [
+                { key: 'hms-dashboard', label: 'HMS Dashboard', icon: 'LayoutDashboard', url: '/hms/dashboard' },
+                { key: 'patients', label: 'Patients', icon: 'Users', url: '/hms/patients' },
+                { key: 'appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
+                { key: 'billing', label: 'Billing', icon: 'Receipt', url: '/hms/billing' },
+            ]
+        }
     ];
 
     if (isAdmin) {
-        items.push({ key: 'settings', label: 'Settings', icon: 'Settings', url: '/settings' });
-        items.push({ key: 'admin', label: 'Admin', icon: 'Shield', url: '/admin' });
+        items.push({
+            key: 'config-group',
+            label: 'Configuration',
+            icon: 'Settings',
+            url: '#',
+            other_menu_items: [
+                { key: 'settings', label: 'Global Settings', icon: 'Settings', url: '/settings' },
+                { key: 'admin', label: 'Admin Panel', icon: 'Shield', url: '/admin' }
+            ]
+        });
     }
 
     return items;
