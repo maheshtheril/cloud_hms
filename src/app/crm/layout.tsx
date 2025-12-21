@@ -28,8 +28,8 @@ export default async function CRMLayout({
 
     return (
         <div className="flex h-screen bg-gray-50 dark:bg-slate-950">
-            {/* Sidebar */}
-            <aside className="w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 hidden md:flex flex-col">
+            {/* Sidebar - FORCED VISIBLE */}
+            <aside className="w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 flex flex-col z-50">
                 <div className="p-4 border-b border-gray-100 dark:border-slate-800">
                     <CompanySwitcher initialActiveCompany={currentCompany} />
                 </div>
