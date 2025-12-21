@@ -20,6 +20,24 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+
+const STANDARD_MODULES = [
+    { value: 'crm', label: 'CRM (Sales & Customers)' },
+    { value: 'hms', label: 'HMS (Hospital Operations)' },
+    { value: 'finance', label: 'Finance & Billing' },
+    { value: 'inventory', label: 'Inventory Management' },
+    { value: 'hr', label: 'HR & Payroll' },
+    { value: 'reporting', label: 'Reporting & Analytics' },
+    { value: 'system', label: 'System Configuration' },
+    { value: 'custom', label: 'Custom / Other' }
+];
 
 export default function PermissionsPage() {
     const [permissions, setPermissions] = useState<Array<{ code: string; name: string; module: string }>>([])
@@ -136,11 +154,21 @@ export default function PermissionsPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label>Module Category</Label>
-                                <Input
-                                    placeholder="e.g. Reporting"
+                                <Select
                                     value={newPermission.module}
-                                    onChange={e => setNewPermission({ ...newPermission, module: e.target.value })}
-                                />
+                                    onValueChange={(val) => setNewPermission({ ...newPermission, module: val })}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select Module" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {STANDARD_MODULES.map(mod => (
+                                            <SelectItem key={mod.value} value={mod.value}>
+                                                {mod.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
                             <DialogFooter>
                                 <Button type="submit" disabled={submitting}>
