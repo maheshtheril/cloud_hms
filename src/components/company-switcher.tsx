@@ -49,18 +49,24 @@ export function CompanySwitcher({
         <div className="relative">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-3 py-2 w-full text-left hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-200"
+                className="flex items-center gap-2 px-3 py-2 w-full text-left transition-colors"
+                style={{
+                    backgroundColor: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '8px',
+                    color: '#e2e8f0'
+                }}
             >
-                <div className="flex items-center justify-center h-8 w-8 rounded bg-blue-100 text-blue-600">
+                <div className="flex items-center justify-center h-8 w-8 rounded" style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>
                     <Building2 size={16} />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
+                    <p className="text-sm font-medium truncate" style={{ color: '#f1f5f9' }}>
                         {activeCompany.name}
                     </p>
-                    <p className="text-xs text-gray-500 truncate">Switch Organization</p>
+                    <p className="text-xs truncate" style={{ color: '#94a3b8' }}>Switch Organization</p>
                 </div>
-                <ChevronDown size={14} className="text-gray-400" />
+                <ChevronDown size={14} style={{ color: '#64748b' }} />
             </button>
 
             {isOpen && (
