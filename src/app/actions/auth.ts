@@ -115,12 +115,14 @@ export async function signup(prevState: any, formData: FormData) {
                 )
             `;
 
-            // 4b. Create 'Admin' Role and Assign to User (RBAC)
+            // 4b. Create RBAC Roles and Assign to User
             const roleId = crypto.randomUUID();
-            // Check if Admin role exists for tenant? No, new tenant.
+            const hmsRoleId = crypto.randomUUID();
+
+            // Create HMS Role (for HMS module - legacy)
             await tx.hms_role.create({
                 data: {
-                    id: roleId,
+                    id: hmsRoleId,
                     tenant_id: tenantId,
                     name: 'Admin',
                     description: 'Full Access Administrator'
@@ -130,9 +132,130 @@ export async function signup(prevState: any, formData: FormData) {
             await tx.hms_user_roles.create({
                 data: {
                     user_id: userId,
-                    role_id: roleId
+                    role_id: hmsRoleId
                 }
             });
+
+            // Seed ALL default RBAC roles for the tenant
+            const defaultRoles = [
+                {
+                    id: roleId, // Super admin - will be assigned to first user
+                    key: 'super_admin',
+                    name: 'Super Administrator',
+                    permissions: ['*']
+                },
+                {
+                    key: 'admin',
+                    name: 'Administrator',
+                    permissions: [
+                        'users:view', 'users:create', 'users:edit', 'users:delete',
+                        'roles:view', 'roles:manage',
+                        'settings:view', 'settings:edit',
+                        'hms:admin', 'crm:admin', 'inventory:admin'
+                    ]
+                },
+                {
+                    key: 'hms_admin',
+                    name: 'HMS Administrator',
+                    permissions: [
+                        'hms:view', 'hms:create', 'hms:edit', 'hms:delete',
+                        'patients:view', 'patients:create', 'patients:edit',
+                        'appointments:view', 'appointments:create', 'appointments:edit',
+                        'billing:view', 'billing:create', 'pharmacy:view'
+                    ]
+                },
+                {
+                    key: 'doctor',
+                    name: 'Doctor',
+                    permissions: [
+                        'patients:view', 'patients:edit',
+                        'appointments:view', 'appointments:create',
+                        'prescriptions:view', 'prescriptions:create', 'prescriptions:edit',
+                        'hms:view'
+                    ]
+                },
+                {
+                    key: 'nurse',
+                    name: 'Nurse',
+                    permissions: [
+                        'patients:view', 'appointments:view',
+                        'vitals:view', 'vitals:create', 'vitals:edit',
+                        'hms:view'
+                    ]
+                },
+                {
+                    key: 'pharmacist',
+                    name: 'Pharmacist',
+                    permissions: [
+                        'pharmacy:view', 'pharmacy:create', 'pharmacy:edit',
+                        'inventory:view', 'prescriptions:view', 'hms:view'
+                    ]
+                },
+                {
+                    key: 'receptionist',
+                    name: 'Receptionist',
+                    permissions: [
+                        'patients:view', 'patients:create', 'patients:edit',
+                        'appointments:view', 'appointments:create', 'appointments:edit',
+                        'billing:view', 'billing:create', 'hms:view'
+                    ]
+                },
+                {
+                    key: 'crm_supervisor',
+                    name: 'CRM Supervisor',
+                    permissions: ['crm:admin', 'crm:view_all', 'crm:reports', 'leads:view', 'leads:edit', 'deals:view', 'deals:edit']
+                },
+                {
+                    key: 'crm_manager',
+                    name: 'CRM Manager',
+                    permissions: ['crm:view_team', 'crm:manage_deals', 'crm:assign_leads', 'leads:view', 'leads:edit', 'deals:view', 'deals:edit']
+                },
+                {
+                    key: 'sales_executive',
+                    name: 'Sales Executive',
+                    permissions: ['crm:view_own', 'crm:create_leads', 'crm:manage_own_deals', 'leads:view', 'leads:create', 'deals:view', 'deals:create']
+                },
+                {
+                    key: 'inventory_manager',
+                    name: 'Inventory Manager',
+                    permissions: [
+                        'inventory:view', 'inventory:create', 'inventory:edit', 'inventory:delete',
+                        'purchasing:view', 'purchasing:create', 'purchasing:edit',
+                        'suppliers:view', 'suppliers:create', 'suppliers:edit'
+                    ]
+                },
+                {
+                    key: 'readonly',
+                    name: 'Read Only User',
+                    permissions: ['*.view']
+                }
+            ];
+
+            // Create all roles
+            for (const roleData of defaultRoles) {
+                await tx.role.create({
+                    data: {
+                        id: roleData.id || crypto.randomUUID(),
+                        tenant_id: tenantId,
+                        key: roleData.key,
+                        name: roleData.name,
+                        permissions: roleData.permissions
+                    }
+                });
+            }
+
+            console.log(`[Signup] Created ${defaultRoles.length} default RBAC roles for tenant`);
+
+            // Assign Super Administrator role to first user
+            await tx.user_role.create({
+                data: {
+                    user_id: userId,
+                    role_id: roleId, // Super admin role ID
+                    tenant_id: tenantId
+                }
+            });
+
+            console.log('[Signup] Assigned Super Administrator role to first user');
 
 
             // 5. Activate Modules
