@@ -20,6 +20,12 @@ import { useRouter } from "next/navigation"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion"
 
 export function CreateRoleDialog() {
     const [open, setOpen] = useState(false)
@@ -179,7 +185,12 @@ export function CreateRoleDialog() {
                                     id="name"
                                     placeholder="e.g., Custom Manager"
                                     value={formData.name}
-                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    onChange={(e) => {
+                                        const name = e.target.value;
+                                        // Auto-generate key: lowercase, underscores, alphanumeric only
+                                        const key = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+                                        setFormData({ name, key });
+                                    }}
                                     required
                                 />
                                 <p className="text-xs text-muted-foreground">
@@ -199,52 +210,76 @@ export function CreateRoleDialog() {
                                     <Loader2 className="h-6 w-6 animate-spin" />
                                 </div>
                             ) : (
-                                <ScrollArea className="h-[400px] border rounded-lg p-4">
-                                    <div className="space-y-6">
+                                <ScrollArea className="h-[400px] border rounded-lg p-4 border-slate-700 bg-slate-900/50">
+                                    <Accordion type="multiple" className="w-full">
                                         {Object.entries(permissionsByModule).map(([module, perms]) => {
                                             const modulePerms = perms.map(p => p.code)
                                             const allSelected = modulePerms.every(p => selectedPermissions.includes(p))
                                             const someSelected = modulePerms.some(p => selectedPermissions.includes(p))
 
                                             return (
-                                                <div key={module} className="space-y-3">
-                                                    <div className="flex items-center justify-between">
-                                                        <h4 className="font-semibold text-sm flex items-center gap-2">
-                                                            {module}
-                                                            <Badge variant="secondary" className="text-xs">
-                                                                {perms.length}
-                                                            </Badge>
-                                                        </h4>
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => selectAllInModule(module)}
-                                                        >
-                                                            {allSelected ? 'Deselect All' : 'Select All'}
-                                                        </Button>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-2 pl-4">
-                                                        {perms.map((perm) => (
-                                                            <div key={perm.code} className="flex items-center space-x-2">
-                                                                <Checkbox
-                                                                    id={perm.code}
-                                                                    checked={selectedPermissions.includes(perm.code)}
-                                                                    onCheckedChange={() => togglePermission(perm.code)}
-                                                                />
-                                                                <label
-                                                                    htmlFor={perm.code}
-                                                                    className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                                                                >
-                                                                    {perm.name}
-                                                                </label>
+                                                <AccordionItem key={module} value={module} className="border-b border-slate-700 last:border-0">
+                                                    <AccordionTrigger className="hover:no-underline py-3 px-2 hover:bg-slate-800/50 rounded-lg transition-colors">
+                                                        <div className="flex items-center gap-3 w-full">
+                                                            <span className="font-medium text-sm capitalize">{module}</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <Badge variant="secondary" className="bg-slate-800 text-slate-300 border-slate-600">
+                                                                    {perms.length}
+                                                                </Badge>
+                                                                {allSelected && (
+                                                                    <Badge className="bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20">All Selected</Badge>
+                                                                )}
+                                                                {someSelected && !allSelected && (
+                                                                    <Badge className="bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 border-yellow-500/20">Some Selected</Badge>
+                                                                )}
                                                             </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
+                                                        </div>
+                                                    </AccordionTrigger>
+                                                    <AccordionContent className="pt-2 px-2 pb-4">
+                                                        <div className="flex justify-end mb-3 border-b border-slate-800 pb-2">
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    selectAllInModule(module);
+                                                                }}
+                                                                className="text-xs h-7 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950/30"
+                                                            >
+                                                                {allSelected ? 'Deselect All' : 'Select All in ' + module}
+                                                            </Button>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            {perms.map((perm) => (
+                                                                <div
+                                                                    key={perm.code}
+                                                                    className="flex items-start space-x-3 p-2 rounded-md hover:bg-slate-800/50 cursor-pointer transition-colors"
+                                                                    onClick={() => togglePermission(perm.code)}
+                                                                >
+                                                                    <Checkbox
+                                                                        id={perm.code}
+                                                                        checked={selectedPermissions.includes(perm.code)}
+                                                                        onCheckedChange={() => togglePermission(perm.code)}
+                                                                        className="mt-0.5 border-slate-500 data-[state=checked]:bg-cyan-600 data-[state=checked]:border-cyan-600"
+                                                                    />
+                                                                    <div className="grid gap-0.5">
+                                                                        <label
+                                                                            htmlFor={perm.code}
+                                                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-slate-200"
+                                                                        >
+                                                                            {perm.name}
+                                                                        </label>
+                                                                        <p className="text-[10px] text-slate-500 font-mono">{perm.code}</p>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </AccordionContent>
+                                                </AccordionItem>
                                             )
                                         })}
-                                    </div>
+                                    </Accordion>
                                 </ScrollArea>
                             )}
                         </div>
