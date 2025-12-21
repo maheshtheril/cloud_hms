@@ -14,20 +14,20 @@ export default async function DashboardPage() {
         <div className="min-h-screen bg-futuristic">
             {/* Animated Background Effects */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-10 animate-blob" />
-                <div className="absolute top-0 -right-4 w-72 h-72 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-10 animate-blob animation-delay-2000" />
-                <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-10 animate-blob animation-delay-4000" />
+                <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 dark:opacity-5 animate-blob" />
+                <div className="absolute top-0 -right-4 w-72 h-72 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 dark:opacity-5 animate-blob animation-delay-2000" />
+                <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 dark:opacity-5 animate-blob animation-delay-4000" />
             </div>
 
             <div className="relative container mx-auto py-8 space-y-8">
                 {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 backdrop-blur-sm border border-gradient-primary">
-                            <Zap className="h-8 w-8 text-cyan-400 dark:text-cyan-300" />
+                        <div className="p-3 rounded-xl bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700">
+                            <Zap className="h-8 w-8 text-cyan-600 dark:text-cyan-400" />
                         </div>
                         <div>
-                            <h1 className="text-4xl font-bold text-gradient-primary">
+                            <h1 className="text-4xl font-bold text-slate-900 dark:text-white">
                                 CRM Command Center
                             </h1>
                             <p className="text-slate-600 dark:text-slate-400 text-lg mt-1">
@@ -39,9 +39,9 @@ export default async function DashboardPage() {
 
                 {/* KPI GRID */}
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-                    <div className="card-stat-purple p-6 rounded-2xl shadow-xl hover-glow-purple transition-all duration-300">
+                    <div className="card-stat-purple p-6 rounded-2xl shadow-xl hover-glow-purple transition-all duration-300 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-purple-100 dark:border-purple-900/30">
                         <div className="flex items-center justify-between mb-4">
-                            <p className="text-sm font-medium text-purple-700 dark:text-purple-300">Total Revenue</p>
+                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Total Revenue</p>
                             <DollarSign className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                         </div>
                         <div className="text-4xl font-bold text-slate-900 dark:text-white mb-1">
@@ -185,10 +185,10 @@ export default async function DashboardPage() {
                                     className="flex items-start gap-4 p-4 rounded-xl border border-slate-200/50 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 hover:border-purple-500/30 dark:hover:border-purple-400/30 transition-all duration-300"
                                 >
                                     <div className={`p-2 rounded-full ${act.type === 'call'
-                                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                                            : act.type === 'meeting'
-                                                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
-                                                : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                                        : act.type === 'meeting'
+                                            ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                                            : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
                                         }`}>
                                         <Activity className="w-4 h-4" />
                                     </div>

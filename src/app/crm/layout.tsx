@@ -149,12 +149,12 @@ function MenuItem({ item, level = 0 }: { item: any, level?: number }) {
                     style={{ ...linkStyle, cursor: 'pointer', listStyle: 'none', justifyContent: 'space-between' }}
                 >
                     <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        {Icon && <Icon size={20} />}
-                        <span>{item.label}</span>
+                        {Icon && <Icon size={18} strokeWidth={2} />}
+                        <span style={{ fontWeight: 500 }}>{item.label}</span>
                     </span>
-                    <span style={{ opacity: 0.5, transform: 'rotate(90deg)' }}>›</span>
+                    <span style={{ opacity: 0.7, transform: 'rotate(90deg)', fontSize: '10px', color: '#94a3b8' }}>▶</span>
                 </summary>
-                <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ marginTop: '2px', display: 'flex', flexDirection: 'column', gap: '2px', borderLeft: '1px solid rgba(255,255,255,0.1)', marginLeft: '18px', paddingLeft: '4px' }}>
                     {item.other_menu_items.map((sub: any) => (
                         <MenuItem key={sub.key} item={sub} level={level + 1} />
                     ))}
