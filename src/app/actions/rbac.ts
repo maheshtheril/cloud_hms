@@ -368,6 +368,7 @@ export async function getAllPermissions() {
             { code: 'leads:view', name: 'View Leads', module: 'CRM' },
             { code: 'leads:create', name: 'Create Leads', module: 'CRM' },
             { code: 'leads:edit', name: 'Edit Leads', module: 'CRM' },
+            { code: 'leads:delete', name: 'Delete Leads', module: 'CRM' },
             { code: 'deals:view', name: 'View Deals', module: 'CRM' },
             { code: 'deals:create', name: 'Create Deals', module: 'CRM' },
             { code: 'deals:edit', name: 'Edit Deals', module: 'CRM' },
