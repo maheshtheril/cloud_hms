@@ -35,13 +35,29 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
     const { toast } = useToast()
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
-    const [currentRoles, setCurrentRoles] = useState(roles)
+    const [currentRoles, setCurrentRoles] = useState<any[]>([
+        { id: 'debug-role', name: 'DEBUG: TEST ROLE', description: 'If you see this, the dropdown works.' }
+    ])
 
     useEffect(() => {
         if (open) {
             const fetchRoles = async () => {
-                const roles = await getHMSRoles()
-                setCurrentRoles(roles as any)
+                try {
+                    const roles = await getHMSRoles()
+                    console.log("Fetched Roles:", roles)
+                    // Keep debug role to verify UI, append real roles
+                    setCurrentRoles(prev => [
+                        ...prev.filter(r => r.id === 'debug-role'),
+                        ...(roles as any[])
+                    ])
+
+                    if (roles.length === 0) {
+                        toast({ title: "Debug", description: "0 Roles returned from server." })
+                    }
+                } catch (e) {
+                    console.error(e)
+                    toast({ variant: "destructive", title: "Debug Error", description: "Failed to fetch roles" })
+                }
             }
             fetchRoles()
         }
