@@ -240,7 +240,7 @@ export function CreateRoleDialog() {
                                     <div className="p-3 border-b border-slate-800 bg-slate-900 shrink-0">
                                         <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Modules</p>
                                     </div>
-                                    <ScrollArea className="flex-1">
+                                    <div className="flex-1 overflow-y-auto">
                                         <div className="flex flex-col">
                                             {Object.entries(permissionsByModule)
                                                 .sort(([a], [b]) => a.localeCompare(b))
@@ -260,7 +260,7 @@ export function CreateRoleDialog() {
                                                     </button>
                                                 ))}
                                         </div>
-                                    </ScrollArea>
+                                    </div>
                                 </div>
 
                                 {/* Right Content */}
@@ -286,7 +286,7 @@ export function CreateRoleDialog() {
                                                         : 'Select All'}
                                                 </Button>
                                             </div>
-                                            <ScrollArea className="flex-1 p-3 h-full">
+                                            <div className="flex-1 overflow-y-auto p-3">
                                                 <div className="grid grid-cols-2 gap-3 pb-20">
                                                     {permissionsByModule[activeModule].map(perm => (
                                                         <div
@@ -313,7 +313,7 @@ export function CreateRoleDialog() {
                                                         </div>
                                                     ))}
                                                 </div>
-                                            </ScrollArea>
+                                            </div>
                                         </>
                                     ) : (
                                         <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">Select a module to view permissions</div>
