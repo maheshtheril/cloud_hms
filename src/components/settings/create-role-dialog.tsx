@@ -42,6 +42,15 @@ export function CreateRoleDialog() {
     const { toast } = useToast()
     const router = useRouter()
 
+    // Helper to normalize module names
+    const normalizeModule = (name: string) => {
+        if (!name) return 'Other';
+        const lower = name.toLowerCase();
+        if (lower === 'crm' || lower === 'hms' || lower === 'erp') return name.toUpperCase();
+        if (lower === 'system') return 'System';
+        return name.charAt(0).toUpperCase() + name.slice(1);
+    }
+
     const loadPermissions = async () => {
         setLoadingPermissions(true)
         const result = await getAllPermissions()
@@ -49,7 +58,7 @@ export function CreateRoleDialog() {
             const perms = result.data || []
             setPermissions(perms)
             if (perms.length > 0 && !activeModule) {
-                setActiveModule(perms[0].module)
+                setActiveModule(normalizeModule(perms[0].module))
             }
         }
         setLoadingPermissions(false)
@@ -129,14 +138,7 @@ export function CreateRoleDialog() {
         )
     }
 
-    // Helper to normalize module names
-    const normalizeModule = (name: string) => {
-        if (!name) return 'Other';
-        const lower = name.toLowerCase();
-        if (lower === 'crm' || lower === 'hms' || lower === 'erp') return name.toUpperCase();
-        if (lower === 'system') return 'System';
-        return name.charAt(0).toUpperCase() + name.slice(1);
-    }
+
 
     const selectAllInModule = (moduleKey: string) => {
         // key matches the normalized module name
