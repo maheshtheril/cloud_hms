@@ -7,7 +7,7 @@ import { CompanySwitcher } from '@/components/company-switcher'
 import { getCurrentCompany } from '../actions/company'
 import { checkCrmLoginStatus } from '@/app/actions/crm/auth'
 import { LoginWorkflowWrapper } from '@/components/crm/login-workflow/wrapper'
-// import { ThemeToggle } from '@/components/theme-toggle'
+import { ThemeToggle } from '@/components/theme-toggle'
 
 // Map icon strings to components
 const IconMap: any = {
@@ -50,7 +50,7 @@ export default async function CRMLayout({
                     ))}
                 </nav>
                 <div className="p-4 border-t border-gray-100 dark:border-gray-800 space-y-3">
-                    {/* <ThemeToggle /> */}
+                    <ThemeToggle />
                     <form action={async () => {
                         'use server';
                         await signOut({ redirectTo: '/login' });
