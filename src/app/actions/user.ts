@@ -104,8 +104,15 @@ export async function toggleUserStatus(userId: string, currentStatus: boolean) {
 }
 
 export async function getHMSRoles() {
-    return await prisma.hms_roles.findMany({
-        where: { is_active: true },
+    const session = await auth()
+    if (!session?.user?.id || !session.user.tenantId) {
+        return []
+    }
+
+    return await prisma.hms_role.findMany({
+        where: {
+            tenant_id: session.user.tenantId
+        },
         orderBy: { name: 'asc' }
     })
 }
