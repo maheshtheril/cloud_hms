@@ -35,9 +35,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
     const { toast } = useToast()
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
-    const [currentRoles, setCurrentRoles] = useState<any[]>([
-        { id: 'debug-role', name: 'DEBUG: TEST ROLE', description: 'If you see this, the dropdown works.' }
-    ])
+    const [currentRoles, setCurrentRoles] = useState<any[]>([])
 
     useEffect(() => {
         if (open) {
@@ -45,14 +43,10 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                 try {
                     const roles = await getHMSRoles()
                     console.log("Fetched Roles:", roles)
-                    // Keep debug role to verify UI, append real roles
-                    setCurrentRoles(prev => [
-                        ...prev.filter(r => r.id === 'debug-role'),
-                        ...(roles as any[])
-                    ])
+                    setCurrentRoles(roles as any[])
 
                     if (roles.length === 0) {
-                        toast({ title: "Debug", description: "0 Roles returned from server." })
+                        // toast({ title: "Debug", description: "0 Roles returned." })
                     }
                 } catch (e) {
                     console.error(e)
@@ -132,7 +126,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                     Invite User
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+            <DialogContent className="sm:max-w-[600px] max-h-[85vh] overflow-y-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-3 text-xl font-bold text-slate-900 dark:text-white">
@@ -146,7 +140,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                         </DialogDescription>
                     </DialogHeader>
 
-                    <div className="space-y-6 py-6">
+                    <div className="space-y-6 py-6 pb-64">
                         {/* Email & Name Grid */}
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
