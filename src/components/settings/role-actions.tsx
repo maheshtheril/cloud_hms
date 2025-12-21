@@ -211,7 +211,7 @@ export function RoleActions({ role }: RoleActionsProps) {
 
             {/* Edit Dialog */}
             <Dialog open={editOpen} onOpenChange={setEditOpen}>
-                <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
+                <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col bg-white dark:bg-slate-900">
                     <DialogHeader>
                         <DialogTitle>Edit Role: {role.key}</DialogTitle>
                         <DialogDescription>
