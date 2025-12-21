@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { createRole, getAllPermissions } from "@/app/actions/rbac"
 import { Button } from "@/components/ui/button"
@@ -19,14 +19,7 @@ import { useToast } from "@/components/ui/use-toast"
 import { Loader2, Plus, Shield } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from "@/components/ui/accordion"
 
 export function CreateRoleDialog() {
     const [open, setOpen] = useState(false)
@@ -130,15 +123,13 @@ export function CreateRoleDialog() {
         }
     }
 
-    const togglePermission = (permCode: string) => {
+    const togglePermission = useCallback((permCode: string) => {
         setSelectedPermissions(prev =>
             prev.includes(permCode)
                 ? prev.filter(p => p !== permCode)
                 : [...prev, permCode]
         )
-    }
-
-
+    }, [])
 
     const selectAllInModule = (moduleKey: string) => {
         // key matches the normalized module name
