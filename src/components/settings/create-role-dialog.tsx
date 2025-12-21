@@ -287,7 +287,7 @@ export function CreateRoleDialog() {
                                                 </Button>
                                             </div>
                                             <ScrollArea className="flex-1 p-3 h-full">
-                                                <div className="grid grid-cols-2 gap-3 pb-4">
+                                                <div className="grid grid-cols-2 gap-3 pb-20">
                                                     {permissionsByModule[activeModule].map(perm => (
                                                         <div
                                                             key={perm.code}
@@ -297,13 +297,16 @@ export function CreateRoleDialog() {
                                                             <Checkbox
                                                                 id={perm.code}
                                                                 checked={selectedPermissions.includes(perm.code)}
-                                                                onCheckedChange={() => togglePermission(perm.code)}
-                                                                className="mt-0.5 border-slate-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500"
+                                                                className="mt-0.5 border-slate-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500 pointer-events-none"
                                                             />
                                                             <div className="grid gap-0.5">
                                                                 <label className="text-sm font-medium leading-none cursor-pointer text-slate-200 group-hover:text-white transition-colors">
-                                                                    {/* Format name to Title Case to fix inconsistent data */}
-                                                                    {perm.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                                                                    {/* Format name to Title Case + Handle CRM specifically */}
+                                                                    {perm.name
+                                                                        .replace(/_/g, ' ')
+                                                                        .replace(/\b\w/g, c => c.toUpperCase())
+                                                                        .replace(/\bCrm\b/g, 'CRM')
+                                                                        .replace(/\bHms\b/g, 'HMS')}
                                                                 </label>
                                                                 <p className="text-[10px] text-slate-500 font-mono group-hover:text-slate-400">{perm.code}</p>
                                                             </div>
