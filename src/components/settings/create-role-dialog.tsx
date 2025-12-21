@@ -173,7 +173,7 @@ export function CreateRoleDialog() {
                     Create Role
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col border-slate-700 bg-gradient-to-br from-slate-900 to-slate-950 text-white shadow-2xl">
+            <DialogContent className="max-w-5xl max-h-[95vh] flex flex-col border-slate-700 bg-gradient-to-br from-slate-900 to-slate-950 text-white shadow-2xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Shield className="h-5 w-5" />
@@ -231,7 +231,7 @@ export function CreateRoleDialog() {
                                     <Loader2 className="h-6 w-6 animate-spin" />
                                 </div>
                             ) : (
-                                <div className="flex h-[550px] border rounded-lg overflow-hidden border-slate-700 bg-slate-900/50">
+                                <div className="flex h-[600px] border rounded-lg overflow-hidden border-slate-700 bg-slate-900/50">
                                     {/* Left Sidebar */}
                                     <div className="w-[180px] bg-slate-900/80 border-r border-slate-700 flex flex-col">
                                         <div className="p-3 border-b border-slate-800 bg-slate-900">
@@ -284,7 +284,7 @@ export function CreateRoleDialog() {
                                                     </Button>
                                                 </div>
                                                 <ScrollArea className="flex-1 p-3">
-                                                    <div className="grid grid-cols-2 gap-3 pb-4">
+                                                    <div className="grid grid-cols-2 gap-3 pb-20">
                                                         {permissionsByModule[activeModule].map(perm => (
                                                             <div
                                                                 key={perm.code}
