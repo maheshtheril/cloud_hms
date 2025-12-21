@@ -314,7 +314,7 @@ export async function getRoles() {
     try {
         const roles = await prisma.role.findMany({
             where: {
-                tenantId: session.user.tenantId
+                tenant_id: session.user.tenantId
             },
             select: {
                 id: true,
