@@ -1,10 +1,17 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function sendInvitationEmail(email: string, token: string, name: string) {
+    const apiKey = process.env.RESEND_API_KEY;
+
+    if (!apiKey) {
+        console.warn("RESEND_API_KEY is not set. Email will not be sent.");
+        return { success: false, error: "RESEND_API_KEY missing" };
+    }
+
+    const resend = new Resend(apiKey);
+
     // Determine App URL - prioritize Env Var, fallback to likely production URL or localhost
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cloud-hms.onrender.com';
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cloud-hms.onrender.com');
 
     const inviteUrl = `${appUrl}/auth/accept-invite?token=${token}`;
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
