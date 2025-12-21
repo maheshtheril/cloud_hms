@@ -23,37 +23,38 @@ export default async function CRMLayout({
     const currentCompany = await getCurrentCompany();
     const loginStatus = await checkCrmLoginStatus();
 
-    // EMERGENCY HARDCODED MENU TO RESTORE VIEW - REMOVED
-    // const menuItems = [ ... ]
-
     return (
-        <div className="flex h-screen bg-gray-50 dark:bg-slate-950">
-            {/* Sidebar - FORCED VISIBLE */}
-            <aside className="w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 flex flex-col z-50">
-                <div className="p-4 border-b border-gray-100 dark:border-slate-800">
+        <div className="flex min-h-screen bg-gray-50 dark:bg-slate-950">
+            {/* Sidebar - Fixed Width, Always Visible */}
+            <aside className="w-64 flex-shrink-0 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 flex flex-col z-40">
+                <div className="h-16 flex items-center px-6 border-b border-gray-100 dark:border-slate-800">
                     <CompanySwitcher initialActiveCompany={currentCompany} />
                 </div>
 
                 <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
                     {menuItems.map((group: any) => (
                         <div key={group.module.module_key}>
-                            {/* Module Header */}
                             {group.module.module_key !== 'general' && (
                                 <h3 className="px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">
                                     {group.module.name}
                                 </h3>
                             )}
 
-                            <div className="space-y-1">
+                            <ul className="space-y-1">
                                 {group.items.map((item: any) => (
-                                    <MenuItem key={item.key} item={item} />
+                                    <li key={item.key}>
+                                        <MenuItem item={item} />
+                                    </li>
                                 ))}
-                            </div>
+                            </ul>
                         </div>
                     ))}
                 </nav>
+
                 <div className="p-4 border-t border-gray-100 dark:border-slate-800 space-y-3">
-                    {/* <ThemeToggle /> - Temporarily disabled */}
+                    {/* ThemeToggle hidden for now to prevent hydration error */}
+                    {/* <ThemeToggle /> */}
+
                     <form action={async () => {
                         'use server';
                         await signOut({ redirectTo: '/login' });
@@ -67,8 +68,8 @@ export default async function CRMLayout({
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-auto bg-gray-50 dark:bg-slate-950">
-                <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 p-4 shadow-sm md:hidden flex justify-between items-center">
+            <main className="flex-1 overflow-auto bg-gray-50 dark:bg-slate-950 relative">
+                <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 p-4 shadow-sm md:hidden flex justify-between items-center sticky top-0 z-30">
                     <div className="flex items-center gap-2">
                         <Activity className="text-blue-600 dark:text-blue-400 h-6 w-6" />
                         <span className="font-bold text-gray-800 dark:text-gray-100">CRM Module</span>
@@ -87,14 +88,15 @@ export default async function CRMLayout({
 function MenuItem({ item, level = 0 }: { item: any, level?: number }) {
     const Icon = IconMap[item.icon] || (level === 0 ? Activity : null);
     const hasChildren = item.other_menu_items && item.other_menu_items.length > 0;
-    const paddingLeftClass = level === 0 ? "px-3" : level === 1 ? "pl-9 pr-3" : "pl-14 pr-3";
+    // Simplify padding logic
+    const paddingLeft = level === 0 ? "12px" : level === 1 ? "36px" : "56px";
 
     if (hasChildren) {
         return (
             <details className="group/item" open>
-                {/* defaulted to open for better visibility of CRM sub-items */}
                 <summary
-                    className={`flex items-center gap-3 ${paddingLeftClass} py-2 text-gray-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 rounded-md transition-colors cursor-pointer list-none justify-between`}
+                    className="flex items-center gap-3 py-2 text-gray-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 rounded-md transition-colors cursor-pointer list-none justify-between"
+                    style={{ paddingLeft, paddingRight: '12px' }}
                 >
                     <span className="flex items-center gap-3">
                         {Icon && <Icon className="h-5 w-5" />}
@@ -118,7 +120,8 @@ function MenuItem({ item, level = 0 }: { item: any, level?: number }) {
     return (
         <Link
             href={item.url || '#'}
-            className={`flex items-center gap-3 ${paddingLeftClass} py-2 text-gray-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 rounded-md transition-colors`}
+            className="block flex items-center gap-3 py-2 text-gray-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 rounded-md transition-colors no-underline"
+            style={{ paddingLeft, paddingRight: '12px' }}
         >
             {Icon && <Icon className="h-5 w-5" />}
             <span className={level > 0 ? "text-sm" : ""}>{item.label}</span>
