@@ -63,14 +63,14 @@ export function SearchableSelect({
     const [selectedOption, setSelectedOption] = React.useState<Option | null>(null);
 
     React.useEffect(() => {
-        // Do not overwrite options with defaultOptions if the menu is open (user is creating or creating search results)
-        if (open) return;
+        // Only block updates if user is actively searching (query exists)
+        if (open && query) return;
 
         setOptions(prev => {
             if (JSON.stringify(prev) === JSON.stringify(defaultOptions)) return prev;
             return defaultOptions;
         });
-    }, [defaultOptions, open]);
+    }, [defaultOptions, open, query]);
 
     const containerRef = React.useRef<HTMLDivElement>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
