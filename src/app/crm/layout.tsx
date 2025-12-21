@@ -7,7 +7,9 @@ import { CompanySwitcher } from '@/components/company-switcher'
 import { getCurrentCompany } from '../actions/company'
 import { checkCrmLoginStatus } from '@/app/actions/crm/auth'
 import { LoginWorkflowWrapper } from '@/components/crm/login-workflow/wrapper'
-import { ThemeToggle } from '@/components/theme-toggle'
+
+// Import globals to ensure CSS is present (redundant but safe)
+import "@/app/globals.css";
 
 // Map icon strings to components
 const IconMap: any = {
@@ -23,26 +25,55 @@ export default async function CRMLayout({
     const currentCompany = await getCurrentCompany();
     const loginStatus = await checkCrmLoginStatus();
 
+    // Inline styles to bypass Tailwind build failures
+    const sidebarStyle = {
+        width: '260px',
+        backgroundColor: '#ffffff',
+        borderRight: '1px solid #e2e8f0',
+        display: 'flex',
+        flexDirection: 'column' as 'column',
+        zIndex: 50,
+        height: '100vh',
+        position: 'fixed' as 'fixed', // Fixed to ensure it stays
+        left: 0,
+        top: 0
+    };
+
+    const mainStyle = {
+        marginLeft: '260px', // Offset for fixed sidebar
+        flex: 1,
+        backgroundColor: '#f8fafc', // Slate 50
+        minHeight: '100vh',
+        position: 'relative' as 'relative'
+    };
+
     return (
-        <div className="flex min-h-screen bg-gray-50 dark:bg-slate-950">
-            {/* Sidebar - Fixed Width, Always Visible */}
-            <aside className="w-64 flex-shrink-0 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-800 flex flex-col z-40">
-                <div className="h-16 flex items-center px-6 border-b border-gray-100 dark:border-slate-800">
+        <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#0f172a' }}>
+            {/* Sidebar - INLINE STYLED */}
+            <aside style={sidebarStyle} className="crm-sidebar dark-sidebar">
+                <style>{`
+                    .dark-sidebar { background-color: #0f172a !important; border-right: 1px solid #1e293b !important; }
+                    .crm-link { text-decoration: none !important; color: #94a3b8 !important; display: flex !important; align-items: center !important; }
+                    .crm-link:hover { background-color: rgba(59, 130, 246, 0.1) !important; color: #60a5fa !important; }
+                    .crm-header { color: #64748b !important; font-size: 0.75rem !important; text-transform: uppercase !important; letter-spacing: 0.05em !important; font-weight: 600 !important; margin-bottom: 0.5rem !important; padding-left: 0.75rem !important; }
+                `}</style>
+
+                <div style={{ height: '64px', display: 'flex', alignItems: 'center', padding: '0 24px', borderBottom: '1px solid #1e293b' }}>
                     <CompanySwitcher initialActiveCompany={currentCompany} />
                 </div>
 
-                <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
+                <nav style={{ flex: 1, padding: '16px', overflowY: 'auto' }}>
                     {menuItems.map((group: any) => (
-                        <div key={group.module.module_key}>
+                        <div key={group.module.module_key} style={{ marginBottom: '24px' }}>
                             {group.module.module_key !== 'general' && (
-                                <h3 className="px-3 text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+                                <h3 className="crm-header">
                                     {group.module.name}
                                 </h3>
                             )}
 
-                            <ul className="space-y-1">
+                            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 {group.items.map((item: any) => (
-                                    <li key={item.key}>
+                                    <li key={item.key} style={{ listStyle: 'none', margin: 0 }}>
                                         <MenuItem item={item} />
                                     </li>
                                 ))}
@@ -51,16 +82,26 @@ export default async function CRMLayout({
                     ))}
                 </nav>
 
-                <div className="p-4 border-t border-gray-100 dark:border-slate-800 space-y-3">
-                    {/* ThemeToggle hidden for now to prevent hydration error */}
-                    {/* <ThemeToggle /> */}
-
+                <div style={{ padding: '16px', borderTop: '1px solid #1e293b' }}>
                     <form action={async () => {
                         'use server';
                         await signOut({ redirectTo: '/login' });
                     }}>
-                        <button className="flex items-center justify-center gap-3 w-full px-4 py-3 text-red-700 bg-red-50 hover:bg-red-100 dark:bg-red-900/10 dark:text-red-400 dark:hover:bg-red-900/20 dark:border-red-900/30 border border-red-200 rounded-xl transition-all shadow-sm hover:shadow-md font-medium group">
-                            <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                        <button style={{
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '12px',
+                            padding: '12px',
+                            borderRadius: '12px',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            color: '#f87171',
+                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                            cursor: 'pointer',
+                            fontWeight: 500
+                        }}>
+                            <LogOut size={20} />
                             <span>Sign Out</span>
                         </button>
                     </form>
@@ -68,14 +109,13 @@ export default async function CRMLayout({
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-auto bg-gray-50 dark:bg-slate-950 relative">
-                <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 p-4 shadow-sm md:hidden flex justify-between items-center sticky top-0 z-30">
-                    <div className="flex items-center gap-2">
-                        <Activity className="text-blue-600 dark:text-blue-400 h-6 w-6" />
-                        <span className="font-bold text-gray-800 dark:text-gray-100">CRM Module</span>
-                    </div>
-                </header>
-                <div className="p-8">
+            <main style={mainStyle} className="crm-main-content">
+                <div className="md:hidden" style={{ background: '#0f172a', padding: '16px', borderBottom: '1px solid #1e293b', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Activity color="#60a5fa" />
+                    <span style={{ color: 'white', fontWeight: 'bold' }}>CRM Module</span>
+                </div>
+
+                <div style={{ padding: '32px' }}>
                     <LoginWorkflowWrapper status={loginStatus}>
                         {children}
                     </LoginWorkflowWrapper>
@@ -88,27 +128,33 @@ export default async function CRMLayout({
 function MenuItem({ item, level = 0 }: { item: any, level?: number }) {
     const Icon = IconMap[item.icon] || (level === 0 ? Activity : null);
     const hasChildren = item.other_menu_items && item.other_menu_items.length > 0;
-    // Simplify padding logic
+
+    // Explicit styles
     const paddingLeft = level === 0 ? "12px" : level === 1 ? "36px" : "56px";
+    const linkStyle = {
+        paddingTop: '8px',
+        paddingBottom: '8px',
+        paddingLeft: paddingLeft,
+        paddingRight: '12px',
+        borderRadius: '6px',
+        transition: 'all 0.2s',
+        fontSize: level > 0 ? '0.875rem' : '1rem'
+    };
 
     if (hasChildren) {
         return (
-            <details className="group/item" open>
+            <details className="group/item" open style={{ marginBottom: '4px' }}>
                 <summary
-                    className="flex items-center gap-3 py-2 text-gray-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 rounded-md transition-colors cursor-pointer list-none justify-between"
-                    style={{ paddingLeft, paddingRight: '12px' }}
+                    className="crm-link"
+                    style={{ ...linkStyle, cursor: 'pointer', listStyle: 'none', justifyContent: 'space-between' }}
                 >
-                    <span className="flex items-center gap-3">
-                        {Icon && <Icon className="h-5 w-5" />}
-                        <span className={level > 0 ? "text-sm" : ""}>{item.label}</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {Icon && <Icon size={20} />}
+                        <span>{item.label}</span>
                     </span>
-                    <span className="transform group-open/item:rotate-90 transition-transform text-gray-400">
-                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M3.33331 8.33333L6.66665 4.99999L3.33331 1.66666" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                    </span>
+                    <span style={{ opacity: 0.5, transform: 'rotate(90deg)' }}>›</span>
                 </summary>
-                <div className="space-y-1 mt-1">
+                <div style={{ marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                     {item.other_menu_items.map((sub: any) => (
                         <MenuItem key={sub.key} item={sub} level={level + 1} />
                     ))}
@@ -120,11 +166,11 @@ function MenuItem({ item, level = 0 }: { item: any, level?: number }) {
     return (
         <Link
             href={item.url || '#'}
-            className="block flex items-center gap-3 py-2 text-gray-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 rounded-md transition-colors no-underline"
-            style={{ paddingLeft, paddingRight: '12px' }}
+            className="crm-link"
+            style={linkStyle}
         >
-            {Icon && <Icon className="h-5 w-5" />}
-            <span className={level > 0 ? "text-sm" : ""}>{item.label}</span>
+            {Icon && <Icon size={20} />}
+            <span>{item.label}</span>
         </Link>
     )
 }
