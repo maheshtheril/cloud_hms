@@ -35,7 +35,7 @@ export default function AcceptInviteForm({ token, email }: { token: string, emai
             setError(result.error)
             setLoading(false)
         } else {
-            router.push('/auth/login?message=Account set up successfully')
+            router.push('/login?message=Account set up successfully')
         }
     }
 

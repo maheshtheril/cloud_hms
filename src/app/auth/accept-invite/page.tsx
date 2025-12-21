@@ -7,7 +7,7 @@ export default async function AcceptInvitePage({ searchParams }: { searchParams:
     const { token } = await searchParams
 
     if (!token) {
-        redirect('/auth/login')
+        redirect('/login')
     }
 
     const tokenRecord = await prisma.email_verification_tokens.findFirst({
@@ -27,7 +27,7 @@ export default async function AcceptInvitePage({ searchParams }: { searchParams:
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">Invalid or Expired Link</h1>
                     <p className="text-gray-600 mb-8">This invitation link is invalid or has expired. Please ask your administrator to send a new invitation.</p>
                     <Link
-                        href="/auth/login"
+                        href="/login"
                         className="inline-block bg-gray-900 text-white px-6 py-3 rounded-lg font-medium hover:bg-gray-800 transition-colors"
                     >
                         Return to Login
