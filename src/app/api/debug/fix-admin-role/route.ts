@@ -24,25 +24,30 @@ export async function GET() {
         }
 
         // Check if user already has an admin role
-        const existingRole = await prisma.user_role.findFirst({
+        // First find the admin role for this tenant
+        const adminRoleCheck = await prisma.role.findFirst({
             where: {
-                user_id: userId,
-                role: {
-                    tenant_id: tenantId,
-                    key: 'admin'
-                }
-            },
-            include: {
-                role: true
+                tenant_id: tenantId,
+                key: 'admin'
             }
         });
 
-        if (existingRole) {
-            return NextResponse.json({
-                success: true,
-                message: "You already have an admin role assigned!",
-                role: existingRole.role
-            });
+        if (adminRoleCheck) {
+            // Then check if user has this role assigned
+            const existingAssignment = await prisma.$queryRaw<any[]>`
+                SELECT * FROM user_role 
+                WHERE user_id = ${userId}::uuid 
+                AND role_id = ${adminRoleCheck.id}::uuid
+                LIMIT 1
+            `;
+
+            if (existingAssignment && existingAssignment.length > 0) {
+                return NextResponse.json({
+                    success: true,
+                    message: "You already have an admin role assigned!",
+                    role: adminRoleCheck
+                });
+            }
         }
 
         // Check if admin role exists for this tenant
@@ -71,20 +76,17 @@ export async function GET() {
             });
         }
 
-        // Assign role to current user
-        const assignment = await prisma.user_role.create({
-            data: {
-                user_id: userId,
-                role_id: adminRole.id,
-                tenant_id: tenantId
-            }
-        });
+        // Assign role to current user using raw SQL
+        await prisma.$executeRaw`
+            INSERT INTO user_role (user_id, role_id, tenant_id)
+            VALUES (${userId}::uuid, ${adminRole.id}::uuid, ${tenantId}::uuid)
+            ON CONFLICT DO NOTHING
+        `;
 
         return NextResponse.json({
             success: true,
             message: "Admin role created and assigned successfully! You can now manage roles.",
-            role: adminRole,
-            assignment: assignment
+            role: adminRole
         });
 
     } catch (error: any) {
