@@ -1,7 +1,8 @@
 import { getDashboardData } from '@/app/actions/crm/dashboard'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Sparkles, DollarSign, Activity, Target, TrendingUp, MapPin, BrainCircuit } from 'lucide-react'
+import { Sparkles, DollarSign, Activity, Target, TrendingUp, MapPin, BrainCircuit, Zap, Crown } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { Badge } from '@/components/ui/badge'
 
 export const dynamic = 'force-dynamic'
 
@@ -10,70 +11,112 @@ export default async function DashboardPage() {
     const { kpis, funnel, activities, hotLeads } = data
 
     return (
-        <div className="container mx-auto py-8">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold tracking-tight text-gray-900" style={{ fontFamily: 'Inter, sans-serif' }}>CRM Command Center</h1>
-                <p className="text-gray-500 mt-2">Real-time insights and AI intelligence.</p>
+        <div className="min-h-screen bg-futuristic">
+            {/* Animated Background Effects */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-0 -left-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-10 animate-blob" />
+                <div className="absolute top-0 -right-4 w-72 h-72 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-10 animate-blob animation-delay-2000" />
+                <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 dark:opacity-10 animate-blob animation-delay-4000" />
             </div>
 
-            {/* KPI GRID */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-                <KpiCard
-                    title="Total Revenue"
-                    value={`$${kpis.totalRevenue.toLocaleString()}`}
-                    icon={DollarSign}
-                    trend="+12% from last month"
-                    trendUp={true}
-                />
-                <KpiCard
-                    title="Pipeline Value"
-                    value={`$${kpis.pipelineValue.toLocaleString()}`}
-                    icon={Target}
-                    trend={`${kpis.activeDealsCount} active deals`}
-                    trendUp={true}
-                    color="indigo"
-                />
-                <KpiCard
-                    title="Avg Lead Score"
-                    value={kpis.avgLeadScore.toString()}
-                    icon={Sparkles}
-                    trend="AI Quality Index"
-                    trendUp={kpis.avgLeadScore > 50}
-                    color="purple"
-                />
-                <KpiCard
-                    title="Activity Volume"
-                    value={activities.length.toString()}
-                    icon={Activity}
-                    trend=" interactions this week"
-                    trendUp={true}
-                    color="orange"
-                />
-            </div>
+            <div className="relative container mx-auto py-8 space-y-8">
+                {/* Header */}
+                <div className="mb-8">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 backdrop-blur-sm border border-gradient-primary">
+                            <Zap className="h-8 w-8 text-cyan-400 dark:text-cyan-300" />
+                        </div>
+                        <div>
+                            <h1 className="text-4xl font-bold text-gradient-primary">
+                                CRM Command Center
+                            </h1>
+                            <p className="text-slate-600 dark:text-slate-400 text-lg mt-1">
+                                Real-time insights and AI intelligence
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
-            {/* BENTO GRID */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* KPI GRID */}
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+                    <div className="card-stat-purple p-6 rounded-2xl shadow-xl hover-glow-purple transition-all duration-300">
+                        <div className="flex items-center justify-between mb-4">
+                            <p className="text-sm font-medium text-purple-700 dark:text-purple-300">Total Revenue</p>
+                            <DollarSign className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white mb-1">
+                            ${kpis.totalRevenue.toLocaleString()}
+                        </div>
+                        <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                            ↑ +12% from last month
+                        </p>
+                    </div>
 
-                {/* SALES FUNNEL */}
-                <Card className="lg:col-span-2">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-gray-500" />
-                            Sales Funnel
-                        </CardTitle>
-                        <CardDescription>Deal distribution by stage</CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                    <div className="card-stat-cyan p-6 rounded-2xl shadow-xl hover-glow-cyan transition-all duration-300">
+                        <div className="flex items-center justify-between mb-4">
+                            <p className="text-sm font-medium text-cyan-700 dark:text-cyan-300">Pipeline Value</p>
+                            <Target className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                        </div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white mb-1">
+                            ${kpis.pipelineValue.toLocaleString()}
+                        </div>
+                        <p className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">
+                            {kpis.activeDealsCount} active deals
+                        </p>
+                    </div>
+
+                    <div className="card-stat-pink p-6 rounded-2xl shadow-xl hover-glow-pink transition-all duration-300">
+                        <div className="flex items-center justify-between mb-4">
+                            <p className="text-sm font-medium text-pink-700 dark:text-pink-300">Avg Lead Score</p>
+                            <Sparkles className="h-5 w-5 text-pink-600 dark:text-pink-400" />
+                        </div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white mb-1">
+                            {kpis.avgLeadScore}
+                        </div>
+                        <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
+                            AI Quality Index
+                        </p>
+                    </div>
+
+                    <div className="glass border-gradient-accent bg-gradient-to-br from-orange-50/50 to-transparent dark:from-orange-950/50 dark:to-transparent p-6 rounded-2xl shadow-xl hover:shadow-orange-500/20 transition-all duration-300">
+                        <div className="flex items-center justify-between mb-4">
+                            <p className="text-sm font-medium text-orange-700 dark:text-orange-300">Activity Volume</p>
+                            <Activity className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                        </div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white mb-1">
+                            {activities.length}
+                        </div>
+                        <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+                            interactions this week
+                        </p>
+                    </div>
+                </div>
+
+                {/* BENTO GRID */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                    {/* SALES FUNNEL */}
+                    <div className="card-futuristic lg:col-span-2">
+                        <div className="flex items-center gap-3 mb-6">
+                            <TrendingUp className="h-6 w-6 text-cyan-400 dark:text-cyan-300" />
+                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Sales Funnel</h2>
+                            <Badge variant="outline" className="ml-auto border-cyan-500/30 bg-cyan-950/20 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300">
+                                {funnel.reduce((acc, s) => acc + s.count, 0)} deals
+                            </Badge>
+                        </div>
                         <div className="space-y-4">
                             {funnel.map((stage) => (
                                 <div key={stage.name} className="flex items-center gap-4">
-                                    <div className="w-24 text-sm font-medium text-gray-600 truncate text-right">{stage.name}</div>
-                                    <div className="flex-1 h-8 bg-gray-100 rounded-full overflow-hidden relative">
+                                    <div className="w-28 text-sm font-medium text-slate-700 dark:text-slate-300 truncate text-right">
+                                        {stage.name}
+                                    </div>
+                                    <div className="flex-1 h-10 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden relative shadow-inner">
                                         <div
-                                            className="h-full rounded-full flex items-center justify-end px-3 text-xs text-white font-bold transition-all duration-500"
+                                            className="h-full rounded-full flex items-center justify-end px-4 text-sm text-white font-bold transition-all duration-500 shadow-lg"
                                             style={{
                                                 width: `${Math.max(5, (stage.count / (Math.max(...funnel.map(f => f.count)) || 1)) * 100)}%`,
-                                                backgroundColor: stage.color
+                                                backgroundColor: stage.color,
+                                                boxShadow: `0 4px 12px ${stage.color}40`
                                             }}
                                         >
                                             {stage.count > 0 && stage.count}
@@ -81,73 +124,96 @@ export default async function DashboardPage() {
                                     </div>
                                 </div>
                             ))}
-                            {funnel.length === 0 && <p className="text-center text-gray-400 py-8">No deals in pipeline</p>}
+                            {funnel.length === 0 && (
+                                <p className="text-center text-slate-500 dark:text-slate-400 py-8">
+                                    No deals in pipeline
+                                </p>
+                            )}
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
 
-                {/* HOT LEADS */}
-                <Card className="lg:row-span-2">
-                    <CardHeader className="bg-gradient-to-r from-orange-50 to-red-50 rounded-t-xl border-b border-orange-100">
-                        <CardTitle className="flex items-center gap-2 text-orange-800">
-                            <Sparkles className="w-5 h-5 text-orange-600" />
-                            Hot Leads (AI)
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                        <div className="divide-y divide-gray-100">
+                    {/* HOT LEADS */}
+                    <div className="card-futuristic lg:row-span-2 overflow-hidden">
+                        <div className="bg-gradient-to-r from-orange-500/10 to-red-500/10 dark:from-orange-400/10 dark:to-red-400/10 rounded-xl border border-orange-500/20 dark:border-orange-400/20 p-4 mb-4">
+                            <div className="flex items-center gap-2">
+                                <Sparkles className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+                                <h2 className="text-xl font-bold text-orange-800 dark:text-orange-300">Hot Leads (AI)</h2>
+                            </div>
+                        </div>
+                        <div className="space-y-3 max-h-96 overflow-y-auto">
                             {hotLeads.map((lead) => (
-                                <div key={lead.id} className="p-4 hover:bg-gray-50 transition-colors flex items-start gap-3">
-                                    <div className={`w-2 h-2 mt-2 rounded-full ${lead.lead_score && lead.lead_score > 80 ? 'bg-red-500' : 'bg-orange-400'}`} />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-gray-900 truncate">{lead.name}</p>
-                                        <p className="text-sm text-gray-500 truncate">{lead.company_name}</p>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-xs font-bold bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
-                                                {lead.lead_score} Score
-                                            </span>
+                                <div
+                                    key={lead.id}
+                                    className="group p-4 rounded-xl border border-slate-200/50 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 hover:border-orange-500/30 dark:hover:border-orange-400/30 transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/10"
+                                >
+                                    <div className="flex items-start gap-3">
+                                        <div className={`w-2 h-2 mt-2 rounded-full ${lead.lead_score && lead.lead_score > 80 ? 'bg-red-500 shadow-lg shadow-red-500/50' : 'bg-orange-400 shadow-lg shadow-orange-400/50'}`} />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-semibold text-slate-900 dark:text-white truncate">
+                                                {lead.name}
+                                            </p>
+                                            <p className="text-sm text-slate-600 dark:text-slate-400 truncate">
+                                                {lead.company_name}
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <span className="text-xs font-bold bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-2 py-1 rounded-lg">
+                                                    {lead.lead_score} Score
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             ))}
-                            {hotLeads.length === 0 && <p className="text-center text-gray-400 py-8">No hot leads detected.</p>}
+                            {hotLeads.length === 0 && (
+                                <p className="text-center text-slate-500 dark:text-slate-400 py-8">
+                                    No hot leads detected
+                                </p>
+                            )}
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
 
-                {/* ACTIVITY FEED */}
-                <Card className="lg:col-span-2">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Activity className="w-5 h-5 text-gray-500" />
-                            Recent Live Activity
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                    {/* ACTIVITY FEED */}
+                    <div className="card-futuristic lg:col-span-2">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Activity className="h-6 w-6 text-purple-400 dark:text-purple-300" />
+                            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Recent Live Activity</h2>
+                        </div>
                         <div className="space-y-4">
                             {activities.map((act) => (
-                                <div key={act.id} className="flex items-start gap-4 p-3 rounded-lg border border-gray-100 bg-gray-50/50">
-                                    <div className={`p-2 rounded-full ${act.type === 'call' ? 'bg-blue-100 text-blue-600' :
-                                            act.type === 'meeting' ? 'bg-purple-100 text-purple-600' : 'bg-gray-200'
+                                <div
+                                    key={act.id}
+                                    className="flex items-start gap-4 p-4 rounded-xl border border-slate-200/50 dark:border-slate-700/50 bg-slate-50/50 dark:bg-slate-800/50 hover:border-purple-500/30 dark:hover:border-purple-400/30 transition-all duration-300"
+                                >
+                                    <div className={`p-2 rounded-full ${act.type === 'call'
+                                            ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                                            : act.type === 'meeting'
+                                                ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400'
+                                                : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
                                         }`}>
                                         <Activity className="w-4 h-4" />
                                     </div>
-                                    <div className="flex-1">
-                                        <div className="flex justify-between">
-                                            <p className="font-medium text-gray-900">{act.subject}</p>
-                                            <span className="text-xs text-gray-500">{formatDistanceToNow(new Date(act.created_at), { addSuffix: true })}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start gap-2">
+                                            <p className="font-medium text-slate-900 dark:text-white">
+                                                {act.subject}
+                                            </p>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                                                {formatDistanceToNow(new Date(act.created_at), { addSuffix: true })}
+                                            </span>
                                         </div>
-                                        <p className="text-sm text-gray-600 mt-1 line-clamp-1">{act.description}</p>
+                                        <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-1">
+                                            {act.description}
+                                        </p>
 
-                                        <div className="flex gap-3 mt-2">
+                                        <div className="flex gap-2 mt-2 flex-wrap">
                                             {(act.sentiment_score ?? 0) > 0 && (
-                                                <span className="flex items-center text-xs font-medium text-purple-600 bg-purple-50 px-2 py-0.5 rounded border border-purple-100">
+                                                <span className="flex items-center text-xs font-medium text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-900/30 px-2 py-1 rounded-lg border border-purple-200 dark:border-purple-700/30">
                                                     <BrainCircuit className="w-3 h-3 mr-1" />
                                                     Sentiment: {act.sentiment_score}
                                                 </span>
                                             )}
                                             {act.location_lat && (
-                                                <span className="flex items-center text-xs font-medium text-green-600 bg-green-50 px-2 py-0.5 rounded border border-green-100">
+                                                <span className="flex items-center text-xs font-medium text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 rounded-lg border border-emerald-200 dark:border-emerald-700/30">
                                                     <MapPin className="w-3 h-3 mr-1" />
                                                     Verified Loc
                                                 </span>
@@ -156,45 +222,16 @@ export default async function DashboardPage() {
                                     </div>
                                 </div>
                             ))}
-                            {activities.length === 0 && <p className="text-center text-gray-400 py-8">No recent activity.</p>}
+                            {activities.length === 0 && (
+                                <p className="text-center text-slate-500 dark:text-slate-400 py-8">
+                                    No recent activity
+                                </p>
+                            )}
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
 
+                </div>
             </div>
         </div>
-    )
-}
-
-function KpiCard({ title, value, icon: Icon, trend, trendUp, color = 'blue' }: any) {
-    const colors: any = {
-        blue: 'text-blue-600 bg-blue-50',
-        indigo: 'text-indigo-600 bg-indigo-50',
-        purple: 'text-purple-600 bg-purple-50',
-        orange: 'text-orange-600 bg-orange-50',
-    }
-
-    return (
-        <Card>
-            <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <p className="text-sm font-medium text-gray-500">{title}</p>
-                        <h3 className="text-2xl font-bold text-gray-900 mt-1">{value}</h3>
-                    </div>
-                    <div className={`p-3 rounded-full ${colors[color] || colors.blue}`}>
-                        <Icon className="w-6 h-6" />
-                    </div>
-                </div>
-                {trend && (
-                    <div className="mt-4 flex items-center text-sm">
-                        <span className={trendUp ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>
-                            {trendUp ? '↑' : '↓'}
-                        </span>
-                        <span className="text-gray-500 ml-1">{trend}</span>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
     )
 }
