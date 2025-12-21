@@ -83,7 +83,7 @@
 
   /* Background Patterns */
   .bg-futuristic {
-    background-image: linear-gradient(to bottom right, rgb(248 250 252), rgb(250 245 255), rgb(248 250 252));
+    background-image: linear-gradient(to bottom right, rgb(237 233 254), rgb(221 214 254), rgb(237 233 254));
   }
 
   .dark .bg-futuristic {
@@ -91,7 +91,7 @@
   }
 
   .bg-futuristic-alt {
-    background-image: linear-gradient(to bottom right, rgb(255 255 255), rgb(236 254 255), rgb(255 255 255));
+    background-image: linear-gradient(to bottom right, rgb(224 242 254), rgb(186 230 253), rgb(224 242 254));
   }
 
   .dark .bg-futuristic-alt {
@@ -295,11 +295,11 @@
   }
 
   .card-stat-purple {
-    background: linear-gradient(to bottom right, rgba(250, 245, 255, 0.5), transparent);
-    background-color: rgba(255, 255, 255, 0.7);
+    background: linear-gradient(to bottom right, rgba(243, 232, 255, 0.9), rgba(250, 245, 255, 0.7));
+    background-color: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(24px);
-    border-width: 1px;
-    border-color: rgba(168, 85, 247, 0.3);
+    border-width: 2px;
+    border-color: rgba(168, 85, 247, 0.4);
     transition: box-shadow 0.3s ease;
   }
 
@@ -314,11 +314,11 @@
   }
 
   .card-stat-cyan {
-    background: linear-gradient(to bottom right, rgba(236, 254, 255, 0.5), transparent);
-    background-color: rgba(255, 255, 255, 0.7);
+    background: linear-gradient(to bottom right, rgba(207, 250, 254, 0.9), rgba(236, 254, 255, 0.7));
+    background-color: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(24px);
-    border-width: 1px;
-    border-color: rgba(6, 182, 212, 0.3);
+    border-width: 2px;
+    border-color: rgba(6, 182, 212, 0.5);
     transition: box-shadow 0.3s ease;
   }
 
@@ -333,11 +333,11 @@
   }
 
   .card-stat-pink {
-    background: linear-gradient(to bottom right, rgba(253, 242, 248, 0.5), transparent);
-    background-color: rgba(255, 255, 255, 0.7);
+    background: linear-gradient(to bottom right, rgba(252, 231, 243, 0.9), rgba(253, 242, 248, 0.7));
+    background-color: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(24px);
-    border-width: 1px;
-    border-color: rgba(236, 72, 153, 0.3);
+    border-width: 2px;
+    border-color: rgba(236, 72, 153, 0.5);
     transition: box-shadow 0.3s ease;
   }
 
