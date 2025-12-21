@@ -19,9 +19,28 @@ export default async function CRMLayout({
 }: {
     children: React.ReactNode
 }) {
-    const menuItems = await getMenuItems();
+    // const menuItems = await getMenuItems();
     const currentCompany = await getCurrentCompany();
     const loginStatus = await checkCrmLoginStatus();
+
+    // EMERGENCY HARDCODED MENU TO RESTORE VIEW
+    const menuItems = [
+        {
+            module: { name: 'CRM Core', module_key: 'crm' },
+            items: [
+                { key: 'dashboard', label: 'Command Center', icon: 'LayoutDashboard', url: '/crm/dashboard' },
+                { key: 'leads', label: 'Leads', icon: 'Users', url: '/crm/leads' },
+                { key: 'deals', label: 'Deals', icon: 'Briefcase', url: '/crm/deals' },
+                { key: 'contacts', label: 'Contacts', icon: 'Users', url: '/crm/contacts' },
+            ]
+        },
+        {
+            module: { name: 'Settings', module_key: 'settings' },
+            items: [
+                { key: 'roles', label: 'Roles & Permissions', icon: 'Shield', url: '/settings/roles' },
+            ]
+        }
+    ];
 
     return (
         <div className="flex h-screen bg-gray-50 dark:bg-slate-950">
