@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { createRole, getAllPermissions } from "@/app/actions/rbac"
 import { Button } from "@/components/ui/button"
@@ -153,16 +153,18 @@ export function CreateRoleDialog() {
         }
     }
 
-    // Group permissions by module
-    const permissionsByModule = permissions.reduce((acc, perm) => {
-        const moduleName = normalizeModule(perm.module);
+    // Group permissions by module - Memoized to prevent render loops
+    const permissionsByModule = useMemo(() => {
+        return permissions.reduce((acc, perm) => {
+            const moduleName = normalizeModule(perm.module);
 
-        if (!acc[moduleName]) {
-            acc[moduleName] = []
-        }
-        acc[moduleName].push(perm)
-        return acc
-    }, {} as Record<string, typeof permissions>)
+            if (!acc[moduleName]) {
+                acc[moduleName] = []
+            }
+            acc[moduleName].push(perm)
+            return acc
+        }, {} as Record<string, typeof permissions>)
+    }, [permissions])
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
