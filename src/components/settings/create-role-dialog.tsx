@@ -254,23 +254,23 @@ export function CreateRoleDialog() {
                                                             {perms.map((perm) => (
                                                                 <div
                                                                     key={perm.code}
-                                                                    className="flex items-start space-x-3 p-2 rounded-md hover:bg-slate-800/50 cursor-pointer transition-colors"
+                                                                    className="flex items-start space-x-3 p-3 rounded-md bg-slate-800/50 border border-slate-700 hover:bg-slate-700 cursor-pointer transition-colors"
                                                                     onClick={() => togglePermission(perm.code)}
                                                                 >
                                                                     <Checkbox
                                                                         id={perm.code}
                                                                         checked={selectedPermissions.includes(perm.code)}
                                                                         onCheckedChange={() => togglePermission(perm.code)}
-                                                                        className="mt-0.5 border-slate-500 data-[state=checked]:bg-cyan-600 data-[state=checked]:border-cyan-600"
+                                                                        className="mt-0.5 border-slate-400 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500"
                                                                     />
                                                                     <div className="grid gap-0.5">
                                                                         <label
                                                                             htmlFor={perm.code}
-                                                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-slate-200"
+                                                                            className="text-sm font-medium leading-none cursor-pointer text-white"
                                                                         >
                                                                             {perm.name}
                                                                         </label>
-                                                                        <p className="text-[10px] text-slate-500 font-mono">{perm.code}</p>
+                                                                        <p className="text-[10px] text-slate-400 font-mono">{perm.code}</p>
                                                                     </div>
                                                                 </div>
                                                             ))}
