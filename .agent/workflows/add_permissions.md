@@ -41,17 +41,24 @@ Now that the permissions exist, they will appear in the Role Editor.
 ## Step 4: Enforce in Frontend Code
 To actually protect your new page, use the permission check helper in your Page Component.
 
-```tsx
-// src/app/crm/leads/page.tsx
-import { checkPermission } from "@/components/crm/crm-wrapper"; // or your auth helper
 
-export default async function LeadsPage() {
-  const canView = await checkPermission("leads:view");
-  
-  if (!canView) {
-    return <div>Access Denied</div>;
-  }
-  
-  return <LeadsForm />;
-}
-```
+## Best Practices: Mapping Pages to Permissions
+
+When you create a new page (e.g., `src/app/crm/reports/leads/page.tsx`), you need to decide on a **Permission Code**.
+
+1.  **Naming Convention:** Use `module:feature:action`.
+    *   Example: `crm:leads_report:view`
+2.  **Granularity:**
+    *   If the page is simple, just one permission: `crm:leads_report:view`
+    *   If the page has actions (Export, Print), add more: `crm:leads_report:export`
+
+### Example
+If you create a **"Leads Report"** page:
+
+1.  **Code Registration:** Add `{ code: 'crm:leads_report:view', name: 'View Leads Report', module: 'CRM' }` to `rbac.ts`.
+2.  **UI Assignment:** Go to Roles UI, you will see "View Leads Report". Check it for the Manager role.
+3.  **Page Protection:**
+    ```tsx
+    // src/app/crm/reports/leads/page.tsx
+    if (!await checkPermission('crm:leads_report:view')) return <AccessDenied />;
+    ```
