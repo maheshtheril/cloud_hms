@@ -140,12 +140,13 @@ export function CreateRoleDialog() {
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button className="gap-2">
-                    <Plus className="h-4 w-4" />
+                <Button className="relative group bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white shadow-lg shadow-purple-500/50 hover:shadow-xl hover:shadow-purple-500/60 transition-all duration-300 border-0">
+                    <div className="absolute inset-0 bg-gradient-to-r from-purple-400/20 to-cyan-400/20 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity blur" />
+                    <Plus className="h-4 w-4 mr-2" />
                     Create Role
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+            <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col border-slate-700 bg-gradient-to-br from-slate-900 to-slate-950 text-white shadow-2xl">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Shield className="h-5 w-5" />
