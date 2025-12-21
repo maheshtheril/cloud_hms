@@ -184,138 +184,140 @@ export function CreateRoleDialog() {
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-                    <div className="space-y-6 flex-1 overflow-y-auto px-1">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="key">Role Key *</Label>
-                                <Input
-                                    id="key"
-                                    placeholder="e.g., custom_manager"
-                                    value={formData.key}
-                                    onChange={(e) => setFormData({ ...formData, key: e.target.value })}
-                                    required
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    Unique identifier (lowercase, underscores only)
-                                </p>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Role Name *</Label>
-                                <Input
-                                    id="name"
-                                    placeholder="e.g., Custom Manager"
-                                    value={formData.name}
-                                    onChange={(e) => {
-                                        const name = e.target.value;
-                                        // Auto-generate key: lowercase, underscores, alphanumeric only
-                                        const key = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-                                        setFormData({ name, key });
-                                    }}
-                                    required
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                    Display name for this role
-                                </p>
-                            </div>
-                        </div>
-
+                <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0 gap-4 p-1">
+                    {/* Fixed Header Inputs */}
+                    <div className="grid grid-cols-2 gap-4 px-1 shrink-0">
                         <div className="space-y-2">
-                            <Label>Permissions *</Label>
-                            <p className="text-sm text-muted-foreground mb-2">
-                                Select {selectedPermissions.length} permission{selectedPermissions.length !== 1 ? 's' : ''}
+                            <Label htmlFor="key">Role Key *</Label>
+                            <Input
+                                id="key"
+                                placeholder="e.g., custom_manager"
+                                value={formData.key}
+                                onChange={(e) => setFormData({ ...formData, key: e.target.value })}
+                                required
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Unique identifier (lowercase, underscores only)
                             </p>
-
-                            {loadingPermissions ? (
-                                <div className="flex items-center justify-center py-8">
-                                    <Loader2 className="h-6 w-6 animate-spin" />
-                                </div>
-                            ) : (
-                                <div className="flex h-[600px] border rounded-lg overflow-hidden border-slate-700 bg-slate-900/50">
-                                    {/* Left Sidebar */}
-                                    <div className="w-[180px] bg-slate-900/80 border-r border-slate-700 flex flex-col">
-                                        <div className="p-3 border-b border-slate-800 bg-slate-900">
-                                            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Modules</p>
-                                        </div>
-                                        <ScrollArea className="flex-1">
-                                            <div className="flex flex-col">
-                                                {Object.entries(permissionsByModule)
-                                                    .sort(([a], [b]) => a.localeCompare(b))
-                                                    .map(([module, perms]) => (
-                                                        <button
-                                                            key={module}
-                                                            onClick={(e) => { e.preventDefault(); setActiveModule(module); }}
-                                                            className={cn(
-                                                                "w-full text-left px-3 py-3 text-sm flex items-center justify-between transition-colors border-l-2",
-                                                                activeModule === module
-                                                                    ? "bg-cyan-950/30 text-cyan-400 border-cyan-500 font-medium"
-                                                                    : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border-transparent"
-                                                            )}
-                                                        >
-                                                            <span className="truncate mr-2">{module}</span>
-                                                            <Badge variant="secondary" className="scale-75 bg-slate-800 text-slate-400 border-slate-700 h-5 px-1.5">{perms.length}</Badge>
-                                                        </button>
-                                                    ))}
-                                            </div>
-                                        </ScrollArea>
-                                    </div>
-
-                                    {/* Right Content */}
-                                    <div className="flex-1 flex flex-col bg-slate-950/30">
-                                        {activeModule && permissionsByModule[activeModule] ? (
-                                            <>
-                                                <div className="p-3 border-b border-slate-800 flex justify-between items-center bg-slate-900/20 h-[53px]">
-                                                    <div className="flex items-center gap-2">
-                                                        <h3 className="font-medium text-white text-sm">{activeModule}</h3>
-                                                        <Badge variant="outline" className="border-slate-700 text-slate-400 text-[10px] h-5">
-                                                            {permissionsByModule[activeModule].length} Items
-                                                        </Badge>
-                                                    </div>
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => selectAllInModule(activeModule)}
-                                                        className="text-xs h-7 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950/30"
-                                                    >
-                                                        {permissionsByModule[activeModule].every(p => selectedPermissions.includes(p.code))
-                                                            ? 'Deselect All'
-                                                            : 'Select All'}
-                                                    </Button>
-                                                </div>
-                                                <ScrollArea className="flex-1 p-3">
-                                                    <div className="grid grid-cols-2 gap-3 pb-20">
-                                                        {permissionsByModule[activeModule].map(perm => (
-                                                            <div
-                                                                key={perm.code}
-                                                                className="flex items-start space-x-3 p-3 rounded-md bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 cursor-pointer transition-all group"
-                                                                onClick={() => togglePermission(perm.code)}
-                                                            >
-                                                                <Checkbox
-                                                                    id={perm.code}
-                                                                    checked={selectedPermissions.includes(perm.code)}
-                                                                    onCheckedChange={() => togglePermission(perm.code)}
-                                                                    className="mt-0.5 border-slate-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500"
-                                                                />
-                                                                <div className="grid gap-0.5">
-                                                                    <label className="text-sm font-medium leading-none cursor-pointer text-slate-200 group-hover:text-white transition-colors">
-                                                                        {/* Format name to Title Case to fix inconsistent data */}
-                                                                        {perm.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                                                                    </label>
-                                                                    <p className="text-[10px] text-slate-500 font-mono group-hover:text-slate-400">{perm.code}</p>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </ScrollArea>
-                                            </>
-                                        ) : (
-                                            <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">Select a module to view permissions</div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
                         </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Role Name *</Label>
+                            <Input
+                                id="name"
+                                placeholder="e.g., Custom Manager"
+                                value={formData.name}
+                                onChange={(e) => {
+                                    const name = e.target.value;
+                                    const key = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+                                    setFormData({ name, key });
+                                }}
+                                required
+                            />
+                            <p className="text-xs text-muted-foreground">
+                                Display name for this role
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col flex-1 min-h-0 gap-2">
+                        <div className="flex justify-between items-center px-1">
+                            <div>
+                                <Label>Permissions *</Label>
+                                <p className="text-xs text-muted-foreground">
+                                    Select {selectedPermissions.length} permission{selectedPermissions.length !== 1 ? 's' : ''}
+                                </p>
+                            </div>
+                        </div>
+
+                        {loadingPermissions ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader2 className="h-6 w-6 animate-spin" />
+                            </div>
+                        ) : (
+                            <div className="flex flex-1 border rounded-lg overflow-hidden border-slate-700 bg-slate-900/50 min-h-0">
+                                {/* Left Sidebar */}
+                                <div className="w-[180px] bg-slate-900/80 border-r border-slate-700 flex flex-col">
+                                    <div className="p-3 border-b border-slate-800 bg-slate-900 shrink-0">
+                                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Modules</p>
+                                    </div>
+                                    <ScrollArea className="flex-1">
+                                        <div className="flex flex-col">
+                                            {Object.entries(permissionsByModule)
+                                                .sort(([a], [b]) => a.localeCompare(b))
+                                                .map(([module, perms]) => (
+                                                    <button
+                                                        key={module}
+                                                        onClick={(e) => { e.preventDefault(); setActiveModule(module); }}
+                                                        className={cn(
+                                                            "w-full text-left px-3 py-3 text-sm flex items-center justify-between transition-colors border-l-2",
+                                                            activeModule === module
+                                                                ? "bg-cyan-950/30 text-cyan-400 border-cyan-500 font-medium"
+                                                                : "text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border-transparent"
+                                                        )}
+                                                    >
+                                                        <span className="truncate mr-2">{module}</span>
+                                                        <Badge variant="secondary" className="scale-75 bg-slate-800 text-slate-400 border-slate-700 h-5 px-1.5">{perms.length}</Badge>
+                                                    </button>
+                                                ))}
+                                        </div>
+                                    </ScrollArea>
+                                </div>
+
+                                {/* Right Content */}
+                                <div className="flex-1 flex flex-col bg-slate-950/30 min-h-0">
+                                    {activeModule && permissionsByModule[activeModule] ? (
+                                        <>
+                                            <div className="p-3 border-b border-slate-800 flex justify-between items-center bg-slate-900/20 h-[53px] shrink-0">
+                                                <div className="flex items-center gap-2">
+                                                    <h3 className="font-medium text-white text-sm">{activeModule}</h3>
+                                                    <Badge variant="outline" className="border-slate-700 text-slate-400 text-[10px] h-5">
+                                                        {permissionsByModule[activeModule].length} Items
+                                                    </Badge>
+                                                </div>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => selectAllInModule(activeModule)}
+                                                    className="text-xs h-7 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-950/30"
+                                                >
+                                                    {permissionsByModule[activeModule].every(p => selectedPermissions.includes(p.code))
+                                                        ? 'Deselect All'
+                                                        : 'Select All'}
+                                                </Button>
+                                            </div>
+                                            <ScrollArea className="flex-1 p-3 h-full">
+                                                <div className="grid grid-cols-2 gap-3 pb-4">
+                                                    {permissionsByModule[activeModule].map(perm => (
+                                                        <div
+                                                            key={perm.code}
+                                                            className="flex items-start space-x-3 p-3 rounded-md bg-slate-800/40 border border-slate-700/50 hover:bg-slate-800 hover:border-slate-600 cursor-pointer transition-all group"
+                                                            onClick={() => togglePermission(perm.code)}
+                                                        >
+                                                            <Checkbox
+                                                                id={perm.code}
+                                                                checked={selectedPermissions.includes(perm.code)}
+                                                                onCheckedChange={() => togglePermission(perm.code)}
+                                                                className="mt-0.5 border-slate-500 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500"
+                                                            />
+                                                            <div className="grid gap-0.5">
+                                                                <label className="text-sm font-medium leading-none cursor-pointer text-slate-200 group-hover:text-white transition-colors">
+                                                                    {/* Format name to Title Case to fix inconsistent data */}
+                                                                    {perm.name.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                                                                </label>
+                                                                <p className="text-[10px] text-slate-500 font-mono group-hover:text-slate-400">{perm.code}</p>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </ScrollArea>
+                                        </>
+                                    ) : (
+                                        <div className="flex-1 flex items-center justify-center text-slate-500 text-sm">Select a module to view permissions</div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <DialogFooter className="mt-6">
