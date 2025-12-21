@@ -1,17 +1,12 @@
-
 import Link from 'next/link'
-import { Activity, Users, Calendar, LayoutDashboard, Settings, LogOut, Stethoscope, Receipt, Shield, Menu, Kanban, Briefcase, ChevronRight } from 'lucide-react'
+import { Activity, LogOut } from 'lucide-react'
 import { signOut } from '@/auth'
 import { getMenuItems } from '../actions/navigation'
 import { CompanySwitcher } from '@/components/company-switcher'
 import { getCurrentCompany } from '../actions/company'
 import { checkCrmLoginStatus } from '@/app/actions/crm/auth'
 import { LoginWorkflowWrapper } from '@/components/crm/login-workflow/wrapper'
-
-// Map icon strings to components
-const IconMap: any = {
-    LayoutDashboard, Users, Calendar, Stethoscope, Receipt, Settings, Shield, Kanban, Briefcase
-};
+import { SidebarMenu } from '@/components/crm/sidebar-menu'
 
 export default async function CRMLayout({
     children,
@@ -30,25 +25,7 @@ export default async function CRMLayout({
                     <CompanySwitcher initialActiveCompany={currentCompany} />
                 </div>
 
-                <nav className="flex-1 p-4 space-y-6 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-700">
-                    {menuItems.map((group: any) => (
-                        <div key={group.module.module_key}>
-                            {group.module.module_key !== 'general' && (
-                                <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-                                    {group.module.name}
-                                </h3>
-                            )}
-
-                            <ul className="space-y-1">
-                                {group.items.map((item: any) => (
-                                    <li key={item.key}>
-                                        <MenuItem item={item} />
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
-                </nav>
+                <SidebarMenu groups={menuItems} />
 
                 <div className="p-4 border-t border-slate-800 bg-slate-900">
                     <form action={async () => {
@@ -80,44 +57,5 @@ export default async function CRMLayout({
                 </div>
             </main>
         </div>
-    )
-}
-
-function MenuItem({ item, level = 0 }: { item: any, level?: number }) {
-    const Icon = IconMap[item.icon] || (level === 0 ? Activity : null);
-    const hasChildren = item.other_menu_items && item.other_menu_items.length > 0;
-
-    // Dynamic indentation class
-    const paddingLeftClass = level === 0 ? "pl-3" : level === 1 ? "pl-9" : "pl-12";
-
-    if (hasChildren) {
-        return (
-            <details className="group/item text-sm" open>
-                <summary
-                    className={`flex items-center justify-between gap-3 ${paddingLeftClass} pr-3 py-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer list-none select-none`}
-                >
-                    <div className="flex items-center gap-3">
-                        {Icon && <Icon className="h-4 w-4" />}
-                        <span className="font-medium">{item.label}</span>
-                    </div>
-                    <ChevronRight className="h-3 w-3 transition-transform group-open/item:rotate-90 text-slate-600 group-hover:text-slate-400" />
-                </summary>
-                <div className="mt-1 space-y-0.5 border-l border-slate-800 ml-5">
-                    {item.other_menu_items.map((sub: any) => (
-                        <MenuItem key={sub.key} item={sub} level={level + 1} />
-                    ))}
-                </div>
-            </details>
-        );
-    }
-
-    return (
-        <Link
-            href={item.url || '#'}
-            className={`flex items-center gap-3 ${paddingLeftClass} pr-3 py-2 text-sm text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors block decoration-0`}
-        >
-            {Icon && <Icon className="h-4 w-4" />}
-            <span className="font-medium">{item.label}</span>
-        </Link>
     )
 }
