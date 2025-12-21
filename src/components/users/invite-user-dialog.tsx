@@ -51,7 +51,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
         email: '',
         fullName: '',
         systemRole: 'user' as 'admin' | 'user',
-        roleId: 'no-role',
+        roleId: '',
     })
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -116,7 +116,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                     Invite User
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+            <DialogContent className="sm:max-w-[600px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                 <form onSubmit={handleSubmit}>
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-3 text-xl font-bold text-slate-900 dark:text-white">
@@ -235,7 +235,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                                     </Link>
                                 </div>
                                 <SearchableSelect
-                                    value={formData.roleId}
+                                    value={formData.roleId || null}
                                     placeholder="Search for a role..."
                                     defaultOptions={[
                                         { id: 'no-role', label: 'No specific role (User will have no permissions)' },
@@ -253,7 +253,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                                         }
                                         return matches
                                     }}
-                                    onChange={(val) => setFormData({ ...formData, roleId: val || 'no-role' })}
+                                    onChange={(val) => setFormData({ ...formData, roleId: val || '' })}
                                 />
                                 <p className="text-[11px] text-slate-500">
                                     You can assign multiple roles later in the user profile.
