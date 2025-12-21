@@ -179,6 +179,8 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
             url: '#',
             other_menu_items: [
                 { key: 'settings', label: 'Global Settings', icon: 'Settings', url: '/settings' },
+                { key: 'roles', label: 'Roles', icon: 'Shield', url: '/settings/roles' },
+                { key: 'permissions', label: 'Permissions', icon: 'Key', url: '/settings/permissions' },
                 { key: 'admin', label: 'Admin Panel', icon: 'Shield', url: '/admin' }
             ]
         });
