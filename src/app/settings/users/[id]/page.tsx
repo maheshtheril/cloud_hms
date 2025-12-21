@@ -1,7 +1,8 @@
 import { getUser, getHMSRoles, updateUserSystemRole, toggleUserStatus } from "@/app/actions/user"
 import HMSRoleSelector from "@/components/hms-role-selector"
 import Link from "next/link"
-import { ArrowLeft, Mail, User, Shield, Activity } from "lucide-react"
+import { ArrowLeft, Mail, User, Shield, Activity, AlertTriangle } from "lucide-react"
+import { DeleteUserButton } from "@/components/users/delete-user-button"
 import { notFound } from "next/navigation"
 
 export default async function ManageUserPage({ params }: { params: Promise<{ id: string }> }) {
@@ -104,6 +105,18 @@ export default async function ManageUserPage({ params }: { params: Promise<{ id:
                                 </button>
                             </form>
                         </div>
+                    </div>
+
+                    {/* Danger Zone */}
+                    <div className="bg-white dark:bg-slate-950 rounded-lg border border-red-200 dark:border-red-900/50 shadow-sm p-6 mt-6">
+                        <h3 className="text-lg font-semibold mb-4 text-red-600 flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5" />
+                            Danger Zone
+                        </h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+                            Permanently delete this user. This action cannot be undone and is only available for users with no associated records.
+                        </p>
+                        <DeleteUserButton userId={id} userName={user.full_name || user.email} />
                     </div>
 
                     {/* Right Column: HMS Roles */}

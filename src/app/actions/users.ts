@@ -353,3 +353,61 @@ export async function acceptInvitation(token: string, password: string) {
         return { error: 'Failed to process invitation. Please try again.' }
     }
 }
+
+/**
+ * Permanently delete user if no transactions exist
+ */
+export async function deleteUserPermanently(userId: string) {
+    const session = await auth()
+    if (!session?.user?.id || !session.user.isAdmin) {
+        return { error: "Unauthorized" }
+    }
+
+    try {
+        // 1. Transaction Check
+        const [
+            encounters,
+            appointments,
+            deals,
+            contacts
+        ] = await Promise.all([
+            prisma.hms_encounter.count({ where: { clinician_id: userId } }),
+            prisma.hms_appointments.count({ where: { clinician_id: userId } }),
+            prisma.crm_deals.count({ where: { owner_id: userId } }),
+            prisma.crm_contacts.count({ where: { owner_id: userId } }),
+        ])
+
+        const totalTransactions = encounters + appointments + deals + contacts
+
+        if (totalTransactions > 0) {
+            const details = [
+                encounters ? `${encounters} Encounters` : '',
+                appointments ? `${appointments} Appointments` : '',
+                deals ? `${deals} Deals` : '',
+                contacts ? `${contacts} Contacts` : ''
+            ].filter(Boolean).join(', ')
+
+            return {
+                error: `Cannot delete user. They have associated transactions: ${details}.`
+            }
+        }
+
+        // 2. Clean up dependencies
+        await prisma.hms_user_roles.deleteMany({ where: { user_id: userId } })
+        await prisma.user_permission.deleteMany({ where: { user_id: userId } })
+        await prisma.email_verification_tokens.deleteMany({ where: { user_id: userId } })
+
+        // 3. Delete the User
+        await prisma.app_user.delete({ where: { id: userId } })
+
+        revalidatePath('/settings/users')
+        return { success: true }
+
+    } catch (error: any) {
+        console.error("Delete user error:", error)
+        if (error.code === 'P2003') {
+            return { error: `Cannot delete user due to foreign key constraint: ${error.meta?.field_name || 'Unknown Table'}` }
+        }
+        return { error: error.message || "Failed to delete user" }
+    }
+}
