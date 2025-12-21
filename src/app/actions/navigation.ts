@@ -5,9 +5,9 @@ import { auth } from "@/auth"
 
 export async function getMenuItems() {
     const session = await auth();
-    if (!session?.user) return [];
+    // if (!session?.user) return []; 
 
-    const isAdmin = session.user.isAdmin;
+    const isAdmin = session?.user?.isAdmin;
     let industry = ''; // we can fetch this if needed
 
     try {
