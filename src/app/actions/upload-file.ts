@@ -40,29 +40,20 @@ export async function uploadFile(formData: FormData, folder: string = 'documents
         // Create unique filename
         const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
         const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, ''); // Sanitize
-        const filename = `${uniqueSuffix}-${originalName}`;
 
-        // Ensure directory exists
-        // Use process.cwd() to find project root. 
-        // NOTE: On some hosting platforms (Vercel/Render), writing to public/ at runtime might fail or be ephemeral.
-        // ideally use S3/Blob storage.
-        const uploadDir = join(process.cwd(), 'public', 'uploads', folder);
-        console.log("Upload Target Dir:", uploadDir);
+        // STRATEGY CHANGE: Use Base64 Data URI instead of File System
+        // This is more robust for serverless/container environments like Render
+        // where the filesystem might be ephemeral or read-only.
 
-        await mkdir(uploadDir, { recursive: true });
+        const base64String = buffer.toString('base64');
+        const mimeType = file.type;
+        const dataUri = `data:${mimeType};base64,${base64String}`;
 
-        const filepath = join(uploadDir, filename);
-        console.log("Writing file to:", filepath);
-
-        await writeFile(filepath, buffer);
-
-        // Return public URL and metadata
-        const url = `/uploads/${folder}/${filename}`;
-        console.log("Upload Success:", url);
+        console.log("Upload Success: Converted to Data URI");
 
         return {
             success: true,
-            url,
+            url: dataUri, // Return the Base64 string as the URL
             filename: originalName,
             size: file.size,
             type: file.type
