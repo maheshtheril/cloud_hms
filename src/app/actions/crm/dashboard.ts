@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 import { redirect } from 'next/navigation'
+import { getCurrencySymbol, getCurrencyCode } from '@/lib/currency'
 
 export async function getDashboardData() {
     const session = await auth()
@@ -17,6 +18,16 @@ export async function getDashboardData() {
 
     // @ts-ignore
     const tenantId = user.tenantId
+
+    // Get Company & Currency Settings
+    const company = await prisma.company.findFirst({
+        where: { tenant_id: tenantId },
+        include: { countries: true }
+    })
+
+    // Default to US if not found, but we should probably use the utility
+    // We import this dynamically or strictly
+    const countryCode = company?.countries?.iso2 || 'US'
 
     // 1. KPI: Total Revenue (Won Deals)
     const wonDeals = await prisma.crm_deals.findMany({
@@ -95,6 +106,8 @@ export async function getDashboardData() {
         },
         funnel: funnelData,
         activities: recentActivities,
-        hotLeads
+        hotLeads,
+        currencySymbol: getCurrencySymbol(countryCode),
+        currencyCode: getCurrencyCode(countryCode)
     }
 }

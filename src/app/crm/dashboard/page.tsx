@@ -1,7 +1,7 @@
 
 import { getDashboardData } from '@/app/actions/crm/dashboard'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Sparkles, DollarSign, Activity, Target, TrendingUp, MapPin, BrainCircuit, Zap, Crown } from 'lucide-react'
+import { Sparkles, DollarSign, Activity, Target, TrendingUp, Zap, IndianRupee, Euro, PoundSterling } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
 
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function DashboardPage() {
     const data = await getDashboardData()
-    const { kpis, funnel, activities, hotLeads } = data
+    const { kpis, funnel, activities, hotLeads, currencySymbol, currencyCode } = data
 
     return (
         <div className="min-h-screen bg-futuristic">
@@ -43,10 +43,13 @@ export default async function DashboardPage() {
                     <div className="bg-white/80 dark:bg-slate-900/80 p-6 rounded-2xl shadow-sm border border-purple-100 dark:border-purple-900/30">
                         <div className="flex items-center justify-between mb-4">
                             <p className="text-sm font-bold text-slate-700 dark:text-slate-300">Total Revenue</p>
-                            <DollarSign className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                            {currencyCode === 'INR' ? <IndianRupee className="h-5 w-5 text-purple-600 dark:text-purple-400" /> :
+                                currencyCode === 'EUR' ? <Euro className="h-5 w-5 text-purple-600 dark:text-purple-400" /> :
+                                    currencyCode === 'GBP' ? <PoundSterling className="h-5 w-5 text-purple-600 dark:text-purple-400" /> :
+                                        <DollarSign className="h-5 w-5 text-purple-600 dark:text-purple-400" />}
                         </div>
                         <div className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
-                            ${kpis.totalRevenue.toLocaleString()}
+                            {currencySymbol}{kpis.totalRevenue.toLocaleString()}
                         </div>
                         <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
                             ↑ +12% vs last month
@@ -59,7 +62,7 @@ export default async function DashboardPage() {
                             <Target className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                         </div>
                         <div className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
-                            ${kpis.pipelineValue.toLocaleString()}
+                            {currencySymbol}{kpis.pipelineValue.toLocaleString()}
                         </div>
                         <p className="text-xs text-cyan-600 dark:text-cyan-400 font-medium">
                             {kpis.activeDealsCount} active deals
