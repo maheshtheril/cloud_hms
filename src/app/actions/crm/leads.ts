@@ -177,7 +177,26 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
     const name = formData.get('name') as string;
     const email = formData.get('email') as string;
     const phone = formData.get('phone') as string;
-    const company = formData.get('company') as string;
+    const company_name = formData.get('company_name') as string; // Client Company
+    const company_id = formData.get('company_id') as string; // Branch/Location
+    const contact_name = formData.get('contact_name') as string;
+
+    // Numbers
+    const estimated_value = parseFloat(formData.get('estimated_value') as string) || 0;
+    const probability = parseFloat(formData.get('probability') as string) || 0;
+
+    // IDs
+    const pipeline_id = formData.get('pipeline_id') as string || null;
+    const stage_id = formData.get('stage_id') as string || null;
+    const source_id = formData.get('source_id') as string || null;
+
+    // Dates
+    const next_followup_date_raw = formData.get('next_followup_date') as string;
+    const next_followup_date = next_followup_date_raw ? new Date(next_followup_date_raw) : null;
+
+    // Meta
+    const ai_summary = formData.get('ai_summary') as string;
+
 
     // Basic validation
     if (!name || name.length < 2) {
@@ -188,12 +207,23 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
         await prisma.crm_leads.create({
             data: {
                 tenant_id: session.user.tenantId,
-                company_id: session.user.companyId,
-                name: name, // Lead Title
-                contact_name: name, // Person Name
+                company_id: company_id || session.user.companyId, // Use selected branch or user's default
+                name: name,
+                contact_name: contact_name || name,
                 email: email,
                 phone: phone,
-                company_name: company,
+                company_name: company_name,
+
+                estimated_value,
+                probability,
+
+                pipeline_id,
+                stage_id,
+                source_id,
+
+                next_followup_date,
+                ai_summary,
+
                 status: 'new'
             }
         });
@@ -201,6 +231,7 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
         revalidatePath('/crm/leads');
         return { success: true, message: "Lead created successfully" };
     } catch (error) {
+        console.error(error);
         return { message: "Database Error: Failed to create lead." };
     }
 }
@@ -213,12 +244,29 @@ export async function updateLead(prevState: LeadFormState, formData: FormData): 
     }
 
     const id = formData.get('id') as string;
+
     const name = formData.get('name') as string;
     const email = formData.get('email') as string;
     const phone = formData.get('phone') as string;
-    const company = formData.get('company') as string;
     const company_name = formData.get('company_name') as string;
     const contact_name = formData.get('contact_name') as string;
+
+    // Numbers
+    const estimated_value = parseFloat(formData.get('estimated_value') as string) || 0;
+    const probability = parseFloat(formData.get('probability') as string) || 0;
+
+    // IDs
+    const pipeline_id = formData.get('pipeline_id') as string || null;
+    const stage_id = formData.get('stage_id') as string || null;
+    const source_id = formData.get('source_id') as string || null;
+
+    // Dates
+    const next_followup_date_raw = formData.get('next_followup_date') as string;
+    const next_followup_date = next_followup_date_raw ? new Date(next_followup_date_raw) : null;
+
+    // Meta
+    const ai_summary = formData.get('ai_summary') as string;
+
 
     if (!id) return { message: "Missing Lead ID" };
     if (!name || name.length < 2) {
@@ -233,11 +281,22 @@ export async function updateLead(prevState: LeadFormState, formData: FormData): 
                 contact_name: contact_name || name,
                 email: email,
                 phone: phone,
-                company_name: company_name || company
+                company_name: company_name,
+
+                estimated_value,
+                probability,
+
+                pipeline_id,
+                stage_id,
+                source_id,
+
+                next_followup_date,
+                ai_summary
             }
         });
 
         revalidatePath('/crm/leads');
+        revalidatePath(`/crm/leads/${id}`); // also revalidate detail page if any
         return { success: true, message: "Lead updated successfully" };
     } catch (error) {
         console.error(error);
