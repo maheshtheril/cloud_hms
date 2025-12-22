@@ -9,6 +9,11 @@ import { getDay } from 'date-fns/getDay'
 import { enUS } from 'date-fns/locale/en-US'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import { getSchedulerEvents } from '@/app/actions/crm/scheduler'
+import { updateSchedulerEvent } from '@/app/actions/crm/scheduler-actions'
+import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
 import {
     Calendar as CalendarIcon,
     Clock,
@@ -47,6 +52,8 @@ export default function CRMCalendar() {
     const [date, setDate] = useState(new Date())
     const [selectedEvent, setSelectedEvent] = useState<any>(null)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
+    const [isEditing, setIsEditing] = useState(false)
+    const [editForm, setEditForm] = useState({ date: '', description: '' })
     const router = useRouter()
 
     const fetchEvents = useCallback(async (currentDate: Date, currentView: any) => {
@@ -65,7 +72,28 @@ export default function CRMCalendar() {
 
     const handleSelectEvent = (event: any) => {
         setSelectedEvent(event)
+        setEditForm({
+            date: format(event.start, "yyyy-MM-dd'T'HH:mm"),
+            description: event.resource.description || ''
+        })
+        setIsEditing(false)
         setIsDialogOpen(true)
+    }
+
+    const handleSave = async () => {
+        if (!selectedEvent) return
+
+        const formData = new FormData()
+        formData.append('id', selectedEvent.id)
+        formData.append('type', selectedEvent.resource.type)
+        formData.append('date', editForm.date)
+        formData.append('description', editForm.description)
+
+        const result = await updateSchedulerEvent(formData)
+        if (result?.success) {
+            fetchEvents(date, view)
+            setIsDialogOpen(false)
+        }
     }
 
     const eventStyleGetter = (event: any) => {
@@ -91,17 +119,6 @@ export default function CRMCalendar() {
         else style.background = 'linear-gradient(135deg, #64748b 0%, #475569 100%)'
 
         return { style }
-    }
-
-    const handleEditEvent = () => {
-        if (!selectedEvent) return
-
-        if (selectedEvent.resource.type === 'lead_followup') {
-            router.push(`/crm/leads/${selectedEvent.id}`)
-        } else {
-            // Future Activity Edit Logic
-        }
-        setIsDialogOpen(false)
     }
 
     return (
@@ -158,63 +175,124 @@ export default function CRMCalendar() {
                             </Badge>
                         </div>
                         <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">
-                            {selectedEvent?.title}
+                            {isEditing ? 'Modify Protocol' : selectedEvent?.title}
                         </DialogTitle>
                         <DialogDescription className="text-xs font-medium text-slate-500 pt-2">
-                            Full intelligence briefing for this synchronization event.
+                            {isEditing ? 'Update temporal alignment and neural notes.' : 'Full intelligence briefing for this synchronization event.'}
                         </DialogDescription>
                     </DialogHeader>
 
                     {selectedEvent && (
                         <div className="grid gap-6 py-4">
-                            <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-white/5">
-                                <Clock className="w-5 h-5 text-indigo-500 mt-1 shrink-0" />
-                                <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Temporal Alignment</p>
-                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                                        {format(selectedEvent.start, 'EEEE, MMM d, yyyy')}
-                                    </p>
-                                    <p className="text-xs font-medium text-slate-500">
-                                        {format(selectedEvent.start, 'h:mm a')} - {format(selectedEvent.end, 'h:mm a')}
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-white/5">
-                                <User className="w-5 h-5 text-pink-500 mt-1 shrink-0" />
-                                <div>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Entity</p>
-                                    <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                                        {selectedEvent.resource.related}
-                                    </p>
-                                    {selectedEvent.resource.subtext && (
-                                        <p className="text-xs text-slate-500 italic mt-1">{selectedEvent.resource.subtext}</p>
+                            {isEditing ? (
+                                <>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="edit-date" className="text-xs font-bold uppercase tracking-wide text-slate-500">Temporal Window</Label>
+                                        <Input
+                                            id="edit-date"
+                                            type="datetime-local"
+                                            value={editForm.date}
+                                            onChange={(e) => setEditForm({ ...editForm, date: e.target.value })}
+                                            className="bg-slate-50 dark:bg-slate-800 border-none h-12 rounded-xl"
+                                        />
+                                    </div>
+                                    {selectedEvent.resource.type !== 'lead_followup' && (
+                                        <div className="space-y-2">
+                                            <Label htmlFor="edit-desc" className="text-xs font-bold uppercase tracking-wide text-slate-500">Event Notes</Label>
+                                            <Textarea
+                                                id="edit-desc"
+                                                value={editForm.description}
+                                                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                                                className="bg-slate-50 dark:bg-slate-800 border-none min-h-[100px] rounded-xl resize-none"
+                                            />
+                                        </div>
                                     )}
-                                </div>
-                            </div>
+                                    {selectedEvent.resource.type === 'lead_followup' && (
+                                        <p className="text-[10px] text-amber-600 bg-amber-50 p-3 rounded-lg border border-amber-100 italic">
+                                            Note: Description editing is disabled for lead auto-followups.
+                                        </p>
+                                    )}
+                                </>
+                            ) : (
+                                <>
+                                    <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-white/5">
+                                        <Clock className="w-5 h-5 text-indigo-500 mt-1 shrink-0" />
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Temporal Alignment</p>
+                                            <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                                                {format(selectedEvent.start, 'EEEE, MMM d, yyyy')}
+                                            </p>
+                                            <p className="text-xs font-medium text-slate-500">
+                                                {format(selectedEvent.start, 'h:mm a')} - {format(selectedEvent.end, 'h:mm a')}
+                                            </p>
+                                        </div>
+                                    </div>
 
-                            <div className="space-y-2">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <Activity className="w-3 h-3" /> Event Notes
-                                </p>
-                                <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                                    {selectedEvent.resource.description}
-                                </div>
-                            </div>
+                                    <div className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-white/5">
+                                        <User className="w-5 h-5 text-pink-500 mt-1 shrink-0" />
+                                        <div>
+                                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Entity</p>
+                                            <p className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                                                {selectedEvent.resource.related}
+                                            </p>
+                                            {selectedEvent.resource.subtext && (
+                                                <p className="text-xs text-slate-500 italic mt-1">{selectedEvent.resource.subtext}</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                            <Activity className="w-3 h-3" /> Event Notes
+                                        </p>
+                                        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                                            {selectedEvent.resource.description}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     )}
 
                     <DialogFooter className="flex-col sm:flex-row gap-2">
-                        <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-xl font-bold uppercase tracking-wider text-[10px]">
-                            Dismiss
-                        </Button>
-                        <Button
-                            onClick={handleEditEvent}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold uppercase tracking-wider text-[10px] shadow-lg shadow-indigo-500/20"
-                        >
-                            <Edit className="w-3 h-3 mr-2" />
-                            {selectedEvent?.resource.type === 'lead_followup' ? 'View Lead Profile' : 'Edit Event'}
-                        </Button>
+                        {isEditing ? (
+                            <>
+                                <Button variant="ghost" onClick={() => setIsEditing(false)} className="rounded-xl font-bold uppercase tracking-wider text-[10px]">
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={handleSave}
+                                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold uppercase tracking-wider text-[10px] shadow-lg shadow-emerald-500/20"
+                                >
+                                    Save Changes
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-xl font-bold uppercase tracking-wider text-[10px]">
+                                    Dismiss
+                                </Button>
+                                <div className="flex gap-2 w-full sm:w-auto">
+                                    <Button
+                                        onClick={() => setIsEditing(true)}
+                                        variant="outline"
+                                        className="flex-1 sm:flex-none border-slate-200 rounded-xl font-bold uppercase tracking-wider text-[10px]"
+                                    >
+                                        <Edit className="w-3 h-3 mr-2" />
+                                        Edit
+                                    </Button>
+                                    {selectedEvent?.resource.type === 'lead_followup' && (
+                                        <Button
+                                            onClick={() => router.push(`/crm/leads/${selectedEvent.id}`)}
+                                            className="flex-1 sm:flex-none bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold uppercase tracking-wider text-[10px] shadow-lg shadow-indigo-500/20"
+                                        >
+                                            <User className="w-3 h-3 mr-2" />
+                                            Profile
+                                        </Button>
+                                    )}
+                                </div>
+                            </>
+                        )}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
