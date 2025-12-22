@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useState, useMemo } from 'react'
+import { useActionState, useState, useMemo, useEffect, useRef } from 'react'
 import { createLead, updateLead, LeadFormState } from '@/app/actions/crm/leads'
 import { PhoneInputComponent } from '@/components/ui/phone-input'
 import { Input } from '@/components/ui/input'
@@ -68,11 +68,21 @@ export function LeadForm({
     const initialState: LeadFormState = { message: '', errors: {} }
     const [state, dispatch] = useActionState(mode === 'edit' ? updateLead : createLead, initialState)
 
+    const formRef = useRef<HTMLFormElement>(null)
+
+    // Reset form on success
+    useEffect(() => {
+        if (state.success && mode === 'create') {
+            setPhone('')
+            formRef.current?.reset()
+        }
+    }, [state.success, mode])
+
 
 
 
     return (
-        <form action={dispatch} className="space-y-8 p-8 bg-white/20 dark:bg-slate-900/20 rounded-3xl backdrop-blur-md">
+        <form ref={formRef} action={dispatch} className="space-y-8 p-8 bg-white/20 dark:bg-slate-900/20 rounded-3xl backdrop-blur-md">
             {mode === 'edit' && <input type="hidden" name="id" value={initialData.id} />}
 
             {/* AI Core Interaction Section */}
@@ -299,7 +309,7 @@ export function LeadForm({
             </div>
 
             {state.message && (
-                <div role="alert" className="p-4 bg-red-50 text-red-700 rounded-md border border-red-200">
+                <div role="alert" className={`p-4 rounded-xl border font-bold text-sm ${state.success ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 'bg-rose-500/10 border-rose-500/20 text-rose-600'}`}>
                     {state.message}
                 </div>
             )}
