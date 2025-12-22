@@ -10,7 +10,7 @@ import { FileUpload } from '@/components/ui/file-upload'
 import { motion, AnimatePresence } from 'framer-motion'
 
 // Placeholder for Step 2: Mapping
-const MappingStep = ({ file, onNext, onBack }: { file: string, onNext: () => void, onBack: () => void }) => (
+const MappingStep = ({ file, rowCount, onNext, onBack }: { file: string, rowCount: number, onNext: () => void, onBack: () => void }) => (
     <div className="space-y-6">
         <div className="bg-slate-50 p-4 rounded-lg border flex items-center gap-3">
             <FileSpreadsheet className="h-8 w-8 text-green-600" />
@@ -62,7 +62,7 @@ const MappingStep = ({ file, onNext, onBack }: { file: string, onNext: () => voi
                     <CardContent className="space-y-2">
                         <div className="flex justify-between text-sm">
                             <span className="text-slate-500">Total Rows</span>
-                            <span className="font-medium">142</span>
+                            <span className="font-medium">{rowCount}</span>
                         </div>
                         <div className="flex justify-between text-sm">
                             <span className="text-slate-500">Mapped Fields</span>
@@ -82,9 +82,24 @@ const MappingStep = ({ file, onNext, onBack }: { file: string, onNext: () => voi
 export default function ImportLeadsPage() {
     const [step, setStep] = useState(1);
     const [fileUrl, setFileUrl] = useState<string | null>(null);
+    const [rowCount, setRowCount] = useState(0);
 
     const [processing, setProcessing] = useState(false);
     const [result, setResult] = useState<{ count: number, duplicates: number } | null>(null);
+
+    React.useEffect(() => {
+        if (fileUrl && fileUrl.startsWith('data:')) {
+            try {
+                const base64Data = fileUrl.split(',')[1];
+                const content = atob(base64Data);
+                const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
+                // Subtract 1 for header
+                setRowCount(lines.length > 0 ? lines.length - 1 : 0);
+            } catch (e) {
+                console.error("Failed to count rows", e);
+            }
+        }
+    }, [fileUrl]);
 
     React.useEffect(() => {
         if (step === 3 && fileUrl && !processing && !result) {
@@ -223,7 +238,7 @@ export default function ImportLeadsPage() {
                             exit={{ opacity: 0, x: 20 }}
                             className="p-6"
                         >
-                            {fileUrl && <MappingStep file="leads_import_Q4.csv" onNext={() => setStep(3)} onBack={() => setStep(1)} />}
+                            {fileUrl && <MappingStep file="leads_import_Q4.csv" rowCount={rowCount} onNext={() => setStep(3)} onBack={() => setStep(1)} />}
                         </motion.div>
                     )}
 
@@ -239,7 +254,7 @@ export default function ImportLeadsPage() {
                                 <Database className="h-10 w-10" />
                             </div>
                             <h2 className="text-2xl font-bold text-slate-900">Importing Data...</h2>
-                            <p className="text-slate-500 mt-2">Processing 142 records. Please wait.</p>
+                            <p className="text-slate-500 mt-2">Processing {rowCount} records. Please wait.</p>
                         </motion.div>
                     )}
 
