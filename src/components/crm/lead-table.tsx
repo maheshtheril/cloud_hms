@@ -59,11 +59,12 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
                 <Table>
                     <TableHeader className="bg-slate-900/5 dark:bg-white/5 border-b border-white/10">
                         <TableRow className="hover:bg-transparent border-none">
-                            <TableHead className="w-[300px] font-bold text-slate-800 dark:text-slate-200 py-5">Identities & Entity</TableHead>
+                            <TableHead className="w-[280px] font-bold text-slate-800 dark:text-slate-200 py-5">Identities & Entity</TableHead>
                             <TableHead className="font-bold text-slate-800 dark:text-slate-200">Point of Contact</TableHead>
-                            <TableHead className="font-bold text-slate-800 dark:text-slate-200">Engagement</TableHead>
+                            <TableHead className="font-bold text-slate-800 dark:text-slate-200 text-center">Assigned</TableHead>
+                            <TableHead className="font-bold text-slate-800 dark:text-slate-200">Engagement & Sync</TableHead>
                             <TableHead className="font-bold text-slate-800 dark:text-slate-200 text-right">Potential Value</TableHead>
-                            <TableHead className="font-bold text-slate-800 dark:text-slate-200">Stage</TableHead>
+                            <TableHead className="font-bold text-slate-800 dark:text-slate-200">Status & Stage</TableHead>
                             <TableHead className="font-bold text-slate-800 dark:text-slate-200">AI Score</TableHead>
                             <TableHead className="text-right pr-6 font-bold text-slate-800 dark:text-slate-200">Actions</TableHead>
                         </TableRow>
@@ -71,7 +72,7 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
                     <TableBody>
                         {data.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={7} className="h-40 text-center text-slate-500 text-lg italic">
+                                <TableCell colSpan={8} className="h-40 text-center text-slate-500 text-lg italic">
                                     No potential growth opportunities found.
                                 </TableCell>
                             </TableRow>
@@ -98,12 +99,31 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
                                             <span className="text-xs text-slate-500 dark:text-slate-400 font-mono tracking-tighter opacity-70">{lead.email}</span>
                                         </div>
                                     </TableCell>
+                                    <TableCell className="text-center">
+                                        <div className="flex flex-col items-center">
+                                            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-[10px] font-black text-indigo-600 uppercase">
+                                                {lead.owner?.name?.substring(0, 2) || lead.owner?.email?.substring(0, 2) || '?'}
+                                            </div>
+                                            <span className="text-[9px] mt-1 font-bold text-slate-500 uppercase tracking-tighter max-w-[80px] truncate">
+                                                {lead.owner?.name || 'Unassigned'}
+                                            </span>
+                                        </div>
+                                    </TableCell>
                                     <TableCell>
                                         <div className="flex flex-col gap-1">
-                                            <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{lead.phone || '-'}</span>
-                                            <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium uppercase">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                                Active {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}
+                                            {lead.next_followup_date ? (
+                                                <div className="flex flex-col">
+                                                    <span className="text-[10px] font-bold uppercase text-amber-500 tracking-tighter">Next Engagement</span>
+                                                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                                        {formatDistanceToNow(new Date(lead.next_followup_date), { addSuffix: true })}
+                                                    </span>
+                                                </div>
+                                            ) : (
+                                                <span className="text-sm text-slate-400 italic">No sync slated</span>
+                                            )}
+                                            <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium uppercase mt-1">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-60" />
+                                                Created {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}
                                             </div>
                                         </div>
                                     </TableCell>

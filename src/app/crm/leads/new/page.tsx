@@ -2,7 +2,7 @@ import { LeadForm } from '@/components/crm/lead-form'
 import { Sparkles } from 'lucide-react'
 
 import { getCustomFieldDefinitions } from '@/app/actions/crm/custom-fields'
-import { getPipelines, getSources, getCompanies } from '@/app/actions/crm/masters'
+import { getPipelines, getSources, getCompanies, getCRMUsers } from '@/app/actions/crm/masters'
 import { getCompanyDefaultCurrency, getSupportedCurrencies } from '@/app/actions/currency'
 
 export default async function NewLeadPage() {
@@ -19,6 +19,7 @@ export default async function NewLeadPage() {
     const companies = await getCompanies()
     const defaultCurrency = await getCompanyDefaultCurrency()
     const supportedCurrencies = await getSupportedCurrencies()
+    const users = await getCRMUsers()
 
     return (
         <div className="min-h-screen bg-futuristic">
@@ -50,6 +51,7 @@ export default async function NewLeadPage() {
                         companies={companies}
                         defaultCurrency={defaultCurrency}
                         supportedCurrencies={supportedCurrencies}
+                        users={users}
                     />
                 </div>
             </div>

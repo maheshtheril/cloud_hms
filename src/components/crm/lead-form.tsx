@@ -22,7 +22,8 @@ export function LeadForm({
     initialData = null,
     mode = 'create',
     defaultCurrency,
-    supportedCurrencies = []
+    supportedCurrencies = [],
+    users = []
 }: {
     customFields?: CustomFieldDefinition[],
     pipelines?: any[],
@@ -31,7 +32,8 @@ export function LeadForm({
     initialData?: any,
     mode?: 'create' | 'edit',
     defaultCurrency?: CurrencyInfo,
-    supportedCurrencies?: CurrencyInfo[]
+    supportedCurrencies?: CurrencyInfo[],
+    users?: any[]
 }) {
     const [currency, setCurrency] = useState(initialData?.currency || defaultCurrency?.code || 'USD')
     const currentCurrencySymbol = supportedCurrencies.find(c => c.code === currency)?.symbol || defaultCurrency?.symbol || '$'
@@ -134,6 +136,19 @@ export function LeadForm({
                                 <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Signal Endpoint (Email)</Label>
                                 <Input id="email" name="email" type="email" placeholder="email@address.com" defaultValue={initialData?.email} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-mono text-sm" />
                             </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="owner_id" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Assigned Growth Rep / Owner</Label>
+                            <select
+                                id="owner_id"
+                                name="owner_id"
+                                defaultValue={initialData?.owner_id}
+                                className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm focus:border-indigo-500 transition-all outline-none font-bold text-indigo-600"
+                            >
+                                <option value="">Auto-Assign (Me)</option>
+                                {users.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
+                            </select>
                         </div>
 
                         <div className="space-y-2">

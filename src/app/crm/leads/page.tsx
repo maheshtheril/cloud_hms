@@ -10,7 +10,7 @@ import { SearchLeads } from '@/components/crm/search-leads'
 
 import { getCompanyDefaultCurrency } from '@/app/actions/currency'
 
-import { getSources } from '@/app/actions/crm/masters'
+import { getSources, getCRMUsers } from '@/app/actions/crm/masters'
 import { FilterLeads } from '@/components/crm/filter-leads'
 
 export const dynamic = 'force-dynamic'
@@ -22,6 +22,9 @@ interface PageProps {
         q?: string
         status?: string
         source_id?: string
+        owner_id?: string
+        from?: string
+        to?: string
         is_hot?: string
     }
 }
@@ -37,6 +40,9 @@ export default async function LeadsPage(props: PageProps) {
     const query = searchParams?.q || ''
     const status = searchParams?.status
     const sourceId = searchParams?.source_id
+    const ownerId = searchParams?.owner_id
+    const fromDate = searchParams?.from
+    const toDate = searchParams?.to
     const isHot = searchParams?.is_hot === 'true'
     const skip = (page - 1) * limit
 
@@ -45,7 +51,14 @@ export default async function LeadsPage(props: PageProps) {
         deleted_at: null,
         ...(status ? { status } : {}),
         ...(sourceId ? { source_id: sourceId } : {}),
+        ...(ownerId ? { owner_id: ownerId } : {}),
         ...(isHot ? { is_hot: true } : {}),
+        ...((fromDate || toDate) ? {
+            created_at: {
+                ...(fromDate ? { gte: new Date(fromDate) } : {}),
+                ...(toDate ? { lte: new Date(new Date(toDate).setHours(23, 59, 59, 999)) } : {}),
+            }
+        } : {}),
         ...(query ? {
             OR: [
                 { name: { contains: query, mode: 'insensitive' } },
@@ -57,13 +70,18 @@ export default async function LeadsPage(props: PageProps) {
     }
 
     // Parallel data fetching for performance
-    const [leads, totalCount, stats, sources] = await Promise.all([
+    const [leads, totalCount, stats, sources, users] = await Promise.all([
         prisma.crm_leads.findMany({
             where,
             take: limit,
             skip: skip,
             orderBy: { created_at: 'desc' },
-            include: { stage: true }
+            include: {
+                stage: true,
+                owner: {
+                    select: { id: true, name: true, email: true }
+                }
+            }
         }),
         prisma.crm_leads.count({
             where
@@ -77,7 +95,8 @@ export default async function LeadsPage(props: PageProps) {
                 estimated_value: true
             }
         }),
-        getSources()
+        getSources(),
+        getCRMUsers()
     ])
 
     const hotLeadsCount = await prisma.crm_leads.count({
@@ -113,7 +132,7 @@ export default async function LeadsPage(props: PageProps) {
                             <SearchLeads defaultValue={query} />
                         </div>
                         <div className="flex gap-2">
-                            <FilterLeads sources={sources} />
+                            <FilterLeads sources={sources} users={users} />
                             <Link href="/crm/leads/new">
                                 <Button className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-lg border-none px-6 rounded-xl">
                                     <Plus className="w-4 h-4 mr-2" />

@@ -196,6 +196,7 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
 
     // Meta
     const ai_summary = formData.get('ai_summary') as string;
+    const owner_id = formData.get('owner_id') as string || session.user.id;
 
 
     // Basic validation
@@ -223,7 +224,7 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
 
                 next_followup_date,
                 ai_summary,
-
+                owner_id: owner_id || null,
                 status: 'new'
             }
         });
@@ -266,6 +267,7 @@ export async function updateLead(prevState: LeadFormState, formData: FormData): 
 
     // Meta
     const ai_summary = formData.get('ai_summary') as string;
+    const owner_id = formData.get('owner_id') as string;
 
 
     if (!id) return { message: "Missing Lead ID" };
@@ -291,7 +293,8 @@ export async function updateLead(prevState: LeadFormState, formData: FormData): 
                 source_id,
 
                 next_followup_date,
-                ai_summary
+                ai_summary,
+                owner_id: owner_id || undefined
             }
         });
 

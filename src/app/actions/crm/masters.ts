@@ -363,3 +363,15 @@ export async function deleteContactRole(id: string) {
         return { error: "Failed to delete contact role" }
     }
 }
+// --- USERS ---
+
+export async function getCRMUsers() {
+    const session = await auth()
+    if (!session?.user?.tenantId) return []
+
+    return prisma.app_user.findMany({
+        where: { tenant_id: session.user.tenantId, is_active: true },
+        select: { id: true, name: true, email: true },
+        orderBy: { name: 'asc' }
+    })
+}

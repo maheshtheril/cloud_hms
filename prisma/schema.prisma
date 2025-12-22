@@ -217,6 +217,7 @@ model app_user {
   email_verification_tokens email_verification_tokens[]
   hms_user_roles            hms_user_roles[]
   user_permission           user_permission[]
+  leads                     crm_leads[]
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -3240,6 +3241,7 @@ model crm_leads {
   pipeline           crm_pipelines?   @relation(fields: [pipeline_id], references: [id])
   source             crm_sources?     @relation(fields: [source_id], references: [id])
   stage              crm_stages?      @relation(fields: [stage_id], references: [id])
+  owner              app_user?        @relation(fields: [owner_id], references: [id])
 
   @@index([tenant_id, status])
   @@index([next_followup_date])
