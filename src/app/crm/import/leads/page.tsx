@@ -83,6 +83,15 @@ export default function ImportLeadsPage() {
     const [step, setStep] = useState(1);
     const [fileUrl, setFileUrl] = useState<string | null>(null);
 
+    React.useEffect(() => {
+        if (step === 3) {
+            const timer = setTimeout(() => {
+                setStep(4);
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [step]);
+
     return (
         <div className="container mx-auto p-8 max-w-5xl space-y-8">
             <header>
@@ -203,6 +212,29 @@ export default function ImportLeadsPage() {
                             </div>
                             <h2 className="text-2xl font-bold text-slate-900">Importing Data...</h2>
                             <p className="text-slate-500 mt-2">Processing 142 records. Please wait.</p>
+                        </motion.div>
+                    )}
+
+                    {step === 4 && (
+                        <motion.div
+                            key="step4"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="p-12 text-center"
+                        >
+                            <div className="h-20 w-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                                <CheckCircle2 className="h-10 w-10" />
+                            </div>
+                            <h2 className="text-2xl font-bold text-slate-900">Import Successful!</h2>
+                            <p className="text-slate-500 mt-2 mb-8">
+                                142 leads have been successfully imported into your CRM.
+                            </p>
+                            <div className="flex items-center justify-center gap-4">
+                                <Button variant="outline" onClick={() => setStep(1)}>Import Another File</Button>
+                                <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => window.location.href = '/crm/leads'}>
+                                    View Leads
+                                </Button>
+                            </div>
                         </motion.div>
                     )}
                 </AnimatePresence>
