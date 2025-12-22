@@ -196,3 +196,60 @@ export async function deleteSource(id: string) {
         return { error: "Failed to delete source" }
     }
 }
+
+// --- INDUSTRIES ---
+
+export async function getIndustries() {
+    const session = await auth()
+    if (!session?.user?.tenantId) return []
+
+    return prisma.lead_industry.findMany({
+        where: { tenant_id: session.user.tenantId, deleted_at: null },
+        orderBy: { name: 'asc' }
+    })
+}
+
+export async function upsertIndustry(data: { id?: string, name: string, description?: string }) {
+    const session = await auth()
+    if (!session?.user?.tenantId) return { error: "Unauthorized" }
+
+    try {
+        if (data.id) {
+            await prisma.lead_industry.update({
+                where: { id: data.id, tenant_id: session.user.tenantId },
+                data: { name: data.name, description: data.description }
+            })
+        } else {
+            await prisma.lead_industry.create({
+                data: {
+                    tenant_id: session.user.tenantId,
+                    name: data.name,
+                    description: data.description,
+                    is_active: true
+                }
+            })
+        }
+        revalidatePath('/settings/crm')
+        revalidatePath('/crm/leads/new')
+        return { success: true }
+    } catch (e) {
+        return { error: "Failed to save industry" }
+    }
+}
+
+export async function deleteIndustry(id: string) {
+    const session = await auth()
+    if (!session?.user?.tenantId) return { error: "Unauthorized" }
+
+    try {
+        await prisma.lead_industry.update({
+            where: { id, tenant_id: session.user.tenantId },
+            data: { deleted_at: new Date() }
+        })
+        revalidatePath('/settings/crm')
+        revalidatePath('/crm/leads/new')
+        return { success: true }
+    } catch (e) {
+        return { error: "Failed to delete industry" }
+    }
+}
