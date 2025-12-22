@@ -160,7 +160,8 @@ export async function getMenuItems() {
                         { key: 'roles', label: 'Roles', icon: 'Shield', url: '/settings/roles' },
                         { key: 'permissions', label: 'Permissions', icon: 'Key', url: '/settings/permissions' },
                         { key: 'crm-masters', label: 'CRM Masters', icon: 'Database', url: '/settings/crm' },
-                        { key: 'custom-fields', label: 'Custom Fields', icon: 'FileText', url: '/settings/custom-fields' }
+                        { key: 'custom-fields', label: 'Custom Fields', icon: 'FileText', url: '/settings/custom-fields' },
+                        { key: 'import-leads', label: 'Import Leads', icon: 'UploadCloud', url: '/crm/import/leads' }
                     ]
                 });
             }
