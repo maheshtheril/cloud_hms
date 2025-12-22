@@ -38,7 +38,7 @@ interface Props {
 
 export default async function LeadDetailPage(props: Props) {
     const params = await props.params
-    const lead = await getLead(params.id)
+    const lead = await getLead(params.id) as any
 
     if (!lead) return notFound()
 

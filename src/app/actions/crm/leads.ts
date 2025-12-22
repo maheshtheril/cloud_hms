@@ -180,6 +180,7 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
     const company_name = formData.get('company_name') as string; // Client Company
     const company_id = formData.get('company_id') as string; // Branch/Location
     const contact_name = formData.get('contact_name') as string;
+    const currency = formData.get('currency') as string || 'INR';
 
     // Numbers
     const estimated_value = parseFloat(formData.get('estimated_value') as string) || 0;
@@ -225,8 +226,9 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
                 next_followup_date,
                 ai_summary,
                 owner_id: owner_id || null,
+                currency: currency,
                 status: 'new'
-            }
+            } as any
         });
 
         revalidatePath('/crm/leads');
@@ -251,6 +253,7 @@ export async function updateLead(prevState: LeadFormState, formData: FormData): 
     const phone = formData.get('phone') as string;
     const company_name = formData.get('company_name') as string;
     const contact_name = formData.get('contact_name') as string;
+    const currency = formData.get('currency') as string || 'INR';
 
     // Numbers
     const estimated_value = parseFloat(formData.get('estimated_value') as string) || 0;
@@ -294,8 +297,9 @@ export async function updateLead(prevState: LeadFormState, formData: FormData): 
 
                 next_followup_date,
                 ai_summary,
-                owner_id: owner_id || undefined
-            }
+                owner_id: owner_id || undefined,
+                currency: currency
+            } as any
         });
 
         revalidatePath('/crm/leads');
@@ -344,6 +348,6 @@ export async function getLead(id: string) {
             owner: {
                 select: { id: true, name: true, email: true }
             }
-        }
+        } as any
     })
 }
