@@ -83,14 +83,42 @@ export default function ImportLeadsPage() {
     const [step, setStep] = useState(1);
     const [fileUrl, setFileUrl] = useState<string | null>(null);
 
+    const [processing, setProcessing] = useState(false);
+    const [result, setResult] = useState<{ count: number, duplicates: number } | null>(null);
+
     React.useEffect(() => {
-        if (step === 3) {
-            const timer = setTimeout(() => {
-                setStep(4);
-            }, 2000);
-            return () => clearTimeout(timer);
+        if (step === 3 && fileUrl && !processing && !result) {
+            const processImport = async () => {
+                setProcessing(true);
+                try {
+                    // Create FormData with the actual file uploaded.
+                    // Since fileUrl is a data URI, we append it directly.
+                    // The server action now supports base64 data URI strings.
+                    const formData = new FormData();
+                    formData.append('file', fileUrl);
+
+                    const { importLeads } = await import('@/app/actions/crm/leads');
+                    const res = await importLeads(formData);
+
+                    if (res.error) {
+                        alert("Import Error: " + res.error);
+                        setStep(1); // Reset on error
+                    } else if (res.success) {
+                        setResult({ count: res.count, duplicates: res.duplicates || 0 });
+                        setStep(4);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    alert("Import failed unexpectedly.");
+                    setStep(1);
+                } finally {
+                    setProcessing(false);
+                }
+            };
+
+            processImport();
         }
-    }, [step]);
+    }, [step, fileUrl]);
 
     return (
         <div className="container mx-auto p-8 max-w-5xl space-y-8">
@@ -227,7 +255,8 @@ export default function ImportLeadsPage() {
                             </div>
                             <h2 className="text-2xl font-bold text-slate-900">Import Successful!</h2>
                             <p className="text-slate-500 mt-2 mb-8">
-                                142 leads have been successfully imported into your CRM.
+                                <span className="font-semibold text-green-600">{result?.count}</span> leads have been successfully imported.
+                                {result?.duplicates! > 0 && <span className="block text-amber-500 text-sm mt-1">{result?.duplicates} duplicates skipped.</span>}
                             </p>
                             <div className="flex items-center justify-center gap-4">
                                 <Button variant="outline" onClick={() => setStep(1)}>Import Another File</Button>

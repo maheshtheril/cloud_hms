@@ -1,114 +1,141 @@
 'use server'
 
-import { z } from 'zod'
+import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
-import { redirect } from 'next/navigation'
-import { auth } from '@/auth' // Fixed import
-import { processCustomFields } from './custom-fields'
 
-const leadSchema = z.object({
-    name: z.string().min(1, 'Lead name is required'),
-    company_name: z.string().optional(),
-    company_id: z.string().optional(), // Internal Company/Branch
-    contact_name: z.string().optional(),
-    email: z.string().email().optional().or(z.literal('')),
-    phone: z.string().optional(),
-
-    pipeline_id: z.string().optional(),
-    stage_id: z.string().optional(),
-    source_id: z.string().optional(),
-
-    estimated_value: z.coerce.number().optional(),
-    probability: z.coerce.number().optional(),
-    status: z.string().default('new'),
-
-    // Futuristic Fields
-    lead_score: z.coerce.number().optional(),
-    ai_summary: z.string().optional(),
-    is_hot: z.boolean().optional(),
-
-    next_followup_date: z.string().optional(), // Date string from form
-})
-
-export type LeadFormState = {
-    errors?: {
-        [K in keyof z.infer<typeof leadSchema>]?: string[]
-    }
-    message?: string
-}
-
-export async function createLead(prevState: LeadFormState, formData: FormData): Promise<LeadFormState> {
-    const session = await auth()
-    const user = session?.user
-
-    // Ensure consistency with masters.ts (tenantId vs tenant_id). Using tenantId based on masters.ts
-    // Check if user object has tenantId or tenant_id. NextAuth usually puts it in user.
-    // If previous code in this file used user.tenantId, and masters used tenantId...
-    // I will use session.user.tenantId as per masters.ts which I believe is more recent/correct for this project 
-    // or type check user.
-    const tenantId = user?.tenantId || (user as any)?.tenant_id
-
-    if (!user || !tenantId) {
-        return { message: 'Unauthorized' }
-    }
-
-    const validatedFields = leadSchema.safeParse(Object.fromEntries(formData.entries()))
-
-    if (!validatedFields.success) {
-        return {
-            errors: validatedFields.error.flatten().fieldErrors,
-            message: 'Missing Fields. Failed to Create Lead.',
-        }
-    }
-
-    const {
-        name, company_name, company_id, contact_name, email, phone,
-        pipeline_id, stage_id, source_id,
-        estimated_value, probability, status,
-        lead_score, ai_summary, is_hot,
-        next_followup_date
-    } = validatedFields.data
-
+export async function importLeads(formData: FormData) {
     try {
-        // Auto-calculate score if not provided (Fake AI for now)
-        const calculatedScore = lead_score || (estimated_value && estimated_value > 10000 ? 80 : 40)
-        const autoSummary = ai_summary || `AI: Lead created manually. High value prospect.`
-        const hotStatus = is_hot || (calculatedScore > 75)
+        console.log("Importing leads...")
+        const session = await auth();
 
-        const newLead = await prisma.crm_leads.create({
-            data: {
-                tenant_id: tenantId,
-                company_id: company_id || null, // Create relation if company_id provided
-                owner_id: user.id, // Assign to creator by default
-                name,
-                company_name,
-                contact_name,
-                email: email || null,
-                phone,
-                pipeline_id: pipeline_id || undefined,
-                stage_id: stage_id || undefined,
-                source_id: source_id || undefined,
-                estimated_value: estimated_value || 0,
-                probability: probability || 0,
-                status,
-                lead_score: calculatedScore,
-                ai_summary: autoSummary,
-                is_hot: hotStatus,
-                next_followup_date: next_followup_date ? new Date(next_followup_date) : undefined
-            },
-        })
-
-        // Process Custom Fields
-        await processCustomFields(formData, user.tenantId, newLead.id, 'lead')
-
-    } catch (error) {
-        console.error('Database Error:', error)
-        return {
-            message: 'Database Error: Failed to Create Lead.',
+        if (!session?.user?.id || !session?.user.tenantId) {
+            console.error("No session found")
+            return { error: 'Unauthorized' }
         }
-    }
 
-    revalidatePath('/crm/leads')
-    redirect('/crm/leads')
+        const file = formData.get('file');
+
+        // Check if file is a File object (standard upload) or a Data URI string (base64)
+        // If it's just a string data uri from the client component, we need to extract the base64 part
+        let content = '';
+
+        if (typeof file === 'string' && file.startsWith('data:')) {
+            // It's a Data URI
+            const base64Data = file.split(',')[1];
+            const buffer = Buffer.from(base64Data, 'base64');
+            content = buffer.toString('utf-8');
+        } else if (file instanceof File) {
+            const buffer = Buffer.from(await file.arrayBuffer());
+            content = buffer.toString('utf-8');
+        } else {
+            return { error: 'Invalid file format' };
+        }
+
+        if (!content) {
+            return { error: 'Empty file content' };
+        }
+
+        // Simple CSV Parser (assuming standard CSV format)
+        // Split by lines, then by comma. 
+        // Handle basic cleaning.
+        const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
+
+        if (lines.length < 2) {
+            console.log("Not enough lines:", lines.length);
+            return { error: 'CSV file must have a header and at least one data row.' };
+        }
+
+        const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+        const dataRows = lines.slice(1);
+
+        console.log("Headers found:", headers);
+
+        let successCount = 0;
+        let diffCount = 0; // if existing lead found
+
+        for (const row of dataRows) {
+            const columns = row.split(',').map(c => c.trim());
+
+            // Map columns based on index if header matches known fields
+            // Mapping: ['first name', 'last name', 'email', 'phone', 'company', 'title', 'lead source', 'status']
+
+            const leadData: any = {};
+
+            // Helper to safely get value by header name
+            const getVal = (headerName: string) => {
+                const index = headers.indexOf(headerName.toLowerCase());
+                return index !== -1 ? columns[index] : null;
+            }
+
+            const firstName = getVal('first name') || '';
+            const lastName = getVal('last name') || '';
+
+            leadData.name = `${firstName} ${lastName}`.trim();
+            if (!leadData.name) leadData.name = 'Unknown Lead';
+
+            leadData.primary_email = getVal('email');
+            leadData.primary_phone = getVal('phone');
+            leadData.stage = 'new'; // default
+            leadData.status = getVal('status')?.toLowerCase() || 'new';
+
+            // Extract company from current session if not specified, 
+            // but usually we rely on tenant_id for scoping.
+            // company_id is optional in schema?
+
+            const companyName = getVal('company');
+            if (companyName) {
+                leadData.custom_data = { company_name: companyName, title: getVal('title') };
+            }
+
+            // Basic Upsert by Email to prevent duplicates
+            if (leadData.primary_email) {
+                console.log("Processing lead:", leadData.primary_email);
+
+                // Check if exists
+                const existing = await prisma.lead.findFirst({
+                    where: {
+                        tenant_id: session.user.tenantId,
+                        primary_email: leadData.primary_email
+                    }
+                });
+
+                if (existing) {
+                    // update? skip for now or maybe update status
+                    diffCount++;
+                } else {
+                    await prisma.lead.create({
+                        data: {
+                            tenant_id: session.user.tenantId,
+                            company_id: session.user.companyId, // Link to current company context
+                            name: leadData.name,
+                            primary_email: leadData.primary_email,
+                            primary_phone: leadData.primary_phone,
+                            status: leadData.status,
+                            custom_data: leadData.custom_data || {},
+                            meta: {
+                                source: 'import_csv',
+                                import_date: new Date().toISOString()
+                            }
+                        }
+                    });
+                    successCount++;
+                }
+            } else {
+                console.log("Skipping row without email");
+            }
+        }
+
+        revalidatePath('/crm/leads');
+
+        return {
+            success: true,
+            count: successCount,
+            duplicates: diffCount
+        };
+
+    } catch (error: any) {
+        console.error("Import error:", error);
+        return { error: error.message };
+    }
 }
