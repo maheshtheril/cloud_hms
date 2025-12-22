@@ -23,10 +23,19 @@ export async function uploadFile(formData: FormData, folder: string = 'documents
 
         console.log("Upload File Received:", file.name, file.type, file.size);
 
-        // Validate file type (PDF or Image)
-        const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+        // Validate file type (PDF, Image, CSV, Excel)
+        const validTypes = [
+            'application/pdf',
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'text/csv',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        ];
         if (!validTypes.includes(file.type)) {
-            return { error: "Invalid file type. Only PDF, JPG, PNG, and WebP are allowed." };
+            console.error("Invalid file type:", file.type);
+            return { error: "Invalid file type. Allowed: PDF, Images, CSV, Excel." };
         }
 
         // Validate size (e.g. 10MB)
