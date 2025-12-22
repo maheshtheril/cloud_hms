@@ -5,47 +5,60 @@ import { join } from 'path'
 import { auth } from '@/auth'
 
 export async function uploadFile(formData: FormData, folder: string = 'documents') {
-    const session = await auth();
-    if (!session?.user?.companyId) {
-        return { error: "Unauthorized" };
-    }
-
-    const file = formData.get('file') as File;
-    if (!file) {
-        return { error: "No file uploaded" };
-    }
-
-    // Validate file type (PDF or Image)
-    const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-        return { error: "Invalid file type. Only PDF, JPG, PNG, and WebP are allowed." };
-    }
-
-    // Validate size (e.g. 10MB)
-    if (file.size > 10 * 1024 * 1024) {
-        return { error: "File size must be less than 10MB" };
-    }
-
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Create unique filename
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, ''); // Sanitize
-    const filename = `${uniqueSuffix}-${originalName}`;
-
-    // Ensure directory exists
-    // public/uploads/[folder]
-    const uploadDir = join(process.cwd(), 'public', 'uploads', folder);
-
+    // Wrap EVERYTHING in try-catch to prevent 500s from crashing the client
     try {
+        console.log("Upload Action Started");
+        const session = await auth();
+        console.log("Upload Auth Session:", session?.user?.id);
+
+        if (!session?.user?.companyId) {
+            console.error("Upload Unauthorized: No companyId");
+            return { error: "Unauthorized" };
+        }
+
+        const file = formData.get('file') as File;
+        if (!file) {
+            return { error: "No file uploaded" };
+        }
+
+        console.log("Upload File Received:", file.name, file.type, file.size);
+
+        // Validate file type (PDF or Image)
+        const validTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+        if (!validTypes.includes(file.type)) {
+            return { error: "Invalid file type. Only PDF, JPG, PNG, and WebP are allowed." };
+        }
+
+        // Validate size (e.g. 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+            return { error: "File size must be less than 10MB" };
+        }
+
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        // Create unique filename
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
+        const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, ''); // Sanitize
+        const filename = `${uniqueSuffix}-${originalName}`;
+
+        // Ensure directory exists
+        // Use process.cwd() to find project root. 
+        // NOTE: On some hosting platforms (Vercel/Render), writing to public/ at runtime might fail or be ephemeral.
+        // ideally use S3/Blob storage.
+        const uploadDir = join(process.cwd(), 'public', 'uploads', folder);
+        console.log("Upload Target Dir:", uploadDir);
+
         await mkdir(uploadDir, { recursive: true });
 
         const filepath = join(uploadDir, filename);
+        console.log("Writing file to:", filepath);
+
         await writeFile(filepath, buffer);
 
         // Return public URL and metadata
         const url = `/uploads/${folder}/${filename}`;
+        console.log("Upload Success:", url);
 
         return {
             success: true,
@@ -55,8 +68,8 @@ export async function uploadFile(formData: FormData, folder: string = 'documents
             type: file.type
         };
 
-    } catch (error) {
-        console.error("Upload error:", error);
-        return { error: "Failed to save file" };
+    } catch (error: any) {
+        console.error("Upload Fatal Error:", error);
+        return { error: `Upload failed: ${error.message}` };
     }
 }
