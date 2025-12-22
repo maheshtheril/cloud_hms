@@ -36,13 +36,16 @@ export async function importLeads(formData: FormData) {
             return { error: 'Empty file content' };
         }
 
-        // Simple CSV Parser (assuming standard CSV format)
-        // Split by lines, then by comma. 
-        // Handle basic cleaning.
+        // Simple CSV Parser
+        // Handle split by new lines
         const lines = content.split(/\r?\n/).filter(line => line.trim() !== '');
 
         if (lines.length < 2) {
-            console.log("Not enough lines:", lines.length);
+            console.log("Only found " + lines.length + " lines.");
+            // If ONLY header exists, it returns 0 count success.
+            if (lines.length === 1) {
+                return { error: 'CSV file contains only a header row. Please add data.' };
+            }
             return { error: 'CSV file must have a header and at least one data row.' };
         }
 
