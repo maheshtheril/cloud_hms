@@ -2511,9 +2511,9 @@ model lead {
   profession_name    String?
   industry_id        String?                  @db.Uuid
 
+
   @@index([industry_id], map: "idx_lead_industry_id")
   @@index([profession_id], map: "idx_lead_profession_id")
-  @@ignore
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
