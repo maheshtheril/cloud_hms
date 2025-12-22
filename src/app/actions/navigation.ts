@@ -130,11 +130,12 @@ export async function getMenuItems() {
 
         // Filter groups
         Object.keys(grouped).forEach(key => {
-            // Filter restricted items AND Explicitly remove "Global Settings" or "Settings" if coming from DB
+            // Filter restricted items AND Explicitly remove "Global Settings", "Settings", or "Custom Fields" if coming from DB
             // to avoid duplicates or unwanted legacy items, as we inject Configuration manually if needed.
             grouped[key].items = filterRestricted(grouped[key].items).filter(item =>
                 item.label !== 'Global Settings' &&
                 item.label !== 'Settings' &&
+                item.label !== 'Custom Fields' &&
                 item.url !== '/settings'
             );
         });
@@ -158,7 +159,8 @@ export async function getMenuItems() {
                         { key: 'users', label: 'Users', icon: 'Users', url: '/settings/users' },
                         { key: 'roles', label: 'Roles', icon: 'Shield', url: '/settings/roles' },
                         { key: 'permissions', label: 'Permissions', icon: 'Key', url: '/settings/permissions' },
-                        { key: 'crm-masters', label: 'CRM Masters', icon: 'Database', url: '/settings/crm' }
+                        { key: 'crm-masters', label: 'CRM Masters', icon: 'Database', url: '/settings/crm' },
+                        { key: 'custom-fields', label: 'Custom Fields', icon: 'FileText', url: '/settings/custom-fields' }
                     ]
                 });
             }
