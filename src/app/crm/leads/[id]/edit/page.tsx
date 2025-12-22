@@ -45,27 +45,38 @@ export default async function EditLeadPage(props: Props) {
     const companies = await getCompanies()
 
     return (
-        <div className="container mx-auto py-8 max-w-4xl">
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
-                        Edit Lead
-                        <Sparkles className="h-6 w-6 text-purple-600" />
-                    </h1>
-                    <p className="text-gray-500 mt-2">
-                        Update lead details and status.
-                    </p>
-                </div>
+        <div className="min-h-screen bg-futuristic">
+            {/* Animated Background Effects */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-0 -left-4 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
+                <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
+                <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
             </div>
 
-            <LeadForm
-                mode="edit"
-                initialData={lead}
-                customFields={customFields}
-                pipelines={pipelines}
-                sources={sources}
-                companies={companies}
-            />
+            <div className="relative container mx-auto py-12 max-w-5xl">
+                <div className="flex items-center justify-between mb-10">
+                    <div>
+                        <h1 className="text-4xl font-bold tracking-tight text-gradient-primary flex items-center gap-2">
+                            Refine Signal
+                            <Sparkles className="h-8 w-8 text-indigo-600 animate-pulse" />
+                        </h1>
+                        <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">
+                            Updating parameters for Lead: <span className="font-bold text-slate-900 dark:text-white">{lead.name}</span>
+                        </p>
+                    </div>
+                </div>
+
+                <div className="glass-card bg-white/40 dark:bg-slate-900/40 p-1 rounded-3xl border border-white/20 shadow-2xl backdrop-blur-xl">
+                    <LeadForm
+                        mode="edit"
+                        initialData={lead}
+                        customFields={customFields}
+                        pipelines={pipelines}
+                        sources={sources}
+                        companies={companies}
+                    />
+                </div>
+            </div>
         </div>
     )
 }

@@ -70,170 +70,160 @@ export function LeadForm({
 
 
     return (
-        <form action={dispatch} className="space-y-6">
+        <form action={dispatch} className="space-y-8 p-8 bg-white/20 dark:bg-slate-900/20 rounded-3xl backdrop-blur-md">
             {mode === 'edit' && <input type="hidden" name="id" value={initialData.id} />}
 
-            {/* AI Header Section */}
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-100 mb-6">
-                <div className="flex items-center gap-2 text-indigo-700 font-semibold mb-2">
-                    <Sparkles className="w-5 h-5" />
-                    <span>AI Prediction Enabled</span>
+            {/* AI Core Interaction Section */}
+            <div className="relative group overflow-hidden bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 p-8 rounded-2xl border border-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.1)] transition-all duration-500 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)]">
+                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <Sparkles className="w-24 h-24 text-indigo-400" />
                 </div>
-                <p className="text-sm text-indigo-600">
-                    Fill in the details below. Our AI will automatically score this lead and generate a summary once created.
+                <div className="relative flex items-center gap-4 text-indigo-600 dark:text-indigo-400 font-black mb-3 text-lg uppercase tracking-tighter">
+                    <div className="p-2 rounded-lg bg-indigo-500/20 animate-pulse">
+                        <Sparkles className="w-6 h-6" />
+                    </div>
+                    <span>AI-Driven Opportunity Analysis</span>
+                </div>
+                <p className="relative text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
+                    Integrating this signal into the hive mind. Our proprietary algorithms will quantify growth potential and automate engagement summaries upon synchronization.
                 </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Lead Details</CardTitle>
-                        <CardDescription>Basic contact information</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Identity & Origin Card */}
+                <div className="space-y-6 bg-white/40 dark:bg-slate-800/20 p-8 rounded-3xl border border-white/20 shadow-xl">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Identity & Origin</h3>
+                    </div>
+
+                    <div className="space-y-5">
                         <div className="space-y-2">
-                            <Label htmlFor="name">Lead Name / Title</Label>
-                            <Input id="name" name="name" placeholder="e.g. Hospital Modernization Project" required defaultValue={initialData?.name} />
-                            {state.errors?.name && <p className="text-red-500 text-sm">{state.errors.name}</p>}
+                            <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Opportunity Nomenclature</Label>
+                            <Input id="name" name="name" placeholder="e.g. Enterprise Modernization" required defaultValue={initialData?.name} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 focus:border-indigo-500 transition-all text-lg font-medium rounded-xl" />
+                            {state.errors?.name && <p className="text-red-500 text-xs font-bold mt-1 ml-1">{state.errors.name}</p>}
                         </div>
 
-                        {/* Company Selection - Conditional display */}
-                        {companies.length > 1 ? (
+                        {companies.length > 1 && (
                             <div className="space-y-2">
-                                <Label htmlFor="company_id">
-                                    Branch/Location
-                                    <span className="ml-2 text-xs text-gray-500 font-normal">
-                                        ({companies.length} available)
-                                    </span>
-                                </Label>
+                                <Label htmlFor="company_id" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Internal Node / Branch</Label>
                                 <select
                                     id="company_id"
                                     name="company_id"
                                     value={selectedCompanyId}
                                     onChange={(e) => setSelectedCompanyId(e.target.value)}
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm focus:border-indigo-500 transition-all outline-none"
                                 >
                                     {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
-                                <p className="text-xs text-gray-500">
-                                    Select which branch/location this lead belongs to
-                                </p>
                             </div>
-                        ) : (
-                            // Hidden field for single company - no need to show selector
-                            companies.length === 1 && (
-                                <input type="hidden" name="company_id" value={companies[0].id} />
-                            )
                         )}
+                        {companies.length === 1 && <input type="hidden" name="company_id" value={companies[0].id} />}
 
                         <div className="space-y-2">
-                            <Label htmlFor="company_name">Client Company Name</Label>
-                            <Input id="company_name" name="company_name" placeholder="e.g. City General Hospital" defaultValue={initialData?.company_name} />
+                            <Label htmlFor="company_name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Target Entity / Client Org</Label>
+                            <Input id="company_name" name="company_name" placeholder="e.g. Apex Global Corp" defaultValue={initialData?.company_name} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl" />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="contact_name">Contact Person</Label>
-                                <Input id="contact_name" name="contact_name" placeholder="Dr. Smith" defaultValue={initialData?.contact_name} />
+                                <Label htmlFor="contact_name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Key Liaison</Label>
+                                <Input id="contact_name" name="contact_name" placeholder="Name" defaultValue={initialData?.contact_name} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl" />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="phone">Phone</Label>
+                                <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Signal Endpoint (Email)</Label>
+                                <Input id="email" name="email" type="email" placeholder="email@address.com" defaultValue={initialData?.email} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-mono text-sm" />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Direct Voice Line</Label>
+                            <div className="rounded-xl overflow-hidden border border-slate-200/50">
                                 <PhoneInputComponent
-                                    key={countryCode} // Force re-render when default country changes
+                                    key={countryCode}
                                     id="phone"
                                     name="phone"
-                                    placeholder="+1..."
+                                    placeholder="Number"
                                     value={phone}
                                     onChange={setPhone}
                                     defaultCountry={countryCode}
                                 />
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input id="email" name="email" type="email" placeholder="dr.smith@hospital.com" defaultValue={initialData?.email} />
-                            {state.errors?.email && <p className="text-red-500 text-sm">{state.errors.email}</p>}
-                        </div>
-                    </CardContent>
-                </Card>
+                {/* Intelligence & Metrics Card */}
+                <div className="space-y-6 bg-white/40 dark:bg-slate-800/20 p-8 rounded-3xl border border-white/20 shadow-xl">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-1.5 h-6 bg-pink-500 rounded-full" />
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Growth Metrics</h3>
+                    </div>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Deal Intelligence</CardTitle>
-                        <CardDescription>Value and tracking</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+                    <div className="space-y-5">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="estimated_value">Est. Value ({currentCurrencySymbol})</Label>
-                                <Input id="estimated_value" name="estimated_value" type="number" placeholder="0.00" step="0.01" defaultValue={initialData?.estimated_value} />
+                                <Label htmlFor="estimated_value" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Potential Yield ({currency})</Label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">{currentCurrencySymbol}</span>
+                                    <Input id="estimated_value" name="estimated_value" type="number" placeholder="0.00" step="0.01" defaultValue={initialData?.estimated_value} className="h-12 pl-10 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-lg font-bold tabular-nums" />
+                                </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="currency">Currency</Label>
+                                <Label htmlFor="currency" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Unit</Label>
                                 <select
                                     id="currency"
                                     name="currency"
                                     value={currency}
                                     onChange={(e) => setCurrency(e.target.value)}
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm outline-none"
                                 >
-                                    {supportedCurrencies.map(c => (
-                                        <option key={c.code} value={c.code}>{c.code} ({c.symbol})</option>
-                                    ))}
-                                    {supportedCurrencies.length === 0 && (
-                                        <>
-                                            <option value="INR">INR (₹)</option>
-                                            <option value="USD">USD ($)</option>
-                                        </>
-                                    )}
+                                    {supportedCurrencies.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                                    {supportedCurrencies.length === 0 && <option value="INR">INR</option>}
                                 </select>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="probability">Probability (%)</Label>
-                                <Input id="probability" name="probability" type="number" placeholder="50" max="100" defaultValue={initialData?.probability} />
+                                <Label htmlFor="probability" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Confidence Factor (%)</Label>
+                                <Input id="probability" name="probability" type="number" placeholder="50" max="100" defaultValue={initialData?.probability} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-center font-black text-indigo-600" />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="source_id">Source</Label>
+                                <Label htmlFor="source_id" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Ingestion Source</Label>
                                 <select
                                     id="source_id"
                                     name="source_id"
                                     defaultValue={initialData?.source_id}
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm outline-none"
                                 >
-                                    <option value="">Select Source</option>
+                                    <option value="">Legacy / Untracked</option>
                                     {sources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                 </select>
                             </div>
                         </div>
 
-                        {/* Pipeline & Stage Section */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-200/50 dark:border-white/5 pt-5">
                             <div className="space-y-2">
-                                <Label htmlFor="pipeline_id">Pipeline</Label>
+                                <Label htmlFor="pipeline_id" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Assigned Pipeline</Label>
                                 <select
                                     id="pipeline_id"
                                     name="pipeline_id"
                                     value={selectedPipelineId}
                                     onChange={(e) => setSelectedPipelineId(e.target.value)}
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm outline-none font-bold"
                                 >
-                                    <option value="">Select Pipeline</option>
                                     {pipelines.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="stage_id">Stage</Label>
+                                <Label htmlFor="stage_id" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Active Stage</Label>
                                 <select
                                     id="stage_id"
                                     name="stage_id"
                                     defaultValue={initialData?.stage_id}
-                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm outline-none font-medium"
                                 >
-                                    <option value="">Select Stage</option>
                                     {stages.map((s: any) => (
                                         <option key={s.id} value={s.id}>{s.name} ({s.probability}%)</option>
                                     ))}
@@ -242,62 +232,54 @@ export function LeadForm({
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="next_followup_date">Next Follow-up</Label>
+                            <Label htmlFor="next_followup_date" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Next Engagement Synchronization</Label>
                             <div className="relative">
                                 <Input
                                     id="next_followup_date"
                                     name="next_followup_date"
                                     type="datetime-local"
+                                    className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl pr-10"
                                     defaultValue={initialData?.next_followup_date ? new Date(initialData.next_followup_date).toISOString().slice(0, 16) : ''}
                                 />
-                                <CalendarIcon className="absolute right-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
+                                <CalendarIcon className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
                             </div>
                         </div>
-
-                        <div className="pt-4">
-                            <div className="flex items-center gap-2 text-sm text-gray-500">
-                                <BarChart2 className="w-4 h-4" />
-                                <span>Projected Score: <span className="font-bold text-gray-700">Calculated after save</span></span>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
 
-            {/* Custom Fields - Dynamic rendering */}
             {customFields.length > 0 && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Additional Information</CardTitle>
-                        <CardDescription>Custom fields configured for your organization</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {customFields.map(field => (
-                                <CustomFieldRenderer key={field.id} field={field} />
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="bg-white/40 dark:bg-slate-800/20 p-8 rounded-3xl border border-white/20 shadow-xl space-y-6">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-1.5 h-6 bg-teal-500 rounded-full" />
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Extended Data Vectors</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {customFields.map(field => (
+                            <CustomFieldRenderer key={field.id} field={field} />
+                        ))}
+                    </div>
+                </div>
             )}
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Notes & Context</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2">
-                        <Label htmlFor="notes">AI Context / Notes</Label>
-                        <Textarea id="notes" name="ai_summary" placeholder="Add any initial context for the AI..." defaultValue={initialData?.ai_summary} />
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="bg-white/40 dark:bg-slate-800/20 p-8 rounded-3xl border border-white/20 shadow-xl space-y-6">
+                <div className="flex items-center gap-3 mb-2">
+                    <div className="w-1.5 h-6 bg-slate-500 rounded-full" />
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Strategic Intelligence</h3>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="notes" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Contextual Summary / Notes</Label>
+                    <Textarea id="notes" name="ai_summary" placeholder="Input strategic context for AI processing..." defaultValue={initialData?.ai_summary} className="min-h-[120px] bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all" />
+                </div>
+            </div>
 
-            <div className="flex justify-end gap-4">
-                <Button variant="outline" type="button" onClick={() => window.history.back()}>Cancel</Button>
-                <SubmitButton className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg">
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {mode === 'edit' ? 'Update Lead' : 'Create Smart Lead'}
+            <div className="flex justify-end items-center gap-6 pt-6">
+                <Button variant="ghost" type="button" onClick={() => window.history.back()} className="text-slate-500 hover:text-slate-900 font-bold uppercase tracking-widest text-xs">
+                    Abort Sync
+                </Button>
+                <SubmitButton className="h-14 px-10 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-[0_10px_20px_rgba(79,70,229,0.3)] border-none rounded-2xl font-black uppercase tracking-tighter text-lg flex items-center gap-3 transition-transform hover:scale-105 active:scale-95">
+                    <Sparkles className="w-6 h-6" />
+                    {mode === 'edit' ? 'Update Signal' : 'Synchronize Lead'}
                 </SubmitButton>
             </div>
 
