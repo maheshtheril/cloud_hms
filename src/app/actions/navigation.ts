@@ -148,14 +148,9 @@ export async function getMenuItems() {
                 result.push({
                     module: { name: 'Configuration', module_key: 'configuration' },
                     items: [
-                        { key: 'settings', label: 'Global Settings', icon: 'Settings', url: '/settings' },
-                        {
-                            key: 'access-control', label: 'Access Control', icon: 'Shield', url: '#', other_menu_items: [
-                                { key: 'users', label: 'Users', icon: 'Users', url: '/settings/users' },
-                                { key: 'roles', label: 'Roles', icon: 'Shield', url: '/settings/roles' },
-                                { key: 'permissions', label: 'Permissions', icon: 'Key', url: '/settings/permissions' },
-                            ]
-                        },
+                        { key: 'users', label: 'Users', icon: 'Users', url: '/settings/users' },
+                        { key: 'roles', label: 'Roles', icon: 'Shield', url: '/settings/roles' },
+                        { key: 'permissions', label: 'Permissions', icon: 'Key', url: '/settings/permissions' },
                         { key: 'crm-masters', label: 'CRM Masters', icon: 'Database', url: '/settings/crm' }
                     ]
                 });
@@ -213,7 +208,7 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
             icon: 'Settings',
             url: '#',
             other_menu_items: [
-                { key: 'settings', label: 'Global Settings', icon: 'Settings', url: '/settings' },
+                { key: 'users', label: 'Users', icon: 'Users', url: '/settings/users' },
                 { key: 'roles', label: 'Roles', icon: 'Shield', url: '/settings/roles' },
                 { key: 'permissions', label: 'Permissions', icon: 'Key', url: '/settings/permissions' },
                 { key: 'admin', label: 'Admin Panel', icon: 'Shield', url: '/admin' }
