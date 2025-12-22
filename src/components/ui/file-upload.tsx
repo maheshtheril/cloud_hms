@@ -53,14 +53,67 @@ export function FileUpload({
         }
     };
 
+    const compressImage = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target?.result as string;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 300;
+                    const MAX_HEIGHT = 300;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx?.drawImage(img, 0, 0, width, height);
+
+                    // Compress to JPEG at 0.7 quality
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    resolve(dataUrl);
+                };
+                img.onerror = (error) => reject(error);
+            };
+            reader.onerror = (error) => reject(error);
+        });
+    };
+
     const handleUpload = async (file: File) => {
         setIsUploading(true);
         setError(null);
 
-        const formData = new FormData();
-        formData.append('file', file);
-
         try {
+            // For Images: Compress client-side and return Data URI directly
+            // This avoids sending large payloads to the server or dealing with filesystem issues
+            if (file.type.startsWith('image/')) {
+                console.log("Client-side compressing image...");
+                const dataUrl = await compressImage(file);
+                setPreviewUrl(dataUrl);
+                onUploadComplete(dataUrl);
+                setIsUploading(false);
+                return;
+            }
+
+            // Fallback for non-images (PDFs etc) - Use Server Action
+            const formData = new FormData();
+            formData.append('file', file);
+
             const res = await uploadFile(formData, folder);
 
             if (res.error) {
