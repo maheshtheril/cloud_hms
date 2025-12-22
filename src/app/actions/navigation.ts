@@ -130,7 +130,13 @@ export async function getMenuItems() {
 
         // Filter groups
         Object.keys(grouped).forEach(key => {
-            grouped[key].items = filterRestricted(grouped[key].items);
+            // Filter restricted items AND Explicitly remove "Global Settings" or "Settings" if coming from DB
+            // to avoid duplicates or unwanted legacy items, as we inject Configuration manually if needed.
+            grouped[key].items = filterRestricted(grouped[key].items).filter(item =>
+                item.label !== 'Global Settings' &&
+                item.label !== 'Settings' &&
+                item.url !== '/settings'
+            );
         });
 
         const result = Object.values(grouped).filter(g => g.items.length > 0);
