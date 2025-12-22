@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge" // Assuming you have a Badge component
 import { formatCurrency } from '@/lib/currency'
 import { formatDistanceToNow } from 'date-fns'
-import { MoreHorizontal, Edit, Trash2, ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { MoreHorizontal, Edit, Trash2, ArrowUpDown, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -55,101 +55,125 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
 
     return (
         <div className="space-y-4">
-            <div className="rounded-md border bg-white shadow-sm overflow-hidden">
+            <div className="overflow-x-auto">
                 <Table>
-                    <TableHeader className="bg-slate-50">
-                        {/* ... table header ... */}
-                        <TableRow>
-                            <TableHead className="w-[250px] font-semibold text-slate-900">Lead Name / Company</TableHead>
-                            <TableHead className="font-semibold text-slate-900">Contact</TableHead>
-                            <TableHead className="font-semibold text-slate-900">Details</TableHead>
-                            <TableHead className="font-semibold text-slate-900 text-right">Value</TableHead>
-                            <TableHead className="font-semibold text-slate-900">Stage</TableHead>
-                            <TableHead className="font-semibold text-slate-900">Score</TableHead>
-                            <TableHead className="font-semibold text-slate-900">Created</TableHead>
-                            <TableHead className="w-[50px]"></TableHead>
+                    <TableHeader className="bg-slate-900/5 dark:bg-white/5 border-b border-white/10">
+                        <TableRow className="hover:bg-transparent border-none">
+                            <TableHead className="w-[300px] font-bold text-slate-800 dark:text-slate-200 py-5">Identities & Entity</TableHead>
+                            <TableHead className="font-bold text-slate-800 dark:text-slate-200">Point of Contact</TableHead>
+                            <TableHead className="font-bold text-slate-800 dark:text-slate-200">Engagement</TableHead>
+                            <TableHead className="font-bold text-slate-800 dark:text-slate-200 text-right">Potential Value</TableHead>
+                            <TableHead className="font-bold text-slate-800 dark:text-slate-200">Stage</TableHead>
+                            <TableHead className="font-bold text-slate-800 dark:text-slate-200">AI Score</TableHead>
+                            <TableHead className="text-right pr-6 font-bold text-slate-800 dark:text-slate-200">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {data.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={8} className="h-24 text-center text-slate-500">
-                                    No leads found.
+                                <TableCell colSpan={7} className="h-40 text-center text-slate-500 text-lg italic">
+                                    No potential growth opportunities found.
                                 </TableCell>
                             </TableRow>
                         ) : (
                             data.map((lead) => (
-                                <TableRow key={lead.id} className="hover:bg-slate-50/50 transition-colors">
-                                    <TableCell>
+                                <TableRow key={lead.id} className="group border-b border-slate-200/50 dark:border-white/5 hover:bg-white/40 dark:hover:bg-white/5 transition-all duration-300">
+                                    <TableCell className="py-4">
                                         <div className="flex flex-col">
-                                            <span className="font-medium text-slate-900 truncate max-w-[200px]" title={lead.name}>
+                                            <span className="font-bold text-slate-900 dark:text-white text-base group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors cursor-pointer" onClick={() => router.push(`/crm/leads/${lead.id}`)}>
                                                 {lead.name}
                                             </span>
                                             {lead.company_name && (
-                                                <span className="text-xs text-slate-500 truncate max-w-[200px]">
-                                                    {lead.company_name}
+                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                    <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-800 text-[10px] py-0 px-1.5 font-medium border-none text-slate-500 uppercase tracking-tighter">
+                                                        {lead.company_name}
+                                                    </Badge>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col">
+                                            <span className="text-slate-800 dark:text-slate-200 font-medium">{lead.contact_name || '-'}</span>
+                                            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono tracking-tighter opacity-70">{lead.email}</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-sm text-slate-700 dark:text-slate-300 font-medium">{lead.phone || '-'}</span>
+                                            <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium uppercase">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                Active {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}
+                                            </div>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-lg font-bold text-slate-900 dark:text-white tabular-nums">
+                                                {formatCurrency(Number(lead.estimated_value) || 0, lead.currency || 'INR')}
+                                            </span>
+                                            {lead.is_hot && (
+                                                <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest flex items-center gap-1">
+                                                    <Sparkles className="w-3 h-3" /> Priority Lead
                                                 </span>
                                             )}
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex flex-col text-sm">
-                                            <span className="text-slate-700">{lead.contact_name || '-'}</span>
-                                            <span className="text-xs text-slate-500">{lead.email}</span>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="text-sm text-slate-600">
-                                            {lead.phone || '-'}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="text-right font-medium text-slate-900">
-                                        {formatCurrency(Number(lead.estimated_value) || 0, lead.currency || 'INR')}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className={`
-                                            ${lead.status === 'new' ? 'border-blue-200 bg-blue-50 text-blue-700' : ''}
-                                            ${lead.status === 'won' ? 'border-green-200 bg-green-50 text-green-700' : ''}
-                                            ${lead.status === 'lost' ? 'border-red-200 bg-red-50 text-red-700' : ''}
+                                        <Badge className={`
+                                            rounded-lg py-1 px-3 border-none shadow-sm font-bold uppercase tracking-wider text-[10px]
+                                            ${lead.status === 'new' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : ''}
+                                            ${lead.status === 'contacted' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : ''}
+                                            ${lead.status === 'won' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : ''}
+                                            ${lead.status === 'lost' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' : ''}
                                         `}>
                                             {lead.stage?.name || lead.status}
                                         </Badge>
                                     </TableCell>
                                     <TableCell>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                        <div className="flex items-center gap-3">
+                                            <div className="relative w-16 h-2.5 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner border border-white/5">
                                                 <div
-                                                    className={`h-full rounded-full ${(lead.lead_score || 0) > 70 ? 'bg-green-500' :
-                                                        (lead.lead_score || 0) > 40 ? 'bg-yellow-500' : 'bg-red-500'
+                                                    className={`h-full rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(0,0,0,0.1)] ${(lead.lead_score || 0) > 70 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' :
+                                                        (lead.lead_score || 0) > 40 ? 'bg-gradient-to-r from-amber-500 to-orange-400' :
+                                                            'bg-gradient-to-r from-rose-600 to-pink-500'
                                                         }`}
                                                     style={{ width: `${lead.lead_score || 0}%` }}
                                                 />
                                             </div>
-                                            <span className="text-xs font-medium">{lead.lead_score}</span>
+                                            <span className="text-sm font-black text-slate-700 dark:text-slate-300 tabular-nums">
+                                                {lead.lead_score}
+                                            </span>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="text-xs text-slate-500">
-                                        {lead.created_at ? formatDistanceToNow(new Date(lead.created_at), { addSuffix: true }) : '-'}
-                                    </TableCell>
-                                    <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <span className="sr-only">Open menu</span>
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                <DropdownMenuItem onClick={() => router.push(`/crm/leads/${lead.id}/edit`)}>
-                                                    <Edit className="mr-2 h-4 w-4" /> Edit Lead
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={() => handleDelete(lead.id)}>
-                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                    <TableCell className="text-right pr-6">
+                                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30" onClick={() => router.push(`/crm/leads/${lead.id}/edit`)}>
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" className="h-8 w-8 p-0 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white">
+                                                        <span className="sr-only">Open menu</span>
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-slate-200/50 dark:border-white/10 shadow-2xl min-w-[160px]">
+                                                    <DropdownMenuLabel className="font-bold text-slate-900 dark:text-white">Management</DropdownMenuLabel>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem className="cursor-pointer font-medium" onClick={() => router.push(`/crm/leads/${lead.id}`)}>
+                                                        <ChevronRight className="mr-2 h-4 w-4 text-indigo-500" /> View Intelligent Summary
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem className="cursor-pointer font-medium" onClick={() => router.push(`/crm/leads/${lead.id}/edit`)}>
+                                                        <Edit className="mr-2 h-4 w-4 text-amber-500" /> Re-engage / Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem className="text-rose-600 cursor-pointer font-bold focus:bg-rose-50 dark:focus:bg-rose-900/20" onClick={() => handleDelete(lead.id)}>
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Purge Opportunity
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))
@@ -159,34 +183,37 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
             </div>
 
             {/* Pagination Controls */}
-            <div className="flex items-center justify-between px-2">
-                <div className="text-sm text-slate-500">
-                    Showing <span className="font-medium">{data.length}</span> of <span className="font-medium">{totalOrCount}</span> leads
+            <div className="flex items-center justify-between px-6 py-4 bg-slate-900/5 dark:bg-white/5 border-t border-white/5">
+                <div className="text-sm font-semibold text-slate-500 dark:text-slate-400">
+                    Propagating <span className="text-slate-900 dark:text-white">{data.length}</span> of <span className="text-slate-900 dark:text-white">{totalOrCount}</span> active signals
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-3">
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
+                        className="bg-white/50 dark:bg-white/5 rounded-xl border border-white/10 hover:bg-white transition-all disabled:opacity-30"
                         onClick={() => handlePageChange(page - 1)}
                         disabled={page <= 1}
                     >
-                        <ChevronLeft className="h-4 w-4" />
-                        Previous
+                        <ChevronLeft className="h-4 w-4 mr-1" />
+                        Retro
                     </Button>
-                    <div className="text-sm font-medium">
-                        Page {page} of {totalPages}
+                    <div className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black text-sm shadow-lg shadow-indigo-500/20">
+                        {page} <span className="opacity-50 text-[10px]">OF</span> {totalPages}
                     </div>
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         size="sm"
+                        className="bg-white/50 dark:bg-white/5 rounded-xl border border-white/10 hover:bg-white transition-all disabled:opacity-30"
                         onClick={() => handlePageChange(page + 1)}
                         disabled={page >= totalPages}
                     >
                         Next
-                        <ChevronRight className="h-4 w-4" />
+                        <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                 </div>
             </div>
         </div>
     )
 }
+

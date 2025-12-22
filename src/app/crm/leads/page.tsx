@@ -10,6 +10,9 @@ import { SearchLeads } from '@/components/crm/search-leads'
 
 import { getCompanyDefaultCurrency } from '@/app/actions/currency'
 
+import { getSources } from '@/app/actions/crm/masters'
+import { FilterLeads } from '@/components/crm/filter-leads'
+
 export const dynamic = 'force-dynamic'
 
 interface PageProps {
@@ -17,6 +20,9 @@ interface PageProps {
         page?: string
         limit?: string
         q?: string
+        status?: string
+        source_id?: string
+        is_hot?: string
     }
 }
 
@@ -29,11 +35,17 @@ export default async function LeadsPage(props: PageProps) {
     const page = Number(searchParams?.page) || 1
     const limit = Number(searchParams?.limit) || 20
     const query = searchParams?.q || ''
+    const status = searchParams?.status
+    const sourceId = searchParams?.source_id
+    const isHot = searchParams?.is_hot === 'true'
     const skip = (page - 1) * limit
-    // ... rest of the logic ...
+
     const where: any = {
         tenant_id: tenantId || undefined,
         deleted_at: null,
+        ...(status ? { status } : {}),
+        ...(sourceId ? { source_id: sourceId } : {}),
+        ...(isHot ? { is_hot: true } : {}),
         ...(query ? {
             OR: [
                 { name: { contains: query, mode: 'insensitive' } },
@@ -45,7 +57,7 @@ export default async function LeadsPage(props: PageProps) {
     }
 
     // Parallel data fetching for performance
-    const [leads, totalCount, stats] = await Promise.all([
+    const [leads, totalCount, stats, sources] = await Promise.all([
         prisma.crm_leads.findMany({
             where,
             take: limit,
@@ -64,7 +76,8 @@ export default async function LeadsPage(props: PageProps) {
             _sum: {
                 estimated_value: true
             }
-        })
+        }),
+        getSources()
     ])
 
     const hotLeadsCount = await prisma.crm_leads.count({
@@ -78,14 +91,21 @@ export default async function LeadsPage(props: PageProps) {
     const totalValue = Number(stats._sum.estimated_value) || 0
 
     return (
-        <div className="min-h-screen bg-slate-50/50">
-            <div className="container mx-auto py-8 space-y-8 max-w-[1600px]">
+        <div className="min-h-screen bg-futuristic">
+            {/* Animated Background Effects */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-0 -left-4 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
+                <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
+                <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
+            </div>
+
+            <div className="relative container mx-auto py-8 space-y-8 max-w-[1600px]">
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Leads</h1>
-                        <p className="text-slate-500 mt-1">
-                            Manage and track your potential opportunities.
+                        <h1 className="text-4xl font-bold text-gradient-primary tracking-tight">Leads Overview</h1>
+                        <p className="text-slate-500 mt-1 dark:text-slate-400">
+                            Driving growth through intelligent lead tracking.
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-3">
@@ -93,11 +113,9 @@ export default async function LeadsPage(props: PageProps) {
                             <SearchLeads defaultValue={query} />
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="outline" className="bg-white border-slate-200">
-                                <Filter className="w-4 h-4 mr-2" /> Filter
-                            </Button>
+                            <FilterLeads sources={sources} />
                             <Link href="/crm/leads/new">
-                                <Button className="bg-slate-900 hover:bg-slate-800 text-white shadow-sm px-6">
+                                <Button className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-lg border-none px-6 rounded-xl">
                                     <Plus className="w-4 h-4 mr-2" />
                                     New Lead
                                 </Button>
@@ -107,47 +125,49 @@ export default async function LeadsPage(props: PageProps) {
                 </div>
 
                 {/* Stats Overview */}
-                <div className="grid gap-4 md:grid-cols-3">
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                <div className="grid gap-6 md:grid-cols-3">
+                    <div className="glass-card bg-white/40 dark:bg-slate-900/40 p-6 rounded-2xl border border-white/20 shadow-xl flex items-center justify-between hover:scale-[1.02] transition-all duration-300">
                         <div>
-                            <p className="text-sm font-medium text-slate-500">Total Leads</p>
-                            <h3 className="text-2xl font-bold text-slate-900 mt-1">{totalCount}</h3>
+                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Pipeline Leads</p>
+                            <h3 className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{totalCount}</h3>
                         </div>
-                        <div className="h-10 w-10 bg-blue-50 rounded-full flex items-center justify-center">
-                            <TrendingUp className="h-5 w-5 text-blue-600" />
+                        <div className="h-12 w-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center border border-indigo-500/20">
+                            <TrendingUp className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                         </div>
                     </div>
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div className="glass-card bg-white/40 dark:bg-slate-900/40 p-6 rounded-2xl border border-white/20 shadow-xl flex items-center justify-between hover:scale-[1.02] transition-all duration-300">
                         <div>
-                            <p className="text-sm font-medium text-slate-500">Hot Opportunities</p>
-                            <h3 className="text-2xl font-bold text-slate-900 mt-1">{hotLeadsCount}</h3>
+                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Hot Opportunities 🔥</p>
+                            <h3 className="text-3xl font-bold text-slate-900 dark:text-white mt-1">{hotLeadsCount}</h3>
                         </div>
-                        <div className="h-10 w-10 bg-amber-50 rounded-full flex items-center justify-center">
-                            <Sparkles className="h-5 w-5 text-amber-600" />
+                        <div className="h-12 w-12 bg-amber-500/10 rounded-2xl flex items-center justify-center border border-amber-500/20">
+                            <Sparkles className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                         </div>
                     </div>
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+                    <div className="glass-card bg-white/40 dark:bg-slate-900/40 p-6 rounded-2xl border border-white/20 shadow-xl flex items-center justify-between hover:scale-[1.02] transition-all duration-300">
                         <div>
-                            <p className="text-sm font-medium text-slate-500">Pipeline Value</p>
-                            <h3 className="text-2xl font-bold text-slate-900 mt-1">{formatCurrency(totalValue, defaultCurrency.code)}</h3>
+                            <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Total Potential Value</p>
+                            <h3 className="text-3xl font-bold text-gradient-primary mt-1">{formatCurrency(totalValue, defaultCurrency.code)}</h3>
                         </div>
-                        <div className="h-10 w-10 bg-green-50 rounded-full flex items-center justify-center">
+                        <div className="h-12 w-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center border border-emerald-500/20">
                             {defaultCurrency.code === 'INR' ? (
-                                <IndianRupee className="h-5 w-5 text-green-600" />
+                                <IndianRupee className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                             ) : (
-                                <DollarSign className="h-5 w-5 text-green-600" />
+                                <DollarSign className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
                             )}
                         </div>
                     </div>
                 </div>
 
                 {/* Data Table */}
-                <LeadTable
-                    data={leads}
-                    totalOrCount={totalCount}
-                    page={page}
-                    limit={limit}
-                />
+                <div className="glass-card bg-white/30 dark:bg-slate-900/30 rounded-3xl border border-white/20 shadow-2xl overflow-hidden backdrop-blur-xl">
+                    <LeadTable
+                        data={leads}
+                        totalOrCount={totalCount}
+                        page={page}
+                        limit={limit}
+                    />
+                </div>
             </div>
         </div>
     )
