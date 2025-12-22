@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState, useState, useMemo } from 'react'
-import { createLead, LeadFormState } from '@/app/actions/crm/leads'
+import { createLead, updateLead, LeadFormState } from '@/app/actions/crm/leads'
 import { PhoneInputComponent } from '@/components/ui/phone-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,12 +16,16 @@ export function LeadForm({
     customFields = [],
     pipelines = [],
     sources = [],
-    companies = []
+    companies = [],
+    initialData = null,
+    mode = 'create'
 }: {
     customFields?: CustomFieldDefinition[],
     pipelines?: any[],
     sources?: any[],
-    companies?: any[]
+    companies?: any[],
+    initialData?: any,
+    mode?: 'create' | 'edit'
 }) {
 
     // Select default pipeline (first one, or one marked is_default)
@@ -31,8 +35,8 @@ export function LeadForm({
     const defaultCompany = companies[0]
 
     // State for Pipeline Selection to update Stages
-    const [selectedPipelineId, setSelectedPipelineId] = useState<string>(defaultPipeline?.id || '')
-    const [selectedCompanyId, setSelectedCompanyId] = useState<string>(defaultCompany?.id || '')
+    const [selectedPipelineId, setSelectedPipelineId] = useState<string>(initialData?.pipeline_id || defaultPipeline?.id || '')
+    const [selectedCompanyId, setSelectedCompanyId] = useState<string>(initialData?.company_id || defaultCompany?.id || '')
 
 
     // Derive stages based on selected pipeline
@@ -48,16 +52,17 @@ export function LeadForm({
         return (c?.countries?.iso2?.toUpperCase() as any) || 'US'
     }, [selectedCompanyId, companies])
 
-    const [phone, setPhone] = useState<any>()
+    const [phone, setPhone] = useState<any>(initialData?.phone || initialData?.primary_phone)
 
     const initialState: LeadFormState = { message: '', errors: {} }
-    const [state, dispatch] = useActionState(createLead, initialState)
+    const [state, dispatch] = useActionState(mode === 'edit' ? updateLead : createLead, initialState)
 
 
 
 
     return (
         <form action={dispatch} className="space-y-6">
+            {mode === 'edit' && <input type="hidden" name="id" value={initialData.id} />}
 
             {/* AI Header Section */}
             <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-100 mb-6">
@@ -79,7 +84,7 @@ export function LeadForm({
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Lead Name / Title</Label>
-                            <Input id="name" name="name" placeholder="e.g. Hospital Modernization Project" required />
+                            <Input id="name" name="name" placeholder="e.g. Hospital Modernization Project" required defaultValue={initialData?.name} />
                             {state.errors?.name && <p className="text-red-500 text-sm">{state.errors.name}</p>}
                         </div>
 
@@ -114,13 +119,13 @@ export function LeadForm({
 
                         <div className="space-y-2">
                             <Label htmlFor="company_name">Client Company Name</Label>
-                            <Input id="company_name" name="company_name" placeholder="e.g. City General Hospital" />
+                            <Input id="company_name" name="company_name" placeholder="e.g. City General Hospital" defaultValue={initialData?.company_name} />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="contact_name">Contact Person</Label>
-                                <Input id="contact_name" name="contact_name" placeholder="Dr. Smith" />
+                                <Input id="contact_name" name="contact_name" placeholder="Dr. Smith" defaultValue={initialData?.contact_name} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="phone">Phone</Label>
@@ -138,7 +143,7 @@ export function LeadForm({
 
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
-                            <Input id="email" name="email" type="email" placeholder="dr.smith@hospital.com" />
+                            <Input id="email" name="email" type="email" placeholder="dr.smith@hospital.com" defaultValue={initialData?.email} />
                             {state.errors?.email && <p className="text-red-500 text-sm">{state.errors.email}</p>}
                         </div>
                     </CardContent>
@@ -153,11 +158,11 @@ export function LeadForm({
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="estimated_value">Est. Value ($)</Label>
-                                <Input id="estimated_value" name="estimated_value" type="number" placeholder="0.00" step="0.01" />
+                                <Input id="estimated_value" name="estimated_value" type="number" placeholder="0.00" step="0.01" defaultValue={initialData?.estimated_value} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="probability">Probability (%)</Label>
-                                <Input id="probability" name="probability" type="number" placeholder="0" max="100" />
+                                <Input id="probability" name="probability" type="number" placeholder="0" max="100" defaultValue={initialData?.probability} />
                             </div>
                         </div>
 
@@ -166,6 +171,7 @@ export function LeadForm({
                             <select
                                 id="source_id"
                                 name="source_id"
+                                defaultValue={initialData?.source_id}
                                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                                 <option value="">Select Source</option>
@@ -193,6 +199,7 @@ export function LeadForm({
                                 <select
                                     id="stage_id"
                                     name="stage_id"
+                                    defaultValue={initialData?.stage_id}
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <option value="">Select Stage</option>
@@ -206,7 +213,12 @@ export function LeadForm({
                         <div className="space-y-2">
                             <Label htmlFor="next_followup_date">Next Follow-up</Label>
                             <div className="relative">
-                                <Input id="next_followup_date" name="next_followup_date" type="datetime-local" />
+                                <Input
+                                    id="next_followup_date"
+                                    name="next_followup_date"
+                                    type="datetime-local"
+                                    defaultValue={initialData?.next_followup_date ? new Date(initialData.next_followup_date).toISOString().slice(0, 16) : ''}
+                                />
                                 <CalendarIcon className="absolute right-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
                             </div>
                         </div>
@@ -245,7 +257,7 @@ export function LeadForm({
                 <CardContent>
                     <div className="space-y-2">
                         <Label htmlFor="notes">AI Context / Notes</Label>
-                        <Textarea id="notes" name="ai_summary" placeholder="Add any initial context for the AI..." />
+                        <Textarea id="notes" name="ai_summary" placeholder="Add any initial context for the AI..." defaultValue={initialData?.ai_summary} />
                     </div>
                 </CardContent>
             </Card>
@@ -254,7 +266,7 @@ export function LeadForm({
                 <Button variant="outline" type="button" onClick={() => window.history.back()}>Cancel</Button>
                 <SubmitButton className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg">
                     <Sparkles className="w-4 h-4 mr-2" />
-                    Create Smart Lead
+                    {mode === 'edit' ? 'Update Lead' : 'Create Smart Lead'}
                 </SubmitButton>
             </div>
 

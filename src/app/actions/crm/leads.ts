@@ -204,3 +204,43 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
         return { message: "Database Error: Failed to create lead." };
     }
 }
+
+
+export async function updateLead(prevState: LeadFormState, formData: FormData): Promise<LeadFormState> {
+    const session = await auth();
+    if (!session?.user?.tenantId) {
+        return { message: "Unauthorized" };
+    }
+
+    const id = formData.get('id') as string;
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const phone = formData.get('phone') as string;
+    const company = formData.get('company') as string;
+    const company_name = formData.get('company_name') as string;
+    const contact_name = formData.get('contact_name') as string;
+
+    if (!id) return { message: "Missing Lead ID" };
+    if (!name || name.length < 2) {
+        return { errors: { name: ["Name must be at least 2 characters"] } };
+    }
+
+    try {
+        await prisma.crm_leads.update({
+            where: { id },
+            data: {
+                name: name,
+                contact_name: contact_name || name,
+                email: email,
+                phone: phone,
+                company_name: company_name || company
+            }
+        });
+
+        revalidatePath('/crm/leads');
+        return { success: true, message: "Lead updated successfully" };
+    } catch (error) {
+        console.error(error);
+        return { message: "Database Error: Failed to update lead." };
+    }
+}
