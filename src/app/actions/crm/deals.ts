@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/auth'
 
 const dealSchema = z.object({
+    id: z.string().optional(),
     title: z.string().min(1, 'Deal title is required'),
     value: z.coerce.number().min(0),
     currency: z.string().default('USD'),
@@ -21,6 +22,59 @@ const dealSchema = z.object({
     probability: z.coerce.number().min(0).max(100),
     status: z.string().default('open'),
 })
+// ...
+export async function updateDeal(prevState: DealFormState, formData: FormData): Promise<DealFormState> {
+    const session = await auth()
+    const user = session?.user
+
+    if (!user || !user.tenantId) {
+        return { message: 'Unauthorized' }
+    }
+
+    const validatedFields = dealSchema.safeParse(Object.fromEntries(formData.entries()))
+
+    if (!validatedFields.success) {
+        return {
+            errors: validatedFields.error.flatten().fieldErrors,
+            message: 'Missing Fields. Failed to Update Deal.',
+        }
+    }
+
+    const {
+        id, title, value, currency,
+        pipeline_id, stage_id,
+        account_id, contact_id,
+        expected_close_date, probability, status
+    } = validatedFields.data
+
+    if (!id) return { message: 'Missing Deal ID' }
+
+    try {
+        await prisma.crm_deals.update({
+            where: { id, tenant_id: user.tenantId },
+            data: {
+                title,
+                value,
+                currency,
+                pipeline_id: pipeline_id || undefined,
+                stage_id: stage_id || undefined,
+                account_id: account_id || undefined,
+                contact_id: contact_id || undefined,
+                expected_close_date: expected_close_date ? new Date(expected_close_date) : undefined,
+                probability,
+                status,
+            },
+        })
+    } catch (error) {
+        console.error('Database Error:', error)
+        return {
+            message: 'Database Error: Failed to Update Deal.',
+        }
+    }
+
+    revalidatePath('/crm/deals')
+    redirect('/crm/deals')
+}
 
 export type DealFormState = {
     errors?: {

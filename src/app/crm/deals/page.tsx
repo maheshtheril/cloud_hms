@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 import { Button } from '@/components/ui/button'
-import { Plus, Target, TrendingUp, DollarSign, Trophy, Percent, Calendar, Zap, IndianRupee } from 'lucide-react'
+import { Plus, Target, TrendingUp, DollarSign, Trophy, Percent, Calendar, Zap, IndianRupee, Edit, Eye } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
 import { getCompanies, getPipelines } from '@/app/actions/crm/masters'
@@ -133,13 +133,29 @@ export default async function DealsPage() {
 
                             <div className="space-y-4 mt-4">
                                 {/* Title */}
-                                <div>
-                                    <h3 className="font-bold text-xl text-slate-900 dark:text-white mb-1 pr-20">
-                                        {deal.title}
-                                    </h3>
-                                    <p className="text-sm text-slate-600 dark:text-slate-400">
-                                        {deal.pipeline?.name || 'Default Pipeline'}
-                                    </p>
+                                <div className="flex justify-between items-start gap-4 pr-12">
+                                    <div>
+                                        <Link href={`/crm/deals/${deal.id}`} className="hover:text-emerald-500 transition-colors">
+                                            <h3 className="font-bold text-xl text-slate-900 dark:text-white mb-1">
+                                                {deal.title}
+                                            </h3>
+                                        </Link>
+                                        <p className="text-sm text-slate-600 dark:text-slate-400">
+                                            {deal.pipeline?.name || 'Default Pipeline'}
+                                        </p>
+                                    </div>
+                                    <div className="absolute top-16 right-4 flex flex-col gap-2">
+                                        <Link href={`/crm/deals/${deal.id}/edit`}>
+                                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl bg-white/50 dark:bg-slate-800/50 shadow-sm hover:bg-emerald-500/10 hover:text-emerald-600 transition-all border border-slate-200/50 dark:border-slate-700/50">
+                                                <Edit className="w-4 h-4" />
+                                            </Button>
+                                        </Link>
+                                        <Link href={`/crm/deals/${deal.id}`}>
+                                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl bg-white/50 dark:bg-slate-800/50 shadow-sm hover:bg-blue-500/10 hover:text-blue-600 transition-all border border-slate-200/50 dark:border-slate-700/50">
+                                                <Eye className="w-4 h-4" />
+                                            </Button>
+                                        </Link>
+                                    </div>
                                 </div>
 
                                 {/* Value */}
