@@ -148,7 +148,23 @@ export default function ImportLeadsPage() {
                                 </div>
 
                                 <div className="pt-6 border-t">
-                                    <Button variant="outline" size="sm" className="text-slate-500">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-all"
+                                        onClick={() => {
+                                            const headers = ['First Name', 'Last Name', 'Email', 'Phone', 'Company', 'Title', 'Lead Source', 'Status'];
+                                            const csvContent = "data:text/csv;charset=utf-8," + headers.join(",");
+                                            const encodedUri = encodeURI(csvContent);
+                                            const link = document.createElement("a");
+                                            link.setAttribute("href", encodedUri);
+                                            link.setAttribute("download", "lead_import_template.csv");
+                                            document.body.appendChild(link);
+                                            link.click();
+                                            document.body.removeChild(link);
+                                        }}
+                                    >
+                                        <FileSpreadsheet className="h-4 w-4 mr-2" />
                                         Download Sample Template
                                     </Button>
                                 </div>
