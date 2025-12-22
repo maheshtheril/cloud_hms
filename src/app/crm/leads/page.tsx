@@ -2,9 +2,10 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 import { Button } from '@/components/ui/button'
-import { Plus, Sparkles, TrendingUp, DollarSign, User, Calendar } from 'lucide-react'
+import { Plus, Sparkles, TrendingUp, IndianRupee, User, Calendar } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
+import { formatCurrency } from '@/lib/currency'
 
 export const dynamic = 'force-dynamic'
 
@@ -83,10 +84,10 @@ export default async function LeadsPage() {
                     <div className="card-stat-cyan p-6 rounded-2xl shadow-xl hover-glow-cyan transition-all duration-300">
                         <div className="flex items-center justify-between mb-2">
                             <p className="text-sm font-medium text-cyan-700 dark:text-cyan-300">Pipeline Value</p>
-                            <DollarSign className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                            <IndianRupee className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                         </div>
                         <div className="text-4xl font-bold text-slate-900 dark:text-white">
-                            ${totalValue.toLocaleString()}
+                            {formatCurrency(totalValue, 'IN')}
                         </div>
                     </div>
                 </div>
@@ -121,7 +122,7 @@ export default async function LeadsPage() {
                                     </div>
                                     <div className="text-right">
                                         <div className="text-2xl font-bold text-gradient-primary">
-                                            ${(Number(lead.estimated_value) || 0).toLocaleString()}
+                                            {formatCurrency(Number(lead.estimated_value) || 0, 'IN')}
                                         </div>
                                     </div>
                                 </div>
@@ -129,8 +130,8 @@ export default async function LeadsPage() {
                                 {/* Stage Badge */}
                                 <Badge
                                     className={`${lead.stage?.type === 'won'
-                                            ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/30'
-                                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
+                                        ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700/30'
+                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700'
                                         }`}
                                 >
                                     {lead.stage?.name || lead.status}
@@ -143,10 +144,10 @@ export default async function LeadsPage() {
                                         <div className="w-32 h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden shadow-inner">
                                             <div
                                                 className={`h-full rounded-full transition-all duration-500 ${(lead.lead_score || 0) > 70
-                                                        ? 'bg-gradient-to-r from-emerald-500 to-green-500 shadow-lg shadow-emerald-500/50'
-                                                        : (lead.lead_score || 0) > 40
-                                                            ? 'bg-gradient-to-r from-amber-500 to-yellow-500 shadow-lg shadow-amber-500/50'
-                                                            : 'bg-gradient-to-r from-red-500 to-rose-500 shadow-lg shadow-red-500/50'
+                                                    ? 'bg-gradient-to-r from-emerald-500 to-green-500 shadow-lg shadow-emerald-500/50'
+                                                    : (lead.lead_score || 0) > 40
+                                                        ? 'bg-gradient-to-r from-amber-500 to-yellow-500 shadow-lg shadow-amber-500/50'
+                                                        : 'bg-gradient-to-r from-red-500 to-rose-500 shadow-lg shadow-red-500/50'
                                                     }`}
                                                 style={{ width: `${lead.lead_score || 0}%` }}
                                             />
