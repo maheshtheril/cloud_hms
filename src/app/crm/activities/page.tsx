@@ -35,7 +35,7 @@ export default async function ActivitiesPage() {
         },
         include: {
             lead: { select: { name: true, company_name: true } },
-            deal: { select: { name: true } }
+            deal: { select: { title: true } }
         },
         orderBy: { created_at: 'desc' },
     })
@@ -177,7 +177,7 @@ export default async function ActivitiesPage() {
                                                 {(item.lead || item.deal) && (
                                                     <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 bg-indigo-500/10 px-3 py-1 rounded-full border border-indigo-500/20">
                                                         <TrendingUp className="w-3 h-3" />
-                                                        {item.lead ? `Lead: ${item.lead.name}` : `Deal: ${item.deal.name}`}
+                                                        {item.lead ? `Lead: ${item.lead.name}` : `Deal: ${item.deal.title}`}
                                                     </div>
                                                 )}
 
