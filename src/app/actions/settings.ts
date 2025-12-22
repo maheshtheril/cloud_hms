@@ -8,7 +8,8 @@ export async function updateGlobalSettings(data: {
     companyId: string,
     name: string,
     industry?: string,
-    currencyId?: string
+    currencyId?: string,
+    logoUrl?: string
 }) {
     const session = await auth()
     if (!session?.user?.id) return { error: "Unauthorized" }
@@ -30,7 +31,8 @@ export async function updateGlobalSettings(data: {
                 where: { id: data.companyId },
                 data: {
                     name: data.name,
-                    industry: data.industry
+                    industry: data.industry,
+                    logo_url: data.logoUrl
                 }
             })
 

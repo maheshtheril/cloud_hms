@@ -11,7 +11,7 @@ const IconMap: any = {
     LayoutDashboard, Users, Calendar, Stethoscope, Receipt, Settings, Shield
 };
 
-export function AppSidebar({ menuItems, currentCompany, children }: { menuItems: any[], currentCompany: any, children: React.ReactNode }) {
+export function AppSidebar({ menuItems, currentCompany, user, children }: { menuItems: any[], currentCompany: any, user?: any, children: React.ReactNode }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
 
@@ -27,6 +27,7 @@ export function AppSidebar({ menuItems, currentCompany, children }: { menuItems:
                 <SidebarContent
                     menuItems={menuItems}
                     currentCompany={currentCompany}
+                    user={user}
                     collapsed={collapsed}
                     setCollapsed={() => setCollapsed(!collapsed)}
                 />
@@ -55,6 +56,7 @@ export function AppSidebar({ menuItems, currentCompany, children }: { menuItems:
                         <SidebarContent
                             menuItems={menuItems}
                             currentCompany={currentCompany}
+                            user={user}
                             collapsed={false}
                             isMobile={true}
                             startCollapsed={false}
@@ -89,16 +91,38 @@ export function AppSidebar({ menuItems, currentCompany, children }: { menuItems:
 }
 
 // Extracted Content for reuse
-function SidebarContent({ menuItems, currentCompany, collapsed, setCollapsed, isMobile, onLinkClick }: any) {
+function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollapsed, isMobile, onLinkClick }: any) {
     return (
         <>
-            {/* Header / Company Switcher */}
+            {/* Header / Company Logo */}
             <div className={`p-4 border-b border-white/5 flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
                 {!collapsed ? (
-                    <CompanySwitcher initialActiveCompany={currentCompany} />
+                    <div className="w-full">
+                        {currentCompany?.logo_url ? (
+                            <div className="flex items-center gap-3">
+                                <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-8 object-contain max-w-[120px]" />
+                                {/* Optional: Show switcher or name if logo is icon-only? Assuming logo includes name or is brand. 
+                                    Let's keep CompanySwitcher logic but use logo if present inside it or replace it?
+                                    User asked "where to save compony logo. i want to show this logo in sidebar".
+                                    Strict replacement or enhancement? Enhancing CompanySwitcher might be best, but CompanySwitcher source is separate.
+                                    Let's just show the logo ABOVE or INSTEAD of switcher default text.
+                                    Actually, CompanySwitcher handles company switching logic. I should probably pass logoUrl TO CompanySwitcher if I can, 
+                                    or just render a header here.
+                                    Let's render a custom header area.
+                                */}
+                                <CompanySwitcher initialActiveCompany={currentCompany} />
+                            </div>
+                        ) : (
+                            <CompanySwitcher initialActiveCompany={currentCompany} />
+                        )}
+                    </div>
                 ) : (
-                    <div className="h-8 w-8 rounded bg-indigo-600 flex items-center justify-center font-bold text-white">
-                        {currentCompany?.name?.substring(0, 2).toUpperCase() || "HM"}
+                    <div className="h-8 w-8 rounded bg-indigo-600 flex items-center justify-center font-bold text-white overflow-hidden">
+                        {currentCompany?.logo_url ? (
+                            <img src={currentCompany.logo_url} alt="Logo" className="w-full h-full object-cover" />
+                        ) : (
+                            currentCompany?.name?.substring(0, 2).toUpperCase() || "HM"
+                        )}
                     </div>
                 )}
             </div>
@@ -141,14 +165,36 @@ function SidebarContent({ menuItems, currentCompany, collapsed, setCollapsed, is
                 </button>
             )}
 
-            {/* Footer / SignOut */}
-            <div className="p-2 border-t border-white/5">
-                <form action={logout}>
-                    <button className={`flex items-center justify-center gap-3 w-full px-3 py-2 text-neutral-400 hover:text-red-400 hover:bg-white/5 rounded-lg transition-all group ${collapsed ? 'px-0' : ''}`}>
-                        <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform" />
-                        {!collapsed && <span className="text-sm font-medium">Sign Out</span>}
-                    </button>
-                </form>
+            {/* Footer / User Profile */}
+            <div className="p-3 border-t border-white/5 bg-black/20">
+                <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} gap-3`}>
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-inner">
+                            {user?.name?.substring(0, 2).toUpperCase() || 'U'}
+                        </div>
+                        {!collapsed && (
+                            <div className="flex flex-col min-w-0">
+                                <span className="text-sm font-medium text-white truncate">{user?.name || 'User'}</span>
+                                <span className="text-xs text-neutral-500 truncate">{user?.email || ''}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    {!collapsed && (
+                        <form action={logout}>
+                            <button className="p-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-md transition-colors" title="Sign Out">
+                                <LogOut className="h-4 w-4" />
+                            </button>
+                        </form>
+                    )}
+                </div>
+                {collapsed && (
+                    <form action={logout} className="mt-2 flex justify-center">
+                        <button className="p-2 text-neutral-400 hover:text-red-400 hover:bg-white/5 rounded-lg transition-colors" title="Sign Out">
+                            <LogOut className="h-4 w-4" />
+                        </button>
+                    </form>
+                )}
             </div>
         </>
     )

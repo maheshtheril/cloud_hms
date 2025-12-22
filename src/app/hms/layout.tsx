@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Activity, Users, Calendar, LayoutDashboard, Settings, LogOut, Stethoscope, Receipt, Shield, Menu } from 'lucide-react'
-import { signOut } from '@/auth'
+import { signOut, auth } from '@/auth'
 import { getMenuItems } from '../actions/navigation'
 import { CompanySwitcher } from '@/components/company-switcher'
 import { getCurrentCompany } from '../actions/company'
@@ -18,9 +18,10 @@ export default async function HMSLayout({
 }) {
     const menuItems = await getMenuItems();
     const currentCompany = await getCurrentCompany();
+    const session = await auth();
 
     return (
-        <AppSidebar menuItems={menuItems} currentCompany={currentCompany}>
+        <AppSidebar menuItems={menuItems} currentCompany={currentCompany} user={session?.user}>
             {children}
         </AppSidebar>
     )

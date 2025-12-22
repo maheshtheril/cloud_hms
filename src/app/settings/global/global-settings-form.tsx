@@ -19,6 +19,7 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
     const [loading, setLoading] = useState(false)
     const [name, setName] = useState(company.name)
     const [industry, setIndustry] = useState(company.industry || '')
+    const [logoUrl, setLogoUrl] = useState(company.logo_url || '')
     const [currencyId, setCurrencyId] = useState(company.company_settings?.currency_id || '')
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -29,6 +30,7 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
             companyId: company.id,
             name,
             industry,
+            logoUrl,
             currencyId
         })
 
@@ -60,6 +62,18 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>Logo URL</Label>
+                        <Input
+                            value={logoUrl}
+                            onChange={e => setLogoUrl(e.target.value)}
+                            placeholder="https://example.com/logo.png"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            Enter a public URL for your company logo.
+                        </p>
+                    </div>
+
                     <div className="space-y-2">
                         <Label>Company Name</Label>
                         <Input
