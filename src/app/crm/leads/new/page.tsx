@@ -3,6 +3,7 @@ import { Sparkles } from 'lucide-react'
 
 import { getCustomFieldDefinitions } from '@/app/actions/crm/custom-fields'
 import { getPipelines, getSources, getCompanies } from '@/app/actions/crm/masters'
+import { getCompanyDefaultCurrency, getSupportedCurrencies } from '@/app/actions/currency'
 
 export default async function NewLeadPage() {
     const rawDefinitions = await getCustomFieldDefinitions('lead')
@@ -16,6 +17,8 @@ export default async function NewLeadPage() {
     const pipelines = await getPipelines(true) // include stages
     const sources = await getSources()
     const companies = await getCompanies()
+    const defaultCurrency = await getCompanyDefaultCurrency()
+    const supportedCurrencies = await getSupportedCurrencies()
 
     return (
         <div className="container mx-auto py-8 max-w-4xl">
@@ -36,6 +39,8 @@ export default async function NewLeadPage() {
                 pipelines={pipelines}
                 sources={sources}
                 companies={companies}
+                defaultCurrency={defaultCurrency}
+                supportedCurrencies={supportedCurrencies}
             />
         </div>
     )

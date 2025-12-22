@@ -25,6 +25,8 @@ import {
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 
+import { deleteLead } from '@/app/actions/crm/leads'
+
 interface LeadTableProps {
     data: any[]
     totalOrCount: number
@@ -45,11 +47,18 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
         router.push(`?${params.toString()}`)
     }
 
+    const handleDelete = async (id: string) => {
+        if (confirm('Are you sure you want to delete this lead?')) {
+            await deleteLead(id)
+        }
+    }
+
     return (
         <div className="space-y-4">
             <div className="rounded-md border bg-white shadow-sm overflow-hidden">
                 <Table>
                     <TableHeader className="bg-slate-50">
+                        {/* ... table header ... */}
                         <TableRow>
                             <TableHead className="w-[250px] font-semibold text-slate-900">Lead Name / Company</TableHead>
                             <TableHead className="font-semibold text-slate-900">Contact</TableHead>
@@ -95,7 +104,7 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right font-medium text-slate-900">
-                                        {formatCurrency(Number(lead.estimated_value) || 0, 'IN')}
+                                        {formatCurrency(Number(lead.estimated_value) || 0, lead.currency || 'INR')}
                                     </TableCell>
                                     <TableCell>
                                         <Badge variant="outline" className={`
@@ -111,7 +120,7 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
                                             <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
                                                 <div
                                                     className={`h-full rounded-full ${(lead.lead_score || 0) > 70 ? 'bg-green-500' :
-                                                            (lead.lead_score || 0) > 40 ? 'bg-yellow-500' : 'bg-red-500'
+                                                        (lead.lead_score || 0) > 40 ? 'bg-yellow-500' : 'bg-red-500'
                                                         }`}
                                                     style={{ width: `${lead.lead_score || 0}%` }}
                                                 />
@@ -136,7 +145,7 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
                                                     <Edit className="mr-2 h-4 w-4" /> Edit Lead
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem className="text-red-600">
+                                                <DropdownMenuItem className="text-red-600 cursor-pointer" onClick={() => handleDelete(lead.id)}>
                                                     <Trash2 className="mr-2 h-4 w-4" /> Delete
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>

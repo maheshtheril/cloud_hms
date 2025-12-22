@@ -2,15 +2,19 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 import { Button } from '@/components/ui/button'
-import { Plus, Target, TrendingUp, DollarSign, Trophy, Percent, Calendar, Zap } from 'lucide-react'
+import { Plus, Target, TrendingUp, DollarSign, Trophy, Percent, Calendar, Zap, IndianRupee } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
+import { getCompanies, getPipelines } from '@/app/actions/crm/masters'
+import { getCompanyDefaultCurrency } from '@/app/actions/currency'
+import { formatCurrency } from '@/lib/currency'
 
 export const dynamic = 'force-dynamic'
 
 export default async function DealsPage() {
     const session = await auth()
     const tenantId = session?.user?.tenantId
+    const defaultCurrency = await getCompanyDefaultCurrency()
 
     const deals = await prisma.crm_deals.findMany({
         where: {
@@ -68,7 +72,7 @@ export default async function DealsPage() {
                             <Target className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                         </div>
                         <div className="text-4xl font-bold text-slate-900 dark:text-white">
-                            ${totalValue.toLocaleString()}
+                            {formatCurrency(totalValue, defaultCurrency.code)}
                         </div>
                     </div>
 
@@ -81,7 +85,7 @@ export default async function DealsPage() {
                             {wonDeals.length}
                         </div>
                         <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mt-1">
-                            ${wonValue.toLocaleString()} closed
+                            {formatCurrency(wonValue, defaultCurrency.code)} closed
                         </p>
                     </div>
 
@@ -141,13 +145,17 @@ export default async function DealsPage() {
                                 {/* Value */}
                                 <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-cyan-50 dark:from-emerald-950/30 dark:to-cyan-950/30 border border-emerald-200/50 dark:border-emerald-700/30">
                                     <div className="p-2 rounded-lg bg-emerald-500/20">
-                                        <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                                        {deal.currency === 'INR' ? (
+                                            <IndianRupee className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                                        ) : (
+                                            <DollarSign className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                                        )}
                                     </div>
                                     <div>
                                         <div className="text-3xl font-bold text-gradient-secondary">
-                                            {Number(deal.value || 0).toLocaleString()}
+                                            {formatCurrency(Number(deal.value || 0), deal.currency || 'USD')}
                                         </div>
-                                        <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                                        <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium font-mono uppercase tracking-wider">
                                             {deal.currency || 'USD'}
                                         </div>
                                     </div>

@@ -7,22 +7,43 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { DollarSign, Calendar as CalendarIcon, Briefcase } from 'lucide-react'
+import { DollarSign, Calendar as CalendarIcon, Briefcase, IndianRupee, Euro, PoundSterling } from 'lucide-react'
 import { useState } from 'react'
 
-export function DealForm({ company, pipelines = [] }: { company?: any, pipelines?: any[] }) {
+import { CurrencyInfo } from '@/app/actions/currency'
+
+export function DealForm({
+    company,
+    pipelines = [],
+    defaultCurrency,
+    supportedCurrencies = []
+}: {
+    company?: any,
+    pipelines?: any[],
+    defaultCurrency?: CurrencyInfo,
+    supportedCurrencies?: CurrencyInfo[]
+}) {
     const initialState: DealFormState = { message: '', errors: {} }
     const [state, dispatch] = useFormState(createDeal, initialState)
     const [selectedPipelineId, setSelectedPipelineId] = useState<string>(pipelines[0]?.id || '')
+
+    const [currency, setCurrency] = useState(defaultCurrency?.code || 'USD')
+
+    // Get symbol for current currency
+    const currentCurrencySymbol = supportedCurrencies.find(c => c.code === currency)?.symbol || '$'
 
     // Get stages for selected pipeline
     const selectedPipeline = pipelines.find(p => p.id === selectedPipelineId)
     const stages = selectedPipeline?.stages || []
 
-    // Determine default currency based on company's country
-    const defaultCurrency = company?.countries?.iso2?.toUpperCase() === 'IN' ? 'INR' :
-        company?.countries?.iso2?.toUpperCase() === 'GB' ? 'GBP' :
-            company?.countries?.iso2?.toUpperCase() === 'US' ? 'USD' : 'USD'
+    const CurrencyIcon = () => {
+        switch (currency) {
+            case 'INR': return <IndianRupee className="absolute left-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
+            case 'EUR': return <Euro className="absolute left-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
+            case 'GBP': return <PoundSterling className="absolute left-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
+            default: return <span className="absolute left-3 top-2 h-4 w-4 text-gray-500 font-bold pointer-events-none select-none">{currentCurrencySymbol}</span>
+        }
+    }
 
     return (
         <form action={dispatch} className="space-y-6">
@@ -43,7 +64,7 @@ export function DealForm({ company, pipelines = [] }: { company?: any, pipelines
                             <div className="space-y-2">
                                 <Label htmlFor="value">Value</Label>
                                 <div className="relative">
-                                    <DollarSign className="absolute left-3 top-2.5 h-4 w-4 text-gray-500 pointer-events-none" />
+                                    <CurrencyIcon />
                                     <Input id="value" name="value" type="number" className="pl-9" placeholder="0.00" step="0.01" />
                                 </div>
                             </div>
@@ -52,14 +73,25 @@ export function DealForm({ company, pipelines = [] }: { company?: any, pipelines
                                 <select
                                     id="currency"
                                     name="currency"
-                                    defaultValue={defaultCurrency}
+                                    value={currency}
+                                    onChange={(e) => setCurrency(e.target.value)}
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    <option value="INR">INR (₹)</option>
-                                    <option value="USD">USD ($)</option>
-                                    <option value="EUR">EUR (€)</option>
-                                    <option value="GBP">GBP (£)</option>
-                                    <option value="AUD">AUD (A$)</option>
+                                    {supportedCurrencies.length > 0 ? (
+                                        supportedCurrencies.map(c => (
+                                            <option key={c.code} value={c.code}>
+                                                {c.code} ({c.symbol})
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <>
+                                            <option value="INR">INR (₹)</option>
+                                            <option value="USD">USD ($)</option>
+                                            <option value="EUR">EUR (€)</option>
+                                            <option value="GBP">GBP (£)</option>
+                                            <option value="AUD">AUD (A$)</option>
+                                        </>
+                                    )}
                                 </select>
                             </div>
                         </div>

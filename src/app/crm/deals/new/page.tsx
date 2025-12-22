@@ -24,7 +24,12 @@ export default async function NewDealPage() {
                 </div>
             </div>
 
-            <DealForm company={defaultCompany} pipelines={pipelines} />
+            <DealForm
+                company={defaultCompany}
+                pipelines={pipelines}
+                defaultCurrency={defaultCurrency}
+                supportedCurrencies={supportedCurrencies}
+            />
         </div>
     )
 }

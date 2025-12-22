@@ -303,3 +303,24 @@ export async function updateLead(prevState: LeadFormState, formData: FormData): 
         return { message: "Database Error: Failed to update lead." };
     }
 }
+
+export async function deleteLead(id: string) {
+    const session = await auth();
+    if (!session?.user?.tenantId) {
+        return { message: "Unauthorized" };
+    }
+
+    try {
+        await prisma.crm_leads.update({
+            where: { id },
+            data: { deleted_at: new Date() }
+        });
+
+        revalidatePath('/crm/leads');
+        return { success: true, message: "Lead deleted successfully" };
+    } catch (error) {
+        console.error(error);
+        return { message: "Database Error: Failed to delete lead." };
+    }
+}
+

@@ -12,21 +12,30 @@ import { Sparkles, BarChart2, Calendar as CalendarIcon } from 'lucide-react'
 import { CustomFieldDefinition, CustomFieldRenderer } from './custom-field-renderer'
 import { SubmitButton } from '@/components/ui/submit-button'
 
+import { CurrencyInfo } from '@/app/actions/currency'
+
 export function LeadForm({
     customFields = [],
     pipelines = [],
     sources = [],
     companies = [],
     initialData = null,
-    mode = 'create'
+    mode = 'create',
+    defaultCurrency,
+    supportedCurrencies = []
 }: {
     customFields?: CustomFieldDefinition[],
     pipelines?: any[],
     sources?: any[],
     companies?: any[],
     initialData?: any,
-    mode?: 'create' | 'edit'
+    mode?: 'create' | 'edit',
+    defaultCurrency?: CurrencyInfo,
+    supportedCurrencies?: CurrencyInfo[]
 }) {
+    const [currency, setCurrency] = useState(initialData?.currency || defaultCurrency?.code || 'USD')
+    const currentCurrencySymbol = supportedCurrencies.find(c => c.code === currency)?.symbol || defaultCurrency?.symbol || '$'
+
 
     // Select default pipeline (first one, or one marked is_default)
     const defaultPipeline = pipelines.find(p => p.is_default) || pipelines[0]
@@ -157,26 +166,48 @@ export function LeadForm({
                     <CardContent className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="estimated_value">Est. Value ($)</Label>
+                                <Label htmlFor="estimated_value">Est. Value ({currentCurrencySymbol})</Label>
                                 <Input id="estimated_value" name="estimated_value" type="number" placeholder="0.00" step="0.01" defaultValue={initialData?.estimated_value} />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="probability">Probability (%)</Label>
-                                <Input id="probability" name="probability" type="number" placeholder="0" max="100" defaultValue={initialData?.probability} />
+                                <Label htmlFor="currency">Currency</Label>
+                                <select
+                                    id="currency"
+                                    name="currency"
+                                    value={currency}
+                                    onChange={(e) => setCurrency(e.target.value)}
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    {supportedCurrencies.map(c => (
+                                        <option key={c.code} value={c.code}>{c.code} ({c.symbol})</option>
+                                    ))}
+                                    {supportedCurrencies.length === 0 && (
+                                        <>
+                                            <option value="INR">INR (₹)</option>
+                                            <option value="USD">USD ($)</option>
+                                        </>
+                                    )}
+                                </select>
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="source_id">Source</Label>
-                            <select
-                                id="source_id"
-                                name="source_id"
-                                defaultValue={initialData?.source_id}
-                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                                <option value="">Select Source</option>
-                                {sources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="probability">Probability (%)</Label>
+                                <Input id="probability" name="probability" type="number" placeholder="50" max="100" defaultValue={initialData?.probability} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="source_id">Source</Label>
+                                <select
+                                    id="source_id"
+                                    name="source_id"
+                                    defaultValue={initialData?.source_id}
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <option value="">Select Source</option>
+                                    {sources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                </select>
+                            </div>
                         </div>
 
                         {/* Pipeline & Stage Section */}

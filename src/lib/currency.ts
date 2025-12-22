@@ -45,17 +45,29 @@ export function getCurrencyCode(countryCode: string): string {
 
 /**
  * Format amount with currency symbol
+ * @param amount Number to format
+ * @param currencyOrCountry Code (e.g. 'INR', 'USD', 'IN', 'US')
  */
-export function formatCurrency(amount: number, countryCode: string): string {
-    const symbol = getCurrencySymbol(countryCode);
+export function formatCurrency(amount: number, currencyOrCountry: string = 'USD'): string {
+    let symbol = '$';
+    const code = currencyOrCountry?.toUpperCase();
+
+    if (code === 'INR' || code === 'IN') symbol = '₹';
+    else if (code === 'USD' || code === 'US') symbol = '$';
+    else if (code === 'GBP' || code === 'GB') symbol = '£';
+    else if (code === 'EUR' || code === 'EU') symbol = '€';
+    else if (code === 'AED' || code === 'AE') symbol = 'AED';
+    else if (code === 'SAR' || code === 'SA') symbol = 'SAR';
+    else if (code === 'AUD' || code === 'AU') symbol = 'A$';
+    else if (code === 'CAD' || code === 'CA') symbol = 'C$';
+    else symbol = CURRENCY_SYMBOLS[code] || '$';
+
     const formatted = amount.toLocaleString('en-IN', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
     });
 
-    // For symbols like ₹, £, put before number
-    // For codes like AED, SAR, put after number
-    if (symbol.length === 1) {
+    if (symbol.length === 1 || symbol === 'A$' || symbol === 'C$' || symbol === 'S$') {
         return `${symbol}${formatted}`;
     } else {
         return `${formatted} ${symbol}`;
