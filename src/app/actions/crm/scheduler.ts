@@ -17,37 +17,56 @@ export async function getSchedulerEvents(start: Date, end: Date) {
 
     // Note: start and end are coming from the client calendar view range
 
-    const activities = await prisma.crm_activities.findMany({
-        where: {
-            tenant_id: tenantId,
-            owner_id: userId, // Filter by user
-            due_date: {
-                gte: start,
-                lte: end
+    // Parallel fetch for activities and leads with followups
+    const [activities, leads] = await Promise.all([
+        prisma.crm_activities.findMany({
+            where: {
+                tenant_id: tenantId,
+                owner_id: userId,
+                due_date: {
+                    gte: start,
+                    lte: end
+                },
+                status: { not: 'cancelled' }
             },
-            status: { not: 'cancelled' } // Optionally hide cancelled
-        },
-        select: {
-            id: true,
-            subject: true,
-            description: true,
-            due_date: true,
-            type: true,
-            status: true,
-            lead: {
-                select: { name: true, company_name: true }
-            },
-            deal: {
-                select: { title: true }
+            select: {
+                id: true,
+                subject: true,
+                description: true,
+                due_date: true,
+                type: true,
+                status: true,
+                lead: {
+                    select: { name: true, company_name: true }
+                },
+                deal: {
+                    select: { title: true }
+                }
             }
-        }
-    })
+        }),
+        prisma.crm_leads.findMany({
+            where: {
+                tenant_id: tenantId,
+                owner_id: userId,
+                next_followup_date: {
+                    gte: start,
+                    lte: end
+                },
+                deleted_at: null
+            },
+            select: {
+                id: true,
+                name: true,
+                company_name: true,
+                next_followup_date: true,
+                status: true
+            }
+        })
+    ])
 
-    // Map to calendar events
-    return activities.map(act => {
+    // Map activities to calendar events
+    const activityEvents = activities.map(act => {
         const startDate = new Date(act.due_date!)
-        // Default duration 1 hour if not specified (activities schema doesn't have end_date, only due_date/completed_at)
-        // We might want to add end_date to schema later, but for now 1h default.
         const endDate = new Date(startDate.getTime() + 60 * 60 * 1000)
 
         return {
@@ -58,10 +77,34 @@ export async function getSchedulerEvents(start: Date, end: Date) {
             allDay: false,
             resource: {
                 type: act.type,
-                description: act.description,
+                description: act.description || 'No description provided.',
                 status: act.status,
-                related: act.lead ? `${act.lead.name} (${act.lead.company_name || ''})` : act.deal ? act.deal.title : 'General'
+                related: act.lead ? `Lead: ${act.lead.name}` : act.deal ? `Deal: ${act.deal.title}` : 'General',
+                subtext: act.lead?.company_name || ''
             }
         }
     })
+
+    // Map leads to calendar events
+    const leadEvents = leads.map(lead => {
+        const startDate = new Date(lead.next_followup_date!)
+        const endDate = new Date(startDate.getTime() + 30 * 60 * 1000) // 30 min for followups
+
+        return {
+            id: lead.id,
+            title: `Follow-up: ${lead.name}`,
+            start: startDate,
+            end: endDate,
+            allDay: false,
+            resource: {
+                type: 'lead_followup',
+                description: `Scheduled follow-up with lead: ${lead.name}`,
+                status: lead.status,
+                related: `Lead: ${lead.name}`,
+                subtext: lead.company_name || ''
+            }
+        }
+    })
+
+    return [...activityEvents, ...leadEvents]
 }

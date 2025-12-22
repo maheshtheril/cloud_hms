@@ -82,6 +82,7 @@ export default function CRMCalendar() {
         else if (type === 'call') style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
         else if (type === 'email') style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
         else if (type === 'task') style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
+        else if (type === 'lead_followup') style.background = 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)'
         else style.background = 'linear-gradient(135deg, #64748b 0%, #475569 100%)'
 
         return { style }
@@ -151,7 +152,8 @@ export default function CRMCalendar() {
                                 <Badge className={`border-none uppercase font-black text-[9px] px-3 py-1 rounded-full
                                     ${selectedEvent.resource.type === 'meeting' ? 'bg-violet-500 text-white' :
                                         selectedEvent.resource.type === 'call' ? 'bg-emerald-500 text-white' :
-                                            'bg-blue-500 text-white'}`}>
+                                            selectedEvent.resource.type === 'lead_followup' ? 'bg-pink-500 text-white' :
+                                                'bg-blue-500 text-white'}`}>
                                     {selectedEvent.resource.type} PROTOCOL
                                 </Badge>
                                 <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter leading-tight">
