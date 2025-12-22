@@ -1,5 +1,7 @@
+'use client'
+
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { Calendar, dateFnsLocalizer, Views } from 'react-big-calendar'
+import { Calendar, dateFnsLocalizer, Views, View } from 'react-big-calendar'
 import { format } from 'date-fns/format'
 import { parse } from 'date-fns/parse'
 import { startOfWeek } from 'date-fns/startOfWeek'
@@ -38,7 +40,7 @@ const localizer = dateFnsLocalizer({
 
 export default function CRMCalendar() {
     const [events, setEvents] = useState<any[]>([])
-    const [view, setView] = useState(Views.MONTH)
+    const [view, setView] = useState<View>(Views.MONTH)
     const [date, setDate] = useState(new Date())
     const [selectedEvent, setSelectedEvent] = useState<any>(null)
 
