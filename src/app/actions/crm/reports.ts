@@ -45,11 +45,80 @@ export async function getCrmReports() {
         }
     })
 
+    // 3. Lead Growth Trend (Last 6 Months)
+    const sixMonthsAgo = new Date()
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5)
+    sixMonthsAgo.setDate(1) // Start of 6 months ago
+
+    const leadsTrendData = await prisma.crm_leads.findMany({
+        where: {
+            tenant_id: tenantId,
+            deleted_at: null,
+            created_at: { gte: sixMonthsAgo }
+        },
+        select: { created_at: true }
+    })
+
+    // Process leads into monthly counts
+    const monthlyGrowth = new Map<string, number>()
+    // Initialize last 6 months with 0
+    for (let i = 0; i < 6; i++) {
+        const d = new Date()
+        d.setMonth(d.getMonth() - i)
+        const key = d.toLocaleString('default', { month: 'short', year: 'numeric' }) // e.g., "Dec 2025"
+        monthlyGrowth.set(key, 0)
+    }
+
+    leadsTrendData.forEach(l => {
+        const key = l.created_at.toLocaleString('default', { month: 'short', year: 'numeric' })
+        if (monthlyGrowth.has(key)) {
+            monthlyGrowth.set(key, (monthlyGrowth.get(key) || 0) + 1)
+        }
+    })
+
+    // Reverse to show oldest first
+    const growthTrend = Array.from(monthlyGrowth.entries())
+        .map(([name, value]) => ({ name, value }))
+        .reverse()
+
+    // 4. Activity Volume
+    const activities = await prisma.crm_activities.groupBy({
+        by: ['type'],
+        where: { tenant_id: tenantId },
+        _count: { id: true }
+    })
+
+    // 5. Top Performers (By Deal Value)
+    const topDeals = await prisma.crm_deals.findMany({
+        where: { tenant_id: tenantId, deleted_at: null, status: 'won' },
+        select: {
+            value: true,
+            owner: {
+                select: { name: true, email: true }
+            }
+        }
+    })
+
+    const ownerPerformance = new Map<string, number>()
+    topDeals.forEach(d => {
+        const ownerName = d.owner?.name || 'Unassigned'
+        const val = Number(d.value || 0)
+        ownerPerformance.set(ownerName, (ownerPerformance.get(ownerName) || 0) + val)
+    })
+
+    const topPerformers = Array.from(ownerPerformance.entries())
+        .map(([name, value]) => ({ name, value }))
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 5) // Top 5
+
     return {
         leadsByStatus: leadsByStatus.map(l => ({
             status: l.status || 'New',
             count: l._count.id
         })),
-        dealsByStage: dealsReport
+        dealsByStage: dealsReport,
+        growthTrend,
+        activityVolume: activities.map(a => ({ name: a.type, value: a._count.id })),
+        topPerformers
     }
 }
