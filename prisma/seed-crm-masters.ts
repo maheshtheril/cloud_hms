@@ -80,11 +80,11 @@ async function main() {
         const reasons = ['Price too high', 'Competitor', 'Feature missing', 'Timing', 'No budget']
         for (const reason of reasons) {
             const exists = await prisma.crm_lost_reasons.findFirst({
-                where: { reason, tenant_id: tenantId }
+                where: { name: reason, tenant_id: tenantId }
             })
             if (!exists) {
                 await prisma.crm_lost_reasons.create({
-                    data: { reason, tenant_id: tenantId }
+                    data: { name: reason, tenant_id: tenantId }
                 })
             }
         }
