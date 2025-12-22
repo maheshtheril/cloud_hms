@@ -121,7 +121,7 @@ export async function inviteUser(data: InviteUserData) {
         const user = await prisma.app_user.create({
             data: {
                 tenant_id: session.user.tenantId,
-                email: data.email,
+                email: data.email.toLowerCase(),
                 full_name: data.fullName || data.email.split('@')[0],
                 name: data.email.split('@')[0],
                 role: data.systemRole,

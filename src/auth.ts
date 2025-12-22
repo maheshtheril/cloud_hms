@@ -15,43 +15,61 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 if (!credentials?.email || !credentials?.password) return null;
 
                 try {
-                    // Use raw query to verify password with pgcrypto
-                    const users = await prisma.$queryRaw`
-            SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id
-            FROM app_user
-            WHERE email = ${credentials.email}
-              AND password = crypt(${credentials.password}, password)
-          ` as any[];
+                    // Normalize email
+                    const email = credentials.email.toLowerCase()
 
+                    // Use raw query to verify password with pgcrypto (Case Insensitive Email)
+                    const users = await prisma.$queryRaw`
+                        SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, password
+                        FROM app_user
+                        WHERE LOWER(email) = ${email}
+                          AND password = crypt(${credentials.password}, password)
+                    ` as any[];
 
                     if (users && users.length > 0) {
                         const user = users[0];
 
-                        // Fetch Company & Modules
-                        const company = await prisma.company.findFirst({ where: { id: user.company_id } });
-                        const tenantModules = await prisma.tenant_module.findMany({
-                            where: { tenant_id: user.tenant_id, enabled: true },
-                            select: { module_key: true }
-                        });
-                        const moduleKeys = tenantModules.map(m => m.module_key);
+                        try {
+                            // Fetch Company & Modules
+                            const company = user.company_id ? await prisma.company.findFirst({ where: { id: user.company_id } }) : null;
+                            const tenantModules = await prisma.tenant_module.findMany({
+                                where: { tenant_id: user.tenant_id, enabled: true },
+                                select: { module_key: true }
+                            });
+                            const moduleKeys = tenantModules.map(m => m.module_key);
 
-                        return {
-                            id: user.id,
-                            email: user.email,
-                            name: user.name,
-                            isAdmin: user.is_admin,
-                            isTenantAdmin: user.is_tenant_admin,
-                            companyId: user.company_id,
-                            tenantId: user.tenant_id,
-                            industry: company?.industry || '',
-                            hasCRM: moduleKeys.includes('crm'),
-                            hasHMS: moduleKeys.includes('hms'),
-                        };
+                            return {
+                                id: user.id,
+                                email: user.email,
+                                name: user.name,
+                                isAdmin: user.is_admin,
+                                isTenantAdmin: user.is_tenant_admin,
+                                companyId: user.company_id,
+                                tenantId: user.tenant_id,
+                                industry: company?.industry || '',
+                                hasCRM: moduleKeys.includes('crm'),
+                                hasHMS: moduleKeys.includes('hms'),
+                            };
+                        } catch (dbError) {
+                            console.error("Auth Data Fetch Error:", dbError)
+                            // return partial session or fail? Fail is safer.
+                            return null;
+                        }
+                    } else {
+                        console.log("Auth Failed: User not found or password verification failed for", email)
+                        // Debugging: Check if user exists without password check
+                        const debugUser = await prisma.app_user.findFirst({ where: { email: email } })
+                        if (debugUser) {
+                            console.log("Debug: User exists, password mismatch.")
+                        } else {
+                            console.log("Debug: User does nit exist.")
+                        }
                     }
                 } catch (error) {
                     console.error("Auth error:", error);
                     return null;
                 }
+
                 return null;
             },
         }),
