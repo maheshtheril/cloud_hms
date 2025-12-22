@@ -139,3 +139,52 @@ export async function importLeads(formData: FormData) {
         return { error: error.message };
     }
 }
+
+// -- Missing Exports for Lead Form (Restoring) --
+
+export type LeadFormState = {
+    errors?: {
+        name?: string[];
+        email?: string[];
+        phone?: string[];
+        company?: string[];
+    };
+    message?: string;
+    success?: boolean;
+}
+
+export async function createLead(prevState: LeadFormState, formData: FormData): Promise<LeadFormState> {
+    const session = await auth();
+    if (!session?.user?.tenantId) {
+        return { message: "Unauthorized" };
+    }
+
+    const name = formData.get('name') as string;
+    const email = formData.get('email') as string;
+    const phone = formData.get('phone') as string;
+    const company = formData.get('company') as string;
+
+    // Basic validation
+    if (!name || name.length < 2) {
+        return { errors: { name: ["Name must be at least 2 characters"] } };
+    }
+
+    try {
+        await prisma.lead.create({
+            data: {
+                tenant_id: session.user.tenantId,
+                company_id: session.user.companyId,
+                name,
+                primary_email: email,
+                primary_phone: phone,
+                custom_data: { company_name: company },
+                status: 'new'
+            }
+        });
+
+        revalidatePath('/crm/leads');
+        return { success: true, message: "Lead created successfully" };
+    } catch (error) {
+        return { message: "Database Error: Failed to create lead." };
+    }
+}
