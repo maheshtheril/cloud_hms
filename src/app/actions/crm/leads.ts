@@ -96,10 +96,10 @@ export async function importLeads(formData: FormData) {
                 console.log("Processing lead:", leadData.primary_email);
 
                 // Check if exists
-                const existing = await prisma.lead.findFirst({
+                const existing = await prisma.crm_leads.findFirst({
                     where: {
                         tenant_id: session.user.tenantId,
-                        primary_email: leadData.primary_email
+                        email: leadData.primary_email
                     }
                 });
 
@@ -107,19 +107,30 @@ export async function importLeads(formData: FormData) {
                     // update? skip for now or maybe update status
                     diffCount++;
                 } else {
-                    await prisma.lead.create({
+                    await prisma.crm_leads.create({
                         data: {
                             tenant_id: session.user.tenantId,
                             company_id: session.user.companyId || null,
                             owner_id: session.user.id || null,
-                            name: leadData.name,
-                            primary_email: leadData.primary_email,
-                            primary_phone: leadData.primary_phone,
+
+                            // Map CSV data to crm_leads fields
+                            name: leadData.name, // The lead title or person name? 
+                            // Usually 'name' in crm_leads is the Lead Title. 
+                            // 'contact_name' is the person.
+                            // For this import, let's use the Name as both for now, or split if we had Title.
+                            contact_name: leadData.name,
+
+                            email: leadData.primary_email,
+                            phone: leadData.primary_phone,
+
+                            company_name: leadData.custom_data?.company_name || null,
+
                             status: leadData.status,
-                            custom_data: leadData.custom_data || {},
-                            meta: {
+
+                            metadata: {
                                 source: 'import_csv',
-                                import_date: new Date().toISOString()
+                                import_date: new Date().toISOString(),
+                                original_data: leadData.custom_data
                             }
                         }
                     });
@@ -174,14 +185,15 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
     }
 
     try {
-        await prisma.lead.create({
+        await prisma.crm_leads.create({
             data: {
                 tenant_id: session.user.tenantId,
                 company_id: session.user.companyId,
-                name,
-                primary_email: email,
-                primary_phone: phone,
-                custom_data: { company_name: company },
+                name: name, // Lead Title
+                contact_name: name, // Person Name
+                email: email,
+                phone: phone,
+                company_name: company,
                 status: 'new'
             }
         });
