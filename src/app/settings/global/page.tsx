@@ -9,30 +9,34 @@ export default async function GlobalSettingsPage() {
     const session = await auth()
     if (!session?.user?.id) redirect('/login')
 
-    // Fetch User's Company
-    const user = await prisma.app_user.findUnique({
-        where: { id: session.user.id },
-        select: { tenant_id: true, company_id: true }
-    })
+    console.log("Global Settings: Session OK", session?.user?.id);
 
-    if (!user || !user.company_id) {
-        // Fallback if no company (shouldn't happen in app context usually)
+    const companyId = session.user.companyId;
+
+    if (!companyId) {
         return <div className="p-8">No company associated with this user account.</div>
     }
 
-    const company = await prisma.company.findUnique({
-        where: { id: user.company_id },
+    const rawCompany = await prisma.company.findUnique({
+        where: { id: companyId },
         include: {
             company_settings: true
         }
     })
+
+    // Serialize to handle Date objects before passing to Client Component
+    const company = JSON.parse(JSON.stringify(rawCompany));
+
+    console.log("Global Settings: Company Fetched", company?.id);
 
     const currencies = await prisma.currencies.findMany({
         select: { id: true, code: true, name: true, symbol: true },
         orderBy: { code: 'asc' }
     })
 
-    if (!company) return <div>Company not found</div>
+    console.log("Global Settings: Currencies", currencies.length);
+
+    if (!company) return <div>Company not found for ID: {companyId}</div>
 
     return (
         <div className="container mx-auto p-6 max-w-4xl">
