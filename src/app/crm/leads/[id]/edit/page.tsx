@@ -7,7 +7,7 @@ import { auth } from '@/auth'
 import { notFound } from 'next/navigation'
 
 import { getCustomFieldDefinitions } from '@/app/actions/crm/custom-fields'
-import { getPipelines, getSources, getCompanies, getCRMUsers } from '@/app/actions/crm/masters'
+import { getPipelines, getSources, getCompanies, getCRMUsers, getTargetTypes } from '@/app/actions/crm/masters'
 
 export const dynamic = 'force-dynamic'
 
@@ -46,6 +46,8 @@ export default async function EditLeadPage(props: Props) {
     const sources = await getSources()
     const companies = await getCompanies()
     const users = await getCRMUsers()
+    const targetTypes = await getTargetTypes()
+
 
     return (
         <div className="min-h-screen bg-futuristic">
@@ -83,7 +85,9 @@ export default async function EditLeadPage(props: Props) {
                         sources={sources}
                         companies={companies}
                         users={users}
+                        targetTypes={targetTypes}
                     />
+
                 </div>
             </div>
         </div>

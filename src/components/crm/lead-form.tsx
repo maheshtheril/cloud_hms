@@ -8,9 +8,20 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
-import { Sparkles, BarChart2, Calendar as CalendarIcon } from 'lucide-react'
+import { Sparkles, BarChart2, Calendar as CalendarIcon, Plus } from 'lucide-react'
 import { CustomFieldDefinition, CustomFieldRenderer } from './custom-field-renderer'
 import { SubmitButton } from '@/components/ui/submit-button'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import { upsertTargetType } from '@/app/actions/crm/masters'
+import { useRouter } from 'next/navigation'
 
 import { CurrencyInfo } from '@/app/actions/currency'
 
@@ -23,7 +34,8 @@ export function LeadForm({
     mode = 'create',
     defaultCurrency,
     supportedCurrencies = [],
-    users = []
+    users = [],
+    targetTypes = []
 }: {
     customFields?: CustomFieldDefinition[],
     pipelines?: any[],
@@ -33,8 +45,28 @@ export function LeadForm({
     mode?: 'create' | 'edit',
     defaultCurrency?: CurrencyInfo,
     supportedCurrencies?: CurrencyInfo[],
-    users?: any[]
+    users?: any[],
+    targetTypes?: any[]
 }) {
+    const router = useRouter()
+    const [localTargetTypes, setLocalTargetTypes] = useState(targetTypes || [])
+    const [isAddingTargetType, setIsAddingTargetType] = useState(false)
+    const [newTargetTypeName, setNewTargetTypeName] = useState('')
+    const [isSavingTargetType, setIsSavingTargetType] = useState(false)
+
+    const handleAddTargetType = async () => {
+        if (!newTargetTypeName.trim()) return
+        setIsSavingTargetType(true)
+        const result = await upsertTargetType({ name: newTargetTypeName })
+        if (result.success && result.data) {
+            setLocalTargetTypes(prev => [...prev, result.data])
+            setNewTargetTypeName('')
+            setIsAddingTargetType(false)
+            router.refresh()
+        }
+        setIsSavingTargetType(false)
+    }
+
     const [currency, setCurrency] = useState(initialData?.currency || defaultCurrency?.code || 'USD')
     const currentCurrencySymbol = supportedCurrencies.find(c => c.code === currency)?.symbol || defaultCurrency?.symbol || '$'
 
@@ -134,9 +166,62 @@ export function LeadForm({
                         )}
                         {companies.length === 1 && <input type="hidden" name="company_id" value={companies[0].id} />}
 
-                        <div className="space-y-2">
+                        <div className="space-y-4">
                             <Label htmlFor="company_name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Target Entity / Client Org</Label>
                             <Input id="company_name" name="company_name" placeholder="e.g. Apex Global Corp" defaultValue={initialData?.company_name} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between px-1">
+                                <Label htmlFor="target_type_id" className="text-xs font-bold uppercase tracking-widest text-slate-500">Target Type</Label>
+                                <Dialog open={isAddingTargetType} onOpenChange={setIsAddingTargetType}>
+                                    <DialogTrigger asChild>
+                                        <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-indigo-600 hover:text-indigo-700 font-bold flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
+                                            <Plus className="w-3 h-3" />
+                                            <span>Add New</span>
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[425px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-white/20 rounded-3xl">
+                                        <DialogHeader>
+                                            <DialogTitle className="text-2xl font-black text-gradient-primary">Define Target Type</DialogTitle>
+                                            <DialogDescription className="text-slate-500">
+                                                Establish a new categorization parameter for lead signals.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="py-6">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="target_type_name" className="text-xs font-bold uppercase tracking-widest text-slate-500">Type Name</Label>
+                                                <Input
+                                                    id="target_type_name"
+                                                    value={newTargetTypeName}
+                                                    onChange={(e) => setNewTargetTypeName(e.target.value)}
+                                                    placeholder="e.g. Enterprise, Government, SME..."
+                                                    className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl"
+                                                />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button
+                                                type="button"
+                                                onClick={handleAddTargetType}
+                                                disabled={isSavingTargetType || !newTargetTypeName.trim()}
+                                                className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg border-none"
+                                            >
+                                                {isSavingTargetType ? 'Initializing...' : 'Add Parameters'}
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                            <select
+                                id="target_type_id"
+                                name="target_type_id"
+                                defaultValue={initialData?.target_type_id}
+                                className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm focus:border-indigo-500 transition-all outline-none font-medium"
+                            >
+                                <option value="">Select Target Type</option>
+                                {localTargetTypes.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            </select>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

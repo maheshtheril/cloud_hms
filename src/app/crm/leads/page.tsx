@@ -88,10 +88,11 @@ export default async function LeadsPage(props: PageProps) {
             orderBy: { created_at: 'desc' },
             include: {
                 stage: true,
+                target_type: true,
                 owner: {
                     select: { id: true, name: true, email: true }
                 }
-            }
+            } as any
         }),
         prisma.crm_leads.count({
             where

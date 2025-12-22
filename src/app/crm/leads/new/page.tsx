@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
 import { getCustomFieldDefinitions } from '@/app/actions/crm/custom-fields'
-import { getPipelines, getSources, getCompanies, getCRMUsers } from '@/app/actions/crm/masters'
+import { getPipelines, getSources, getCompanies, getCRMUsers, getTargetTypes } from '@/app/actions/crm/masters'
 import { getCompanyDefaultCurrency, getSupportedCurrencies } from '@/app/actions/currency'
 
 export default async function NewLeadPage() {
@@ -22,6 +22,8 @@ export default async function NewLeadPage() {
     const defaultCurrency = await getCompanyDefaultCurrency()
     const supportedCurrencies = await getSupportedCurrencies()
     const users = await getCRMUsers()
+    const targetTypes = await getTargetTypes()
+
 
     return (
         <div className="min-h-screen bg-futuristic">
@@ -59,7 +61,9 @@ export default async function NewLeadPage() {
                         defaultCurrency={defaultCurrency}
                         supportedCurrencies={supportedCurrencies}
                         users={users}
+                        targetTypes={targetTypes}
                     />
+
                 </div>
             </div>
         </div>

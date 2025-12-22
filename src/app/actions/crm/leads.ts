@@ -191,6 +191,8 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
     const pipeline_id = formData.get('pipeline_id') as string || null;
     const stage_id = formData.get('stage_id') as string || null;
     const source_id = formData.get('source_id') as string || null;
+    const target_type_id = formData.get('target_type_id') as string || null;
+
 
     // Dates
     const next_followup_date_raw = formData.get('next_followup_date') as string;
@@ -233,6 +235,8 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
                 pipeline_id,
                 stage_id,
                 source_id,
+                target_type_id,
+
 
                 next_followup_date,
                 ai_summary,
@@ -277,6 +281,8 @@ export async function updateLead(prevState: LeadFormState, formData: FormData): 
     const pipeline_id = formData.get('pipeline_id') as string || null;
     const stage_id = formData.get('stage_id') as string || null;
     const source_id = formData.get('source_id') as string || null;
+    const target_type_id = formData.get('target_type_id') as string || null;
+
 
     // Dates
     const next_followup_date_raw = formData.get('next_followup_date') as string;
@@ -318,6 +324,8 @@ export async function updateLead(prevState: LeadFormState, formData: FormData): 
                 pipeline_id,
                 stage_id,
                 source_id,
+                target_type_id,
+
 
                 next_followup_date,
                 ai_summary,
@@ -371,6 +379,8 @@ export async function getLead(id: string) {
             stage: true,
             pipeline: true,
             source: true,
+            target_type: true,
+
             owner: {
                 select: { id: true, name: true, email: true }
             }

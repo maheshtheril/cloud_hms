@@ -84,6 +84,11 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
                                         <div className="flex flex-col">
                                             <span className="font-bold text-slate-900 dark:text-white text-base group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors cursor-pointer" onClick={() => router.push(`/crm/leads/${lead.id}`)}>
                                                 {lead.name}
+                                                {lead.target_type && (
+                                                    <span className="ml-2 text-[9px] font-black px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 uppercase tracking-tighter align-middle">
+                                                        {(lead.target_type as any).name}
+                                                    </span>
+                                                )}
                                             </span>
                                             {lead.company_name && (
                                                 <div className="flex items-center gap-1.5 mt-0.5">

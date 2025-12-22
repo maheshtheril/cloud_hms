@@ -3214,6 +3214,8 @@ model crm_leads {
   pipeline_id        String?          @db.Uuid
   stage_id           String?          @db.Uuid
   source_id          String?          @db.Uuid
+  target_type_id     String?          @db.Uuid
+
   /// Lead Name / Title
   name               String
   /// Person Name
@@ -3243,6 +3245,8 @@ model crm_leads {
   source             crm_sources?     @relation(fields: [source_id], references: [id])
   stage              crm_stages?      @relation(fields: [stage_id], references: [id])
   owner              app_user?        @relation(fields: [owner_id], references: [id])
+  target_type        crm_target_types? @relation(fields: [target_type_id], references: [id])
+
 
   @@index([tenant_id, status])
   @@index([next_followup_date])
@@ -4193,4 +4197,18 @@ model crm_contact_roles {
   deleted_at  DateTime? @db.Timestamptz(6)
 
   @@index([tenant_id], map: "idx_crm_contact_roles_tenant")
+}
+
+model crm_target_types {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id   String      @db.Uuid
+  name        String
+  description String?
+  is_active   Boolean?    @default(true)
+  created_at  DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?   @default(now()) @db.Timestamptz(6)
+  deleted_at  DateTime?   @db.Timestamptz(6)
+  leads       crm_leads[]
+
+  @@index([tenant_id])
 }

@@ -231,6 +231,10 @@ export default async function LeadDetailPage(props: Props) {
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase">Target Type</span>
+                                    <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">{lead.target_type?.name || 'Standard'}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
                                     <span className="text-[10px] font-bold text-slate-400 uppercase">Input Vector</span>
                                     <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{lead.source?.name || 'Manual Signal'}</span>
                                 </div>

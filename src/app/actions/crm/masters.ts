@@ -260,10 +260,11 @@ export async function getLostReasons() {
     const session = await auth()
     if (!session?.user?.tenantId) return []
 
-    return prisma.crm_lost_reasons.findMany({
+    return (prisma as any).crm_lost_reasons.findMany({
         where: { tenant_id: session.user.tenantId, deleted_at: null },
         orderBy: { name: 'asc' }
     })
+
 }
 
 export async function upsertLostReason(data: { id?: string, name: string, description?: string }) {
@@ -272,12 +273,12 @@ export async function upsertLostReason(data: { id?: string, name: string, descri
 
     try {
         if (data.id) {
-            await prisma.crm_lost_reasons.update({
+            await (prisma as any).crm_lost_reasons.update({
                 where: { id: data.id, tenant_id: session.user.tenantId },
                 data: { name: data.name, description: data.description }
             })
         } else {
-            await prisma.crm_lost_reasons.create({
+            await (prisma as any).crm_lost_reasons.create({
                 data: {
                     tenant_id: session.user.tenantId,
                     name: data.name,
@@ -315,7 +316,7 @@ export async function getContactRoles() {
     const session = await auth()
     if (!session?.user?.tenantId) return []
 
-    return prisma.crm_contact_roles.findMany({
+    return (prisma as any).crm_contact_roles.findMany({
         where: { tenant_id: session.user.tenantId, deleted_at: null },
         orderBy: { name: 'asc' }
     })
@@ -327,12 +328,12 @@ export async function upsertContactRole(data: { id?: string, name: string, descr
 
     try {
         if (data.id) {
-            await prisma.crm_contact_roles.update({
+            await (prisma as any).crm_contact_roles.update({
                 where: { id: data.id, tenant_id: session.user.tenantId },
                 data: { name: data.name, description: data.description }
             })
         } else {
-            await prisma.crm_contact_roles.create({
+            await (prisma as any).crm_contact_roles.create({
                 data: {
                     tenant_id: session.user.tenantId,
                     name: data.name,
@@ -353,7 +354,7 @@ export async function deleteContactRole(id: string) {
     if (!session?.user?.tenantId) return { error: "Unauthorized" }
 
     try {
-        await prisma.crm_contact_roles.update({
+        await (prisma as any).crm_contact_roles.update({
             where: { id, tenant_id: session.user.tenantId },
             data: { deleted_at: new Date() }
         })
@@ -374,4 +375,43 @@ export async function getCRMUsers() {
         select: { id: true, name: true, email: true },
         orderBy: { name: 'asc' }
     })
+}
+// --- TARGET TYPES ---
+
+export async function getTargetTypes() {
+    const session = await auth()
+    if (!session?.user?.tenantId) return []
+
+    return (prisma as any).crm_target_types.findMany({
+        where: { tenant_id: session.user.tenantId, deleted_at: null },
+        orderBy: { name: 'asc' }
+    })
+}
+
+export async function upsertTargetType(data: { id?: string, name: string, description?: string }) {
+    const session = await auth()
+    if (!session?.user?.tenantId) return { error: "Unauthorized" }
+
+    try {
+        let result;
+        if (data.id) {
+            result = await (prisma as any).crm_target_types.update({
+                where: { id: data.id, tenant_id: session.user.tenantId },
+                data: { name: data.name, description: data.description }
+            })
+        } else {
+            result = await (prisma as any).crm_target_types.create({
+                data: {
+                    tenant_id: session.user.tenantId,
+                    name: data.name,
+                    description: data.description
+                }
+            })
+        }
+        revalidatePath('/settings/crm')
+        revalidatePath('/crm/leads/new')
+        return { success: true, data: result }
+    } catch (e) {
+        return { error: "Failed to save target type" }
+    }
 }
