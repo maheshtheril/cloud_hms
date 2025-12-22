@@ -1,5 +1,7 @@
 import { LeadForm } from '@/components/crm/lead-form'
-import { Sparkles } from 'lucide-react'
+import { ArrowLeft, Sparkles } from 'lucide-react'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 import { notFound } from 'next/navigation'
@@ -55,9 +57,14 @@ export default async function EditLeadPage(props: Props) {
             </div>
 
             <div className="relative container mx-auto py-12 max-w-5xl">
-                <div className="flex items-center justify-between mb-10">
+                <div className="flex items-center gap-6 mb-10">
+                    <Link href="/crm/leads">
+                        <Button variant="ghost" size="icon" className="rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md">
+                            <ArrowLeft className="h-6 w-6" />
+                        </Button>
+                    </Link>
                     <div>
-                        <h1 className="text-4xl font-bold tracking-tight text-gradient-primary flex items-center gap-2">
+                        <h1 className="text-4xl font-bold tracking-tight text-gradient-primary flex items-center gap-3">
                             Refine Signal
                             <Sparkles className="h-8 w-8 text-indigo-600 animate-pulse" />
                         </h1>
