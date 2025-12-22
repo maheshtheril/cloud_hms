@@ -16,7 +16,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                 try {
                     // Normalize email
-                    const email = credentials.email.toLowerCase()
+                    const email = (credentials.email as string).toLowerCase()
 
                     // Use raw query to verify password with pgcrypto (Case Insensitive Email)
                     const users = await prisma.$queryRaw`
