@@ -19,8 +19,9 @@ export function FileUpload({
     label = "Upload Document",
     accept = "application/pdf,image/*",
     currentFileUrl,
-    disabled = false
-}: FileUploadProps) {
+    disabled = false,
+    maxSizeInBytes = 10 * 1024 * 1024 // 10MB default
+}: FileUploadProps & { maxSizeInBytes?: number }) {
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(currentFileUrl || null);
@@ -210,7 +211,7 @@ export function FileUpload({
                             </p>
                         </div>
                         <div className="text-[10px] text-gray-400 font-mono bg-gray-50 px-2 py-1 rounded">
-                            PDF, JPG, PNG (Max 10MB)
+                            PDF, JPG, PNG (Max {Math.round(maxSizeInBytes / (1024 * 1024))}MB)
                         </div>
                     </>
                 )}
