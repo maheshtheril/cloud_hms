@@ -64,6 +64,7 @@ export function LeadForm({
     }, [selectedCompanyId, companies])
 
     const [phone, setPhone] = useState<any>(initialData?.phone || initialData?.primary_phone)
+    const [isHot, setIsHot] = useState<boolean>(initialData?.is_hot || false)
 
     const initialState: LeadFormState = { message: '', errors: {} }
     const [state, dispatch] = useActionState(mode === 'edit' ? updateLead : createLead, initialState)
@@ -83,6 +84,7 @@ export function LeadForm({
 
     return (
         <form ref={formRef} action={dispatch} className="space-y-8 p-8 bg-white/20 dark:bg-slate-900/20 rounded-3xl backdrop-blur-md">
+            <input type="hidden" name="is_hot" value={isHot ? 'true' : 'false'} />
             {mode === 'edit' && <input type="hidden" name="id" value={initialData.id} />}
 
             {/* AI Core Interaction Section */}
@@ -225,6 +227,19 @@ export function LeadForm({
                                     <option value="">Legacy / Untracked</option>
                                     {sources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                                 </select>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-3 p-4 bg-indigo-500/5 dark:bg-indigo-500/10 rounded-2xl border border-indigo-500/20 group cursor-pointer transition-all hover:bg-indigo-500/10" onClick={() => setIsHot(!isHot)}>
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isHot ? 'bg-amber-500 text-white shadow-[0_0_15px_rgba(245,158,11,0.5)]' : 'bg-slate-200 dark:bg-slate-800 text-slate-400'}`}>
+                                <Sparkles className={`w-5 h-5 ${isHot ? 'animate-pulse' : ''}`} />
+                            </div>
+                            <div className="flex-1">
+                                <p className="text-xs font-black uppercase tracking-widest text-slate-900 dark:text-white">Priority Signal</p>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase">Boost AI score by marking as High Priority</p>
+                            </div>
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isHot ? 'border-amber-500 bg-amber-500' : 'border-slate-300 dark:border-slate-700'}`}>
+                                {isHot && <div className="w-2 h-2 bg-white rounded-full" />}
                             </div>
                         </div>
 

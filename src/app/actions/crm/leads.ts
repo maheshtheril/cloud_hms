@@ -181,6 +181,7 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
     const company_id = formData.get('company_id') as string; // Branch/Location
     const contact_name = formData.get('contact_name') as string;
     const currency = formData.get('currency') as string || 'INR';
+    const is_hot = formData.get('is_hot') === 'true';
 
     // Numbers
     const estimated_value = parseFloat(formData.get('estimated_value') as string) || 0;
@@ -198,6 +199,16 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
     // Meta
     const ai_summary = formData.get('ai_summary') as string;
     const owner_id = formData.get('owner_id') as string || session.user.id;
+
+    // AI Scoring Implementation
+    const lead_score = calculateAILeadScore({
+        estimated_value,
+        probability,
+        hasEmail: !!email,
+        hasPhone: !!phone,
+        hasCompany: !!company_name,
+        isHot: is_hot
+    });
 
 
     // Basic validation
@@ -227,6 +238,8 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
                 ai_summary,
                 owner_id: owner_id || null,
                 currency: currency,
+                is_hot: is_hot,
+                lead_score: lead_score,
                 status: 'new'
             } as any
         });
@@ -254,6 +267,7 @@ export async function updateLead(prevState: LeadFormState, formData: FormData): 
     const company_name = formData.get('company_name') as string;
     const contact_name = formData.get('contact_name') as string;
     const currency = formData.get('currency') as string || 'INR';
+    const is_hot = formData.get('is_hot') === 'true';
 
     // Numbers
     const estimated_value = parseFloat(formData.get('estimated_value') as string) || 0;
@@ -271,6 +285,16 @@ export async function updateLead(prevState: LeadFormState, formData: FormData): 
     // Meta
     const ai_summary = formData.get('ai_summary') as string;
     const owner_id = formData.get('owner_id') as string;
+
+    // AI Scoring Implementation (Re-calculation)
+    const lead_score = calculateAILeadScore({
+        estimated_value,
+        probability,
+        hasEmail: !!email,
+        hasPhone: !!phone,
+        hasCompany: !!company_name,
+        isHot: is_hot
+    });
 
 
     if (!id) return { message: "Missing Lead ID" };
@@ -298,7 +322,9 @@ export async function updateLead(prevState: LeadFormState, formData: FormData): 
                 next_followup_date,
                 ai_summary,
                 owner_id: owner_id || undefined,
-                currency: currency
+                currency: currency,
+                is_hot: is_hot,
+                lead_score: lead_score
             } as any
         });
 
@@ -350,4 +376,41 @@ export async function getLead(id: string) {
             }
         } as any
     })
+}
+
+/**
+ * AI Scoring Algorithm for Leads
+ * Higher data completeness and priority flags boost the score.
+ */
+function calculateAILeadScore(data: {
+    estimated_value: number;
+    probability: number;
+    hasEmail: boolean;
+    hasPhone: boolean;
+    hasCompany: boolean;
+    isHot: boolean;
+}) {
+    let score = 0;
+
+    // 1. Probability component (Max 40 points)
+    score += (data.probability / 100) * 40;
+
+    // 2. Data Completeness component (Max 20 points)
+    if (data.hasEmail) score += 7;
+    if (data.hasPhone) score += 7;
+    if (data.hasCompany) score += 6;
+
+    // 3. Potential Value component (Max 20 points)
+    // Logarithmic scale: 10k = ~5pts, 100k = ~10pts, 1M = ~15pts, 10M+ = 20pts
+    if (data.estimated_value > 0) {
+        const valScore = Math.min(20, Math.log10(data.estimated_value) * 3);
+        score += valScore;
+    }
+
+    // 4. Intensity Modifier (Hot Lead) (Max 20 points)
+    if (data.isHot) {
+        score += 20;
+    }
+
+    return Math.min(100, Math.round(score));
 }
