@@ -26,6 +26,8 @@ interface PageProps {
         from?: string
         to?: string
         is_hot?: string
+        followup_from?: string
+        followup_to?: string
     }
 }
 
@@ -43,6 +45,8 @@ export default async function LeadsPage(props: PageProps) {
     const ownerId = searchParams?.owner_id
     const fromDate = searchParams?.from
     const toDate = searchParams?.to
+    const followupFrom = searchParams?.followup_from
+    const followupTo = searchParams?.followup_to
     const isHot = searchParams?.is_hot === 'true'
     const skip = (page - 1) * limit
 
@@ -57,6 +61,12 @@ export default async function LeadsPage(props: PageProps) {
             created_at: {
                 ...(fromDate ? { gte: new Date(fromDate) } : {}),
                 ...(toDate ? { lte: new Date(new Date(toDate).setHours(23, 59, 59, 999)) } : {}),
+            }
+        } : {}),
+        ...((followupFrom || followupTo) ? {
+            next_followup_date: {
+                ...(followupFrom ? { gte: new Date(followupFrom) } : {}),
+                ...(followupTo ? { lte: new Date(new Date(followupTo).setHours(23, 59, 59, 999)) } : {}),
             }
         } : {}),
         ...(query ? {

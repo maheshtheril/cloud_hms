@@ -135,6 +135,31 @@ export function FilterLeads({ sources, users }: FilterLeadsProps) {
                             </div>
                         </div>
 
+                        {/* Followup Range Section */}
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Followup Schedule</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                    <Label className="text-[9px] text-slate-500">From</Label>
+                                    <Input
+                                        type="date"
+                                        className="h-8 text-[10px] bg-slate-50 dark:bg-slate-800 border-none font-bold text-amber-600"
+                                        value={searchParams.get('followup_from') || ''}
+                                        onChange={(e) => router.push(`?${createQueryString({ followup_from: e.target.value || null })}`)}
+                                    />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-[9px] text-slate-500">To</Label>
+                                    <Input
+                                        type="date"
+                                        className="h-8 text-[10px] bg-slate-50 dark:bg-slate-800 border-none font-bold text-amber-600"
+                                        value={searchParams.get('followup_to') || ''}
+                                        onChange={(e) => router.push(`?${createQueryString({ followup_to: e.target.value || null })}`)}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Source Section */}
                         <div className="space-y-2">
                             <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Ingestion Source</Label>

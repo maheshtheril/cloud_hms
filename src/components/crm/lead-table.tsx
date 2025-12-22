@@ -62,6 +62,7 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
                             <TableHead className="w-[280px] font-bold text-slate-800 dark:text-slate-200 py-5">Identities & Entity</TableHead>
                             <TableHead className="font-bold text-slate-800 dark:text-slate-200">Point of Contact</TableHead>
                             <TableHead className="font-bold text-slate-800 dark:text-slate-200 text-center">Assigned</TableHead>
+                            <TableHead className="font-bold text-slate-800 dark:text-slate-200">Followup Date</TableHead>
                             <TableHead className="font-bold text-slate-800 dark:text-slate-200">Engagement & Sync</TableHead>
                             <TableHead className="font-bold text-slate-800 dark:text-slate-200 text-right">Potential Value</TableHead>
                             <TableHead className="font-bold text-slate-800 dark:text-slate-200">Status & Stage</TableHead>
@@ -110,21 +111,28 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
                                         </div>
                                     </TableCell>
                                     <TableCell>
+                                        {lead.next_followup_date ? (
+                                            <div className="flex flex-col">
+                                                <span className="text-xs font-bold text-amber-600 dark:text-amber-400">
+                                                    {formatDistanceToNow(new Date(lead.next_followup_date), { addSuffix: true })}
+                                                </span>
+                                                <span className="text-[10px] text-slate-500 font-mono">
+                                                    {new Date(lead.next_followup_date).toLocaleDateString()}
+                                                </span>
+                                            </div>
+                                        ) : (
+                                            <Badge variant="outline" className="text-[10px] opacity-40 uppercase font-bold border-slate-200">No Task</Badge>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
                                         <div className="flex flex-col gap-1">
-                                            {lead.next_followup_date ? (
-                                                <div className="flex flex-col">
-                                                    <span className="text-[10px] font-bold uppercase text-amber-500 tracking-tighter">Next Engagement</span>
-                                                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                                                        {formatDistanceToNow(new Date(lead.next_followup_date), { addSuffix: true })}
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <span className="text-sm text-slate-400 italic">No sync slated</span>
-                                            )}
-                                            <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium uppercase mt-1">
+                                            <div className="flex items-center gap-1 text-[10px] text-slate-500 font-bold uppercase tracking-tighter">
                                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 opacity-60" />
                                                 Created {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true })}
                                             </div>
+                                            <span className="text-[9px] text-slate-400 font-mono">
+                                                {new Date(lead.created_at).toLocaleDateString()}
+                                            </span>
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right">
