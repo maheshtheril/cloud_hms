@@ -2483,7 +2483,7 @@ model lab_test_group {
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model lead {
-  id                 String                   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                 String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id          String                   @db.Uuid
   company_id         String?                  @db.Uuid
   owner_id           String?                  @db.Uuid
