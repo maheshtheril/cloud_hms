@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { updateGlobalSettings } from '@/app/actions/settings'
 import { Loader2, Save, Building2, Coins } from 'lucide-react'
 import { toast } from '@/components/ui/use-toast'
+import { FileUpload } from '@/components/ui/file-upload'
 
 interface Props {
     company: any
@@ -61,35 +62,68 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
                         Manage your company profile and primary operational settings.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>Logo URL</Label>
-                        <Input
-                            value={logoUrl}
-                            onChange={e => setLogoUrl(e.target.value)}
-                            placeholder="https://example.com/logo.png"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                            Enter a public URL for your company logo.
-                        </p>
+                <CardContent className="space-y-6">
+                    <div className="space-y-4">
+                        <Label>Company Logo</Label>
+                        <div className="flex flex-col gap-4">
+                            {/* Integration with FileUpload component */}
+                            <FileUpload
+                                label="Upload Company Logo"
+                                folder="logos"
+                                accept="image/*"
+                                currentFileUrl={logoUrl}
+                                onUploadComplete={(url) => setLogoUrl(url)}
+                            />
+                            {/* Fallback URL input if they really want to paste one */}
+                            {!logoUrl && (
+                                <div className="flex items-center gap-2">
+                                    <div className="h-px flex-1 bg-border" />
+                                    <span className="text-xs text-muted-foreground">OR enter URL manually</span>
+                                    <div className="h-px flex-1 bg-border" />
+                                </div>
+                            )}
+                            {!logoUrl && (
+                                <Input
+                                    placeholder="https://..."
+                                    value={logoUrl}
+                                    onChange={e => setLogoUrl(e.target.value)}
+                                    className="text-sm"
+                                />
+                            )}
+                        </div>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label>Company Name</Label>
-                        <Input
-                            value={name}
-                            onChange={e => setName(e.target.value)}
-                            required
-                            placeholder="e.g. Acme Corp"
-                        />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Industry</Label>
-                        <Input
-                            value={industry}
-                            onChange={e => setIndustry(e.target.value)}
-                            placeholder="e.g. Healthcare, Technology"
-                        />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <Label>Company Name</Label>
+                            <Input
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                                required
+                                placeholder="e.g. Acme Corp"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Industry</Label>
+                            <Select value={industry} onValueChange={setIndustry}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select industry" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Healthcare">Healthcare</SelectItem>
+                                    <SelectItem value="Technology">Technology</SelectItem>
+                                    <SelectItem value="Manufacturing">Manufacturing</SelectItem>
+                                    <SelectItem value="Retail">Retail</SelectItem>
+                                    <SelectItem value="Finance">Finance</SelectItem>
+                                    <SelectItem value="Education">Education</SelectItem>
+                                    <SelectItem value="Construction">Construction</SelectItem>
+                                    <SelectItem value="Real Estate">Real Estate</SelectItem>
+                                    <SelectItem value="Non-Profit">Non-Profit</SelectItem>
+                                    <SelectItem value="Other">Other</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
