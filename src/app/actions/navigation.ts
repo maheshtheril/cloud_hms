@@ -154,6 +154,7 @@ export async function getMenuItems() {
                 result.push({
                     module: { name: 'Configuration', module_key: 'configuration' },
                     items: [
+                        { key: 'general-settings', label: 'General Settings', icon: 'Settings', url: '/settings/global' },
                         { key: 'users', label: 'Users', icon: 'Users', url: '/settings/users' },
                         { key: 'roles', label: 'Roles', icon: 'Shield', url: '/settings/roles' },
                         { key: 'permissions', label: 'Permissions', icon: 'Key', url: '/settings/permissions' },
