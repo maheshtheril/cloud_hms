@@ -219,14 +219,23 @@ export function PipelineManager({ pipelines }: { pipelines: any[] }) {
                                         {pipeline.name}
                                         {pipeline.is_default && <Badge variant="secondary" className="text-xs bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-100">Default</Badge>}
                                     </CardTitle>
-                                    <CardDesc className="text-xs mt-0.5">
-                                        {pipeline.stages?.length || 0} Stages defined
+                                    <CardDesc className="text-xs mt-1 flex flex-wrap gap-1 items-center">
+                                        {pipeline.stages?.length > 0 ? (
+                                            pipeline.stages.map((s: any, i: number) => (
+                                                <span key={s.id} className="flex items-center">
+                                                    <span className="font-medium text-slate-600">{s.name}</span>
+                                                    {i < pipeline.stages.length - 1 && <span className="mx-1 text-slate-300">→</span>}
+                                                </span>
+                                            ))
+                                        ) : (
+                                            <span className="text-slate-400 italic">No stages defined</span>
+                                        )}
                                     </CardDesc>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button variant="outline" size="sm" onClick={() => setExpanded(expanded === pipeline.id ? null : pipeline.id)} className={expanded === pipeline.id ? "bg-slate-100 border-slate-300" : ""}>
-                                    {expanded === pipeline.id ? 'Close Designer' : 'Visualize & Edit'}
+                                <Button variant="outline" size="sm" onClick={() => setExpanded(expanded === pipeline.id ? null : pipeline.id)} className={expanded === pipeline.id ? "bg-slate-100 border-slate-300" : "bg-white hover:bg-slate-50"}>
+                                    {expanded === pipeline.id ? 'Close Stages' : 'Configure Stages'}
                                 </Button>
                                 <Separator orientation="vertical" className="h-6 mx-1" />
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-500 hover:text-blue-600" onClick={() => handleEdit(pipeline)}>
