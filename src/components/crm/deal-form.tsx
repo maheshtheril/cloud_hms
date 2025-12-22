@@ -8,20 +8,16 @@ import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { DollarSign, Calendar as CalendarIcon, Briefcase } from 'lucide-react'
+import { useState } from 'react'
 
-// Mock Data
-const pipelines = [{ id: 'default', name: 'Standard Sales Pipeline' }]
-const stages = [
-    { id: 'new', name: 'New' },
-    { id: 'qual', name: 'Qualified' },
-    { id: 'prop', name: 'Proposal' },
-    { id: 'won', name: 'Won' },
-    { id: 'lost', name: 'Lost' },
-]
-
-export function DealForm({ company }: { company?: any }) {
+export function DealForm({ company, pipelines = [] }: { company?: any, pipelines?: any[] }) {
     const initialState: DealFormState = { message: '', errors: {} }
     const [state, dispatch] = useFormState(createDeal, initialState)
+    const [selectedPipelineId, setSelectedPipelineId] = useState<string>(pipelines[0]?.id || '')
+
+    // Get stages for selected pipeline
+    const selectedPipeline = pipelines.find(p => p.id === selectedPipelineId)
+    const stages = selectedPipeline?.stages || []
 
     // Determine default currency based on company's country
     const defaultCurrency = company?.countries?.iso2?.toUpperCase() === 'IN' ? 'INR' :
@@ -74,6 +70,8 @@ export function DealForm({ company }: { company?: any }) {
                                 <select
                                     id="pipeline_id"
                                     name="pipeline_id"
+                                    value={selectedPipelineId}
+                                    onChange={(e) => setSelectedPipelineId(e.target.value)}
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     {pipelines.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -87,7 +85,7 @@ export function DealForm({ company }: { company?: any }) {
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
                                 >
                                     <option value="">Select Stage</option>
-                                    {stages.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                                    {stages.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}
                                 </select>
                             </div>
                         </div>
