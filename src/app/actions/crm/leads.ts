@@ -327,3 +327,23 @@ export async function deleteLead(id: string) {
     }
 }
 
+export async function getLead(id: string) {
+    const session = await auth()
+    if (!session?.user?.tenantId) return null
+
+    return prisma.crm_leads.findUnique({
+        where: {
+            id,
+            tenant_id: session.user.tenantId,
+            deleted_at: null
+        },
+        include: {
+            stage: true,
+            pipeline: true,
+            source: true,
+            owner: {
+                select: { id: true, name: true, email: true }
+            }
+        }
+    })
+}
