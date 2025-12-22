@@ -110,7 +110,8 @@ export async function importLeads(formData: FormData) {
                     await prisma.lead.create({
                         data: {
                             tenant_id: session.user.tenantId,
-                            company_id: session.user.companyId, // Link to current company context
+                            company_id: session.user.companyId || null,
+                            owner_id: session.user.id || null,
                             name: leadData.name,
                             primary_email: leadData.primary_email,
                             primary_phone: leadData.primary_phone,
