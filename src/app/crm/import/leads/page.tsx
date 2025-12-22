@@ -149,15 +149,21 @@ export default function ImportLeadsPage() {
 
                                 <div className="pt-6 border-t">
                                     <Button
+                                        type="button"
                                         variant="outline"
                                         size="sm"
-                                        className="text-slate-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-all"
-                                        onClick={() => {
+                                        className="relative z-10 cursor-pointer text-slate-600 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-200 transition-all active:scale-95"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation(); // Stop any parent handlers
+                                            console.log("Downloading template...");
                                             const headers = ['First Name', 'Last Name', 'Email', 'Phone', 'Company', 'Title', 'Lead Source', 'Status'];
-                                            const csvContent = "data:text/csv;charset=utf-8," + headers.join(",");
-                                            const encodedUri = encodeURI(csvContent);
+                                            const csvContent = headers.join(",");
+                                            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                                            const url = URL.createObjectURL(blob);
+
                                             const link = document.createElement("a");
-                                            link.setAttribute("href", encodedUri);
+                                            link.href = url;
                                             link.setAttribute("download", "lead_import_template.csv");
                                             document.body.appendChild(link);
                                             link.click();
