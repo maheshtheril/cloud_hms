@@ -3344,12 +3344,16 @@ model crm_sources {
 }
 
 model crm_lost_reasons {
-  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id  String      @db.Uuid
-  reason     String
-  deleted_at DateTime?   @db.Timestamptz(6)
-  created_at DateTime    @default(now()) @db.Timestamptz(6)
-  deals      crm_deals[]
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id   String      @db.Uuid
+  name        String
+  description String?
+  is_active   Boolean?    @default(true)
+  created_at  DateTime    @default(now()) @db.Timestamptz(6)
+  deleted_at  DateTime?   @db.Timestamptz(6)
+  deals       crm_deals[]
+
+  @@index([tenant_id], map: "idx_crm_lost_reasons_tenant")
 }
 
 model crm_activities {
@@ -4171,5 +4175,19 @@ model prescription_items {
   hms_product     hms_product  @relation(fields: [medicine_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([prescription_id], map: "idx_prescription_items_prescription")
+
   @@index([medicine_id], map: "idx_prescription_items_medicine")
+}
+
+
+model crm_contact_roles {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id   String    @db.Uuid
+  name        String
+  description String?
+  is_active   Boolean?  @default(true)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  deleted_at  DateTime? @db.Timestamptz(6)
+
+  @@index([tenant_id], map: "idx_crm_contact_roles_tenant")
 }
