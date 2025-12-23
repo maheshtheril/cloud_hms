@@ -85,7 +85,7 @@ export async function createPatient(prevState: any, formData: FormData) {
                 first_name: firstName,
                 last_name: lastName || '',
                 dob: dob ? new Date(dob) : null,
-                gender: null, // TODO: Fix gender constraint
+                gender: gender || null,
                 contact: contact as any, // Type cast for Prisma Json
                 metadata: metadata as any,
                 patient_number: `PAT-${Date.now()}`, // Simple ID generation

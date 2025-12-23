@@ -28,7 +28,7 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
     const [age, setAge] = useState('');
     const [ageUnit, setAgeUnit] = useState('Years');
     const [dob, setDob] = useState('');
-    const [gender, setGender] = useState('M');
+    const [gender, setGender] = useState('male');
 
     const handleLocalSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         if (!onSuccess) return;
@@ -194,7 +194,7 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                 Gender<span className="text-red-500">*</span>
                             </label>
                             <div className="flex gap-2">
-                                {['M', 'F', 'Other'].map((g) => (
+                                {['male', 'female', 'other'].map((g) => (
                                     <button
                                         key={g}
                                         type="button"
@@ -204,7 +204,7 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                             : 'bg-white border-gray-300 text-gray-700 hover:border-blue-300'
                                             }`}
                                     >
-                                        {g === 'M' ? 'Male' : g === 'F' ? 'Female' : 'Other'}
+                                        {g === 'male' ? 'Male' : g === 'female' ? 'Female' : 'Other'}
                                     </button>
                                 ))}
                             </div>
