@@ -4,6 +4,16 @@ import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { auth } from "@/auth"
 
+const normalizeGender = (gender: string | null) => {
+    if (!gender) return null;
+    const g = gender.toLowerCase().trim();
+    if (g === 'm' || g === 'male') return 'male';
+    if (g === 'f' || g === 'female') return 'female';
+    if (g === 'other') return 'other';
+    if (g === 'unknown') return 'unknown';
+    return null;
+}
+
 export async function createPatient(prevState: any, formData: FormData) {
     const firstName = formData.get("first_name") as string
     const lastName = formData.get("last_name") as string
@@ -85,7 +95,7 @@ export async function createPatient(prevState: any, formData: FormData) {
                 first_name: firstName,
                 last_name: lastName || '',
                 dob: dob ? new Date(dob) : null,
-                gender: gender || null,
+                gender: normalizeGender(gender),
                 contact: contact as any, // Type cast for Prisma Json
                 metadata: metadata as any,
                 patient_number: `PAT-${Date.now()}`, // Simple ID generation
@@ -151,21 +161,25 @@ export async function createPatientQuick(formData: FormData) {
         }
     }
 
-    const patient = await prisma.hms_patient.create({
-        data: {
-            tenant_id: tenantId,
-            company_id: companyId || tenantId,
-            first_name: firstName.trim(),
-            last_name: (lastName || '').trim(),
-            dob: dob ? new Date(dob) : null,
-            gender: gender || null,
-            contact: contact as any,
-            patient_number: `PAT-${Date.now()}`,
-            created_by: userId,
-            updated_by: userId
-        }
-    })
-
-    return patient
+    try {
+        const patient = await prisma.hms_patient.create({
+            data: {
+                tenant_id: tenantId,
+                company_id: companyId || tenantId,
+                first_name: firstName.trim(),
+                last_name: (lastName || '').trim(),
+                dob: dob ? new Date(dob) : null,
+                gender: normalizeGender(gender),
+                contact: contact as any,
+                patient_number: `PAT-${Date.now()}`,
+                created_by: userId,
+                updated_by: userId
+            }
+        })
+        return patient
+    } catch (error: any) {
+        console.error('Quick patient creation error:', error)
+        throw new Error(error.message || "Failed to create patient record")
+    }
 }
 
