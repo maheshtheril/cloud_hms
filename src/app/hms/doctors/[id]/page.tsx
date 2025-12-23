@@ -5,9 +5,10 @@ import { ArrowLeft, Mail, Phone, Award, Briefcase, Calendar, Clock, User } from 
 
 import { DoctorProfileActions } from "@/components/hms/doctors/doctor-profile-actions"
 
-export default async function DoctorDetailPage({ params }: { params: { id: string } }) {
+export default async function DoctorDetailPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
     const doctor = await prisma.hms_clinicians.findUnique({
-        where: { id: params.id },
+        where: { id },
         include: {
             hms_roles: true,
             hms_specializations: true
