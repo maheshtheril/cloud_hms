@@ -334,18 +334,18 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-6">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 p-6">
             <div className="max-w-7xl mx-auto space-y-6">
 
                 {/* Premium Header Card */}
-                <div className="bg-white/80 backdrop-blur-xl p-8 rounded-2xl border border-white shadow-xl shadow-blue-100/50">
+                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-8 rounded-2xl border border-white dark:border-slate-800 shadow-xl shadow-blue-100/50 dark:shadow-black/50">
                     <div className="flex items-center gap-4 mb-8">
-                        <div className="h-14 w-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg">
+                        <div className="h-14 w-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20">
                             <Receipt className="h-7 w-7 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">New Invoice</h1>
-                            <p className="text-gray-500 text-sm">Create and manage patient billing</p>
+                            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-slate-400 bg-clip-text text-transparent">New Invoice</h1>
+                            <p className="text-gray-500 dark:text-slate-400 text-sm">Create and manage patient billing</p>
                         </div>
                     </div>
 
@@ -353,25 +353,25 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                         {/* Patient Selector */}
                         <div>
                             <div className="flex items-center justify-between mb-3">
-                                <label className="block text-sm font-semibold text-gray-700">Select Patient</label>
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300">Select Patient</label>
                                 <Link
                                     href="/hms/patients/new"
-                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 hover:text-white bg-blue-50 hover:bg-blue-600 rounded-lg transition-all"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-white bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-600 dark:hover:bg-blue-600 rounded-lg transition-all"
                                 >
                                     <UserPlus className="h-3.5 w-3.5" />
                                     New Patient
                                 </Link>
                             </div>
                             <div className="relative">
-                                <User className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
+                                <User className="absolute left-4 top-3.5 h-5 w-5 text-gray-400 dark:text-slate-500" />
                                 <select
-                                    className="w-full pl-12 pr-4 py-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 font-medium"
+                                    className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white font-medium appearance-none"
                                     value={selectedPatientId}
                                     onChange={(e) => setSelectedPatientId(e.target.value)}
                                 >
-                                    <option value="">Choose patient...</option>
+                                    <option value="" className="text-gray-500">Choose patient...</option>
                                     {patients.map(p => (
-                                        <option key={p.id} value={p.id} className="text-gray-900">
+                                        <option key={p.id} value={p.id} className="text-gray-900 dark:text-white">
                                             {p.first_name} {p.last_name} - {(p.contact as any)?.phone || 'No Contact'}
                                         </option>
                                     ))}
@@ -393,12 +393,12 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
 
                         {/* Date Picker */}
                         <div>
-                            <label className="block text-sm font-semibold text-gray-700 mb-3">Invoice Date</label>
+                            <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-3">Invoice Date</label>
                             <div className="relative">
-                                <Calendar className="absolute left-4 top-3.5 h-5 w-5 text-gray-400" />
+                                <Calendar className="absolute left-4 top-3.5 h-5 w-5 text-gray-400 dark:text-slate-500" />
                                 <input
                                     type="date"
-                                    className="w-full pl-12 pr-4 py-3.5 bg-white border-2 border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 font-medium"
+                                    className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-slate-950 border-2 border-gray-200 dark:border-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white font-medium [color-scheme:light] dark:[color-scheme:dark]"
                                     value={date}
                                     onChange={(e) => setDate(e.target.value)}
                                 />
@@ -423,9 +423,9 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                 </div>
 
                 {/* Items Table - Premium Design */}
-                <div className="bg-white/80 backdrop-blur-xl rounded-2xl border border-white shadow-xl shadow-blue-100/50 overflow-hidden">
+                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white dark:border-slate-800 shadow-xl shadow-blue-100/50 dark:shadow-black/50 overflow-hidden">
                     {/* Table Header */}
-                    <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-4">
+                    <div className="bg-gradient-to-r from-gray-900 to-gray-800 dark:from-slate-950 dark:to-slate-900 px-6 py-4">
                         <h2 className="text-white font-bold text-lg flex items-center gap-2">
                             <FileText className="h-5 w-5" />
                             Invoice Items
@@ -435,22 +435,22 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                     {/* Table */}
                     <div className="overflow-x-auto">
                         <table className="w-full">
-                            <thead className="bg-gray-50 border-b-2 border-gray-200">
+                            <thead className="bg-gray-50 dark:bg-slate-950/50 border-b-2 border-gray-200 dark:border-slate-800">
                                 <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-10">#</th>
-                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider w-[35%]">Item / Service</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Qty / UOM</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Price</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Discount</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Tax</th>
-                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">Total</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider w-10">#</th>
+                                    <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider w-[35%]">Item / Service</th>
+                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">Qty / UOM</th>
+                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">Price</th>
+                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">Discount</th>
+                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">Tax</th>
+                                    <th className="px-6 py-4 text-right text-xs font-bold text-gray-700 dark:text-slate-300 uppercase tracking-wider">Total</th>
                                     <th className="px-6 py-4"></th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-100">
+                            <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                                 {lines.map((line, idx) => (
-                                    <tr key={line.id} className="hover:bg-blue-50/50 transition-colors group">
-                                        <td className="px-6 py-4 text-gray-500 font-mono text-sm">{idx + 1}</td>
+                                    <tr key={line.id} className="hover:bg-blue-50/50 dark:hover:bg-blue-900/10 transition-colors group">
+                                        <td className="px-6 py-4 text-gray-500 dark:text-slate-500 font-mono text-sm">{idx + 1}</td>
 
                                         {/* Item Column - Wider & Searchable */}
                                         <td className="px-6 py-4">
@@ -482,7 +482,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                                             <input
                                                 type="text"
                                                 placeholder="Additional description..."
-                                                className="w-full text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-1.5 outline-none focus:ring-2 focus:ring-blue-500"
+                                                className="w-full text-sm text-gray-600 dark:text-slate-300 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded px-3 py-1.5 outline-none focus:ring-2 focus:ring-blue-500"
                                                 value={line.description}
                                                 onChange={(e) => updateLine(line.id, 'description', e.target.value)}
                                             />
@@ -495,12 +495,12 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                                                     type="number"
                                                     min="1"
                                                     step="0.01"
-                                                    className="w-20 text-right p-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none font-mono text-gray-900 font-bold"
+                                                    className="w-20 text-right p-2.5 border-2 border-gray-200 dark:border-slate-700 rounded-lg focus:border-blue-500 outline-none font-mono text-gray-900 dark:text-white font-bold bg-white dark:bg-slate-900"
                                                     value={line.quantity}
                                                     onChange={(e) => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
                                                 />
                                                 <select
-                                                    className="p-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-sm text-gray-700 bg-white"
+                                                    className="p-2.5 border-2 border-gray-200 dark:border-slate-700 rounded-lg focus:border-blue-500 outline-none text-sm text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-900"
                                                     value={line.uom || 'PCS'}
                                                     onChange={(e) => {
                                                         // Only update UOM - the updateLine handler will calculate price
@@ -524,12 +524,12 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                                         {/* Price */}
                                         <td className="px-6 py-4">
                                             <div className="flex items-center justify-end gap-1">
-                                                <span className="text-gray-500 text-sm">₹</span>
+                                                <span className="text-gray-500 dark:text-slate-500 text-sm">₹</span>
                                                 <input
                                                     type="number"
                                                     min="0"
                                                     step="0.01"
-                                                    className="w-24 text-right p-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none font-mono text-gray-900 font-bold"
+                                                    className="w-24 text-right p-2.5 border-2 border-gray-200 dark:border-slate-700 rounded-lg focus:border-blue-500 outline-none font-mono text-gray-900 dark:text-white font-bold bg-white dark:bg-slate-900"
                                                     value={line.unit_price}
                                                     onChange={(e) => updateLine(line.id, 'unit_price', parseFloat(e.target.value) || 0)}
                                                 />
@@ -545,7 +545,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                                                     min="0"
                                                     step="0.01"
                                                     placeholder="0"
-                                                    className="w-20 text-right p-2.5 border-2 border-red-200 rounded-lg focus:border-red-500 outline-none font-mono text-red-600 font-bold"
+                                                    className="w-20 text-right p-2.5 border-2 border-red-200 dark:border-red-900/30 rounded-lg focus:border-red-500 outline-none font-mono text-red-600 dark:text-red-400 font-bold bg-white dark:bg-slate-900"
                                                     value={line.discount_amount || ''}
                                                     onChange={(e) => updateLine(line.id, 'discount_amount', parseFloat(e.target.value) || 0)}
                                                 />
@@ -555,16 +555,16 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                                         {/* Tax */}
                                         <td className="px-6 py-4">
                                             <select
-                                                className="w-full text-right p-2.5 border-2 border-gray-200 rounded-lg focus:border-blue-500 outline-none text-sm text-gray-900 font-medium"
+                                                className="w-full text-right p-2.5 border-2 border-gray-200 dark:border-slate-700 rounded-lg focus:border-blue-500 outline-none text-sm text-gray-900 dark:text-white font-medium bg-white dark:bg-slate-900"
                                                 value={line.tax_rate_id}
                                                 onChange={(e) => updateLine(line.id, 'tax_rate_id', e.target.value)}
                                             >
                                                 <option value="" className="text-gray-500">No Tax</option>
                                                 {taxConfig.taxRates.map(t => (
-                                                    <option key={t.id} value={t.id} className="text-gray-900">{t.name} ({t.rate}%)</option>
+                                                    <option key={t.id} value={t.id} className="text-gray-900 dark:text-white">{t.name} ({t.rate}%)</option>
                                                 ))}
                                             </select>
-                                            <div className="text-right text-xs text-gray-500 mt-1 font-mono">
+                                            <div className="text-right text-xs text-gray-500 dark:text-slate-500 mt-1 font-mono">
                                                 ₹{(line.tax_amount || 0).toFixed(2)}
                                             </div>
                                         </td>
@@ -572,7 +572,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                                         {/* Line Total */}
                                         <td className="px-6 py-4">
                                             <div className="text-right">
-                                                <span className="font-bold text-gray-900 text-lg font-mono">
+                                                <span className="font-bold text-gray-900 dark:text-white text-lg font-mono">
                                                     ₹{((line.quantity * line.unit_price) - (line.discount_amount || 0) + (line.tax_amount || 0)).toFixed(2)}
                                                 </span>
                                             </div>
@@ -594,10 +594,10 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                     </div>
 
                     {/* Add Item Button */}
-                    <div className="p-6 bg-gray-50 border-t-2 border-gray-200">
+                    <div className="p-6 bg-gray-50 dark:bg-slate-900/50 border-t-2 border-gray-200 dark:border-slate-800">
                         <button
                             onClick={handleAddItem}
-                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg hover:scale-105 transition-all"
+                            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white font-semibold rounded-xl hover:shadow-lg hover:scale-105 transition-all"
                         >
                             <Plus className="h-5 w-5" />
                             Add Line Item
@@ -610,14 +610,14 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                     {/* Action Buttons */}
                     <div className="flex items-end gap-4">
                         <button
-                            className="flex-1 px-8 py-4 rounded-xl border-2 border-gray-300 text-gray-700 font-bold text-lg hover:bg-gray-50 transition-all shadow-sm"
+                            className="flex-1 px-8 py-4 rounded-xl border-2 border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 font-bold text-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-all shadow-sm"
                             onClick={() => handleSave('draft')}
                             disabled={loading}
                         >
                             Save as Draft
                         </button>
                         <button
-                            className="flex-1 px-8 py-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-bold text-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2"
+                            className="flex-1 px-8 py-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-500 dark:to-emerald-500 text-white font-bold text-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2"
                             onClick={() => handleSave('posted')}
                             disabled={loading}
                         >
@@ -627,7 +627,8 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                     </div>
 
                     {/* Premium Totals Card */}
-                    <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-8 rounded-2xl shadow-2xl text-white">
+                    <div className="bg-gradient-to-br from-gray-900 to-gray-800 dark:from-slate-900 dark:to-black p-8 rounded-2xl shadow-2xl text-white border border-gray-700 dark:border-slate-800">
+
                         <h3 className="text-sm font-semibold uppercase tracking-wider text-gray-400 mb-6">Invoice Summary</h3>
 
                         <div className="space-y-4">
