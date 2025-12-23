@@ -98,13 +98,17 @@ export function SearchableSelect({
         return () => document.removeEventListener('keydown', handleKeyDown)
     }, [isOpen, highlightedIndex, filteredOptions])
 
+    const dropdownRef = useRef<HTMLDivElement>(null)
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            // Check if the click is outside the main container and also not inside the portal dropdown
-            // The portal dropdown is rendered outside the DOM tree of containerRef, so we need to check its parent (document.body)
-            // For simplicity, we'll rely on containerRef for now, as the portal itself doesn't have a ref here.
-            // A more robust solution would involve a ref on the portal's root div.
-            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+            // Check if click is outside BOTH the trigger container AND the dropdown portal
+            if (
+                containerRef.current &&
+                !containerRef.current.contains(event.target as Node) &&
+                dropdownRef.current &&
+                !dropdownRef.current.contains(event.target as Node)
+            ) {
                 setIsOpen(false)
                 setSearch('')
             }
@@ -129,6 +133,7 @@ export function SearchableSelect({
 
     const dropdown = isOpen ? createPortal(
         <div
+            ref={dropdownRef}
             style={{
                 position: 'absolute',
                 top: `${dropdownPosition.top}px`,
