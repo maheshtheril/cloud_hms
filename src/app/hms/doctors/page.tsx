@@ -84,10 +84,10 @@ export default async function DoctorsPage({
     }
 
     return <DoctorsClientPage
-        doctors={doctors}
+        doctors={JSON.parse(JSON.stringify(doctors))}
         stats={stats}
-        departments={departments}
-        roles={roles}
-        specializations={specializations}
+        departments={JSON.parse(JSON.stringify(departments))}
+        roles={JSON.parse(JSON.stringify(roles))}
+        specializations={JSON.parse(JSON.stringify(specializations))}
     />
 }

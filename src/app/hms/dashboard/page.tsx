@@ -132,11 +132,11 @@ export default async function DashboardPage() {
 
     return (
         <DashboardClient
-            user={session.user}
+            user={JSON.parse(JSON.stringify(session.user))}
             stats={stats}
-            appointments={appointments}
-            patients={patients}
-            doctors={doctors}
+            appointments={JSON.parse(JSON.stringify(appointments))}
+            patients={JSON.parse(JSON.stringify(patients))}
+            doctors={JSON.parse(JSON.stringify(doctors))}
         />
     )
 }
