@@ -27,7 +27,6 @@ export default async function RolesPage() {
     const avgPermissions = roles.length > 0 ? Math.round(totalPermissions / roles.length) : 0;
 
     return (
-    return (
         <div className="min-h-screen bg-futuristic">
             {/* Animated Background Effects */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
