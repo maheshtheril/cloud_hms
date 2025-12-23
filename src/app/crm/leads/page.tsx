@@ -12,6 +12,7 @@ import { getCompanyDefaultCurrency } from '@/app/actions/currency'
 
 import { getSources, getCRMUsers } from '@/app/actions/crm/masters'
 import { FilterLeads } from '@/components/crm/filter-leads'
+import { ExportLeadsButton } from '@/components/crm/export-leads-button'
 
 export const dynamic = 'force-dynamic'
 
@@ -143,6 +144,7 @@ export default async function LeadsPage(props: PageProps) {
                             <SearchLeads defaultValue={query} />
                         </div>
                         <div className="flex gap-2">
+                            <ExportLeadsButton />
                             <FilterLeads sources={sources} users={users} />
                             <Link href="/crm/leads/new">
                                 <Button className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-lg border-none px-6 rounded-xl">
