@@ -11,9 +11,10 @@ const initialState = {
 
 interface CreatePatientFormProps {
     tenantCountry?: string
+    onClose?: () => void
 }
 
-export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormProps) {
+export function CreatePatientForm({ tenantCountry = 'IN', onClose }: CreatePatientFormProps) {
 
     const [state, action, isPending] = useActionState(createPatient, initialState);
     const [showMoreDetails, setShowMoreDetails] = useState(false);
@@ -73,9 +74,15 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                 {/* Header */}
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
                     <h2 className="text-xl font-bold text-white">Add New Patient</h2>
-                    <Link href="/hms/patients" className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
-                        <X className="h-6 w-6" />
-                    </Link>
+                    {onClose ? (
+                        <button onClick={onClose} className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
+                            <X className="h-6 w-6" />
+                        </button>
+                    ) : (
+                        <Link href="/hms/patients" className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
+                            <X className="h-6 w-6" />
+                        </Link>
+                    )}
                 </div>
 
                 <form action={action} className="flex-1 overflow-y-auto p-3 space-y-2">
@@ -480,6 +487,7 @@ export function CreatePatientForm({ tenantCountry = 'IN' }: CreatePatientFormPro
                             </button>
                         </div>
                     </div>
+                    {onClose && <input type="hidden" name="source" value="dashboard" />}
                 </form>
             </div>
         </div>

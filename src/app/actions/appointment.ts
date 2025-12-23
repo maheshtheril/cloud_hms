@@ -99,6 +99,12 @@ export async function createAppointment(formData: FormData) {
         return { error: "Failed to create appointment" }
     }
 
+    const source = formData.get("source") as string
+
+    if (source === 'dashboard') {
+        redirect("/hms/dashboard")
+    }
+
     redirect("/hms/appointments")
 }
 

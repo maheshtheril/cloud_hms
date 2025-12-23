@@ -95,6 +95,12 @@ export async function createPatient(prevState: any, formData: FormData) {
         })
 
         // Redirect based on next_action
+        const source = formData.get("source") as string
+
+        if (source === 'dashboard' && !nextAction) {
+            redirect("/hms/dashboard")
+        }
+
         if (nextAction === 'bill') {
             redirect("/hms/billing")
         } else if (nextAction === 'appointment') {
@@ -104,6 +110,9 @@ export async function createPatient(prevState: any, formData: FormData) {
             redirect(`/hms/prescriptions/new?patientId=${patient.id}`)
         } else {
             // Default: redirect to patients list
+            if (source === 'dashboard') {
+                redirect("/hms/dashboard")
+            }
             redirect("/hms/patients")
         }
     } catch (error: any) {
