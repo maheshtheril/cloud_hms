@@ -2,11 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import * as LucideIcons from 'lucide-react';
 import {
-    Activity, Users, Calendar, LayoutDashboard, Settings, LogOut, Stethoscope, Receipt, Shield,
-    Briefcase, Target, Database, FileText, UploadCloud, Menu, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen,
-    Zap, PieChart, MessageSquare, Phone, Mail, Home, Building2
+    Menu, ChevronLeft, ChevronRight, PanelLeftClose,
+    Building2, Activity, LogOut, User, Settings, Search
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import { CompanySwitcher } from '@/components/company-switcher';
 import { logout } from '@/app/actions/auth';
@@ -15,43 +17,41 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger,
+    DropdownMenuSeparator,
+    DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-// Map icon strings to components - Expanded for all modules
-const IconMap: any = {
-    // Shared / Core
-    LayoutDashboard, Users, Calendar, Settings, Shield, Activity,
-
-    // CRM
-    Briefcase, Target, Database, FileText, UploadCloud,
-    Zap, PieChart, MessageSquare, Phone, Mail, Home,
-
-    // HMS
-    Stethoscope, Receipt,
+// Dynamically retrieve icons
+const getIcon = (iconName: string) => {
+    // @ts-ignore - Dynamic access to Lucide icons
+    const Icon = LucideIcons[iconName];
+    return Icon || Activity; // Default to Activity if not found
 };
 
 export function AppSidebar({ menuItems, currentCompany, user, children }: { menuItems: any[], currentCompany: any, user?: any, children: React.ReactNode }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
+    const [mounted, setMounted] = useState(false);
 
-    // Persist sidebar state
+    // Prevent hydration mismatch for collision detection/rendering
     useEffect(() => {
+        setMounted(true);
         const savedState = localStorage.getItem('sidebar-collapsed');
         if (savedState) {
             setCollapsed(JSON.parse(savedState));
         }
 
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth < 768);
-            if (window.innerWidth < 768) {
-                setCollapsed(false); // Always expanded in drawer mode
+        const handleResize = () => {
+            if (window.innerWidth < 1024) {
+                setCollapsed(false); // Reset on mobile to allow drawer
             }
         };
 
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     const toggleCollapse = () => {
@@ -60,13 +60,21 @@ export function AppSidebar({ menuItems, currentCompany, user, children }: { menu
         localStorage.setItem('sidebar-collapsed', JSON.stringify(newState));
     };
 
+    if (!mounted) return null; // or a skeleton
+
     return (
-        <div className="flex h-screen bg-neutral-950 text-white font-sans overflow-hidden">
+        <div className="flex h-screen bg-slate-50 dark:bg-black font-sans overflow-hidden">
             {/* Desktop Sidebar */}
-            <aside
-                className={`${collapsed ? 'w-20' : 'w-72'} 
-                bg-black/40 border-r border-white/5 
-                hidden md:flex flex-col transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] relative z-30 backdrop-blur-xl shadow-2xl`}
+            <motion.aside
+                initial={false}
+                animate={{ width: collapsed ? 80 : 280 }}
+                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className={cn(
+                    "hidden md:flex flex-col z-30 relative",
+                    "bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl",
+                    "border-r border-slate-200 dark:border-zinc-800",
+                    "shadow-[4px_0_24px_-12px_rgba(0,0,0,0.1)]"
+                )}
             >
                 <SidebarContent
                     menuItems={menuItems}
@@ -76,58 +84,67 @@ export function AppSidebar({ menuItems, currentCompany, user, children }: { menu
                     setCollapsed={toggleCollapse}
                     isMobile={false}
                 />
-            </aside>
+            </motion.aside>
 
             {/* Mobile Sidebar System */}
-            {/* Backdrop */}
-            <div
-                className={`fixed inset-0 z-40 bg-black/80 backdrop-blur-sm transition-opacity duration-300 md:hidden
-                ${mobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-                onClick={() => setMobileMenuOpen(false)}
-            />
-
-            {/* Drawer */}
-            <div className={`fixed top-0 left-0 bottom-0 w-[85vw] max-w-sm z-50 bg-neutral-900 border-r border-white/10 shadow-2xl transform transition-transform duration-300 ease-out md:hidden ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-                <SidebarContent
-                    menuItems={menuItems}
-                    currentCompany={currentCompany}
-                    user={user}
-                    collapsed={false}
-                    isMobile={true}
-                    onLinkClick={() => setMobileMenuOpen(false)}
-                    onClose={() => setMobileMenuOpen(false)}
-                />
-            </div>
+            <AnimatePresence>
+                {mobileMenuOpen && (
+                    <>
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden"
+                            onClick={() => setMobileMenuOpen(false)}
+                        />
+                        <motion.div
+                            initial={{ x: "-100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "-100%" }}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            className="fixed top-0 left-0 bottom-0 w-[85vw] max-w-sm z-50 bg-white dark:bg-zinc-900 border-r border-slate-200 dark:border-zinc-800 shadow-2xl md:hidden"
+                        >
+                            <SidebarContent
+                                menuItems={menuItems}
+                                currentCompany={currentCompany}
+                                user={user}
+                                collapsed={false}
+                                isMobile={true}
+                                onLinkClick={() => setMobileMenuOpen(false)}
+                                onClose={() => setMobileMenuOpen(false)}
+                            />
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-neutral-950 relative w-full">
+            <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50 dark:bg-black relative w-full">
                 {/* Mobile Header */}
-                <header className="bg-black/40 backdrop-blur-md border-b border-white/5 p-4 md:hidden flex justify-between items-center z-20 sticky top-0">
+                <header className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-zinc-800 p-4 md:hidden flex justify-between items-center z-20 sticky top-0">
                     <div className="flex items-center gap-3">
                         <button
                             onClick={() => setMobileMenuOpen(true)}
-                            className="p-2 -ml-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-xl transition-colors active:scale-95"
+                            className="p-2 -ml-2 text-slate-500 hover:text-slate-900 dark:text-zinc-400 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-xl transition-colors active:scale-95"
                         >
                             <Menu className="h-6 w-6" />
                         </button>
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
                                 <Activity className="text-white h-5 w-5" />
                             </div>
-                            <span className="font-bold text-white text-lg tracking-tight">HMS Core</span>
+                            <span className="font-bold text-slate-900 dark:text-white text-lg tracking-tight">HMS Core</span>
                         </div>
                     </div>
-                    {/* Tiny User Avatar for Mobile Header */}
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs shadow-inner overflow-hidden">
-                        {user?.image ? (
-                            <img src={user.image} alt={user.name || 'User'} className="w-full h-full object-cover" />
-                        ) : (
-                            user?.name?.substring(0, 2).toUpperCase() || 'U'
-                        )}
-                    </div>
+                    <Avatar className="h-9 w-9 border-2 border-white dark:border-zinc-800 shadow-sm">
+                        <AvatarImage src={user?.image} />
+                        <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-500 text-white font-bold text-xs">
+                            {user?.name?.substring(0, 2).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                    </Avatar>
                 </header>
 
-                <div className="flex-1 overflow-auto relative scroll-smooth">
+                <div className="flex-1 overflow-auto relative scroll-smooth scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
                     {children}
                 </div>
             </main>
@@ -135,78 +152,96 @@ export function AppSidebar({ menuItems, currentCompany, user, children }: { menu
     );
 }
 
-// Extracted Content for reuse
 function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollapsed, isMobile, onLinkClick, onClose }: any) {
     const canSwitchCompany = user?.isAdmin || user?.isTenantAdmin;
+    const [searchText, setSearchText] = useState('');
+
+    const filteredMenuItems = menuItems.map((group: any) => ({
+        ...group,
+        items: group.items.filter((item: any) =>
+            item.label.toLowerCase().includes(searchText.toLowerCase()) ||
+            (item.other_menu_items && item.other_menu_items.some((sub: any) => sub.label.toLowerCase().includes(searchText.toLowerCase())))
+        )
+    })).filter((group: any) => group.items.length > 0);
 
     return (
-        <>
+        <div className="flex flex-col h-full">
             {/* Header / Company Logo */}
-            <div className={`p-4 border-b border-white/5 flex items-center ${collapsed ? 'justify-center' : 'justify-between'} h-16`}>
+            <div className={cn(
+                "flex items-center h-20 px-6 shrink-0 transition-all duration-300",
+                collapsed ? "justify-center px-2" : "justify-between"
+            )}>
                 {!collapsed ? (
-                    <div className="w-full flex items-center justify-between gap-2">
-                        <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between w-full">
+                        <div className="flex-1 min-w-0 mr-4">
                             {canSwitchCompany ? (
-                                <div className={currentCompany?.logo_url ? "flex items-center gap-3" : ""}>
-                                    {currentCompany?.logo_url && (
-                                        <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-8 w-8 object-contain shrink-0" />
-                                    )}
-                                    <CompanySwitcher initialActiveCompany={currentCompany} />
+                                <div className="flex items-center gap-3">
+                                    <div className="relative">
+                                        {currentCompany?.logo_url ? (
+                                            <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-9 w-9 object-contain rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200 dark:ring-zinc-800" />
+                                        ) : (
+                                            <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20">
+                                                <Building2 size={16} />
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <CompanySwitcher initialActiveCompany={currentCompany} />
+                                    </div>
                                 </div>
                             ) : (
-                                <div className="flex items-center gap-2 px-3 py-2 w-full text-left bg-white/5 border border-white/10 rounded-lg">
-                                    {currentCompany?.logo_url ? (
-                                        <img src={currentCompany.logo_url} alt="Logo" className="h-6 w-6 object-contain" />
-                                    ) : (
-                                        <div className="flex items-center justify-center h-6 w-6 rounded bg-blue-500/20 text-blue-400">
-                                            <Building2 size={14} />
-                                        </div>
-                                    )}
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold text-slate-100 truncate">
-                                            {currentCompany?.name}
-                                        </p>
+                                <div className="flex items-center gap-3">
+                                    <div className="h-9 w-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                                        <Building2 size={18} />
+                                    </div>
+                                    <div className="font-bold text-lg tracking-tight text-slate-900 dark:text-white truncate">
+                                        {currentCompany?.name}
                                     </div>
                                 </div>
                             )}
                         </div>
-                        {isMobile && onClose && (
-                            <button
-                                onClick={onClose}
-                                className="p-2 -mr-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-xl transition-all active:scale-95"
-                            >
-                                <PanelLeftClose className="h-5 w-5" />
+                        {isMobile && (
+                            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                                <PanelLeftClose className="w-5 h-5" />
                             </button>
                         )}
                     </div>
                 ) : (
-                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-700 flex items-center justify-center font-bold text-white overflow-hidden shadow-lg transform transition-transform hover:scale-105 cursor-pointer" title="Expand">
-                        {currentCompany?.logo_url ? (
-                            <img src={currentCompany.logo_url} alt="Logo" className="w-full h-full object-cover" />
-                        ) : (
-                            <span className="text-xs tracking-tighter">
-                                {currentCompany?.name?.substring(0, 2).toUpperCase() || "HM"}
-                            </span>
-                        )}
+                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-600 shadow-lg shadow-indigo-500/30 text-white font-bold text-sm">
+                        {currentCompany?.name?.substring(0, 1).toUpperCase() || "H"}
                     </div>
                 )}
             </div>
 
-            {/* Navigation */}
-            <nav className="flex-1 p-3 space-y-6 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-                {menuItems.map((group: any) => (
+            {/* Search (Only Expanded) */}
+            {!collapsed && !isMobile && (
+                <div className="px-4 mb-4">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                        <Input
+                            placeholder="Search modules..."
+                            className="pl-9 bg-slate-100/50 dark:bg-zinc-800/50 border-slate-200 dark:border-zinc-800 h-9 text-sm focus:bg-white dark:focus:bg-zinc-900 transition-all"
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* Scrollable Navigation */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-8 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+                {filteredMenuItems.map((group: any) => (
                     <div key={group.module.module_key} className={collapsed ? "text-center" : ""}>
-                        {/* Module Header */}
-                        {!collapsed && group.module.module_key !== 'general' && (
-                            <h3 className="px-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2 font-mono ml-1">
+                        {!collapsed && (
+                            <h3 className="px-3 text-[11px] font-bold text-slate-400 dark:text-zinc-500 uppercase tracking-wider mb-2 font-mono">
                                 {group.module.name}
                             </h3>
                         )}
-                        {collapsed && group.module.module_key !== 'general' && (
-                            <div className="h-px w-8 bg-white/5 mx-auto mb-3 mt-4"></div>
+                        {collapsed && (
+                            <div className="h-px w-8 bg-slate-200 dark:bg-zinc-800 mx-auto mb-4 mt-2"></div>
                         )}
 
-                        <div className="space-y-0.5">
+                        <div className="space-y-1">
                             {group.items.map((item: any) => (
                                 <MenuItem
                                     key={item.key}
@@ -218,62 +253,84 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                         </div>
                     </div>
                 ))}
-            </nav>
 
-            {/* Collapse Toggle (Bottom) - Only Desktop */}
+                {filteredMenuItems.length === 0 && searchText && (
+                    <div className="text-center p-4 text-slate-400 text-sm">
+                        No modules found for "{searchText}"
+                    </div>
+                )}
+            </div>
+
+            {/* Desktop Collapse Toggle */}
             {!isMobile && setCollapsed && (
                 <button
                     onClick={setCollapsed}
-                    className="absolute -right-3 top-20 bg-neutral-800 text-neutral-400 p-1 rounded-full border border-white/10 hover:text-white hover:bg-indigo-600 transition-colors z-50 shadow-lg"
+                    className="absolute -right-3 top-24 bg-white dark:bg-zinc-900 text-slate-400 dark:text-zinc-500 p-1.5 rounded-full border border-slate-200 dark:border-zinc-800 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-600 dark:hover:border-indigo-500 transition-all shadow-md z-50 hover:scale-110 active:scale-95"
                 >
                     {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
                 </button>
             )}
 
-            {/* Footer / User Profile */}
-            <div className="p-3 border-t border-white/5 bg-black/20">
+            {/* User Profile Footer */}
+            <div className="p-4 border-t border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 backdrop-blur-sm">
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <button className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} gap-3 w-full p-2 rounded-xl hover:bg-white/5 transition-all group outline-none`}>
+                        <button className={cn(
+                            "flex items-center gap-3 w-full p-2 rounded-xl transition-all group outline-none",
+                            collapsed ? "justify-center" : "justify-between hover:bg-white dark:hover:bg-zinc-800 hover:shadow-sm"
+                        )}>
                             <div className="flex items-center gap-3 overflow-hidden text-left">
-                                <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-inner ring-2 ring-white/10 group-hover:ring-white/20 transition-all overflow-hidden">
-                                    {user?.image ? (
-                                        <img src={user.image} alt={user.name || 'User'} className="w-full h-full object-cover" />
-                                    ) : (
-                                        user?.name?.substring(0, 2).toUpperCase() || 'U'
-                                    )}
-                                </div>
+                                <Avatar className="h-10 w-10 border-2 border-white dark:border-zinc-700 shadow-sm ring-2 ring-transparent group-hover:ring-indigo-100 dark:group-hover:ring-indigo-900 transition-all">
+                                    <AvatarImage src={user?.image} />
+                                    <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs">
+                                        {user?.name?.substring(0, 2).toUpperCase() || 'U'}
+                                    </AvatarFallback>
+                                </Avatar>
+
                                 {!collapsed && (
                                     <div className="flex flex-col min-w-0">
-                                        <span className="text-sm font-semibold text-white truncate group-hover:text-indigo-400 transition-colors">
+                                        <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                             {user?.name || user?.email?.split('@')[0] || 'User'}
                                         </span>
-                                        <span className="text-xs text-neutral-500 truncate">{user?.email || ''}</span>
+                                        <span className="text-xs text-slate-500 dark:text-zinc-500 truncate">{user?.email || ''}</span>
                                     </div>
                                 )}
                             </div>
                             {!collapsed && (
-                                <ChevronRight className="h-4 w-4 text-neutral-600 group-hover:text-white transition-colors" />
+                                <Settings className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors animate-spin-slow" />
                             )}
                         </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent side="right" align="end" className="w-56 bg-neutral-900 border-white/10 text-white p-2 backdrop-blur-xl shadow-2xl rounded-xl">
-                        <div className="px-2 py-1.5 border-b border-white/10 mb-1">
-                            <p className="text-sm font-semibold text-white">{user?.name}</p>
-                            <p className="text-xs text-neutral-400">{user?.email}</p>
+
+                    <DropdownMenuContent side="right" align="end" className="w-64 bg-white/95 dark:bg-zinc-900/95 border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 p-2 backdrop-blur-xl shadow-2xl rounded-2xl mb-2 ml-2">
+                        <div className="px-3 py-2.5 bg-slate-50 dark:bg-zinc-800/50 rounded-lg mb-2">
+                            <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{user?.name}</p>
+                            <p className="text-xs text-slate-500 font-mono mt-0.5">{user?.email}</p>
                         </div>
-                        <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white cursor-pointer rounded-lg text-neutral-300 mb-1">
-                            <Link href="/settings/profile" className="flex items-center gap-2 px-2 py-1.5 w-full outline-none">
-                                <Users className="h-4 w-4" />
+
+                        <DropdownMenuLabel className="text-xs text-slate-400 font-normal uppercase tracking-wider ml-1">Account</DropdownMenuLabel>
+
+                        <DropdownMenuItem asChild className="focus:bg-indigo-50 dark:focus:bg-indigo-900/20 focus:text-indigo-700 dark:focus:text-indigo-400 cursor-pointer rounded-lg mb-1 h-10">
+                            <Link href="/settings/profile" className="flex items-center gap-3 px-2 w-full">
+                                <User className="h-4 w-4" />
                                 <span>My Profile</span>
                             </Link>
                         </DropdownMenuItem>
+
+                        <DropdownMenuItem asChild className="focus:bg-indigo-50 dark:focus:bg-indigo-900/20 focus:text-indigo-700 dark:focus:text-indigo-400 cursor-pointer rounded-lg mb-1 h-10">
+                            <Link href="/settings" className="flex items-center gap-3 px-2 w-full">
+                                <Settings className="h-4 w-4" />
+                                <span>Settings</span>
+                            </Link>
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSeparator className="bg-slate-200 dark:bg-zinc-800 my-2" />
 
                         <DropdownMenuItem
                             onClick={async () => {
                                 await logout();
                             }}
-                            className="focus:bg-red-500/20 focus:text-red-400 cursor-pointer rounded-lg text-red-500 mt-1 flex items-center gap-2 px-2 py-1.5 w-full outline-none"
+                            className="focus:bg-red-50 dark:focus:bg-red-900/20 focus:text-red-600 dark:focus:text-red-400 cursor-pointer rounded-lg text-red-600 dark:text-red-500 flex items-center gap-3 px-2 h-10 font-medium"
                         >
                             <LogOut className="h-4 w-4" />
                             <span>Sign Out</span>
@@ -281,31 +338,46 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-        </>
+        </div>
     )
 }
 
 function MenuItem({ item, level = 0, collapsed, onClick }: { item: any, level?: number, collapsed: boolean, onClick?: () => void }) {
-    const Icon = IconMap[item.icon] || (level === 0 ? Activity : null);
+    const pathname = usePathname();
+    const isActive = pathname === item.url;
     const hasChildren = item.other_menu_items && item.other_menu_items.length > 0;
     const [expanded, setExpanded] = useState(false);
 
-    // If collapsed, we don't show children inline usually, needs popover. 
-    // For MVP, we might hide children or just show icon.
-    // Let's assume if collapsed, clicking opens? OR we just disable nesting visual in collapsed.
+    // Auto-expand if child is active
+    useEffect(() => {
+        if (hasChildren && item.other_menu_items.some((child: any) => pathname === child.url)) {
+            setExpanded(true);
+        }
+    }, [pathname, hasChildren, item.other_menu_items]);
+
+    const Icon = getIcon(item.icon);
 
     if (collapsed) {
         return (
             <Link
                 href={item.url || '#'}
                 onClick={onClick}
-                className="flex items-center justify-center p-2 rounded-lg text-neutral-400 hover:bg-indigo-600 hover:text-white transition-all group relative"
-                title={item.label}
+                className={cn(
+                    "flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all duration-300 group relative",
+                    isActive
+                        ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/40"
+                        : "text-slate-400 dark:text-zinc-500 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-indigo-600 dark:hover:text-indigo-400"
+                )}
             >
-                {Icon && <Icon className="h-5 w-5" />}
-                {/* Tooltip-ish */}
-                <div className="absolute left-full ml-2 px-2 py-1 bg-neutral-900 border border-white/10 text-xs text-white rounded opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
+                <div className="relative z-10">
+                    <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
+                </div>
+
+                {/* Tooltip */}
+                <div className="absolute left-full ml-4 px-3 py-1.5 bg-slate-900 dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-50 shadow-xl border border-white/10 dark:border-black/5">
                     {item.label}
+                    {/* Arrow */}
+                    <div className="absolute -left-1 top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900 dark:border-r-white"></div>
                 </div>
             </Link>
         )
@@ -313,26 +385,43 @@ function MenuItem({ item, level = 0, collapsed, onClick }: { item: any, level?: 
 
     if (hasChildren) {
         return (
-            <div className="group/item">
+            <div className="group/item pb-1">
                 <button
                     onClick={() => setExpanded(!expanded)}
-                    className={`w-full flex items-center gap-3 px-3 py-2 text-neutral-400 hover:bg-white/5 hover:text-white rounded-lg transition-colors justify-between text-sm font-medium`}
+                    className={cn(
+                        "w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                        expanded
+                            ? "bg-slate-100 dark:bg-zinc-800/50 text-indigo-700 dark:text-indigo-300"
+                            : "text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800/50 hover:text-slate-900 dark:hover:text-slate-200"
+                    )}
                 >
                     <span className="flex items-center gap-3">
-                        {Icon && <Icon className="h-[18px] w-[18px]" />}
+                        <Icon className={cn("h-5 w-5 opacity-70", expanded && "opacity-100 text-indigo-500")} />
                         <span>{item.label}</span>
                     </span>
-                    <span className={`transform transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`}>
-                        <ChevronRight className="h-3 w-3" />
-                    </span>
+                    <ChevronRight className={cn(
+                        "h-4 w-4 text-slate-400 transition-transform duration-200",
+                        expanded && "rotate-90 text-indigo-500"
+                    )} />
                 </button>
-                {expanded && (
-                    <div className="space-y-0.5 mt-1 ml-4 border-l border-white/10 pl-2">
-                        {item.other_menu_items.map((sub: any) => (
-                            <MenuItem key={sub.key} item={sub} level={level + 1} collapsed={collapsed} onClick={onClick} />
-                        ))}
-                    </div>
-                )}
+
+                <AnimatePresence>
+                    {expanded && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                        >
+                            <div className="pt-1 pl-4 space-y-1 border-l-2 border-slate-100 dark:border-zinc-800 ml-5 my-1">
+                                {item.other_menu_items.map((sub: any) => (
+                                    <MenuItem key={sub.key} item={sub} level={level + 1} collapsed={collapsed} onClick={onClick} />
+                                ))}
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         );
     }
@@ -341,10 +430,26 @@ function MenuItem({ item, level = 0, collapsed, onClick }: { item: any, level?: 
         <Link
             href={item.url || '#'}
             onClick={onClick}
-            className={`flex items-center gap-3 px-3 py-2 text-neutral-400 hover:bg-white/5 hover:text-white rounded-lg transition-colors text-sm font-medium`}
+            className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group relative overflow-hidden",
+                isActive
+                    ? "bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300"
+                    : "text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800/50 hover:text-slate-900 dark:hover:text-slate-200"
+            )}
         >
-            {Icon && <Icon className="h-[18px] w-[18px]" />}
-            <span>{item.label}</span>
+            {isActive && (
+                <motion.div
+                    layoutId="activeLink"
+                    className="absolute inset-0 bg-indigo-100/50 dark:bg-indigo-500/10 rounded-xl"
+                    initial={false}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                />
+            )}
+            <Icon className={cn(
+                "h-5 w-5 relative z-10 transition-colors",
+                isActive ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 group-hover:text-indigo-500"
+            )} strokeWidth={isActive ? 2.5 : 2} />
+            <span className="relative z-10">{item.label}</span>
         </Link>
     )
 }
