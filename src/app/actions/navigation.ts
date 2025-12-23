@@ -213,6 +213,7 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
                 { key: 'hms-dashboard', label: 'HMS Dashboard', icon: 'LayoutDashboard', url: '/hms/dashboard' },
                 { key: 'patients', label: 'Patients', icon: 'Users', url: '/hms/patients' },
                 { key: 'appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
+                { key: 'prescriptions', label: 'Prescriptions', icon: 'FileText', url: '/hms/prescriptions' },
                 { key: 'billing', label: 'Billing', icon: 'Receipt', url: '/hms/billing' },
             ]
         }
