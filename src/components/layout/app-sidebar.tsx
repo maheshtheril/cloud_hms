@@ -262,16 +262,10 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                             <p className="text-sm font-semibold text-white">{user?.name}</p>
                             <p className="text-xs text-neutral-400">{user?.email}</p>
                         </div>
-                        <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white cursor-pointer rounded-lg text-neutral-300">
+                        <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white cursor-pointer rounded-lg text-neutral-300 mb-1">
                             <Link href="/settings/profile" className="flex items-center gap-2 px-2 py-1.5 w-full outline-none">
                                 <Users className="h-4 w-4" />
                                 <span>My Profile</span>
-                            </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white cursor-pointer rounded-lg text-neutral-300 mb-1">
-                            <Link href="/settings/global" className="flex items-center gap-2 px-2 py-1.5 w-full outline-none">
-                                <Settings className="h-4 w-4" />
-                                <span>Company Settings</span>
                             </Link>
                         </DropdownMenuItem>
 
