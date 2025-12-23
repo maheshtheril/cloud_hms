@@ -64,6 +64,11 @@ export function SearchableSelect({
         setHighlightedIndex(0)
     }, [search])
 
+    // Sync internal state with value prop
+    useEffect(() => {
+        setSelectedValue(initialValue || '')
+    }, [initialValue])
+
     // Handle keyboard navigation
     useEffect(() => {
         if (!isOpen) return

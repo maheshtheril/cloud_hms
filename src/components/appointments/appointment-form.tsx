@@ -150,7 +150,6 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                             onPatientSelect={setSelectedPatientId}
                             onNewPatientClick={() => setShowNewPatientModal(true)}
                         />
-                        <input type="hidden" name="patient_id" value={selectedPatientId} />
 
                         {/* Schedule Card */}
                         <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
