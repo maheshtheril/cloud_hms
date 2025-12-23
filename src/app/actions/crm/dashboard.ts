@@ -72,6 +72,7 @@ export async function getDashboardData() {
     })
 
     const funnelData = stages.map(s => ({
+        id: s.id,
         name: s.name,
         count: s._count.deals,
         color: s.type === 'won' ? '#10B981' : s.type === 'lost' ? '#EF4444' : '#6366F1'
