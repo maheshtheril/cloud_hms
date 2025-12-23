@@ -85,8 +85,9 @@ export async function createAppointment(formData: FormData) {
     const durationMinutes = clinician?.consultation_slot_duration || 30
     const endsAt = new Date(startsAt.getTime() + durationMinutes * 60000)
 
+    let createdApt;
     try {
-        await prisma.hms_appointments.create({
+        createdApt = await prisma.hms_appointments.create({
             data: {
                 tenant_id: session.user.tenantId,
                 company_id: session.user.companyId,
@@ -108,6 +109,15 @@ export async function createAppointment(formData: FormData) {
     }
 
     const source = formData.get("source") as string
+    const nextAction = formData.get("next_action") as string
+
+    if (nextAction === 'prescribe') {
+        redirect(`/hms/prescriptions/new?patientId=${patientId}&appointmentId=${createdApt.id}`)
+    }
+
+    if (nextAction === 'bill') {
+        redirect(`/hms/billing/new?patientId=${patientId}&appointmentId=${createdApt.id}`)
+    }
 
     if (source === 'dashboard') {
         redirect("/hms/dashboard")

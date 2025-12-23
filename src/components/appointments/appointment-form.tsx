@@ -1,7 +1,7 @@
 'use client'
 
 import { createAppointment } from "@/app/actions/appointment"
-import { ArrowLeft, Calendar, Clock, FileText, CheckCircle, MapPin, Video, Phone, AlertCircle } from "lucide-react"
+import { ArrowLeft, Calendar, Clock, FileText, CheckCircle, MapPin, Video, Phone, AlertCircle, Stethoscope, IndianRupee } from "lucide-react"
 import Link from "next/link"
 import { PatientDoctorSelectors } from "@/components/appointments/patient-doctor-selectors"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
@@ -134,6 +134,28 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                             >
                                 <CheckCircle className="h-4 w-4" />
                                 Confirm Booking
+                            </button>
+
+                            <button
+                                type="submit"
+                                name="next_action"
+                                value="prescribe"
+                                disabled={suggestedTime === 'Fully Booked'}
+                                className="px-5 py-2 bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-slate-700 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 font-medium text-sm flex items-center gap-2 transition-all"
+                            >
+                                <Stethoscope className="h-4 w-4" />
+                                Confirm & Prescribe
+                            </button>
+
+                            <button
+                                type="submit"
+                                name="next_action"
+                                value="bill"
+                                disabled={suggestedTime === 'Fully Booked'}
+                                className="px-5 py-2 bg-white dark:bg-slate-900 text-green-600 dark:text-green-400 border border-green-200 dark:border-slate-700 rounded-lg hover:bg-green-50 dark:hover:bg-slate-800 font-medium text-sm flex items-center gap-2 transition-all"
+                            >
+                                <IndianRupee className="h-4 w-4" />
+                                Confirm & Bill
                             </button>
                         </div>
                     </div>
