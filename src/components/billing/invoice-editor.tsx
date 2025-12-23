@@ -323,6 +323,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
         setLoading(true)
         const res = await createInvoice({
             patient_id: selectedPatientId,
+            appointment_id: appointmentId || urlAppointmentId,
             date,
             line_items: lines,
             status,
@@ -628,6 +629,14 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                         >
                             <Save className="h-5 w-5" />
                             {loading ? 'Processing...' : 'Post Invoice'}
+                        </button>
+                        <button
+                            className="flex-1 px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white font-bold text-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2"
+                            onClick={() => handleSave('paid' as any)}
+                            disabled={loading}
+                        >
+                            <DollarSign className="h-5 w-5" />
+                            {loading ? 'Processing...' : 'Collect Payment'}
                         </button>
                     </div>
 

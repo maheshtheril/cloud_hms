@@ -58,12 +58,10 @@ export async function POST(request: NextRequest) {
                 }
             })
 
-            // If this is linked to an appointment, mark appointment as completed
+            // If this is linked to an appointment, we just link it, don't change status to completed yet
+            // completed logic should follow payment/billing as per user request
             if (appointmentId) {
-                await tx.hms_appointments.update({
-                    where: { id: appointmentId },
-                    data: { status: 'completed' }
-                })
+                // We keep the link, but don't update the status here
             }
 
             return pr

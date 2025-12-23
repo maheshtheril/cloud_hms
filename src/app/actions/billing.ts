@@ -133,7 +133,7 @@ export async function createInvoice(data: any) {
     const session = await auth();
     if (!session?.user?.companyId) return { error: "Unauthorized" };
 
-    const { patient_id, date, line_items, status = 'draft', total_discount = 0 } = data;
+    const { patient_id, appointment_id, date, line_items, status = 'draft', total_discount = 0 } = data;
 
     if (!line_items || line_items.length === 0) {
         return { error: "At least one line item is required" };
@@ -153,41 +153,54 @@ export async function createInvoice(data: any) {
         // Grand Total: Subtotal + Tax - Global Discount
         const total = Math.max(0, subtotal + totalTaxAmount - Number(total_discount || 0));
 
-        const newInvoice = await prisma.hms_invoice.create({
-            data: {
-                tenant_id: session.user.tenantId,
-                company_id: session.user.companyId,
-                patient_id: patient_id,
-                invoice_number: invoiceNo,
-                invoice_date: new Date(date),
-                currency: 'INR', // Indian Rupee
-                status: status, // 'draft' or 'posted'
-                total: total,
-                subtotal: subtotal,
-                total_tax: totalTaxAmount,
-                total_discount: Number(total_discount),
-                outstanding_amount: status === 'posted' ? total : 0,
-                hms_invoice_lines: {
-                    create: line_items.map((item: any, index: number) => ({
-                        tenant_id: session.user.tenantId,
-                        company_id: session.user.companyId,
-                        line_idx: index + 1,
-                        product_id: item.product_id || null, // Convert empty string to null
-                        description: item.description,
-                        quantity: item.quantity,
-                        unit_price: item.unit_price,
-                        net_amount: (item.quantity * item.unit_price) - (item.discount_amount || 0),
-                        // Tax details
-                        tax_rate_id: item.tax_rate_id || null, // Convert empty string to null
-                        tax_amount: item.tax_amount || 0,
-                        discount_amount: item.discount_amount || 0
-                    }))
-                }
+        const result = await prisma.$transaction(async (tx) => {
+            const newInvoice = await tx.hms_invoice.create({
+                data: {
+                    tenant_id: session.user.tenantId!,
+                    company_id: session.user.companyId!,
+                    patient_id: (patient_id as string) || null,
+                    appointment_id: (appointment_id as string) || null,
+                    invoice_number: invoiceNo,
+                    invoice_date: new Date(date),
+                    currency: 'INR', // Indian Rupee
+                    status: status as any, // 'draft', 'posted', or 'paid'
+                    total: total,
+                    subtotal: subtotal,
+                    total_tax: totalTaxAmount,
+                    total_discount: Number(total_discount),
+                    outstanding_amount: (status === 'posted') ? total : 0,
+                    hms_invoice_lines: {
+                        create: line_items.map((item: any, index: number) => ({
+                            tenant_id: session.user.tenantId,
+                            company_id: session.user.companyId,
+                            line_idx: index + 1,
+                            product_id: item.product_id || null, // Convert empty string to null
+                            description: item.description,
+                            quantity: item.quantity,
+                            unit_price: item.unit_price,
+                            net_amount: (item.quantity * item.unit_price) - (item.discount_amount || 0),
+                            // Tax details
+                            tax_rate_id: item.tax_rate_id || null, // Convert empty string to null
+                            tax_amount: item.tax_amount || 0,
+                            discount_amount: item.discount_amount || 0
+                        }))
+                    }
+                } as any
+            });
+
+            // If status is paid and appointment is linked, mark appointment as completed
+            if (status === 'paid' && appointment_id) {
+                await tx.hms_appointments.update({
+                    where: { id: appointment_id },
+                    data: { status: 'completed' }
+                });
             }
+
+            return newInvoice;
         });
 
         revalidatePath('/hms/billing');
-        return { success: true, data: newInvoice };
+        return { success: true, data: result };
 
     } catch (error) {
         console.error("Failed to create invoice:", error)
