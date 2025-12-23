@@ -1003,6 +1003,9 @@ model hms_clinicians {
   license_no          String?
   experience_years    Int?
   is_active           Boolean?             @default(true)
+  consultation_start_time String?          @default("09:00")
+  consultation_end_time   String?          @default("17:00")
+  consultation_slot_duration Int?          @default(30)
   created_at          DateTime?            @default(now()) @db.Timestamptz(6)
   updated_at          DateTime?            @default(now()) @db.Timestamptz(6)
   role_id             String?              @db.Uuid
