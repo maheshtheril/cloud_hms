@@ -289,6 +289,7 @@ export default function NewPrescriptionPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     patientId,
+                    appointmentId,
                     vitals: convertedText.vitals || '',
                     diagnosis: convertedText.diagnosis || '',
                     complaint: convertedText.complaint || '',
