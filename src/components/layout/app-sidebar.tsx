@@ -6,8 +6,9 @@ import { usePathname } from 'next/navigation';
 import * as LucideIcons from 'lucide-react';
 import {
     Menu, ChevronLeft, ChevronRight, PanelLeftClose,
-    Building2, Activity, LogOut, User, Settings, Search
+    Building2, Activity, LogOut, User, Settings, Search, Sun, Moon
 } from 'lucide-react';
+import { useTheme } from '@/contexts/theme-context';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { CompanySwitcher } from '@/components/company-switcher';
@@ -152,9 +153,12 @@ export function AppSidebar({ menuItems, currentCompany, user, children }: { menu
     );
 }
 
+
+
 function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollapsed, isMobile, onLinkClick, onClose }: any) {
     const canSwitchCompany = user?.isAdmin || user?.isTenantAdmin;
     const [searchText, setSearchText] = useState('');
+    const { theme, toggleTheme } = useTheme();
 
     const filteredMenuItems = menuItems.map((group: any) => ({
         ...group,
@@ -324,6 +328,19 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                             </Link>
                         </DropdownMenuItem>
 
+                        <DropdownMenuItem
+                            onClick={(e) => {
+                                e.preventDefault();
+                                toggleTheme();
+                            }}
+                            className="focus:bg-indigo-50 dark:focus:bg-indigo-900/20 focus:text-indigo-700 dark:focus:text-indigo-400 cursor-pointer rounded-lg mb-1 h-10"
+                        >
+                            <div className="flex items-center gap-3 px-2 w-full">
+                                {theme === 'dark' ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+                                <span>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+                            </div>
+                        </DropdownMenuItem>
+
                         <DropdownMenuSeparator className="bg-slate-200 dark:bg-zinc-800 my-2" />
 
                         <DropdownMenuItem
@@ -341,7 +358,6 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
         </div>
     )
 }
-
 function MenuItem({ item, level = 0, collapsed, onClick }: { item: any, level?: number, collapsed: boolean, onClick?: () => void }) {
     const pathname = usePathname();
     const isActive = pathname === item.url;
