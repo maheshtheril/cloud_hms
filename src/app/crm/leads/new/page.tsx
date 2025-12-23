@@ -2,6 +2,7 @@ import { LeadForm } from '@/components/crm/lead-form'
 import { ArrowLeft, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { BackButton } from '@/components/ui/back-button'
 
 import { getCustomFieldDefinitions } from '@/app/actions/crm/custom-fields'
 import { getPipelines, getSources, getCompanies, getCRMUsers, getTargetTypes } from '@/app/actions/crm/masters'
@@ -36,11 +37,7 @@ export default async function NewLeadPage() {
 
             <div className="relative container mx-auto py-12 max-w-5xl">
                 <div className="flex items-center gap-6 mb-10">
-                    <Link href="/crm/leads">
-                        <Button variant="ghost" size="icon" className="rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md text-slate-700 dark:text-slate-200">
-                            <ArrowLeft className="h-6 w-6" />
-                        </Button>
-                    </Link>
+                    <BackButton href="/crm/leads" />
                     <div>
                         <h1 className="text-4xl font-bold tracking-tight text-gradient-primary flex items-center gap-3">
                             Initialize Signal

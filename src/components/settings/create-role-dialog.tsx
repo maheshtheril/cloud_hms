@@ -189,6 +189,7 @@ export function CreateRoleDialog() {
                                 value={formData.key}
                                 onChange={(e) => setFormData({ ...formData, key: e.target.value })}
                                 required
+                                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400 focus-visible:ring-indigo-500"
                             />
                             <p className="text-xs text-muted-foreground">
                                 Unique identifier (lowercase, underscores only)
@@ -206,6 +207,7 @@ export function CreateRoleDialog() {
                                     setFormData({ name, key });
                                 }}
                                 required
+                                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-400 focus-visible:ring-indigo-500"
                             />
                             <p className="text-xs text-muted-foreground">
                                 Display name for this role

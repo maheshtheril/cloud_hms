@@ -1,3 +1,4 @@
+import { BackButton } from '@/components/ui/back-button'
 import { notFound } from 'next/navigation'
 import { getLead } from '@/app/actions/crm/leads'
 import { formatCurrency } from '@/lib/currency'
@@ -55,11 +56,7 @@ export default async function LeadDetailPage(props: Props) {
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-4">
-                        <Link href="/crm/leads">
-                            <Button variant="ghost" size="icon" className="rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md">
-                                <ArrowLeft className="h-5 w-5" />
-                            </Button>
-                        </Link>
+                        <BackButton href="/crm/leads" />
                         <div>
                             <div className="flex items-center gap-3">
                                 <h1 className="text-4xl font-black text-gradient-primary tracking-tighter uppercase">{lead.name}</h1>

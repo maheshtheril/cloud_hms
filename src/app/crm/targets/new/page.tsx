@@ -4,6 +4,7 @@ import { TargetForm } from '@/components/crm/targets/target-form'
 import { ArrowLeft, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { BackButton } from '@/components/ui/back-button'
 
 export const metadata: Metadata = {
     title: 'Initialize Target | SAAS ERP',
@@ -23,11 +24,7 @@ export default function NewTargetPage() {
             <div className="relative container mx-auto py-8 space-y-8 max-w-4xl">
                 <div className="flex items-center justify-between mb-8 px-4">
                     <div className="flex items-center gap-4">
-                        <Link href="/crm/targets">
-                            <Button variant="ghost" size="icon" className="rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md">
-                                <ArrowLeft className="h-5 w-5" />
-                            </Button>
-                        </Link>
+                        <BackButton href="/crm/targets" />
                         <div>
                             <h1 className="text-3xl font-black text-gradient-primary uppercase tracking-tighter">Define Objective</h1>
                             <p className="text-slate-500 font-medium">Configure achievement vectors for performance synchronization.</p>
@@ -38,8 +35,8 @@ export default function NewTargetPage() {
                 <div className="px-4 pb-12">
                     <TargetForm />
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     )
 }
 

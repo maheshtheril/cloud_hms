@@ -27,109 +27,143 @@ export default async function RolesPage() {
     const avgPermissions = roles.length > 0 ? Math.round(totalPermissions / roles.length) : 0;
 
     return (
-        <div className="container mx-auto py-8 space-y-8">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        <Shield className="h-8 w-8" />
-                        Roles & Permissions
-                    </h1>
-                    <p className="text-gray-600 dark:text-gray-400 mt-2">
-                        Manage access control and permissions • {roles.length} roles
-                    </p>
-                </div>
-                <div className="flex gap-3">
-                    {roles.length === 0 && <SeedRolesButton />}
-                    <Link href="/settings/permissions">
-                        <Button variant="outline">
-                            <Key className="h-4 w-4 mr-2" />
-                            View Permissions
-                        </Button>
-                    </Link>
-                    <CreateRoleDialog />
-                </div>
+    return (
+        <div className="min-h-screen bg-futuristic">
+            {/* Animated Background Effects */}
+            <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-0 -left-4 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
+                <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-2000" />
+                <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob animation-delay-4000" />
             </div>
 
-            {/* Stats */}
-            <div className="grid gap-6 md:grid-cols-3">
-                <Card className="p-6">
-                    <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Roles</p>
-                        <Shield className="h-5 w-5 text-purple-600" />
-                    </div>
-                    <div className="text-3xl font-bold">{roles.length}</div>
-                </Card>
-
-                <Card className="p-6">
-                    <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Permissions</p>
-                        <Key className="h-5 w-5 text-cyan-600" />
-                    </div>
-                    <div className="text-3xl font-bold">{totalPermissions}</div>
-                </Card>
-
-                <Card className="p-6">
-                    <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Permissions</p>
-                        <Plus className="h-5 w-5 text-pink-600" />
-                    </div>
-                    <div className="text-3xl font-bold">{avgPermissions}</div>
-                </Card>
-            </div>
-
-            {/* Roles List */}
-            <Card className="p-6">
-                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-                    <Shield className="h-5 w-5" />
-                    Role Definitions
-                </h2>
-
-                {roles.length === 0 ? (
-                    <div className="text-center py-12">
-                        <Shield className="h-16 w-16 mx-auto text-gray-400 mb-4" />
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                            No Roles Found
-                        </h3>
-                        <p className="text-gray-600 dark:text-gray-400 mb-6">
-                            Get started by seeding default roles or creating a custom role
+            <div className="relative container mx-auto py-8 space-y-8 max-w-7xl">
+                {/* Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div>
+                        <h1 className="text-4xl font-black text-gradient-primary flex items-center gap-3 tracking-tighter">
+                            <Shield className="h-10 w-10 text-indigo-600" />
+                            Roles & Permissions
+                        </h1>
+                        <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg font-medium">
+                            Manage access control and permissions • <span className="text-slate-900 dark:text-white font-bold">{roles.length} roles active</span>
                         </p>
-                        <div className="flex gap-3 justify-center">
-                            <SeedRolesButton />
-                            <CreateRoleDialog />
-                        </div>
                     </div>
-                ) : (
-                    <div className="space-y-4">
-                        {roles.map((role) => (
-                            <div
-                                key={role.id}
-                                className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-purple-500/30 transition-all"
-                            >
-                                <div className="flex items-center gap-4">
-                                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                                        <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-semibold text-gray-900 dark:text-white">
-                                            {role.name}
-                                        </h3>
-                                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                                            {role.key}
-                                        </p>
-                                    </div>
+                    <div className="flex gap-3">
+                        {roles.length === 0 && <SeedRolesButton />}
+                        <Link href="/settings/permissions">
+                            <Button variant="outline" className="bg-white/40 border-slate-200/50 hover:bg-white text-slate-700 dark:text-slate-200 dark:bg-slate-900/40 dark:hover:bg-slate-900 backdrop-blur-md">
+                                <Key className="h-4 w-4 mr-2" />
+                                View Permissions
+                            </Button>
+                        </Link>
+                        <CreateRoleDialog />
+                    </div>
+                </div>
+
+                {/* Stats */}
+                <div className="grid gap-6 md:grid-cols-3">
+                    <div className="glass-card bg-white/40 dark:bg-slate-900/40 p-6 rounded-2xl border border-white/20 shadow-xl backdrop-blur-md relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <Shield className="h-16 w-16 text-indigo-500" />
+                        </div>
+                        <div className="flex items-center justify-between mb-4">
+                            <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest">Total Roles</p>
+                            <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-600">
+                                <Shield className="h-5 w-5" />
+                            </div>
+                        </div>
+                        <div className="text-4xl font-black text-slate-900 dark:text-white">{roles.length}</div>
+                    </div>
+
+                    <div className="glass-card bg-white/40 dark:bg-slate-900/40 p-6 rounded-2xl border border-white/20 shadow-xl backdrop-blur-md relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <Key className="h-16 w-16 text-cyan-500" />
+                        </div>
+                        <div className="flex items-center justify-between mb-4">
+                            <p className="text-xs font-bold text-cyan-600 dark:text-cyan-400 uppercase tracking-widest">Total Permissions</p>
+                            <div className="p-2 bg-cyan-500/10 rounded-lg text-cyan-600">
+                                <Key className="h-5 w-5" />
+                            </div>
+                        </div>
+                        <div className="text-4xl font-black text-slate-900 dark:text-white">{totalPermissions}</div>
+                    </div>
+
+                    <div className="glass-card bg-white/40 dark:bg-slate-900/40 p-6 rounded-2xl border border-white/20 shadow-xl backdrop-blur-md relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <Plus className="h-16 w-16 text-pink-500" />
+                        </div>
+                        <div className="flex items-center justify-between mb-4">
+                            <p className="text-xs font-bold text-pink-600 dark:text-pink-400 uppercase tracking-widest">Avg Permissions</p>
+                            <div className="p-2 bg-pink-500/10 rounded-lg text-pink-600">
+                                <Plus className="h-5 w-5" />
+                            </div>
+                        </div>
+                        <div className="text-4xl font-black text-slate-900 dark:text-white">{avgPermissions}</div>
+                    </div>
+                </div>
+
+                {/* Roles List */}
+                <div className="glass-card bg-white/40 dark:bg-slate-900/40 p-1 rounded-3xl border border-white/20 shadow-2xl backdrop-blur-xl">
+                    <div className="p-6 border-b border-white/10">
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <Shield className="h-5 w-5 text-indigo-500" />
+                            Role Definitions
+                        </h2>
+                    </div>
+
+                    <div className="p-6">
+                        {roles.length === 0 ? (
+                            <div className="text-center py-12">
+                                <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <Shield className="h-10 w-10 text-slate-400" />
                                 </div>
-                                <div className="flex items-center gap-4">
-                                    <Badge variant="outline">
-                                        {role.permissions?.length || 0} permissions
-                                    </Badge>
-                                    <RoleActions role={role} />
+                                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                                    No Roles Found
+                                </h3>
+                                <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-sm mx-auto">
+                                    Get started by seeding default roles or creating a custom role to manage system access.
+                                </p>
+                                <div className="flex gap-4 justify-center">
+                                    <SeedRolesButton />
+                                    <CreateRoleDialog />
                                 </div>
                             </div>
-                        ))}
+                        ) : (
+                            <div className="space-y-4">
+                                {roles.map((role) => (
+                                    <div
+                                        key={role.id}
+                                        className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-white/60 dark:bg-slate-900/60 border border-white/20 dark:border-white/5 rounded-2xl hover:border-indigo-500/50 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300 group"
+                                    >
+                                        <div className="flex items-center gap-5">
+                                            <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shrink-0">
+                                                <Shield className="h-6 w-6 text-white" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-lg text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                                    {role.name}
+                                                </h3>
+                                                <p className="text-sm font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded w-fit mt-1">
+                                                    {role.key}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-6 mt-4 md:mt-0 pl-16 md:pl-0">
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                                <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                                                    <span className="font-bold text-slate-900 dark:text-white">{role.permissions?.length || 0}</span> capabilities
+                                                </span>
+                                            </div>
+                                            <RoleActions role={role} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                )}
-            </Card>
+                </div>
+            </div>
         </div>
     );
 }
