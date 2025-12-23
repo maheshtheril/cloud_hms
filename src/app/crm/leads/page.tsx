@@ -51,12 +51,22 @@ export default async function LeadsPage(props: PageProps) {
     const isHot = searchParams?.is_hot === 'true'
     const skip = (page - 1) * limit
 
+    const isGlobalAdmin = session?.user?.isAdmin
+    const isTenantAdmin = session?.user?.isTenantAdmin
+    const canViewAll = isGlobalAdmin || isTenantAdmin
+
+    // Security: Restrict non-admins to their own data
+    let effectiveOwnerId = ownerId;
+    if (!canViewAll) {
+        effectiveOwnerId = session?.user?.id;
+    }
+
     const where: any = {
         tenant_id: tenantId || undefined,
         deleted_at: null,
         ...(status ? { status } : {}),
         ...(sourceId ? { source_id: sourceId } : {}),
-        ...(ownerId ? { owner_id: ownerId } : {}),
+        ...(effectiveOwnerId ? { owner_id: effectiveOwnerId } : {}),
         ...(isHot ? { is_hot: true } : {}),
         ...((fromDate || toDate) ? {
             created_at: {
@@ -95,14 +105,9 @@ export default async function LeadsPage(props: PageProps) {
                 }
             } as any
         }),
-        prisma.crm_leads.count({
-            where
-        }),
+        prisma.crm_leads.count({ where }),
         prisma.crm_leads.aggregate({
-            where: {
-                tenant_id: tenantId || undefined,
-                deleted_at: null
-            },
+            where: where,
             _sum: {
                 estimated_value: true
             }
@@ -113,9 +118,8 @@ export default async function LeadsPage(props: PageProps) {
 
     const hotLeadsCount = await prisma.crm_leads.count({
         where: {
-            tenant_id: tenantId || undefined,
-            is_hot: true,
-            deleted_at: null
+            ...where,
+            is_hot: true
         }
     })
 
