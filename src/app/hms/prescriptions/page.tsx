@@ -9,7 +9,7 @@ export default async function PrescriptionsPage() {
     const companyId = session?.user?.companyId
 
     // Fetch recent prescriptions
-    const prescriptions = await prisma.hms_prescriptions.findMany({
+    const prescriptionsRes = await prisma.prescription.findMany({
         where: { tenant_id: tenantId },
         take: 10,
         orderBy: { created_at: 'desc' },
@@ -19,6 +19,7 @@ export default async function PrescriptionsPage() {
             }
         }
     })
+    const prescriptions = prescriptionsRes as any[]
 
     return (
         <div className="p-6 space-y-6">
