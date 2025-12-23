@@ -1,9 +1,10 @@
 'use client'
 
-import { createPatient } from "@/app/actions/patient"
+import { createPatient, createPatientQuick } from "@/app/actions/patient"
 import Link from "next/link"
-import { X, User, Phone, Calendar, ChevronDown, Camera, Upload } from "lucide-react"
+import { X, User, Phone, Calendar, ChevronDown, Camera, Upload, AlertCircle } from "lucide-react"
 import { useActionState, useState } from "react"
+import { useRouter } from "next/navigation"
 
 const initialState = {
     error: ""
@@ -12,11 +13,15 @@ const initialState = {
 interface CreatePatientFormProps {
     tenantCountry?: string
     onClose?: () => void
+    onSuccess?: (patient: any) => void
+    isDialog?: boolean
 }
 
-export function CreatePatientForm({ tenantCountry = 'IN', onClose }: CreatePatientFormProps) {
-
+export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, isDialog = false }: CreatePatientFormProps) {
+    const router = useRouter();
     const [state, action, isPending] = useActionState(createPatient, initialState);
+    const [localIsPending, setLocalIsPending] = useState(false);
+    const [localError, setLocalError] = useState("");
     const [showMoreDetails, setShowMoreDetails] = useState(false);
     const [useAge, setUseAge] = useState(true); // Toggle between Age and DOB
     const [nextAction, setNextAction] = useState<'rx' | 'bill' | 'appointment'>('rx');
@@ -24,6 +29,25 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose }: CreatePatie
     const [ageUnit, setAgeUnit] = useState('Years');
     const [dob, setDob] = useState('');
     const [gender, setGender] = useState('M');
+
+    const handleLocalSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        if (!onSuccess) return;
+        e.preventDefault();
+        setLocalIsPending(true);
+        setLocalError("");
+
+        try {
+            const formData = new FormData(e.currentTarget);
+            const patient = await createPatientQuick(formData);
+            if (onSuccess) {
+                onSuccess(patient);
+            }
+        } catch (err: any) {
+            setLocalError(err.message || "Failed to create patient");
+        } finally {
+            setLocalIsPending(false);
+        }
+    };
 
     // Auto-calculate DOB from Age
     const handleAgeChange = (value: string, unit: string) => {
@@ -68,8 +92,8 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose }: CreatePatie
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+        <div className={isDialog ? "" : "fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"}>
+            <div className={`bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden flex flex-col ${isDialog ? 'h-full shadow-none border dark:border-slate-800 dark:bg-slate-900' : ''}`}>
 
                 {/* Header */}
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
@@ -85,11 +109,16 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose }: CreatePatie
                     )}
                 </div>
 
-                <form action={action} className="flex-1 overflow-y-auto p-3 space-y-2">
+                <form
+                    action={onSuccess ? undefined : action}
+                    onSubmit={onSuccess ? handleLocalSubmit : undefined}
+                    className="flex-1 overflow-y-auto p-3 space-y-2"
+                >
 
-                    {state?.error && (
-                        <div className="bg-red-50 border border-red-200 text-red-600 px-3 py-2 rounded-lg">
-                            {state.error}
+                    {(state?.error || localError) && (
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-3 py-2 rounded-lg flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4" />
+                            {state?.error || localError}
                         </div>
                     )}
 
@@ -453,39 +482,43 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose }: CreatePatie
                     )}
 
                     {/* Action Buttons */}
-                    <div className="border-t-2 border-gray-200 pt-6 space-y-2">
+                    <div className="border-t-2 border-gray-200 dark:border-slate-800 pt-6 space-y-2">
                         <button
                             type="submit"
                             name="next_action"
                             value="rx"
-                            disabled={isPending}
+                            disabled={isPending || localIsPending}
                             className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm shadow-lg transition-colors disabled:opacity-50"
                         >
-                            {isPending ? 'Creating...' : 'Save Patient Record'}
+                            {(isPending || localIsPending) ? 'Creating...' : 'Save Patient Record'}
                         </button>
 
-                        <p className="text-center text-gray-500 font-medium text-xs">or</p>
+                        {!onSuccess && (
+                            <>
+                                <p className="text-center text-gray-500 font-medium text-xs">or</p>
 
-                        <div className="grid grid-cols-2 gap-2">
-                            <button
-                                type="submit"
-                                name="next_action"
-                                value="bill"
-                                disabled={isPending}
-                                className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
-                            >
-                                {isPending ? 'Creating...' : 'Add & Create Bill'}
-                            </button>
-                            <button
-                                type="submit"
-                                name="next_action"
-                                value="appointment"
-                                disabled={isPending}
-                                className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
-                            >
-                                {isPending ? 'Creating...' : 'Add & Create Appointment'}
-                            </button>
-                        </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="submit"
+                                        name="next_action"
+                                        value="bill"
+                                        disabled={isPending}
+                                        className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
+                                    >
+                                        {isPending ? 'Creating...' : 'Add & Create Bill'}
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        name="next_action"
+                                        value="appointment"
+                                        disabled={isPending}
+                                        className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
+                                    >
+                                        {isPending ? 'Creating...' : 'Add & Create Appointment'}
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </div>
                     {onClose && <input type="hidden" name="source" value="dashboard" />}
                 </form>

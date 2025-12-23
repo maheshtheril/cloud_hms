@@ -4,6 +4,7 @@ import { createAppointment } from "@/app/actions/appointment"
 import { ArrowLeft, Calendar, Clock, FileText, CheckCircle, MapPin, Video, Phone, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { PatientDoctorSelectors } from "@/components/appointments/patient-doctor-selectors"
+import { CreatePatientForm } from "@/components/hms/create-patient-form"
 import { useState } from "react"
 
 interface AppointmentFormProps {
@@ -20,6 +21,9 @@ interface AppointmentFormProps {
 
 export function AppointmentForm({ patients, doctors, appointments = [], initialData = {}, onClose }: AppointmentFormProps) {
     const { patient_id: initialPatientId, date: initialDate, time: initialTime } = initialData
+    const [localPatients, setLocalPatients] = useState(patients)
+    const [selectedPatientId, setSelectedPatientId] = useState(initialPatientId || '')
+    const [showNewPatientModal, setShowNewPatientModal] = useState(false)
     const [selectedClinicianId, setSelectedClinicianId] = useState('')
     const [suggestedTime, setSuggestedTime] = useState(initialTime || '')
 
@@ -65,6 +69,12 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                 setSuggestedTime(`${hours}:${minutes}`)
             }
         }
+    }
+
+    const handlePatientCreated = (newPatient: any) => {
+        setLocalPatients(prev => [newPatient, ...prev])
+        setSelectedPatientId(newPatient.id)
+        setShowNewPatientModal(false)
     }
 
     return (
@@ -132,11 +142,14 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                 {/* Left Column (Span 8) */}
                 <div className="lg:col-span-8 space-y-4 overflow-y-auto pr-1 custom-scrollbar pb-20">
                     <PatientDoctorSelectors
-                        patients={patients}
+                        patients={localPatients}
                         doctors={doctors}
-                        selectedPatientId={initialPatientId || ''}
+                        selectedPatientId={selectedPatientId}
                         onClinicianSelect={handleClinicianChange}
+                        onPatientSelect={setSelectedPatientId}
+                        onNewPatientClick={() => setShowNewPatientModal(true)}
                     />
+                    <input type="hidden" name="patient_id" value={selectedPatientId} />
 
                     {/* Schedule Card */}
                     <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
@@ -288,6 +301,18 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                 </div>
             </div>
             {onClose && <input type="hidden" name="source" value="dashboard" />}
+
+            {/* Quick Create Patient Modal */}
+            {showNewPatientModal && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                    <div className="w-full max-w-4xl shadow-2xl animate-in zoom-in-95 duration-200">
+                        <CreatePatientForm
+                            onClose={() => setShowNewPatientModal(false)}
+                            onSuccess={handlePatientCreated}
+                        />
+                    </div>
+                </div>
+            )}
         </form>
     )
 }

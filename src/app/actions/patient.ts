@@ -125,3 +125,48 @@ export async function createPatient(prevState: any, formData: FormData) {
     }
 }
 
+export async function createPatientQuick(formData: FormData) {
+    const firstName = formData.get("first_name") as string
+    const lastName = formData.get("last_name") as string
+    const dob = formData.get('dob') as string
+    const gender = formData.get('gender') as string
+    const phone = formData.get('phone') as string
+    const email = formData.get('email') as string
+
+    const session = await auth()
+    const tenantId = session?.user?.tenantId
+    const companyId = session?.user?.companyId
+    const userId = session?.user?.id
+
+    if (!tenantId) throw new Error("Authentication required")
+    if (!firstName) throw new Error("Name is required")
+
+    const contact = {
+        phone,
+        email,
+        address: {
+            street: formData.get('street'),
+            city: formData.get('city'),
+            zip: formData.get('zip'),
+        }
+    }
+
+    const patient = await prisma.hms_patient.create({
+        data: {
+            id: crypto.randomUUID(),
+            tenant_id: tenantId,
+            company_id: companyId || tenantId,
+            first_name: firstName,
+            last_name: lastName || '',
+            dob: dob ? new Date(dob) : null,
+            gender: gender || null,
+            contact: contact as any,
+            patient_number: `PAT-${Date.now()}`,
+            created_by: userId,
+            updated_by: userId
+        }
+    })
+
+    return patient
+}
+

@@ -24,12 +24,16 @@ export function PatientDoctorSelectors({
     patients,
     doctors,
     selectedPatientId,
-    onClinicianSelect
+    onClinicianSelect,
+    onPatientSelect,
+    onNewPatientClick
 }: {
     patients: Patient[]
     doctors: Doctor[]
     selectedPatientId: string
     onClinicianSelect?: (id: string) => void
+    onPatientSelect?: (id: string) => void
+    onNewPatientClick?: () => void
 }) {
     const patientOptions = patients.map(p => ({
         id: p.id,
@@ -63,20 +67,20 @@ export function PatientDoctorSelectors({
                             <label className="block text-sm font-semibold text-gray-900 dark:text-slate-300">
                                 Patient <span className="text-red-500">*</span>
                             </label>
-                            <Link
-                                href="/hms/patients/new"
-                                target="_blank"
+                            <button
+                                type="button"
+                                onClick={onNewPatientClick}
                                 className="flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-all"
                             >
                                 <User className="h-3 w-3" />
                                 New
-                            </Link>
+                            </button>
                         </div>
 
                         <SearchableSelect
                             options={patientOptions}
                             value={selectedPatientId}
-                            onChange={() => { }}
+                            onChange={(id) => onPatientSelect?.(id)}
                             placeholder="Search patient..."
                             name="patient_id"
                             required
