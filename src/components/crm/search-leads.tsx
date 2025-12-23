@@ -36,7 +36,7 @@ export function SearchLeads({ defaultValue = '' }: { defaultValue?: string }) {
             <Search className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors ${isPending ? 'text-indigo-500 animate-pulse' : 'text-slate-400 group-focus-within:text-slate-900'}`} />
             <Input
                 placeholder="Search leads by name, email, or company..."
-                className="pl-10 pr-10 py-2 border-slate-200 focus-visible:ring-slate-900 bg-white shadow-sm"
+                className="pl-10 pr-10 py-2 border-slate-200 focus-visible:ring-slate-900 bg-white shadow-sm text-slate-900"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
             />
