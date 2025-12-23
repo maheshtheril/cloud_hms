@@ -37,7 +37,7 @@ export default async function NewLeadPage() {
             <div className="relative container mx-auto py-12 max-w-5xl">
                 <div className="flex items-center gap-6 mb-10">
                     <Link href="/crm/leads">
-                        <Button variant="ghost" size="icon" className="rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md">
+                        <Button variant="ghost" size="icon" className="rounded-full bg-white/20 hover:bg-white/40 backdrop-blur-md text-slate-700 dark:text-slate-200">
                             <ArrowLeft className="h-6 w-6" />
                         </Button>
                     </Link>

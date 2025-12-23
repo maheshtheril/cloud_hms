@@ -60,7 +60,7 @@ export function FilterLeads({ sources, users }: FilterLeadsProps) {
         <div className="flex items-center gap-2">
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className={`bg-white/50 backdrop-blur-sm border-slate-200/50 hover:bg-white transition-all ${hasFilters ? 'border-indigo-500 text-indigo-600 ring-2 ring-indigo-500/20' : ''}`}>
+                    <Button variant="outline" className={`bg-white/50 backdrop-blur-sm border-slate-200/50 hover:bg-white transition-all text-slate-700 dark:text-slate-200 ${hasFilters ? 'border-indigo-500 text-indigo-600 ring-2 ring-indigo-500/20' : ''}`}>
                         <Filter className="w-4 h-4 mr-2" />
                         {hasFilters ? 'Filters Active' : 'Filter'}
                     </Button>
