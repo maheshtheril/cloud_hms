@@ -152,7 +152,7 @@ export function DashboardClient({ user, stats, appointments, patients, doctors }
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-3">
                                                         <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-xs ring-2 ring-white dark:ring-slate-900 shadow-sm">
-                                                            {apt.patient.first_name[0]}{apt.patient.last_name[0]}
+                                                            {apt.patient.first_name?.[0]}{apt.patient.last_name?.[0] || ''}
                                                         </div>
                                                         <div>
                                                             <div className="font-semibold text-gray-900 dark:text-white">
@@ -169,7 +169,7 @@ export function DashboardClient({ user, stats, appointments, patients, doctors }
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex items-center gap-2">
-                                                        {apt.notes && apt.notes.toLowerCase().includes('video') ? (
+                                                        {apt.notes?.toLowerCase()?.includes('video') ? (
                                                             <Video className="h-3.5 w-3.5 text-purple-500" />
                                                         ) : (
                                                             <MapPin className="h-3.5 w-3.5 text-blue-500" />
