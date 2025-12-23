@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
     Activity, Users, Calendar, LayoutDashboard, Settings, LogOut, Stethoscope, Receipt, Shield,
     Briefcase, Target, Database, FileText, UploadCloud, Menu, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen,
-    Zap, PieChart, MessageSquare, Phone, Mail, Home
+    Zap, PieChart, MessageSquare, Phone, Mail, Home, Building2
 } from 'lucide-react';
 
 import { CompanySwitcher } from '@/components/company-switcher';
@@ -137,20 +137,37 @@ export function AppSidebar({ menuItems, currentCompany, user, children }: { menu
 
 // Extracted Content for reuse
 function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollapsed, isMobile, onLinkClick, onClose }: any) {
+    const canSwitchCompany = user?.isAdmin || user?.isTenantAdmin;
+
     return (
         <>
             {/* Header / Company Logo */}
             <div className={`p-4 border-b border-white/5 flex items-center ${collapsed ? 'justify-center' : 'justify-between'} h-16`}>
                 {!collapsed ? (
-                    <div className="w-full flex items-center justify-between">
-                        <div className="flex-1">
-                            {currentCompany?.logo_url ? (
-                                <div className="flex items-center gap-3">
-                                    <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-8 object-contain max-w-[120px]" />
+                    <div className="w-full flex items-center justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                            {canSwitchCompany ? (
+                                <div className={currentCompany?.logo_url ? "flex items-center gap-3" : ""}>
+                                    {currentCompany?.logo_url && (
+                                        <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-8 w-8 object-contain shrink-0" />
+                                    )}
                                     <CompanySwitcher initialActiveCompany={currentCompany} />
                                 </div>
                             ) : (
-                                <CompanySwitcher initialActiveCompany={currentCompany} />
+                                <div className="flex items-center gap-2 px-3 py-2 w-full text-left bg-white/5 border border-white/10 rounded-lg">
+                                    {currentCompany?.logo_url ? (
+                                        <img src={currentCompany.logo_url} alt="Logo" className="h-6 w-6 object-contain" />
+                                    ) : (
+                                        <div className="flex items-center justify-center h-6 w-6 rounded bg-blue-500/20 text-blue-400">
+                                            <Building2 size={14} />
+                                        </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold text-slate-100 truncate">
+                                            {currentCompany?.name}
+                                        </p>
+                                    </div>
+                                </div>
                             )}
                         </div>
                         {isMobile && onClose && (
