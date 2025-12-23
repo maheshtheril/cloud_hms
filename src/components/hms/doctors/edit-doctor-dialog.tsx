@@ -26,11 +26,14 @@ interface Doctor {
     last_name: string
     email: string | null
     phone: string | null
+    employee_id: string | null
+    designation: string | null
     license_no: string | null
     role_id: string | null
     specialization_id: string | null
     department_id: string | null
     experience_years: number | null
+    qualification?: string | null
     consultation_start_time: string | null
     consultation_end_time: string | null
     consultation_slot_duration: number | null
@@ -60,8 +63,8 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments, roles, 
                     >
                         <X className="h-5 w-5 text-white" />
                     </button>
-                    <h2 className="text-3xl font-black text-white">Edit Staff Member</h2>
-                    <p className="text-blue-100 mt-2">Update details and schedule for {doctor.first_name} {doctor.last_name}</p>
+                    <h2 className="text-3xl font-black text-white">Edit Staff Profile</h2>
+                    <p className="text-blue-100 mt-2">Update administrative and clinical details for Dr. {doctor.first_name}</p>
                 </div>
 
                 {/* Form */}
@@ -74,13 +77,80 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments, roles, 
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                        {/* Personal Information */}
+                        {/* Administrative & HR Section */}
                         <div className="md:col-span-2">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
+                                <div className="h-8 w-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                                    <Shield className="h-4 w-4 text-amber-600" />
+                                </div>
+                                Administrative & HR
+                            </h3>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-900 mb-2">
+                                Employee ID
+                            </label>
+                            <input
+                                type="text"
+                                name="employee_id"
+                                defaultValue={doctor.employee_id || ''}
+                                className="w-full p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none font-medium text-gray-900"
+                                placeholder="EMP-123"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-900 mb-2">
+                                Job Designation <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                name="designation"
+                                required
+                                defaultValue={doctor.designation || ''}
+                                className="w-full p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none font-medium text-gray-900"
+                                placeholder="e.g. Senior Consultant"
+                            />
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
+                                <Building2 className="h-4 w-4" />
+                                Clinical Department
+                            </label>
+                            <select
+                                name="department_id"
+                                defaultValue={doctor.department_id || ''}
+                                className="w-full p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none font-medium text-gray-900"
+                            >
+                                <option value="">Select Department (Work Area)</option>
+                                {departments
+                                    .filter(dept => !dept.parent_id)
+                                    .map(parentDept => (
+                                        <>
+                                            <option key={parentDept.id} value={parentDept.id}>
+                                                {parentDept.name}
+                                            </option>
+                                            {departments
+                                                .filter(child => child.parent_id === parentDept.id)
+                                                .map(childDept => (
+                                                    <option key={childDept.id} value={childDept.id}>
+                                                        &nbsp;&nbsp;&nbsp;&nbsp;↳ {childDept.name}
+                                                    </option>
+                                                ))}
+                                        </>
+                                    ))}
+                            </select>
+                        </div>
+
+                        {/* Basic Information */}
+                        <div className="md:col-span-2 mt-6">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
                                 <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
                                     <GraduationCap className="h-4 w-4 text-blue-600" />
                                 </div>
-                                Personal Information
+                                Basic Contact Details
                             </h3>
                         </div>
 
@@ -137,52 +207,19 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments, roles, 
                             />
                         </div>
 
-                        {/* Professional Details */}
+                        {/* Professional Credentials Section */}
                         <div className="md:col-span-2 mt-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
                                 <div className="h-8 w-8 bg-purple-100 rounded-lg flex items-center justify-center">
                                     <Briefcase className="h-4 w-4 text-purple-600" />
                                 </div>
-                                Professional Details
+                                Professional Credentials
                             </h3>
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Building2 className="h-4 w-4" />
-                                Department {departments.length > 0 && <span className="text-red-500">*</span>}
-                            </label>
-                            <select
-                                name="department_id"
-                                required={departments.length > 0}
-                                defaultValue={doctor.department_id || ''}
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
-                            >
-                                <option value="">
-                                    {departments.length === 0 ? 'No departments available' : 'Select Department'}
-                                </option>
-                                {departments
-                                    .filter(dept => !dept.parent_id)
-                                    .map(parentDept => (
-                                        <>
-                                            <option key={parentDept.id} value={parentDept.id}>
-                                                {parentDept.name}
-                                            </option>
-                                            {departments
-                                                .filter(child => child.parent_id === parentDept.id)
-                                                .map(childDept => (
-                                                    <option key={childDept.id} value={childDept.id}>
-                                                        &nbsp;&nbsp;&nbsp;&nbsp;↳ {childDept.name}
-                                                    </option>
-                                                ))}
-                                        </>
-                                    ))}
-                            </select>
-                        </div>
-
-                        <div>
                             <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Role / Position <span className="text-red-500">*</span>
+                                Clinical Role <span className="text-red-500">*</span>
                             </label>
                             <select
                                 name="role_id"
@@ -216,7 +253,7 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments, roles, 
                         <div>
                             <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
                                 <Shield className="h-4 w-4" />
-                                License Number <span className="text-red-500">*</span>
+                                License / Registration No. <span className="text-red-500">*</span>
                             </label>
                             <input
                                 type="text"
@@ -227,7 +264,7 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments, roles, 
                             />
                         </div>
 
-                        <div>
+                        <div className="md:col-span-2">
                             <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
                                 <Calendar className="h-4 w-4" />
                                 Years of Experience
@@ -241,13 +278,13 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments, roles, 
                             />
                         </div>
 
-                        {/* Consulting Settings */}
+                        {/* Clinical Settings */}
                         <div className="md:col-span-2 mt-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
                                 <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
                                     <Clock className="h-4 w-4 text-green-600" />
                                 </div>
-                                Consulting Schedule (Defaults)
+                                Consulting Logic & Fee
                             </h3>
                         </div>
 
@@ -308,7 +345,6 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments, roles, 
                                     className="w-full pl-8 p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-bold text-gray-900"
                                 />
                             </div>
-                            <p className="mt-1.5 text-[10px] text-gray-500">Standard fee for 1 consultation slot</p>
                         </div>
                     </div>
 

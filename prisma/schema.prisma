@@ -1004,6 +1004,8 @@ model hms_clinicians {
   last_name           String
   email               String?              @unique
   phone               String?
+  employee_id         String?              @unique
+  designation         String?
   role                String?
   specialization      String?
   license_no          String?

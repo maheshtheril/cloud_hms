@@ -70,7 +70,15 @@ export default async function DoctorDetailPage({ params }: { params: Promise<{ i
                                 {doctor.is_active ? 'Active' : 'Inactive'}
                             </span>
                         </h1>
-                        <p className="text-gray-500 text-sm">License: {doctor.license_no || 'N/A'}</p>
+                        <div className="flex items-center gap-3 text-gray-500 text-sm">
+                            <p>License: {doctor.license_no || 'N/A'}</p>
+                            {doctor.employee_id && (
+                                <>
+                                    <span>•</span>
+                                    <p className="font-medium text-blue-600">ID: {doctor.employee_id}</p>
+                                </>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -98,7 +106,7 @@ export default async function DoctorDetailPage({ params }: { params: Promise<{ i
                                 {doctor.first_name.charAt(0)}
                             </div>
                             <div>
-                                <p className="font-semibold text-gray-900">{doctor.hms_specializations?.name || 'General Practitioner'}</p>
+                                <p className="font-semibold text-gray-900">{doctor.designation || doctor.hms_specializations?.name || 'General Practitioner'}</p>
                                 <p className="text-sm text-gray-500">{doctor.experience_years ? `${doctor.experience_years} years experience` : 'Experience not listed'}</p>
                             </div>
                         </div>

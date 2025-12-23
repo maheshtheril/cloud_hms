@@ -196,9 +196,16 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                                     <h3 className="text-xl font-black text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
                                         Dr. {doc.first_name} {doc.last_name}
                                     </h3>
-                                    <p className="text-sm text-gray-600 font-medium">
-                                        {doc.hms_roles?.name || 'Medical Professional'}
-                                    </p>
+                                    <div className="flex flex-col">
+                                        <p className="text-sm font-bold text-blue-600">
+                                            {doc.designation || doc.hms_roles?.name || 'Medical Professional'}
+                                        </p>
+                                        {doc.employee_id && (
+                                            <p className="text-[10px] text-gray-400 font-mono tracking-tighter">
+                                                ID: {doc.employee_id}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Contact Info */}
