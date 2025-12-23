@@ -65,9 +65,9 @@ export function TargetForm() {
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
                                     <TrendingUp className="w-5 h-5" />
                                 </div>
-                                <SelectNative id="target_type" name="target_type" required className="h-14 pl-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all font-bold">
-                                    <option value="revenue">Capital: Revenue Yield</option>
-                                    <option value="activity">Operational: Activity Quota</option>
+                                <SelectNative id="target_type" name="target_type" required className="h-14 pl-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-slate-900 dark:text-slate-100">
+                                    <option value="revenue" className="text-slate-900 bg-white">Capital: Revenue Yield</option>
+                                    <option value="activity" className="text-slate-900 bg-white">Operational: Activity Quota</option>
                                 </SelectNative>
                             </div>
                         </div>
@@ -77,7 +77,7 @@ export function TargetForm() {
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
                                     <Zap className="w-5 h-5" />
                                 </div>
-                                <Input id="target_value" name="target_value" type="number" step="0.01" required placeholder="e.g. 50000" className="h-14 pl-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl font-black text-lg" />
+                                <Input id="target_value" name="target_value" type="number" step="0.01" required placeholder="e.g. 50000" className="h-14 pl-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl font-black text-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400" />
                             </div>
                         </div>
                     </div>
@@ -85,30 +85,30 @@ export function TargetForm() {
                     {/* Incentive Section */}
                     <div className="space-y-4">
                         <Label htmlFor="incentive_amount" className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Incentive Payload (Reward)</Label>
-                        <Input id="incentive_amount" name="incentive_amount" type="number" step="0.01" placeholder="Optional bonus amount in INR" className="h-14 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl px-6 text-emerald-600 font-bold" />
+                        <Input id="incentive_amount" name="incentive_amount" type="number" step="0.01" placeholder="Optional bonus amount in INR" className="h-14 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl px-6 text-emerald-600 font-bold placeholder:text-slate-400" />
                     </div>
 
                     {/* Period Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-slate-100 dark:border-white/5">
                         <div className="space-y-4">
                             <Label htmlFor="period_type" className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Temporal Cycle</Label>
-                            <SelectNative id="period_type" name="period_type" required defaultValue="month" className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-bold">
-                                <option value="month">Monthly Cycle</option>
-                                <option value="quarter">Quarterly Phase</option>
-                                <option value="year">Fiscal Year</option>
+                            <SelectNative id="period_type" name="period_type" required defaultValue="month" className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-bold text-slate-900 dark:text-slate-100">
+                                <option value="month" className="text-slate-900 bg-white">Monthly Cycle</option>
+                                <option value="quarter" className="text-slate-900 bg-white">Quarterly Phase</option>
+                                <option value="year" className="text-slate-900 bg-white">Fiscal Year</option>
                             </SelectNative>
                         </div>
                         <div className="space-y-4">
                             <Label htmlFor="period_start" className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-2">
                                 <Calendar className="w-3 h-3" /> Activation
                             </Label>
-                            <Input id="period_start" name="period_start" type="date" required className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-medium" />
+                            <Input id="period_start" name="period_start" type="date" required className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-medium text-slate-900 dark:text-slate-100" />
                         </div>
                         <div className="space-y-4">
                             <Label htmlFor="period_end" className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-2">
                                 <Calendar className="w-3 h-3" /> Termination
                             </Label>
-                            <Input id="period_end" name="period_end" type="date" required className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-medium" />
+                            <Input id="period_end" name="period_end" type="date" required className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-medium text-slate-900 dark:text-slate-100" />
                         </div>
                     </div>
                 </div>

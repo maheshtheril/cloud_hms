@@ -136,6 +136,8 @@ export async function getMenuItems() {
                 item.label !== 'Global Settings' &&
                 item.label !== 'Settings' &&
                 item.label !== 'Custom Fields' &&
+                item.label !== 'Targets' && // Hide Targets from standard menu
+                item.url !== '/crm/targets' &&
                 item.url !== '/settings'
             );
         });
@@ -161,9 +163,14 @@ export async function getMenuItems() {
                         { key: 'permissions', label: 'Permissions', icon: 'Key', url: '/settings/permissions' },
                         { key: 'crm-masters', label: 'CRM Masters', icon: 'Database', url: '/settings/crm' },
                         { key: 'custom-fields', label: 'Custom Fields', icon: 'FileText', url: '/settings/custom-fields' },
-                        { key: 'import-leads', label: 'Import Leads', icon: 'UploadCloud', url: '/crm/import/leads' }
+                        { key: 'import-leads', label: 'Import Leads', icon: 'UploadCloud', url: '/crm/import/leads' },
+                        { key: 'crm-targets', label: 'Targets', icon: 'Target', url: '/crm/targets' } // Moved here
                     ]
                 });
+            } else {
+                // If config group exists (from DB), ensures these critical manual items are present if not already
+                // For now, simpler to just assume if config exists in DB it's managed there, 
+                // OR we can merge. Let's stick to the push block for creating new group.
             }
         }
 
