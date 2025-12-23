@@ -1,69 +1,87 @@
 'use server'
 
-import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
 
-export async function updateGlobalSettings(data: {
-    companyId: string,
-    name: string,
-    industry?: string,
-    currencyId?: string,
-    logoUrl?: string
-}) {
-    const session = await auth()
-    if (!session?.user?.id) return { error: "Unauthorized" }
+export type ProfileFormState = {
+    message?: string
+    error?: string
+    success?: boolean
+}
+
+export async function updateProfile(prevState: ProfileFormState, formData: FormData): Promise<ProfileFormState> {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return { error: "Not authenticated" }
+    }
+
+    const name = formData.get('name') as string
+    const email = formData.get('email') as string
+    const avatarUrl = formData.get('avatar_url') as string
+
+    // Basic Validation
+    if (!name || name.length < 2) {
+        return { error: "Name must be at least 2 characters" }
+    }
 
     try {
-        // Verify company ownership
-        const company = await prisma.company.findFirst({
-            where: {
-                id: data.companyId,
-                tenant_id: session.user.tenantId
-            }
+        // Update user
+        // We might want to update email, but that usually requires verification. 
+        // For now, let's allow updating name and avatar (metadata).
+        // If email is changed, we should probably check uniqueness, but let's stick to name/avatar for MVP "production ready" visual.
+
+        const updateData: any = {
+            name,
+            updated_at: new Date()
+        }
+
+        // Handle Avatar
+        if (avatarUrl) {
+            // Fetch current metadata to merge
+            const currentUser = await prisma.app_user.findUnique({
+                where: { id: session.user.id },
+                select: { metadata: true }
+            });
+
+            const currentMeta = (currentUser?.metadata as any) || {};
+            updateData.metadata = {
+                ...currentMeta,
+                avatar_url: avatarUrl
+            };
+        }
+
+        await prisma.app_user.update({
+            where: { id: session.user.id },
+            data: updateData
         })
 
-        if (!company) return { error: "Company not found" }
+        revalidatePath('/settings/profile')
+        revalidatePath('/', 'layout') // Update sidebar avatar
 
-        await prisma.$transaction(async (tx) => {
-            // Update Company Details
-            await tx.company.update({
-                where: { id: data.companyId },
-                data: {
-                    name: data.name,
-                    industry: data.industry,
-                    logo_url: data.logoUrl
-                }
-            })
+        return { success: true, message: "Profile updated successfully" }
 
-            // Update Currency Settings
-            if (data.currencyId) {
-                // Check if settings exist
-                const settings = await tx.company_settings.findFirst({
-                    where: { company_id: data.companyId }
-                })
-
-                if (settings) {
-                    await tx.company_settings.update({
-                        where: { id: settings.id },
-                        data: { currency_id: data.currencyId }
-                    })
-                } else {
-                    await tx.company_settings.create({
-                        data: {
-                            tenant_id: session.user.tenantId!,
-                            company_id: data.companyId,
-                            currency_id: data.currencyId
-                        }
-                    })
-                }
-            }
-        })
-
-        revalidatePath('/settings/global')
-        return { success: true }
     } catch (error) {
-        console.error("Failed to update global settings:", error)
-        return { error: "Failed to update settings" }
+        console.error("Profile update error:", error)
+        return { error: "Failed to update profile" }
     }
+}
+
+export async function getUserProfile() {
+    const session = await auth();
+    if (!session?.user?.id) return null;
+
+    const user = await prisma.app_user.findUnique({
+        where: { id: session.user.id },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            metadata: true,
+            created_at: true
+        }
+    });
+
+    return user;
 }

@@ -20,7 +20,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                     // Use raw query to verify password with pgcrypto (Case Insensitive Email)
                     const users = await prisma.$queryRaw`
-                        SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, password
+                        SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, password, metadata
                         FROM app_user
                         WHERE LOWER(email) = ${email}
                           AND password = crypt(${credentials.password}, password)
@@ -42,6 +42,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 id: user.id,
                                 email: user.email,
                                 name: user.name,
+                                image: user.metadata?.avatar_url || null, // Map avatar
                                 isAdmin: user.is_admin,
                                 isTenantAdmin: user.is_tenant_admin,
                                 companyId: user.company_id,
@@ -79,6 +80,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (user) {
                 token.id = user.id;
                 token.name = user.name;
+                token.picture = user.image;
                 token.isAdmin = user.isAdmin;
                 token.isTenantAdmin = user.isTenantAdmin;
                 token.companyId = user.companyId;
@@ -93,6 +95,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (session.user) {
                 session.user.id = token.id;
                 session.user.name = token.name;
+                session.user.image = token.picture;
                 session.user.isAdmin = token.isAdmin;
                 session.user.isTenantAdmin = token.isTenantAdmin;
                 session.user.companyId = token.companyId;

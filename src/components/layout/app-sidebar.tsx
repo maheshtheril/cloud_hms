@@ -118,8 +118,12 @@ export function AppSidebar({ menuItems, currentCompany, user, children }: { menu
                         </div>
                     </div>
                     {/* Tiny User Avatar for Mobile Header */}
-                    <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs shadow-inner">
-                        {user?.name?.substring(0, 2).toUpperCase() || 'U'}
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs shadow-inner overflow-hidden">
+                        {user?.image ? (
+                            <img src={user.image} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                        ) : (
+                            user?.name?.substring(0, 2).toUpperCase() || 'U'
+                        )}
                     </div>
                 </header>
 
@@ -215,8 +219,12 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                     <DropdownMenuTrigger asChild>
                         <button className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} gap-3 w-full p-2 rounded-xl hover:bg-white/5 transition-all group outline-none`}>
                             <div className="flex items-center gap-3 overflow-hidden text-left">
-                                <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-inner ring-2 ring-white/10 group-hover:ring-white/20 transition-all">
-                                    {user?.name?.substring(0, 2).toUpperCase() || 'U'}
+                                <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-inner ring-2 ring-white/10 group-hover:ring-white/20 transition-all overflow-hidden">
+                                    {user?.image ? (
+                                        <img src={user.image} alt={user.name || 'User'} className="w-full h-full object-cover" />
+                                    ) : (
+                                        user?.name?.substring(0, 2).toUpperCase() || 'U'
+                                    )}
                                 </div>
                                 {!collapsed && (
                                     <div className="flex flex-col min-w-0">
@@ -237,17 +245,17 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                             <p className="text-sm font-semibold text-white">{user?.name}</p>
                             <p className="text-xs text-neutral-400">{user?.email}</p>
                         </div>
-                        <DropdownMenuItem className="focus:bg-white/10 focus:text-white cursor-pointer rounded-lg text-neutral-300">
-                            <div className="flex items-center gap-2">
+                        <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white cursor-pointer rounded-lg text-neutral-300">
+                            <Link href="/settings/profile" className="flex items-center gap-2 px-2 py-1.5 w-full outline-none">
                                 <Users className="h-4 w-4" />
                                 <span>Profile</span>
-                            </div>
+                            </Link>
                         </DropdownMenuItem>
-                        <DropdownMenuItem className="focus:bg-white/10 focus:text-white cursor-pointer rounded-lg text-neutral-300 mb-1">
-                            <div className="flex items-center gap-2">
+                        <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white cursor-pointer rounded-lg text-neutral-300 mb-1">
+                            <Link href="/settings/profile" className="flex items-center gap-2 px-2 py-1.5 w-full outline-none">
                                 <Settings className="h-4 w-4" />
                                 <span>Settings</span>
-                            </div>
+                            </Link>
                         </DropdownMenuItem>
 
                         <DropdownMenuItem asChild className="focus:bg-red-500/20 focus:text-red-400 cursor-pointer rounded-lg text-red-500 mt-1">
