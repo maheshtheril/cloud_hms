@@ -321,12 +321,7 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                             </Link>
                         </DropdownMenuItem>
 
-                        <DropdownMenuItem asChild className="focus:bg-indigo-50 dark:focus:bg-indigo-900/20 focus:text-indigo-700 dark:focus:text-indigo-400 cursor-pointer rounded-lg mb-1 h-10">
-                            <Link href="/settings" className="flex items-center gap-3 px-2 w-full">
-                                <Settings className="h-4 w-4" />
-                                <span>Settings</span>
-                            </Link>
-                        </DropdownMenuItem>
+
 
                         <DropdownMenuItem
                             onClick={(e) => {
