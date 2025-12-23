@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { patientId, vitals, diagnosis, complaint, examination, plan, medicines } = body
+        const { patientId, appointmentId, vitals, diagnosis, complaint, examination, plan, medicines } = body
 
         if (!patientId) {
             return NextResponse.json({ error: 'Patient ID required' }, { status: 400 })
@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
             data: {
                 tenant_id: session.user.tenantId,
                 patient_id: patientId,
+                appointment_id: appointmentId || null,
                 vitals: vitals || '',
                 diagnosis: diagnosis || '',
                 complaint: complaint || '',

@@ -68,6 +68,14 @@ export default async function DashboardPage() {
             },
             orderBy: {
                 starts_at: 'asc'
+            },
+            include: {
+                prescription: {
+                    select: { id: true }
+                },
+                hms_invoice: {
+                    select: { id: true, status: true }
+                }
             }
         }),
 

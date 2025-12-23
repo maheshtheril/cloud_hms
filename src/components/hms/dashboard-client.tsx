@@ -180,7 +180,27 @@ export function DashboardClient({ user, stats, appointments, patients, doctors }
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <StatusBadge status={apt.status} />
+                                                    <div className="flex flex-col gap-1.5">
+                                                        <StatusBadge status={apt.status} />
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {apt.prescription && apt.prescription.length > 0 && (
+                                                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+                                                                    <Stethoscope className="h-2.5 w-2.5" /> Rx Done
+                                                                </span>
+                                                            )}
+                                                            {apt.hms_invoice && apt.hms_invoice.length > 0 ? (
+                                                                apt.hms_invoice.some((inv: any) => inv.status === 'paid') ? (
+                                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                                                        <CheckCircle2 className="h-2.5 w-2.5" /> Paid
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                                                                        <Receipt className="h-2.5 w-2.5" /> Bill Pending
+                                                                    </span>
+                                                                )
+                                                            ) : null}
+                                                        </div>
+                                                    </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
                                                     <div className="flex items-center justify-end gap-1 sm:gap-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
