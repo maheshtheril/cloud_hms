@@ -51,39 +51,38 @@ export default async function NewAppointmentPage({
     const selectedPatientId = patient_id || ''
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 pb-12">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 pb-4">
             <form action={async (formData) => {
                 'use server'
                 await createAppointment(formData)
-            }} className="max-w-6xl mx-auto p-6 space-y-6">
+            }} className="max-w-[1600px] mx-auto p-4 space-y-4">
 
-                {/* Premium Header */}
-                <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white shadow-xl shadow-blue-100/50 p-6">
+                {/* Premium Header - Compact */}
+                <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3">
                             <Link
                                 href="/hms/appointments"
-                                className="p-2.5 hover:bg-gray-100 rounded-xl transition-all group"
+                                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-all group"
                             >
-                                <ArrowLeft className="h-5 w-5 text-gray-600 group-hover:text-gray-900" />
+                                <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
                             </Link>
                             <div>
-                                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
                                     Book New Appointment
                                 </h1>
-                                <p className="text-gray-600 text-sm mt-1">Schedule a patient visit with our healthcare providers</p>
                             </div>
                         </div>
                         <div className="flex gap-3">
                             <Link
                                 href="/hms/appointments"
-                                className="px-5 py-2.5 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl font-medium text-sm transition-all"
+                                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg font-medium text-sm transition-all"
                             >
                                 Cancel
                             </Link>
                             <button
                                 type="submit"
-                                className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg hover:scale-[1.02] font-medium text-sm flex items-center gap-2 transition-all"
+                                className="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white rounded-lg hover:shadow-lg hover:scale-[1.02] font-medium text-sm flex items-center gap-2 transition-all"
                             >
                                 <CheckCircle className="h-4 w-4" />
                                 Confirm Booking
@@ -92,10 +91,11 @@ export default async function NewAppointmentPage({
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-[calc(100vh-140px)] overflow-hidden">
 
-                    {/* Left Column - Patient & Doctor (2 cols) */}
-                    <div className="lg:col-span-2 space-y-6">
+
+                    {/* Left Column - Patient & Doctor & Schedule (Span 8) */}
+                    <div className="lg:col-span-8 space-y-4 h-full overflow-y-auto pr-1 custom-scrollbar">
 
                         <PatientDoctorSelectors
                             patients={patients}
@@ -104,21 +104,21 @@ export default async function NewAppointmentPage({
                         />
 
                         {/* Date & Time Card */}
-                        <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white shadow-xl shadow-blue-100/50 p-6">
-                            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
-                                <div className="h-10 w-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-                                    <Calendar className="h-5 w-5 text-white" />
+                        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
+                            <div className="flex items-center gap-3 mb-4 pb-2 border-b border-gray-100 dark:border-slate-800">
+                                <div className="h-8 w-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-md">
+                                    <Calendar className="h-4 w-4 text-white" />
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-bold text-gray-900">Schedule</h2>
-                                    <p className="text-sm text-gray-600">When should the appointment take place?</p>
+                                    <h2 className="text-base font-bold text-gray-900 dark:text-white">Schedule</h2>
+                                    <p className="text-xs text-gray-600 dark:text-slate-400">When should the appointment take place?</p>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-900 mb-2">
-                                        <Calendar className="h-4 w-4 inline mr-1" />
+                                    <label className="block text-sm font-semibold text-gray-900 dark:text-slate-300 mb-1.5">
+                                        <Calendar className="h-3.5 w-3.5 inline mr-1" />
                                         Date <span className="text-red-500">*</span>
                                     </label>
                                     <input
@@ -126,12 +126,12 @@ export default async function NewAppointmentPage({
                                         name="date"
                                         required
                                         defaultValue={date}
-                                        className="w-full p-3.5 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-medium"
+                                        className="w-full p-2.5 bg-white dark:bg-slate-950 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium [color-scheme:light] dark:[color-scheme:dark]"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-900 mb-2">
-                                        <Clock className="h-4 w-4 inline mr-1" />
+                                    <label className="block text-sm font-semibold text-gray-900 dark:text-slate-300 mb-1.5">
+                                        <Clock className="h-3.5 w-3.5 inline mr-1" />
                                         Time <span className="text-red-500">*</span>
                                     </label>
                                     <input
@@ -139,34 +139,34 @@ export default async function NewAppointmentPage({
                                         name="time"
                                         required
                                         defaultValue={time}
-                                        className="w-full p-3.5 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-medium"
+                                        className="w-full p-2.5 bg-white dark:bg-slate-950 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium [color-scheme:light] dark:[color-scheme:dark]"
                                     />
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Right Column - Visit Details */}
-                    <div className="space-y-6">
+                    {/* Right Column - Visit Details (Span 4) */}
+                    <div className="lg:col-span-4 space-y-4 h-full overflow-y-auto pr-1">
 
                         {/* Visit Type & Mode */}
-                        <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white shadow-xl shadow-blue-100/50 p-6">
-                            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
-                                <div className="h-10 w-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center shadow-lg">
-                                    <FileText className="h-5 w-5 text-white" />
+                        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
+                            <div className="flex items-center gap-3 mb-4 pb-2 border-b border-gray-100 dark:border-slate-800">
+                                <div className="h-8 w-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center shadow-md">
+                                    <FileText className="h-4 w-4 text-white" />
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-bold text-gray-900">Visit Details</h2>
-                                    <p className="text-sm text-gray-600">Type and mode of consultation</p>
+                                    <h2 className="text-base font-bold text-gray-900 dark:text-white">Visit Details</h2>
+                                    <p className="text-xs text-gray-600 dark:text-slate-400">Type and mode</p>
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-900 mb-2">Visit Type</label>
+                                    <label className="block text-sm font-semibold text-gray-900 dark:text-slate-300 mb-1.5">Visit Type</label>
                                     <select
                                         name="type"
-                                        className="w-full p-3.5 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none font-medium"
+                                        className="w-full p-2.5 bg-white dark:bg-slate-950 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none font-medium text-sm"
                                     >
                                         <option value="consultation">🩺 Initial Consultation</option>
                                         <option value="follow_up">🔄 Follow Up Visit</option>
@@ -177,9 +177,9 @@ export default async function NewAppointmentPage({
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-900 mb-2">Consultation Mode</label>
+                                    <label className="block text-sm font-semibold text-gray-900 dark:text-slate-300 mb-1.5">Consultation Mode</label>
                                     <div className="grid grid-cols-1 gap-2">
-                                        <label className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-blue-50 border-2 border-gray-200 rounded-xl cursor-pointer transition-all group">
+                                        <label className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer transition-all group">
                                             <input
                                                 type="radio"
                                                 name="mode"
@@ -187,28 +187,28 @@ export default async function NewAppointmentPage({
                                                 defaultChecked
                                                 className="text-blue-600 focus:ring-blue-500"
                                             />
-                                            <MapPin className="h-4 w-4 text-gray-600 group-hover:text-blue-600" />
-                                            <span className="text-sm font-medium text-gray-900">In-Person Visit</span>
+                                            <MapPin className="h-4 w-4 text-gray-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+                                            <span className="text-sm font-medium text-gray-900 dark:text-slate-200">In-Person Visit</span>
                                         </label>
-                                        <label className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-purple-50 border-2 border-gray-200 rounded-xl cursor-pointer transition-all group">
+                                        <label className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-900/20 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer transition-all group">
                                             <input
                                                 type="radio"
                                                 name="mode"
                                                 value="video"
                                                 className="text-purple-600 focus:ring-purple-500"
                                             />
-                                            <Video className="h-4 w-4 text-gray-600 group-hover:text-purple-600" />
-                                            <span className="text-sm font-medium text-gray-900">Video Call</span>
+                                            <Video className="h-4 w-4 text-gray-600 dark:text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400" />
+                                            <span className="text-sm font-medium text-gray-900 dark:text-slate-200">Video Call</span>
                                         </label>
-                                        <label className="flex items-center gap-3 p-3 bg-gray-50 hover:bg-green-50 border-2 border-gray-200 rounded-xl cursor-pointer transition-all group">
+                                        <label className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-slate-800 hover:bg-green-50 dark:hover:bg-green-900/20 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer transition-all group">
                                             <input
                                                 type="radio"
                                                 name="mode"
                                                 value="phone"
                                                 className="text-green-600 focus:ring-green-500"
                                             />
-                                            <Phone className="h-4 w-4 text-gray-600 group-hover:text-green-600" />
-                                            <span className="text-sm font-medium text-gray-900">Phone Consultation</span>
+                                            <Phone className="h-4 w-4 text-gray-600 dark:text-slate-400 group-hover:text-green-600 dark:group-hover:text-green-400" />
+                                            <span className="text-sm font-medium text-gray-900 dark:text-slate-200">Phone Consultation</span>
                                         </label>
                                     </div>
                                 </div>
@@ -216,50 +216,48 @@ export default async function NewAppointmentPage({
                         </div>
 
                         {/* Priority */}
-                        <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white shadow-xl shadow-blue-100/50 p-6">
-                            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
-                                <div className="h-10 w-10 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg">
-                                    <AlertCircle className="h-5 w-5 text-white" />
+                        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
+                            <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-100 dark:border-slate-800">
+                                <div className="h-8 w-8 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-lg flex items-center justify-center shadow-md">
+                                    <AlertCircle className="h-4 w-4 text-white" />
                                 </div>
                                 <div>
-                                    <h2 className="text-lg font-bold text-gray-900">Priority Level</h2>
-                                    <p className="text-sm text-gray-600">How urgent is this appointment?</p>
+                                    <h2 className="text-base font-bold text-gray-900 dark:text-white">Priority</h2>
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <label className="flex items-center gap-3 p-3 bg-green-50 border-2 border-green-200 rounded-xl cursor-pointer transition-all hover:shadow-md">
+                            <div className="grid grid-cols-2 gap-2">
+                                <label className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg cursor-pointer transition-all hover:shadow-sm">
                                     <input type="radio" name="priority" value="low" className="text-green-600 focus:ring-green-500" />
-                                    <span className="text-sm font-medium text-green-700">🟢 Low - Routine care</span>
+                                    <span className="text-xs font-bold text-green-700 dark:text-green-400">Low</span>
                                 </label>
-                                <label className="flex items-center gap-3 p-3 bg-blue-50 border-2 border-blue-300 rounded-xl cursor-pointer transition-all hover:shadow-md">
+                                <label className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg cursor-pointer transition-all hover:shadow-sm">
                                     <input type="radio" name="priority" value="normal" defaultChecked className="text-blue-600 focus:ring-blue-500" />
-                                    <span className="text-sm font-medium text-blue-700">🔵 Normal - Standard visit</span>
+                                    <span className="text-xs font-bold text-blue-700 dark:text-blue-400">Normal</span>
                                 </label>
-                                <label className="flex items-center gap-3 p-3 bg-orange-50 border-2 border-orange-200 rounded-xl cursor-pointer transition-all hover:shadow-md">
+                                <label className="flex items-center gap-2 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg cursor-pointer transition-all hover:shadow-sm">
                                     <input type="radio" name="priority" value="high" className="text-orange-600 focus:ring-orange-500" />
-                                    <span className="text-sm font-medium text-orange-700">🟠 High - Needs attention soon</span>
+                                    <span className="text-xs font-bold text-orange-700 dark:text-orange-400">High</span>
                                 </label>
-                                <label className="flex items-center gap-3 p-3 bg-red-50 border-2 border-red-300 rounded-xl cursor-pointer transition-all hover:shadow-md">
+                                <label className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg cursor-pointer transition-all hover:shadow-sm">
                                     <input type="radio" name="priority" value="urgent" className="text-red-600 focus:ring-red-500" />
-                                    <span className="text-sm font-medium text-red-700">🔴 Urgent - Immediate care</span>
+                                    <span className="text-xs font-bold text-red-700 dark:text-red-400">Urgent</span>
                                 </label>
                             </div>
                         </div>
 
-                        {/* Notes */}
-                        <div className="bg-white/90 backdrop-blur-xl rounded-2xl border border-white shadow-xl shadow-blue-100/50 p-6">
-                            <div className="flex items-center gap-3 mb-4">
-                                <FileText className="h-5 w-5 text-gray-600" />
-                                <h3 className="text-sm font-bold text-gray-900">Chief Complaint / Notes</h3>
+                        {/* Notes - Compact */}
+                        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4 flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                                <FileText className="h-4 w-4 text-gray-600 dark:text-slate-400" />
+                                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Notes</h3>
                             </div>
                             <textarea
                                 name="notes"
-                                rows={5}
-                                className="w-full p-3.5 bg-white text-gray-900 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-none font-medium"
-                                placeholder="Reason for visit, symptoms, preliminary notes..."
+                                rows={3}
+                                className="w-full p-2.5 bg-white dark:bg-slate-950 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none font-medium text-sm"
+                                placeholder="Reason for visit..."
                             ></textarea>
-                            <p className="mt-2 text-xs text-gray-500">This information helps prepare for the appointment</p>
                         </div>
                     </div>
 
