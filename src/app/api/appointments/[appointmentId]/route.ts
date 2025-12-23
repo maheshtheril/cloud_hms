@@ -15,14 +15,15 @@ export async function GET(
 
         const { appointmentId } = await params
 
-        // Fetch the appointment with patient details
+        // Fetch the appointment with patient and clinician details (for fee)
         const appointment = await prisma.hms_appointments.findFirst({
             where: {
                 id: appointmentId,
                 tenant_id: session.user.tenantId
             },
             include: {
-                hms_patient: true
+                hms_patient: true,
+                hms_clinician: true
             }
         })
 
@@ -70,7 +71,15 @@ export async function GET(
             ]
         })
 
-        const consultation_fee = consultationFeeRule?.price || services.find(s => s.notes?.includes('consultation'))?.unit_price || 0
+        // Standard consultation fee hierarchy:
+        // 1. Specific Billing Rule
+        // 2. Clinician's own fee (new standard field)
+        // 3. Service notes fallback
+        // 4. Default 0
+        const consultation_fee = consultationFeeRule?.price
+            || (appointment as any).hms_clinician?.consultation_fee
+            || services.find(s => s.notes?.includes('consultation'))?.unit_price
+            || 0
 
         // Fetch lab orders for this appointment
         // Strategy:

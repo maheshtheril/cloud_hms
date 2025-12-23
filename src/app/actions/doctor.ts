@@ -69,8 +69,9 @@ export async function createDoctor(formData: FormData) {
                 consultation_start_time: formData.get("consultation_start_time") as string || "09:00",
                 consultation_end_time: formData.get("consultation_end_time") as string || "17:00",
                 consultation_slot_duration: parseInt(formData.get("consultation_slot_duration") as string) || 30,
+                consultation_fee: parseFloat(formData.get("consultation_fee") as string) || 0,
                 is_active: true
-            }
+            } as any
         })
 
     } catch (error) {
@@ -96,6 +97,7 @@ export async function updateDoctor(formData: FormData) {
     const consultationStartTime = formData.get("consultation_start_time") as string
     const consultationEndTime = formData.get("consultation_end_time") as string
     const consultationSlotDuration = parseInt(formData.get("consultation_slot_duration") as string)
+    const consultationFee = parseFloat(formData.get("consultation_fee") as string) || 0
 
     const session = await auth();
     if (!session?.user?.id) throw new Error("Unauthorized");
@@ -115,8 +117,9 @@ export async function updateDoctor(formData: FormData) {
                 consultation_start_time: consultationStartTime,
                 consultation_end_time: consultationEndTime,
                 consultation_slot_duration: consultationSlotDuration,
+                consultation_fee: consultationFee,
                 updated_at: new Date()
-            }
+            } as any
         })
     } catch (error) {
         console.error("Failed to update doctor:", error)

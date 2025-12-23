@@ -34,6 +34,7 @@ interface Doctor {
     consultation_start_time: string | null
     consultation_end_time: string | null
     consultation_slot_duration: number | null
+    consultation_fee: number | null
 }
 
 interface EditDoctorDialogProps {
@@ -290,6 +291,24 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments, roles, 
                                 min="5"
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-medium text-gray-900"
                             />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-900 mb-2">
+                                Consultation Fee (₹) <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                                <div className="absolute left-4 top-3.5 text-gray-400 font-bold">₹</div>
+                                <input
+                                    type="number"
+                                    name="consultation_fee"
+                                    required
+                                    defaultValue={doctor.consultation_fee || "500"}
+                                    min="0"
+                                    className="w-full pl-8 p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-bold text-gray-900"
+                                />
+                            </div>
+                            <p className="mt-1.5 text-[10px] text-gray-500">Standard fee for 1 consultation slot</p>
                         </div>
                     </div>
 
