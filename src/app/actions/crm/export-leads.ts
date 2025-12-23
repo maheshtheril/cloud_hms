@@ -59,7 +59,7 @@ export async function exportLeadsAction(searchParams: any) {
         }) as any
 
         // Format for CSV
-        const csvData = leads.map(lead => ({
+        const csvData = leads.map((lead: any) => ({
             'Lead Name': lead.name,
             'Contact Person': lead.contact_name || '',
             'Company': lead.company_name || '',
