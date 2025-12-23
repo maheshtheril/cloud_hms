@@ -84,7 +84,7 @@ export function ActivityForm() {
                                     <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-orange-500 transition-colors">
                                         <TrendingUp className="w-5 h-5" />
                                     </div>
-                                    <Input id="subject" name="subject" placeholder="e.g. Critical Follow-up: Q4 Alignment" required className="h-14 pl-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl focus:ring-2 focus:ring-orange-500 transition-all font-bold" />
+                                    <Input id="subject" name="subject" placeholder="e.g. Critical Follow-up: Q4 Alignment" required className="h-14 pl-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl focus:ring-2 focus:ring-orange-500 transition-all font-bold text-slate-900 dark:text-white" />
                                 </div>
                                 {state.errors?.subject && <p className="text-red-500 text-[10px] font-black uppercase px-2">{state.errors.subject}</p>}
                             </div>
@@ -92,7 +92,7 @@ export function ActivityForm() {
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <Label htmlFor="type" className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Vector Type</Label>
-                                    <SelectNative id="type" name="type" className="h-14 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl font-bold">
+                                    <SelectNative id="type" name="type" className="h-14 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl font-bold text-slate-900 dark:text-white">
                                         {activityTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                                     </SelectNative>
                                 </div>
@@ -102,14 +102,14 @@ export function ActivityForm() {
                                         <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
                                             <Calendar className="w-5 h-5" />
                                         </div>
-                                        <Input id="due_date" name="due_date" type="datetime-local" className="h-14 pl-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl font-medium" />
+                                        <Input id="due_date" name="due_date" type="datetime-local" className="h-14 pl-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl font-medium text-slate-900 dark:text-white" />
                                     </div>
                                 </div>
                             </div>
 
                             <div className="space-y-4">
                                 <Label htmlFor="description" className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Log Content / Neural Notes</Label>
-                                <Textarea id="description" name="description" placeholder="Outcome and next-step vectors..." className="min-h-[160px] bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-3xl p-6 font-medium leading-relaxed resize-none focus:ring-2 focus:ring-orange-500 transition-all" />
+                                <Textarea id="description" name="description" placeholder="Outcome and next-step vectors..." className="min-h-[160px] bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-3xl p-6 font-medium leading-relaxed resize-none focus:ring-2 focus:ring-orange-500 transition-all text-slate-900 dark:text-white" />
                             </div>
                         </div>
                     </div>
