@@ -7,10 +7,13 @@ import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Recei
 import { createInvoice } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 
-export function InvoiceEditor({ patients, billableItems, taxConfig }: {
+export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatientId, initialMedicines, appointmentId }: {
     patients: any[],
     billableItems: any[],
-    taxConfig: { defaultTax: any, taxRates: any[] }
+    taxConfig: { defaultTax: any, taxRates: any[] },
+    initialPatientId?: string,
+    initialMedicines?: any[],
+    appointmentId?: string
 }) {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -22,7 +25,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
     const urlAppointmentId = searchParams.get('appointmentId')
 
     // State
-    const [selectedPatientId, setSelectedPatientId] = useState(urlPatientId || '')
+    const [selectedPatientId, setSelectedPatientId] = useState(initialPatientId || urlPatientId || '')
     const [date, setDate] = useState(new Date().toISOString().split('T')[0])
     // Use configured default or empty (force user to select)
     const getDefaultTaxId = () => {
@@ -44,14 +47,15 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
 
     const [globalDiscount, setGlobalDiscount] = useState(0)
 
-    // Auto-load medicines from URL (from prescription)
+    // Auto-load medicines from URL or initial props
     useEffect(() => {
-        if (urlMedicines) {
-            try {
-                const medicines = JSON.parse(decodeURIComponent(urlMedicines))
-                console.log('📋 Auto-loading medicines from prescription:', medicines)
+        const medicinesToLoad = initialMedicines || (urlMedicines ? JSON.parse(decodeURIComponent(urlMedicines)) : null)
 
-                const medicineLines = medicines.map((med: any, idx: number) => ({
+        if (medicinesToLoad) {
+            try {
+                console.log('📋 Auto-loading medicines:', medicinesToLoad)
+
+                const medicineLines = medicinesToLoad.map((med: any, idx: number) => ({
                     id: Date.now() + idx,
                     product_id: med.id,
                     description: med.name,
@@ -66,18 +70,19 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
                 setLines(medicineLines)
                 console.log('✅ Auto-filled', medicineLines.length, 'medicines')
             } catch (error) {
-                console.error('Error loading medicines from URL:', error)
+                console.error('Error loading medicines:', error)
             }
         }
-    }, [urlMedicines])
+    }, [urlMedicines, initialMedicines])
 
     // Auto-load appointment fee and lab tests from appointmentId
     useEffect(() => {
-        if (urlAppointmentId) {
+        const activeAppointmentId = appointmentId || urlAppointmentId
+        if (activeAppointmentId) {
             const loadAppointmentData = async () => {
                 try {
-                    console.log('🏥 Fetching appointment data:', urlAppointmentId)
-                    const res = await fetch(`/api/appointments/${urlAppointmentId}`)
+                    console.log('🏥 Fetching appointment data:', activeAppointmentId)
+                    const res = await fetch(`/api/appointments/${activeAppointmentId}`)
                     const data = await res.json()
 
                     if (data.success && data.appointment) {
@@ -129,7 +134,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig }: {
 
             loadAppointmentData()
         }
-    }, [urlAppointmentId])
+    }, [urlAppointmentId, appointmentId])
 
     // Load prescriptions when patient is selected
     const loadPrescriptionMedicines = async () => {

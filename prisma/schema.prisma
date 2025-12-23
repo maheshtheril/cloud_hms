@@ -214,11 +214,10 @@ model app_user {
   role                      String?
   is_platform_admin         Boolean                     @default(false)
   is_tenant_admin           Boolean                     @default(false)
+  leads                     crm_leads[]
   email_verification_tokens email_verification_tokens[]
   hms_user_roles            hms_user_roles[]
   user_permission           user_permission[]
-  leads                     crm_leads[]
-  deals                     crm_deals[]
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -304,12 +303,6 @@ model company {
   company_menu_overrides company_menu_overrides[]
   company_settings       company_settings?
   company_taxes          company_taxes[]
-  // lead_activity          lead_activity[]
-  // lead_assignment        lead_assignment[]
-  // lead_event             lead_event[]
-  // lead_note              lead_note[]
-  // lead_schedule          lead_schedule[]
-  // lead_task              lead_task[]
   sessions               sessions[]
 
   @@index([tenant_id], map: "idx_company_tenant_id")
@@ -1009,9 +1002,6 @@ model hms_clinicians {
   specialization      String?
   license_no          String?
   experience_years    Int?
-  consultation_start_time    String?   @default("09:00")
-  consultation_end_time      String?   @default("17:00")
-  consultation_slot_duration Int?      @default(30)
   is_active           Boolean?             @default(true)
   created_at          DateTime?            @default(now()) @db.Timestamptz(6)
   updated_at          DateTime?            @default(now()) @db.Timestamptz(6)
@@ -1535,12 +1525,13 @@ model hms_patient {
   updated_by        String?             @db.Uuid
   full_name         String?             @default(dbgenerated("TRIM(BOTH ' '::text FROM ((COALESCE(first_name, ''::text) || ' '::text) || COALESCE(last_name, ''::text)))"))
   hms_admission     hms_admission[]
+  hms_appointments  hms_appointments[]
   hms_encounter     hms_encounter[]
   hms_imaging_order hms_imaging_order[]
   hms_invoice       hms_invoice[]
   hms_lab_order     hms_lab_order[]
   hms_vitals        hms_vitals[]
-  hms_appointments  hms_appointments[]
+  prescription      prescription[]
 
   @@index([contact], map: "hms_patient_contact_gin_idx", type: Gin)
   @@index([identifiers], map: "hms_patient_identifiers_gin_idx", type: Gin)
@@ -1660,11 +1651,11 @@ model hms_product {
   hms_product_stock_ledger   hms_product_stock_ledger[]
   hms_product_supplier       hms_product_supplier[]
   hms_product_uom_conversion hms_product_uom_conversion[]
-  hms_stock_levels           hms_stock_levels[]
-  product_tax_rules          product_tax_rules[]
-  hms_stock_ledger           hms_stock_ledger[]
   hms_purchase_order_line    hms_purchase_order_line[]
+  hms_stock_ledger           hms_stock_ledger[]
+  hms_stock_levels           hms_stock_levels[]
   prescription_items         prescription_items[]
+  product_tax_rules          product_tax_rules[]
 
   @@unique([tenant_id, sku], map: "ux_hms_product_tenant_sku")
   @@index([company_id], map: "ix_hms_product_company")
@@ -1683,10 +1674,6 @@ model hms_product_batch {
   expiry_date              DateTime?                  @db.Date
   mrp                      Decimal?                   @db.Decimal(14, 2)
   cost                     Decimal?                   @db.Decimal(14, 4)
-  sale_price               Decimal?                   @db.Decimal(14, 2)
-  margin_percentage        Decimal?                   @db.Decimal(5, 2)
-  markup_percentage        Decimal?                   @db.Decimal(5, 2)
-  pricing_strategy         String?
   qty_on_hand              Decimal                    @default(0) @db.Decimal(16, 6)
   vendor_barcode           String?
   internal_barcode         String?
@@ -1695,6 +1682,10 @@ model hms_product_batch {
   metadata                 Json?                      @default("{}")
   manufacturer_id          String?                    @db.Uuid
   uom_id                   String?                    @db.Uuid
+  margin_percentage        Decimal?                   @db.Decimal(5, 2)
+  markup_percentage        Decimal?                   @db.Decimal(5, 2)
+  pricing_strategy         String?
+  sale_price               Decimal?                   @db.Decimal(14, 2)
   hms_manufacturer         hms_manufacturer?          @relation(fields: [manufacturer_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_product              hms_product                @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   hms_uom                  hms_uom?                   @relation(fields: [uom_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -1982,7 +1973,6 @@ model hms_purchase_receipt {
   tenant_id                 String                      @db.Uuid
   company_id                String                      @db.Uuid
   purchase_order_id         String?                     @db.Uuid
-  supplier_id               String?                     @db.Uuid
   name                      String?
   receipt_date              DateTime                    @default(dbgenerated("CURRENT_DATE")) @db.Date
   status                    hms_receipt_status?         @default(pending)
@@ -1992,6 +1982,7 @@ model hms_purchase_receipt {
   metadata                  Json?                       @default("{}")
   created_at                DateTime                    @default(now()) @db.Timestamptz(6)
   updated_at                DateTime?                   @db.Timestamptz(6)
+  supplier_id               String?                     @db.Uuid
   hms_purchase_order        hms_purchase_order?         @relation(fields: [purchase_order_id], references: [id], onUpdate: NoAction, map: "hms_purchase_receipt_po_fkey")
   hms_supplier              hms_supplier?               @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "hms_purchase_receipt_supplier_fkey")
   hms_purchase_receipt_line hms_purchase_receipt_line[]
@@ -2516,7 +2507,6 @@ model lead {
   profession_name    String?
   industry_id        String?                  @db.Uuid
 
-
   @@index([industry_id], map: "idx_lead_industry_id")
   @@index([profession_id], map: "idx_lead_profession_id")
 }
@@ -2532,7 +2522,6 @@ model lead_activity {
   payload    Json?     @default("{}")
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   company_id String?   @db.Uuid
-  // company    company?  @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lead_activity_company")
 
   @@ignore
 }
@@ -2548,7 +2537,6 @@ model lead_assignment {
   reason        String?
   created_at    DateTime? @default(now()) @db.Timestamptz(6)
   company_id    String?   @db.Uuid
-  // company       company?  @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lead_assignment_company")
 
   @@ignore
 }
@@ -2605,7 +2593,6 @@ model lead_event {
   payload    Json?     @default("{}")
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   company_id String?   @db.Uuid
-  // company    company?  @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lead_event_company")
 
   @@ignore
 }
@@ -2678,7 +2665,6 @@ model lead_note {
   metadata   Json?     @default("{}")
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   company_id String?   @db.Uuid
-  // company    company?  @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lead_note_company")
 
   @@ignore
 }
@@ -2731,7 +2717,6 @@ model lead_schedule {
   created_at   DateTime  @default(now()) @db.Timestamptz(6)
   updated_at   DateTime  @default(now()) @db.Timestamptz(6)
   company_id   String?   @db.Uuid
-  // company      company?  @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lead_schedule_company")
 
   @@ignore
 }
@@ -2813,7 +2798,6 @@ model lead_task {
   created_at   DateTime  @default(now()) @db.Timestamptz(6)
   completed_at DateTime? @db.Timestamptz(6)
   company_id   String?   @db.Uuid
-  // company      company?  @relation(fields: [company_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_lead_task_company")
 
   @@index([company_id], map: "idx_lead_task_company")
   @@ignore
@@ -3210,16 +3194,14 @@ model permission {
 }
 
 model crm_leads {
-  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id          String           @db.Uuid
-  company_id         String?          @db.Uuid
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id          String            @db.Uuid
+  company_id         String?           @db.Uuid
   /// Link to app_user
-  owner_id           String?          @db.Uuid
-  pipeline_id        String?          @db.Uuid
-  stage_id           String?          @db.Uuid
-  source_id          String?          @db.Uuid
-  target_type_id     String?          @db.Uuid
-
+  owner_id           String?           @db.Uuid
+  pipeline_id        String?           @db.Uuid
+  stage_id           String?           @db.Uuid
+  source_id          String?           @db.Uuid
   /// Lead Name / Title
   name               String
   /// Person Name
@@ -3229,28 +3211,27 @@ model crm_leads {
   email              String?
   phone              String?
   /// new, contacted, qualified, lost, converted
-  status             String?          @default("new")
-  currency           String?          @default("INR")
-  estimated_value    Decimal?         @default(0) @db.Decimal(18, 2)
-  probability        Decimal?         @default(0) @db.Decimal(5, 2)
-  next_followup_date DateTime?        @db.Timestamptz(6)
-  last_activity_date DateTime?        @db.Timestamptz(6)
-  lead_score         Int?             @default(0)
+  status             String?           @default("new")
+  estimated_value    Decimal?          @default(0) @db.Decimal(18, 2)
+  probability        Decimal?          @default(0) @db.Decimal(5, 2)
+  next_followup_date DateTime?         @db.Timestamptz(6)
+  last_activity_date DateTime?         @db.Timestamptz(6)
+  lead_score         Int?              @default(0)
   ai_summary         String?
-  is_hot             Boolean?         @default(false)
+  is_hot             Boolean?          @default(false)
   /// Soft Delete
-  deleted_at         DateTime?        @db.Timestamptz(6)
-  metadata           Json?            @default("{}")
-  created_at         DateTime         @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime         @default(now()) @db.Timestamptz(6)
+  deleted_at         DateTime?         @db.Timestamptz(6)
+  metadata           Json?             @default("{}")
+  created_at         DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime          @default(now()) @db.Timestamptz(6)
+  currency           String?           @default("INR")
+  target_type_id     String?           @db.Uuid
   activities         crm_activities[]
-  // custom_values      crm_custom_values[]
-  pipeline           crm_pipelines?   @relation(fields: [pipeline_id], references: [id])
-  source             crm_sources?     @relation(fields: [source_id], references: [id])
-  stage              crm_stages?      @relation(fields: [stage_id], references: [id])
-  owner              app_user?        @relation(fields: [owner_id], references: [id])
+  owner              app_user?         @relation(fields: [owner_id], references: [id])
+  pipeline           crm_pipelines?    @relation(fields: [pipeline_id], references: [id])
+  source             crm_sources?      @relation(fields: [source_id], references: [id])
+  stage              crm_stages?       @relation(fields: [stage_id], references: [id])
   target_type        crm_target_types? @relation(fields: [target_type_id], references: [id])
-
 
   @@index([tenant_id, status])
   @@index([next_followup_date])
@@ -3272,7 +3253,6 @@ model crm_contacts {
   created_at DateTime      @default(now()) @db.Timestamptz(6)
   updated_at DateTime      @default(now()) @db.Timestamptz(6)
   account    crm_accounts? @relation(fields: [account_id], references: [id])
-  // custom_values crm_custom_values[]
 }
 
 model crm_accounts {
@@ -3287,7 +3267,6 @@ model crm_accounts {
   created_at DateTime       @default(now()) @db.Timestamptz(6)
   updated_at DateTime       @default(now()) @db.Timestamptz(6)
   contacts   crm_contacts[]
-  // custom_values crm_custom_values[]
   deals      crm_deals[]
 }
 
@@ -3312,12 +3291,10 @@ model crm_deals {
   updated_at          DateTime          @default(now()) @db.Timestamptz(6)
   activities          crm_activities[]
   commissions         crm_commissions[]
-  // custom_values       crm_custom_values[]
   account             crm_accounts?     @relation(fields: [account_id], references: [id])
   lost_reason         crm_lost_reasons? @relation(fields: [lost_reason_id], references: [id])
   pipeline            crm_pipelines?    @relation(fields: [pipeline_id], references: [id])
   stage               crm_stages?       @relation(fields: [stage_id], references: [id])
-  owner               app_user?         @relation(fields: [owner_id], references: [id])
 }
 
 model crm_pipelines {
@@ -3359,10 +3336,10 @@ model crm_lost_reasons {
   id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id   String      @db.Uuid
   name        String      @map("reason")
+  deleted_at  DateTime?   @db.Timestamptz(6)
+  created_at  DateTime    @default(now()) @db.Timestamptz(6)
   description String?
   is_active   Boolean?    @default(true)
-  created_at  DateTime    @default(now()) @db.Timestamptz(6)
-  deleted_at  DateTime?   @db.Timestamptz(6)
   deals       crm_deals[]
 
   @@index([tenant_id], map: "idx_crm_lost_reasons_tenant")
@@ -3426,9 +3403,9 @@ model crm_targets {
   target_type      String
   target_value     Decimal   @db.Decimal(18, 2)
   achieved_value   Decimal?  @default(0) @db.Decimal(18, 2)
-  incentive_amount Decimal?  @default(0) @db.Decimal(18, 2)
   deleted_at       DateTime? @db.Timestamptz(6)
   created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  incentive_amount Decimal?  @default(0) @db.Decimal(18, 2)
 }
 
 model crm_commission_rules {
@@ -3493,10 +3470,6 @@ model crm_custom_values {
   value_boolean Boolean?
   value_json    Json?
   field         crm_custom_fields @relation(fields: [field_id], references: [id], onDelete: Cascade)
-  // lead          crm_accounts      @relation(fields: [record_id], references: [id], map: "crm_cv_account_fkey")
-  // lead          crm_contacts      @relation(fields: [record_id], references: [id], map: "crm_cv_contact_fkey")
-  // lead          crm_deals         @relation(fields: [record_id], references: [id], map: "crm_cv_deal_fkey")
-  // lead          crm_leads         @relation(fields: [record_id], references: [id], map: "crm_cv_lead_fkey")
 
   @@unique([field_id, record_id])
 }
@@ -4068,6 +4041,71 @@ model user_role {
   @@index([user_id, tenant_id], map: "idx_user_role_user_tenant")
 }
 
+model prescription {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id          String               @db.Uuid
+  company_id         String?              @db.Uuid
+  patient_id         String               @db.Uuid
+  doctor_id          String?              @db.Uuid
+  visit_date         DateTime             @default(now()) @db.Timestamptz(6)
+  vitals             String?
+  diagnosis          String?
+  complaint          String?
+  examination        String?
+  plan               String?
+  created_at         DateTime             @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
+  hms_patient        hms_patient          @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  prescription_items prescription_items[]
+
+  @@index([patient_id], map: "idx_prescription_patient")
+  @@index([tenant_id], map: "idx_prescription_tenant")
+  @@index([created_at(sort: Desc)], map: "idx_prescription_created")
+}
+
+model prescription_items {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  prescription_id String       @db.Uuid
+  medicine_id     String       @db.Uuid
+  morning         Int          @default(0)
+  afternoon       Int          @default(0)
+  evening         Int          @default(0)
+  night           Int          @default(0)
+  days            Int          @default(3)
+  created_at      DateTime     @default(now()) @db.Timestamptz(6)
+  hms_product     hms_product  @relation(fields: [medicine_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  prescription    prescription @relation(fields: [prescription_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([prescription_id], map: "idx_prescription_items_prescription")
+  @@index([medicine_id], map: "idx_prescription_items_medicine")
+}
+
+model crm_contact_roles {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id   String    @db.Uuid
+  name        String
+  description String?
+  is_active   Boolean?  @default(true)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  deleted_at  DateTime? @db.Timestamptz(6)
+
+  @@index([tenant_id], map: "idx_crm_contact_roles_tenant")
+}
+
+model crm_target_types {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id   String      @db.Uuid
+  name        String
+  description String?
+  is_active   Boolean?    @default(true)
+  created_at  DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?   @default(now()) @db.Timestamptz(6)
+  deleted_at  DateTime?   @db.Timestamptz(6)
+  leads       crm_leads[]
+
+  @@index([tenant_id])
+}
+
 enum StockMoveType {
   RECEIPT
   ISSUE
@@ -4146,74 +4184,4 @@ enum visit_status {
   completed
   cancelled
   no_show
-}
-
-// ============================================
-// PRESCRIPTION TABLES (HMS Module)
-// ============================================
-
-model prescription {
-  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id          String               @db.Uuid
-  company_id         String?              @db.Uuid
-  patient_id         String               @db.Uuid
-  doctor_id          String?              @db.Uuid
-  visit_date         DateTime             @default(now()) @db.Timestamptz(6)
-  vitals             String?
-  diagnosis          String?
-  complaint          String?
-  examination        String?
-  plan               String?
-  created_at         DateTime             @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime             @default(now()) @db.Timestamptz(6)
-  prescription_items prescription_items[]
-
-  @@index([patient_id], map: "idx_prescription_patient")
-  @@index([tenant_id], map: "idx_prescription_tenant")
-  @@index([created_at(sort: Desc)], map: "idx_prescription_created")
-}
-
-model prescription_items {
-  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  prescription_id String       @db.Uuid
-  medicine_id     String       @db.Uuid
-  morning         Int          @default(0)
-  afternoon       Int          @default(0)
-  evening         Int          @default(0)
-  night           Int          @default(0)
-  days            Int          @default(3)
-  created_at      DateTime     @default(now()) @db.Timestamptz(6)
-  prescription    prescription @relation(fields: [prescription_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  hms_product     hms_product  @relation(fields: [medicine_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([prescription_id], map: "idx_prescription_items_prescription")
-
-  @@index([medicine_id], map: "idx_prescription_items_medicine")
-}
-
-
-model crm_contact_roles {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id   String    @db.Uuid
-  name        String
-  description String?
-  is_active   Boolean?  @default(true)
-  created_at  DateTime? @default(now()) @db.Timestamptz(6)
-  deleted_at  DateTime? @db.Timestamptz(6)
-
-  @@index([tenant_id], map: "idx_crm_contact_roles_tenant")
-}
-
-model crm_target_types {
-  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id   String      @db.Uuid
-  name        String
-  description String?
-  is_active   Boolean?    @default(true)
-  created_at  DateTime?   @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime?   @default(now()) @db.Timestamptz(6)
-  deleted_at  DateTime?   @db.Timestamptz(6)
-  leads       crm_leads[]
-
-  @@index([tenant_id])
 }

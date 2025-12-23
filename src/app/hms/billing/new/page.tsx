@@ -5,10 +5,19 @@ import { InvoiceEditor } from "@/components/billing/invoice-editor"
 import { getBillableItems, getTaxConfiguration } from "@/app/actions/billing"
 import { auth } from "@/auth"
 
-export default async function NewInvoicePage() {
+export default async function NewInvoicePage({
+    searchParams
+}: {
+    searchParams: Promise<{
+        patientId?: string
+        medicines?: string
+        appointmentId?: string
+    }>
+}) {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return <div>Unauthorized</div>;
 
+    const { patientId, medicines, appointmentId } = await searchParams;
     const tenantId = session.user.tenantId;
 
     // Parallel data fetching
@@ -33,14 +42,8 @@ export default async function NewInvoicePage() {
         getTaxConfiguration()
     ]);
 
-    const patientsReal = patients;
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
-
-    console.log('=== BILLING PAGE DEBUG ===');
-    console.log('Patients count:', patients.length);
-    console.log('Billable items count:', billableItems.length);
-    console.log('First patient:', patients[0]);
 
     return (
         <div className="max-w-5xl mx-auto space-y-6">
@@ -58,9 +61,12 @@ export default async function NewInvoicePage() {
             </div>
 
             <InvoiceEditor
-                patients={patientsReal}
-                billableItems={billableItems}
-                taxConfig={taxConfig}
+                patients={JSON.parse(JSON.stringify(patients))}
+                billableItems={JSON.parse(JSON.stringify(billableItems))}
+                taxConfig={JSON.parse(JSON.stringify(taxConfig))}
+                initialPatientId={patientId}
+                initialMedicines={medicines ? JSON.parse(medicines) : undefined}
+                appointmentId={appointmentId}
             />
         </div>
     )

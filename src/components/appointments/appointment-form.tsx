@@ -29,9 +29,11 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
 
         if (!clinicianId) return
 
-        // Get doctor's default start time
+        // Get doctor's default settings
         const doctor = doctors.find(d => d.id === clinicianId)
         const defaultStart = doctor?.consultation_start_time || "09:00"
+        const defaultEnd = doctor?.consultation_end_time || "17:00"
+        const slotDuration = doctor?.consultation_slot_duration || 30
 
         // Filter appointments for this doctor today
         const doctorApts = appointments.filter(a => a.clinician_id === clinicianId)
@@ -41,17 +43,27 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
             return
         }
 
-        // Find the latest end time
+        // Find the latest appointment by ends_at
         const lastApt = doctorApts.reduce((latest, current) => {
             return new Date(current.ends_at) > new Date(latest.ends_at) ? current : latest
         }, doctorApts[0])
 
         if (lastApt && lastApt.ends_at) {
             const lastEnd = new Date(lastApt.ends_at)
-            // Add a small buffer (e.g., 5 mins) or just start exactly after? User said "according to that".
-            // Let's suggest exactly after.
-            const nextSlot = lastEnd.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-            setSuggestedTime(nextSlot)
+            const nextSlotTime = new Date(lastEnd.getTime())
+
+            // Check if next slot would exceed end time
+            const [endH, endM] = defaultEnd.split(':').map(Number)
+            const endTimeObj = new Date(lastEnd)
+            endTimeObj.setHours(endH, endM, 0, 0)
+
+            if (nextSlotTime >= endTimeObj) {
+                setSuggestedTime('Fully Booked')
+            } else {
+                const hours = nextSlotTime.getHours().toString().padStart(2, '0')
+                const minutes = nextSlotTime.getMinutes().toString().padStart(2, '0')
+                setSuggestedTime(`${hours}:${minutes}`)
+            }
         }
     }
 
@@ -106,7 +118,8 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
 
                         <button
                             type="submit"
-                            className="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white rounded-lg hover:shadow-lg hover:scale-[1.02] font-medium text-sm flex items-center gap-2 transition-all"
+                            disabled={suggestedTime === 'Fully Booked'}
+                            className={`px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white rounded-lg hover:shadow-lg hover:scale-[1.02] font-medium text-sm flex items-center gap-2 transition-all ${suggestedTime === 'Fully Booked' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                         >
                             <CheckCircle className="h-4 w-4" />
                             Confirm Booking
@@ -160,13 +173,20 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                                     Time <span className="text-red-500">*</span>
                                 </label>
                                 <input
-                                    type="time"
+                                    type={suggestedTime === 'Fully Booked' ? 'text' : 'time'}
                                     name="time"
                                     required
                                     key={suggestedTime} // Force re-render when suggestion changes
-                                    defaultValue={suggestedTime || new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
-                                    className="w-full p-2.5 bg-white dark:bg-slate-950 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium [color-scheme:light] dark:[color-scheme:dark]"
+                                    defaultValue={suggestedTime === 'Fully Booked' ? '' : suggestedTime || new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                                    readOnly={suggestedTime === 'Fully Booked'}
+                                    placeholder={suggestedTime === 'Fully Booked' ? 'Fully Booked' : ''}
+                                    className={`w-full p-2.5 bg-white dark:bg-slate-950 text-gray-900 dark:text-white border ${suggestedTime === 'Fully Booked' ? 'border-red-500 ring-2 ring-red-500/20' : 'border-gray-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium [color-scheme:light] dark:[color-scheme:dark]`}
                                 />
+                                {suggestedTime === 'Fully Booked' && (
+                                    <p className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-1 animate-pulse">
+                                        <AlertCircle className="h-3 w-3" /> No more slots available today
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>
