@@ -67,6 +67,31 @@ export default function NewPrescriptionPage() {
             .catch(err => console.error(err))
     }, [patientId])
 
+    // Fetch existing prescription if appointmentId is present
+    useEffect(() => {
+        if (!appointmentId) return;
+
+        console.log('🔍 Checking for existing prescription for appointment:', appointmentId)
+        fetch(`/api/prescriptions/by-appointment/${appointmentId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && data.prescription) {
+                    console.log('✅ Found existing prescription, populating...')
+                    const pr = data.prescription;
+                    setConvertedText({
+                        vitals: pr.vitals || '',
+                        diagnosis: pr.diagnosis || '',
+                        complaint: pr.complaint || '',
+                        examination: pr.examination || '',
+                        plan: pr.plan || ''
+                    });
+                    setSelectedMedicines(pr.medicines || []);
+                    setShowConverted(true); // Switch to text mode if data exists
+                }
+            })
+            .catch(err => console.error('Error fetching existing prescription:', err));
+    }, [appointmentId]);
+
     // Fetch medicines
     useEffect(() => {
         fetch('/api/medicines')

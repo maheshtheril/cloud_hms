@@ -204,13 +204,23 @@ export function DashboardClient({ user, stats, appointments, patients, doctors }
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
                                                     <div className="flex items-center justify-end gap-1 sm:gap-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                                                        <Link
-                                                            href={`/hms/prescriptions/new?patientId=${apt.patient_id}&appointmentId=${apt.id}`}
-                                                            className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all"
-                                                            title="Prescribe"
-                                                        >
-                                                            <Stethoscope className="h-4 w-4" />
-                                                        </Link>
+                                                        {apt.prescription && apt.prescription.length > 0 ? (
+                                                            <Link
+                                                                href={`/hms/prescriptions/new?patientId=${apt.patient_id}&appointmentId=${apt.id}`}
+                                                                className="px-2 py-1 bg-indigo-600 text-white rounded text-[10px] font-bold transition-all hover:bg-indigo-700 shadow-sm"
+                                                                title="Edit Prescription"
+                                                            >
+                                                                Edit Rx
+                                                            </Link>
+                                                        ) : (
+                                                            <Link
+                                                                href={`/hms/prescriptions/new?patientId=${apt.patient_id}&appointmentId=${apt.id}`}
+                                                                className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all"
+                                                                title="Prescribe"
+                                                            >
+                                                                <Stethoscope className="h-4 w-4" />
+                                                            </Link>
+                                                        )}
                                                         <Link
                                                             href={`/hms/billing/new?patientId=${apt.patient_id}&appointmentId=${apt.id}`}
                                                             className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-all"

@@ -18,7 +18,17 @@ export async function POST(request: NextRequest) {
 
         // Create prescription and update appointment status in a transaction
         const prescription = await prisma.$transaction(async (tx) => {
-            const pr = await tx.prescription.create({
+            // If this is linked to an appointment, check if one already exists and delete it to "update"
+            if (appointmentId) {
+                const existing = await (tx.prescription as any).findFirst({
+                    where: { appointment_id: appointmentId, tenant_id: session.user.tenantId }
+                })
+                if (existing) {
+                    await (tx.prescription as any).delete({ where: { id: existing.id } })
+                }
+            }
+
+            const pr = await (tx.prescription as any).create({
                 data: {
                     tenant_id: session.user.tenantId,
                     patient_id: patientId,
@@ -70,7 +80,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: true,
             prescriptionId: prescription.id,
-            medicines: prescription.prescription_items.map(item => ({
+            medicines: (prescription as any).prescription_items.map((item: any) => ({
                 id: item.hms_product.id,
                 name: item.hms_product.name,
                 sku: item.hms_product.sku,
