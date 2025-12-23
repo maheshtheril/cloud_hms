@@ -91,6 +91,10 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
 
                         // Add Consultation Fee
                         if (appointment.consultation_fee) {
+                            const taxRateObj = taxConfig.taxRates.find(t => t.id === defaultTaxId);
+                            const rate = taxRateObj ? taxRateObj.rate : 0;
+                            const tax_amount = (appointment.consultation_fee * rate) / 100;
+
                             appointmentLines.push({
                                 id: Date.now() + 1000,
                                 product_id: '', // Service, not a product
@@ -99,7 +103,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                                 unit_price: parseFloat(appointment.consultation_fee.toString()),
                                 uom: 'Service',
                                 tax_rate_id: defaultTaxId,
-                                tax_amount: 0,
+                                tax_amount: tax_amount,
                                 discount_amount: 0
                             })
                         }
@@ -107,6 +111,10 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                         // Add Lab Tests
                         if (appointment.lab_tests && appointment.lab_tests.length > 0) {
                             appointment.lab_tests.forEach((test: any, idx: number) => {
+                                const taxRateObj = taxConfig.taxRates.find(t => t.id === defaultTaxId);
+                                const rate = taxRateObj ? taxRateObj.rate : 0;
+                                const tax_amount = (test.test_fee * rate) / 100;
+
                                 appointmentLines.push({
                                     id: Date.now() + 2000 + idx,
                                     product_id: '', // Service
@@ -115,8 +123,38 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                                     unit_price: parseFloat(test.test_fee.toString()),
                                     uom: 'Test',
                                     tax_rate_id: defaultTaxId,
-                                    tax_amount: 0,
+                                    tax_amount: tax_amount,
                                     discount_amount: 0
+                                })
+                            })
+                        }
+
+                        // Add Prescription Items (Medicines)
+                        if (appointment.prescription_items && appointment.prescription_items.length > 0) {
+                            appointment.prescription_items.forEach((item: any, idx: number) => {
+                                // Find product to get tax info if possible
+                                const product = billableItems.find(p => p.id === item.id);
+                                const defaultItemTaxId = product?.categoryTaxId || defaultTaxId;
+
+                                // Calculate tax amount
+                                const taxRateObj = taxConfig.taxRates.find(t => t.id === defaultItemTaxId);
+                                const rate = taxRateObj ? taxRateObj.rate : 0;
+                                const baseTotal = (item.quantity * item.price);
+                                const tax_amount = (Math.max(0, baseTotal) * rate) / 100;
+
+                                appointmentLines.push({
+                                    id: Date.now() + 3000 + idx,
+                                    product_id: item.id,
+                                    description: item.name,
+                                    quantity: item.quantity,
+                                    unit_price: item.price,
+                                    uom: 'PCS',
+                                    tax_rate_id: defaultItemTaxId,
+                                    tax_amount: tax_amount,
+                                    discount_amount: 0,
+                                    // Preserve pricing data for UOM if needed
+                                    base_price: item.price,
+                                    conversion_factor: 1
                                 })
                             })
                         }

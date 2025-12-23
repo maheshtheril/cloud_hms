@@ -151,6 +151,30 @@ export async function GET(
             }))
         )
 
+        // Fetch prescriptions linked to this appointment
+        const prescription = await (prisma.prescription as any).findFirst({
+            where: {
+                appointment_id: appointmentId,
+                tenant_id: session.user.tenantId
+            },
+            include: {
+                prescription_items: {
+                    include: {
+                        hms_product: true
+                    }
+                }
+            }
+        })
+
+        const prescription_items = prescription ? prescription.prescription_items.map((item: any) => ({
+            id: item.hms_product.id,
+            name: item.hms_product.name,
+            sku: item.hms_product.sku,
+            price: Number(item.hms_product.price || 0),
+            // Calculate qty: (morning + afternoon + evening + night) * days
+            quantity: (item.morning + item.afternoon + item.evening + item.night) * item.days
+        })) : []
+
         // Build response
         const responseData = {
             id: appointment.id,
@@ -174,7 +198,8 @@ export async function GET(
                 test_name: t.test_name,
                 test_code: t.test_code,
                 test_fee: Number(t.test_fee)
-            }))
+            })),
+            prescription_items
         }
 
         console.log('📋 Appointment billing data fetched:', {
@@ -182,7 +207,8 @@ export async function GET(
             patientId: responseData.patient_id,
             consultationFee: responseData.consultation_fee,
             servicesCount: responseData.services.length,
-            labTestsCount: responseData.lab_tests.length
+            labTestsCount: responseData.lab_tests.length,
+            prescriptionItemsCount: responseData.prescription_items.length
         })
 
         return NextResponse.json({
