@@ -248,23 +248,24 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                         <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white cursor-pointer rounded-lg text-neutral-300">
                             <Link href="/settings/profile" className="flex items-center gap-2 px-2 py-1.5 w-full outline-none">
                                 <Users className="h-4 w-4" />
-                                <span>Profile</span>
+                                <span>My Profile</span>
                             </Link>
                         </DropdownMenuItem>
                         <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white cursor-pointer rounded-lg text-neutral-300 mb-1">
-                            <Link href="/settings/profile" className="flex items-center gap-2 px-2 py-1.5 w-full outline-none">
+                            <Link href="/settings/global" className="flex items-center gap-2 px-2 py-1.5 w-full outline-none">
                                 <Settings className="h-4 w-4" />
-                                <span>Settings</span>
+                                <span>Company Settings</span>
                             </Link>
                         </DropdownMenuItem>
 
-                        <DropdownMenuItem asChild className="focus:bg-red-500/20 focus:text-red-400 cursor-pointer rounded-lg text-red-500 mt-1">
-                            <form action={logout} className="w-full">
-                                <button className="w-full flex items-center gap-2 px-2 py-1.5">
-                                    <LogOut className="h-4 w-4" />
-                                    <span>Sign Out</span>
-                                </button>
-                            </form>
+                        <DropdownMenuItem
+                            onClick={async () => {
+                                await logout();
+                            }}
+                            className="focus:bg-red-500/20 focus:text-red-400 cursor-pointer rounded-lg text-red-500 mt-1 flex items-center gap-2 px-2 py-1.5 w-full outline-none"
+                        >
+                            <LogOut className="h-4 w-4" />
+                            <span>Sign Out</span>
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
