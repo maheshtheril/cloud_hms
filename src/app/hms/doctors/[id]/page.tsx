@@ -76,10 +76,10 @@ export default async function DoctorDetailPage({ params }: { params: Promise<{ i
 
                 <div className="flex items-center gap-2">
                     <DoctorProfileActions
-                        doctor={doctor}
-                        departments={departments}
-                        roles={roles}
-                        specializations={specializations}
+                        doctor={JSON.parse(JSON.stringify(doctor))}
+                        departments={JSON.parse(JSON.stringify(departments))}
+                        roles={JSON.parse(JSON.stringify(roles))}
+                        specializations={JSON.parse(JSON.stringify(specializations))}
                     />
                     <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 flex items-center gap-2 font-medium">
                         <Calendar className="h-4 w-4" />
