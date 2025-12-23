@@ -283,8 +283,8 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                             "flex items-center gap-3 w-full p-2 rounded-xl transition-all group outline-none",
                             collapsed ? "justify-center" : "justify-between hover:bg-white dark:hover:bg-zinc-800 hover:shadow-sm"
                         )}>
-                            <div className="flex items-center gap-3 overflow-hidden text-left">
-                                <Avatar className="h-10 w-10 border-2 border-white dark:border-zinc-700 shadow-sm ring-2 ring-transparent group-hover:ring-indigo-100 dark:group-hover:ring-indigo-900 transition-all">
+                            <div className={cn("flex items-center gap-3 overflow-hidden text-left", collapsed ? "justify-center" : "w-full")}>
+                                <Avatar className="h-10 w-10 border-2 border-white dark:border-zinc-700 shadow-sm ring-2 ring-transparent group-hover:ring-indigo-100 dark:group-hover:ring-indigo-900 transition-all shrink-0">
                                     <AvatarImage src={user?.image} />
                                     <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-bold text-xs">
                                         {user?.name?.substring(0, 2).toUpperCase() || 'U'}
@@ -292,7 +292,7 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                                 </Avatar>
 
                                 {!collapsed && (
-                                    <div className="flex flex-col min-w-0">
+                                    <div className="flex flex-col min-w-0 flex-1">
                                         <span className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                                             {user?.name || user?.email?.split('@')[0] || 'User'}
                                         </span>
@@ -301,12 +301,17 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                                 )}
                             </div>
                             {!collapsed && (
-                                <Settings className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors animate-spin-slow" />
+                                <Settings className="h-4 w-4 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300 transition-colors shrink-0" />
                             )}
                         </button>
                     </DropdownMenuTrigger>
 
-                    <DropdownMenuContent side="right" align="end" className="w-64 bg-white/95 dark:bg-zinc-900/95 border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 p-2 backdrop-blur-xl shadow-2xl rounded-2xl mb-2 ml-2">
+                    <DropdownMenuContent
+                        side={isMobile ? "bottom" : "right"}
+                        align={isMobile ? "center" : "end"}
+                        sideOffset={isMobile ? 10 : 5}
+                        className="w-[260px] max-w-[90vw] bg-white/95 dark:bg-zinc-900/95 border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 p-2 backdrop-blur-xl shadow-2xl rounded-2xl mb-2 ml-2"
+                    >
                         <div className="px-3 py-2.5 bg-slate-50 dark:bg-zinc-800/50 rounded-lg mb-2">
                             <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{user?.name}</p>
                             <p className="text-xs text-slate-500 font-mono mt-0.5">{user?.email}</p>
@@ -326,6 +331,7 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                         <DropdownMenuItem
                             onClick={(e) => {
                                 e.preventDefault();
+                                e.stopPropagation();
                                 toggleTheme();
                             }}
                             className="focus:bg-indigo-50 dark:focus:bg-indigo-900/20 focus:text-indigo-700 dark:focus:text-indigo-400 cursor-pointer rounded-lg mb-1 h-10"
