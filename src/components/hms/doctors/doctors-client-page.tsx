@@ -11,6 +11,8 @@ interface Doctor {
     last_name: string
     email: string | null
     phone: string | null
+    employee_id: string | null
+    designation: string | null
     license_no: string | null
     is_active: boolean | null
     hms_specializations: { name: string } | null
