@@ -3,9 +3,9 @@
 import { useState } from "react"
 import Link from "next/link"
 import {
-    Users, Calendar, Activity, DollarSign, Plus, Search,
+    Users, Calendar, Activity, IndianRupee, Plus, Search,
     Filter, MoreHorizontal, Clock, MapPin, Video, Phone,
-    CheckCircle2, XCircle, AlertCircle
+    CheckCircle2, XCircle, AlertCircle, Stethoscope, Receipt
 } from "lucide-react"
 import { AppointmentForm } from "@/components/appointments/appointment-form"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
@@ -26,6 +26,8 @@ interface DashboardClientProps {
 export function DashboardClient({ user, stats, appointments, patients, doctors }: DashboardClientProps) {
     const [showAppointmentModal, setShowAppointmentModal] = useState(false)
     const [showPatientModal, setShowPatientModal] = useState(false)
+
+    const pendingApts = appointments.filter(a => a.status.toLowerCase() === 'scheduled' || a.status.toLowerCase() === 'pending').length
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20">
@@ -69,14 +71,14 @@ export function DashboardClient({ user, stats, appointments, patients, doctors }
                         title="Total Patients"
                         value={stats.totalPatients.toString()}
                         icon={Users}
-                        trend="+12% from last month"
+                        trend="Registered in system"
                         color="blue"
                     />
                     <StatsCard
                         title="Today's Appointments"
                         value={stats.todayAppointments.toString()}
                         icon={Calendar}
-                        trend="4 pending"
+                        trend={`${pendingApts} upcoming`}
                         color="indigo"
                         highlight
                     />
@@ -84,14 +86,14 @@ export function DashboardClient({ user, stats, appointments, patients, doctors }
                         title="Pending Bills"
                         value={stats.pendingBills.toString()}
                         icon={Activity}
-                        trend="Action needed"
+                        trend="Invoices to process"
                         color="orange"
                     />
                     <StatsCard
                         title="Total Revenue"
-                        value={`$${stats.revenue.toLocaleString()}`}
-                        icon={DollarSign}
-                        trend="+8% from last week"
+                        value={`₹${stats.revenue.toLocaleString()}`}
+                        icon={IndianRupee}
+                        trend="Monthly collection"
                         color="green"
                     />
                 </div>
@@ -181,9 +183,25 @@ export function DashboardClient({ user, stats, appointments, patients, doctors }
                                                     <StatusBadge status={apt.status} />
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <button className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </button>
+                                                    <div className="flex items-center justify-end gap-1 sm:gap-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                                        <Link
+                                                            href={`/hms/prescriptions/new?patientId=${apt.patient_id}&appointmentId=${apt.id}`}
+                                                            className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all"
+                                                            title="Prescribe"
+                                                        >
+                                                            <Stethoscope className="h-4 w-4" />
+                                                        </Link>
+                                                        <Link
+                                                            href={`/hms/billing/new?patientId=${apt.patient_id}&appointmentId=${apt.id}`}
+                                                            className="p-2 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 rounded-lg transition-all"
+                                                            title="Create Bill"
+                                                        >
+                                                            <IndianRupee className="h-4 w-4" />
+                                                        </Link>
+                                                        <button className="p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-all">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         ))
