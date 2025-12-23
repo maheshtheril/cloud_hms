@@ -146,7 +146,7 @@ export function LeadForm({
                     <div className="space-y-5">
                         <div className="space-y-2">
                             <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Opportunity Nomenclature</Label>
-                            <Input id="name" name="name" placeholder="e.g. Enterprise Modernization" required defaultValue={initialData?.name} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 focus:border-indigo-500 transition-all text-lg font-medium rounded-xl" />
+                            <Input id="name" name="name" placeholder="e.g. Enterprise Modernization" required defaultValue={initialData?.name} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 focus:border-indigo-500 transition-all text-lg font-medium rounded-xl text-slate-900 dark:text-white" />
                             {state.errors?.name && <p className="text-red-500 text-xs font-bold mt-1 ml-1">{state.errors.name}</p>}
                         </div>
 
@@ -158,7 +158,7 @@ export function LeadForm({
                                     name="company_id"
                                     value={selectedCompanyId}
                                     onChange={(e) => setSelectedCompanyId(e.target.value)}
-                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm focus:border-indigo-500 transition-all outline-none"
+                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm focus:border-indigo-500 transition-all outline-none text-slate-900 dark:text-white"
                                 >
                                     {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
@@ -168,7 +168,7 @@ export function LeadForm({
 
                         <div className="space-y-4">
                             <Label htmlFor="company_name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Target Entity / Client Org</Label>
-                            <Input id="company_name" name="company_name" placeholder="e.g. Apex Global Corp" defaultValue={initialData?.company_name} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl" />
+                            <Input id="company_name" name="company_name" placeholder="e.g. Apex Global Corp" defaultValue={initialData?.company_name} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white" />
                         </div>
 
                         <div className="space-y-2">
@@ -196,7 +196,7 @@ export function LeadForm({
                                                     value={newTargetTypeName}
                                                     onChange={(e) => setNewTargetTypeName(e.target.value)}
                                                     placeholder="e.g. Enterprise, Government, SME..."
-                                                    className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl"
+                                                    className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white"
                                                 />
                                             </div>
                                         </div>
@@ -217,7 +217,7 @@ export function LeadForm({
                                 id="target_type_id"
                                 name="target_type_id"
                                 defaultValue={initialData?.target_type_id}
-                                className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm focus:border-indigo-500 transition-all outline-none font-medium"
+                                className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm focus:border-indigo-500 transition-all outline-none font-medium text-slate-900 dark:text-white"
                             >
                                 <option value="">Select Target Type</option>
                                 {localTargetTypes.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -227,11 +227,11 @@ export function LeadForm({
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="contact_name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Key Liaison</Label>
-                                <Input id="contact_name" name="contact_name" placeholder="Name" defaultValue={initialData?.contact_name} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl" />
+                                <Input id="contact_name" name="contact_name" placeholder="Name" defaultValue={initialData?.contact_name} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Signal Endpoint (Email)</Label>
-                                <Input id="email" name="email" type="email" placeholder="email@address.com" defaultValue={initialData?.email} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-mono text-sm" />
+                                <Input id="email" name="email" type="email" placeholder="email@address.com" defaultValue={initialData?.email} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-mono text-sm text-slate-900 dark:text-white" />
                             </div>
                         </div>
 
@@ -241,7 +241,7 @@ export function LeadForm({
                                 id="owner_id"
                                 name="owner_id"
                                 defaultValue={initialData?.owner_id}
-                                className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm focus:border-indigo-500 transition-all outline-none font-bold text-indigo-600"
+                                className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm focus:border-indigo-500 transition-all outline-none font-bold text-indigo-600 dark:text-indigo-400"
                             >
                                 <option value="">Auto-Assign (Me)</option>
                                 {users.map(u => <option key={u.id} value={u.id}>{u.name || u.email}</option>)}
@@ -259,6 +259,9 @@ export function LeadForm({
                                     value={phone}
                                     onChange={setPhone}
                                     defaultCountry={countryCode}
+                                    numberInputProps={{
+                                        className: "h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 focus:border-indigo-500 transition-all text-lg font-medium rounded-xl text-slate-900 dark:text-white"
+                                    }}
                                 />
                             </div>
                         </div>
@@ -278,7 +281,7 @@ export function LeadForm({
                                 <Label htmlFor="estimated_value" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Potential Yield ({currency})</Label>
                                 <div className="relative">
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">{currentCurrencySymbol}</span>
-                                    <Input id="estimated_value" name="estimated_value" type="number" placeholder="0.00" step="0.01" defaultValue={initialData?.estimated_value} className="h-12 pl-10 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-lg font-bold tabular-nums" />
+                                    <Input id="estimated_value" name="estimated_value" type="number" placeholder="0.00" step="0.01" defaultValue={initialData?.estimated_value} className="h-12 pl-10 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-lg font-bold tabular-nums text-slate-900 dark:text-white" />
                                 </div>
                             </div>
                             <div className="space-y-2">
@@ -288,7 +291,7 @@ export function LeadForm({
                                     name="currency"
                                     value={currency}
                                     onChange={(e) => setCurrency(e.target.value)}
-                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm outline-none"
+                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm outline-none text-slate-900 dark:text-white"
                                 >
                                     {supportedCurrencies.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
                                     {supportedCurrencies.length === 0 && <option value="INR">INR</option>}
@@ -299,7 +302,7 @@ export function LeadForm({
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="probability" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Confidence Factor (%)</Label>
-                                <Input id="probability" name="probability" type="number" placeholder="50" max="100" defaultValue={initialData?.probability} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-center font-black text-indigo-600" />
+                                <Input id="probability" name="probability" type="number" placeholder="50" max="100" defaultValue={initialData?.probability} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-center font-black text-indigo-600 dark:text-indigo-400" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="source_id" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Ingestion Source</Label>
@@ -307,7 +310,7 @@ export function LeadForm({
                                     id="source_id"
                                     name="source_id"
                                     defaultValue={initialData?.source_id}
-                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm outline-none"
+                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm outline-none text-slate-900 dark:text-white"
                                 >
                                     <option value="">Legacy / Untracked</option>
                                     {sources.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -336,7 +339,7 @@ export function LeadForm({
                                     name="pipeline_id"
                                     value={selectedPipelineId}
                                     onChange={(e) => setSelectedPipelineId(e.target.value)}
-                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm outline-none font-bold"
+                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm outline-none font-bold text-slate-900 dark:text-white"
                                 >
                                     {pipelines.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                                 </select>
@@ -347,7 +350,7 @@ export function LeadForm({
                                     id="stage_id"
                                     name="stage_id"
                                     defaultValue={initialData?.stage_id}
-                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm outline-none font-medium"
+                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm outline-none font-medium text-slate-900 dark:text-white"
                                 >
                                     {stages.map((s: any) => (
                                         <option key={s.id} value={s.id}>{s.name} ({s.probability}%)</option>
@@ -363,7 +366,7 @@ export function LeadForm({
                                     id="next_followup_date"
                                     name="next_followup_date"
                                     type="datetime-local"
-                                    className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl pr-10"
+                                    className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl pr-10 text-slate-900 dark:text-white"
                                     defaultValue={initialData?.next_followup_date ? new Date(initialData.next_followup_date).toISOString().slice(0, 16) : ''}
                                 />
                                 <CalendarIcon className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 pointer-events-none" />
@@ -394,7 +397,7 @@ export function LeadForm({
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="notes" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Contextual Summary / Notes</Label>
-                    <Textarea id="notes" name="ai_summary" placeholder="Input strategic context for AI processing..." defaultValue={initialData?.ai_summary} className="min-h-[120px] bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all" />
+                    <Textarea id="notes" name="ai_summary" placeholder="Input strategic context for AI processing..." defaultValue={initialData?.ai_summary} className="min-h-[120px] bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all text-slate-900 dark:text-white" />
                 </div>
             </div>
 

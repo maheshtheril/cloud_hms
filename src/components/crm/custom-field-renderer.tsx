@@ -23,7 +23,7 @@ export function CustomFieldRenderer({ field }: { field: CustomFieldDefinition })
         return (
             <div className="space-y-2">
                 <Label htmlFor={name}>{field.label} {isRequired && <span className="text-red-500">*</span>}</Label>
-                <Textarea id={name} name={name} required={isRequired} placeholder={`Enter ${field.label}`} />
+                <Textarea id={name} name={name} required={isRequired} placeholder={`Enter ${field.label}`} className="bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white" />
             </div>
         )
     }
@@ -37,7 +37,7 @@ export function CustomFieldRenderer({ field }: { field: CustomFieldDefinition })
                     name={name}
                     id={name}
                     required={isRequired}
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-10 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 text-slate-900 dark:text-white"
                 >
                     <option value="">Select {field.label}</option>
                     {Array.isArray(options) && options.map((opt: any) => (
@@ -65,7 +65,7 @@ export function CustomFieldRenderer({ field }: { field: CustomFieldDefinition })
         return (
             <div className="space-y-2">
                 <Label htmlFor={name}>{field.label} {isRequired && <span className="text-red-500">*</span>}</Label>
-                <Input type="date" id={name} name={name} required={isRequired} />
+                <Input type="date" id={name} name={name} required={isRequired} className="bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white" />
             </div>
         )
     }
@@ -74,7 +74,7 @@ export function CustomFieldRenderer({ field }: { field: CustomFieldDefinition })
         return (
             <div className="space-y-2">
                 <Label htmlFor={name}>{field.label} {isRequired && <span className="text-red-500">*</span>}</Label>
-                <Input type="file" id={name} name={name} required={isRequired} className="cursor-pointer" />
+                <Input type="file" id={name} name={name} required={isRequired} className="cursor-pointer bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white" />
                 <p className="text-xs text-gray-500">Upload {field.label} document</p>
             </div>
         )
@@ -90,6 +90,7 @@ export function CustomFieldRenderer({ field }: { field: CustomFieldDefinition })
                 name={name}
                 required={isRequired}
                 placeholder={`Enter ${field.label}`}
+                className="bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white"
             />
         </div>
     )
