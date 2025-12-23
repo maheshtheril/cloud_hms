@@ -215,6 +215,9 @@ model app_user {
   is_platform_admin         Boolean                     @default(false)
   is_tenant_admin           Boolean                     @default(false)
   leads                     crm_leads[]
+  deals                     crm_deals[]
+  accounts                  crm_accounts[]
+  contacts                  crm_contacts[]
   email_verification_tokens email_verification_tokens[]
   hms_user_roles            hms_user_roles[]
   user_permission           user_permission[]
@@ -3256,6 +3259,7 @@ model crm_contacts {
   created_at DateTime      @default(now()) @db.Timestamptz(6)
   updated_at DateTime      @default(now()) @db.Timestamptz(6)
   account    crm_accounts? @relation(fields: [account_id], references: [id])
+  owner      app_user?     @relation(fields: [owner_id], references: [id])
 }
 
 model crm_accounts {
@@ -3269,6 +3273,7 @@ model crm_accounts {
   deleted_at DateTime?      @db.Timestamptz(6)
   created_at DateTime       @default(now()) @db.Timestamptz(6)
   updated_at DateTime       @default(now()) @db.Timestamptz(6)
+  owner      app_user?      @relation(fields: [owner_id], references: [id])
   contacts   crm_contacts[]
   deals      crm_deals[]
 }
@@ -3298,6 +3303,7 @@ model crm_deals {
   lost_reason         crm_lost_reasons? @relation(fields: [lost_reason_id], references: [id])
   pipeline            crm_pipelines?    @relation(fields: [pipeline_id], references: [id])
   stage               crm_stages?       @relation(fields: [stage_id], references: [id])
+  owner               app_user?         @relation(fields: [owner_id], references: [id])
 }
 
 model crm_pipelines {
