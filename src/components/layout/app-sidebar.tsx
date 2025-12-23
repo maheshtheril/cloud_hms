@@ -2,7 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Activity, Users, Calendar, LayoutDashboard, Settings, LogOut, Stethoscope, Receipt, Shield, Menu, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import {
+    Activity, Users, Calendar, LayoutDashboard, Settings, LogOut, Stethoscope, Receipt, Shield,
+    Briefcase, Target, Database, FileText, UploadCloud, Menu, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen,
+    Zap, PieChart, MessageSquare, Phone, Mail, Home
+} from 'lucide-react';
+
 import { CompanySwitcher } from '@/components/company-switcher';
 import { logout } from '@/app/actions/auth';
 import {
@@ -12,9 +17,17 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// Map icon strings to components
+// Map icon strings to components - Expanded for all modules
 const IconMap: any = {
-    LayoutDashboard, Users, Calendar, Stethoscope, Receipt, Settings, Shield
+    // Shared / Core
+    LayoutDashboard, Users, Calendar, Settings, Shield, Activity,
+
+    // CRM
+    Briefcase, Target, Database, FileText, UploadCloud,
+    Zap, PieChart, MessageSquare, Phone, Mail, Home,
+
+    // HMS
+    Stethoscope, Receipt,
 };
 
 export function AppSidebar({ menuItems, currentCompany, user, children }: { menuItems: any[], currentCompany: any, user?: any, children: React.ReactNode }) {
