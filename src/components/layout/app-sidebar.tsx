@@ -182,7 +182,9 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                                 </div>
                                 {!collapsed && (
                                     <div className="flex flex-col min-w-0">
-                                        <span className="text-sm font-semibold text-white truncate group-hover:text-indigo-400 transition-colors">{user?.name || 'User'}</span>
+                                        <span className="text-sm font-semibold text-white truncate group-hover:text-indigo-400 transition-colors">
+                                            {user?.name || user?.email?.split('@')[0] || 'User'}
+                                        </span>
                                         <span className="text-xs text-neutral-500 truncate">{user?.email || ''}</span>
                                     </div>
                                 )}
