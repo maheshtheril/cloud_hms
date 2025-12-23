@@ -16,46 +16,57 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Patient ID required' }, { status: 400 })
         }
 
-        // Create prescription with all items in a transaction
-        const prescription = await prisma.prescription.create({
-            data: {
-                tenant_id: session.user.tenantId,
-                patient_id: patientId,
-                appointment_id: appointmentId || null,
-                vitals: vitals || '',
-                diagnosis: diagnosis || '',
-                complaint: complaint || '',
-                examination: examination || '',
-                plan: plan || '',
-                prescription_items: {
-                    create: medicines.map((med: any) => {
-                        // Parse dosage (e.g., "1-0-1" or "1-1-1-1")
-                        const dosageParts = med.dosage.split('-').map((n: string) => parseInt(n) || 0)
-                        return {
-                            medicine_id: med.id || med.medicineId, // Support both from search and from database
-                            morning: dosageParts[0] || 0,
-                            afternoon: dosageParts[1] || 0,
-                            evening: dosageParts[2] || 0,
-                            night: dosageParts[3] || 0,
-                            days: parseInt(med.days) || 3
-                        }
-                    })
-                }
-            },
-            include: {
-                prescription_items: {
-                    include: {
-                        hms_product: {
-                            select: {
-                                id: true,
-                                name: true,
-                                sku: true,
-                                price: true
+        // Create prescription and update appointment status in a transaction
+        const prescription = await prisma.$transaction(async (tx) => {
+            const pr = await tx.prescription.create({
+                data: {
+                    tenant_id: session.user.tenantId,
+                    patient_id: patientId,
+                    appointment_id: appointmentId || null,
+                    vitals: vitals || '',
+                    diagnosis: diagnosis || '',
+                    complaint: complaint || '',
+                    examination: examination || '',
+                    plan: plan || '',
+                    prescription_items: {
+                        create: medicines.map((med: any) => {
+                            const dosageParts = med.dosage.split('-').map((n: string) => parseInt(n) || 0)
+                            return {
+                                medicine_id: med.id || med.medicineId,
+                                morning: dosageParts[0] || 0,
+                                afternoon: dosageParts[1] || 0,
+                                evening: dosageParts[2] || 0,
+                                night: dosageParts[3] || 0,
+                                days: parseInt(med.days) || 3
+                            }
+                        })
+                    }
+                },
+                include: {
+                    prescription_items: {
+                        include: {
+                            hms_product: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    sku: true,
+                                    price: true
+                                }
                             }
                         }
                     }
                 }
+            })
+
+            // If this is linked to an appointment, mark appointment as completed
+            if (appointmentId) {
+                await tx.hms_appointments.update({
+                    where: { id: appointmentId },
+                    data: { status: 'completed' }
+                })
             }
+
+            return pr
         })
 
         return NextResponse.json({
