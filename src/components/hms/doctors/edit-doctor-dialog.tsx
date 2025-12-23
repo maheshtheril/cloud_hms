@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createDoctor } from '@/app/actions/doctor'
+import { updateDoctor } from '@/app/actions/doctor'
 import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock } from 'lucide-react'
 
 interface Department {
@@ -20,15 +20,32 @@ interface Specialization {
     name: string
 }
 
-interface AddDocFormProps {
+interface Doctor {
+    id: string
+    first_name: string
+    last_name: string
+    email: string | null
+    phone: string | null
+    license_no: string | null
+    role_id: string | null
+    specialization_id: string | null
+    department_id: string | null
+    experience_years: number | null
+    consultation_start_time: string | null
+    consultation_end_time: string | null
+    consultation_slot_duration: number | null
+}
+
+interface EditDoctorDialogProps {
     isOpen: boolean
     onClose: () => void
+    doctor: Doctor
     departments: Department[]
     roles: Role[]
     specializations: Specialization[]
 }
 
-export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializations }: AddDocFormProps) {
+export function EditDoctorDialog({ isOpen, onClose, doctor, departments, roles, specializations }: EditDoctorDialogProps) {
     if (!isOpen) return null
 
     return (
@@ -42,16 +59,18 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                     >
                         <X className="h-5 w-5 text-white" />
                     </button>
-                    <h2 className="text-3xl font-black text-white">Add Clinical Staff</h2>
-                    <p className="text-blue-100 mt-2">Register a new healthcare professional (Doctor, Nurse, Therapist, etc.)</p>
+                    <h2 className="text-3xl font-black text-white">Edit Staff Member</h2>
+                    <p className="text-blue-100 mt-2">Update details and schedule for {doctor.first_name} {doctor.last_name}</p>
                 </div>
 
                 {/* Form */}
                 {/* Form */}
                 <form action={async (formData) => {
-                    await createDoctor(formData)
+                    await updateDoctor(formData)
                     onClose()
                 }} className="p-8 overflow-y-auto max-h-[calc(90vh-140px)]">
+                    <input type="hidden" name="id" value={doctor.id} />
+
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                         {/* Personal Information */}
@@ -72,8 +91,8 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                                 type="text"
                                 name="first_name"
                                 required
+                                defaultValue={doctor.first_name}
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-gray-900"
-                                placeholder="John"
                             />
                         </div>
 
@@ -85,8 +104,8 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                                 type="text"
                                 name="last_name"
                                 required
+                                defaultValue={doctor.last_name || ''}
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-gray-900"
-                                placeholder="Doe"
                             />
                         </div>
 
@@ -99,8 +118,8 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                                 type="email"
                                 name="email"
                                 required
+                                defaultValue={doctor.email || ''}
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-gray-900"
-                                placeholder="doctor@hospital.com"
                             />
                         </div>
 
@@ -112,8 +131,8 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                             <input
                                 type="tel"
                                 name="phone"
+                                defaultValue={doctor.phone || ''}
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-gray-900"
-                                placeholder="+1 (555) 123-4567"
                             />
                         </div>
 
@@ -135,12 +154,12 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                             <select
                                 name="department_id"
                                 required={departments.length > 0}
+                                defaultValue={doctor.department_id || ''}
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
                             >
                                 <option value="">
                                     {departments.length === 0 ? 'No departments available' : 'Select Department'}
                                 </option>
-                                {/* Group by parent departments */}
                                 {departments
                                     .filter(dept => !dept.parent_id)
                                     .map(parentDept => (
@@ -148,7 +167,6 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                                             <option key={parentDept.id} value={parentDept.id}>
                                                 {parentDept.name}
                                             </option>
-                                            {/* Show child departments indented */}
                                             {departments
                                                 .filter(child => child.parent_id === parentDept.id)
                                                 .map(childDept => (
@@ -159,15 +177,6 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                                         </>
                                     ))}
                             </select>
-                            {departments.length === 0 ? (
-                                <p className="mt-2 text-xs text-amber-600 font-medium">
-                                    ⚠️ Please add departments in system settings first
-                                </p>
-                            ) : (
-                                <p className="mt-2 text-xs text-gray-500">
-                                    Sub-departments shown with ↳ under parent
-                                </p>
-                            )}
                         </div>
 
                         <div>
@@ -177,6 +186,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                             <select
                                 name="role_id"
                                 required
+                                defaultValue={doctor.role_id || ''}
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
                             >
                                 <option value="">Select Role</option>
@@ -192,6 +202,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                             </label>
                             <select
                                 name="specialization_id"
+                                defaultValue={doctor.specialization_id || ''}
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
                             >
                                 <option value="">Select Specialization (Optional)</option>
@@ -210,21 +221,8 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                                 type="text"
                                 name="license_no"
                                 required
+                                defaultValue={doctor.license_no || ''}
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
-                                placeholder="MED123456"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Award className="h-4 w-4" />
-                                Qualification
-                            </label>
-                            <input
-                                type="text"
-                                name="qualification"
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
-                                placeholder="MBBS, MD"
                             />
                         </div>
 
@@ -237,8 +235,8 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                                 type="number"
                                 name="experience_years"
                                 min="0"
+                                defaultValue={doctor.experience_years || ''}
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
-                                placeholder="10"
                             />
                         </div>
 
@@ -260,7 +258,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                                 type="time"
                                 name="consultation_start_time"
                                 required
-                                defaultValue="09:00"
+                                defaultValue={doctor.consultation_start_time || "09:00"}
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-medium text-gray-900"
                             />
                         </div>
@@ -273,7 +271,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                                 type="time"
                                 name="consultation_end_time"
                                 required
-                                defaultValue="17:00"
+                                defaultValue={doctor.consultation_end_time || "17:00"}
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-medium text-gray-900"
                             />
                         </div>
@@ -287,7 +285,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                                 type="number"
                                 name="consultation_slot_duration"
                                 required
-                                defaultValue="30"
+                                defaultValue={doctor.consultation_slot_duration || "30"}
                                 step="5"
                                 min="5"
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-medium text-gray-900"
@@ -308,7 +306,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                             type="submit"
                             className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all"
                         >
-                            Add Staff Member
+                            Save Changes
                         </button>
                     </div>
                 </form>

@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from "@/lib/prisma"
+import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 
 export async function createDoctor(formData: FormData) {
@@ -78,4 +79,49 @@ export async function createDoctor(formData: FormData) {
     }
 
     redirect("/hms/doctors")
+}
+
+export async function updateDoctor(formData: FormData) {
+    const id = formData.get("id") as string
+    const firstName = formData.get("first_name") as string
+    const lastName = formData.get("last_name") as string
+    const email = formData.get("email") as string
+    const phone = formData.get("phone") as string
+    const licenseNo = formData.get("license_no") as string
+    const roleId = formData.get("role_id") as string
+    const specializationId = formData.get("specialization_id") as string
+    const departmentId = formData.get("department_id") as string
+
+    // Consultation Settings
+    const consultationStartTime = formData.get("consultation_start_time") as string
+    const consultationEndTime = formData.get("consultation_end_time") as string
+    const consultationSlotDuration = parseInt(formData.get("consultation_slot_duration") as string)
+
+    const session = await auth();
+    if (!session?.user?.id) throw new Error("Unauthorized");
+
+    try {
+        await prisma.hms_clinicians.update({
+            where: { id },
+            data: {
+                first_name: firstName,
+                last_name: lastName,
+                email: email,
+                phone: phone,
+                license_no: licenseNo,
+                role_id: roleId,
+                specialization_id: specializationId,
+                department_id: departmentId || null,
+                consultation_start_time: consultationStartTime,
+                consultation_end_time: consultationEndTime,
+                consultation_slot_duration: consultationSlotDuration,
+                updated_at: new Date()
+            }
+        })
+    } catch (error) {
+        console.error("Failed to update doctor:", error)
+        return { error: "Failed to update doctor" }
+    }
+
+    redirect(`/hms/doctors/${id}`)
 }

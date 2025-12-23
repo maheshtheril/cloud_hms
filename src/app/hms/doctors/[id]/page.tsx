@@ -3,6 +3,8 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Mail, Phone, Award, Briefcase, Calendar, Clock, User } from "lucide-react"
 
+import { DoctorProfileActions } from "@/components/hms/doctors/doctor-profile-actions"
+
 export default async function DoctorDetailPage({ params }: { params: { id: string } }) {
     const doctor = await prisma.hms_clinicians.findUnique({
         where: { id: params.id },
@@ -15,6 +17,22 @@ export default async function DoctorDetailPage({ params }: { params: { id: strin
     if (!doctor) {
         return notFound()
     }
+
+    // Fetch dropdown data for Edit Form
+    const [departments, roles, specializations] = await Promise.all([
+        prisma.hms_departments.findMany({
+            where: { is_active: true },
+            select: { id: true, name: true, parent_id: true }
+        }),
+        prisma.hms_roles.findMany({
+            where: { is_active: true, is_clinical: true },
+            select: { id: true, name: true }
+        }),
+        prisma.hms_specializations.findMany({
+            where: { is_active: true },
+            select: { id: true, name: true }
+        })
+    ])
 
     // Fetch upcoming appointments for this doctor
     const upcomingAppointments = await prisma.hms_appointments.findMany({
@@ -55,10 +73,18 @@ export default async function DoctorDetailPage({ params }: { params: { id: strin
                     </div>
                 </div>
 
-                <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 flex items-center gap-2 font-medium">
-                    <Calendar className="h-4 w-4" />
-                    View Full Schedule
-                </button>
+                <div className="flex items-center gap-2">
+                    <DoctorProfileActions
+                        doctor={doctor}
+                        departments={departments}
+                        roles={roles}
+                        specializations={specializations}
+                    />
+                    <button className="px-4 py-2 bg-white border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 flex items-center gap-2 font-medium">
+                        <Calendar className="h-4 w-4" />
+                        View Full Schedule
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
