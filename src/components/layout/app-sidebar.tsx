@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Activity, Users, Calendar, LayoutDashboard, Settings, LogOut, Stethoscope, Receipt, Shield, Menu, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { CompanySwitcher } from '@/components/company-switcher';
@@ -20,75 +20,97 @@ const IconMap: any = {
 export function AppSidebar({ menuItems, currentCompany, user, children }: { menuItems: any[], currentCompany: any, user?: any, children: React.ReactNode }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Persist sidebar state
+    useEffect(() => {
+        const savedState = localStorage.getItem('sidebar-collapsed');
+        if (savedState) {
+            setCollapsed(JSON.parse(savedState));
+        }
+
+        const checkMobile = () => {
+            setIsMobile(window.innerWidth < 768);
+            if (window.innerWidth < 768) {
+                setCollapsed(false); // Always expanded in drawer mode
+            }
+        };
+
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
+    const toggleCollapse = () => {
+        const newState = !collapsed;
+        setCollapsed(newState);
+        localStorage.setItem('sidebar-collapsed', JSON.stringify(newState));
+    };
 
     return (
         <div className="flex h-screen bg-neutral-950 text-white font-sans overflow-hidden">
             {/* Desktop Sidebar */}
             <aside
-                className={`${collapsed ? 'w-16' : 'w-72'} 
+                className={`${collapsed ? 'w-20' : 'w-72'} 
                 bg-black/40 border-r border-white/5 
-                hidden md:flex flex-col transition-all duration-300 ease-in-out relative z-10 backdrop-blur-xl`}
+                hidden md:flex flex-col transition-all duration-300 ease-[cubic-bezier(0.25,0.1,0.25,1)] relative z-30 backdrop-blur-xl shadow-2xl`}
             >
-                {/* ... Sidebar Content reused ... */}
                 <SidebarContent
                     menuItems={menuItems}
                     currentCompany={currentCompany}
                     user={user}
                     collapsed={collapsed}
-                    setCollapsed={() => setCollapsed(!collapsed)}
+                    setCollapsed={toggleCollapse}
+                    isMobile={false}
                 />
             </aside>
 
-            {/* Mobile Sidebar Drawer */}
-            {mobileMenuOpen && (
-                <div className="fixed inset-0 z-50 md:hidden flex">
-                    {/* Backdrop */}
-                    <div
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm"
-                        onClick={() => setMobileMenuOpen(false)}
-                    />
+            {/* Mobile Sidebar System */}
+            {/* Backdrop */}
+            <div
+                className={`fixed inset-0 z-40 bg-black/80 backdrop-blur-sm transition-opacity duration-300 md:hidden
+                ${mobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+                onClick={() => setMobileMenuOpen(false)}
+            />
 
-                    {/* Drawer */}
-                    <aside className="relative w-72 max-w-xs bg-neutral-900 border-r border-white/10 flex flex-col h-full shadow-2xl animate-in slide-in-from-left duration-200">
-                        <div className="flex items-center justify-between p-4 border-b border-white/5">
-                            <span className="font-bold text-lg">Menu</span>
-                            <button
-                                onClick={() => setMobileMenuOpen(false)}
-                                className="p-2 hover:bg-white/10 rounded-full"
-                            >
-                                <PanelLeftClose className="h-5 w-5" />
-                            </button>
-                        </div>
-                        <SidebarContent
-                            menuItems={menuItems}
-                            currentCompany={currentCompany}
-                            user={user}
-                            collapsed={false}
-                            isMobile={true}
-                            startCollapsed={false}
-                            onLinkClick={() => setMobileMenuOpen(false)}
-                        />
-                    </aside>
-                </div>
-            )}
+            {/* Drawer */}
+            <div className={`fixed top-0 left-0 bottom-0 w-[85vw] max-w-sm z-50 bg-neutral-900 border-r border-white/10 shadow-2xl transform transition-transform duration-300 ease-out md:hidden ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <SidebarContent
+                    menuItems={menuItems}
+                    currentCompany={currentCompany}
+                    user={user}
+                    collapsed={false}
+                    isMobile={true}
+                    onLinkClick={() => setMobileMenuOpen(false)}
+                    onClose={() => setMobileMenuOpen(false)}
+                />
+            </div>
 
             {/* Main Content Area */}
-            <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-neutral-950 relative">
-                {/* Mobile Header (Hidden on Desktop) */}
-                <header className="bg-black/50 backdrop-blur-md border-b border-white/5 p-4 md:hidden flex justify-between items-center z-20">
-                    <div className="flex items-center gap-2">
+            <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-neutral-950 relative w-full">
+                {/* Mobile Header */}
+                <header className="bg-black/40 backdrop-blur-md border-b border-white/5 p-4 md:hidden flex justify-between items-center z-20 sticky top-0">
+                    <div className="flex items-center gap-3">
                         <button
                             onClick={() => setMobileMenuOpen(true)}
-                            className="mr-2 p-1 hover:bg-white/10 rounded"
+                            className="p-2 -ml-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-xl transition-colors active:scale-95"
                         >
-                            <Menu className="h-6 w-6 text-neutral-400" />
+                            <Menu className="h-6 w-6" />
                         </button>
-                        <Activity className="text-indigo-600 h-6 w-6" />
-                        <span className="font-bold text-white">HMS Core</span>
+                        <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg">
+                                <Activity className="text-white h-5 w-5" />
+                            </div>
+                            <span className="font-bold text-white text-lg tracking-tight">HMS Core</span>
+                        </div>
+                    </div>
+                    {/* Tiny User Avatar for Mobile Header */}
+                    <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs shadow-inner">
+                        {user?.name?.substring(0, 2).toUpperCase() || 'U'}
                     </div>
                 </header>
 
-                <div className="flex-1 overflow-auto relative">
+                <div className="flex-1 overflow-auto relative scroll-smooth">
                     {children}
                 </div>
             </main>
@@ -97,54 +119,57 @@ export function AppSidebar({ menuItems, currentCompany, user, children }: { menu
 }
 
 // Extracted Content for reuse
-function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollapsed, isMobile, onLinkClick }: any) {
+function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollapsed, isMobile, onLinkClick, onClose }: any) {
     return (
         <>
             {/* Header / Company Logo */}
-            <div className={`p-4 border-b border-white/5 flex items-center ${collapsed ? 'justify-center' : 'justify-between'}`}>
+            <div className={`p-4 border-b border-white/5 flex items-center ${collapsed ? 'justify-center' : 'justify-between'} h-16`}>
                 {!collapsed ? (
-                    <div className="w-full">
-                        {currentCompany?.logo_url ? (
-                            <div className="flex items-center gap-3">
-                                <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-8 object-contain max-w-[120px]" />
-                                {/* Optional: Show switcher or name if logo is icon-only? Assuming logo includes name or is brand. 
-                                    Let's keep CompanySwitcher logic but use logo if present inside it or replace it?
-                                    User asked "where to save compony logo. i want to show this logo in sidebar".
-                                    Strict replacement or enhancement? Enhancing CompanySwitcher might be best, but CompanySwitcher source is separate.
-                                    Let's just show the logo ABOVE or INSTEAD of switcher default text.
-                                    Actually, CompanySwitcher handles company switching logic. I should probably pass logoUrl TO CompanySwitcher if I can, 
-                                    or just render a header here.
-                                    Let's render a custom header area.
-                                */}
+                    <div className="w-full flex items-center justify-between">
+                        <div className="flex-1">
+                            {currentCompany?.logo_url ? (
+                                <div className="flex items-center gap-3">
+                                    <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-8 object-contain max-w-[120px]" />
+                                    <CompanySwitcher initialActiveCompany={currentCompany} />
+                                </div>
+                            ) : (
                                 <CompanySwitcher initialActiveCompany={currentCompany} />
-                            </div>
-                        ) : (
-                            <CompanySwitcher initialActiveCompany={currentCompany} />
+                            )}
+                        </div>
+                        {isMobile && onClose && (
+                            <button
+                                onClick={onClose}
+                                className="p-2 -mr-2 text-neutral-400 hover:text-white hover:bg-white/10 rounded-xl transition-all active:scale-95"
+                            >
+                                <PanelLeftClose className="h-5 w-5" />
+                            </button>
                         )}
                     </div>
                 ) : (
-                    <div className="h-8 w-8 rounded bg-indigo-600 flex items-center justify-center font-bold text-white overflow-hidden">
+                    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-700 flex items-center justify-center font-bold text-white overflow-hidden shadow-lg transform transition-transform hover:scale-105 cursor-pointer" title="Expand">
                         {currentCompany?.logo_url ? (
                             <img src={currentCompany.logo_url} alt="Logo" className="w-full h-full object-cover" />
                         ) : (
-                            currentCompany?.name?.substring(0, 2).toUpperCase() || "HM"
+                            <span className="text-xs tracking-tighter">
+                                {currentCompany?.name?.substring(0, 2).toUpperCase() || "HM"}
+                            </span>
                         )}
                     </div>
                 )}
             </div>
 
             {/* Navigation */}
-            <nav className="flex-1 p-2 space-y-6 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+            <nav className="flex-1 p-3 space-y-6 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
                 {menuItems.map((group: any) => (
                     <div key={group.module.module_key} className={collapsed ? "text-center" : ""}>
                         {/* Module Header */}
                         {!collapsed && group.module.module_key !== 'general' && (
-                            <h3 className="px-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2 font-mono">
+                            <h3 className="px-3 text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-2 font-mono ml-1">
                                 {group.module.name}
                             </h3>
                         )}
                         {collapsed && group.module.module_key !== 'general' && (
-                            <div className="h-px w-8 bg-white/10 mx-auto mb-2 mt-4"></div>
+                            <div className="h-px w-8 bg-white/5 mx-auto mb-3 mt-4"></div>
                         )}
 
                         <div className="space-y-0.5">
