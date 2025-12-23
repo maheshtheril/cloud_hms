@@ -129,19 +129,16 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 overflow-hidden min-h-0">
-
-
-                {/* Left Column - Patient & Doctor & Schedule (Span 8) */}
+                {/* Left Column (Span 8) */}
                 <div className="lg:col-span-8 space-y-4 overflow-y-auto pr-1 custom-scrollbar pb-20">
-
                     <PatientDoctorSelectors
                         patients={patients}
                         doctors={doctors}
                         selectedPatientId={initialPatientId || ''}
-                        onClinicianSelect={handleClinicianChange} // Pass the handler
+                        onClinicianSelect={handleClinicianChange}
                     />
 
-                    {/* Date & Time Card */}
+                    {/* Schedule Card */}
                     <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
                         <div className="flex items-center gap-3 mb-4 pb-2 border-b border-gray-100 dark:border-slate-800">
                             <div className="h-8 w-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-md">
@@ -164,7 +161,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                                     name="date"
                                     required
                                     defaultValue={initialDate || new Date().toISOString().split('T')[0]}
-                                    className="w-full p-2.5 bg-white dark:bg-slate-950 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium [color-scheme:light] dark:[color-scheme:dark]"
+                                    className="w-full p-2.5 bg-white dark:bg-slate-950 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium"
                                 />
                             </div>
                             <div>
@@ -176,11 +173,11 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                                     type={suggestedTime === 'Fully Booked' ? 'text' : 'time'}
                                     name="time"
                                     required
-                                    key={suggestedTime} // Force re-render when suggestion changes
+                                    key={suggestedTime}
                                     defaultValue={suggestedTime === 'Fully Booked' ? '' : suggestedTime || new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                                     readOnly={suggestedTime === 'Fully Booked'}
                                     placeholder={suggestedTime === 'Fully Booked' ? 'Fully Booked' : ''}
-                                    className={`w-full p-2.5 bg-white dark:bg-slate-950 text-gray-900 dark:text-white border ${suggestedTime === 'Fully Booked' ? 'border-red-500 ring-2 ring-red-500/20' : 'border-gray-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium [color-scheme:light] dark:[color-scheme:dark]`}
+                                    className={`w-full p-2.5 bg-white dark:bg-slate-950 text-gray-900 dark:text-white border ${suggestedTime === 'Fully Booked' ? 'border-red-500 ring-2 ring-red-500/20' : 'border-gray-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium`}
                                 />
                                 {suggestedTime === 'Fully Booked' && (
                                     <p className="text-[10px] text-red-500 font-bold mt-1 flex items-center gap-1 animate-pulse">
@@ -190,11 +187,24 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                             </div>
                         </div>
                     </div>
+
+                    {/* Notes Card - MOVED HERE BELOW SCHEDULE */}
+                    <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                            <FileText className="h-4 w-4 text-gray-600 dark:text-slate-400" />
+                            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Notes / Brief Complaint</h3>
+                        </div>
+                        <textarea
+                            name="notes"
+                            rows={3}
+                            className="w-full p-2.5 bg-gray-50/50 dark:bg-slate-950 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none font-medium text-sm"
+                            placeholder="Reason for visit, symptoms, or any special instructions..."
+                        ></textarea>
+                    </div>
                 </div>
 
-                {/* Right Column - Visit Details (Span 4) */}
+                {/* Right Column (Span 4) */}
                 <div className="lg:col-span-4 space-y-4 overflow-y-auto pr-1 custom-scrollbar pb-20">
-
                     {/* Visit Type & Mode */}
                     <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
                         <div className="flex items-center gap-3 mb-4 pb-2 border-b border-gray-100 dark:border-slate-800">
@@ -226,33 +236,17 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                                 <label className="block text-sm font-semibold text-gray-900 dark:text-slate-300 mb-1.5">Consultation Mode</label>
                                 <div className="grid grid-cols-1 gap-2">
                                     <label className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer transition-all group">
-                                        <input
-                                            type="radio"
-                                            name="mode"
-                                            value="in_person"
-                                            defaultChecked
-                                            className="text-blue-600 focus:ring-blue-500"
-                                        />
+                                        <input type="radio" name="mode" value="in_person" defaultChecked className="text-blue-600 focus:ring-blue-500" />
                                         <MapPin className="h-4 w-4 text-gray-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
                                         <span className="text-sm font-medium text-gray-900 dark:text-slate-200">In-Person Visit</span>
                                     </label>
                                     <label className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-900/20 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer transition-all group">
-                                        <input
-                                            type="radio"
-                                            name="mode"
-                                            value="video"
-                                            className="text-purple-600 focus:ring-purple-500"
-                                        />
+                                        <input type="radio" name="mode" value="video" className="text-purple-600 focus:ring-purple-500" />
                                         <Video className="h-4 w-4 text-gray-600 dark:text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400" />
                                         <span className="text-sm font-medium text-gray-900 dark:text-slate-200">Video Call</span>
                                     </label>
                                     <label className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-slate-800 hover:bg-green-50 dark:hover:bg-green-900/20 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer transition-all group">
-                                        <input
-                                            type="radio"
-                                            name="mode"
-                                            value="phone"
-                                            className="text-green-600 focus:ring-green-500"
-                                        />
+                                        <input type="radio" name="mode" value="phone" className="text-green-600 focus:ring-green-500" />
                                         <Phone className="h-4 w-4 text-gray-600 dark:text-slate-400 group-hover:text-green-600 dark:group-hover:text-green-400" />
                                         <span className="text-sm font-medium text-gray-900 dark:text-slate-200">Phone Consultation</span>
                                     </label>
@@ -261,7 +255,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                         </div>
                     </div>
 
-                    {/* Priority */}
+                    {/* Priority Card */}
                     <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
                         <div className="flex items-center gap-3 mb-3 pb-2 border-b border-gray-100 dark:border-slate-800">
                             <div className="h-8 w-8 bg-gradient-to-br from-yellow-500 to-amber-600 rounded-lg flex items-center justify-center shadow-md">
@@ -291,22 +285,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                             </label>
                         </div>
                     </div>
-
-                    {/* Notes - Compact */}
-                    <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <FileText className="h-4 w-4 text-gray-600 dark:text-slate-400" />
-                            <h3 className="text-sm font-bold text-gray-900 dark:text-white">Notes</h3>
-                        </div>
-                        <textarea
-                            name="notes"
-                            rows={3}
-                            className="w-full p-2.5 bg-white dark:bg-slate-950 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none font-medium text-sm"
-                            placeholder="Reason for visit..."
-                        ></textarea>
-                    </div>
                 </div>
-
             </div>
             {onClose && <input type="hidden" name="source" value="dashboard" />}
         </form>
