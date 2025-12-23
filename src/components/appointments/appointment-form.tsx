@@ -4,10 +4,12 @@ import { createAppointment } from "@/app/actions/appointment"
 import { ArrowLeft, Calendar, Clock, FileText, CheckCircle, MapPin, Video, Phone, AlertCircle } from "lucide-react"
 import Link from "next/link"
 import { PatientDoctorSelectors } from "@/components/appointments/patient-doctor-selectors"
+import { useState } from "react"
 
 interface AppointmentFormProps {
     patients: any[]
     doctors: any[]
+    appointments?: any[]
     initialData?: {
         patient_id?: string
         date?: string
@@ -16,8 +18,42 @@ interface AppointmentFormProps {
     onClose?: () => void
 }
 
-export function AppointmentForm({ patients, doctors, initialData = {}, onClose }: AppointmentFormProps) {
+export function AppointmentForm({ patients, doctors, appointments = [], initialData = {}, onClose }: AppointmentFormProps) {
     const { patient_id: initialPatientId, date: initialDate, time: initialTime } = initialData
+    const [selectedClinicianId, setSelectedClinicianId] = useState('')
+    const [suggestedTime, setSuggestedTime] = useState(initialTime || '')
+
+    // Smart Slot Calculation
+    const handleClinicianChange = (clinicianId: string) => {
+        setSelectedClinicianId(clinicianId)
+
+        if (!clinicianId) return
+
+        // Get doctor's default start time
+        const doctor = doctors.find(d => d.id === clinicianId)
+        const defaultStart = doctor?.consultation_start_time || "09:00"
+
+        // Filter appointments for this doctor today
+        const doctorApts = appointments.filter(a => a.clinician_id === clinicianId)
+
+        if (doctorApts.length === 0) {
+            setSuggestedTime(defaultStart)
+            return
+        }
+
+        // Find the latest end time
+        const lastApt = doctorApts.reduce((latest, current) => {
+            return new Date(current.ends_at) > new Date(latest.ends_at) ? current : latest
+        }, doctorApts[0])
+
+        if (lastApt && lastApt.ends_at) {
+            const lastEnd = new Date(lastApt.ends_at)
+            // Add a small buffer (e.g., 5 mins) or just start exactly after? User said "according to that".
+            // Let's suggest exactly after.
+            const nextSlot = lastEnd.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+            setSuggestedTime(nextSlot)
+        }
+    }
 
     return (
         <form action={async (formData) => {
@@ -83,12 +119,13 @@ export function AppointmentForm({ patients, doctors, initialData = {}, onClose }
 
 
                 {/* Left Column - Patient & Doctor & Schedule (Span 8) */}
-                <div className="lg:col-span-8 space-y-4 overflow-y-auto pr-1 custom-scrollbar">
+                <div className="lg:col-span-8 space-y-4 overflow-y-auto pr-1 custom-scrollbar pb-20">
 
                     <PatientDoctorSelectors
                         patients={patients}
                         doctors={doctors}
                         selectedPatientId={initialPatientId || ''}
+                        onClinicianSelect={handleClinicianChange} // Pass the handler
                     />
 
                     {/* Date & Time Card */}
@@ -113,7 +150,7 @@ export function AppointmentForm({ patients, doctors, initialData = {}, onClose }
                                     type="date"
                                     name="date"
                                     required
-                                    defaultValue={initialDate}
+                                    defaultValue={initialDate || new Date().toISOString().split('T')[0]}
                                     className="w-full p-2.5 bg-white dark:bg-slate-950 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium [color-scheme:light] dark:[color-scheme:dark]"
                                 />
                             </div>
@@ -126,7 +163,8 @@ export function AppointmentForm({ patients, doctors, initialData = {}, onClose }
                                     type="time"
                                     name="time"
                                     required
-                                    defaultValue={initialTime}
+                                    key={suggestedTime} // Force re-render when suggestion changes
+                                    defaultValue={suggestedTime || new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                                     className="w-full p-2.5 bg-white dark:bg-slate-950 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium [color-scheme:light] dark:[color-scheme:dark]"
                                 />
                             </div>
@@ -135,7 +173,7 @@ export function AppointmentForm({ patients, doctors, initialData = {}, onClose }
                 </div>
 
                 {/* Right Column - Visit Details (Span 4) */}
-                <div className="lg:col-span-4 space-y-4 overflow-y-auto pr-1 custom-scrollbar">
+                <div className="lg:col-span-4 space-y-4 overflow-y-auto pr-1 custom-scrollbar pb-20">
 
                     {/* Visit Type & Mode */}
                     <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
@@ -235,7 +273,7 @@ export function AppointmentForm({ patients, doctors, initialData = {}, onClose }
                     </div>
 
                     {/* Notes - Compact */}
-                    <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4 flex-1">
+                    <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
                         <div className="flex items-center gap-2 mb-2">
                             <FileText className="h-4 w-4 text-gray-600 dark:text-slate-400" />
                             <h3 className="text-sm font-bold text-gray-900 dark:text-white">Notes</h3>

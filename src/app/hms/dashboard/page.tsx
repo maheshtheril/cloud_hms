@@ -48,7 +48,10 @@ export default async function DashboardPage() {
                 first_name: true,
                 last_name: true,
                 hms_specializations: { select: { name: true } },
-                role: true
+                role: true,
+                consultation_start_time: true,
+                consultation_end_time: true,
+                consultation_slot_duration: true
             },
             orderBy: { first_name: 'asc' }
         }),

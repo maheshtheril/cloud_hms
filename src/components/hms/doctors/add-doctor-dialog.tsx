@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2 } from 'lucide-react'
+import { createDoctor } from '@/app/actions/doctor'
+import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock } from 'lucide-react'
 
 interface Department {
     id: string
@@ -46,7 +47,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                 </div>
 
                 {/* Form */}
-                <form action="/api/doctors" method="POST" className="p-8 overflow-y-auto max-h-[calc(90vh-140px)]">
+                <form action={createDoctor} className="p-8 overflow-y-auto max-h-[calc(90vh-140px)]">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                         {/* Personal Information */}
@@ -234,6 +235,58 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                                 min="0"
                                 className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
                                 placeholder="10"
+                            />
+                        </div>
+
+                        {/* Consulting Settings */}
+                        <div className="md:col-span-2 mt-6">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                    <Clock className="h-4 w-4 text-green-600" />
+                                </div>
+                                Consulting Schedule (Defaults)
+                            </h3>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-900 mb-2">
+                                Start Time <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="time"
+                                name="consultation_start_time"
+                                required
+                                defaultValue="09:00"
+                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-medium text-gray-900"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-900 mb-2">
+                                End Time <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                type="time"
+                                name="consultation_end_time"
+                                required
+                                defaultValue="17:00"
+                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-medium text-gray-900"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
+                                <Clock className="h-4 w-4" />
+                                Slot Duration (Minutes)
+                            </label>
+                            <input
+                                type="number"
+                                name="consultation_slot_duration"
+                                required
+                                defaultValue="30"
+                                step="5"
+                                min="5"
+                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-medium text-gray-900"
                             />
                         </div>
                     </div>

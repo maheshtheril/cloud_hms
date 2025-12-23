@@ -208,6 +208,7 @@ export function DashboardClient({ user, stats, appointments, patients, doctors }
                             <AppointmentForm
                                 patients={patients}
                                 doctors={doctors}
+                                appointments={appointments}
                                 onClose={() => setShowAppointmentModal(false)}
                             />
                         </div>

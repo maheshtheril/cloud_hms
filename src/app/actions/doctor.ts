@@ -65,6 +65,9 @@ export async function createDoctor(formData: FormData) {
                 license_no: licenseNo,
                 role_id: role.id,
                 specialization_id: specialization.id,
+                consultation_start_time: formData.get("consultation_start_time") as string || "09:00",
+                consultation_end_time: formData.get("consultation_end_time") as string || "17:00",
+                consultation_slot_duration: parseInt(formData.get("consultation_slot_duration") as string) || 30,
                 is_active: true
             }
         })

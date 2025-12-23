@@ -23,11 +23,13 @@ interface Doctor {
 export function PatientDoctorSelectors({
     patients,
     doctors,
-    selectedPatientId
+    selectedPatientId,
+    onClinicianSelect
 }: {
     patients: Patient[]
     doctors: Doctor[]
     selectedPatientId: string
+    onClinicianSelect?: (id: string) => void
 }) {
     const patientOptions = patients.map(p => ({
         id: p.id,
@@ -104,7 +106,7 @@ export function PatientDoctorSelectors({
 
                     <SearchableSelect
                         options={doctorOptions}
-                        onChange={() => { }}
+                        onChange={(e) => onClinicianSelect?.(e)}
                         placeholder="Search doctor..."
                         name="clinician_id"
                         required

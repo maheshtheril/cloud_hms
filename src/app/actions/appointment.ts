@@ -75,7 +75,15 @@ export async function createAppointment(formData: FormData) {
 
     // Combine date and time
     const startsAt = new Date(`${dateStr}T${timeStr}:00`)
-    const endsAt = new Date(startsAt.getTime() + 30 * 60000) // Default 30 mins
+
+    // Fetch doctor's slot duration
+    const clinician = await prisma.hms_clinicians.findUnique({
+        where: { id: clinicianId },
+        select: { consultation_slot_duration: true }
+    })
+
+    const durationMinutes = clinician?.consultation_slot_duration || 30
+    const endsAt = new Date(startsAt.getTime() + durationMinutes * 60000)
 
     try {
         await prisma.hms_appointments.create({
