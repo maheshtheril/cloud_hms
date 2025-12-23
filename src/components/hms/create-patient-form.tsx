@@ -99,7 +99,11 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-4 flex items-center justify-between">
                     <h2 className="text-xl font-bold text-white">Add New Patient</h2>
                     {onClose ? (
-                        <button onClick={onClose} className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="text-white hover:bg-white/20 p-2 rounded-lg transition-colors"
+                        >
                             <X className="h-6 w-6" />
                         </button>
                     ) : (
@@ -110,9 +114,10 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                 </div>
 
                 <form
+                    id="patient-create-form"
                     action={onSuccess ? undefined : action}
                     onSubmit={onSuccess ? handleLocalSubmit : undefined}
-                    className="flex-1 overflow-y-auto p-3 space-y-2"
+                    className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar"
                 >
 
                     {(state?.error || localError) && (
@@ -144,17 +149,26 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                     <option>Sri</option>
                                     <option>Kumari</option>
                                 </select>
-                                <div className="relative flex-1">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                                    <input
-                                        name="first_name"
-                                        required
-                                        placeholder="Enter Name"
-                                        className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900"
-                                    />
+                                <div className="grid grid-cols-2 gap-2 flex-1">
+                                    <div className="relative">
+                                        <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                        <input
+                                            name="first_name"
+                                            required
+                                            placeholder="First Name *"
+                                            className="w-full pl-9 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900 text-sm font-medium"
+                                        />
+                                    </div>
+                                    <div className="relative">
+                                        <input
+                                            name="last_name"
+                                            placeholder="Last Name"
+                                            className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-gray-900 text-sm font-medium"
+                                        />
+                                    </div>
                                 </div>
                             </div>
-                            <p className="text-[10px] text-red-500">Enter the Name of the Patient</p>
+                            <p className="text-[10px] text-gray-500 mt-0.5">Enter the legal name of the patient</p>
                         </div>
 
                         {/* Phone Number */}
@@ -480,55 +494,52 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                             </div>
                         </div>
                     )}
-
-                    {/* Action Buttons */}
-                    <div className="border-t-2 border-gray-200 dark:border-slate-800 pt-6 space-y-2">
-                        <button
-                            type="submit"
-                            name="next_action"
-                            value="rx"
-                            disabled={isPending || localIsPending}
-                            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm shadow-lg transition-colors disabled:opacity-50"
-                        >
-                            {(isPending || localIsPending) ? 'Creating...' : 'Save Patient Record'}
-                        </button>
-
-                        {!onSuccess && (
-                            <>
-                                <p className="text-center text-gray-500 font-medium text-xs">or</p>
-
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        type="submit"
-                                        name="next_action"
-                                        value="bill"
-                                        disabled={isPending}
-                                        className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
-                                    >
-                                        {isPending ? 'Creating...' : 'Add & Create Bill'}
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        name="next_action"
-                                        value="appointment"
-                                        disabled={isPending}
-                                        className="py-2 bg-white hover:bg-gray-50 text-blue-600 border-2 border-blue-200 rounded-lg font-semibold transition-colors text-sm disabled:opacity-50"
-                                    >
-                                        {isPending ? 'Creating...' : 'Add & Create Appointment'}
-                                    </button>
-                                </div>
-                            </>
-                        )}
-                    </div>
-                    {onClose && <input type="hidden" name="source" value="dashboard" />}
                 </form>
+
+                {/* Sticky Footer */}
+                <div className="bg-gray-50 dark:bg-slate-800/50 border-t border-gray-200 dark:border-slate-800 p-4 space-y-2">
+                    <button
+                        type="submit"
+                        form="patient-create-form"
+                        disabled={isPending || localIsPending}
+                        className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-xl font-bold text-sm shadow-lg hover:shadow-blue-500/20 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale"
+                    >
+                        {(isPending || localIsPending) ? (
+                            <div className="flex items-center justify-center gap-2">
+                                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                Processing...
+                            </div>
+                        ) : 'Save Patient Record'}
+                    </button>
+
+                    {!onSuccess && (
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="submit"
+                                form="patient-create-form"
+                                name="next_action"
+                                value="bill"
+                                disabled={isPending}
+                                className="py-2.5 bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-slate-700 rounded-xl font-semibold transition-all text-sm disabled:opacity-50"
+                            >
+                                {isPending ? '...' : 'Save & Create Bill'}
+                            </button>
+                            <button
+                                type="submit"
+                                form="patient-create-form"
+                                name="next_action"
+                                value="appointment"
+                                disabled={isPending}
+                                className="py-2.5 bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-slate-700 rounded-xl font-semibold transition-all text-sm disabled:opacity-50"
+                            >
+                                {isPending ? '...' : 'Save & Book'}
+                            </button>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     )
 }
-
-
-
-
 
 

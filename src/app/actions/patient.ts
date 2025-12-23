@@ -153,11 +153,10 @@ export async function createPatientQuick(formData: FormData) {
 
     const patient = await prisma.hms_patient.create({
         data: {
-            id: crypto.randomUUID(),
             tenant_id: tenantId,
             company_id: companyId || tenantId,
-            first_name: firstName,
-            last_name: lastName || '',
+            first_name: firstName.trim(),
+            last_name: (lastName || '').trim(),
             dob: dob ? new Date(dob) : null,
             gender: gender || null,
             contact: contact as any,
