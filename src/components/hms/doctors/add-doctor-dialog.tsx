@@ -338,13 +338,13 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                             <input type="number" name="consultation_fee" defaultValue="500" className="w-full p-4 bg-emerald-50 border-2 border-emerald-100 text-emerald-700 rounded-2xl font-black text-lg outline-none" />
                                         </div>
                                         <div className="bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl relative overflow-hidden group">
-                                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-indigo-500/20 transition-all duration-500"></div>
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-rose-500/20 transition-all duration-500"></div>
                                             <div className="flex items-center justify-between mb-4">
-                                                <span className="text-[10px] font-black uppercase text-indigo-300 tracking-widest">Accounting Group</span>
-                                                <div className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]"></div>
+                                                <span className="text-[10px] font-black uppercase text-rose-300 tracking-widest">Accounting Group</span>
+                                                <div className="h-3 w-3 rounded-full bg-rose-400 shadow-[0_0_10px_rgba(251,113,133,0.5)]"></div>
                                             </div>
-                                            <div className="text-2xl font-black tracking-tight mb-2">Sundry Debtors</div>
-                                            <p className="text-xs text-indigo-200/50 font-bold leading-relaxed">Integrated with Staff Ledger for automated payroll & settlement cycles.</p>
+                                            <div className="text-2xl font-black tracking-tight mb-2 uppercase">Sundry Creditors</div>
+                                            <p className="text-xs text-rose-200/50 font-bold leading-relaxed">Integrated with Professional Payables for automated fee disbursement & settlement.</p>
                                         </div>
                                     </div>
                                 </div>

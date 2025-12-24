@@ -54,21 +54,10 @@ export async function createPatient(prevState: any, formData: FormData) {
     }
 
     const metadata = {
-        blood_group: blood_group, // Storing here or separate if schema allows, schema has blood_group? No, schema inspection didn't show it explicitly in the snippet I saw earlier, let me check. 
-        // Wait, I recall seeing `blood_group` in the table view earlier but let's be safe.
-        // Actually earlier snippet showed: `email`, `phone` in patient model? 
-        // Let's re-verify specific fields of `hms_patient` in schema.
-        // Schema output lines 1507-1540: `first_name`, `last_name`, `dob`, `gender`, `identifiers`, `contact`, `metadata`, `status`... 
-        // IT DOES NOT HAVE `blood_group` or `email` or `phone` as top level columns! 
-        // WAIT: My previous code `src/app/actions/patient.ts` was using `email` and `phone` and `blood_group` directly?
-        // Let's check `src/app/hms/patients/page.tsx` again.
-        // It used `patient.phone`, `patient.blood_group` (which might have been filtered out or I hallucinated `blood_group` column).
-        // `phone` is NOT in the schema snippet I just read (1507-1540). `contact` is Json.
-        // Ah, `hms_clinicians` had `email`, `phone`.
-        // `hms_patient` has: `patient_number`, `first_name`, `last_name`, `dob`, `gender`. EVERYTHING ELSE is likely in JSON `contact` or `metadata`!
-        // CHECK line 1517: `contact Json?`.
-        // So I must store phone, email, address in `contact`.
-        // And `blood_group` in `metadata`.
+        title: formData.get("title") as string,
+        blood_group: blood_group,
+        profile_image_url: formData.get("profile_image_url") as string,
+        id_card_url: formData.get("id_card_url") as string,
         insurance
     }
 
@@ -87,18 +76,27 @@ export async function createPatient(prevState: any, formData: FormData) {
     }
 
     try {
+        // WORLD-CLASS: Link to Accounts Head (Sundry Debtors)
+        // Ensure revenue tracking is locked for this patient
+        const sundryDebtorsAccount = await prisma.account_chart.findFirst({
+            where: {
+                tenant_id: tenantId,
+                name: { contains: 'Sundry Debtors', mode: 'insensitive' }
+            }
+        })
+
         const patient = await prisma.hms_patient.create({
             data: {
                 id: crypto.randomUUID(),
                 tenant_id: tenantId,
-                company_id: companyId || tenantId, // Use companyId from session, fallback to tenantId
+                company_id: companyId || tenantId,
                 first_name: firstName,
                 last_name: lastName || '',
                 dob: dob ? new Date(dob) : null,
                 gender: normalizeGender(gender),
-                contact: contact as any, // Type cast for Prisma Json
+                contact: contact as any,
                 metadata: metadata as any,
-                patient_number: `PAT-${Date.now()}`, // Simple ID generation
+                patient_number: `PAT-${Date.now()}`,
                 created_by: userId,
                 updated_by: userId
             }
