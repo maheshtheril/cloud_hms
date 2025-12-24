@@ -52,10 +52,7 @@ export async function getMenuItems() {
 
         if (allMenuItems.length === 0) {
             // ... fallback logic
-            return [{
-                module: { name: 'General', module_key: 'general' },
-                items: getFallbackMenuItems(isAdmin)
-            }];
+            return getFallbackMenuItems(isAdmin);
         }
 
         // 2. Build Tree ... (existing code)
@@ -142,7 +139,22 @@ export async function getMenuItems() {
             );
         });
 
-        const result = Object.values(grouped).filter(g => g.items.length > 0);
+        // 6. SORT BY PRIORITY (World Standard Ordering)
+        const priority = ['hms', 'accounting', 'inventory', 'crm', 'general', 'configuration'];
+        const result = Object.values(grouped)
+            .filter(g => g.items.length > 0)
+            .sort((a, b) => {
+                const indexA = priority.indexOf(a.module?.module_key || '');
+                const indexB = priority.indexOf(b.module?.module_key || '');
+                // If both found, sort by priority
+                if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+                // If only A found, A comes first
+                if (indexA !== -1) return -1;
+                // If only B found, B comes first
+                if (indexB !== -1) return 1;
+                // Otherwise sort alphabetically
+                return (a.module?.name || '').localeCompare(b.module?.name || '');
+            });
 
         // FORCE INJECT ADMIN MENU (Hybrid Approach)
         // Ensure Admins always have access to Configuration, even if DB is missing these items.
@@ -167,69 +179,160 @@ export async function getMenuItems() {
                         { key: 'crm-targets', label: 'Targets', icon: 'Target', url: '/crm/targets' } // Moved here
                     ]
                 });
-            } else {
-                // If config group exists (from DB), ensures these critical manual items are present if not already
-                // For now, simpler to just assume if config exists in DB it's managed there, 
-                // OR we can merge. Let's stick to the push block for creating new group.
             }
         }
+
+        // 7. INJECT MISSING CORE MODULES (Hybrid Mode)
+        // If DB has HMS but lacks Accounting/Inventory/CRM, inject them from standard fallback
+        const fallback = getFallbackMenuItems(isAdmin);
+        const coreKeys = ['accounting', 'inventory', 'crm'];
+
+        coreKeys.forEach(key => {
+            const exists = result.find(g => g.module?.module_key === key);
+            if (!exists) {
+                const fallbackGroup = fallback.find((g: any) => g.module?.module_key === key);
+                if (fallbackGroup) {
+                    result.push(fallbackGroup);
+                }
+            }
+        });
+
+        // Re-sort after injection
+        result.sort((a, b) => {
+            const indexA = priority.indexOf(a.module?.module_key || '');
+            const indexB = priority.indexOf(b.module?.module_key || '');
+            // If both found, sort by priority
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+            if (indexA !== -1) return -1;
+            if (indexB !== -1) return 1;
+            return (a.module?.name || '').localeCompare(b.module?.name || '');
+        });
 
         return result;
 
     } catch (error) {
         console.error("Failed to fetch menu items:", error);
-        return [{
-            module: { name: 'General', module_key: 'general' },
-            items: getFallbackMenuItems(isAdmin)
-        }];
+        return getFallbackMenuItems(isAdmin);
     }
 }
 
 function getFallbackMenuItems(isAdmin: boolean | undefined) {
-    // TREE STRUCTURE FALLBACK
-    let items: any[] = [
-        { key: 'crm-dashboard', label: 'Command Center', icon: 'LayoutDashboard', url: '/crm/dashboard', padding_left: 0 },
+    // WORLD CLASS TREE STRUCTURE FALLBACK
+    const items: any[] = [];
 
-        // Sales Group
-        {
-            key: 'sales-group',
-            label: 'Sales Pipeline',
-            icon: 'Briefcase',
-            url: '#',
-            other_menu_items: [
-                { key: 'crm-leads', label: 'Leads', icon: 'Users', url: '/crm/leads' },
-                { key: 'crm-deals', label: 'Deals', icon: 'Target', url: '/crm/deals' },
-                { key: 'crm-contacts', label: 'Contacts', icon: 'Users', url: '/crm/contacts' },
-            ]
-        },
+    // 1. HMS (Core Medical Ops)
+    items.push({
+        module: { name: 'Health Management', module_key: 'hms' },
+        items: [
+            { key: 'hms-dashboard', label: 'Command Center', icon: 'Activity', url: '/hms/dashboard' },
+            {
+                key: 'hms-patients',
+                label: 'Patient Care',
+                icon: 'Users',
+                url: '#',
+                other_menu_items: [
+                    { key: 'patient-list', label: 'Patient Registry', icon: 'User', url: '/hms/patients' },
+                    { key: 'patient-registration', label: 'Admission / Reg', icon: 'Plus', url: '/hms/patients/new' },
+                ]
+            },
+            {
+                key: 'hms-appointments',
+                label: 'Scheduling',
+                icon: 'Calendar',
+                url: '#',
+                other_menu_items: [
+                    { key: 'apt-calendar', label: 'Doctor Calendar', icon: 'Calendar', url: '/hms/appointments' },
+                    { key: 'apt-list', label: 'All Attributes', icon: 'List', url: '/hms/appointments/list' },
+                ]
+            },
+            {
+                key: 'hms-clinical',
+                label: 'Clinical',
+                icon: 'Stethoscope',
+                url: '#',
+                other_menu_items: [
+                    { key: 'prescriptions', label: 'Prescriptions', icon: 'FileText', url: '/hms/prescriptions' },
+                    { key: 'doctors', label: 'Medical Staff', icon: 'UserCheck', url: '/hms/doctors' },
+                ]
+            }
+        ]
+    });
 
-        // HMS Group
-        {
-            key: 'hms-group',
-            label: 'Hospital Ops',
-            icon: 'Activity',
-            url: '#',
-            other_menu_items: [
-                { key: 'hms-dashboard', label: 'HMS Dashboard', icon: 'LayoutDashboard', url: '/hms/dashboard' },
-                { key: 'patients', label: 'Patients', icon: 'Users', url: '/hms/patients' },
-                { key: 'appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
-                { key: 'prescriptions', label: 'Prescriptions', icon: 'FileText', url: '/hms/prescriptions' },
-                { key: 'billing', label: 'Billing', icon: 'Receipt', url: '/hms/billing' },
-            ]
-        }
-    ];
+    // 2. ACCOUNTING (Finance & Ledger)
+    items.push({
+        module: { name: 'Accounting & Finance', module_key: 'accounting' },
+        items: [
+            { key: 'acc-dashboard', label: 'Financial Overview', icon: 'LayoutDashboard', url: '/accounting/dashboard' },
+            {
+                key: 'acc-receivables',
+                label: 'Income & Sales',
+                icon: 'TrendingUp',
+                url: '#',
+                other_menu_items: [
+                    { key: 'hms-billing', label: 'Patient Invoices', icon: 'Receipt', url: '/hms/billing' },
+                    { key: 'acc-payments', label: 'Payments Received', icon: 'CreditCard', url: '/accounting/income/payments' },
+                ]
+            },
+            {
+                key: 'acc-payables',
+                label: 'Expenses & Buys',
+                icon: 'TrendingDown',
+                url: '#',
+                other_menu_items: [
+                    { key: 'acc-bills', label: 'Vendor Bills', icon: 'FileMinus', url: '/hms/purchasing/bills' }, // Linked to Purchasing
+                    { key: 'acc-expenses', label: 'Expenses', icon: 'Receipt', url: '/accounting/expenses' },
+                ]
+            },
+            {
+                key: 'acc-ledger',
+                label: 'General Ledger',
+                icon: 'Book',
+                url: '#',
+                other_menu_items: [
+                    { key: 'acc-coa', label: 'Chart of Accounts', icon: 'List', url: '/accounting/coa' },
+                    { key: 'acc-journals', label: 'Journal Entries', icon: 'BookOpen', url: '/accounting/journals' },
+                ]
+            }
+        ]
+    });
 
+    // 3. INVENTORY (Pharmacy & Assets)
+    items.push({
+        module: { name: 'Pharmacy & Inventory', module_key: 'inventory' },
+        items: [
+            { key: 'inv-products', label: 'Product Master', icon: 'Package', url: '/hms/inventory/products' },
+            {
+                key: 'inv-procurement',
+                label: 'Procurement',
+                icon: 'ShoppingCart',
+                url: '#',
+                other_menu_items: [
+                    { key: 'inv-suppliers', label: 'Suppliers', icon: 'Truck', url: '/hms/purchasing/suppliers' },
+                    { key: 'inv-po', label: 'Purchase Orders', icon: 'FileText', url: '/hms/purchasing/orders' },
+                    { key: 'inv-receipts', label: 'Goods Receipts', icon: 'ClipboardList', url: '/hms/purchasing/receipts' },
+                ]
+            }
+        ]
+    });
+
+    // 4. CRM (Optional)
+    items.push({
+        module: { name: 'CRM & Engagement', module_key: 'crm' },
+        items: [
+            { key: 'crm-leads', label: 'Leads Pipeline', icon: 'Users', url: '/crm/leads' },
+            { key: 'crm-dashboard', label: 'Performance', icon: 'BarChart', url: '/crm/dashboard' },
+        ]
+    });
+
+
+    // 5. CONFIG
     if (isAdmin) {
         items.push({
-            key: 'config-group',
-            label: 'Configuration',
-            icon: 'Settings',
-            url: '#',
-            other_menu_items: [
-                { key: 'users', label: 'Users', icon: 'Users', url: '/settings/users' },
-                { key: 'roles', label: 'Roles', icon: 'Shield', url: '/settings/roles' },
-                { key: 'permissions', label: 'Permissions', icon: 'Key', url: '/settings/permissions' },
-                { key: 'admin', label: 'Admin Panel', icon: 'Shield', url: '/admin' }
+            module: { name: 'System Configuration', module_key: 'configuration' },
+            items: [
+                { key: 'users', label: 'User Management', icon: 'Users', url: '/settings/users' },
+                { key: 'roles', label: 'RBAC & Security', icon: 'Shield', url: '/settings/roles' },
+                { key: 'settings', label: 'Global Settings', icon: 'Settings', url: '/settings/global' },
             ]
         });
     }
