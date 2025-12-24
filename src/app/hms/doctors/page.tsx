@@ -50,6 +50,7 @@ export default async function DoctorsPage({
     const [departments, roles, specializations] = await Promise.all([
         prisma.hms_departments.findMany({
             where: {
+                ...(tenantId ? { tenant_id: tenantId } : {}),
                 is_active: true
             },
             select: {
@@ -61,6 +62,7 @@ export default async function DoctorsPage({
         }),
         prisma.hms_roles.findMany({
             where: {
+                ...(tenantId ? { tenant_id: tenantId } : {}),
                 is_active: true,
                 is_clinical: true
             },
@@ -69,6 +71,7 @@ export default async function DoctorsPage({
         }),
         prisma.hms_specializations.findMany({
             where: {
+                ...(tenantId ? { tenant_id: tenantId } : {}),
                 is_active: true
             },
             select: { id: true, name: true },

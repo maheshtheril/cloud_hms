@@ -51,9 +51,12 @@ interface EditDoctorDialogProps {
 
 function renderDepartmentOptions(departments: Department[], parentId: string | null = null, depth = 0): any {
     return departments
-        .filter(dept => dept.parent_id === parentId)
+        .filter(dept => {
+            const normalizedParentId = dept.parent_id || null;
+            return normalizedParentId === parentId;
+        })
         .map(dept => {
-            const hasChildren = departments.some(d => d.parent_id === dept.id);
+            const hasChildren = departments.some(d => (d.parent_id || null) === dept.id);
             return (
                 <React.Fragment key={dept.id}>
                     <option
