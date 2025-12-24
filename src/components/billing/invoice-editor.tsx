@@ -47,9 +47,10 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
 
     const [globalDiscount, setGlobalDiscount] = useState(0)
 
-    // Auto-load medicines from URL
+    // Auto-load medicines/items from URL
     useEffect(() => {
-        const medicinesToLoad = initialMedicines || (urlMedicines ? JSON.parse(decodeURIComponent(urlMedicines)) : null)
+        const itemsParam = searchParams.get('items');
+        const medicinesToLoad = initialMedicines || (urlMedicines ? JSON.parse(decodeURIComponent(urlMedicines)) : null) || (itemsParam ? JSON.parse(decodeURIComponent(itemsParam)) : null);
 
         if (medicinesToLoad) {
             try {
