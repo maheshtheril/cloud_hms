@@ -176,8 +176,8 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                     setMessage(null);
                     try {
                         const res = await createPatient(initialData?.id || null, formData);
-                        if (res?.error) {
-                            setMessage({ type: 'error', text: res.error });
+                        if ((res as any)?.error) {
+                            setMessage({ type: 'error', text: (res as any).error });
                         } else if (onSuccess) {
                             // Check if billing is required (Client Side logic for now)
                             const shouldCharge = formData.get('charge_registration') === 'on';
