@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { updateDoctor } from '@/app/actions/doctor'
-import { seedStandardDepartments, quickAddDepartment } from '@/app/actions/hms-setup'
-import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { seedStandardDepartments, quickAddDepartment, WORLD_CLASS_DESIGNATIONS, WORLD_CLASS_QUALIFICATIONS } from '@/app/actions/hms-setup'
+import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle, Hash, CreditCard, UserCheck, UserCog } from 'lucide-react'
 
 interface Department {
     id: string
@@ -76,6 +76,7 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
     const [isSeeding, setIsSeeding] = useState(false)
     const [isAddingDept, setIsAddingDept] = useState(false)
     const [newDeptName, setNewDeptName] = useState('')
+    const [empId, setEmpId] = useState(doctor.employee_id || '')
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
     if (!isOpen) return null
@@ -109,403 +110,268 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden">
-                {/* Header */}
-                <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-slate-900/60 backdrop-blur-md">
+            <div className="relative w-full max-w-[95vw] lg:max-w-7xl bg-white rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.3)] max-h-[92vh] flex flex-col overflow-hidden border border-white/20">
+                {/* Header - Compact & Premium */}
+                <div className="relative bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 p-6 flex items-center justify-between border-b border-indigo-500/20">
+                    <div>
+                        <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+                            <div className="h-10 w-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                                <UserCog className="h-6 w-6 text-white" />
+                            </div>
+                            Update Profile: <span className="text-blue-400">{doctor.first_name} {doctor.last_name}</span>
+                        </h2>
+                        <p className="text-indigo-200/60 text-xs font-bold uppercase tracking-widest mt-1">Personnel Management & Compliance</p>
+                    </div>
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-xl transition-all"
+                        className="p-2 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/10 group active:scale-95"
                     >
-                        <X className="h-5 w-5 text-white" />
+                        <X className="h-5 w-5 text-white/70 group-hover:text-white" />
                     </button>
-                    <h2 className="text-3xl font-black text-white">Edit Staff Profile</h2>
-                    <p className="text-blue-100 mt-2">Update administrative and clinical details for Dr. {doctor.first_name}</p>
                 </div>
 
-                {/* Feedback Message */}
-                {message && (
-                    <div className={`mx-8 mt-4 p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
-                        }`}>
-                        {message.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
-                        <span className="font-bold text-sm">{message.text}</span>
-                        <button onClick={() => setMessage(null)} className="ml-auto text-current opacity-50 hover:opacity-100">
-                            <X className="h-4 w-4" />
-                        </button>
-                    </div>
-                )}
-
-                {/* Form */}
+                {/* Form - 3 Column Non-Scroll Layout */}
                 <form action={async (formData) => {
                     await updateDoctor(formData)
                     onClose()
-                }} className="p-8 overflow-y-auto max-h-[calc(90vh-140px)]">
+                }} className="flex-1 overflow-hidden flex flex-col bg-slate-50/30">
                     <input type="hidden" name="id" value={doctor.id} />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                        {/* Administrative & HR Section */}
-                        <div className="md:col-span-2">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
-                                <div className="h-8 w-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                                    <Shield className="h-4 w-4 text-amber-600" />
-                                </div>
-                                Administrative & HR
-                            </h3>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Employee ID
-                            </label>
-                            <input
-                                type="text"
-                                name="employee_id"
-                                defaultValue={doctor.employee_id || ''}
-                                className="w-full p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none font-medium text-gray-900"
-                                placeholder="EMP-123"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Job Designation <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="designation"
-                                required
-                                defaultValue={doctor.designation || ''}
-                                className="w-full p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none font-medium text-gray-900"
-                                placeholder="e.g. Senior Consultant"
-                            />
-                        </div>
-
-
-
-                        {/* Basic Information */}
-                        <div className="md:col-span-2 mt-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
-                                <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <GraduationCap className="h-4 w-4 text-blue-600" />
-                                </div>
-                                Basic Contact Details
-                            </h3>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                First Name <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="first_name"
-                                required
-                                defaultValue={doctor.first_name}
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-gray-900"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Last Name <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="last_name"
-                                required
-                                defaultValue={doctor.last_name || ''}
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-gray-900"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Mail className="h-4 w-4" />
-                                Email <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="email"
-                                name="email"
-                                required
-                                defaultValue={doctor.email || ''}
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-gray-900"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Phone className="h-4 w-4" />
-                                Phone
-                            </label>
-                            <input
-                                type="tel"
-                                name="phone"
-                                defaultValue={doctor.phone || ''}
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-gray-900"
-                            />
-                        </div>
-
-                        {/* Professional Credentials Section */}
-                        <div className="md:col-span-2 mt-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
-                                <div className="h-8 w-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                                    <Briefcase className="h-4 w-4 text-purple-600" />
-                                </div>
-                                Professional Credentials
-                            </h3>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Clinical Role <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                name="role_id"
-                                required
-                                defaultValue={doctor.role_id || ''}
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
-                            >
-                                <option value="">Select Role</option>
-                                {roles.map(role => (
-                                    <option key={role.id} value={role.id}>{role.name}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Specialization
-                            </label>
-                            <select
-                                name="specialization_id"
-                                defaultValue={doctor.specialization_id || ''}
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
-                            >
-                                <option value="">Select Specialization (Optional)</option>
-                                {specializations.map(spec => (
-                                    <option key={spec.id} value={spec.id}>{spec.name}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Shield className="h-4 w-4" />
-                                License / Registration No. <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="license_no"
-                                required
-                                defaultValue={doctor.license_no || ''}
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
-                            />
-                        </div>
-
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
-                                Years of Experience
-                            </label>
-                            <input
-                                type="number"
-                                name="experience_years"
-                                min="0"
-                                defaultValue={doctor.experience_years || ''}
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
-                            />
-                        </div>
-
-                        {/* Clinical Settings */}
-                        <div className="md:col-span-2 mt-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
-                                <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
-                                    <Clock className="h-4 w-4 text-green-600" />
-                                </div>
-                                Consulting Logic & Fee
-                            </h3>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Start Time <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="time"
-                                name="consultation_start_time"
-                                required
-                                defaultValue={doctor.consultation_start_time || "09:00"}
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-medium text-gray-900"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                End Time <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="time"
-                                name="consultation_end_time"
-                                required
-                                defaultValue={doctor.consultation_end_time || "17:00"}
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-medium text-gray-900"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                Slot Duration (Minutes)
-                            </label>
-                            <input
-                                type="number"
-                                name="consultation_slot_duration"
-                                required
-                                defaultValue={doctor.consultation_slot_duration || "30"}
-                                step="5"
-                                min="5"
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-medium text-gray-900"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Consultation Fee (₹) <span className="text-red-500">*</span>
-                            </label>
-                            <div className="relative">
-                                <div className="absolute left-4 top-3.5 text-gray-400 font-bold">₹</div>
-                                <input
-                                    type="number"
-                                    name="consultation_fee"
-                                    required
-                                    defaultValue={doctor.consultation_fee || "500"}
-                                    min="0"
-                                    className="w-full pl-8 p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-bold text-gray-900"
-                                />
+                    <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                        {message && (
+                            <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-4 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                }`}>
+                                {message.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+                                <span className="font-bold text-sm tracking-tight">{message.text}</span>
+                                <button onClick={() => setMessage(null)} className="ml-auto p-1 hover:bg-black/5 rounded-lg transition-colors">
+                                    <X className="h-4 w-4" />
+                                </button>
                             </div>
-                        </div>
+                        )}
 
-                        {/* Final Assignment Section */}
-                        <div className="md:col-span-2 mt-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
-                                <div className="h-8 w-8 bg-slate-100 rounded-lg flex items-center justify-center">
-                                    <Building2 className="h-4 w-4 text-slate-600" />
-                                </div>
-                                Organizational Placement (Final Node)
-                            </h3>
-                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                        {departments.length === 0 ? (
-                            <div className="md:col-span-2 p-8 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl text-center">
-                                <div className="h-16 w-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100">
-                                    <Building2 className="h-8 w-8 text-slate-300" />
-                                </div>
-                                <h4 className="text-lg font-bold text-slate-900 mb-2">No Departments Configured</h4>
-                                <p className="text-sm text-slate-500 mb-6 max-w-md mx-auto">
-                                    A world-class hospital needs a structured hierarchy. You can either seed international standard departments or add one quickly below.
-                                </p>
-                                <div className="flex flex-wrap justify-center gap-4">
-                                    <button
-                                        type="button"
-                                        onClick={handleSeed}
-                                        disabled={isSeeding}
-                                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-indigo-600 border-2 border-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-all shadow-sm active:scale-95 disabled:opacity-50"
-                                    >
-                                        {isSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-amber-500" />}
-                                        Seed Standard Departments
-                                    </button>
-                                    <div className="flex items-center gap-2">
+                            {/* Column 1: Administrative */}
+                            <div className="space-y-4 bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
+                                    <Shield className="h-4 w-4" />
+                                    Accountability
+                                </h3>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider flex items-center gap-2">
+                                            <Hash className="h-3 w-3" /> Employee ID
+                                        </label>
                                         <input
                                             type="text"
-                                            value={newDeptName}
-                                            onChange={(e) => setNewDeptName(e.target.value)}
-                                            placeholder="Enter Department Name"
-                                            className="p-3 bg-white border-2 border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-slate-500 font-medium text-sm w-48"
+                                            name="employee_id"
+                                            value={empId}
+                                            onChange={(e) => setEmpId(e.target.value)}
+                                            className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none font-bold text-sm"
                                         />
-                                        <button
-                                            type="button"
-                                            onClick={handleQuickAdd}
-                                            disabled={isAddingDept || !newDeptName}
-                                            className="p-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50"
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Job Designation</label>
+                                        <select
+                                            name="designation"
+                                            defaultValue={doctor.designation || ''}
+                                            className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-bold text-sm appearance-none"
                                         >
-                                            <Plus className="h-5 w-5" />
-                                        </button>
+                                            <option value="">Select Designation</option>
+                                            {WORLD_CLASS_DESIGNATIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Clinical Role</label>
+                                        <select
+                                            name="role_id"
+                                            defaultValue={doctor.role_id || ''}
+                                            required
+                                            className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-bold text-sm"
+                                        >
+                                            <option value="">Select Clinical Type</option>
+                                            {roles.map((role: Role) => (
+                                                <option key={role.id} value={role.id}>{role.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Specialization</label>
+                                        <select
+                                            name="specialization_id"
+                                            defaultValue={doctor.specialization_id || ''}
+                                            className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-bold text-sm"
+                                        >
+                                            <option value="">None / General</option>
+                                            {specializations.map((spec: Specialization) => (
+                                                <option key={spec.id} value={spec.id}>{spec.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider flex items-center justify-between">
+                                            <span>Department</span>
+                                            <button type="button" onClick={() => setIsAddingDept(!isAddingDept)} className="text-indigo-600 hover:text-indigo-800 text-[9px] font-black">
+                                                <Plus className="h-2 w-2" /> NEW
+                                            </button>
+                                        </label>
+                                        {isAddingDept && (
+                                            <div className="flex items-center gap-2 mb-4 animate-in fade-in slide-in-from-top-2">
+                                                <input
+                                                    type="text"
+                                                    value={newDeptName}
+                                                    onChange={(e) => setNewDeptName(e.target.value)}
+                                                    placeholder="Department Name"
+                                                    className="flex-1 p-3 bg-blue-50/50 border-2 border-blue-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-medium text-sm"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={handleQuickAdd}
+                                                    className="px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-md active:scale-95"
+                                                >
+                                                    Add
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setIsAddingDept(false); setNewDeptName('') }}
+                                                    className="p-3 bg-gray-100 text-gray-500 rounded-xl hover:bg-gray-200 transition-all"
+                                                >
+                                                    <X className="h-5 w-5" />
+                                                </button>
+                                            </div>
+                                        )}
+                                        <select
+                                            name="department_id"
+                                            defaultValue={doctor.department_id || ''}
+                                            required
+                                            className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-bold text-sm"
+                                        >
+                                            <option value="">Select Department</option>
+                                            {renderDepartmentOptions(departments)}
+                                        </select>
                                     </div>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="md:col-span-2 space-y-4">
+
+                            {/* Column 2: Credentials */}
+                            <div className="space-y-4 bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
+                                    <GraduationCap className="h-4 w-4" />
+                                    Identity Profile
+                                </h3>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">First Name</label>
+                                        <input type="text" name="first_name" defaultValue={doctor.first_name} required className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Last Name</label>
+                                        <input type="text" name="last_name" defaultValue={doctor.last_name} required className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
+                                    </div>
+                                </div>
+
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <Building2 className="h-4 w-4" />
-                                            Assigned Clinical Department {departments.length > 0 && <span className="text-red-500">*</span>}
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsAddingDept(!isAddingDept)}
-                                            className="text-[10px] text-blue-600 hover:text-blue-800 font-bold uppercase tracking-wider"
-                                        >
-                                            + Quick Add
-                                        </button>
-                                    </label>
-
-                                    {isAddingDept && (
-                                        <div className="flex items-center gap-2 mb-4 animate-in fade-in slide-in-from-top-2">
-                                            <input
-                                                type="text"
-                                                value={newDeptName}
-                                                onChange={(e) => setNewDeptName(e.target.value)}
-                                                placeholder="Department Name (e.g. Oncology)"
-                                                className="flex-1 p-3 bg-blue-50/50 border-2 border-blue-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-medium text-sm"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={handleQuickAdd}
-                                                className="px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-md active:scale-95"
-                                            >
-                                                Add
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => { setIsAddingDept(false); setNewDeptName('') }}
-                                                className="p-3 bg-gray-100 text-gray-500 rounded-xl hover:bg-gray-200 transition-all"
-                                            >
-                                                <X className="h-5 w-5" />
-                                            </button>
-                                        </div>
-                                    )}
-
+                                    <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Qualification</label>
                                     <select
-                                        name="department_id"
-                                        defaultValue={doctor.department_id || ''}
-                                        className="w-full p-3.5 bg-slate-100/50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none font-black text-gray-900"
+                                        name="qualification"
+                                        defaultValue={doctor.qualification || ''}
+                                        className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm"
                                     >
-                                        <option value="">Select Terminal Node</option>
-                                        {renderDepartmentOptions(departments)}
+                                        <option value="">Select Qualification</option>
+                                        {WORLD_CLASS_QUALIFICATIONS.map(q => <option key={q} value={q}>{q}</option>)}
                                     </select>
-                                    <p className="mt-2 text-[10px] text-gray-500 italic">Modify the clinician's placement within the organizational tree (Terminal Node).</p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">License Number</label>
+                                    <input type="text" name="license_no" defaultValue={doctor.license_no || ''} required className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Professional Email</label>
+                                    <input type="email" name="email" defaultValue={doctor.email || ''} required className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Direct Phone</label>
+                                    <input type="tel" name="phone" defaultValue={doctor.phone || ''} className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
                                 </div>
                             </div>
-                        )}
+
+                            {/* Column 3: Clinical & Finance */}
+                            <div className="space-y-4 bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
+                                    <Clock className="h-4 w-4" />
+                                    Operations
+                                </h3>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Start Time</label>
+                                        <input type="time" name="consultation_start_time" defaultValue={doctor.consultation_start_time || '09:00'} className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">End Time</label>
+                                        <input type="time" name="consultation_end_time" defaultValue={doctor.consultation_end_time || '17:00'} className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Slot (Min)</label>
+                                        <input type="number" name="consultation_slot_duration" defaultValue={doctor.consultation_slot_duration || 30} className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Fee (₹)</label>
+                                        <input type="number" name="consultation_fee" defaultValue={Number(doctor.consultation_fee) || 0} className="w-full p-3 bg-slate-50 border-2 border-emerald-100 outline-none font-bold text-sm text-emerald-700" />
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 border-t border-slate-100">
+                                    <label className="block text-[11px] font-black text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-2">
+                                        <CreditCard className="h-3.5 w-3.5 text-blue-500" />
+                                        Fiscal Mapping
+                                    </label>
+                                    <div className="bg-slate-900 rounded-2xl p-4 text-white shadow-xl border border-indigo-500/30">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[10px] font-black uppercase text-blue-300 tracking-tighter">Current Head</span>
+                                            <div className="px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded text-[8px] font-bold uppercase">Locked</div>
+                                        </div>
+                                        <div className="text-lg font-black tracking-tight mb-1 uppercase">Sundry Debtors</div>
+                                        <p className="text-[10px] text-slate-400 font-medium">Mapped for enterprise financial reconciliation.</p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Experience (Years)</label>
+                                    <input type="number" name="experience_years" defaultValue={doctor.experience_years || 0} className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-
-                    {/* Actions */}
-                    <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+                    {/* Footer - Sticky */}
+                    <div className="p-6 bg-white border-t border-slate-100 flex items-center justify-end gap-3 rounded-b-[2.5rem]">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all"
+                            className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-sm transition-all active:scale-95 uppercase tracking-widest"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all"
+                            className="px-8 py-3 bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-700 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-200 flex items-center gap-2 hover:shadow-2xl hover:-translate-y-0.5 transition-all active:scale-95 uppercase tracking-widest"
                         >
-                            Save Changes
+                            <Sparkles className="h-4 w-4" />
+                            Update Credentials
                         </button>
                     </div>
                 </form>

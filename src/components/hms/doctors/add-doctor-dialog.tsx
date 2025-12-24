@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { createDoctor } from '@/app/actions/doctor'
-import { seedStandardDepartments, quickAddDepartment } from '@/app/actions/hms-setup'
-import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { seedStandardDepartments, quickAddDepartment, WORLD_CLASS_DESIGNATIONS, WORLD_CLASS_QUALIFICATIONS } from '@/app/actions/hms-setup'
+import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle, UserCheck, CreditCard, Hash } from 'lucide-react'
 
 interface Department {
     id: string
@@ -55,7 +55,17 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
     const [isSeeding, setIsSeeding] = useState(false)
     const [isAddingDept, setIsAddingDept] = useState(false)
     const [newDeptName, setNewDeptName] = useState('')
+    const [empId, setEmpId] = useState('')
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
+    // Auto-generate world-class Employee ID
+    useEffect(() => {
+        if (isOpen && !empId) {
+            const date = new Date().toISOString().slice(2, 10).replace(/-/g, '')
+            const random = Math.floor(1000 + Math.random() * 9000)
+            setEmpId(`EMP-${date}-${random}`)
+        }
+    }, [isOpen])
 
     if (!isOpen) return null
 
@@ -65,14 +75,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
         const result = await seedStandardDepartments()
         if (result.success) {
             setMessage({ type: 'success', text: result.message! })
-            // We should ideally re-fetch departments here or update state
-            // For now, since it's a server action with revalidatePath, 
-            // the parent component might need to re-fetch. 
-            // But lets provide a world class optimistic update if we can, 
-            // or just tell them to refresh if it's not automatic.
-            // Actually, better to just let the parent handle it if it's passed as props.
-            // But wait, this is a client component, props won't update unless the parent re-renders.
-            window.location.reload() // Fastest way to sync for now since we revalidated
+            window.location.reload()
         } else {
             setMessage({ type: 'error', text: result.error! })
         }
@@ -95,408 +98,267 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
     }
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-            <div className="relative w-full max-w-4xl bg-white rounded-3xl shadow-2xl max-h-[90vh] overflow-hidden">
-                {/* Header */}
-                <div className="relative bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-slate-900/60 backdrop-blur-md">
+            <div className="relative w-full max-w-[95vw] lg:max-w-7xl bg-white rounded-[2.5rem] shadow-[0_0_50px_rgba(0,0,0,0.3)] max-h-[92vh] flex flex-col overflow-hidden border border-white/20">
+                {/* Header - More Compact */}
+                <div className="relative bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-6 flex items-center justify-between border-b border-indigo-500/20">
+                    <div>
+                        <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
+                            <div className="h-10 w-10 bg-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                                <UserCheck className="h-6 w-6 text-white" />
+                            </div>
+                            Staff Registration <span className="text-indigo-400">Portal</span>
+                        </h2>
+                        <p className="text-indigo-200/60 text-xs font-bold uppercase tracking-widest mt-1">Enterprise Clinician Management</p>
+                    </div>
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-xl transition-all"
+                        className="p-2 bg-white/5 hover:bg-white/10 rounded-2xl transition-all border border-white/10 group active:scale-95"
                     >
-                        <X className="h-5 w-5 text-white" />
+                        <X className="h-5 w-5 text-white/70 group-hover:text-white" />
                     </button>
-                    <h2 className="text-3xl font-black text-white">Add Clinical Staff</h2>
-                    <p className="text-blue-100 mt-2">Register a new healthcare professional (Doctor, Nurse, Therapist, etc.)</p>
                 </div>
 
-                {/* Feedback Message */}
-                {message && (
-                    <div className={`mx-8 mt-4 p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
-                        }`}>
-                        {message.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
-                        <span className="font-bold text-sm">{message.text}</span>
-                        <button onClick={() => setMessage(null)} className="ml-auto text-current opacity-50 hover:opacity-100">
-                            <X className="h-4 w-4" />
-                        </button>
-                    </div>
-                )}
-
-                {/* Form */}
+                {/* Form - 3 Column Layout to Avoid Scrolling */}
                 <form action={async (formData) => {
                     await createDoctor(formData)
                     onClose()
-                }} className="p-8 overflow-y-auto max-h-[calc(90vh-140px)]">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                }} className="flex-1 overflow-hidden flex flex-col bg-slate-50/30">
 
-                        {/* Administrative & HR Section */}
-                        <div className="md:col-span-2">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
-                                <div className="h-8 w-8 bg-amber-100 rounded-lg flex items-center justify-center">
-                                    <Shield className="h-4 w-4 text-amber-600" />
-                                </div>
-                                Administrative & HR
-                            </h3>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Employee ID <span className="text-gray-400 text-[10px] font-normal">(Optional)</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="employee_id"
-                                className="w-full p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none font-medium text-gray-900"
-                                placeholder="EMP-123"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Job Designation <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="designation"
-                                required
-                                className="w-full p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none font-medium text-gray-900"
-                                placeholder="e.g. Senior Consultant, Clinical Lead"
-                            />
-                        </div>
-
-                        {/* Personal Information */}
-                        <div className="md:col-span-2 mt-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
-                                <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <GraduationCap className="h-4 w-4 text-blue-600" />
-                                </div>
-                                Basic Contact Details
-                            </h3>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                First Name <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="first_name"
-                                required
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-gray-900"
-                                placeholder="John"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Last Name <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="last_name"
-                                required
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-gray-900"
-                                placeholder="Doe"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Mail className="h-4 w-4" />
-                                Email <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="email"
-                                name="email"
-                                required
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-gray-900"
-                                placeholder="doctor@hospital.com"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Phone className="h-4 w-4" />
-                                Phone
-                            </label>
-                            <input
-                                type="tel"
-                                name="phone"
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-gray-900"
-                                placeholder="+1 (555) 123-4567"
-                            />
-                        </div>
-
-                        {/* Professional Credentials Section */}
-                        <div className="md:col-span-2 mt-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
-                                <div className="h-8 w-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                                    <Briefcase className="h-4 w-4 text-purple-600" />
-                                </div>
-                                Professional Credentials
-                            </h3>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Clinical Role <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                name="role_id"
-                                required
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
-                            >
-                                <option value="">Select Clinical Type</option>
-                                {roles.map(role => (
-                                    <option key={role.id} value={role.id}>{role.name}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Specialization
-                            </label>
-                            <select
-                                name="specialization_id"
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
-                            >
-                                <option value="">Select Specialization (Optional)</option>
-                                {specializations.map(spec => (
-                                    <option key={spec.id} value={spec.id}>{spec.name}</option>
-                                ))}
-                            </select>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Shield className="h-4 w-4" />
-                                License / Registration No. <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                name="license_no"
-                                required
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
-                                placeholder="MED123456"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Award className="h-4 w-4" />
-                                Educational Qualification
-                            </label>
-                            <input
-                                type="text"
-                                name="qualification"
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
-                                placeholder="e.g. MBBS, MD, FRCS"
-                            />
-                        </div>
-
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
-                                Years of Experience
-                            </label>
-                            <input
-                                type="number"
-                                name="experience_years"
-                                min="0"
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none font-medium text-gray-900"
-                                placeholder="10"
-                            />
-                        </div>
-
-                        {/* Clinical Settings */}
-                        <div className="md:col-span-2 mt-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
-                                <div className="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
-                                    <Clock className="h-4 w-4 text-green-600" />
-                                </div>
-                                Consulting Logic & Fee
-                            </h3>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Start Time <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="time"
-                                name="consultation_start_time"
-                                required
-                                defaultValue="09:00"
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-medium text-gray-900"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                End Time <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="time"
-                                name="consultation_end_time"
-                                required
-                                defaultValue="17:00"
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-medium text-gray-900"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Clock className="h-4 w-4" />
-                                Slot Duration (Minutes)
-                            </label>
-                            <input
-                                type="number"
-                                name="consultation_slot_duration"
-                                required
-                                defaultValue="30"
-                                step="5"
-                                min="5"
-                                className="w-full p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-medium text-gray-900"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-bold text-gray-900 mb-2">
-                                Consultation Fee (₹) <span className="text-red-500">*</span>
-                            </label>
-                            <div className="relative">
-                                <div className="absolute left-4 top-3.5 text-gray-400 font-bold">₹</div>
-                                <input
-                                    type="number"
-                                    name="consultation_fee"
-                                    required
-                                    defaultValue="500"
-                                    min="0"
-                                    className="w-full pl-8 p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-bold text-gray-900"
-                                />
+                    <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
+                        {message && (
+                            <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-4 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm shadow-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-200'
+                                }`}>
+                                {message.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+                                <span className="font-bold text-sm tracking-tight">{message.text}</span>
+                                <button onClick={() => setMessage(null)} className="ml-auto p-1 hover:bg-black/5 rounded-lg transition-colors">
+                                    <X className="h-4 w-4" />
+                                </button>
                             </div>
-                        </div>
+                        )}
 
-                        {/* Final Assignment Section */}
-                        <div className="md:col-span-2 mt-6">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
-                                <div className="h-8 w-8 bg-slate-100 rounded-lg flex items-center justify-center">
-                                    <Building2 className="h-4 w-4 text-slate-600" />
-                                </div>
-                                Organizational Placement (Final Node)
-                            </h3>
-                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-                        {departments.length === 0 ? (
-                            <div className="md:col-span-2 p-8 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl text-center">
-                                <div className="h-16 w-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100">
-                                    <Building2 className="h-8 w-8 text-slate-300" />
-                                </div>
-                                <h4 className="text-lg font-bold text-slate-900 mb-2">No Departments Configured</h4>
-                                <p className="text-sm text-slate-500 mb-6 max-w-md mx-auto">
-                                    A world-class hospital needs a structured hierarchy. You can either seed international standard departments or add one quickly below.
-                                </p>
-                                <div className="flex flex-wrap justify-center gap-4">
-                                    <button
-                                        type="button"
-                                        onClick={handleSeed}
-                                        disabled={isSeeding}
-                                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-indigo-600 border-2 border-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-all shadow-sm active:scale-95 disabled:opacity-50"
-                                    >
-                                        {isSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-amber-500" />}
-                                        Seed Standard Departments
-                                    </button>
-                                    <div className="flex items-center gap-2">
+                            {/* Column 1: Administrative & HR */}
+                            <div className="space-y-4 bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
+                                    <Shield className="h-4 w-4" />
+                                    Corporate Info
+                                </h3>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider flex items-center gap-2">
+                                            <Hash className="h-3 w-3" /> Employee ID
+                                        </label>
                                         <input
                                             type="text"
-                                            value={newDeptName}
-                                            onChange={(e) => setNewDeptName(e.target.value)}
-                                            placeholder="Enter Department Name"
-                                            className="p-3 bg-white border-2 border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-slate-500 font-medium text-sm w-48"
+                                            name="employee_id"
+                                            value={empId}
+                                            onChange={(e) => setEmpId(e.target.value)}
+                                            className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 outline-none font-bold text-sm transition-all"
+                                            placeholder="Auto-generated"
                                         />
-                                        <button
-                                            type="button"
-                                            onClick={handleQuickAdd}
-                                            disabled={isAddingDept || !newDeptName}
-                                            className="p-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50"
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider flex items-center gap-2">
+                                            <Briefcase className="h-3 w-3" /> Job Designation
+                                        </label>
+                                        <select
+                                            name="designation"
+                                            required
+                                            className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 outline-none font-bold text-sm transition-all appearance-none"
                                         >
-                                            <Plus className="h-5 w-5" />
-                                        </button>
+                                            <option value="">Select Designation</option>
+                                            {WORLD_CLASS_DESIGNATIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Clinical Role</label>
+                                        <select
+                                            name="role_id"
+                                            required
+                                            className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 outline-none font-bold text-sm transition-all"
+                                        >
+                                            <option value="">Select Role</option>
+                                            {roles.map(role => (
+                                                <option key={role.id} value={role.id}>{role.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Specialization</label>
+                                        <select
+                                            name="specialization_id"
+                                            className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 outline-none font-bold text-sm transition-all"
+                                        >
+                                            <option value="">None / General</option>
+                                            {specializations.map(spec => (
+                                                <option key={spec.id} value={spec.id}>{spec.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider flex items-center justify-between">
+                                            <span>Department</span>
+                                            <button type="button" onClick={() => setIsAddingDept(!isAddingDept)} className="text-indigo-600 hover:text-indigo-800 text-[9px] font-black flex items-center gap-1">
+                                                <Plus className="h-2 w-2" /> NEW
+                                            </button>
+                                        </label>
+                                        {isAddingDept && (
+                                            <div className="flex gap-2 mb-3 bg-indigo-50/50 p-2 rounded-xl animate-in fade-in slide-in-from-top-1">
+                                                <input
+                                                    type="text"
+                                                    value={newDeptName}
+                                                    onChange={(e) => setNewDeptName(e.target.value)}
+                                                    placeholder="Dept Name"
+                                                    className="flex-1 p-2 bg-white border border-indigo-100 rounded-lg text-xs font-bold outline-none"
+                                                />
+                                                <button type="button" onClick={handleQuickAdd} className="bg-indigo-600 text-white p-2 rounded-lg hover:bg-indigo-700 transition-all shadow-md active:scale-95">
+                                                    <Plus className="h-4 w-4" />
+                                                </button>
+                                            </div>
+                                        )}
+                                        <select
+                                            name="department_id"
+                                            required
+                                            className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 outline-none font-bold text-sm transition-all"
+                                        >
+                                            <option value="">Select Department</option>
+                                            {renderDepartmentOptions(departments)}
+                                        </select>
                                     </div>
                                 </div>
                             </div>
-                        ) : (
-                            <div className="md:col-span-2 space-y-4">
+
+                            {/* Column 2: Personal & Contact */}
+                            <div className="space-y-4 bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
+                                    <GraduationCap className="h-4 w-4" />
+                                    Identity & Credentials
+                                </h3>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">First Name</label>
+                                        <input type="text" name="first_name" required className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" placeholder="e.g. Liam" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Last Name</label>
+                                        <input type="text" name="last_name" required className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" placeholder="e.g. Smith" />
+                                    </div>
+                                </div>
+
                                 <div>
-                                    <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <Building2 className="h-4 w-4" />
-                                            Assigned Clinical Department <span className="text-red-500">*</span>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsAddingDept(!isAddingDept)}
-                                            className="text-[10px] text-blue-600 hover:text-blue-800 font-bold uppercase tracking-wider"
-                                        >
-                                            + Quick Add
-                                        </button>
-                                    </label>
-
-                                    {isAddingDept && (
-                                        <div className="flex items-center gap-2 mb-4 animate-in fade-in slide-in-from-top-2">
-                                            <input
-                                                type="text"
-                                                value={newDeptName}
-                                                onChange={(e) => setNewDeptName(e.target.value)}
-                                                placeholder="Department Name (e.g. Oncology)"
-                                                className="flex-1 p-3 bg-blue-50/50 border-2 border-blue-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-medium text-sm"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={handleQuickAdd}
-                                                className="px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-md active:scale-95"
-                                            >
-                                                Add
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => { setIsAddingDept(false); setNewDeptName('') }}
-                                                className="p-3 bg-gray-100 text-gray-500 rounded-xl hover:bg-gray-200 transition-all"
-                                            >
-                                                <X className="h-5 w-5" />
-                                            </button>
-                                        </div>
-                                    )}
-
+                                    <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Professional Qualification</label>
                                     <select
-                                        name="department_id"
-                                        required
-                                        className="w-full p-3.5 bg-slate-100/50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none font-black text-gray-900"
+                                        name="qualification"
+                                        className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm"
                                     >
-                                        <option value="">Select Terminal Node</option>
-                                        {renderDepartmentOptions(departments)}
+                                        <option value="">Select Qualification</option>
+                                        {WORLD_CLASS_QUALIFICATIONS.map(q => <option key={q} value={q}>{q}</option>)}
                                     </select>
-                                    <p className="mt-2 text-[10px] text-gray-500 italic">Assign the clinician to their final organizational unit (Terminal Node).</p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">License Number</label>
+                                    <input type="text" name="license_no" required className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" placeholder="MED-998877" />
+                                </div>
+
+                                <div>
+                                    <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Professional Email</label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                        <input type="email" name="email" required className="w-full pl-10 p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" placeholder="clinician@hospital.com" />
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Direct Phone</label>
+                                    <div className="relative">
+                                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                        <input type="tel" name="phone" className="w-full pl-10 p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" placeholder="+1 (234) 567-890" />
+                                    </div>
                                 </div>
                             </div>
-                        )}
+
+                            {/* Column 3: Clinical Logic & Finance */}
+                            <div className="space-y-4 bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
+                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
+                                    <Clock className="h-4 w-4" />
+                                    Schedule & Ledger
+                                </h3>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Shift Start</label>
+                                        <input type="time" name="consultation_start_time" defaultValue="09:00" className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Shift End</label>
+                                        <input type="time" name="consultation_end_time" defaultValue="17:00" className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Slot (Min)</label>
+                                        <input type="number" name="consultation_slot_duration" defaultValue="30" className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Fee (₹)</label>
+                                        <input type="number" name="consultation_fee" defaultValue="500" className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-emerald-100 border-emerald-100 focus:border-emerald-500 outline-none font-bold text-sm" />
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 border-t border-slate-100">
+                                    <label className="block text-[11px] font-black text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-2">
+                                        <CreditCard className="h-3.5 w-3.5 text-indigo-500" />
+                                        Accounting Integration
+                                    </label>
+                                    <div className="bg-slate-900 rounded-2xl p-4 text-white shadow-xl">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="text-[10px] font-black uppercase text-indigo-300">Fiscal Head</span>
+                                            <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                                        </div>
+                                        <div className="text-lg font-black tracking-tight mb-1">Sundry Debtors</div>
+                                        <div className="text-[10px] text-indigo-200/50 font-bold leading-relaxed">
+                                            Automatically mapped to <span className="text-indigo-300 underline font-black">Staff Ledger</span> Group for seamless payroll and settlement.
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Years of Experience</label>
+                                    <div className="relative">
+                                        <Award className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-amber-500" />
+                                        <input type="number" name="experience_years" min="0" defaultValue="0" className="w-full pl-10 p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
 
-
-                    {/* Actions */}
-                    <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
+                    {/* Footer - Sticky */}
+                    <div className="p-6 bg-white border-t border-slate-100 flex items-center justify-end gap-3 rounded-b-[2.5rem]">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all"
+                            className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-2xl font-black text-sm transition-all active:scale-95 uppercase tracking-widest"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
-                            className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all"
+                            className="px-8 py-3 bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700 text-white rounded-2xl font-black text-sm shadow-xl shadow-indigo-200 flex items-center gap-2 hover:shadow-2xl hover:-translate-y-0.5 transition-all active:scale-95 uppercase tracking-widest"
                         >
-                            Add Staff Member
+                            <Sparkles className="h-4 w-4" />
+                            Finalize Registration
                         </button>
                     </div>
                 </form>
