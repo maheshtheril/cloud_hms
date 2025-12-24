@@ -108,7 +108,7 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                 </div>
 
                 {/* Compressed Form Content */}
-                <form onSubmit={async (e) => {
+                <form noValidate onSubmit={async (e) => {
                     e.preventDefault();
 
                     // Smart Tab Validation Interceptor
@@ -362,7 +362,7 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                         <div className="flex items-center gap-3">
                             <button
                                 type="button"
-                                onClick={onClose}
+                                onClick={() => onClose ? onClose() : router.back()}
                                 className="px-5 py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
                             >
                                 Cancel
