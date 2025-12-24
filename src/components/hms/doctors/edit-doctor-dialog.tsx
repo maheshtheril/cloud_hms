@@ -38,6 +38,7 @@ interface Doctor {
     consultation_end_time: string | null
     consultation_slot_duration: number | null
     consultation_fee: number | null
+    working_days?: string[] | null
 }
 
 interface EditDoctorDialogProps {
@@ -79,6 +80,15 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
     const [newDeptName, setNewDeptName] = useState('')
     const [empId, setEmpId] = useState(doctor.employee_id || '')
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+    const [selectedDays, setSelectedDays] = useState<string[]>(doctor.working_days || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
+
+    const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+
+    const toggleDay = (day: string) => {
+        setSelectedDays(prev =>
+            prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+        )
+    }
 
     if (!isOpen) return null
 
@@ -334,6 +344,34 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
                                         <input type="number" name="consultation_fee" defaultValue={Number(doctor.consultation_fee) || 0} className="w-full p-3 bg-slate-50 border-2 border-emerald-100 outline-none font-bold text-sm text-emerald-700" />
                                     </div>
                                 </div>
+
+                                <div>
+                                    <label className="block text-[11px] font-black text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-2">
+                                        <Calendar className="h-3.5 w-3.5 text-blue-500" />
+                                        Weekly Availability
+                                    </label>
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {daysOfWeek.map(day => (
+                                            <button
+                                                key={day}
+                                                type="button"
+                                                onClick={() => toggleDay(day)}
+                                                className={`h-9 w-9 rounded-xl text-[10px] font-black transition-all border-2 flex items-center justify-center active:scale-90 ${selectedDays.includes(day)
+                                                        ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200"
+                                                        : "bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-300"
+                                                    }`}
+                                            >
+                                                {day.substring(0, 3).toUpperCase()}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {/* Hidden inputs for form submission */}
+                                    {selectedDays.map(day => (
+                                        <input key={day} type="hidden" name="working_days" value={day} />
+                                    ))}
+                                    {selectedDays.length === 0 && <p className="text-[10px] text-rose-500 mt-2 font-bold animate-pulse">Select at least one day.</p>}
+                                </div>
+
 
                                 <div className="pt-4 border-t border-slate-100">
                                     <label className="block text-[11px] font-black text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-2">

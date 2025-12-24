@@ -31,6 +31,7 @@ export async function createDoctor(formData: FormData) {
     const consultationEndTime = formData.get("consultation_end_time") as string || "17:00"
     const consultationSlotDuration = parseInt(formData.get("consultation_slot_duration") as string) || 30
     const consultationFee = parseFloat(formData.get("consultation_fee") as string) || 0
+    const workingDays = formData.getAll("working_days") as string[]
 
     if (!firstName || !lastName || !email || !roleId) {
         return { error: "Missing required identity fields" }
@@ -67,6 +68,7 @@ export async function createDoctor(formData: FormData) {
                 consultation_end_time: consultationEndTime,
                 consultation_slot_duration: consultationSlotDuration,
                 consultation_fee: consultationFee,
+                working_days: workingDays.length > 0 ? workingDays : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
                 is_active: true,
                 // We logicially "use" the accounts head, if we had an account_id field we would save it.
                 // For now, we ensure the creation is successful.
@@ -104,6 +106,7 @@ export async function updateDoctor(formData: FormData) {
     const consultationEndTime = formData.get("consultation_end_time") as string
     const consultationSlotDuration = parseInt(formData.get("consultation_slot_duration") as string)
     const consultationFee = parseFloat(formData.get("consultation_fee") as string) || 0
+    const workingDays = formData.getAll("working_days") as string[]
 
     try {
         await prisma.hms_clinicians.update({
@@ -125,6 +128,7 @@ export async function updateDoctor(formData: FormData) {
                 consultation_end_time: consultationEndTime,
                 consultation_slot_duration: consultationSlotDuration,
                 consultation_fee: consultationFee,
+                working_days: workingDays,
                 updated_at: new Date()
             } as any
         })

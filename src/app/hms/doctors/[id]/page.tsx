@@ -132,6 +132,54 @@ export default async function DoctorDetailPage({ params }: { params: Promise<{ i
                         <p className="text-blue-700 text-sm mb-4">Total appointments assigned</p>
                         <p className="text-4xl font-bold text-blue-600">{totalAppointments}</p>
                     </div>
+
+                    {/* Schedule Card - WORLD CLASS */}
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <div className="flex items-center gap-2 mb-4">
+                            <Clock className="h-5 w-5 text-indigo-500" />
+                            <h3 className="font-bold text-gray-900">Schedule & Availability</h3>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2">Weekly Cadence</p>
+                                <div className="flex gap-1.5">
+                                    {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => {
+                                        const isActive = doctor.working_days?.includes(day);
+                                        return (
+                                            <div
+                                                key={day}
+                                                className={`h-9 w-9 rounded-lg flex items-center justify-center text-[10px] font-black border transition-all ${isActive
+                                                        ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100"
+                                                        : "bg-slate-50 border-slate-100 text-slate-300"
+                                                    }`}
+                                                title={day}
+                                            >
+                                                {day.substring(0, 1)}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 pt-2">
+                                <div>
+                                    <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Consultation Hours</p>
+                                    <p className="text-sm font-bold text-gray-700">{doctor.consultation_start_time} - {doctor.consultation_end_time}</p>
+                                </div>
+                                <div>
+                                    <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Session Slot</p>
+                                    <p className="text-sm font-bold text-gray-700">{doctor.consultation_slot_duration} Minutes</p>
+                                </div>
+                            </div>
+
+                            <div className="pt-2 border-t border-gray-50 flex items-center justify-between">
+                                <span className="text-[10px] uppercase font-black text-gray-400 tracking-wider">Fee Per Session</span>
+                                <span className="text-lg font-black text-emerald-600">₹{Number(doctor.consultation_fee)}</span>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 {/* Schedule / Appointments */}

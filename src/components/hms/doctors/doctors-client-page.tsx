@@ -17,6 +17,7 @@ interface Doctor {
     is_active: boolean | null
     hms_specializations: { name: string } | null
     hms_roles: { name: string } | null
+    working_days: string[] | null
 }
 
 interface Department {
@@ -230,7 +231,26 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                                             <span className="font-mono">{doc.license_no}</span>
                                         </div>
                                     )}
+
+                                    {/* Availability Pulse - WORLD CLASS */}
+                                    <div className="pt-3 flex gap-1 border-t border-slate-50 mt-2">
+                                        {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => {
+                                            const isActive = doc.working_days?.includes(day);
+                                            return (
+                                                <div
+                                                    key={day}
+                                                    className={`h-5 w-5 rounded-md flex items-center justify-center text-[7px] font-black transition-all ${isActive
+                                                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                                                            : "bg-slate-50 text-slate-300"
+                                                        }`}
+                                                >
+                                                    {day.substring(0, 1)}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
+
                             </Link>
                         ))
                     )}
