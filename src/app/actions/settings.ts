@@ -153,10 +153,11 @@ export async function updateGlobalSettings(data: {
 
 export async function getHMSSettings() {
     const session = await auth();
-    if (!session?.user?.companyId) return { error: "Unauthorized" };
+    if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
 
     try {
         const companyId = session.user.companyId;
+        const tenantId = session.user.tenantId;
 
         // 1. Fetch Registration Fee Product
         // We look for a product that looks like "Registration Fee".
@@ -182,18 +183,24 @@ export async function getHMSSettings() {
 
         const finalProduct = regFeeProductFallback;
 
-        // 2. Fetch Company Settings for other toggles
-        const companySettings = await prisma.company_settings.findUnique({
-            where: { company_id: companyId }
+        // 2. Fetch HMS Specific Settings
+        const hmsConfigRecord = await prisma.hms_settings.findFirst({
+            where: {
+                company_id: companyId,
+                tenant_id: tenantId,
+                key: 'registration_config'
+            }
         });
+
+        const configData = (hmsConfigRecord?.value as any) || {};
 
         return {
             success: true,
             settings: {
                 registrationFee: finalProduct ? parseFloat(finalProduct.price?.toString() || '0') : 500,
                 registrationProductId: finalProduct?.id,
-                registrationValidity: (companySettings?.metadata as any)?.hms_registration_validity || 365,
-                enableCardIssuance: (companySettings?.metadata as any)?.hms_enable_card_issuance ?? true
+                registrationValidity: configData.validity || 365,
+                enableCardIssuance: configData.enableCardIssuance ?? true
             }
         };
     } catch (error: any) {
@@ -241,28 +248,36 @@ export async function updateHMSSettings(data: any) {
             });
         }
 
-        // 2. Update Metadata in Company Settings
-        const settings = await prisma.company_settings.findUnique({ where: { company_id: companyId } });
+        // 2. Upsert HMS Settings
+        // We use findFirst + update/create pattern to avoid guessing the unique index name if uncertain,
+        // although upsert is preferred. Given schema uncertainty on unique constraint naming, manual upsert is safer.
 
-        const currentMetadata = (settings?.metadata as any) || {};
-        const newMetadata = {
-            ...currentMetadata,
-            hms_registration_validity: parseInt(data.registrationValidity),
-            hms_enable_card_issuance: data.enableCardIssuance
+        const existingConfig = await prisma.hms_settings.findFirst({
+            where: {
+                company_id: companyId,
+                tenant_id: tenantId!,
+                key: 'registration_config'
+            }
+        });
+
+        const configValue = {
+            validity: parseInt(data.registrationValidity),
+            enableCardIssuance: data.enableCardIssuance
         };
 
-        if (settings) {
-            await prisma.company_settings.update({
-                where: { company_id: companyId },
-                data: { metadata: newMetadata }
+        if (existingConfig) {
+            await prisma.hms_settings.update({
+                where: { id: existingConfig.id },
+                data: { value: configValue }
             });
         } else {
-            await prisma.company_settings.create({
+            await prisma.hms_settings.create({
                 data: {
                     tenant_id: tenantId!,
                     company_id: companyId,
-                    metadata: newMetadata,
-                    fiscal_year_start_month: 4
+                    key: 'registration_config',
+                    value: configValue,
+                    scope: 'company'
                 }
             });
         }
