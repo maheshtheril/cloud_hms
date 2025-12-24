@@ -193,7 +193,8 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                         type: 'service'
                                     }])
                                 });
-                                window.location.href = `/hms/billing/new?${billingParams.toString()}`;
+                                // Force redirect for reliability
+                                window.location.assign(`/hms/billing/new?${billingParams.toString()}`);
                             } else {
                                 onSuccess(res);
                             }
@@ -212,7 +213,8 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                         type: 'service'
                                     }])
                                 });
-                                router.push(`/hms/billing/new?${billingParams.toString()}`);
+                                // Force redirect for reliability
+                                window.location.assign(`/hms/billing/new?${billingParams.toString()}`);
                             } else {
                                 setMessage({ type: 'success', text: "Patient profile synchronized successfully." });
                                 setTimeout(() => window.location.reload(), 1000);
