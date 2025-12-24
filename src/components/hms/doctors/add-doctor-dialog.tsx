@@ -390,6 +390,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                                     folder="staff/profiles"
                                                     label="Upload Photo"
                                                     accept="image/*"
+                                                    showCamera={true}
                                                 />
                                                 <input type="hidden" name="profile_image_url" value={profileImageUrl} />
                                             </div>

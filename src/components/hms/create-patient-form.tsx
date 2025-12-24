@@ -273,6 +273,7 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                                     folder="patients/profiles"
                                                     label="Photo"
                                                     accept="image/*"
+                                                    showCamera={true}
                                                 />
                                                 <input type="hidden" name="profile_image_url" value={profileImageUrl} />
                                             </div>

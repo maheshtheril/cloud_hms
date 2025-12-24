@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { Upload, X, FileText, Image as ImageIcon, Loader2, CheckCircle2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Upload, X, FileText, Image as ImageIcon, Loader2, CheckCircle2, Camera, RefreshCw, Sparkles, AlertCircle } from 'lucide-react'
 import { uploadFile } from '@/app/actions/upload-file'
 
 interface FileUploadProps {
@@ -11,6 +11,7 @@ interface FileUploadProps {
     accept?: string;
     currentFileUrl?: string | null;
     disabled?: boolean;
+    showCamera?: boolean;
 }
 
 export function FileUpload({
@@ -20,13 +21,28 @@ export function FileUpload({
     accept = "application/pdf,image/*",
     currentFileUrl,
     disabled = false,
+    showCamera = false,
     maxSizeInBytes = 10 * 1024 * 1024 // 10MB default
 }: FileUploadProps & { maxSizeInBytes?: number }) {
     const [isDragging, setIsDragging] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(currentFileUrl || null);
     const [error, setError] = useState<string | null>(null);
+    const [isCameraActive, setIsCameraActive] = useState(false);
+    const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    // Stop camera stream on unmount
+    useEffect(() => {
+        return () => {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, [cameraStream]);
 
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();
@@ -54,6 +70,51 @@ export function FileUpload({
         }
     };
 
+    const startCamera = async () => {
+        try {
+            setError(null);
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } }
+            });
+            setCameraStream(stream);
+            if (videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+            setIsCameraActive(true);
+        } catch (err) {
+            setError("Unable to access camera. Please verify permissions.");
+            console.error(err);
+        }
+    };
+
+    const stopCamera = () => {
+        if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            setCameraStream(null);
+        }
+        setIsCameraActive(false);
+    };
+
+    const capturePhoto = () => {
+        if (videoRef.current && canvasRef.current) {
+            const video = videoRef.current;
+            const canvas = canvasRef.current;
+            const context = canvas.getContext('2d');
+
+            // Set canvas size to match video resolution
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            context?.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Compress to JPEG 0.8
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+            setPreviewUrl(dataUrl);
+            onUploadComplete(dataUrl);
+            stopCamera();
+        }
+    };
+
     const compressImage = (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -63,8 +124,8 @@ export function FileUpload({
                 img.src = event.target?.result as string;
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 300;
-                    const MAX_HEIGHT = 300;
+                    const MAX_WIDTH = 600;
+                    const MAX_HEIGHT = 600;
                     let width = img.width;
                     let height = img.height;
 
@@ -85,8 +146,7 @@ export function FileUpload({
                     const ctx = canvas.getContext('2d');
                     ctx?.drawImage(img, 0, 0, width, height);
 
-                    // Compress to JPEG at 0.7 quality
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
                     resolve(dataUrl);
                 };
                 img.onerror = (error) => reject(error);
@@ -100,10 +160,7 @@ export function FileUpload({
         setError(null);
 
         try {
-            // For Images: Compress client-side and return Data URI directly
-            // This avoids sending large payloads to the server or dealing with filesystem issues
             if (file.type.startsWith('image/')) {
-                console.log("Client-side compressing image...");
                 const dataUrl = await compressImage(file);
                 setPreviewUrl(dataUrl);
                 onUploadComplete(dataUrl);
@@ -111,10 +168,8 @@ export function FileUpload({
                 return;
             }
 
-            // Fallback for non-images (PDFs etc) - Use Server Action
             const formData = new FormData();
             formData.append('file', file);
-
             const res = await uploadFile(formData, folder);
 
             if (res.error) {
@@ -125,7 +180,7 @@ export function FileUpload({
                 onUploadComplete(res.url, res);
             }
         } catch (err) {
-            setError("Upload failed. Please try again.");
+            setError("Upload failed.");
             console.error(err);
         } finally {
             setIsUploading(false);
@@ -133,7 +188,7 @@ export function FileUpload({
     };
 
     const clearFile = (e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent triggering click on parent
+        e.stopPropagation();
         setPreviewUrl(null);
         onUploadComplete("");
         if (fileInputRef.current) fileInputRef.current.value = "";
@@ -143,83 +198,120 @@ export function FileUpload({
         <div className="w-full space-y-2">
             <div
                 className={`
-                    relative group cursor-pointer
-                    border-2 border-dashed rounded-xl p-6 transition-all duration-200
-                    flex flex-col items-center justify-center text-center gap-3
-                    ${isDragging
-                        ? 'border-blue-500 bg-blue-50/50 scale-[1.01]'
-                        : previewUrl
-                            ? 'border-green-200 bg-green-50/30'
-                            : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
-                    }
+                    relative group transition-all duration-300
+                    border-2 border-dashed rounded-3xl p-4 overflow-hidden
+                    flex flex-col items-center justify-center text-center bg-slate-50/50 dark:bg-slate-900/20
+                    ${isDragging ? 'border-indigo-500 bg-indigo-50/30 scale-[1.01]' : 'border-slate-200 dark:border-slate-800'}
+                    ${previewUrl ? 'border-emerald-500/30 bg-emerald-50/10' : ''}
                 `}
-                onDragEnter={disabled ? undefined : handleDrag}
-                onDragLeave={disabled ? undefined : handleDrag}
-                onDragOver={disabled ? undefined : handleDrag}
-                onDrop={disabled ? undefined : handleDrop}
-                onClick={disabled ? undefined : () => fileInputRef.current?.click()}
-                style={{ cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1 }}
+                onDragEnter={disabled || isCameraActive ? undefined : handleDrag}
+                onDragLeave={disabled || isCameraActive ? undefined : handleDrag}
+                onDragOver={disabled || isCameraActive ? undefined : handleDrag}
+                onDrop={disabled || isCameraActive ? undefined : handleDrop}
             >
-                <input
-                    ref={fileInputRef}
-                    type="file"
-                    className="hidden"
-                    onChange={handleChange}
-                    accept={accept}
-                />
+                <input ref={fileInputRef} type="file" className="hidden" onChange={handleChange} accept={accept} />
+                <canvas ref={canvasRef} className="hidden" />
 
-                {isUploading ? (
-                    <div className="py-4">
-                        <Loader2 className="h-8 w-8 text-blue-500 animate-spin mb-2" />
-                        <p className="text-sm font-medium text-blue-600">Uploading...</p>
+                {isCameraActive ? (
+                    <div className="w-full space-y-4 animate-in fade-in zoom-in-95 duration-300">
+                        <div className="relative aspect-video w-full max-w-sm mx-auto overflow-hidden rounded-2xl bg-black shadow-2xl border-2 border-indigo-500/20">
+                            <video
+                                ref={videoRef}
+                                autoPlay
+                                playsInline
+                                className="w-full h-full object-cover mirror transform -scale-x-100"
+                            />
+                            <div className="absolute top-2 left-2 px-2 py-1 bg-indigo-600/80 backdrop-blur-md rounded text-[10px] text-white font-black uppercase tracking-widest flex items-center gap-1.5">
+                                <div className="h-1.5 w-1.5 rounded-full bg-red-500 animate-pulse"></div>
+                                Live Acquisition
+                            </div>
+                        </div>
+                        <div className="flex items-center justify-center gap-3">
+                            <button
+                                type="button"
+                                onClick={stopCamera}
+                                className="p-3 bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl hover:bg-slate-300 transition-colors"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={capturePhoto}
+                                className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all active:scale-95 flex items-center gap-2"
+                            >
+                                <Sparkles className="h-4 w-4" />
+                                Capture Snapshot
+                            </button>
+                        </div>
+                    </div>
+                ) : isUploading ? (
+                    <div className="py-6 flex flex-col items-center">
+                        <RefreshCw className="h-10 w-10 text-indigo-500 animate-spin mb-3" />
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Encrypting Artifact...</p>
                     </div>
                 ) : previewUrl ? (
-                    <div className="flex items-center gap-4 w-full p-2">
-                        <div className="h-12 w-12 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
+                    <div className="flex items-center gap-4 w-full p-2 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
+                        <div className="h-16 w-16 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-800">
                             {previewUrl.toLowerCase().endsWith('.pdf') ? (
-                                <FileText className="h-6 w-6 text-green-600" />
+                                <FileText className="h-8 w-8 text-emerald-600" />
                             ) : (
-                                <img src={previewUrl} alt="Preview" className="h-full w-full object-cover rounded-lg" />
+                                <img src={previewUrl} alt="Preview" className="h-full w-full object-cover rounded-xl" />
                             )}
                         </div>
-                        <div className="flex-1 text-left overflow-hidden">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                                {previewUrl.split('/').pop()}
-                            </p>
-                            <p className="text-xs text-green-600 flex items-center gap-1">
-                                <CheckCircle2 className="h-3 w-3" /> Upload Complete
-                            </p>
+                        <div className="flex-1 text-left">
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Synchronization Secure</p>
+                            <div className="flex items-center gap-2">
+                                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                <span className="text-xs font-black text-slate-700 dark:text-slate-200">Asset Ready</span>
+                            </div>
                         </div>
                         <button
+                            type="button"
                             onClick={clearFile}
-                            className="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors"
+                            className="h-10 w-10 flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-900/20 text-slate-400 hover:text-rose-500 rounded-xl transition-all"
                         >
-                            <X className="h-4 w-4" />
+                            <X className="h-5 w-5" />
                         </button>
                     </div>
                 ) : (
-                    <>
-                        <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-200">
-                            <Upload className="h-6 w-6 text-gray-400 group-hover:text-gray-600" />
+                    <div className="w-full py-4 flex flex-col items-center gap-4">
+                        <div className="flex gap-4">
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all border border-transparent hover:border-slate-200 group/upload"
+                            >
+                                <div className="h-12 w-12 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-center group-hover/upload:scale-110 transition-all">
+                                    <Upload className="h-6 w-6 text-indigo-500" />
+                                </div>
+                                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Cloud Upload</span>
+                            </button>
+
+                            {showCamera && (
+                                <button
+                                    type="button"
+                                    onClick={startCamera}
+                                    className="flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all border border-transparent hover:border-slate-200 group/camera"
+                                >
+                                    <div className="h-12 w-12 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-center group-hover/camera:scale-110 transition-all">
+                                        <Camera className="h-6 w-6 text-emerald-500" />
+                                    </div>
+                                    <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Bio Capture</span>
+                                </button>
+                            )}
                         </div>
+
                         <div className="space-y-1">
-                            <p className="text-sm font-medium text-gray-700">
-                                {label}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                                Drag & drop or click to browse
-                            </p>
+                            <p className="text-xs font-bold text-slate-600 dark:text-slate-400">{label}</p>
+                            <p className="text-[9px] text-slate-400 font-mono tracking-tighter italic">DRAG & DROP SUPPORTED • MAX {Math.round(maxSizeInBytes / (1024 * 1024))}MB</p>
                         </div>
-                        <div className="text-[10px] text-gray-400 font-mono bg-gray-50 px-2 py-1 rounded">
-                            PDF, JPG, PNG (Max {Math.round(maxSizeInBytes / (1024 * 1024))}MB)
-                        </div>
-                    </>
+                    </div>
                 )}
             </div>
 
             {error && (
-                <p className="text-sm text-red-500 flex items-center gap-2 px-1 animate-in slide-in-from-top-1">
-                    <X className="h-3 w-3" /> {error}
+                <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-2 px-2 animate-in slide-in-from-top-1">
+                    <AlertCircle className="h-3.5 w-3.5" /> {error}
                 </p>
             )}
         </div>
