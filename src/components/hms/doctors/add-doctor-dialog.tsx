@@ -64,6 +64,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
     const [profileImageUrl, setProfileImageUrl] = useState('')
     const [signatureUrl, setSignatureUrl] = useState('')
     const [documentUrls, setDocumentUrls] = useState<{ [key: string]: string }>({})
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -135,13 +136,36 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                 </div>
 
                 {/* Form - 3 Column Layout to Avoid Scrolling */}
-                <form action={async (formData) => {
-                    setMessage(null)
-                    const res = await createDoctor(formData)
-                    if (res?.success) {
-                        onClose()
-                    } else {
-                        setMessage({ type: 'error', text: res?.error || "Failed to create clinician profile. Please verify all mandatory fields." })
+                <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+
+                    // Progressive Validation: Client-Side check before server trip
+                    const firstName = formData.get("first_name") as string;
+                    const lastName = formData.get("last_name") as string;
+                    const email = formData.get("email") as string;
+                    const roleId = formData.get("role_id") as string;
+
+                    if (!firstName) return setMessage({ type: 'error', text: "First Name is a mandatory identity field." });
+                    if (!lastName) return setMessage({ type: 'error', text: "Last Name is required for professional registration." });
+                    if (!email) return setMessage({ type: 'error', text: "A professional email address is mandatory." });
+                    if (!roleId) return setMessage({ type: 'error', text: "Please assign an Institutional Role." });
+
+                    setIsSubmitting(true);
+                    setMessage(null);
+
+                    try {
+                        const res = await createDoctor(formData);
+                        if (res?.success) {
+                            onClose();
+                            // Optional: triggered reload or refresh if needed
+                        } else {
+                            setMessage({ type: 'error', text: res?.error || "Failed to create staff profile. Please verify data integrity." });
+                        }
+                    } catch (err: any) {
+                        setMessage({ type: 'error', text: "An unexpected system error occurred during registration." });
+                    } finally {
+                        setIsSubmitting(false);
                     }
                 }} className="flex-1 overflow-hidden flex flex-col bg-slate-50/30">
 
@@ -426,10 +450,20 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                         </button>
                         <button
                             type="submit"
-                            className="px-8 py-3 bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700 text-white rounded-2xl font-black text-sm shadow-xl shadow-indigo-200 flex items-center gap-2 hover:shadow-2xl hover:-translate-y-0.5 transition-all active:scale-95 uppercase tracking-widest"
+                            disabled={isSubmitting}
+                            className={`px-8 py-3 bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700 text-white rounded-2xl font-black text-sm shadow-xl shadow-indigo-200 flex items-center gap-2 hover:shadow-2xl hover:-translate-y-0.5 transition-all active:scale-95 uppercase tracking-widest ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
-                            <Sparkles className="h-4 w-4" />
-                            Finalize Registration
+                            {isSubmitting ? (
+                                <>
+                                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                    Processing...
+                                </>
+                            ) : (
+                                <>
+                                    <Plus className="h-4 w-4" />
+                                    Finalize Registration
+                                </>
+                            )}
                         </button>
                     </div>
                 </form>

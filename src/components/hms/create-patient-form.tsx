@@ -106,7 +106,9 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                 </div>
 
                 {/* Form Content */}
-                <form action={async (formData) => {
+                <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
                     setIsPending(true);
                     setMessage(null);
                     try {
@@ -116,10 +118,12 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                         } else if (onSuccess) {
                             onSuccess(res);
                         } else {
-                            window.location.reload();
+                            // Professional feedback before refresh
+                            setMessage({ type: 'success', text: "Patient profile synchronized successfully." });
+                            setTimeout(() => window.location.reload(), 1000);
                         }
                     } catch (err: any) {
-                        setMessage({ type: 'error', text: "Submission failed. Please check required fields." });
+                        setMessage({ type: 'error', text: "Systems offline or validation failed. Please review mandatory fields." });
                     } finally {
                         setIsPending(false);
                     }
