@@ -3,6 +3,7 @@ import { updateDoctor } from '@/app/actions/doctor'
 import { seedStandardDepartments, quickAddDepartment } from '@/app/actions/hms-setup'
 import { WORLD_CLASS_DESIGNATIONS, WORLD_CLASS_QUALIFICATIONS } from '@/app/hms/doctors/constants'
 import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle, Hash, CreditCard, UserCheck, UserCog, Image, FileText, Fingerprint, Camera, FileCheck } from 'lucide-react'
+import { FileUpload } from '@/components/ui/file-upload'
 
 interface Department {
     id: string
@@ -85,6 +86,9 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
     const [selectedDays, setSelectedDays] = useState<string[]>(doctor.working_days || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
     const [activeTab, setActiveTab] = useState<'general' | 'clinical' | 'documents'>('general')
+    const [profileImageUrl, setProfileImageUrl] = useState(doctor.profile_image_url || '')
+    const [signatureUrl, setSignatureUrl] = useState(doctor.signature_url || '')
+    const [documentUrls, setDocumentUrls] = useState<any>(doctor.document_urls || [])
 
     const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -349,26 +353,26 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
                                         </h3>
                                         <div className="flex gap-6">
                                             <div className="flex-1 space-y-3">
-                                                <div className={`aspect-square border-2 border-dashed rounded-[2rem] flex flex-col items-center justify-center gap-3 group transition-all cursor-pointer ${doctor.profile_image_url ? 'bg-indigo-50 border-indigo-200' : 'bg-slate-50 border-slate-200 hover:border-indigo-400 hover:bg-indigo-50'}`}>
-                                                    <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                                        {doctor.profile_image_url ? <CheckCircle2 className="h-6 w-6 text-indigo-500" /> : <Image className="h-6 w-6 text-slate-400" />}
-                                                    </div>
-                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-600 text-center px-4">
-                                                        {doctor.profile_image_url ? 'Portrait Locked' : 'Update Profile Image'}
-                                                    </span>
-                                                </div>
-                                                <input type="hidden" name="profile_image_url" defaultValue={doctor.profile_image_url || ''} />
+                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Profile Portrait</label>
+                                                <FileUpload
+                                                    onUploadComplete={(url) => setProfileImageUrl(url)}
+                                                    folder="staff/profiles"
+                                                    label="Revise Photo"
+                                                    accept="image/*"
+                                                    currentFileUrl={profileImageUrl}
+                                                />
+                                                <input type="hidden" name="profile_image_url" value={profileImageUrl} />
                                             </div>
                                             <div className="flex-1 space-y-3">
-                                                <div className={`aspect-square border-2 border-dashed rounded-[2rem] flex flex-col items-center justify-center gap-3 group transition-all cursor-pointer ${doctor.signature_url ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50'}`}>
-                                                    <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                                                        {doctor.signature_url ? <CheckCircle2 className="h-6 w-6 text-emerald-500" /> : <Fingerprint className="h-6 w-6 text-slate-400" />}
-                                                    </div>
-                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-emerald-600 text-center px-4">
-                                                        {doctor.signature_url ? 'E-Signature Locked' : 'Update Signature'}
-                                                    </span>
-                                                </div>
-                                                <input type="hidden" name="signature_url" defaultValue={doctor.signature_url || ''} />
+                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">E-Signature</label>
+                                                <FileUpload
+                                                    onUploadComplete={(url) => setSignatureUrl(url)}
+                                                    folder="staff/signatures"
+                                                    label="Revise Signature"
+                                                    accept="image/*"
+                                                    currentFileUrl={signatureUrl}
+                                                />
+                                                <input type="hidden" name="signature_url" value={signatureUrl} />
                                             </div>
                                         </div>
                                     </div>
@@ -379,18 +383,32 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
                                             <FileText className="h-4 w-4 text-purple-500" />
                                             Document Repository
                                         </h3>
-                                        <div className="space-y-3">
-                                            {['Medical Degree', 'Practice License', 'Insurance Credentials'].map(doc => (
-                                                <div key={doc} className="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl flex items-center justify-between group hover:border-purple-200 transition-all">
+                                        <div className="grid grid-cols-1 gap-4">
+                                            {[
+                                                { id: 'degree', label: 'Medical Degree' },
+                                                { id: 'license', label: 'Practice License' },
+                                                { id: 'insurance', label: 'Insurance Credentials' }
+                                            ].map((doc, idx) => (
+                                                <div key={doc.id} className="p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl space-y-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="h-8 w-8 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:rotate-6 transition-all"><FileText className="h-4 w-4 text-purple-600" /></div>
-                                                        <span className="text-xs font-bold text-slate-600">{doc}</span>
+                                                        <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-sm"><FileText className="h-5 w-5 text-purple-600" /></div>
+                                                        <span className="text-xs font-black text-slate-700 uppercase tracking-wider">{doc.label}</span>
                                                     </div>
-                                                    <button type="button" className="text-[10px] font-black text-purple-600 uppercase tracking-widest hover:underline">Revise</button>
+                                                    <FileUpload
+                                                        onUploadComplete={(url) => {
+                                                            const newDocs = Array.isArray(documentUrls) ? [...documentUrls] : [];
+                                                            newDocs[idx] = url;
+                                                            setDocumentUrls(newDocs);
+                                                        }}
+                                                        folder="staff/documents"
+                                                        label={`Revise ${doc.label}`}
+                                                        accept="application/pdf,image/*"
+                                                        currentFileUrl={Array.isArray(documentUrls) ? documentUrls[idx] : null}
+                                                    />
                                                 </div>
                                             ))}
                                         </div>
-                                        <input type="hidden" name="document_urls" defaultValue={JSON.stringify(doctor.document_urls || [])} />
+                                        <input type="hidden" name="document_urls" value={JSON.stringify(Array.isArray(documentUrls) ? documentUrls.filter(Boolean) : [])} />
                                     </div>
                                 </div>
                             )}
