@@ -125,13 +125,29 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                             // If field is missing, switch to that tab immediately
                             if (activeTab !== field.tab) {
                                 setActiveTab(field.tab as any);
-                                // Give React a split second to render the tab before showing error
                                 await new Promise(resolve => setTimeout(resolve, 100));
                             }
                             setMessage({ type: 'error', text: `Missing mandatory field: ${field.name.replace('_', ' ')}` });
                             const element = e.currentTarget.querySelector(`[name="${field.name}"]`) as HTMLElement;
                             element?.focus();
                             return;
+                        }
+
+                        // Phone Number Specific Validation (10 Digits)
+                        if (field.name === 'phone') {
+                            const phoneRegex = /^\d{10}$/;
+                            // Remove non-digit characters for check
+                            const cleanPhone = value.toString().replace(/\D/g, '');
+                            if (!phoneRegex.test(cleanPhone)) {
+                                if (activeTab !== field.tab) {
+                                    setActiveTab(field.tab as any);
+                                    await new Promise(resolve => setTimeout(resolve, 100));
+                                }
+                                setMessage({ type: 'error', text: 'Phone number must be exactly 10 digits' });
+                                const element = e.currentTarget.querySelector(`[name="${field.name}"]`) as HTMLElement;
+                                element?.focus();
+                                return;
+                            }
                         }
                     }
 
