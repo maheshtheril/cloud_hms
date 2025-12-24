@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Calendar, User, Phone, MapPin, Clock, FileText, Plus, Edit, Mail } from "lucide-react"
+import { EditPatientButton } from "@/components/hms/patients/edit-patient-button"
 
 export default async function PatientDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -54,10 +55,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                     </div>
                 </div>
                 <div className="flex gap-3">
-                    <button className="px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium flex items-center gap-2">
-                        <Edit className="h-4 w-4" />
-                        Edit Profile
-                    </button>
+                    <EditPatientButton patient={patientAny} />
                     <Link
                         href={`/hms/prescriptions/new?patientId=${patientAny.id}`}
                         className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex items-center gap-2"
