@@ -11,23 +11,36 @@ interface CreatePatientFormProps {
     onClose?: () => void
     onSuccess?: (patient: any) => void
     isDialog?: boolean
+    initialData?: any
 }
 
-export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, isDialog = false }: CreatePatientFormProps) {
+export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, isDialog = false, initialData }: CreatePatientFormProps) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'basic' | 'residency' | 'vault'>('basic');
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [isPending, setIsPending] = useState(false);
 
     // State for Vault
-    const [profileImageUrl, setProfileImageUrl] = useState('');
-    const [idCardUrl, setIdCardUrl] = useState('');
+    const [profileImageUrl, setProfileImageUrl] = useState(initialData?.profile_image_url || initialData?.metadata?.profile_image_url || '');
+    const [idCardUrl, setIdCardUrl] = useState(initialData?.metadata?.id_card_url || '');
 
     // State for Age/DOB logic
-    const [age, setAge] = useState('');
-    const [ageUnit, setAgeUnit] = useState('Years');
-    const [dob, setDob] = useState('');
-    const [gender, setGender] = useState('male');
+    const calculateAge = (dobString: string) => {
+        if (!dobString) return { age: '', unit: 'Years' };
+        const birthDate = new Date(dobString);
+        const today = new Date();
+        let ageYears = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) ageYears--;
+        return { age: ageYears.toString(), unit: 'Years' };
+    };
+
+    const initialAgeData = initialData?.dob ? calculateAge(initialData.dob.toString()) : { age: '', unit: 'Years' };
+
+    const [age, setAge] = useState(initialAgeData.age);
+    const [ageUnit, setAgeUnit] = useState(initialAgeData.unit);
+    const [dob, setDob] = useState(initialData?.dob ? new Date(initialData.dob).toISOString().split('T')[0] : '');
+    const [gender, setGender] = useState(initialData?.gender || 'male');
 
     const handleAgeChange = (value: string, unit: string) => {
         setAge(value);
@@ -71,7 +84,7 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                         </div>
                         <div>
                             <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
-                                Patient Master <span className="text-indigo-400">Registration</span>
+                                Patient Master <span className="text-indigo-400">{initialData ? 'Update' : 'Registration'}</span>
                             </h2>
                             <p className="text-indigo-200/50 text-[9px] font-black uppercase tracking-[0.2em]">Institutional Health Registry • v2.4</p>
                         </div>
@@ -125,11 +138,15 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                             // If field is missing, switch to that tab immediately
                             if (activeTab !== field.tab) {
                                 setActiveTab(field.tab as any);
-                                await new Promise(resolve => setTimeout(resolve, 100));
+                                await new Promise(resolve => setTimeout(resolve, 100)); // Allow render
                             }
                             setMessage({ type: 'error', text: `Missing mandatory field: ${field.name.replace('_', ' ')}` });
-                            const element = e.currentTarget.querySelector(`[name="${field.name}"]`) as HTMLElement;
-                            element?.focus();
+
+                            // Safe focus with retry
+                            setTimeout(() => {
+                                const element = document.querySelector(`[name="${field.name}"]`) as HTMLElement;
+                                element?.focus();
+                            }, 150);
                             return;
                         }
 
@@ -144,8 +161,11 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                     await new Promise(resolve => setTimeout(resolve, 100));
                                 }
                                 setMessage({ type: 'error', text: 'Phone number must be exactly 10 digits' });
-                                const element = e.currentTarget.querySelector(`[name="${field.name}"]`) as HTMLElement;
-                                element?.focus();
+
+                                setTimeout(() => {
+                                    const element = document.querySelector(`[name="${field.name}"]`) as HTMLElement;
+                                    element?.focus();
+                                }, 150);
                                 return;
                             }
                         }
@@ -154,7 +174,7 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                     setIsPending(true);
                     setMessage(null);
                     try {
-                        const res = await createPatient(null, formData);
+                        const res = await createPatient(initialData?.id || null, formData);
                         if (res?.error) {
                             setMessage({ type: 'error', text: res.error });
                         } else if (onSuccess) {
@@ -191,18 +211,18 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                         <div className="flex gap-3">
                                             <div className="w-1/4">
                                                 <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Title</label>
-                                                <select name="title" className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors">
+                                                <select defaultValue={initialData?.metadata?.title} name="title" className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors">
                                                     <option>Mr.</option><option>Mrs.</option><option>Ms.</option><option>Dr.</option><option>Master</option><option>Baby</option>
                                                 </select>
                                             </div>
                                             <div className="flex-1">
                                                 <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">First Name</label>
-                                                <input name="first_name" type="text" placeholder="John" required className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors" />
+                                                <input defaultValue={initialData?.first_name} name="first_name" type="text" placeholder="John" required className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors" />
                                             </div>
                                         </div>
                                         <div>
                                             <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Last Name</label>
-                                            <input name="last_name" type="text" placeholder="Doe" required className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors" />
+                                            <input defaultValue={initialData?.last_name} name="last_name" type="text" placeholder="Doe" required className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors" />
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
@@ -213,7 +233,7 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                             </div>
                                             <div>
                                                 <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Blood Group</label>
-                                                <select name="blood_group" className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors">
+                                                <select defaultValue={initialData?.metadata?.blood_group} name="blood_group" className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors">
                                                     <option value="">Unknown</option>
                                                     {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => <option key={bg} value={bg}>{bg}</option>)}
                                                 </select>
@@ -262,7 +282,7 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                             {/* TAB 2: RESIDENCY - High Link Density */}
                             <div className={activeTab === 'residency' ? 'block' : 'hidden'}>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                    <div className="space-y-4 bg-white dark:bg-slate-800/40 p-5 rounded-[1.5rem] shadow-sm border border-slate-100 dark:border-slate-800">
+                                    <div className="space-y-4 bg-whiteダークbg-slate-800/40 p-5 rounded-[1.5rem] shadow-sm border border-slate-100 dark:border-slate-800">
                                         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
                                             <Phone className="h-3 w-3 text-indigo-500" /> Contact Grid
                                         </h3>
@@ -270,14 +290,14 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                             <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Mobile Number</label>
                                             <div className="relative">
                                                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                                                <input name="phone" type="tel" placeholder="e.g. +91 98765..." required className="w-full pl-10 p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs" />
+                                                <input defaultValue={initialData?.contact?.phone} name="phone" type="tel" placeholder="e.g. +91 98765..." required className="w-full pl-10 p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs" />
                                             </div>
                                         </div>
                                         <div>
                                             <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Institutional Email</label>
                                             <div className="relative">
                                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                                                <input name="email" type="email" placeholder="john@example.com" className="w-full pl-10 p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs" />
+                                                <input defaultValue={initialData?.contact?.email} name="email" type="email" placeholder="john@example.com" className="w-full pl-10 p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs" />
                                             </div>
                                         </div>
                                     </div>
@@ -288,10 +308,10 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                         </h3>
                                         <div>
                                             <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Address Line</label>
-                                            <input name="street" type="text" placeholder="Street, Area" className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs mb-3" />
+                                            <input defaultValue={initialData?.contact?.address?.street} name="street" type="text" placeholder="Street, Area" className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs mb-3" />
                                             <div className="grid grid-cols-2 gap-3">
-                                                <input name="city" type="text" placeholder="City" className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs" />
-                                                <input name="zip" type="text" placeholder="Pin code" className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs" />
+                                                <input defaultValue={initialData?.contact?.address?.city} name="city" type="text" placeholder="City" className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs" />
+                                                <input defaultValue={initialData?.contact?.address?.zip} name="zip" type="text" placeholder="Pin code" className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs" />
                                             </div>
                                         </div>
                                     </div>
