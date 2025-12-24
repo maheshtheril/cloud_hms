@@ -59,53 +59,55 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
     };
 
     return (
-        <div className={isDialog ? "h-full flex flex-col" : "fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-4"}>
-            <div className={`bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col border border-white/20 ${isDialog ? 'h-full shadow-none border-none' : ''}`}>
+        <div className={isDialog ? "h-full flex flex-col" : "fixed inset-0 bg-slate-900/60 backdrop-blur-md flex items-center justify-center z-50 p-2"}>
+            <div className={`bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col border border-white/20 ${isDialog ? 'h-full shadow-none border-none' : ''}`}>
 
-                {/* Header */}
-                <div className="p-8 bg-gradient-to-br from-indigo-600 via-blue-600 to-indigo-700 flex items-center justify-between relative overflow-hidden">
+                {/* Compact Header */}
+                <div className="px-6 py-4 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 flex items-center justify-between relative overflow-hidden border-b border-indigo-500/20">
                     <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
-                    <div className="relative z-10">
-                        <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
-                            <div className="h-10 w-10 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/30 shadow-inner">
-                                <User className="h-6 w-6 text-white" />
-                            </div>
-                            Patient Master Registration
-                        </h2>
-                        <p className="text-blue-100 text-xs font-bold mt-1 uppercase tracking-[0.2em] opacity-80">World-Class Healthcare Standards</p>
+                    <div className="relative z-10 flex items-center gap-4">
+                        <div className="h-10 w-10 bg-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 border border-white/10">
+                            <User className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
+                                Patient Master <span className="text-indigo-400">Registration</span>
+                            </h2>
+                            <p className="text-indigo-200/50 text-[9px] font-black uppercase tracking-[0.2em]">Institutional Health Registry • v2.4</p>
+                        </div>
                     </div>
                     {onClose && (
-                        <button onClick={onClose} className="h-12 w-12 bg-white/10 hover:bg-white/20 text-white rounded-2xl flex items-center justify-center transition-all active:scale-95 border border-white/20">
-                            <X className="h-6 w-6" />
+                        <button onClick={onClose} className="h-10 w-10 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl flex items-center justify-center transition-all active:scale-95 border border-white/10">
+                            <X className="h-5 w-5" />
                         </button>
                     )}
                 </div>
 
-                {/* Tab Navigation */}
-                <div className="px-8 pt-6">
-                    <div className="flex gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/50 rounded-[1.5rem] border border-slate-200/50">
+                {/* Dense Tab Navigation */}
+                <div className="px-6 pt-4">
+                    <div className="flex gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-2xl border border-slate-200/50">
                         {[
-                            { id: 'basic', label: 'Core Identity', icon: User },
-                            { id: 'residency', label: 'Residency & Contact', icon: MapPin },
-                            { id: 'vault', label: 'Identity Vault', icon: Fingerprint }
+                            { id: 'basic', label: 'Identity', icon: User },
+                            { id: 'residency', label: 'Residency', icon: MapPin },
+                            { id: 'vault', label: 'Vault', icon: Fingerprint }
                         ].map((tab) => (
                             <button
                                 key={tab.id}
                                 type="button"
                                 onClick={() => setActiveTab(tab.id as any)}
-                                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-300 ${activeTab === tab.id
-                                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm border border-slate-200/50 scale-[1.02]'
+                                className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-[0.9rem] text-[10px] font-black uppercase tracking-wider transition-all duration-300 ${activeTab === tab.id
+                                    ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 shadow-sm border border-slate-200/50'
                                     : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
                                     }`}
                             >
-                                <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? 'animate-pulse' : ''}`} />
+                                <tab.icon className={`h-3.5 w-3.5 ${activeTab === tab.id ? 'animate-pulse' : ''}`} />
                                 {tab.label}
                             </button>
                         ))}
                     </div>
                 </div>
 
-                {/* Form Content */}
+                {/* Compressed Form Content */}
                 <form onSubmit={async (e) => {
                     e.preventDefault();
                     const formData = new FormData(e.currentTarget);
@@ -118,61 +120,60 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                         } else if (onSuccess) {
                             onSuccess(res);
                         } else {
-                            // Professional feedback before refresh
                             setMessage({ type: 'success', text: "Patient profile synchronized successfully." });
                             setTimeout(() => window.location.reload(), 1000);
                         }
                     } catch (err: any) {
-                        setMessage({ type: 'error', text: "Systems offline or validation failed. Please review mandatory fields." });
+                        setMessage({ type: 'error', text: "Systems offline or validation failed." });
                     } finally {
                         setIsPending(false);
                     }
-                }} id="patient-master-form" className="flex-1 overflow-hidden flex flex-col">
+                }} id="patient-master-form" className="flex-1 overflow-hidden flex flex-col bg-slate-50/30">
 
-                    <div className="flex-1 overflow-y-auto p-8 scrollbar-hide">
+                    <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
                         {message && (
-                            <div className={`mb-8 p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-4 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+                            <div className={`mb-4 p-3 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-4 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm' : 'bg-rose-50 text-rose-700 border border-rose-200'
                                 }`}>
-                                {message.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
-                                <span className="font-bold text-sm">{message.text}</span>
+                                {message.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                                <span className="font-bold text-[11px] uppercase tracking-wide">{message.text}</span>
                             </div>
                         )}
 
-                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-400">
 
-                            {/* TAB 1: CORE IDENTITY */}
+                            {/* TAB 1: CORE IDENTITY - Optimized Grid */}
                             <div className={activeTab === 'basic' ? 'block' : 'hidden'}>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    <div className="space-y-6 bg-white dark:bg-slate-800/40 p-8 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800">
-                                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
-                                            <Activity className="h-4 w-4 text-indigo-500" /> Professional Identity
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    <div className="space-y-4 bg-white dark:bg-slate-800/40 p-5 rounded-[1.5rem] shadow-sm border border-slate-100 dark:border-slate-800">
+                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
+                                            <Activity className="h-3 w-3 text-indigo-500" /> Identity Profile
                                         </h3>
-                                        <div className="flex gap-4">
-                                            <div className="w-1/3">
-                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Title</label>
-                                                <select name="title" className="w-full p-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-sm">
+                                        <div className="flex gap-3">
+                                            <div className="w-1/4">
+                                                <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Title</label>
+                                                <select name="title" className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors">
                                                     <option>Mr.</option><option>Mrs.</option><option>Ms.</option><option>Dr.</option><option>Master</option><option>Baby</option>
                                                 </select>
                                             </div>
                                             <div className="flex-1">
-                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">First Name</label>
-                                                <input name="first_name" type="text" placeholder="e.g. John" className="w-full p-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-sm" />
+                                                <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">First Name</label>
+                                                <input name="first_name" type="text" placeholder="John" required className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors" />
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Last Name</label>
-                                            <input name="last_name" type="text" placeholder="e.g. Doe" className="w-full p-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-sm" />
+                                            <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Last Name</label>
+                                            <input name="last_name" type="text" placeholder="Doe" required className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors" />
                                         </div>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 gap-3">
                                             <div>
-                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Gender</label>
-                                                <select name="gender" value={gender} onChange={(e) => setGender(e.target.value)} className="w-full p-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-sm">
+                                                <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Gender</label>
+                                                <select name="gender" value={gender} onChange={(e) => setGender(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors">
                                                     <option value="male">Male</option><option value="female">Female</option><option value="other">Other</option>
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Blood Group</label>
-                                                <select name="blood_group" className="w-full p-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-sm">
+                                                <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Blood Group</label>
+                                                <select name="blood_group" className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors">
                                                     <option value="">Unknown</option>
                                                     {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => <option key={bg} value={bg}>{bg}</option>)}
                                                 </select>
@@ -180,37 +181,37 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                         </div>
                                     </div>
 
-                                    <div className="space-y-6 bg-white dark:bg-slate-800/40 p-8 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800">
-                                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
-                                            <Calendar className="h-4 w-4 text-emerald-500" /> Vital Chronology
+                                    <div className="space-y-4 bg-white dark:bg-slate-800/40 p-5 rounded-[1.5rem] shadow-sm border border-slate-100 dark:border-slate-800">
+                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
+                                            <Calendar className="h-3 w-3 text-emerald-500" /> Vital Timing
                                         </h3>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-2 gap-3">
                                             <div>
-                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Age ({ageUnit})</label>
-                                                <input type="number" value={age} onChange={(e) => handleAgeChange(e.target.value, ageUnit)} className="w-full p-4 bg-slate-50 dark:bg-slate-900 border-2 border-emerald-50 dark:border-emerald-900/20 rounded-2xl font-black text-emerald-600 text-lg" />
+                                                <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Age ({ageUnit})</label>
+                                                <input type="number" value={age} onChange={(e) => handleAgeChange(e.target.value, ageUnit)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-emerald-50 dark:border-emerald-900/20 rounded-xl font-black text-emerald-600 text-base" />
                                             </div>
                                             <div>
-                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Unit</label>
-                                                <select value={ageUnit} onChange={(e) => handleAgeChange(age, e.target.value)} className="w-full p-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-sm">
+                                                <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Unit</label>
+                                                <select value={ageUnit} onChange={(e) => handleAgeChange(age, e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs">
                                                     <option>Years</option><option>Months</option><option>Days</option>
                                                 </select>
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Date of Birth</label>
+                                            <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Date of Birth</label>
                                             <div className="relative">
-                                                <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                <input name="dob" type="date" value={dob} onChange={(e) => handleDobChange(e.target.value)} className="w-full pl-12 p-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-sm" />
+                                                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                                <input name="dob" type="date" value={dob} onChange={(e) => handleDobChange(e.target.value)} className="w-full pl-10 p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs" />
                                             </div>
                                         </div>
-                                        <div className="p-6 bg-slate-900 rounded-3xl text-white relative overflow-hidden">
-                                            <div className="flex items-center gap-4 relative z-10">
-                                                <div className="h-12 w-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center border border-emerald-500/30">
-                                                    <Shield className="h-6 w-6 text-emerald-400" />
+                                        <div className="p-4 bg-slate-900 rounded-2xl text-white">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-8 w-8 bg-emerald-500/20 rounded-lg flex items-center justify-center border border-emerald-500/30">
+                                                    <Shield className="h-4 w-4 text-emerald-400" />
                                                 </div>
                                                 <div>
-                                                    <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Medical ID Status</p>
-                                                    <p className="text-sm font-bold opacity-80">Automatic Generation on Save</p>
+                                                    <p className="text-[8px] font-black text-emerald-400 uppercase tracking-widest">Medical ID Generation</p>
+                                                    <p className="text-[10px] font-bold opacity-60 italic">Automated Ledger Link</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -218,69 +219,69 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                 </div>
                             </div>
 
-                            {/* TAB 2: RESIDENCY & CONTACT */}
+                            {/* TAB 2: RESIDENCY - High Link Density */}
                             <div className={activeTab === 'residency' ? 'block' : 'hidden'}>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    <div className="space-y-6 bg-white dark:bg-slate-800/40 p-8 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800">
-                                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
-                                            <Phone className="h-4 w-4 text-indigo-500" /> Primary Communication
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    <div className="space-y-4 bg-white dark:bg-slate-800/40 p-5 rounded-[1.5rem] shadow-sm border border-slate-100 dark:border-slate-800">
+                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
+                                            <Phone className="h-3 w-3 text-indigo-500" /> Contact Grid
                                         </h3>
                                         <div>
-                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Mobile Number</label>
+                                            <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Mobile Number</label>
                                             <div className="relative">
-                                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                <input name="phone" type="tel" placeholder="e.g. +91 9876543210" className="w-full pl-12 p-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-sm" />
+                                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                                <input name="phone" type="tel" placeholder="e.g. +91 98765..." required className="w-full pl-10 p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs" />
                                             </div>
                                         </div>
                                         <div>
-                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Email Address</label>
+                                            <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Institutional Email</label>
                                             <div className="relative">
-                                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                <input name="email" type="email" placeholder="e.g. john@example.com" className="w-full pl-12 p-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-sm" />
+                                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                                <input name="email" type="email" placeholder="john@example.com" className="w-full pl-10 p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs" />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="space-y-6 bg-white dark:bg-slate-800/40 p-8 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800">
-                                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
-                                            <MapPin className="h-4 w-4 text-emerald-500" /> Residency Logistics
+                                    <div className="space-y-4 bg-white dark:bg-slate-800/40 p-5 rounded-[1.5rem] shadow-sm border border-slate-100 dark:border-slate-800">
+                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
+                                            <MapPin className="h-3 w-3 text-emerald-500" /> Geographic Logistics
                                         </h3>
                                         <div>
-                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Residential Address</label>
-                                            <input name="street" type="text" placeholder="Street Name, Area" className="w-full p-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-sm mb-4" />
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <input name="city" type="text" placeholder="City" className="w-full p-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-sm" />
-                                                <input name="zip" type="text" placeholder="Pin Code" className="w-full p-4 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-bold text-sm" />
+                                            <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Address Line</label>
+                                            <input name="street" type="text" placeholder="Street, Area" className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs mb-3" />
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <input name="city" type="text" placeholder="City" className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs" />
+                                                <input name="zip" type="text" placeholder="Pin code" className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs" />
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* TAB 3: IDENTITY VAULT & FISCAL */}
+                            {/* TAB 3: IDENTITY VAULT - Compact UI */}
                             <div className={activeTab === 'vault' ? 'block' : 'hidden'}>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    <div className="space-y-6 bg-white dark:bg-slate-800/40 p-8 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800">
-                                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
-                                            <Camera className="h-4 w-4 text-indigo-500" /> Visual & ID Persona
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                    <div className="space-y-4 bg-white dark:bg-slate-800/40 p-5 rounded-[1.5rem] shadow-sm border border-slate-100 dark:border-slate-800">
+                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
+                                            <Camera className="h-3 w-3 text-indigo-500" /> Digital Artifacts
                                         </h3>
-                                        <div className="flex gap-6">
-                                            <div className="flex-1 space-y-3">
-                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Patient Photo</label>
+                                        <div className="flex gap-4">
+                                            <div className="flex-1 space-y-2">
+                                                <label className="block text-[9px] font-black text-slate-500 uppercase tracking-wider">Bio Photo</label>
                                                 <FileUpload
                                                     onUploadComplete={(url) => setProfileImageUrl(url)}
                                                     folder="patients/profiles"
-                                                    label="Capture Photo"
+                                                    label="Photo"
                                                     accept="image/*"
                                                 />
                                                 <input type="hidden" name="profile_image_url" value={profileImageUrl} />
                                             </div>
-                                            <div className="flex-1 space-y-3">
-                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">National ID Card</label>
+                                            <div className="flex-1 space-y-2">
+                                                <label className="block text-[9px] font-black text-slate-500 uppercase tracking-wider">Doc ID</label>
                                                 <FileUpload
                                                     onUploadComplete={(url) => setIdCardUrl(url)}
                                                     folder="patients/ids"
-                                                    label="Upload ID"
+                                                    label="ID Card"
                                                     accept="application/pdf,image/*"
                                                 />
                                                 <input type="hidden" name="id_card_url" value={idCardUrl} />
@@ -288,25 +289,22 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                         </div>
                                     </div>
 
-                                    <div className="space-y-6 bg-white dark:bg-slate-800/40 p-8 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800">
-                                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
-                                            <Shield className="h-4 w-4 text-emerald-500" /> Fiscal Engineering
+                                    <div className="space-y-4 bg-white dark:bg-slate-800/40 p-5 rounded-[1.5rem] shadow-sm border border-slate-100 dark:border-slate-800">
+                                        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
+                                            <Shield className="h-3 w-3 text-emerald-500" /> Fiscal Vault
                                         </h3>
-                                        <div className="bg-slate-900 rounded-[2rem] p-8 text-white shadow-2xl relative overflow-hidden group">
-                                            <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-emerald-500/20 transition-all duration-500"></div>
-                                            <div className="flex items-center justify-between mb-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]"></div>
-                                                    <span className="text-[10px] font-black uppercase text-emerald-400 tracking-[0.2em]">Active Fiscal Group</span>
-                                                </div>
+                                        <div className="bg-slate-900 rounded-[1.2rem] p-5 text-white shadow-xl relative overflow-hidden">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <div className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                                                <span className="text-[8px] font-black uppercase text-emerald-400 tracking-widest">Accounts Receivable</span>
                                             </div>
-                                            <div className="text-3xl font-black tracking-tighter mb-4 uppercase text-emerald-50">Accounts Receivable</div>
-                                            <p className="text-xs text-slate-400 font-bold leading-relaxed mb-6">
-                                                World-Standard categorization for Clinical Revenue. Integrated with the institutional General Ledger for automated clinical receivables tracking.
+                                            <div className="text-xl font-black tracking-tight mb-2 uppercase text-emerald-50">Auto-Ledger Synchronized</div>
+                                            <p className="text-[9px] text-slate-400 font-bold leading-relaxed mb-4">
+                                                World-Standard IFRS/GAAP categorization. Clinical Revenue Hub integrated.
                                             </p>
-                                            <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/10 w-fit">
-                                                <Activity className="h-3 w-3 text-emerald-400" />
-                                                <span className="text-[10px] font-black uppercase text-white tracking-widest">Auto-Ledger Enabled</span>
+                                            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-lg border border-white/10">
+                                                <Activity className="h-2.5 w-2.5 text-emerald-400" />
+                                                <span className="text-[8px] font-black uppercase text-white tracking-widest">Institutional Lock Enabled</span>
                                             </div>
                                         </div>
                                     </div>
@@ -315,28 +313,28 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                         </div>
                     </div>
 
-                    {/* Footer - Sticky */}
-                    <div className="p-8 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between rounded-b-[2.5rem]">
-                        <div className="text-slate-400 text-[10px] font-black uppercase tracking-widest hidden md:block italic">
-                            Validated through Healthcare Protocol 2.4.1
+                    {/* Dense Footer */}
+                    <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between rounded-b-[2rem]">
+                        <div className="text-slate-400 text-[8px] font-black uppercase tracking-[0.3em] hidden md:block italic">
+                            Secure Healthcare Node • v2.4.1
                         </div>
                         <div className="flex items-center gap-3">
                             <button
                                 type="button"
                                 onClick={onClose}
-                                className="px-8 py-4 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all active:scale-95"
+                                className="px-5 py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={isPending}
-                                className="px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-blue-500/20 hover:shadow-2xl hover:-translate-y-0.5 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
+                                className="px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-indigo-500/20 hover:shadow-2xl hover:-translate-y-0.5 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-50"
                             >
                                 {isPending ? (
-                                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                ) : <CheckCircle2 className="h-4 w-4" />}
-                                Finalise Patient Master
+                                    <div className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                ) : <CheckCircle2 className="h-3.5 w-3.5" />}
+                                Commit Registration
                             </button>
                         </div>
                     </div>
