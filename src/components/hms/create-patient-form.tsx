@@ -178,10 +178,41 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                         if (res?.error) {
                             setMessage({ type: 'error', text: res.error });
                         } else if (onSuccess) {
-                            onSuccess(res);
+                            // Check if billing is required (Client Side logic for now)
+                            const shouldCharge = formData.get('charge_registration') === 'on';
+                            if (shouldCharge && res.id) {
+                                // Redirect to billing with pre-filled item
+                                const billingParams = new URLSearchParams({
+                                    patientId: res.id,
+                                    items: JSON.stringify([{
+                                        name: 'Patient Registration Fee',
+                                        price: 500,
+                                        quantity: 1,
+                                        type: 'service'
+                                    }])
+                                });
+                                window.location.href = `/hms/billing/new?${billingParams.toString()}`;
+                            } else {
+                                onSuccess(res);
+                            }
                         } else {
-                            setMessage({ type: 'success', text: "Patient profile synchronized successfully." });
-                            setTimeout(() => window.location.reload(), 1000);
+                            // Standalone mode redirect logic
+                            const shouldCharge = formData.get('charge_registration') === 'on';
+                            if (shouldCharge && res.id) {
+                                const billingParams = new URLSearchParams({
+                                    patientId: res.id,
+                                    items: JSON.stringify([{
+                                        name: 'Patient Registration Fee',
+                                        price: 500,
+                                        quantity: 1,
+                                        type: 'service'
+                                    }])
+                                });
+                                router.push(`/hms/billing/new?${billingParams.toString()}`);
+                            } else {
+                                setMessage({ type: 'success', text: "Patient profile synchronized successfully." });
+                                setTimeout(() => window.location.reload(), 1000);
+                            }
                         }
                     } catch (err: any) {
                         setMessage({ type: 'error', text: "Systems offline or validation failed." });
@@ -375,11 +406,29 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                     </div>
 
                     {/* Dense Footer */}
-                    <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between rounded-b-[2rem]">
-                        <div className="text-slate-400 text-[8px] font-black uppercase tracking-[0.3em] hidden md:block italic">
-                            Secure Healthcare Node • v2.4.1
+                    <div className="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 md:flex flex-row items-center justify-between rounded-b-[2rem] gap-4">
+                        <div className="flex items-center gap-6">
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <div className="relative">
+                                    <input type="checkbox" name="charge_registration" defaultChecked className="peer sr-only" />
+                                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-100 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black uppercase text-indigo-900 dark:text-indigo-200 tracking-wider group-hover:text-indigo-600 transition-colors">Charge Registration Fee</span>
+                                    <span className="text-[8px] font-bold text-slate-400">Standard Service (500.00)</span>
+                                </div>
+                            </label>
+
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <div className="relative">
+                                    <input type="checkbox" name="issue_card" defaultChecked className="peer sr-only" />
+                                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-100 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
+                                </div>
+                                <span className="text-[10px] font-black uppercase text-slate-600 dark:text-slate-300 tracking-wider group-hover:text-emerald-600 transition-colors">Issue Patient Card</span>
+                            </label>
                         </div>
-                        <div className="flex items-center gap-3">
+
+                        <div className="flex items-center gap-3 mt-4 md:mt-0">
                             <button
                                 type="button"
                                 onClick={() => onClose ? onClose() : router.back()}
