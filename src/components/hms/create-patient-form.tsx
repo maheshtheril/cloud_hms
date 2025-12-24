@@ -12,9 +12,10 @@ interface CreatePatientFormProps {
     onSuccess?: (patient: any) => void
     isDialog?: boolean
     initialData?: any
+    registrationFee?: number
 }
 
-export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, isDialog = false, initialData }: CreatePatientFormProps) {
+export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, isDialog = false, initialData, registrationFee = 500 }: CreatePatientFormProps) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'basic' | 'residency' | 'vault'>('basic');
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -188,7 +189,7 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                     patientId: patientId,
                                     items: JSON.stringify([{
                                         name: 'Patient Registration Fee',
-                                        price: 500,
+                                        price: registrationFee,
                                         quantity: 1,
                                         type: 'service'
                                     }])
@@ -208,7 +209,7 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                     patientId: patientId,
                                     items: JSON.stringify([{
                                         name: 'Patient Registration Fee',
-                                        price: 500,
+                                        price: registrationFee,
                                         quantity: 1,
                                         type: 'service'
                                     }])
@@ -421,7 +422,7 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                 </div>
                                 <div className="flex flex-col">
                                     <span className="text-[10px] font-black uppercase text-indigo-900 dark:text-indigo-200 tracking-wider group-hover:text-indigo-600 transition-colors">Charge Registration Fee</span>
-                                    <span className="text-[8px] font-bold text-slate-400">Standard Service (500.00)</span>
+                                    <span className="text-[8px] font-bold text-slate-400">Standard Service ({registrationFee.toFixed(2)})</span>
                                 </div>
                             </label>
 
