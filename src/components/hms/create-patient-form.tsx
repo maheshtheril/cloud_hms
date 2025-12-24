@@ -180,10 +180,12 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                         } else if (onSuccess) {
                             // Check if billing is required (Client Side logic for now)
                             const shouldCharge = formData.get('charge_registration') === 'on';
-                            if (shouldCharge && res.id) {
+                            const patientId = (res as any).id; // Cast to any to fix TS error
+
+                            if (shouldCharge && patientId) {
                                 // Redirect to billing with pre-filled item
                                 const billingParams = new URLSearchParams({
-                                    patientId: res.id,
+                                    patientId: patientId,
                                     items: JSON.stringify([{
                                         name: 'Patient Registration Fee',
                                         price: 500,
@@ -198,9 +200,11 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                         } else {
                             // Standalone mode redirect logic
                             const shouldCharge = formData.get('charge_registration') === 'on';
-                            if (shouldCharge && res.id) {
+                            const patientId = (res as any).id; // Cast to any to fix TS error
+
+                            if (shouldCharge && patientId) {
                                 const billingParams = new URLSearchParams({
-                                    patientId: res.id,
+                                    patientId: patientId,
                                     items: JSON.stringify([{
                                         name: 'Patient Registration Fee',
                                         price: 500,
