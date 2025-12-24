@@ -163,7 +163,7 @@ export async function getHMSSettings() {
         // We look for a product that looks like "Registration Fee".
         // In a real world app, we might store the product_id in settings, 
         // but looking up by name is a safe fallback for this MVP.
-        const regFeeProduct = await prisma.product.findFirst({
+        const regFeeProduct = await prisma.hms_product.findFirst({
             where: {
                 company_id: companyId,
                 name: { contains: 'Registration', mode: 'insensitive' },
@@ -173,7 +173,7 @@ export async function getHMSSettings() {
         });
 
         // Fallback search strictly by name if fuzzy match fails
-        const regFeeProductFallback = regFeeProduct || await prisma.product.findFirst({
+        const regFeeProductFallback = regFeeProduct || await prisma.hms_product.findFirst({
             where: {
                 company_id: companyId,
                 name: { contains: 'Registration Fee', mode: 'insensitive' },
@@ -222,7 +222,7 @@ export async function updateHMSSettings(data: any) {
         // 1. Update/Create Registration Fee Product
         const feeAmount = parseFloat(data.registrationFee);
 
-        let regProduct = await prisma.product.findFirst({
+        let regProduct = await prisma.hms_product.findFirst({
             where: {
                 company_id: companyId,
                 name: { contains: 'Registration Fee', mode: 'insensitive' }
@@ -230,21 +230,23 @@ export async function updateHMSSettings(data: any) {
         });
 
         if (regProduct) {
-            await prisma.product.update({
+            await prisma.hms_product.update({
                 where: { id: regProduct.id },
-                data: { price: feeAmount }
+                data: { price: feeAmount, is_service: true, is_stockable: false }
             });
         } else {
             // Create if missing!
-            await prisma.product.create({
+            await prisma.hms_product.create({
                 data: {
                     tenant_id: tenantId!,
                     company_id: companyId,
                     name: "Patient Registration Fee",
+                    sku: `REG-FEE-${companyId.slice(0, 8).toUpperCase()}`, // Ensure unique SKU per company
                     description: "Standard fee for new patient registration",
                     price: feeAmount,
-                    type: "service",
-                    uom_id: null,
+                    is_service: true,
+                    is_stockable: false, // User requested non-stock service
+                    uom: 'each',
                     is_active: true
                 }
             });
