@@ -102,32 +102,9 @@ export async function createPatient(prevState: any, formData: FormData) {
             }
         })
 
-        // Redirect based on next_action
-        const source = formData.get("source") as string
+        return patient;
 
-        if (source === 'dashboard' && !nextAction) {
-            redirect("/hms/dashboard")
-        }
-
-        if (nextAction === 'bill') {
-            redirect("/hms/billing")
-        } else if (nextAction === 'appointment') {
-            redirect("/hms/appointments")
-        } else if (nextAction === 'rx') {
-            // Redirect to new prescription with patient ID
-            redirect(`/hms/prescriptions/new?patientId=${patient.id}`)
-        } else {
-            // Default: redirect to patients list
-            if (source === 'dashboard') {
-                redirect("/hms/dashboard")
-            }
-            redirect("/hms/patients")
-        }
     } catch (error: any) {
-        // Re-throw redirect errors (they're not real errors)
-        if (error.message === 'NEXT_REDIRECT' || error.digest?.startsWith('NEXT_REDIRECT')) {
-            throw error;
-        }
         console.error('Patient creation error:', error)
         return { error: `Failed to create patient: ${error.message}` }
     }
