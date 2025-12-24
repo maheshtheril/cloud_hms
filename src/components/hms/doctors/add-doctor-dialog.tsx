@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { createDoctor } from '@/app/actions/doctor'
 import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock } from 'lucide-react'
 
@@ -26,6 +26,26 @@ interface AddDocFormProps {
     departments: Department[]
     roles: Role[]
     specializations: Specialization[]
+}
+
+function renderDepartmentOptions(departments: Department[], parentId: string | null = null, depth = 0): any {
+    return departments
+        .filter(dept => dept.parent_id === parentId)
+        .map(dept => {
+            const hasChildren = departments.some(d => d.parent_id === dept.id);
+            return (
+                <React.Fragment key={dept.id}>
+                    <option
+                        value={dept.id}
+                        disabled={hasChildren}
+                        className={depth === 0 ? "font-bold" : ""}
+                    >
+                        {"\u00A0".repeat(depth * 4)}{depth > 0 ? "↳ " : ""}{dept.name} {hasChildren ? " (Branch)" : ""}
+                    </option>
+                    {renderDepartmentOptions(departments, dept.id, depth + 1)}
+                </React.Fragment>
+            );
+        });
 }
 
 export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializations }: AddDocFormProps) {
@@ -87,38 +107,6 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                                 className="w-full p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none font-medium text-gray-900"
                                 placeholder="e.g. Senior Consultant, Clinical Lead"
                             />
-                        </div>
-
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Building2 className="h-4 w-4" />
-                                Clinical Department {departments.length > 0 && <span className="text-red-500">*</span>}
-                            </label>
-                            <select
-                                name="department_id"
-                                required={departments.length > 0}
-                                className="w-full p-3.5 bg-gray-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none font-medium text-gray-900"
-                            >
-                                <option value="">
-                                    {departments.length === 0 ? 'No departments available' : 'Select Department (Work Area)'}
-                                </option>
-                                {departments
-                                    .filter(dept => !dept.parent_id)
-                                    .map(parentDept => (
-                                        <>
-                                            <option key={parentDept.id} value={parentDept.id}>
-                                                {parentDept.name}
-                                            </option>
-                                            {departments
-                                                .filter(child => child.parent_id === parentDept.id)
-                                                .map(childDept => (
-                                                    <option key={childDept.id} value={childDept.id}>
-                                                        &nbsp;&nbsp;&nbsp;&nbsp;↳ {childDept.name}
-                                                    </option>
-                                                ))}
-                                        </>
-                                    ))}
-                            </select>
                         </div>
 
                         {/* Personal Information */}
@@ -333,6 +321,34 @@ export function AddDoctorDialog({ isOpen, onClose, departments, roles, specializ
                                     className="w-full pl-8 p-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none font-bold text-gray-900"
                                 />
                             </div>
+                        </div>
+
+                        {/* Final Assignment Section */}
+                        <div className="md:col-span-2 mt-6">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2 border-b pb-2">
+                                <div className="h-8 w-8 bg-slate-100 rounded-lg flex items-center justify-center">
+                                    <Building2 className="h-4 w-4 text-slate-600" />
+                                </div>
+                                Organizational Placement (Final Node)
+                            </h3>
+                        </div>
+
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
+                                <Building2 className="h-4 w-4" />
+                                Assigned Clinical Department {departments.length > 0 && <span className="text-red-500">*</span>}
+                            </label>
+                            <select
+                                name="department_id"
+                                required={departments.length > 0}
+                                className="w-full p-3.5 bg-slate-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none font-black text-gray-900"
+                            >
+                                <option value="">
+                                    {departments.length === 0 ? 'No departments configured' : 'Select Terminal Node'}
+                                </option>
+                                {renderDepartmentOptions(departments)}
+                            </select>
+                            <p className="mt-2 text-[10px] text-gray-500 italic">Assign the clinician to their final organizational unit (Terminal Node).</p>
                         </div>
                     </div>
 
