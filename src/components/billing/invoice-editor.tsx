@@ -47,33 +47,62 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
 
     const [globalDiscount, setGlobalDiscount] = useState(0)
 
-    // Auto-load medicines from URL or initial props
+    // Auto-load medicines from URL
     useEffect(() => {
         const medicinesToLoad = initialMedicines || (urlMedicines ? JSON.parse(decodeURIComponent(urlMedicines)) : null)
 
         if (medicinesToLoad) {
             try {
-                console.log('📋 Auto-loading medicines:', medicinesToLoad)
+                console.log('📋 Auto-loading medicines/services:', medicinesToLoad)
 
-                const medicineLines = medicinesToLoad.map((med: any, idx: number) => ({
-                    id: Date.now() + idx,
-                    product_id: med.id,
-                    description: med.name,
-                    quantity: med.quantity || 1,
-                    unit_price: parseFloat(med.price?.toString() || '0'),
-                    uom: 'PCS',
-                    tax_rate_id: defaultTaxId,
-                    tax_amount: 0,
-                    discount_amount: 0
-                }))
+                const parsedLines = medicinesToLoad.map((med: any, idx: number) => {
+                    // SMART LOOKUP: If item is "Patient Registration Fee", try to match with a DB product
+                    let dbProduct = null;
+                    if (med.name === 'Patient Registration Fee' || med.name === 'Registration Fee') {
+                        dbProduct = billableItems.find(p => p.label.toLowerCase().includes('registration') && p.type === 'service');
+                    } else {
+                        dbProduct = billableItems.find(p => p.id === med.id);
+                    }
 
-                setLines(medicineLines)
-                console.log('✅ Auto-filled', medicineLines.length, 'medicines')
+                    const lineItem: any = {
+                        id: Date.now() + idx,
+                        product_id: dbProduct ? dbProduct.id : (med.id || ''),
+                        description: dbProduct ? (dbProduct.description || dbProduct.label) : med.name,
+                        quantity: med.quantity || 1,
+                        unit_price: parseFloat(med.price?.toString() || '0'),
+                        uom: med.uom || 'PCS',
+                        tax_rate_id: defaultTaxId,
+                        tax_amount: 0,
+                        discount_amount: 0
+                    };
+
+                    // Apply DB Product Defaults (Tax, Price, etc)
+                    if (dbProduct) {
+                        lineItem.unit_price = dbProduct.price || lineItem.unit_price;
+                        lineItem.description = dbProduct.description || dbProduct.label; // Official description
+                        if (dbProduct.categoryTaxId) {
+                            lineItem.tax_rate_id = dbProduct.categoryTaxId;
+                        } else if (dbProduct.metadata?.purchase_tax_rate) {
+                            const matchingTax = taxConfig.taxRates.find(t => t.rate === Number(dbProduct.metadata.purchase_tax_rate));
+                            if (matchingTax) lineItem.tax_rate_id = matchingTax.id;
+                        }
+                    }
+
+                    // Calculate Tax for auto-loaded item
+                    const taxRateObj = taxConfig.taxRates.find(t => t.id === lineItem.tax_rate_id);
+                    const rate = taxRateObj ? taxRateObj.rate : 0;
+                    lineItem.tax_amount = (lineItem.quantity * lineItem.unit_price * rate) / 100;
+
+                    return lineItem;
+                })
+
+                setLines(parsedLines)
+                console.log('✅ Auto-filled', parsedLines.length, 'items with accounting logic')
             } catch (error) {
-                console.error('Error loading medicines:', error)
+                console.error('Error loading items:', error)
             }
         }
-    }, [urlMedicines, initialMedicines])
+    }, [urlMedicines, initialMedicines, billableItems])
 
     // Auto-load appointment fee and lab tests from appointmentId
     useEffect(() => {
