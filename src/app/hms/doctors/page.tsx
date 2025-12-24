@@ -29,8 +29,8 @@ export default async function DoctorsPage({
             orderBy: { name: 'asc' }
         }),
         prisma.hms_roles.findMany({
-            where: { tenant_id: tenantId, is_active: true, is_clinical: true },
-            select: { id: true, name: true },
+            where: { tenant_id: tenantId, is_active: true },
+            select: { id: true, name: true, is_clinical: true },
             orderBy: { name: 'asc' }
         }),
         prisma.hms_specializations.findMany({
@@ -41,35 +41,41 @@ export default async function DoctorsPage({
     ])
 
     // World-class auto-seeding if data is missing
-    if (departments.length === 0 || roles.length === 0 || specializations.length === 0) {
-        if (departments.length === 0) {
-            await prisma.hms_departments.createMany({
-                data: [
-                    { id: randomUUID(), tenant_id: tenantId, company_id: companyId, name: "Emergency Department", code: "ER" },
-                    { id: randomUUID(), tenant_id: tenantId, company_id: companyId, name: "Intensive Care Unit", code: "ICU" },
-                    { id: randomUUID(), tenant_id: tenantId, company_id: companyId, name: "Outpatient Department", code: "OPD" }
-                ]
-            });
+    if (departments.length < 5 || roles.length < 5) {
+        // Departments Seeding
+        const deptNames = ["Clinical Services", "Accounts & Finance", "Human Resources", "Administration", "Pharmacy", "Laboratory", "Emergency (ER)"];
+        for (const name of deptNames) {
+            const exists = departments.find(d => d.name === name);
+            if (!exists) {
+                await prisma.hms_departments.create({
+                    data: { id: randomUUID(), tenant_id: tenantId, company_id: companyId, name, code: name.substring(0, 3).toUpperCase() }
+                });
+            }
         }
-        if (roles.length === 0) {
-            await prisma.hms_roles.createMany({
-                data: ["Senior Consultant", "Resident Physician", "Nursing Lead", "Radiology Expert"].map(name => ({
-                    id: randomUUID(), tenant_id: tenantId, company_id: companyId, name, is_clinical: true
-                }))
-            });
-        }
-        if (specializations.length === 0) {
-            await prisma.hms_specializations.createMany({
-                data: ["Cardiology", "Neurology", "Pediatrics", "Orthopedics"].map(name => ({
-                    id: randomUUID(), tenant_id: tenantId, company_id: companyId, name
-                }))
-            });
+
+        // Roles Seeding
+        const roleData = [
+            { name: "Senior Consultant", clinical: true },
+            { name: "Resident Doctor", clinical: true },
+            { name: "Nursing Supervisor", clinical: true },
+            { name: "Accountant", clinical: false },
+            { name: "Administrator", clinical: false },
+            { name: "Front Desk Executive", clinical: false },
+            { name: "HR Manager", clinical: false }
+        ];
+        for (const r of roleData) {
+            const exists = roles.find(role => role.name === r.name);
+            if (!exists) {
+                await prisma.hms_roles.create({
+                    data: { id: randomUUID(), tenant_id: tenantId, company_id: companyId, name: r.name, is_clinical: r.clinical }
+                });
+            }
         }
 
         // Re-fetch after seeding
         [departments, roles, specializations] = await Promise.all([
             prisma.hms_departments.findMany({ where: { tenant_id: tenantId, is_active: true }, select: { id: true, name: true, parent_id: true }, orderBy: { name: 'asc' } }),
-            prisma.hms_roles.findMany({ where: { tenant_id: tenantId, is_active: true, is_clinical: true }, select: { id: true, name: true }, orderBy: { name: 'asc' } }),
+            prisma.hms_roles.findMany({ where: { tenant_id: tenantId, is_active: true }, select: { id: true, name: true, is_clinical: true }, orderBy: { name: 'asc' } }),
             prisma.hms_specializations.findMany({ where: { tenant_id: tenantId, is_active: true }, select: { id: true, name: true }, orderBy: { name: 'asc' } })
         ]);
     }

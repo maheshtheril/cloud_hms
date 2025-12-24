@@ -246,7 +246,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Clinical Role</label>
+                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Institutional Role</label>
                                                 <select name="role_id" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
                                                     <option value="">Select Role</option>
                                                     {roles.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}
@@ -262,7 +262,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                         </div>
                                         <div>
                                             <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider flex items-center justify-between">
-                                                <span>Department</span>
+                                                <span>Functional Unit</span>
                                                 <button type="button" onClick={() => setIsAddingDept(!isAddingDept)} className="text-indigo-600 hover:text-indigo-800 text-[9px] font-black flex items-center gap-1">
                                                     <Plus className="h-2 w-2" /> NEW
                                                 </button>

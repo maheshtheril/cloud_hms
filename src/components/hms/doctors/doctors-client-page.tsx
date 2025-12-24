@@ -29,6 +29,7 @@ interface Department {
 interface Role {
     id: string
     name: string
+    is_clinical?: boolean
 }
 
 interface Specialization {
@@ -37,7 +38,7 @@ interface Specialization {
 }
 
 interface DoctorsClientPageProps {
-    doctors: Doctor[]
+    doctors: (Doctor & { hms_roles?: Role })[]
     stats: {
         total: number
         active: number
@@ -64,40 +65,40 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
             <div className="max-w-[1800px] mx-auto space-y-6">
 
                 {/* Futuristic Header */}
-                <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-8 shadow-2xl">
+                <div className="relative overflow-hidden bg-gradient-to-r from-slate-800 via-indigo-900 to-slate-900 rounded-3xl p-8 shadow-2xl">
                     <div className="absolute inset-0 opacity-20">
-                        <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse"></div>
-                        <div className="absolute bottom-0 right-0 w-96 h-96 bg-pink-300 rounded-full blur-3xl animate-pulse delay-700"></div>
+                        <div className="absolute top-0 left-0 w-96 h-96 bg-indigo-500 rounded-full blur-3xl animate-pulse"></div>
+                        <div className="absolute bottom-0 right-0 w-96 h-96 bg-blue-300 rounded-full blur-3xl animate-pulse delay-700"></div>
                     </div>
 
                     <div className="relative z-10 flex items-center justify-between">
                         <div className="flex items-center gap-6">
-                            <div className="h-16 w-16 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center shadow-lg">
-                                <Stethoscope className="h-8 w-8 text-white" />
+                            <div className="h-16 w-16 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center shadow-lg border border-white/20">
+                                <Users className="h-8 w-8 text-white" />
                             </div>
                             <div>
                                 <div className="flex items-center gap-3">
                                     <h1 className="text-4xl font-black text-white tracking-tight">
-                                        Medical Team
+                                        Staff Master
                                     </h1>
-                                    <div className="px-3 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full flex items-center gap-1">
-                                        <Sparkles className="h-3 w-3" />
-                                        World-Class
+                                    <div className="px-3 py-1 bg-indigo-500 text-white text-xs font-bold rounded-full flex items-center gap-1">
+                                        <Shield className="h-3 w-3" />
+                                        Institutional Security
                                     </div>
                                 </div>
-                                <p className="text-blue-100 text-lg mt-1">
-                                    Expert healthcare professionals • Advanced care • Trusted specialists
+                                <p className="text-indigo-100 text-lg mt-1 opacity-80 font-medium">
+                                    Comprehensive Registry of Clinical & Administrative Personnel
                                 </p>
                             </div>
                         </div>
 
                         <button
                             onClick={() => setIsAddDialogOpen(true)}
-                            className="group relative px-8 py-4 bg-white text-indigo-600 rounded-2xl hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center gap-3 font-bold shadow-xl"
+                            className="group relative px-8 py-4 bg-white text-indigo-700 rounded-2xl hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center gap-3 font-bold shadow-xl overflow-hidden"
                         >
-                            <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-pink-400 rounded-2xl opacity-0 group-hover:opacity-20 transition-opacity"></div>
-                            <Plus className="h-5 w-5" />
-                            <span>Add Staff Member</span>
+                            <div className="absolute inset-0 bg-indigo-600 translate-y-[101%] group-hover:translate-y-0 transition-transform duration-300"></div>
+                            <Plus className="h-5 w-5 relative z-10 group-hover:text-white transition-colors" />
+                            <span className="relative z-10 group-hover:text-white transition-colors">Register New Staff</span>
                         </button>
                     </div>
                 </div>
@@ -110,11 +111,11 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                                 <Users className="h-6 w-6 text-white" />
                             </div>
                             <div className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">
-                                Total
+                                Enterprise
                             </div>
                         </div>
                         <div className="text-3xl font-black text-gray-900 mb-1">{stats.total}</div>
-                        <div className="text-sm text-gray-600 font-medium">Healthcare Professionals</div>
+                        <div className="text-sm text-gray-600 font-medium">Total Registered Staff</div>
                     </div>
 
                     <div className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
@@ -123,11 +124,11 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                                 <TrendingUp className="h-6 w-6 text-white" />
                             </div>
                             <div className="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full">
-                                Active
+                                Operational
                             </div>
                         </div>
                         <div className="text-3xl font-black text-gray-900 mb-1">{stats.active}</div>
-                        <div className="text-sm text-gray-600 font-medium">Currently Active</div>
+                        <div className="text-sm text-gray-600 font-medium">Active Personnel</div>
                     </div>
 
                     <div className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
@@ -136,11 +137,11 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                                 <Award className="h-6 w-6 text-white" />
                             </div>
                             <div className="px-3 py-1 bg-purple-50 text-purple-600 text-xs font-bold rounded-full">
-                                Diverse
+                                Divisions
                             </div>
                         </div>
                         <div className="text-3xl font-black text-gray-900 mb-1">{stats.specializations}</div>
-                        <div className="text-sm text-gray-600 font-medium">Specializations</div>
+                        <div className="text-sm text-gray-600 font-medium">Departments & Units</div>
                     </div>
                 </div>
 
@@ -152,25 +153,25 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="🔍 Search by name, email, or specialization..."
+                            placeholder="🔍 Search staff by name, department, or institutional role..."
                             className="w-full pl-12 pr-4 py-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-medium text-gray-900"
                         />
                     </div>
                 </div>
 
-                {/* Doctors Grid */}
+                {/* Staff Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredDoctors.length === 0 ? (
                         <div className="md:col-span-2 lg:col-span-3 bg-white/80 backdrop-blur-xl rounded-2xl p-12 text-center border border-gray-200">
-                            <Stethoscope className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                            <h3 className="text-lg font-bold text-gray-900 mb-2">No staff members found</h3>
-                            <p className="text-gray-500 mb-6">Add your first healthcare professional (doctor, nurse, therapist, etc.)</p>
+                            <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                            <h3 className="text-lg font-bold text-gray-900 mb-2">Institutional Registry Empty</h3>
+                            <p className="text-gray-500 mb-6">Register your first team member to begin institutional management.</p>
                             <button
                                 onClick={() => setIsAddDialogOpen(true)}
-                                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all inline-flex items-center gap-2"
+                                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-blue-600 text-white rounded-xl font-bold hover:shadow-lg hover:scale-105 transition-all inline-flex items-center gap-2"
                             >
                                 <Plus className="h-4 w-4" />
-                                Add Staff Member
+                                Register Staff
                             </button>
                         </div>
                     ) : (
@@ -195,10 +196,10 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                                     )}
                                 </div>
 
-                                {/* Doctor Info */}
+                                {/* Staff Info - Smarter Prefix Logic */}
                                 <div className="mb-4">
                                     <h3 className="text-xl font-black text-gray-900 mb-1 group-hover:text-blue-600 transition-colors">
-                                        Dr. {doc.first_name} {doc.last_name}
+                                        {doc.hms_roles?.is_clinical ? 'Dr. ' : ''}{doc.first_name} {doc.last_name}
                                     </h3>
                                     <div className="flex flex-col">
                                         <p className="text-sm font-bold text-blue-600">

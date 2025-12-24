@@ -263,7 +263,7 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
                                                 </select>
                                             </div>
                                             <div>
-                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Clinical Role</label>
+                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Institutional Role</label>
                                                 <select name="role_id" defaultValue={doctor.role_id || ''} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
                                                     <option value="">Select Role</option>
                                                     {roles.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}
@@ -278,7 +278,7 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
                                             </select>
                                         </div>
                                         <div>
-                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Department</label>
+                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Functional Unit</label>
                                             <select name="department_id" defaultValue={doctor.department_id || ''} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
                                                 <option value="">Select Department</option>
                                                 {renderDepartmentOptions(departments)}

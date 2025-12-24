@@ -37,9 +37,10 @@ export async function createDoctor(formData: FormData) {
     const documentUrlsStr = formData.get("document_urls") as string
     const documentUrls = documentUrlsStr ? JSON.parse(documentUrlsStr) : []
 
-    if (!firstName || !lastName || !email || !roleId) {
-        return { error: "Missing required identity fields" }
-    }
+    if (!firstName) return { error: "First Name is required" }
+    if (!lastName) return { error: "Last Name is required" }
+    if (!email) return { error: "Professional Email is required" }
+    if (!roleId) return { error: "Institutional Role is required" }
 
     try {
         // WORLD-CLASS: Link to Accounts Head (Employee Payables)
