@@ -202,8 +202,8 @@ export async function createInvoice(data: any) {
         revalidatePath('/hms/billing');
         return { success: true, data: result };
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to create invoice:", error)
-        return { error: "Failed to create invoice" }
+        return { error: `Failed to create invoice: ${error.message}` }
     }
 }
