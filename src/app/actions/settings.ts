@@ -190,7 +190,7 @@ export async function getHMSSettings() {
         return {
             success: true,
             settings: {
-                registrationFee: finalProduct ? parseFloat(finalProduct.price.toString()) : 500,
+                registrationFee: finalProduct ? parseFloat(finalProduct.price?.toString() || '0') : 500,
                 registrationProductId: finalProduct?.id,
                 registrationValidity: (companySettings?.metadata as any)?.hms_registration_validity || 365,
                 enableCardIssuance: (companySettings?.metadata as any)?.hms_enable_card_issuance ?? true
