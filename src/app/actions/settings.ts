@@ -198,7 +198,9 @@ export async function getHMSSettings() {
             success: true,
             settings: {
                 registrationFee: finalProduct ? parseFloat(finalProduct.price?.toString() || '0') : 500,
-                registrationProductId: finalProduct?.id,
+                registrationProductId: finalProduct?.id || null,
+                registrationProductName: finalProduct?.name || 'Patient Registration Fee',
+                registrationProductDescription: finalProduct?.description || 'Standard Registration Service',
                 registrationValidity: configData.validity || 365,
                 enableCardIssuance: configData.enableCardIssuance ?? true
             }

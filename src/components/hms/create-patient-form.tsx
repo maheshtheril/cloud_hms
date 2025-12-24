@@ -13,9 +13,22 @@ interface CreatePatientFormProps {
     isDialog?: boolean
     initialData?: any
     registrationFee?: number
+    registrationProductId?: string | null
+    registrationProductName?: string
+    registrationProductDescription?: string
 }
 
-export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, isDialog = false, initialData, registrationFee = 500 }: CreatePatientFormProps) {
+export function CreatePatientForm({
+    tenantCountry = 'IN',
+    onClose,
+    onSuccess,
+    isDialog = false,
+    initialData,
+    registrationFee = 500,
+    registrationProductId = null,
+    registrationProductName = 'Patient Registration Fee',
+    registrationProductDescription = 'Standard Service'
+}: CreatePatientFormProps) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'basic' | 'residency' | 'vault'>('basic');
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
@@ -188,7 +201,9 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                                 const billingParams = new URLSearchParams({
                                     patientId: patientId,
                                     items: JSON.stringify([{
-                                        name: 'Patient Registration Fee',
+                                        id: registrationProductId || '',
+                                        name: registrationProductName,
+                                        description: registrationProductDescription || registrationProductName,
                                         price: registrationFee,
                                         quantity: 1,
                                         type: 'service'
