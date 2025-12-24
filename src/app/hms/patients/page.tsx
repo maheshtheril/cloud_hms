@@ -97,7 +97,19 @@ export default async function PatientsPage({
                                         {(patient.contact as any)?.phone || (patient as any).phone || '-'}
                                     </td>
                                     <td className="p-4 text-gray-600 capitalize">{patient.gender || '-'}</td>
-                                    <td className="p-4 text-gray-600">{patient.blood_group || '-'}</td>
+                                    <td className="p-4">
+                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black tracking-wide ${(patient.metadata as any)?.blood_group
+                                                ? 'bg-rose-50 text-rose-600 border border-rose-100'
+                                                : 'bg-slate-50 text-slate-400'
+                                            }`}>
+                                            {(patient.metadata as any)?.blood_group ? (
+                                                <>
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></span>
+                                                    {(patient.metadata as any).blood_group}
+                                                </>
+                                            ) : '-'}
+                                        </span>
+                                    </td>
                                     <td className="p-4 text-gray-600">
                                         {patient.updated_at ? new Date(patient.updated_at).toLocaleDateString() : '-'}
                                     </td>
