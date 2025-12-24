@@ -110,7 +110,31 @@ export function CreatePatientForm({ tenantCountry = 'IN', onClose, onSuccess, is
                 {/* Compressed Form Content */}
                 <form onSubmit={async (e) => {
                     e.preventDefault();
+
+                    // Smart Tab Validation Interceptor
                     const formData = new FormData(e.currentTarget);
+                    const requiredFields = [
+                        { name: 'first_name', tab: 'basic' },
+                        { name: 'last_name', tab: 'basic' },
+                        { name: 'phone', tab: 'residency' }
+                    ];
+
+                    for (const field of requiredFields) {
+                        const value = formData.get(field.name);
+                        if (!value || value.toString().trim() === '') {
+                            // If field is missing, switch to that tab immediately
+                            if (activeTab !== field.tab) {
+                                setActiveTab(field.tab as any);
+                                // Give React a split second to render the tab before showing error
+                                await new Promise(resolve => setTimeout(resolve, 100));
+                            }
+                            setMessage({ type: 'error', text: `Missing mandatory field: ${field.name.replace('_', ' ')}` });
+                            const element = e.currentTarget.querySelector(`[name="${field.name}"]`) as HTMLElement;
+                            element?.focus();
+                            return;
+                        }
+                    }
+
                     setIsPending(true);
                     setMessage(null);
                     try {
