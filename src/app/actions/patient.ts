@@ -76,12 +76,12 @@ export async function createPatient(prevState: any, formData: FormData) {
     }
 
     try {
-        // WORLD-CLASS: Link to Accounts Head (Sundry Debtors)
+        // WORLD-CLASS: Link to Accounts Head (Accounts Receivable)
         // Ensure revenue tracking is locked for this patient
-        const sundryDebtorsAccount = await prisma.account_chart.findFirst({
+        const accountsReceivableAccount = await prisma.account_chart.findFirst({
             where: {
                 tenant_id: tenantId,
-                name: { contains: 'Sundry Debtors', mode: 'insensitive' }
+                name: { contains: 'Accounts Receivable', mode: 'insensitive' }
             }
         })
 

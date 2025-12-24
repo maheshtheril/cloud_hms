@@ -42,12 +42,12 @@ export async function createDoctor(formData: FormData) {
     }
 
     try {
-        // WORLD-CLASS: Link to Accounts Head (Sundry Debtors)
-        // We look for the AR (Accounts Receivable) account or a Sundry Debtors account for this tenant
-        const sundryCreditorsAccount = await prisma.account_chart.findFirst({
+        // WORLD-CLASS: Link to Accounts Head (Employee Payables)
+        // We look for the Employee Payable or Salary Payable account for this tenant
+        const employeePayableAccount = await prisma.account_chart.findFirst({
             where: {
                 tenant_id: tenantId,
-                name: { contains: 'Sundry Creditors', mode: 'insensitive' }
+                name: { contains: 'Employee Payable', mode: 'insensitive' }
             }
         })
 
