@@ -32,6 +32,10 @@ export async function createDoctor(formData: FormData) {
     const consultationSlotDuration = parseInt(formData.get("consultation_slot_duration") as string) || 30
     const consultationFee = parseFloat(formData.get("consultation_fee") as string) || 0
     const workingDays = formData.getAll("working_days") as string[]
+    const profileImageUrl = formData.get("profile_image_url") as string
+    const signatureUrl = formData.get("signature_url") as string
+    const documentUrlsStr = formData.get("document_urls") as string
+    const documentUrls = documentUrlsStr ? JSON.parse(documentUrlsStr) : []
 
     if (!firstName || !lastName || !email || !roleId) {
         return { error: "Missing required identity fields" }
@@ -69,6 +73,9 @@ export async function createDoctor(formData: FormData) {
                 consultation_slot_duration: consultationSlotDuration,
                 consultation_fee: consultationFee,
                 working_days: workingDays.length > 0 ? workingDays : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                profile_image_url: profileImageUrl || null,
+                signature_url: signatureUrl || null,
+                document_urls: documentUrls,
                 is_active: true,
                 // We logicially "use" the accounts head, if we had an account_id field we would save it.
                 // For now, we ensure the creation is successful.
@@ -107,6 +114,10 @@ export async function updateDoctor(formData: FormData) {
     const consultationSlotDuration = parseInt(formData.get("consultation_slot_duration") as string)
     const consultationFee = parseFloat(formData.get("consultation_fee") as string) || 0
     const workingDays = formData.getAll("working_days") as string[]
+    const profileImageUrl = formData.get("profile_image_url") as string
+    const signatureUrl = formData.get("signature_url") as string
+    const documentUrlsStr = formData.get("document_urls") as string
+    const documentUrls = documentUrlsStr ? JSON.parse(documentUrlsStr) : []
 
     try {
         await prisma.hms_clinicians.update({
@@ -129,6 +140,9 @@ export async function updateDoctor(formData: FormData) {
                 consultation_slot_duration: consultationSlotDuration,
                 consultation_fee: consultationFee,
                 working_days: workingDays,
+                profile_image_url: profileImageUrl || null,
+                signature_url: signatureUrl || null,
+                document_urls: documentUrls,
                 updated_at: new Date()
             } as any
         })

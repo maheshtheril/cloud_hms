@@ -53,9 +53,10 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
     const [searchQuery, setSearchQuery] = useState('')
 
     const filteredDoctors = doctors.filter(doc =>
-        `${doc.first_name} ${doc.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        `${doc.first_name} ${doc.last_name} ${doc.hms_roles?.name || ''}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
         doc.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.hms_specializations?.name.toLowerCase().includes(searchQuery.toLowerCase())
+        doc.hms_specializations?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        doc.hms_roles?.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
     return (
@@ -240,8 +241,8 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                                                 <div
                                                     key={day}
                                                     className={`h-5 w-5 rounded-md flex items-center justify-center text-[7px] font-black transition-all ${isActive
-                                                            ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
-                                                            : "bg-slate-50 text-slate-300"
+                                                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
+                                                        : "bg-slate-50 text-slate-300"
                                                         }`}
                                                 >
                                                     {day.substring(0, 1)}

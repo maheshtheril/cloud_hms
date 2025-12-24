@@ -1004,6 +1004,9 @@ model hms_clinicians {
   last_name           String
   email               String?              @unique
   phone               String?
+  profile_image_url   String?
+  signature_url       String?
+  document_urls       Json?                @default("[]")
   employee_id         String?              @unique
   designation         String?
   qualification       String?

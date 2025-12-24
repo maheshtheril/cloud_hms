@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { updateDoctor } from '@/app/actions/doctor'
 import { seedStandardDepartments, quickAddDepartment } from '@/app/actions/hms-setup'
 import { WORLD_CLASS_DESIGNATIONS, WORLD_CLASS_QUALIFICATIONS } from '@/app/hms/doctors/constants'
-import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle, Hash, CreditCard, UserCheck, UserCog } from 'lucide-react'
+import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle, Hash, CreditCard, UserCheck, UserCog, Image, FileText, Fingerprint, Camera, FileCheck } from 'lucide-react'
 
 interface Department {
     id: string
@@ -39,6 +39,9 @@ interface Doctor {
     consultation_slot_duration: number | null
     consultation_fee: number | null
     working_days?: string[] | null
+    profile_image_url?: string | null
+    signature_url?: string | null
+    document_urls?: any | null
 }
 
 interface EditDoctorDialogProps {
@@ -81,6 +84,7 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
     const [empId, setEmpId] = useState(doctor.employee_id || '')
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
     const [selectedDays, setSelectedDays] = useState<string[]>(doctor.working_days || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
+    const [activeTab, setActiveTab] = useState<'general' | 'clinical' | 'documents'>('general')
 
     const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
@@ -151,7 +155,7 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
 
                     <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
                         {message && (
-                            <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-4 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'
+                            <div className={`mb-6 p-4 rounded-2xl flex items-center gap-3 animate-in slide-in-from-top-4 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm shadow-emerald-100' : 'bg-rose-50 text-rose-700 border border-rose-200 shadow-sm'
                                 }`}>
                                 {message.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
                                 <span className="font-bold text-sm tracking-tight">{message.text}</span>
@@ -161,238 +165,235 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
                             </div>
                         )}
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* World-Class Tablet Navigation */}
+                        <div className="flex items-center gap-2 mb-8 bg-slate-100 p-1.5 rounded-[1.5rem] w-fit border border-slate-200 shadow-inner">
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('general')}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl text-xs font-black transition-all ${activeTab === 'general' ? 'bg-white text-indigo-600 shadow-md' : 'text-slate-500 hover:bg-white/50 hover:text-slate-700'}`}
+                            >
+                                <UserCog className="h-4 w-4" />
+                                Profile Identity
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('clinical')}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl text-xs font-black transition-all ${activeTab === 'clinical' ? 'bg-white text-emerald-600 shadow-md' : 'text-slate-500 hover:bg-white/50 hover:text-slate-700'}`}
+                            >
+                                <Clock className="h-4 w-4" />
+                                Clinical Logic
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setActiveTab('documents')}
+                                className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl text-xs font-black transition-all ${activeTab === 'documents' ? 'bg-white text-amber-600 shadow-md' : 'text-slate-500 hover:bg-white/50 hover:text-slate-700'}`}
+                            >
+                                <Fingerprint className="h-4 w-4" />
+                                Credentials & Vault
+                            </button>
+                        </div>
 
-                            {/* Column 1: Administrative */}
-                            <div className="space-y-4 bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
-                                    <Shield className="h-4 w-4" />
-                                    Accountability
-                                </h3>
-
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider flex items-center gap-2">
-                                            <Hash className="h-3 w-3" /> Employee ID
-                                        </label>
-                                        <input
-                                            type="text"
-                                            name="employee_id"
-                                            value={empId}
-                                            onChange={(e) => setEmpId(e.target.value)}
-                                            className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none font-bold text-sm"
-                                        />
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Job Designation</label>
-                                        <select
-                                            name="designation"
-                                            defaultValue={doctor.designation || ''}
-                                            className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-bold text-sm appearance-none"
-                                        >
-                                            <option value="">Select Designation</option>
-                                            {WORLD_CLASS_DESIGNATIONS.map(d => <option key={d} value={d}>{d}</option>)}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Clinical Role</label>
-                                        <select
-                                            name="role_id"
-                                            defaultValue={doctor.role_id || ''}
-                                            required
-                                            className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-bold text-sm"
-                                        >
-                                            <option value="">Select Clinical Type</option>
-                                            {roles.map((role: Role) => (
-                                                <option key={role.id} value={role.id}>{role.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Specialization</label>
-                                        <select
-                                            name="specialization_id"
-                                            defaultValue={doctor.specialization_id || ''}
-                                            className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-bold text-sm"
-                                        >
-                                            <option value="">None / General</option>
-                                            {specializations.map((spec: Specialization) => (
-                                                <option key={spec.id} value={spec.id}>{spec.name}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider flex items-center justify-between">
-                                            <span>Department</span>
-                                            <button type="button" onClick={() => setIsAddingDept(!isAddingDept)} className="text-indigo-600 hover:text-indigo-800 text-[9px] font-black">
-                                                <Plus className="h-2 w-2" /> NEW
-                                            </button>
-                                        </label>
-                                        {isAddingDept && (
-                                            <div className="flex items-center gap-2 mb-4 animate-in fade-in slide-in-from-top-2">
-                                                <input
-                                                    type="text"
-                                                    value={newDeptName}
-                                                    onChange={(e) => setNewDeptName(e.target.value)}
-                                                    placeholder="Department Name"
-                                                    className="flex-1 p-3 bg-blue-50/50 border-2 border-blue-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-medium text-sm"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={handleQuickAdd}
-                                                    className="px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-md active:scale-95"
-                                                >
-                                                    Add
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => { setIsAddingDept(false); setNewDeptName('') }}
-                                                    className="p-3 bg-gray-100 text-gray-500 rounded-xl hover:bg-gray-200 transition-all"
-                                                >
-                                                    <X className="h-5 w-5" />
-                                                </button>
+                        <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            {activeTab === 'general' && (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    {/* Column 1: Core Identity */}
+                                    <div className="space-y-6 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
+                                            <GraduationCap className="h-4 w-4 text-indigo-500" />
+                                            Professional Profile
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">First Name</label>
+                                                <input type="text" name="first_name" defaultValue={doctor.first_name} required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
                                             </div>
-                                        )}
-                                        <select
-                                            name="department_id"
-                                            defaultValue={doctor.department_id || ''}
-                                            required
-                                            className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-blue-100 outline-none font-bold text-sm"
-                                        >
-                                            <option value="">Select Department</option>
-                                            {renderDepartmentOptions(departments)}
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Column 2: Credentials */}
-                            <div className="space-y-4 bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
-                                    <GraduationCap className="h-4 w-4" />
-                                    Identity Profile
-                                </h3>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">First Name</label>
-                                        <input type="text" name="first_name" defaultValue={doctor.first_name} required className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Last Name</label>
-                                        <input type="text" name="last_name" defaultValue={doctor.last_name} required className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Qualification</label>
-                                    <select
-                                        name="qualification"
-                                        defaultValue={doctor.qualification || ''}
-                                        className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm"
-                                    >
-                                        <option value="">Select Qualification</option>
-                                        {WORLD_CLASS_QUALIFICATIONS.map(q => <option key={q} value={q}>{q}</option>)}
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">License Number</label>
-                                    <input type="text" name="license_no" defaultValue={doctor.license_no || ''} required className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
-                                </div>
-
-                                <div>
-                                    <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Professional Email</label>
-                                    <input type="email" name="email" defaultValue={doctor.email || ''} required className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
-                                </div>
-
-                                <div>
-                                    <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Direct Phone</label>
-                                    <input type="tel" name="phone" defaultValue={doctor.phone || ''} className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
-                                </div>
-                            </div>
-
-                            {/* Column 3: Clinical & Finance */}
-                            <div className="space-y-4 bg-white p-5 rounded-3xl shadow-sm border border-slate-100">
-                                <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
-                                    <Clock className="h-4 w-4" />
-                                    Operations
-                                </h3>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Start Time</label>
-                                        <input type="time" name="consultation_start_time" defaultValue={doctor.consultation_start_time || '09:00'} className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">End Time</label>
-                                        <input type="time" name="consultation_end_time" defaultValue={doctor.consultation_end_time || '17:00'} className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Slot (Min)</label>
-                                        <input type="number" name="consultation_slot_duration" defaultValue={doctor.consultation_slot_duration || 30} className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Fee (₹)</label>
-                                        <input type="number" name="consultation_fee" defaultValue={Number(doctor.consultation_fee) || 0} className="w-full p-3 bg-slate-50 border-2 border-emerald-100 outline-none font-bold text-sm text-emerald-700" />
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-[11px] font-black text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-2">
-                                        <Calendar className="h-3.5 w-3.5 text-blue-500" />
-                                        Weekly Availability
-                                    </label>
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {daysOfWeek.map(day => (
-                                            <button
-                                                key={day}
-                                                type="button"
-                                                onClick={() => toggleDay(day)}
-                                                className={`h-9 w-9 rounded-xl text-[10px] font-black transition-all border-2 flex items-center justify-center active:scale-90 ${selectedDays.includes(day)
-                                                        ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200"
-                                                        : "bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-300"
-                                                    }`}
-                                            >
-                                                {day.substring(0, 3).toUpperCase()}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    {/* Hidden inputs for form submission */}
-                                    {selectedDays.map(day => (
-                                        <input key={day} type="hidden" name="working_days" value={day} />
-                                    ))}
-                                    {selectedDays.length === 0 && <p className="text-[10px] text-rose-500 mt-2 font-bold animate-pulse">Select at least one day.</p>}
-                                </div>
-
-
-                                <div className="pt-4 border-t border-slate-100">
-                                    <label className="block text-[11px] font-black text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-2">
-                                        <CreditCard className="h-3.5 w-3.5 text-blue-500" />
-                                        Fiscal Mapping
-                                    </label>
-                                    <div className="bg-slate-900 rounded-2xl p-4 text-white shadow-xl border border-indigo-500/30">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-[10px] font-black uppercase text-blue-300 tracking-tighter">Current Head</span>
-                                            <div className="px-2 py-0.5 bg-blue-500/20 text-blue-300 rounded text-[8px] font-bold uppercase">Locked</div>
+                                            <div>
+                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Last Name</label>
+                                                <input type="text" name="last_name" defaultValue={doctor.last_name} required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
+                                            </div>
                                         </div>
-                                        <div className="text-lg font-black tracking-tight mb-1 uppercase">Sundry Debtors</div>
-                                        <p className="text-[10px] text-slate-400 font-medium">Mapped for enterprise financial reconciliation.</p>
+                                        <div>
+                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Professional Email</label>
+                                            <div className="relative">
+                                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                                <input type="email" name="email" defaultValue={doctor.email || ''} required className="w-full pl-12 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Qualification</label>
+                                            <select name="qualification" defaultValue={doctor.qualification || ''} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm">
+                                                <option value="">Select Qualification</option>
+                                                {WORLD_CLASS_QUALIFICATIONS.map(q => <option key={q} value={q}>{q}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Medical License No.</label>
+                                            <div className="relative">
+                                                <Shield className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                                <input type="text" name="license_no" defaultValue={doctor.license_no || ''} required className="w-full pl-12 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Column 2: Organizational Logic */}
+                                    <div className="space-y-6 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
+                                            <Building2 className="h-4 w-4 text-emerald-500" />
+                                            Organizational Alignment
+                                        </h3>
+                                        <div>
+                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider flex items-center gap-2"><Hash className="h-3 w-3" /> Employee ID</label>
+                                            <input type="text" name="employee_id" value={empId} onChange={(e) => setEmpId(e.target.value)} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm" />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Designation</label>
+                                                <select name="designation" defaultValue={doctor.designation || ''} required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
+                                                    <option value="">Select</option>
+                                                    {WORLD_CLASS_DESIGNATIONS.map(d => <option key={d} value={d}>{d}</option>)}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Clinical Role</label>
+                                                <select name="role_id" defaultValue={doctor.role_id || ''} required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
+                                                    <option value="">Select Role</option>
+                                                    {roles.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Specialization</label>
+                                            <select name="specialization_id" defaultValue={doctor.specialization_id || ''} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
+                                                <option value="">None / General</option>
+                                                {specializations.map(spec => <option key={spec.id} value={spec.id}>{spec.name}</option>)}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Department</label>
+                                            <select name="department_id" defaultValue={doctor.department_id || ''} required className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
+                                                <option value="">Select Department</option>
+                                                {renderDepartmentOptions(departments)}
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
+                            )}
 
-                                <div>
-                                    <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Experience (Years)</label>
-                                    <input type="number" name="experience_years" defaultValue={doctor.experience_years || 0} className="w-full p-3 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
+                            {activeTab === 'clinical' && (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    <div className="space-y-6 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
+                                            <Clock className="h-4 w-4 text-indigo-500" />
+                                            Consultation Logistics
+                                        </h3>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Shift Start</label>
+                                                <input type="time" name="consultation_start_time" defaultValue={doctor.consultation_start_time || '09:00'} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Shift End</label>
+                                                <input type="time" name="consultation_end_time" defaultValue={doctor.consultation_end_time || '17:00'} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Slot (Min)</label>
+                                                <input type="number" name="consultation_slot_duration" defaultValue={doctor.consultation_slot_duration || 30} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Experience (Yrs)</label>
+                                                <input type="number" name="experience_years" defaultValue={doctor.experience_years || 0} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm" />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-black text-slate-500 mb-2 uppercase tracking-wider flex items-center gap-2"><Calendar className="h-3.5 w-3.5 text-blue-500" /> Performance Cadence</label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {daysOfWeek.map(day => (
+                                                    <button key={day} type="button" onClick={() => toggleDay(day)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all border-2 ${selectedDays.includes(day) ? "bg-indigo-600 border-indigo-600 text-white shadow-lg" : "bg-slate-50 border-slate-100 text-slate-400 hover:border-slate-300"}`}>{day.substring(0, 3).toUpperCase()}</button>
+                                                ))}
+                                            </div>
+                                            {selectedDays.map(day => <input key={day} type="hidden" name="working_days" value={day} />)}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
+                                            <CreditCard className="h-4 w-4 text-emerald-500" />
+                                            Financial Integration
+                                        </h3>
+                                        <div>
+                                            <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Consultation Fee (₹)</label>
+                                            <input type="number" name="consultation_fee" defaultValue={Number(doctor.consultation_fee) || 0} className="w-full p-4 bg-emerald-50 border-2 border-emerald-100 text-emerald-700 rounded-2xl font-black text-lg outline-none" />
+                                        </div>
+                                        <div className="bg-slate-900 rounded-[2rem] p-6 text-white shadow-2xl relative overflow-hidden group">
+                                            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-indigo-500/20 transition-all duration-500"></div>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <span className="text-[10px] font-black uppercase text-indigo-300 tracking-widest">Active Fiscal Head</span>
+                                                <div className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]"></div>
+                                            </div>
+                                            <div className="text-2xl font-black tracking-tight mb-2 uppercase">Sundry Debtors</div>
+                                            <p className="text-xs text-indigo-200/50 font-bold leading-relaxed">Persisted through Staff Ledger. Locked for compliance.</p>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
+
+                            {activeTab === 'documents' && (
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    {/* Visual Persona */}
+                                    <div className="space-y-6 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
+                                            <Camera className="h-4 w-4 text-indigo-500" />
+                                            Visual Persona
+                                        </h3>
+                                        <div className="flex gap-6">
+                                            <div className="flex-1 space-y-3">
+                                                <div className={`aspect-square border-2 border-dashed rounded-[2rem] flex flex-col items-center justify-center gap-3 group transition-all cursor-pointer ${doctor.profile_image_url ? 'bg-indigo-50 border-indigo-200' : 'bg-slate-50 border-slate-200 hover:border-indigo-400 hover:bg-indigo-50'}`}>
+                                                    <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                                        {doctor.profile_image_url ? <CheckCircle2 className="h-6 w-6 text-indigo-500" /> : <Image className="h-6 w-6 text-slate-400" />}
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-indigo-600 text-center px-4">
+                                                        {doctor.profile_image_url ? 'Portrait Locked' : 'Update Profile Image'}
+                                                    </span>
+                                                </div>
+                                                <input type="hidden" name="profile_image_url" defaultValue={doctor.profile_image_url || ''} />
+                                            </div>
+                                            <div className="flex-1 space-y-3">
+                                                <div className={`aspect-square border-2 border-dashed rounded-[2rem] flex flex-col items-center justify-center gap-3 group transition-all cursor-pointer ${doctor.signature_url ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200 hover:border-emerald-400 hover:bg-emerald-50'}`}>
+                                                    <div className="h-12 w-12 bg-white rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                                                        {doctor.signature_url ? <CheckCircle2 className="h-6 w-6 text-emerald-500" /> : <Fingerprint className="h-6 w-6 text-slate-400" />}
+                                                    </div>
+                                                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest group-hover:text-emerald-600 text-center px-4">
+                                                        {doctor.signature_url ? 'E-Signature Locked' : 'Update Signature'}
+                                                    </span>
+                                                </div>
+                                                <input type="hidden" name="signature_url" defaultValue={doctor.signature_url || ''} />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Document Vault */}
+                                    <div className="space-y-6 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-100">
+                                        <h3 className="text-sm font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-4">
+                                            <FileText className="h-4 w-4 text-purple-500" />
+                                            Document Repository
+                                        </h3>
+                                        <div className="space-y-3">
+                                            {['Medical Degree', 'Practice License', 'Insurance Credentials'].map(doc => (
+                                                <div key={doc} className="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl flex items-center justify-between group hover:border-purple-200 transition-all">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="h-8 w-8 bg-white rounded-lg flex items-center justify-center shadow-sm group-hover:rotate-6 transition-all"><FileText className="h-4 w-4 text-purple-600" /></div>
+                                                        <span className="text-xs font-bold text-slate-600">{doc}</span>
+                                                    </div>
+                                                    <button type="button" className="text-[10px] font-black text-purple-600 uppercase tracking-widest hover:underline">Revise</button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <input type="hidden" name="document_urls" defaultValue={JSON.stringify(doctor.document_urls || [])} />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
