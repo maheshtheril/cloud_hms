@@ -1,8 +1,7 @@
-'use client'
-
 import React, { useState } from 'react'
 import { updateDoctor } from '@/app/actions/doctor'
-import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock } from 'lucide-react'
+import { seedStandardDepartments, quickAddDepartment } from '@/app/actions/hms-setup'
+import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 
 interface Department {
     id: string
@@ -72,8 +71,42 @@ function renderDepartmentOptions(departments: Department[], parentId: string | n
         });
 }
 
-export function EditDoctorDialog({ isOpen, onClose, doctor, departments, roles, specializations }: EditDoctorDialogProps) {
+export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initialDepartments, roles, specializations }: EditDoctorDialogProps) {
+    const [departments, setDepartments] = useState(initialDepartments)
+    const [isSeeding, setIsSeeding] = useState(false)
+    const [isAddingDept, setIsAddingDept] = useState(false)
+    const [newDeptName, setNewDeptName] = useState('')
+    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
     if (!isOpen) return null
+
+    const handleSeed = async () => {
+        setIsSeeding(true)
+        setMessage(null)
+        const result = await seedStandardDepartments()
+        if (result.success) {
+            setMessage({ type: 'success', text: result.message! })
+            window.location.reload()
+        } else {
+            setMessage({ type: 'error', text: result.error! })
+        }
+        setIsSeeding(false)
+    }
+
+    const handleQuickAdd = async () => {
+        if (!newDeptName.trim()) return
+        setIsAddingDept(true)
+        setMessage(null)
+        const result = await quickAddDepartment(newDeptName)
+        if (result.success) {
+            setMessage({ type: 'success', text: "Department added!" })
+            setDepartments([...departments, result.department!])
+            setNewDeptName('')
+        } else {
+            setMessage({ type: 'error', text: result.error! })
+        }
+        setIsAddingDept(false)
+    }
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
@@ -90,7 +123,18 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments, roles, 
                     <p className="text-blue-100 mt-2">Update administrative and clinical details for Dr. {doctor.first_name}</p>
                 </div>
 
-                {/* Form */}
+                {/* Feedback Message */}
+                {message && (
+                    <div className={`mx-8 mt-4 p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+                        }`}>
+                        {message.type === 'success' ? <CheckCircle2 className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+                        <span className="font-bold text-sm">{message.text}</span>
+                        <button onClick={() => setMessage(null)} className="ml-auto text-current opacity-50 hover:opacity-100">
+                            <X className="h-4 w-4" />
+                        </button>
+                    </div>
+                )}
+
                 {/* Form */}
                 <form action={async (formData) => {
                     await updateDoctor(formData)
@@ -352,22 +396,101 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments, roles, 
                             </h3>
                         </div>
 
-                        <div className="md:col-span-2">
-                            <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center gap-2">
-                                <Building2 className="h-4 w-4" />
-                                Assigned Clinical Department
-                            </label>
-                            <select
-                                name="department_id"
-                                defaultValue={doctor.department_id || ''}
-                                className="w-full p-3.5 bg-slate-50 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none font-black text-gray-900"
-                            >
-                                <option value="">Select Terminal Node</option>
-                                {renderDepartmentOptions(departments)}
-                            </select>
-                            <p className="mt-2 text-[10px] text-gray-500 italic">Modify the clinician's placement within the organizational tree (Terminal Node).</p>
-                        </div>
+                        {departments.length === 0 ? (
+                            <div className="md:col-span-2 p-8 bg-slate-50 border-2 border-dashed border-slate-200 rounded-3xl text-center">
+                                <div className="h-16 w-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100">
+                                    <Building2 className="h-8 w-8 text-slate-300" />
+                                </div>
+                                <h4 className="text-lg font-bold text-slate-900 mb-2">No Departments Configured</h4>
+                                <p className="text-sm text-slate-500 mb-6 max-w-md mx-auto">
+                                    A world-class hospital needs a structured hierarchy. You can either seed international standard departments or add one quickly below.
+                                </p>
+                                <div className="flex flex-wrap justify-center gap-4">
+                                    <button
+                                        type="button"
+                                        onClick={handleSeed}
+                                        disabled={isSeeding}
+                                        className="inline-flex items-center gap-2 px-6 py-3 bg-white text-indigo-600 border-2 border-indigo-600 rounded-xl font-bold hover:bg-indigo-50 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                                    >
+                                        {isSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-amber-500" />}
+                                        Seed Standard Departments
+                                    </button>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={newDeptName}
+                                            onChange={(e) => setNewDeptName(e.target.value)}
+                                            placeholder="Enter Department Name"
+                                            className="p-3 bg-white border-2 border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-slate-500 font-medium text-sm w-48"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={handleQuickAdd}
+                                            disabled={isAddingDept || !newDeptName}
+                                            className="p-3 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50"
+                                        >
+                                            <Plus className="h-5 w-5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="md:col-span-2 space-y-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-900 mb-2 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Building2 className="h-4 w-4" />
+                                            Assigned Clinical Department {departments.length > 0 && <span className="text-red-500">*</span>}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsAddingDept(!isAddingDept)}
+                                            className="text-[10px] text-blue-600 hover:text-blue-800 font-bold uppercase tracking-wider"
+                                        >
+                                            + Quick Add
+                                        </button>
+                                    </label>
+
+                                    {isAddingDept && (
+                                        <div className="flex items-center gap-2 mb-4 animate-in fade-in slide-in-from-top-2">
+                                            <input
+                                                type="text"
+                                                value={newDeptName}
+                                                onChange={(e) => setNewDeptName(e.target.value)}
+                                                placeholder="Department Name (e.g. Oncology)"
+                                                className="flex-1 p-3 bg-blue-50/50 border-2 border-blue-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-medium text-sm"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={handleQuickAdd}
+                                                className="px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-md active:scale-95"
+                                            >
+                                                Add
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => { setIsAddingDept(false); setNewDeptName('') }}
+                                                className="p-3 bg-gray-100 text-gray-500 rounded-xl hover:bg-gray-200 transition-all"
+                                            >
+                                                <X className="h-5 w-5" />
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    <select
+                                        name="department_id"
+                                        defaultValue={doctor.department_id || ''}
+                                        className="w-full p-3.5 bg-slate-100/50 border-2 border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-500 focus:border-slate-500 outline-none font-black text-gray-900"
+                                    >
+                                        <option value="">Select Terminal Node</option>
+                                        {renderDepartmentOptions(departments)}
+                                    </select>
+                                    <p className="mt-2 text-[10px] text-gray-500 italic">Modify the clinician's placement within the organizational tree (Terminal Node).</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
+
 
                     {/* Actions */}
                     <div className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-gray-200">
