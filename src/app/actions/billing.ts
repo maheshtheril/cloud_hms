@@ -153,39 +153,50 @@ export async function createInvoice(data: any) {
         // Grand Total: Subtotal + Tax - Global Discount
         const total = Math.max(0, subtotal + totalTaxAmount - Number(total_discount || 0));
 
+        // DEBUG: Check Triggers
+        try {
+            const triggers = await prisma.$queryRaw`SELECT trigger_name, event_manipulation, event_object_table FROM information_schema.triggers WHERE event_object_table IN ('hms_invoice', 'hms_invoice_lines')`;
+            console.log("DEBUG: Active Triggers on Invoice/Lines:", triggers);
+        } catch (e) {
+            console.error("DEBUG: Failed to check triggers", e);
+        }
+
+        const invoicePayload = {
+            tenant_id: session.user.tenantId!,
+            company_id: session.user.companyId!,
+            patient_id: (patient_id as string) || null,
+            appointment_id: (appointment_id as string) || null,
+            invoice_number: invoiceNo,
+            invoice_date: new Date(date),
+            currency: 'INR', // Indian Rupee
+            status: status as any, // 'draft', 'posted', or 'paid'
+            total: total,
+            subtotal: subtotal,
+            total_tax: totalTaxAmount,
+            total_discount: Number(total_discount),
+            outstanding_amount: (status === 'posted') ? total : 0,
+            hms_invoice_lines: {
+                create: line_items.map((item: any, index: number) => ({
+                    tenant_id: session.user.tenantId,
+                    company_id: session.user.companyId,
+                    line_idx: index + 1,
+                    product_id: item.product_id || null, // Convert empty string to null
+                    description: item.description,
+                    quantity: item.quantity,
+                    unit_price: item.unit_price,
+                    net_amount: (item.quantity * item.unit_price) - (item.discount_amount || 0),
+                    // Tax details
+                    tax_rate_id: item.tax_rate_id || null, // Convert empty string to null
+                    tax_amount: item.tax_amount || 0,
+                    discount_amount: item.discount_amount || 0
+                }))
+            }
+        };
+        console.log("DEBUG PAYLOAD:", JSON.stringify(invoicePayload, null, 2));
+
         const result = await prisma.$transaction(async (tx) => {
             const newInvoice = await tx.hms_invoice.create({
-                data: {
-                    tenant_id: session.user.tenantId!,
-                    company_id: session.user.companyId!,
-                    patient_id: (patient_id as string) || null,
-                    appointment_id: (appointment_id as string) || null,
-                    invoice_number: invoiceNo,
-                    invoice_date: new Date(date),
-                    currency: 'INR', // Indian Rupee
-                    status: status as any, // 'draft', 'posted', or 'paid'
-                    total: total,
-                    subtotal: subtotal,
-                    total_tax: totalTaxAmount,
-                    total_discount: Number(total_discount),
-                    outstanding_amount: (status === 'posted') ? total : 0,
-                    hms_invoice_lines: {
-                        create: line_items.map((item: any, index: number) => ({
-                            tenant_id: session.user.tenantId,
-                            company_id: session.user.companyId,
-                            line_idx: index + 1,
-                            product_id: item.product_id || null, // Convert empty string to null
-                            description: item.description,
-                            quantity: item.quantity,
-                            unit_price: item.unit_price,
-                            net_amount: (item.quantity * item.unit_price) - (item.discount_amount || 0),
-                            // Tax details
-                            tax_rate_id: item.tax_rate_id || null, // Convert empty string to null
-                            tax_amount: item.tax_amount || 0,
-                            discount_amount: item.discount_amount || 0
-                        }))
-                    }
-                } as any
+                data: invoicePayload as any
             });
 
             // If status is paid and appointment is linked, mark appointment as completed
@@ -203,7 +214,13 @@ export async function createInvoice(data: any) {
         return { success: true, data: result };
 
     } catch (error: any) {
-        console.error("Failed to create invoice:", error)
-        return { error: `Failed to create invoice: ${error.message}` }
+        console.error("Failed to create invoice:", error);
+        let triggersInfo = '';
+        try {
+            const triggers = await prisma.$queryRaw`SELECT trigger_name, event_manipulation, event_object_table FROM information_schema.triggers WHERE event_object_table IN ('hms_invoice', 'hms_invoice_lines')`;
+            triggersInfo = JSON.stringify(triggers);
+        } catch (e) { triggersInfo = 'Check failed'; }
+
+        return { error: `Failed to create invoice: ${error.message}. DB Triggers: ${triggersInfo}` }
     }
 }
