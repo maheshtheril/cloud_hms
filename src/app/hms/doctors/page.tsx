@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { DoctorsClientPage } from "@/components/hms/doctors/doctors-client-page"
+import { randomUUID } from "crypto"
 
 export default async function DoctorsPage({
     searchParams
@@ -44,23 +45,23 @@ export default async function DoctorsPage({
         if (departments.length === 0) {
             await prisma.hms_departments.createMany({
                 data: [
-                    { id: crypto.randomUUID(), tenant_id: tenantId, company_id: companyId, name: "Emergency Department", code: "ER" },
-                    { id: crypto.randomUUID(), tenant_id: tenantId, company_id: companyId, name: "Intensive Care Unit", code: "ICU" },
-                    { id: crypto.randomUUID(), tenant_id: tenantId, company_id: companyId, name: "Outpatient Department", code: "OPD" }
+                    { id: randomUUID(), tenant_id: tenantId, company_id: companyId, name: "Emergency Department", code: "ER" },
+                    { id: randomUUID(), tenant_id: tenantId, company_id: companyId, name: "Intensive Care Unit", code: "ICU" },
+                    { id: randomUUID(), tenant_id: tenantId, company_id: companyId, name: "Outpatient Department", code: "OPD" }
                 ]
             });
         }
         if (roles.length === 0) {
             await prisma.hms_roles.createMany({
                 data: ["Senior Consultant", "Resident Physician", "Nursing Lead", "Radiology Expert"].map(name => ({
-                    id: crypto.randomUUID(), tenant_id: tenantId, company_id: companyId, name, is_clinical: true
+                    id: randomUUID(), tenant_id: tenantId, company_id: companyId, name, is_clinical: true
                 }))
             });
         }
         if (specializations.length === 0) {
             await prisma.hms_specializations.createMany({
                 data: ["Cardiology", "Neurology", "Pediatrics", "Orthopedics"].map(name => ({
-                    id: crypto.randomUUID(), tenant_id: tenantId, company_id: companyId, name
+                    id: randomUUID(), tenant_id: tenantId, company_id: companyId, name
                 }))
             });
         }

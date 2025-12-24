@@ -3,6 +3,7 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { randomUUID } from "crypto"
 
 export async function seedStandardDepartments() {
     const session = await auth();
@@ -40,7 +41,7 @@ export async function seedStandardDepartments() {
 
         await prisma.hms_departments.createMany({
             data: standardDepartments.map(dept => ({
-                id: crypto.randomUUID(),
+                id: randomUUID(),
                 tenant_id: tenantId,
                 company_id: companyId,
                 name: dept.name,
@@ -107,7 +108,7 @@ export async function seedStandardRoles() {
 
         await prisma.hms_roles.createMany({
             data: standardRoles.map(name => ({
-                id: crypto.randomUUID(),
+                id: randomUUID(),
                 tenant_id: tenantId,
                 company_id: companyId,
                 name,
@@ -142,7 +143,7 @@ export async function seedStandardSpecializations() {
 
         await prisma.hms_specializations.createMany({
             data: standardSpecs.map(name => ({
-                id: crypto.randomUUID(),
+                id: randomUUID(),
                 tenant_id: tenantId,
                 company_id: companyId,
                 name,
@@ -167,7 +168,7 @@ export async function quickAddDepartment(name: string) {
     try {
         const department = await prisma.hms_departments.create({
             data: {
-                id: crypto.randomUUID(),
+                id: randomUUID(),
                 tenant_id: tenantId,
                 company_id: companyId,
                 name: name,

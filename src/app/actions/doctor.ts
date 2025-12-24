@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { randomUUID } from "crypto"
 
 export async function createDoctor(formData: FormData) {
     const session = await auth()
@@ -48,7 +49,7 @@ export async function createDoctor(formData: FormData) {
         // Create Clinician
         const newClinician = await prisma.hms_clinicians.create({
             data: {
-                id: crypto.randomUUID(),
+                id: randomUUID(),
                 tenant_id: tenantId,
                 company_id: companyId,
                 first_name: firstName,
