@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { updateDoctor } from '@/app/actions/doctor'
-import { seedStandardDepartments, quickAddDepartment, WORLD_CLASS_DESIGNATIONS, WORLD_CLASS_QUALIFICATIONS } from '@/app/actions/hms-setup'
+import { seedStandardDepartments, quickAddDepartment } from '@/app/actions/hms-setup'
+import { WORLD_CLASS_DESIGNATIONS, WORLD_CLASS_QUALIFICATIONS } from '@/app/hms/doctors/constants'
 import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle, Hash, CreditCard, UserCheck, UserCog } from 'lucide-react'
 
 interface Department {
