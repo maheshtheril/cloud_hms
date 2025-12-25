@@ -4,6 +4,7 @@ import { Plus, TrendingUp, AlertCircle, CheckCircle2, Search } from "lucide-reac
 import { auth } from "@/auth"
 
 import SearchInput from "@/components/search-input"
+import { BillingActions } from "@/components/billing/billing-actions"
 
 export default async function BillingPage({
     searchParams
@@ -134,20 +135,23 @@ export default async function BillingPage({
                             <th className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider">Date</th>
                             <th className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider">Status</th>
                             <th className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider text-right">Amount</th>
+                            <th className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider text-right w-[50px]">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
                         {invoices.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="p-12 text-center text-gray-500">
+                                <td colSpan={6} className="p-12 text-center text-gray-500">
                                     No invoices found. <Link href="/hms/billing/new" className="text-blue-600 hover:underline">Create your first one</Link>.
                                 </td>
                             </tr>
                         ) : (
                             invoices.map((inv) => (
-                                <tr key={inv.id} className="hover:bg-gray-50/80 transition-colors group cursor-pointer">
+                                <tr key={inv.id} className="hover:bg-gray-50/80 transition-colors group">
                                     <td className="p-4 text-gray-900 font-medium font-mono text-sm">
-                                        {inv.invoice_number}
+                                        <Link href={`/hms/billing/${inv.id}`} className="hover:text-blue-600 hover:underline transition-colors">
+                                            {inv.invoice_number}
+                                        </Link>
                                     </td>
                                     <td className="p-4 text-gray-700 font-medium">
                                         <div className="flex items-center gap-2">
@@ -170,6 +174,9 @@ export default async function BillingPage({
                                     </td>
                                     <td className="p-4 text-right font-mono text-sm font-medium text-gray-900">
                                         ₹{Number(inv.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </td>
+                                    <td className="p-4 text-right">
+                                        <BillingActions invoiceId={inv.id} invoiceNumber={inv.invoice_number} />
                                     </td>
                                 </tr>
                             ))

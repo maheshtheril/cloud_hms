@@ -1,0 +1,58 @@
+📋 Trigger: trg_hms_invoice_post_stock
+📋 Function Name: hms_create_stock_moves_from_invoice
+--- SOURCE CODE START ---
+
+DECLARE
+  l jsonb;
+  idx int;
+  prod_id uuid;
+  qty numeric;
+  default_location uuid;
+BEGIN
+  -- only on status change to posted
+  IF TG_OP = 'UPDATE' AND NEW.status = 'posted' AND OLD.status IS DISTINCT FROM 'posted' THEN
+    FOR idx IN 0 .. jsonb_array_length(NEW.line_items)-1 LOOP
+      l := NEW.line_items->idx;
+      IF COALESCE((l->>'is_stockable'),'false')::boolean = true THEN
+        -- try to map service_code to product sku
+        SELECT id INTO prod_id FROM hms_product WHERE tenant_id = NEW.tenant_id AND sku = (l->>'service_code') LIMIT 1;
+        IF prod_id IS NULL THEN
+          -- skip if no product mapping; app should ensure mapping exists
+          CONTINUE;
+        END IF;
+        qty := COALESCE((l->>'quantity')::numeric,1);
+        -- choose default location for company (first pharmacy) - app should set explicit location in metadata ideally
+        SELECT id INTO default_location FROM hms_stock_location WHERE tenant_id = NEW.tenant_id AND company_id = NEW.company_id AND location_type = 'pharmacy' LIMIT 1;
+        IF default_location IS NULL THEN
+          SELECT id INTO default_location FROM hms_stock_location WHERE tenant_id = NEW.tenant_id AND company_id = NEW.company_id LIMIT 1;
+        END IF;
+        INSERT INTO hms_stock_move (tenant_id, company_id, product_id, location_from, location_to, qty, uom, move_type, source, source_reference, created_at)
+        VALUES (NEW.tenant_id, NEW.company_id, prod_id, default_location, NULL, qty, l->>'unit', 'out', 'invoice', NEW.id, now());
+      END IF;
+    END LOOP;
+  END IF;
+  RETURN NEW;
+END;
+
+--- SOURCE CODE END ---
+
+📋 Trigger: trg_hms_invoice_history
+📋 Function Name: hms_invoice_history_trigger
+--- SOURCE CODE START ---
+
+BEGIN
+  IF TG_OP = 'UPDATE' THEN
+    INSERT INTO hms_invoice_history (tenant_id, company_id, invoice_id, changed_by, change_type, delta, changed_at)
+    VALUES (NEW.tenant_id, NEW.company_id, NEW.id, NEW.updated_by, 'update', jsonb_build_object('old', row_to_json(OLD), 'new', row_to_json(NEW)), now());
+    RETURN NEW;
+  ELSIF TG_OP = 'INSERT' THEN
+    INSERT INTO hms_invoice_history (tenant_id, company_id, invoice_id, changed_by, change_type, delta, changed_at)
+    VALUES (NEW.tenant_id, NEW.company_id, NEW.id, NEW.created_by, 'insert', jsonb_build_object('new', row_to_json(NEW)), now());
+    RETURN NEW;
+  ELSE
+    RETURN OLD;
+  END IF;
+END;
+
+--- SOURCE CODE END ---
+
