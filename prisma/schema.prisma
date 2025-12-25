@@ -1262,6 +1262,7 @@ model hms_invoice {
   hms_invoice_lines       hms_invoice_lines[]
   hms_invoice_payments    hms_invoice_payments[]
   hms_payment_allocations hms_payment_allocations[]
+  journal_entries         journal_entries[]
   appointment_id          String?                   @db.Uuid
   hms_appointment         hms_appointments?         @relation(fields: [appointment_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
@@ -2432,6 +2433,7 @@ model journal_entries {
   is_locked                  Boolean               @default(false)
   locked_at                  DateTime?             @db.Timestamptz(6)
   currencies                 currencies?           @relation(fields: [currency_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hms_invoice                hms_invoice?          @relation(fields: [invoice_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journals                   journals?             @relation(fields: [journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journal_entry_lines        journal_entry_lines[]
   journal_lines              journal_lines[]
