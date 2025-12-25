@@ -41,8 +41,9 @@ export async function getMenuItems() {
             globalActiveModules.forEach(m => allowedModuleKeys.add(m.module_key));
         }
 
-        // Always allow General
+        // Always allow General and Configuration
         allowedModuleKeys.add('general');
+        allowedModuleKeys.add('configuration');
 
         // 1. FETCH ALL ITEMS ... (existing code)
         const allMenuItems = await prisma.menu_items.findMany({
