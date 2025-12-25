@@ -31,7 +31,6 @@ export default async function AccountingSettingsPage() {
     // 3. Fetch Tax Rates
     const taxRates = await prisma.tax_rates.findMany({
         where: {
-            company_id: companyId,
             is_active: true
         },
         orderBy: { rate: 'asc' },
