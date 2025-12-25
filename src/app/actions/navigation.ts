@@ -163,24 +163,26 @@ export async function getMenuItems() {
         const hasFullAccess = isAdmin || userPerms.has('*') || userPerms.has('settings:view');
 
         if (hasFullAccess) {
-            // Check if we already have a configuration group from DB
+            // 1. Get Standard Config Items
+            const configGroup = getFallbackMenuItems(isAdmin).find((g: any) => g.module?.module_key === 'configuration');
+            const standardConfigItems = configGroup ? configGroup.items : [];
+
+            // 2. Find Existing Config Group from DB
             const existingConfig = result.find(g => g.module?.module_key === 'configuration' || g.module?.name === 'Configuration');
 
-            if (!existingConfig) {
-                result.push({
-                    module: { name: 'Configuration', module_key: 'configuration' },
-                    items: [
-                        { key: 'general-settings', label: 'General Settings', icon: 'Settings', url: '/settings/global' },
-                        { key: 'hms-settings', label: 'HMS Configuration', icon: 'Activity', url: '/settings/hms' },
-                        { key: 'users', label: 'Users', icon: 'Users', url: '/settings/users' },
-                        { key: 'roles', label: 'Roles', icon: 'Shield', url: '/settings/roles' },
-                        { key: 'permissions', label: 'Permissions', icon: 'Key', url: '/settings/permissions' },
-                        { key: 'crm-masters', label: 'CRM Masters', icon: 'Database', url: '/settings/crm' },
-                        { key: 'custom-fields', label: 'Custom Fields', icon: 'FileText', url: '/settings/custom-fields' },
-                        { key: 'import-leads', label: 'Import Leads', icon: 'UploadCloud', url: '/crm/import/leads' },
-                        { key: 'crm-targets', label: 'Targets', icon: 'Target', url: '/crm/targets' } // Moved here
-                    ]
+            if (existingConfig) {
+                // MERGE: Add standard items if they don't already exist (by key or url)
+                standardConfigItems.forEach((standardItem: any) => {
+                    const exists = existingConfig.items.some((dbItem: any) =>
+                        dbItem.key === standardItem.key || dbItem.url === standardItem.url
+                    );
+                    if (!exists) {
+                        existingConfig.items.push(standardItem);
+                    }
                 });
+            } else if (configGroup) {
+                // CREATE: matches fallback exactly
+                result.push(configGroup);
             }
         }
 
