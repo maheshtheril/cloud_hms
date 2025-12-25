@@ -56,6 +56,23 @@ export default async function AccountingSettingsPage() {
         select: { id: true, name: true, rate: true }
     })
 
+    // 4. Fetch Company for Country-Specific Tax Logic
+    const company = await prisma.company.findUnique({
+        where: { id: companyId },
+        include: { countries: true }
+    });
+
+    let taxLabel = "Tax";
+    const countryName = company?.countries?.name?.toLowerCase() || '';
+
+    if (countryName.includes('india') || countryName.includes('canada') || countryName.includes('australia') || countryName.includes('new zealand')) {
+        taxLabel = "GST";
+    } else if (countryName.includes('united kingdom') || countryName.includes('uae') || countryName.includes('saudi') || countryName.includes('europe')) {
+        taxLabel = "VAT";
+    } else if (countryName.includes('usa') || countryName.includes('united states')) {
+        taxLabel = "Sales Tax";
+    }
+
     return (
         <div className="container mx-auto p-6 max-w-4xl">
             <header className="mb-8 border-b pb-4">
@@ -67,6 +84,7 @@ export default async function AccountingSettingsPage() {
                 settings={settings}
                 accounts={accounts}
                 taxRates={taxRates}
+                taxLabel={taxLabel}
             />
         </div>
     )

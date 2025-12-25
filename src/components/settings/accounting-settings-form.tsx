@@ -6,10 +6,11 @@ import { Save, AlertCircle } from 'lucide-react'
 import { updateAccountingSettings } from '@/app/actions/accounting-settings'
 import { useToast } from "@/components/ui/use-toast"
 
-export function AccountingSettingsForm({ settings, accounts, taxRates }: {
+export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel }: {
     settings: any,
     accounts: any[],
-    taxRates: any[]
+    taxRates: any[],
+    taxLabel: string
 }) {
     const router = useRouter()
     const { toast } = useToast()
