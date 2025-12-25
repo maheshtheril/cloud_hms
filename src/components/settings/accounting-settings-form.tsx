@@ -54,6 +54,44 @@ export function AccountingSettingsForm({ settings, accounts, taxRates }: {
         }
     }
 
+    // EMPTY STATE: If no accounts exist
+    if (accounts.length === 0) {
+        const handleSeed = async () => {
+            // Dynamic import to avoid circular dep issues in some setups, though standard import is fine usually.
+            // We'll trust standard import if we add it. 
+            // EDIT: We need to import the action.
+            setLoading(true);
+            const { seedDefaultAccountsAction } = await import('@/app/actions/seed-accounts');
+            const res = await seedDefaultAccountsAction();
+            if (res.success) {
+                toast({ title: "Success", description: "Default accounts created." });
+                router.refresh();
+            } else {
+                toast({ title: "Error", description: "Failed to create accounts: " + res.error, variant: "destructive" });
+            }
+            setLoading(false);
+        };
+
+        return (
+            <div className="bg-white dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-12 text-center animate-in fade-in zoom-in-95 duration-300">
+                <div className="mx-auto h-16 w-16 text-blue-500 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mb-6">
+                    <AlertCircle className="h-8 w-8" />
+                </div>
+                <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">Setup Required</h3>
+                <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto mb-8 leading-relaxed">
+                    Your Chart of Accounts is currently empty. We can generate a standard set of ledger accounts for you to get started instantly.
+                </p>
+                <button
+                    onClick={handleSeed}
+                    disabled={loading}
+                    className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transform hover:-translate-y-0.5 inline-flex items-center gap-3"
+                >
+                    {loading ? "Generating..." : "Generate Standard Accounts"}
+                </button>
+            </div>
+        )
+    }
+
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-xl shadow-slate-200/50 dark:shadow-black/20">
