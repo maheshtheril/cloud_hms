@@ -47,7 +47,7 @@ export default async function NewInvoicePage({
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
 
     // Standardize initial items (medicines or generic items)
-    const initialItems = items ? JSON.parse(items) : (medicines ? JSON.parse(medicines) : undefined);
+    const initialItems = items ? JSON.parse(decodeURIComponent(items)) : (medicines ? JSON.parse(decodeURIComponent(medicines)) : undefined);
 
     return (
         <div className="max-w-5xl mx-auto space-y-6">
