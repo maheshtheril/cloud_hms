@@ -151,14 +151,7 @@ export async function getMenuItems() {
 
         // Filter groups
         Object.keys(grouped).forEach(key => {
-            grouped[key].items = filterRestricted(grouped[key].items).filter(item =>
-                item.label !== 'Global Settings' &&
-                item.label !== 'Settings' &&
-                item.label !== 'Custom Fields' &&
-                item.label !== 'Targets' &&
-                item.url !== '/crm/targets' &&
-                item.url !== '/settings'
-            );
+            grouped[key].items = filterRestricted(grouped[key].items);
         });
 
         // 6. SORT BY PRIORITY (World Standard Ordering)

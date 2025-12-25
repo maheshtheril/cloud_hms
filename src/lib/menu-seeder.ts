@@ -57,6 +57,9 @@ export async function ensureAdminMenus() {
             { key: 'roles', label: 'Roles & Permissions', url: '/settings/roles', icon: 'Shield', sort: 91 },
             { key: 'general-settings', label: 'Global Settings', url: '/settings/global', icon: 'Settings', sort: 99 },
             { key: 'crm-masters', label: 'CRM Masters', url: '/settings/crm', icon: 'Database', sort: 92 },
+            { key: 'import-leads', label: 'Import Leads', url: '/crm/import/leads', icon: 'UploadCloud', sort: 93 },
+            { key: 'crm-targets', label: 'Targets', url: '/crm/targets', icon: 'Target', sort: 94 },
+            { key: 'custom-fields', label: 'Custom Fields', url: '/settings/custom-fields', icon: 'FileText', sort: 95 },
         ];
 
         for (const item of adminItems) {
