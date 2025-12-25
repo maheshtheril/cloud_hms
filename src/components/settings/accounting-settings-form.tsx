@@ -33,7 +33,14 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel 
         fiscal_year_start: settings?.fiscal_year_start ? new Date(settings.fiscal_year_start).toISOString().split('T')[0] : '2025-04-01',
         fiscal_year_end: settings?.fiscal_year_end ? new Date(settings.fiscal_year_end).toISOString().split('T')[0] : '2026-03-31',
         currency_precision: settings?.currency_precision || 2,
-        rounding_method: settings?.rounding_method || 'ROUND_HALF_UP'
+        rounding_method: settings?.rounding_method || 'ROUND_HALF_UP',
+
+        // Advanced / World Class
+        lock_date: settings?.lock_date ? new Date(settings.lock_date).toISOString().split('T')[0] : '',
+        retained_earnings_account_id: settings?.retained_earnings_account_id || '',
+        inventory_asset_account_id: settings?.inventory_asset_account_id || '',
+        cogs_account_id: settings?.cogs_account_id || '',
+        stock_adjustment_account_id: settings?.stock_adjustment_account_id || ''
     })
 
     const handleSave = async () => {
@@ -130,6 +137,37 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel 
                             className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                         />
                         <p className="text-xs text-slate-400">End date for annual closing.</p>
+                    </div>
+                    {/* Lock Date & Retained Earnings */}
+                    <div className="space-y-1.5 border-t md:col-span-2 pt-4 mt-2">
+                        <div className="flex items-center gap-2 mb-2">
+                            <label className="block text-sm font-bold text-slate-900 dark:text-white">Period Locking & Closing</label>
+                            <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold">CONTROL</span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Lock Date</label>
+                                <input
+                                    type="date"
+                                    value={formData.lock_date}
+                                    onChange={e => setFormData({ ...formData, lock_date: e.target.value })}
+                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition-all"
+                                />
+                                <p className="text-xs text-slate-400 mt-1">Transactions before this date cannot be modified.</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Retained Earnings Account</label>
+                                <select
+                                    value={formData.retained_earnings_account_id}
+                                    onChange={e => setFormData({ ...formData, retained_earnings_account_id: e.target.value })}
+                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                                >
+                                    <option value="">Select Equity Account...</option>
+                                    {accounts.filter(a => a.type === 'Equity').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                                </select>
+                                <p className="text-xs text-slate-500 mt-1">Net profit/loss is transferred here at year-end.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -234,6 +272,52 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel 
                             {accounts.filter(a => a.type === 'Liability' || a.type === 'Asset').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
                         <p className="text-xs text-slate-500">Account for tax paid on purchases (claimable).</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* SECTION 4: INVENTORY & STOCK */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                    <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
+                    Inventory & Stock (Perpetual)
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Inventory Asset Account</label>
+                        <select
+                            value={formData.inventory_asset_account_id}
+                            onChange={e => setFormData({ ...formData, inventory_asset_account_id: e.target.value })}
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            <option value="">Select Inventory Asset...</option>
+                            {accounts.filter(a => a.type === 'Asset').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                        <p className="text-xs text-slate-500">Current asset account for stock value.</p>
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Cost of Goods Sold (COGS)</label>
+                        <select
+                            value={formData.cogs_account_id}
+                            onChange={e => setFormData({ ...formData, cogs_account_id: e.target.value })}
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            <option value="">Select COGS Account...</option>
+                            {accounts.filter(a => a.type === 'Cost of Goods Sold' || a.type === 'Expense').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                        <p className="text-xs text-slate-500">Direct costs account for sold inventory.</p>
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Stock Adjustment Account</label>
+                        <select
+                            value={formData.stock_adjustment_account_id}
+                            onChange={e => setFormData({ ...formData, stock_adjustment_account_id: e.target.value })}
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            <option value="">Select Adjustment Account...</option>
+                            {accounts.filter(a => a.type === 'Expense' || a.type === 'Cost of Goods Sold').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                        <p className="text-xs text-slate-500">Expense account for inventory shrinkage/write-offs.</p>
                     </div>
                 </div>
             </div>
