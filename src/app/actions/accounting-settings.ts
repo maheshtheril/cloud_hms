@@ -13,7 +13,15 @@ export async function updateAccountingSettings(data: any) {
             ar_account_id,
             sales_account_id,
             output_tax_account_id,
-            default_sale_tax_id
+            default_sale_tax_id,
+            // New Fields
+            ap_account_id,
+            purchase_account_id,
+            input_tax_account_id,
+            fiscal_year_start,
+            fiscal_year_end,
+            currency_precision,
+            rounding_method
         } = data;
 
         // Upsert settings for this company
@@ -22,19 +30,42 @@ export async function updateAccountingSettings(data: any) {
             create: {
                 tenant_id: session.user.tenantId!,
                 company_id: session.user.companyId!,
+
+                // Sales
                 ar_account_id: ar_account_id || null,
                 sales_account_id: sales_account_id || null,
                 output_tax_account_id: output_tax_account_id || null,
                 default_sale_tax_id: default_sale_tax_id || null,
-                // Defaults
-                currency_precision: 2,
-                rounding_method: 'ROUND_HALF_UP'
+
+                // Purchasing
+                ap_account_id: ap_account_id || null,
+                purchase_account_id: purchase_account_id || null,
+                input_tax_account_id: input_tax_account_id || null,
+
+                // General
+                fiscal_year_start: fiscal_year_start ? new Date(fiscal_year_start) : undefined,
+                fiscal_year_end: fiscal_year_end ? new Date(fiscal_year_end) : undefined,
+                currency_precision: currency_precision ? parseInt(currency_precision) : 2,
+                rounding_method: rounding_method || 'ROUND_HALF_UP'
             },
             update: {
+                // Sales
                 ar_account_id: ar_account_id || null,
                 sales_account_id: sales_account_id || null,
                 output_tax_account_id: output_tax_account_id || null,
                 default_sale_tax_id: default_sale_tax_id || null,
+
+                // Purchasing
+                ap_account_id: ap_account_id || null,
+                purchase_account_id: purchase_account_id || null,
+                input_tax_account_id: input_tax_account_id || null,
+
+                // General
+                fiscal_year_start: fiscal_year_start ? new Date(fiscal_year_start) : undefined,
+                fiscal_year_end: fiscal_year_end ? new Date(fiscal_year_end) : undefined,
+                currency_precision: currency_precision ? parseInt(currency_precision) : 2,
+                rounding_method: rounding_method || 'ROUND_HALF_UP',
+
                 updated_at: new Date()
             }
         });
