@@ -18,31 +18,9 @@ model account_chart {
   is_active                                                                                    Boolean                       @default(true)
   created_at                                                                                   DateTime                      @default(now()) @db.Timestamptz(6)
   account_types                                                                                account_types?                @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  company_accounting_settings_company_accounting_settings_ap_account_idToaccount_chart         company_accounting_settings[] @relation("company_accounting_settings_ap_account_idToaccount_chart")
-  company_accounting_settings_company_accounting_settings_ar_account_idToaccount_chart         company_accounting_settings[] @relation("company_accounting_settings_ar_account_idToaccount_chart")
-  company_accounting_settings_company_accounting_settings_input_tax_account_idToaccount_chart  company_accounting_settings[] @relation("company_accounting_settings_input_tax_account_idToaccount_chart")
-  company_accounting_settings_company_accounting_settings_output_tax_account_idToaccount_chart company_accounting_settings[] @relation("company_accounting_settings_output_tax_account_idToaccount_chart")
-  company_accounting_settings_company_accounting_settings_purchase_account_idToaccount_chart   company_accounting_settings[] @relation("company_accounting_settings_purchase_account_idToaccount_chart")
-  company_accounting_settings_company_accounting_settings_sales_account_idToaccount_chart      company_accounting_settings[] @relation("company_accounting_settings_sales_account_idToaccount_chart")
-  fiscal_position_account_map_fiscal_position_account_map_from_account_idToaccount_chart       fiscal_position_account_map[] @relation("fiscal_position_account_map_from_account_idToaccount_chart")
-  fiscal_position_account_map_fiscal_position_account_map_to_account_idToaccount_chart         fiscal_position_account_map[] @relation("fiscal_position_account_map_to_account_idToaccount_chart")
-  ledger_posting_rules_ledger_posting_rules_credit_account_idToaccount_chart                   ledger_posting_rules[]        @relation("ledger_posting_rules_credit_account_idToaccount_chart")
-  ledger_posting_rules_ledger_posting_rules_debit_account_idToaccount_chart                    ledger_posting_rules[]        @relation("ledger_posting_rules_debit_account_idToaccount_chart")
-  posting_rules_posting_rules_credit_account_idToaccount_chart                                 posting_rules[]               @relation("posting_rules_credit_account_idToaccount_chart")
-  posting_rules_posting_rules_debit_account_idToaccount_chart                                  posting_rules[]               @relation("posting_rules_debit_account_idToaccount_chart")
   tax_gl_accounts_tax_gl_accounts_input_account_idToaccount_chart                              tax_gl_accounts[]             @relation("tax_gl_accounts_input_account_idToaccount_chart")
   tax_gl_accounts_tax_gl_accounts_output_account_idToaccount_chart                             tax_gl_accounts[]             @relation("tax_gl_accounts_output_account_idToaccount_chart")
   tax_gl_accounts_tax_gl_accounts_reverse_charge_account_idToaccount_chart                     tax_gl_accounts[]             @relation("tax_gl_accounts_reverse_charge_account_idToaccount_chart")
-
-  // World Class Features Relations
-  company_settings_retained_earnings  company_accounting_settings[] @relation("company_accounting_settings_retained_earnings")
-  company_settings_inventory_asset    company_accounting_settings[] @relation("company_accounting_settings_inventory_asset")
-  company_settings_cogs               company_accounting_settings[] @relation("company_accounting_settings_cogs")
-  company_settings_stock_adjustment   company_accounting_settings[] @relation("company_accounting_settings_stock_adjustment")
-  
-  company_settings_exchange_gain_loss company_accounting_settings[] @relation("company_accounting_settings_exchange_gain_loss")
-  company_settings_sales_discount     company_accounting_settings[] @relation("company_accounting_settings_sales_discount")
-  company_settings_purchase_discount  company_accounting_settings[] @relation("company_accounting_settings_purchase_discount")
 
   @@unique([company_id, code])
 }
@@ -90,6 +68,21 @@ model accounts {
   journal_lines                                         journal_lines[]
   journals_journals_default_credit_account_idToaccounts journals[]            @relation("journals_default_credit_account_idToaccounts")
   journals_journals_default_debit_account_idToaccounts  journals[]            @relation("journals_default_debit_account_idToaccounts")
+
+  // Settings Relations
+  settings_ap               company_accounting_settings[] @relation("settings_ap")
+  settings_ar               company_accounting_settings[] @relation("settings_ar")
+  settings_sales            company_accounting_settings[] @relation("settings_sales")
+  settings_purchase         company_accounting_settings[] @relation("settings_purchase")
+  settings_output_tax       company_accounting_settings[] @relation("settings_output_tax")
+  settings_input_tax        company_accounting_settings[] @relation("settings_input_tax")
+  settings_retained_earnings company_accounting_settings[] @relation("settings_retained_earnings")
+  settings_inventory         company_accounting_settings[] @relation("settings_inventory")
+  settings_cogs              company_accounting_settings[] @relation("settings_cogs")
+  settings_stock_adjustment  company_accounting_settings[] @relation("settings_stock_adjustment")
+  settings_exchange_gain_loss company_accounting_settings[] @relation("settings_exchange_gain_loss")
+  settings_sales_discount     company_accounting_settings[] @relation("settings_sales_discount")
+  settings_purchase_discount  company_accounting_settings[] @relation("settings_purchase_discount")
 
   @@unique([company_id, code])
   @@index([company_id], map: "idx_accounts_company")
@@ -362,30 +355,33 @@ model company_accounting_settings {
 
   created_at                                                                     DateTime       @default(now()) @db.Timestamptz(6)
   updated_at                                                                     DateTime       @default(now()) @db.Timestamptz(6)
-  account_chart_company_accounting_settings_ap_account_idToaccount_chart         account_chart? @relation("company_accounting_settings_ap_account_idToaccount_chart", fields: [ap_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  account_chart_company_accounting_settings_ar_account_idToaccount_chart         account_chart? @relation("company_accounting_settings_ar_account_idToaccount_chart", fields: [ar_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  
+  // Relations to ACCOUNTS (Corrected from account_chart)
+  accounts_ap               accounts?      @relation("settings_ap", fields: [ap_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_ar               accounts?      @relation("settings_ar", fields: [ar_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_sales            accounts?      @relation("settings_sales", fields: [sales_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_purchase         accounts?      @relation("settings_purchase", fields: [purchase_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_output_tax       accounts?      @relation("settings_output_tax", fields: [output_tax_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_input_tax        accounts?      @relation("settings_input_tax", fields: [input_tax_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  
+  accounts_retained_earnings accounts?     @relation("settings_retained_earnings", fields: [retained_earnings_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_inventory         accounts?     @relation("settings_inventory", fields: [inventory_asset_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_cogs              accounts?     @relation("settings_cogs", fields: [cogs_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_stock_adjustment  accounts?     @relation("settings_stock_adjustment", fields: [stock_adjustment_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  
+  accounts_exchange_gain_loss accounts?    @relation("settings_exchange_gain_loss", fields: [exchange_gain_loss_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_sales_discount     accounts?    @relation("settings_sales_discount", fields: [sales_discount_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_purchase_discount  accounts?    @relation("settings_purchase_discount", fields: [purchase_discount_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  // Other Relations
   journals_company_accounting_settings_bank_journal_idTojournals                 journals?      @relation("company_accounting_settings_bank_journal_idTojournals", fields: [bank_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journals_company_accounting_settings_cash_journal_idTojournals                 journals?      @relation("company_accounting_settings_cash_journal_idTojournals", fields: [cash_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   currencies                                                                     currencies?    @relation(fields: [currency_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   tax_rates_company_accounting_settings_default_purchase_tax_idTotax_rates       tax_rates?     @relation("company_accounting_settings_default_purchase_tax_idTotax_rates", fields: [default_purchase_tax_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   tax_rates_company_accounting_settings_default_sale_tax_idTotax_rates           tax_rates?     @relation("company_accounting_settings_default_sale_tax_idTotax_rates", fields: [default_sale_tax_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journals_company_accounting_settings_general_journal_idTojournals              journals?      @relation("company_accounting_settings_general_journal_idTojournals", fields: [general_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  account_chart_company_accounting_settings_input_tax_account_idToaccount_chart  account_chart? @relation("company_accounting_settings_input_tax_account_idToaccount_chart", fields: [input_tax_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  account_chart_company_accounting_settings_output_tax_account_idToaccount_chart account_chart? @relation("company_accounting_settings_output_tax_account_idToaccount_chart", fields: [output_tax_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  account_chart_company_accounting_settings_purchase_account_idToaccount_chart   account_chart? @relation("company_accounting_settings_purchase_account_idToaccount_chart", fields: [purchase_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journals_company_accounting_settings_purchase_journal_idTojournals             journals?      @relation("company_accounting_settings_purchase_journal_idTojournals", fields: [purchase_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  account_chart_company_accounting_settings_sales_account_idToaccount_chart      account_chart? @relation("company_accounting_settings_sales_account_idToaccount_chart", fields: [sales_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journals_company_accounting_settings_sales_journal_idTojournals                journals?      @relation("company_accounting_settings_sales_journal_idTojournals", fields: [sales_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  
-  // New Relations
-  account_chart_retained_earnings  account_chart? @relation("company_accounting_settings_retained_earnings", fields: [retained_earnings_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  account_chart_inventory_asset    account_chart? @relation("company_accounting_settings_inventory_asset", fields: [inventory_asset_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  account_chart_cogs               account_chart? @relation("company_accounting_settings_cogs", fields: [cogs_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  account_chart_stock_adjustment   account_chart? @relation("company_accounting_settings_stock_adjustment", fields: [stock_adjustment_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  
-  account_chart_exchange_gain_loss account_chart? @relation("company_accounting_settings_exchange_gain_loss", fields: [exchange_gain_loss_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  account_chart_sales_discount     account_chart? @relation("company_accounting_settings_sales_discount", fields: [sales_discount_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  account_chart_purchase_discount  account_chart? @relation("company_accounting_settings_purchase_discount", fields: [purchase_discount_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model company_menu_overrides {
