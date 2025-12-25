@@ -55,6 +55,12 @@ export async function ensureDefaultAccounts(companyId: string, tenantId: string)
         { code: '6700', name: 'Travel & Accommodation', type: 'Expense' },
         { code: '6800', name: 'Utilities (Power/Water/Internet)', type: 'Expense' },
         { code: '8900', name: 'General Expenses', type: 'Expense' },
+
+        // --- World Class Features (Auto-Added) ---
+        { code: '4150', name: 'Sales Discounts', type: 'Expense' },
+        { code: '4950', name: 'Purchase Discounts', type: 'Revenue' },
+        { code: '5100', name: 'Inventory Shrinkage / Adjustment', type: 'Expense' },
+        { code: '7000', name: 'Currency Exchange Gain/Loss', type: 'Expense' },
     ];
 
     // UPSERT ALL ACCOUNTS (Upgrade if exists, Create if new)
