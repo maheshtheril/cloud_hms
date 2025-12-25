@@ -13,14 +13,22 @@ export default async function AccountingSettingsPage() {
     if (!session?.user?.id) redirect('/login')
 
     // Auto-fix menu existence if missing (Self-Healing)
-    await ensureAccountingMenu();
+    try {
+        await ensureAccountingMenu();
+    } catch (e) {
+        console.error("Menu seeding failed", e);
+    }
 
     const companyId = session.user.companyId;
     if (!companyId) return <div>No company found</div>
 
     // Self-Healing: Ensure Basic Accounts Exist
     if (session.user.tenantId) {
-        await ensureDefaultAccounts(companyId, session.user.tenantId);
+        try {
+            await ensureDefaultAccounts(companyId, session.user.tenantId);
+        } catch (e) {
+            console.error("Account seeding failed", e);
+        }
     }
 
     // 1. Fetch Existing Settings
