@@ -34,6 +34,12 @@ model account_chart {
   tax_gl_accounts_tax_gl_accounts_output_account_idToaccount_chart                             tax_gl_accounts[]             @relation("tax_gl_accounts_output_account_idToaccount_chart")
   tax_gl_accounts_tax_gl_accounts_reverse_charge_account_idToaccount_chart                     tax_gl_accounts[]             @relation("tax_gl_accounts_reverse_charge_account_idToaccount_chart")
 
+  // World Class Features Relations
+  company_settings_retained_earnings  company_accounting_settings[] @relation("company_accounting_settings_retained_earnings")
+  company_settings_inventory_asset    company_accounting_settings[] @relation("company_accounting_settings_inventory_asset")
+  company_settings_cogs               company_accounting_settings[] @relation("company_accounting_settings_cogs")
+  company_settings_stock_adjustment   company_accounting_settings[] @relation("company_accounting_settings_stock_adjustment")
+
   @@unique([company_id, code])
 }
 
@@ -337,6 +343,14 @@ model company_accounting_settings {
   localization                                                                   String?
   enable_reverse_charge                                                          Boolean?       @default(true)
   enable_zero_rate                                                               Boolean?       @default(true)
+  
+  // World Class Features
+  lock_date                                                                      DateTime?      @db.Date
+  retained_earnings_account_id                                                   String?        @db.Uuid
+  inventory_asset_account_id                                                     String?        @db.Uuid
+  cogs_account_id                                                                String?        @db.Uuid
+  stock_adjustment_account_id                                                    String?        @db.Uuid
+
   created_at                                                                     DateTime       @default(now()) @db.Timestamptz(6)
   updated_at                                                                     DateTime       @default(now()) @db.Timestamptz(6)
   account_chart_company_accounting_settings_ap_account_idToaccount_chart         account_chart? @relation("company_accounting_settings_ap_account_idToaccount_chart", fields: [ap_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -353,6 +367,12 @@ model company_accounting_settings {
   journals_company_accounting_settings_purchase_journal_idTojournals             journals?      @relation("company_accounting_settings_purchase_journal_idTojournals", fields: [purchase_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   account_chart_company_accounting_settings_sales_account_idToaccount_chart      account_chart? @relation("company_accounting_settings_sales_account_idToaccount_chart", fields: [sales_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journals_company_accounting_settings_sales_journal_idTojournals                journals?      @relation("company_accounting_settings_sales_journal_idTojournals", fields: [sales_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  
+  // New Relations
+  account_chart_retained_earnings  account_chart? @relation("company_accounting_settings_retained_earnings", fields: [retained_earnings_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  account_chart_inventory_asset    account_chart? @relation("company_accounting_settings_inventory_asset", fields: [inventory_asset_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  account_chart_cogs               account_chart? @relation("company_accounting_settings_cogs", fields: [cogs_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  account_chart_stock_adjustment   account_chart? @relation("company_accounting_settings_stock_adjustment", fields: [stock_adjustment_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model company_menu_overrides {

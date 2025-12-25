@@ -14,14 +14,19 @@ export async function updateAccountingSettings(data: any) {
             sales_account_id,
             output_tax_account_id,
             default_sale_tax_id,
-            // New Fields
             ap_account_id,
             purchase_account_id,
             input_tax_account_id,
             fiscal_year_start,
             fiscal_year_end,
             currency_precision,
-            rounding_method
+            rounding_method,
+            // World Class Features
+            lock_date,
+            retained_earnings_account_id,
+            inventory_asset_account_id,
+            cogs_account_id,
+            stock_adjustment_account_id
         } = data;
 
         // Upsert settings for this company
@@ -46,7 +51,14 @@ export async function updateAccountingSettings(data: any) {
                 fiscal_year_start: fiscal_year_start ? new Date(fiscal_year_start) : undefined,
                 fiscal_year_end: fiscal_year_end ? new Date(fiscal_year_end) : undefined,
                 currency_precision: currency_precision ? parseInt(currency_precision) : 2,
-                rounding_method: rounding_method || 'ROUND_HALF_UP'
+                rounding_method: rounding_method || 'ROUND_HALF_UP',
+
+                // Advanced / World Class
+                lock_date: lock_date ? new Date(lock_date) : undefined,
+                retained_earnings_account_id: retained_earnings_account_id || null,
+                inventory_asset_account_id: inventory_asset_account_id || null,
+                cogs_account_id: cogs_account_id || null,
+                stock_adjustment_account_id: stock_adjustment_account_id || null
             },
             update: {
                 // Sales
@@ -66,15 +78,19 @@ export async function updateAccountingSettings(data: any) {
                 currency_precision: currency_precision ? parseInt(currency_precision) : 2,
                 rounding_method: rounding_method || 'ROUND_HALF_UP',
 
-                updated_at: new Date()
+                // Advanced / World Class
+                lock_date: lock_date ? new Date(lock_date) : null, // Allow clearing by sending null/empty
+                retained_earnings_account_id: retained_earnings_account_id || null,
+                inventory_asset_account_id: inventory_asset_account_id || null,
+                cogs_account_id: cogs_account_id || null,
+                stock_adjustment_account_id: stock_adjustment_account_id || null
             }
-        });
+        })
 
-        revalidatePath('/settings/accounting');
-        return { success: true, message: "Accounting settings saved successfully." };
-
+        revalidatePath('/settings/accounting')
+        return { success: true }
     } catch (error: any) {
-        console.error("Failed to update accounting settings:", error);
-        return { error: error.message || "Failed to save settings." };
+        console.error("Error updating settings:", error);
+        return { error: error.message || "Failed to update settings" };
     }
 }
