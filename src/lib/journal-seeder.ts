@@ -29,8 +29,7 @@ export async function ensureDefaultJournals(companyId: string, tenantId: string)
                     company_id: companyId,
                     name: journal.name,
                     code: journal.code,
-                    type: journal.type,
-                    is_active: true
+                    type: journal.type
                 }
             })
         }
