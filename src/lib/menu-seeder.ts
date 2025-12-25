@@ -10,14 +10,14 @@ export async function ensureAccountingMenu() {
             }
         });
 
-        // Update existing to ensure it is in HMS module
+        // Update existing to ensure it is in Configuration module
         if (existing) {
-            if (existing.module_key !== 'hms' || existing.parent_id) {
-                console.log("Moving Accounting menu to HMS module...");
+            if (existing.module_key !== 'configuration' || existing.parent_id) {
+                console.log("Moving Accounting menu to Configuration module...");
                 await prisma.menu_items.update({
                     where: { id: existing.id },
                     data: {
-                        module_key: 'hms',
+                        module_key: 'configuration',
                         parent_id: null
                     }
                 });
@@ -25,7 +25,7 @@ export async function ensureAccountingMenu() {
             return;
         }
 
-        // 2. Create as ROOT item in HMS Module
+        // 2. Create as ROOT item in Configuration Module
         const lastItem = await prisma.menu_items.findFirst({
             orderBy: { sort_order: 'desc' }
         });
@@ -36,7 +36,7 @@ export async function ensureAccountingMenu() {
                 label: 'Accounting Config',
                 url: '/settings/accounting',
                 key: 'accounting-settings',
-                module_key: 'hms', // Moved to HMS as requested
+                module_key: 'configuration', // Moved to Configuration to ensure visibility
                 icon: 'Calculator',
                 parent_id: null,
                 sort_order: sortOrder,
