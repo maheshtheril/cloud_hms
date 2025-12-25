@@ -4,6 +4,7 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { AccountingSettingsForm } from "@/components/settings/accounting-settings-form"
 import { ensureDefaultAccounts } from "@/lib/account-seeder"
+import { ensureAccountingMenu } from "@/lib/menu-seeder"
 
 export const dynamic = 'force-dynamic'
 
