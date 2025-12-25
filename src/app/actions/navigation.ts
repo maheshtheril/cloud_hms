@@ -163,15 +163,24 @@ export async function getMenuItems() {
         const hasFullAccess = isAdmin || userPerms.has('*') || userPerms.has('settings:view');
 
         if (hasFullAccess) {
-            // 1. Get Standard Config Items
-            const configGroup = getFallbackMenuItems(isAdmin).find((g: any) => g.module?.module_key === 'configuration');
-            const standardConfigItems = configGroup ? configGroup.items : [];
+            // 1. Define ALL Standard Config Items (Restoring missing CRM/Permissions items)
+            const standardConfigItems = [
+                { key: 'general-settings', label: 'General Settings', icon: 'Settings', url: '/settings/global' },
+                { key: 'hms-settings', label: 'HMS Configuration', icon: 'Activity', url: '/settings/hms' },
+                { key: 'users', label: 'Users', icon: 'Users', url: '/settings/users' },
+                { key: 'roles', label: 'Roles', icon: 'Shield', url: '/settings/roles' },
+                { key: 'permissions', label: 'Permissions', icon: 'Key', url: '/settings/permissions' },
+                { key: 'crm-masters', label: 'CRM Masters', icon: 'Database', url: '/settings/crm' },
+                { key: 'custom-fields', label: 'Custom Fields', icon: 'FileText', url: '/settings/custom-fields' },
+                { key: 'import-leads', label: 'Import Leads', icon: 'UploadCloud', url: '/crm/import/leads' },
+                { key: 'crm-targets', label: 'Targets', icon: 'Target', url: '/crm/targets' }
+            ];
 
             // 2. Find Existing Config Group from DB
             const existingConfig = result.find(g => g.module?.module_key === 'configuration' || g.module?.name === 'Configuration');
 
             if (existingConfig) {
-                // MERGE: Add standard items if they don't already exist (by key or url)
+                // MERGE: Add standard items if they don't already exist
                 standardConfigItems.forEach((standardItem: any) => {
                     const exists = existingConfig.items.some((dbItem: any) =>
                         dbItem.key === standardItem.key || dbItem.url === standardItem.url
@@ -180,9 +189,12 @@ export async function getMenuItems() {
                         existingConfig.items.push(standardItem);
                     }
                 });
-            } else if (configGroup) {
-                // CREATE: matches fallback exactly
-                result.push(configGroup);
+            } else {
+                // CREATE new group if it doesn't exist
+                result.push({
+                    module: { name: 'Configuration', module_key: 'configuration' },
+                    items: standardConfigItems
+                });
             }
         }
 
