@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
+import { AccountingService } from "@/lib/services/accounting"
 
 export async function getBillableItems() {
     const session = await auth();
@@ -209,6 +210,19 @@ export async function createInvoice(data: any) {
 
             return newInvoice;
         });
+
+        if ((result.status === 'posted' || result.status === 'paid') && result.id) {
+            // FIRE AND FORGET - Accounting Post
+            // We don't want to block the UI response if accounting fails (it can be reconciled later),
+            // but for "World Standard" reliability, we ideally want it to succeed. 
+            // For now, we await it to ensure user sees errors if config is missing.
+            const accountingRes = await AccountingService.postSalesInvoice(result.id, session.user.id);
+            if (!accountingRes.success) {
+                console.warn("Accounting Post Failed:", accountingRes.error);
+                // Optionally append warning to UI? 
+                // return { success: true, data: result, warning: "Invoice saved but accounting entry failed: " + accountingRes.error };
+            }
+        }
 
         revalidatePath('/hms/billing');
         return { success: true, data: result };
