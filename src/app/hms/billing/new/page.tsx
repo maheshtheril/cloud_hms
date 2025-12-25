@@ -11,13 +11,14 @@ export default async function NewInvoicePage({
     searchParams: Promise<{
         patientId?: string
         medicines?: string
+        items?: string
         appointmentId?: string
     }>
 }) {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return <div>Unauthorized</div>;
 
-    const { patientId, medicines, appointmentId } = await searchParams;
+    const { patientId, medicines, items, appointmentId } = await searchParams;
     const tenantId = session.user.tenantId;
 
     // Parallel data fetching
@@ -45,6 +46,9 @@ export default async function NewInvoicePage({
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
 
+    // Standardize initial items (medicines or generic items)
+    const initialItems = items ? JSON.parse(items) : (medicines ? JSON.parse(medicines) : undefined);
+
     return (
         <div className="max-w-5xl mx-auto space-y-6">
             <div className="flex items-center gap-4">
@@ -65,7 +69,7 @@ export default async function NewInvoicePage({
                 billableItems={JSON.parse(JSON.stringify(billableItems))}
                 taxConfig={JSON.parse(JSON.stringify(taxConfig))}
                 initialPatientId={patientId}
-                initialMedicines={medicines ? JSON.parse(medicines) : undefined}
+                initialMedicines={initialItems}
                 appointmentId={appointmentId}
             />
         </div>

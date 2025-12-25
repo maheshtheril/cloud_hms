@@ -21,6 +21,9 @@ export async function getMenuItems() {
         // Self-Healing: Ensure Admin Menus Exist
         if (isAdmin) {
             await ensureAdminMenus();
+            // Ensure Journal menus are seeded for admins/finance
+            const { ensureAccountingMenu } = await import('@/lib/menu-seeder');
+            await ensureAccountingMenu();
         }
 
         // Fetch Tenant Details for Industry Check
@@ -61,6 +64,8 @@ export async function getMenuItems() {
             } else {
                 // FORCE CRM for non-healthcare
                 allowedModuleKeys.add('crm');
+                // FORCE ACCOUNTING for verifying functionality
+                allowedModuleKeys.add('accounting');
 
                 // If the user has NO subscriptions and is NOT healthcare, 
                 // we strictly default to CRM. 
