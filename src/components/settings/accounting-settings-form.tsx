@@ -15,25 +15,36 @@ export function AccountingSettingsForm({ settings, accounts, taxRates }: {
     const { toast } = useToast()
     const [loading, setLoading] = useState(false)
 
-    // Form State
+    // Form State with comprehensive fields
     const [formData, setFormData] = useState({
+        // Sales Defaults
         ar_account_id: settings?.ar_account_id || '',
         sales_account_id: settings?.sales_account_id || '',
         output_tax_account_id: settings?.output_tax_account_id || '',
-        default_sale_tax_id: settings?.default_sale_tax_id || ''
+        default_sale_tax_id: settings?.default_sale_tax_id || '',
+
+        // Purchasing Defaults
+        ap_account_id: settings?.ap_account_id || '',
+        purchase_account_id: settings?.purchase_account_id || '',
+        input_tax_account_id: settings?.input_tax_account_id || '',
+
+        // General Configuration
+        fiscal_year_start: settings?.fiscal_year_start ? new Date(settings.fiscal_year_start).toISOString().split('T')[0] : '2025-04-01',
+        fiscal_year_end: settings?.fiscal_year_end ? new Date(settings.fiscal_year_end).toISOString().split('T')[0] : '2026-03-31',
+        currency_precision: settings?.currency_precision || 2,
+        rounding_method: settings?.rounding_method || 'ROUND_HALF_UP'
     })
 
     const handleSave = async () => {
         setLoading(true)
-
         try {
             const res = await updateAccountingSettings(formData)
 
             if (res.success) {
                 toast({
                     title: "Success",
-                    description: "Configuration saved successfully",
-                    className: "bg-green-500 text-white border-none"
+                    description: "Accounting preferences saved successfully.",
+                    className: "bg-green-600 text-white border-none"
                 })
                 router.refresh()
             } else {
@@ -57,9 +68,6 @@ export function AccountingSettingsForm({ settings, accounts, taxRates }: {
     // EMPTY STATE: If no accounts exist
     if (accounts.length === 0) {
         const handleSeed = async () => {
-            // Dynamic import to avoid circular dep issues in some setups, though standard import is fine usually.
-            // We'll trust standard import if we add it. 
-            // EDIT: We need to import the action.
             setLoading(true);
             const { seedDefaultAccountsAction } = await import('@/app/actions/seed-accounts');
             const res = await seedDefaultAccountsAction();
@@ -93,119 +101,151 @@ export function AccountingSettingsForm({ settings, accounts, taxRates }: {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-xl shadow-slate-200/50 dark:shadow-black/20">
+        <div className="space-y-6 animate-in fade-in duration-500 pb-20">
 
-                {/* Information Banner */}
-                <div className="flex items-start gap-4 mb-8 text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-300 p-5 rounded-xl border border-blue-100 dark:border-blue-800/50">
-                    <AlertCircle className="h-6 w-6 shrink-0 mt-0.5" />
-                    <div>
-                        <h3 className="font-semibold text-base mb-1">Automated Journal Posting</h3>
-                        <p className="text-sm opacity-90 leading-relaxed">
-                            These settings control how the system automatically creates journal entries for Invoices and Payments.
-                            Ensure you select the correct Control Accounts to keep your General Ledger accurate.
-                        </p>
+            {/* SECTION 1: GENERAL CONFIGURATION */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                    <span className="w-1 h-6 bg-blue-600 rounded-full"></span>
+                    General Financial Settings
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Fiscal Year Start</label>
+                        <input
+                            type="date"
+                            value={formData.fiscal_year_start}
+                            onChange={e => setFormData({ ...formData, fiscal_year_start: e.target.value })}
+                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        />
+                        <p className="text-xs text-slate-400">Start of your financial reporting year.</p>
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Fiscal Year End</label>
+                        <input
+                            type="date"
+                            value={formData.fiscal_year_end}
+                            onChange={e => setFormData({ ...formData, fiscal_year_end: e.target.value })}
+                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                        />
+                        <p className="text-xs text-slate-400">End date for annual closing.</p>
                     </div>
                 </div>
+            </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    {/* AR Account */}
-                    <div className="space-y-1.5 group">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1">
-                            Accounts Receivable (AR)
-                        </label>
-                        <div className="relative">
-                            <select
-                                className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all hover:bg-slate-100 dark:hover:bg-slate-900"
-                                value={formData.ar_account_id}
-                                onChange={(e) => setFormData({ ...formData, ar_account_id: e.target.value })}
-                            >
-                                <option value="">Select Account...</option>
-                                {accounts.map(a => (
-                                    <option key={a.id} value={a.id}>{a.code} - {a.name} ({a.type})</option>
-                                ))}
-                            </select>
-                        </div>
-                        <p className="text-xs text-slate-500 font-medium ml-1">Asset account for unpaid invoices (Debtors Control).</p>
+            {/* SECTION 2: SALES & RECEIVABLES */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                    <span className="w-1 h-6 bg-green-500 rounded-full"></span>
+                    Sales & Receivables
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Accounts Receivable (AR)</label>
+                        <select
+                            value={formData.ar_account_id}
+                            onChange={e => setFormData({ ...formData, ar_account_id: e.target.value })}
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            <option value="">Select AR Account...</option>
+                            {accounts.filter(a => a.type === 'Asset').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                        <p className="text-xs text-slate-500">Asset account for unpaid customer invoices.</p>
                     </div>
-
-                    {/* Sales Account */}
-                    <div className="space-y-1.5 group">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1">
-                            Default Sales / Income
-                        </label>
-                        <div className="relative">
-                            <select
-                                className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all hover:bg-slate-100 dark:hover:bg-slate-900"
-                                value={formData.sales_account_id}
-                                onChange={(e) => setFormData({ ...formData, sales_account_id: e.target.value })}
-                            >
-                                <option value="">Select Account...</option>
-                                {accounts.map(a => (
-                                    <option key={a.id} value={a.id}>{a.code} - {a.name} ({a.type})</option>
-                                ))}
-                            </select>
-                        </div>
-                        <p className="text-xs text-slate-500 font-medium ml-1">Default revenue account for services & products.</p>
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Default Income Account</label>
+                        <select
+                            value={formData.sales_account_id}
+                            onChange={e => setFormData({ ...formData, sales_account_id: e.target.value })}
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            <option value="">Select Revenue Account...</option>
+                            {accounts.filter(a => a.type === 'Revenue').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                        <p className="text-xs text-slate-500">Default account for product/service sales.</p>
                     </div>
-
-                    {/* Tax Account */}
-                    <div className="space-y-1.5 group">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1">
-                            Output VAT / Tax Payable
-                        </label>
-                        <div className="relative">
-                            <select
-                                className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all hover:bg-slate-100 dark:hover:bg-slate-900"
-                                value={formData.output_tax_account_id}
-                                onChange={(e) => setFormData({ ...formData, output_tax_account_id: e.target.value })}
-                            >
-                                <option value="">Select Account...</option>
-                                {accounts.map(a => (
-                                    <option key={a.id} value={a.id}>{a.code} - {a.name} ({a.type})</option>
-                                ))}
-                            </select>
-                        </div>
-                        <p className="text-xs text-slate-500 font-medium ml-1">Liability account for collected taxes.</p>
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Output VAT (Tax Liability)</label>
+                        <select
+                            value={formData.output_tax_account_id}
+                            onChange={e => setFormData({ ...formData, output_tax_account_id: e.target.value })}
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            <option value="">Select Liability Account...</option>
+                            {accounts.filter(a => a.type === 'Liability').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                        <p className="text-xs text-slate-500">Where tax collected on sales is recorded.</p>
                     </div>
-
-                    {/* Default Tax Rate */}
-                    <div className="space-y-1.5 group">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1">
-                            Default Tax Rate
-                        </label>
-                        <div className="relative">
-                            <select
-                                className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all hover:bg-slate-100 dark:hover:bg-slate-900"
-                                value={formData.default_sale_tax_id}
-                                onChange={(e) => setFormData({ ...formData, default_sale_tax_id: e.target.value })}
-                            >
-                                <option value="">No Default Tax</option>
-                                {taxRates.map(t => (
-                                    <option key={t.id} value={t.id}>{t.name} ({Number(t.rate)}%)</option>
-                                ))}
-                            </select>
-                        </div>
-                        <p className="text-xs text-slate-500 font-medium ml-1">Pre-selected tax rate for new invoices.</p>
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Default Sales Tax Rate</label>
+                        <select
+                            value={formData.default_sale_tax_id}
+                            onChange={e => setFormData({ ...formData, default_sale_tax_id: e.target.value })}
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            <option value="">No Default Tax</option>
+                            {taxRates.map(t => <option key={t.id} value={t.id}>{t.name} ({Number(t.rate)}%)</option>)}
+                        </select>
+                        <p className="text-xs text-slate-500">Auto-selected tax rate for new invoices.</p>
                     </div>
                 </div>
+            </div>
 
-                <div className="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-                    <button
-                        onClick={handleSave}
-                        disabled={loading}
-                        className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/30 disabled:opacity-70 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                        {loading ? (
-                            <>Processing...</>
-                        ) : (
-                            <>
-                                <Save className="h-5 w-5" />
-                                Save Configuration
-                            </>
-                        )}
-                    </button>
+            {/* SECTION 3: PURCHASING & PAYABLES */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                    <span className="w-1 h-6 bg-amber-500 rounded-full"></span>
+                    Purchasing & Payables
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Accounts Payable (Creditors)</label>
+                        <select
+                            value={formData.ap_account_id}
+                            onChange={e => setFormData({ ...formData, ap_account_id: e.target.value })}
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            <option value="">Select AP Account...</option>
+                            {accounts.filter(a => a.type === 'Liability').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                        <p className="text-xs text-slate-500">Liability account for unpaid vendor bills.</p>
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Default Expense Account</label>
+                        <select
+                            value={formData.purchase_account_id}
+                            onChange={e => setFormData({ ...formData, purchase_account_id: e.target.value })}
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            <option value="">Select Expense Account...</option>
+                            {accounts.filter(a => a.type === 'Expense' || a.type === 'Cost of Goods Sold').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                        <p className="text-xs text-slate-500">Default category for vendor bills (e.g. COGS or General).</p>
+                    </div>
+                    <div className="space-y-1.5">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Input VAT (Tax Asset)</label>
+                        <select
+                            value={formData.input_tax_account_id}
+                            onChange={e => setFormData({ ...formData, input_tax_account_id: e.target.value })}
+                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                        >
+                            <option value="">Select Tax Account...</option>
+                            {accounts.filter(a => a.type === 'Liability' || a.type === 'Asset').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                        <p className="text-xs text-slate-500">Account for tax paid on purchases (claimable).</p>
+                    </div>
                 </div>
+            </div>
+
+            {/* SAVE BUTTON */}
+            <div className="fixed bottom-6 right-6 z-50">
+                <button
+                    onClick={handleSave}
+                    disabled={loading}
+                    className="flex items-center gap-2 px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all"
+                >
+                    {loading ? "Saving..." : <><Save className="h-5 w-5" /> Save Preferences</>}
+                </button>
             </div>
         </div>
     )
