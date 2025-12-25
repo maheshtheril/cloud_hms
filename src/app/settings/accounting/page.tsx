@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { AccountingSettingsForm } from "@/components/settings/accounting-settings-form"
-import { ensureAccountingMenu } from "@/lib/menu-seeder"
+import { ensureDefaultAccounts } from "@/lib/account-seeder"
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +16,11 @@ export default async function AccountingSettingsPage() {
 
     const companyId = session.user.companyId;
     if (!companyId) return <div>No company found</div>
+
+    // Self-Healing: Ensure Basic Accounts Exist
+    if (session.user.tenantId) {
+        await ensureDefaultAccounts(companyId, session.user.tenantId);
+    }
 
     // 1. Fetch Existing Settings
     const settings = await prisma.company_accounting_settings.findUnique({
