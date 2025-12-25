@@ -3,11 +3,16 @@ import { getMenuItems } from "@/app/actions/navigation"
 import { getCurrentCompany } from "@/app/actions/company"
 import { auth } from "@/auth"
 
+import { ensureAccountingMenu } from "@/lib/menu-seeder";
+
 export default async function SettingsLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
+    // Auto-fix menu visibility on ANY settings page load
+    await ensureAccountingMenu();
+
     const menuItems = await getMenuItems();
     const currentCompany = await getCurrentCompany();
     const session = await auth();
