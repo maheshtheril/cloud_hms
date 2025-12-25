@@ -166,7 +166,7 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel 
                         <p className="text-xs text-slate-500">Default account for product/service sales.</p>
                     </div>
                     <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Output VAT (Tax Liability)</label>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Output {taxLabel} (Tax Liability)</label>
                         <select
                             value={formData.output_tax_account_id}
                             onChange={e => setFormData({ ...formData, output_tax_account_id: e.target.value })}
@@ -178,7 +178,7 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel 
                         <p className="text-xs text-slate-500">Where tax collected on sales is recorded.</p>
                     </div>
                     <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Default Sales Tax Rate</label>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Default {taxLabel} Rate</label>
                         <select
                             value={formData.default_sale_tax_id}
                             onChange={e => setFormData({ ...formData, default_sale_tax_id: e.target.value })}
@@ -224,7 +224,7 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel 
                         <p className="text-xs text-slate-500">Default category for vendor bills (e.g. COGS or General).</p>
                     </div>
                     <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Input VAT (Tax Asset)</label>
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Input {taxLabel} (Tax Asset)</label>
                         <select
                             value={formData.input_tax_account_id}
                             onChange={e => setFormData({ ...formData, input_tax_account_id: e.target.value })}
