@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, AlertCircle } from 'lucide-react'
+import { Save, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { updateAccountingSettings } from '@/app/actions/accounting-settings'
+import { Toaster, toast } from 'sonner'
 
 export function AccountingSettingsForm({ settings, accounts, taxRates }: {
     settings: any,
@@ -23,111 +24,138 @@ export function AccountingSettingsForm({ settings, accounts, taxRates }: {
 
     const handleSave = async () => {
         setLoading(true)
-        const res = await updateAccountingSettings(formData)
-        if (res.success) {
-            router.refresh()
-            alert('Settings saved successfully')
-        } else {
-            alert(res.error)
+        const toastId = toast.loading('Saving configuration...')
+
+        try {
+            const res = await updateAccountingSettings(formData)
+
+            if (res.success) {
+                toast.success('Configuration saved successfully', { id: toastId })
+                router.refresh()
+            } else {
+                toast.error(res.error || 'Failed to save settings', { id: toastId })
+            }
+        } catch (error) {
+            toast.error('An unexpected error occurred', { id: toastId })
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
-    // Filter accounts by type if possible, or just show all for MVP
-    // Assuming standard naming convention or type for filtering would be better
-    // But for "User Friendly", showing "Accounts Receivable" type accounts is best.
-    // However, schema `accounts` has `type` (String). I'll check types from `account_types`.
-    // For now, I'll list all, user filters by search/dropdown.
-
     return (
-        <div className="space-y-6">
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-800 p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-6 text-amber-600 bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg">
-                    <AlertCircle className="h-5 w-5" />
-                    <p className="text-sm font-medium">Standard Accounting mappings are required for automated posting.</p>
+        <div className="space-y-8 animate-in fade-in duration-500">
+            <Toaster position="top-right" richColors />
+
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-xl shadow-slate-200/50 dark:shadow-black/20">
+
+                {/* Information Banner */}
+                <div className="flex items-start gap-4 mb-8 text-blue-700 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-300 p-5 rounded-xl border border-blue-100 dark:border-blue-800/50">
+                    <AlertCircle className="h-6 w-6 shrink-0 mt-0.5" />
+                    <div>
+                        <h3 className="font-semibold text-base mb-1">Automated Journal Posting</h3>
+                        <p className="text-sm opacity-90 leading-relaxed">
+                            These settings control how the system automatically creates journal entries for Invoices and Payments.
+                            Ensure you select the correct Control Accounts to keep your General Ledger accurate.
+                        </p>
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* AR Account */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                    <div className="space-y-1.5 group">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1">
                             Accounts Receivable (AR)
                         </label>
-                        <select
-                            className="w-full p-2.5 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                            value={formData.ar_account_id}
-                            onChange={(e) => setFormData({ ...formData, ar_account_id: e.target.value })}
-                        >
-                            <option value="">Select AR Account...</option>
-                            {accounts.map(a => (
-                                <option key={a.id} value={a.id}>{a.code} - {a.name} ({a.type})</option>
-                            ))}
-                        </select>
-                        <p className="text-xs text-gray-500 mt-1">Account used for unpaid invoices (Credit Sales).</p>
+                        <div className="relative">
+                            <select
+                                className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all hover:bg-slate-100 dark:hover:bg-slate-900"
+                                value={formData.ar_account_id}
+                                onChange={(e) => setFormData({ ...formData, ar_account_id: e.target.value })}
+                            >
+                                <option value="">Select Account...</option>
+                                {accounts.map(a => (
+                                    <option key={a.id} value={a.id}>{a.code} - {a.name} ({a.type})</option>
+                                ))}
+                            </select>
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium ml-1">Asset account for unpaid invoices (Debtors Control).</p>
                     </div>
 
                     {/* Sales Account */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                            Default Sales / Income Account
+                    <div className="space-y-1.5 group">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1">
+                            Default Sales / Income
                         </label>
-                        <select
-                            className="w-full p-2.5 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                            value={formData.sales_account_id}
-                            onChange={(e) => setFormData({ ...formData, sales_account_id: e.target.value })}
-                        >
-                            <option value="">Select Income Account...</option>
-                            {accounts.map(a => (
-                                <option key={a.id} value={a.id}>{a.code} - {a.name} ({a.type})</option>
-                            ))}
-                        </select>
-                        <p className="text-xs text-gray-500 mt-1">Default revenue account for services/products.</p>
+                        <div className="relative">
+                            <select
+                                className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all hover:bg-slate-100 dark:hover:bg-slate-900"
+                                value={formData.sales_account_id}
+                                onChange={(e) => setFormData({ ...formData, sales_account_id: e.target.value })}
+                            >
+                                <option value="">Select Account...</option>
+                                {accounts.map(a => (
+                                    <option key={a.id} value={a.id}>{a.code} - {a.name} ({a.type})</option>
+                                ))}
+                            </select>
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium ml-1">Default revenue account for services & products.</p>
                     </div>
 
                     {/* Tax Account */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                    <div className="space-y-1.5 group">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1">
                             Output VAT / Tax Payable
                         </label>
-                        <select
-                            className="w-full p-2.5 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                            value={formData.output_tax_account_id}
-                            onChange={(e) => setFormData({ ...formData, output_tax_account_id: e.target.value })}
-                        >
-                            <option value="">Select Tax Account...</option>
-                            {accounts.map(a => (
-                                <option key={a.id} value={a.id}>{a.code} - {a.name} ({a.type})</option>
-                            ))}
-                        </select>
-                        <p className="text-xs text-gray-500 mt-1">Account for tax liability collected on sales.</p>
+                        <div className="relative">
+                            <select
+                                className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all hover:bg-slate-100 dark:hover:bg-slate-900"
+                                value={formData.output_tax_account_id}
+                                onChange={(e) => setFormData({ ...formData, output_tax_account_id: e.target.value })}
+                            >
+                                <option value="">Select Account...</option>
+                                {accounts.map(a => (
+                                    <option key={a.id} value={a.id}>{a.code} - {a.name} ({a.type})</option>
+                                ))}
+                            </select>
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium ml-1">Liability account for collected taxes.</p>
                     </div>
 
                     {/* Default Tax Rate */}
-                    <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                    <div className="space-y-1.5 group">
+                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200 ml-1">
                             Default Tax Rate
                         </label>
-                        <select
-                            className="w-full p-2.5 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                            value={formData.default_sale_tax_id}
-                            onChange={(e) => setFormData({ ...formData, default_sale_tax_id: e.target.value })}
-                        >
-                            <option value="">No Default Tax</option>
-                            {taxRates.map(t => (
-                                <option key={t.id} value={t.id}>{t.name} ({Number(t.rate)}%)</option>
-                            ))}
-                        </select>
+                        <div className="relative">
+                            <select
+                                className="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all hover:bg-slate-100 dark:hover:bg-slate-900"
+                                value={formData.default_sale_tax_id}
+                                onChange={(e) => setFormData({ ...formData, default_sale_tax_id: e.target.value })}
+                            >
+                                <option value="">No Default Tax</option>
+                                {taxRates.map(t => (
+                                    <option key={t.id} value={t.id}>{t.name} ({Number(t.rate)}%)</option>
+                                ))}
+                            </select>
+                        </div>
+                        <p className="text-xs text-slate-500 font-medium ml-1">Pre-selected tax rate for new invoices.</p>
                     </div>
                 </div>
 
-                <div className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-800 flex justify-end">
+                <div className="mt-10 pt-8 border-t border-slate-100 dark:border-slate-800 flex justify-end">
                     <button
                         onClick={handleSave}
                         disabled={loading}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all disabled:opacity-50"
+                        className="flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/30 disabled:opacity-70 disabled:cursor-not-allowed hover:scale-[1.02] active:scale-[0.98]"
                     >
-                        <Save className="h-4 w-4" />
-                        {loading ? 'Saving...' : 'Save Configuration'}
+                        {loading ? (
+                            <>Processing...</>
+                        ) : (
+                            <>
+                                <Save className="h-5 w-5" />
+                                Save Configuration
+                            </>
+                        )}
                     </button>
                 </div>
             </div>
