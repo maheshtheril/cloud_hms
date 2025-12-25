@@ -238,3 +238,88 @@ export async function createInvoice(data: any) {
         return { error: `Failed to create invoice: ${error.message}. DB Triggers: ${triggersInfo}` }
     }
 }
+
+export async function updateInvoice(invoiceId: string, data: any) {
+    const session = await auth();
+    if (!session?.user?.companyId) return { error: "Unauthorized" };
+
+    const { patient_id, appointment_id, date, line_items, status = 'draft', total_discount = 0 } = data;
+
+    if (!line_items || line_items.length === 0) {
+        return { error: "At least one line item is required" };
+    }
+
+    try {
+        // Calculate totals
+        const subtotal = line_items.reduce((sum: number, item: any) => sum + ((item.quantity * item.unit_price) - (item.discount_amount || 0)), 0);
+        const totalTaxAmount = line_items.reduce((sum: number, item: any) => sum + (Number(item.tax_amount || 0)), 0);
+        const total = Math.max(0, subtotal + totalTaxAmount - Number(total_discount || 0));
+
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Update Invoice Header
+            const updatedInvoice = await tx.hms_invoice.update({
+                where: { id: invoiceId },
+                data: {
+                    patient_id: (patient_id as string) || null,
+                    appointment_id: (appointment_id as string) || null,
+                    invoice_date: new Date(date),
+                    status: status as any,
+                    total: total,
+                    subtotal: subtotal,
+                    total_tax: totalTaxAmount,
+                    total_discount: Number(total_discount),
+                    outstanding_amount: (status === 'posted') ? total : 0,
+                }
+            });
+
+            // 2. Delete existing lines (Simple approach for MVP)
+            await tx.hms_invoice_lines.deleteMany({
+                where: { invoice_id: invoiceId }
+            });
+
+            // 3. Create new lines
+            await tx.hms_invoice_lines.createMany({
+                data: line_items.map((item: any, index: number) => ({
+                    tenant_id: session.user.tenantId,
+                    company_id: session.user.companyId,
+                    invoice_id: invoiceId,
+                    line_idx: index + 1,
+                    product_id: item.product_id || null, // Convert empty string to null
+                    description: item.description,
+                    quantity: item.quantity,
+                    unit_price: item.unit_price,
+                    net_amount: (item.quantity * item.unit_price) - (item.discount_amount || 0),
+                    // Tax details
+                    tax_rate_id: item.tax_rate_id || null, // Convert empty string to null
+                    tax_amount: item.tax_amount || 0,
+                    discount_amount: item.discount_amount || 0
+                }))
+            });
+
+            // If status is paid and appointment is linked, mark appointment as completed
+            if (status === 'paid' && appointment_id) {
+                await tx.hms_appointments.update({
+                    where: { id: appointment_id },
+                    data: { status: 'completed' }
+                });
+            }
+
+            return updatedInvoice;
+        });
+
+        if ((result.status === 'posted' || result.status === 'paid') && result.id) {
+            const accountingRes = await AccountingService.postSalesInvoice(result.id, session.user.id);
+            if (!accountingRes.success) {
+                console.warn("Accounting Post Failed:", accountingRes.error);
+            }
+        }
+
+        revalidatePath('/hms/billing');
+        revalidatePath(`/hms/billing/${invoiceId}`);
+        return { success: true, data: result };
+
+    } catch (error: any) {
+        console.error("Failed to update invoice:", error);
+        return { error: `Failed to update invoice: ${error.message}` };
+    }
+}

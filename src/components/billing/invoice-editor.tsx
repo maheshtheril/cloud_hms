@@ -4,16 +4,17 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, UserPlus } from 'lucide-react'
-import { createInvoice } from '@/app/actions/billing'
+import { createInvoice, updateInvoice } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 
-export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatientId, initialMedicines, appointmentId }: {
+export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice }: {
     patients: any[],
     billableItems: any[],
     taxConfig: { defaultTax: any, taxRates: any[] },
     initialPatientId?: string,
     initialMedicines?: any[],
-    appointmentId?: string
+    appointmentId?: string,
+    initialInvoice?: any
 }) {
     const router = useRouter()
     const searchParams = useSearchParams()
@@ -25,8 +26,8 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
     const urlAppointmentId = searchParams.get('appointmentId')
 
     // State
-    const [selectedPatientId, setSelectedPatientId] = useState(initialPatientId || urlPatientId || '')
-    const [date, setDate] = useState(new Date().toISOString().split('T')[0])
+    const [selectedPatientId, setSelectedPatientId] = useState(initialInvoice?.patient_id || initialPatientId || urlPatientId || '')
+    const [date, setDate] = useState(initialInvoice?.invoice_date ? new Date(initialInvoice.invoice_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
     // Use configured default or empty (force user to select)
     const getDefaultTaxId = () => {
         if (taxConfig.defaultTax?.id) return taxConfig.defaultTax.id;
@@ -41,11 +42,22 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
     console.log('Default Tax ID Selected:', defaultTaxId);
     console.log('Available Tax Rates:', taxConfig.taxRates);
 
-    const [lines, setLines] = useState<any[]>([
+    const [lines, setLines] = useState<any[]>(initialInvoice?.hms_invoice_lines ? initialInvoice.hms_invoice_lines.map((l: any) => ({
+        id: l.id || Date.now() + Math.random(),
+        product_id: l.product_id || '',
+        description: l.description,
+        quantity: Number(l.quantity),
+        uom: 'PCS', // Default, should ideally come from DB if possible or metadata
+        unit_price: Number(l.unit_price),
+        tax_rate_id: l.tax_rate_id || defaultTaxId,
+        tax_amount: Number(l.tax_amount),
+        discount_amount: Number(l.discount_amount),
+        net_amount: Number(l.net_amount)
+    })) : [
         { id: 1, product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0 }
     ])
 
-    const [globalDiscount, setGlobalDiscount] = useState(0)
+    const [globalDiscount, setGlobalDiscount] = useState(Number(initialInvoice?.total_discount || 0))
 
     // Auto-load medicines/items from URL
     useEffect(() => {
@@ -398,14 +410,22 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
         if (!selectedPatientId) return alert('Please select a patient')
 
         setLoading(true)
-        const res = await createInvoice({
+
+        let res;
+        const payload = {
             patient_id: selectedPatientId,
             appointment_id: appointmentId || urlAppointmentId,
             date,
             line_items: lines,
             status,
             total_discount: globalDiscount
-        })
+        };
+
+        if (initialInvoice?.id) {
+            res = await updateInvoice(initialInvoice.id, payload);
+        } else {
+            res = await createInvoice(payload);
+        }
 
         if (res.success) {
             router.push('/hms/billing')
