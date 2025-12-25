@@ -4,6 +4,34 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
 
+export async function lockAccountingPeriod(dateStr: string | null) {
+    const session = await auth();
+    if (!session?.user?.companyId) return { error: "Unauthorized" };
+
+    try {
+        const lockDate = dateStr ? new Date(dateStr) : null;
+
+        await prisma.company_accounting_settings.upsert({
+            where: { company_id: session.user.companyId },
+            create: {
+                tenant_id: session.user.tenantId!,
+                company_id: session.user.companyId!,
+                lock_date: lockDate
+                // Defaults will handle the rest
+            },
+            update: {
+                lock_date: lockDate
+            }
+        });
+
+        revalidatePath('/settings/accounting');
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error locking period:", error);
+        return { error: error.message || "Failed to lock period" };
+    }
+}
+
 export async function updateAccountingSettings(data: any) {
     const session = await auth();
     if (!session?.user?.companyId) return { error: "Unauthorized" };
@@ -15,7 +43,7 @@ export async function updateAccountingSettings(data: any) {
             fiscal_year_end,
             currency_precision,
             rounding_method,
-            lock_date,
+            // lock_date, // REMOVED: Managed by lockAccountingPeriod
             retained_earnings_account_id,
 
             // Journals (Existing fields exposed)
@@ -30,13 +58,13 @@ export async function updateAccountingSettings(data: any) {
             sales_account_id,
             output_tax_account_id,
             default_sale_tax_id,
-            sales_discount_account_id, // NEW
+            sales_discount_account_id,
 
             // Purchases
             ap_account_id,
             purchase_account_id,
             input_tax_account_id,
-            purchase_discount_account_id, // NEW
+            purchase_discount_account_id,
 
             // Inventory
             inventory_asset_account_id,
@@ -44,7 +72,7 @@ export async function updateAccountingSettings(data: any) {
             stock_adjustment_account_id,
 
             // Advanced
-            exchange_gain_loss_account_id // NEW
+            exchange_gain_loss_account_id
         } = data;
 
         // Upsert settings for this company
@@ -59,7 +87,7 @@ export async function updateAccountingSettings(data: any) {
                 fiscal_year_end: fiscal_year_end ? new Date(fiscal_year_end) : undefined,
                 currency_precision: currency_precision ? parseInt(currency_precision) : 2,
                 rounding_method: rounding_method || 'ROUND_HALF_UP',
-                lock_date: lock_date ? new Date(lock_date) : undefined,
+                // lock_date: lock_date ? new Date(lock_date) : undefined, // REMOVED
                 retained_earnings_account_id: retained_earnings_account_id || null,
 
                 // Journals
@@ -80,7 +108,7 @@ export async function updateAccountingSettings(data: any) {
                 ap_account_id: ap_account_id || null,
                 purchase_account_id: purchase_account_id || null,
                 input_tax_account_id: input_tax_account_id || null,
-                purchase_discount_account_id: purchase_discount_account_id || null, // Note: Schema might need update if this doesn't exist yet
+                purchase_discount_account_id: purchase_discount_account_id || null,
 
                 // Inventory
                 inventory_asset_account_id: inventory_asset_account_id || null,
@@ -96,7 +124,7 @@ export async function updateAccountingSettings(data: any) {
                 fiscal_year_end: fiscal_year_end ? new Date(fiscal_year_end) : undefined,
                 currency_precision: currency_precision ? parseInt(currency_precision) : 2,
                 rounding_method: rounding_method || 'ROUND_HALF_UP',
-                lock_date: lock_date ? new Date(lock_date) : null,
+                // lock_date: lock_date ? new Date(lock_date) : null, // REMOVED
                 retained_earnings_account_id: retained_earnings_account_id || null,
 
                 // Journals
