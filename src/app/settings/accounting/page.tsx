@@ -4,7 +4,7 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { AccountingSettingsForm } from "@/components/settings/accounting-settings-form"
 import { ensureDefaultAccounts } from "@/lib/account-seeder"
-import { ensureAccountingMenu } from "@/lib/menu-seeder"
+import { ensureAccountingMenu, ensureAdminMenus } from "@/lib/menu-seeder"
 
 export const dynamic = 'force-dynamic'
 
@@ -15,6 +15,7 @@ export default async function AccountingSettingsPage() {
     // Auto-fix menu existence if missing (Self-Healing)
     try {
         await ensureAccountingMenu();
+        await ensureAdminMenus();
     } catch (e) {
         console.error("Menu seeding failed", e);
     }

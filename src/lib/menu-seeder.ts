@@ -49,3 +49,43 @@ export async function ensureAccountingMenu() {
         console.error("Failed to auto-seed menu:", e);
     }
 }
+
+export async function ensureAdminMenus() {
+    try {
+        const adminItems = [
+            { key: 'users', label: 'Users', url: '/settings/users', icon: 'Users', sort: 90 },
+            { key: 'roles', label: 'Roles & Permissions', url: '/settings/roles', icon: 'Shield', sort: 91 },
+            { key: 'general-settings', label: 'Global Settings', url: '/settings/global', icon: 'Settings', sort: 99 },
+            { key: 'crm-masters', label: 'CRM Masters', url: '/settings/crm', icon: 'Database', sort: 92 },
+        ];
+
+        for (const item of adminItems) {
+            const existing = await prisma.menu_items.findFirst({
+                where: { key: item.key }
+            });
+
+            if (!existing) {
+                await prisma.menu_items.create({
+                    data: {
+                        label: item.label,
+                        url: item.url,
+                        key: item.key,
+                        module_key: 'configuration',
+                        icon: item.icon,
+                        sort_order: item.sort,
+                        is_global: true
+                    }
+                });
+                console.log(`Auto-seeded Admin Menu: ${item.label}`);
+            } else if (existing.module_key !== 'configuration') {
+                // Fix module key if wrong
+                await prisma.menu_items.update({
+                    where: { id: existing.id },
+                    data: { module_key: 'configuration' }
+                });
+            }
+        }
+    } catch (e) {
+        console.error("Failed to seed admin menus:", e);
+    }
+}
