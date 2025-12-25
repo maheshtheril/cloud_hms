@@ -59,16 +59,20 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                 const parsedLines = medicinesToLoad.map((med: any, idx: number) => {
                     // SMART LOOKUP: If item is "Patient Registration Fee", try to match with a DB product
                     let dbProduct = null;
-                    if (med.name === 'Patient Registration Fee' || med.name === 'Registration Fee') {
-                        dbProduct = billableItems.find(p => p.label.toLowerCase().includes('registration') && p.type === 'service');
-                    } else {
-                        dbProduct = billableItems.find(p => p.id === med.id);
+                    if (med.name) {
+                        // Normalize name: replace + with space, lower case
+                        const normalizedName = med.name.replace(/\+/g, ' ').toLowerCase();
+                        if (normalizedName.includes('patient registration fee') || normalizedName.includes('registration fee')) {
+                            dbProduct = billableItems.find(p => p.label.toLowerCase().includes('registration') && p.type === 'service');
+                        } else {
+                            dbProduct = billableItems.find(p => p.id === med.id);
+                        }
                     }
 
                     const lineItem: any = {
                         id: Date.now() + idx,
                         product_id: dbProduct ? dbProduct.id : (med.id || ''),
-                        description: dbProduct ? (dbProduct.description || dbProduct.label) : med.name,
+                        description: dbProduct ? (dbProduct.description || dbProduct.label) : (med.name?.replace(/\+/g, ' ') || 'Service'),
                         quantity: med.quantity || 1,
                         unit_price: parseFloat(med.price?.toString() || '0'),
                         uom: med.uom || 'PCS',
@@ -79,7 +83,12 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
 
                     // Apply DB Product Defaults (Tax, Price, etc)
                     if (dbProduct) {
-                        lineItem.unit_price = dbProduct.price || lineItem.unit_price;
+                        // ONLY override price if DB has a non-zero price. 
+                        // Otherwise respect the URL/Registration price (e.g. 500)
+                        if (dbProduct.price && dbProduct.price > 0) {
+                            lineItem.unit_price = dbProduct.price;
+                        }
+
                         lineItem.description = dbProduct.description || dbProduct.label; // Official description
                         if (dbProduct.categoryTaxId) {
                             lineItem.tax_rate_id = dbProduct.categoryTaxId;
