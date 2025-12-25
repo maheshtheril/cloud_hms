@@ -2,15 +2,16 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, AlertCircle } from 'lucide-react'
+import { Save, AlertCircle, BookOpen, Layers, DollarSign, Package, Settings, Calendar } from 'lucide-react'
 import { updateAccountingSettings } from '@/app/actions/accounting-settings'
 import { useToast } from "@/components/ui/use-toast"
 
-export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel }: {
+export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel, journals }: {
     settings: any,
     accounts: any[],
     taxRates: any[],
-    taxLabel: string
+    taxLabel: string,
+    journals: any[]
 }) {
     const router = useRouter()
     const { toast } = useToast()
@@ -18,29 +19,40 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel 
 
     // Form State with comprehensive fields
     const [formData, setFormData] = useState({
+        // General & Journals
+        fiscal_year_start: settings?.fiscal_year_start ? new Date(settings.fiscal_year_start).toISOString().split('T')[0] : '2025-04-01',
+        fiscal_year_end: settings?.fiscal_year_end ? new Date(settings.fiscal_year_end).toISOString().split('T')[0] : '2026-03-31',
+        lock_date: settings?.lock_date ? new Date(settings.lock_date).toISOString().split('T')[0] : '',
+        currency_precision: settings?.currency_precision || 2,
+        retained_earnings_account_id: settings?.retained_earnings_account_id || '',
+        exchange_gain_loss_account_id: settings?.exchange_gain_loss_account_id || '',
+
+        // Journals Mapping
+        sales_journal_id: settings?.sales_journal_id || '',
+        purchase_journal_id: settings?.purchase_journal_id || '',
+        bank_journal_id: settings?.bank_journal_id || '',
+        cash_journal_id: settings?.cash_journal_id || '',
+        general_journal_id: settings?.general_journal_id || '',
+
         // Sales Defaults
         ar_account_id: settings?.ar_account_id || '',
         sales_account_id: settings?.sales_account_id || '',
+        sales_discount_account_id: settings?.sales_discount_account_id || '',
         output_tax_account_id: settings?.output_tax_account_id || '',
         default_sale_tax_id: settings?.default_sale_tax_id || '',
 
         // Purchasing Defaults
         ap_account_id: settings?.ap_account_id || '',
         purchase_account_id: settings?.purchase_account_id || '',
+        purchase_discount_account_id: settings?.purchase_discount_account_id || '',
         input_tax_account_id: settings?.input_tax_account_id || '',
 
-        // General Configuration
-        fiscal_year_start: settings?.fiscal_year_start ? new Date(settings.fiscal_year_start).toISOString().split('T')[0] : '2025-04-01',
-        fiscal_year_end: settings?.fiscal_year_end ? new Date(settings.fiscal_year_end).toISOString().split('T')[0] : '2026-03-31',
-        currency_precision: settings?.currency_precision || 2,
-        rounding_method: settings?.rounding_method || 'ROUND_HALF_UP',
-
-        // Advanced / World Class
-        lock_date: settings?.lock_date ? new Date(settings.lock_date).toISOString().split('T')[0] : '',
-        retained_earnings_account_id: settings?.retained_earnings_account_id || '',
+        // Inventory
         inventory_asset_account_id: settings?.inventory_asset_account_id || '',
         cogs_account_id: settings?.cogs_account_id || '',
-        stock_adjustment_account_id: settings?.stock_adjustment_account_id || ''
+        stock_adjustment_account_id: settings?.stock_adjustment_account_id || '',
+
+        rounding_method: settings?.rounding_method || 'ROUND_HALF_UP',
     })
 
     const handleSave = async () => {
@@ -51,7 +63,7 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel 
             if (res.success) {
                 toast({
                     title: "Success",
-                    description: "Accounting preferences saved successfully.",
+                    description: "Complete accounting configuration saved.",
                     className: "bg-green-600 text-white border-none"
                 })
                 router.refresh()
@@ -108,216 +120,212 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel 
         )
     }
 
-    return (
-        <div className="space-y-6 animate-in fade-in duration-500 pb-20">
+    // Styles
+    const sectionClass = "bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm relative overflow-hidden";
+    const labelClass = "block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5";
+    const inputClass = "w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all";
+    const subLabelClass = "text-xs text-slate-500";
 
-            {/* SECTION 1: GENERAL CONFIGURATION */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
+    return (
+        <div className="space-y-6 animate-in fade-in duration-500 pb-24">
+
+            {/* 1. PERIODS & JOURNALS */}
+            <div className={sectionClass}>
+                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                    <BookOpen className="w-24 h-24" />
+                </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                     <span className="w-1 h-6 bg-blue-600 rounded-full"></span>
-                    General Financial Settings
+                    Journals & Financial Periods
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Fiscal Year Start</label>
-                        <input
-                            type="date"
-                            value={formData.fiscal_year_start}
-                            onChange={e => setFormData({ ...formData, fiscal_year_start: e.target.value })}
-                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        />
-                        <p className="text-xs text-slate-400">Start of your financial reporting year.</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <div className="space-y-1">
+                        <label className={labelClass}>Fiscal Year Start</label>
+                        <input type="date" value={formData.fiscal_year_start} onChange={e => setFormData({ ...formData, fiscal_year_start: e.target.value })} className={inputClass} />
                     </div>
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Fiscal Year End</label>
-                        <input
-                            type="date"
-                            value={formData.fiscal_year_end}
-                            onChange={e => setFormData({ ...formData, fiscal_year_end: e.target.value })}
-                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                        />
-                        <p className="text-xs text-slate-400">End date for annual closing.</p>
+                    <div className="space-y-1">
+                        <label className={labelClass}>Fiscal Year End</label>
+                        <input type="date" value={formData.fiscal_year_end} onChange={e => setFormData({ ...formData, fiscal_year_end: e.target.value })} className={inputClass} />
                     </div>
-                    {/* Lock Date & Retained Earnings */}
-                    <div className="space-y-1.5 border-t md:col-span-2 pt-4 mt-2">
-                        <div className="flex items-center gap-2 mb-2">
-                            <label className="block text-sm font-bold text-slate-900 dark:text-white">Period Locking & Closing</label>
-                            <span className="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded-full font-bold">CONTROL</span>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-1">
+                        <label className={labelClass}>Period Lock Date</label>
+                        <input type="date" value={formData.lock_date} onChange={e => setFormData({ ...formData, lock_date: e.target.value })} className="w-full px-4 py-2.5 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition-all" />
+                        <p className={subLabelClass}>Lock transactions before this date.</p>
+                    </div>
+
+                    {/* Journals Mapping */}
+                    <div className="col-span-full border-t border-slate-100 dark:border-slate-800 pt-6 mt-2">
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider text-xs opacity-70">Journal Operations Routing</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Lock Date</label>
-                                <input
-                                    type="date"
-                                    value={formData.lock_date}
-                                    onChange={e => setFormData({ ...formData, lock_date: e.target.value })}
-                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none transition-all"
-                                />
-                                <p className="text-xs text-slate-400 mt-1">Transactions before this date cannot be modified.</p>
+                                <label className={labelClass}>Sales Journal</label>
+                                <select value={formData.sales_journal_id} onChange={e => setFormData({ ...formData, sales_journal_id: e.target.value })} className={inputClass}>
+                                    <option value="">Default Journal...</option>
+                                    {journals.map(j => <option key={j.id} value={j.id}>{j.name} ({j.code})</option>)}
+                                </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1">Retained Earnings Account</label>
-                                <select
-                                    value={formData.retained_earnings_account_id}
-                                    onChange={e => setFormData({ ...formData, retained_earnings_account_id: e.target.value })}
-                                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                                >
-                                    <option value="">Select Equity Account...</option>
-                                    {accounts.filter(a => a.type === 'Equity').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                                <label className={labelClass}>Purchase Journal</label>
+                                <select value={formData.purchase_journal_id} onChange={e => setFormData({ ...formData, purchase_journal_id: e.target.value })} className={inputClass}>
+                                    <option value="">Default Journal...</option>
+                                    {journals.map(j => <option key={j.id} value={j.id}>{j.name} ({j.code})</option>)}
                                 </select>
-                                <p className="text-xs text-slate-500 mt-1">Net profit/loss is transferred here at year-end.</p>
+                            </div>
+                            <div>
+                                <label className={labelClass}>Bank/General</label>
+                                <select value={formData.bank_journal_id} onChange={e => setFormData({ ...formData, bank_journal_id: e.target.value })} className={inputClass}>
+                                    <option value="">Default Journal...</option>
+                                    {journals.map(j => <option key={j.id} value={j.id}>{j.name} ({j.code})</option>)}
+                                </select>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* SECTION 2: SALES & RECEIVABLES */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
+            {/* 2. SALES */}
+            <div className={sectionClass}>
+                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                    <DollarSign className="w-24 h-24" />
+                </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                     <span className="w-1 h-6 bg-green-500 rounded-full"></span>
                     Sales & Receivables
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Accounts Receivable (AR)</label>
-                        <select
-                            value={formData.ar_account_id}
-                            onChange={e => setFormData({ ...formData, ar_account_id: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
+                    <div className="space-y-1">
+                        <label className={labelClass}>Accounts Receivable (AR)</label>
+                        <select value={formData.ar_account_id} onChange={e => setFormData({ ...formData, ar_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select AR Account...</option>
                             {accounts.filter(a => a.type === 'Asset').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className="text-xs text-slate-500">Asset account for unpaid customer invoices.</p>
                     </div>
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Default Income Account</label>
-                        <select
-                            value={formData.sales_account_id}
-                            onChange={e => setFormData({ ...formData, sales_account_id: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
+                    <div className="space-y-1">
+                        <label className={labelClass}>Default Income Account</label>
+                        <select value={formData.sales_account_id} onChange={e => setFormData({ ...formData, sales_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select Revenue Account...</option>
                             {accounts.filter(a => a.type === 'Revenue').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className="text-xs text-slate-500">Default account for product/service sales.</p>
                     </div>
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Output {taxLabel} (Tax Liability)</label>
-                        <select
-                            value={formData.output_tax_account_id}
-                            onChange={e => setFormData({ ...formData, output_tax_account_id: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
+                    <div className="space-y-1">
+                        <label className={labelClass}>Sales Discount Account</label>
+                        <select value={formData.sales_discount_account_id} onChange={e => setFormData({ ...formData, sales_discount_account_id: e.target.value })} className={inputClass}>
+                            <option value="">Select Discount Account...</option>
+                            {accounts.filter(a => a.type === 'Expense' || a.type === 'Revenue').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                        <p className={subLabelClass}>Contra-revenue or expense for given discounts.</p>
+                    </div>
+                    <div className="space-y-1">
+                        <label className={labelClass}>{taxLabel} Output (Liability)</label>
+                        <select value={formData.output_tax_account_id} onChange={e => setFormData({ ...formData, output_tax_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select Liability Account...</option>
                             {accounts.filter(a => a.type === 'Liability').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className="text-xs text-slate-500">Where tax collected on sales is recorded.</p>
-                    </div>
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Default {taxLabel} Rate</label>
-                        <select
-                            value={formData.default_sale_tax_id}
-                            onChange={e => setFormData({ ...formData, default_sale_tax_id: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                            <option value="">No Default Tax</option>
-                            {taxRates.map(t => <option key={t.id} value={t.id}>{t.name} ({Number(t.rate)}%)</option>)}
-                        </select>
-                        <p className="text-xs text-slate-500">Auto-selected tax rate for new invoices.</p>
                     </div>
                 </div>
             </div>
 
-            {/* SECTION 3: PURCHASING & PAYABLES */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
+            {/* 3. PURCHASING */}
+            <div className={sectionClass}>
+                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                    <Layers className="w-24 h-24" />
+                </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                     <span className="w-1 h-6 bg-amber-500 rounded-full"></span>
                     Purchasing & Payables
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Accounts Payable (Creditors)</label>
-                        <select
-                            value={formData.ap_account_id}
-                            onChange={e => setFormData({ ...formData, ap_account_id: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
+                    <div className="space-y-1">
+                        <label className={labelClass}>Accounts Payable (AP)</label>
+                        <select value={formData.ap_account_id} onChange={e => setFormData({ ...formData, ap_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select AP Account...</option>
                             {accounts.filter(a => a.type === 'Liability').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className="text-xs text-slate-500">Liability account for unpaid vendor bills.</p>
                     </div>
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Default Expense Account</label>
-                        <select
-                            value={formData.purchase_account_id}
-                            onChange={e => setFormData({ ...formData, purchase_account_id: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
+                    <div className="space-y-1">
+                        <label className={labelClass}>Default Expense Account</label>
+                        <select value={formData.purchase_account_id} onChange={e => setFormData({ ...formData, purchase_account_id: e.target.value })} className={inputClass}>
                             <option value="">Select Expense Account...</option>
                             {accounts.filter(a => a.type === 'Expense' || a.type === 'Cost of Goods Sold').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className="text-xs text-slate-500">Default category for vendor bills (e.g. COGS or General).</p>
                     </div>
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Input {taxLabel} (Tax Asset)</label>
-                        <select
-                            value={formData.input_tax_account_id}
-                            onChange={e => setFormData({ ...formData, input_tax_account_id: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                            <option value="">Select Tax Account...</option>
-                            {accounts.filter(a => a.type === 'Liability' || a.type === 'Asset').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                    <div className="space-y-1">
+                        <label className={labelClass}>Purchase Discount Account</label>
+                        <select value={formData.purchase_discount_account_id} onChange={e => setFormData({ ...formData, purchase_discount_account_id: e.target.value })} className={inputClass}>
+                            <option value="">Select Discount Account...</option>
+                            {accounts.filter(a => a.type === 'Revenue' || a.type === 'Expense').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className="text-xs text-slate-500">Account for tax paid on purchases (claimable).</p>
+                        <p className={subLabelClass}>Income or Contra-Expense for vendor discounts.</p>
+                    </div>
+                    <div className="space-y-1">
+                        <label className={labelClass}>{taxLabel} Input (Asset)</label>
+                        <select value={formData.input_tax_account_id} onChange={e => setFormData({ ...formData, input_tax_account_id: e.target.value })} className={inputClass}>
+                            <option value="">Select Asset Account...</option>
+                            {accounts.filter(a => a.type === 'Asset' || a.type === 'Liability').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
                     </div>
                 </div>
             </div>
 
-            {/* SECTION 4: INVENTORY & STOCK */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-sm">
+            {/* 4. INVENTORY */}
+            <div className={sectionClass}>
+                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                    <Package className="w-24 h-24" />
+                </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
                     <span className="w-1 h-6 bg-purple-500 rounded-full"></span>
-                    Inventory & Stock (Perpetual)
+                    Inventory (Perpetual)
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Inventory Asset Account</label>
-                        <select
-                            value={formData.inventory_asset_account_id}
-                            onChange={e => setFormData({ ...formData, inventory_asset_account_id: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                            <option value="">Select Inventory Asset...</option>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div className="space-y-1">
+                        <label className={labelClass}>Inventory Asset</label>
+                        <select value={formData.inventory_asset_account_id} onChange={e => setFormData({ ...formData, inventory_asset_account_id: e.target.value })} className={inputClass}>
+                            <option value="">Select Asset...</option>
                             {accounts.filter(a => a.type === 'Asset').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className="text-xs text-slate-500">Current asset account for stock value.</p>
                     </div>
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Cost of Goods Sold (COGS)</label>
-                        <select
-                            value={formData.cogs_account_id}
-                            onChange={e => setFormData({ ...formData, cogs_account_id: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                            <option value="">Select COGS Account...</option>
+                    <div className="space-y-1">
+                        <label className={labelClass}>Cost of Goods Sold</label>
+                        <select value={formData.cogs_account_id} onChange={e => setFormData({ ...formData, cogs_account_id: e.target.value })} className={inputClass}>
+                            <option value="">Select COGS...</option>
                             {accounts.filter(a => a.type === 'Cost of Goods Sold' || a.type === 'Expense').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className="text-xs text-slate-500">Direct costs account for sold inventory.</p>
                     </div>
-                    <div className="space-y-1.5">
-                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300">Stock Adjustment Account</label>
-                        <select
-                            value={formData.stock_adjustment_account_id}
-                            onChange={e => setFormData({ ...formData, stock_adjustment_account_id: e.target.value })}
-                            className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                        >
-                            <option value="">Select Adjustment Account...</option>
+                    <div className="space-y-1">
+                        <label className={labelClass}>Stock Adjustment</label>
+                        <select value={formData.stock_adjustment_account_id} onChange={e => setFormData({ ...formData, stock_adjustment_account_id: e.target.value })} className={inputClass}>
+                            <option value="">Select Expense...</option>
                             {accounts.filter(a => a.type === 'Expense' || a.type === 'Cost of Goods Sold').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
                         </select>
-                        <p className="text-xs text-slate-500">Expense account for inventory shrinkage/write-offs.</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* 5. ADVANCED & EQUITY */}
+            <div className={sectionClass}>
+                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                    <Settings className="w-24 h-24" />
+                </div>
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+                    <span className="w-1 h-6 bg-slate-500 rounded-full"></span>
+                    Advanced Financials
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-1">
+                        <label className={labelClass}>Retained Earnings</label>
+                        <select value={formData.retained_earnings_account_id} onChange={e => setFormData({ ...formData, retained_earnings_account_id: e.target.value })} className={inputClass}>
+                            <option value="">Select Equity...</option>
+                            {accounts.filter(a => a.type === 'Equity').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                        <p className={subLabelClass}>Accumulated profit/loss year-over-year.</p>
+                    </div>
+                    <div className="space-y-1">
+                        <label className={labelClass}>Exchange Gain/Loss</label>
+                        <select value={formData.exchange_gain_loss_account_id} onChange={e => setFormData({ ...formData, exchange_gain_loss_account_id: e.target.value })} className={inputClass}>
+                            <option value="">Select Gain/Loss Account...</option>
+                            {accounts.filter(a => a.type === 'Expense' || a.type === 'Revenue').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                        <p className={subLabelClass}>For realized currency exchange differences.</p>
                     </div>
                 </div>
             </div>
@@ -329,7 +337,7 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel 
                     disabled={loading}
                     className="flex items-center gap-2 px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all"
                 >
-                    {loading ? "Saving..." : <><Save className="h-5 w-5" /> Save Preferences</>}
+                    {loading ? "Saving..." : <><Save className="h-5 w-5" /> Save Standard Defaults</>}
                 </button>
             </div>
         </div>

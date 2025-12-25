@@ -56,48 +56,38 @@ export default async function AccountingSettingsPage() {
         select: { id: true, name: true, rate: true }
     })
 
-    // 4. Determine Tax Label (Priority: Database Setting -> Country Fallback -> Default)
+    // 4. Fetch Journals (NEW)
+    const journals = await prisma.journals.findMany({
+        where: { company_id: companyId },
+        orderBy: { name: 'asc' },
+        select: { id: true, name: true, code: true }
+    })
+
+    // 5. Determine Tax Label (Priority: Database Setting -> Country Fallback -> Default)
     let taxLabel = "Tax";
 
-    // A. specific company settings
-    const companySettings = await prisma.company_settings.findFirst({
+    // Check Company Settings for overrides
+    const companySettings = await prisma.company_settings.findUnique({
         where: { company_id: companyId },
-        include: { tax_types: true }
+        include: { tax_types: true, company: { include: { countries: true } } }
     });
 
     if (companySettings?.tax_types?.name) {
         taxLabel = companySettings.tax_types.name;
-    } else {
-        // B. Fallback to Country Logic
-        const company = await prisma.company.findUnique({
-            where: { id: companyId },
-            include: { countries: true }
-        });
-
-        const countryName = company?.countries?.name?.toLowerCase() || '';
-
-        if (countryName.includes('india') || countryName.includes('canada') || countryName.includes('australia') || countryName.includes('new zealand')) {
-            taxLabel = "GST";
-        } else if (countryName.includes('united kingdom') || countryName.includes('uae') || countryName.includes('saudi') || countryName.includes('europe')) {
-            taxLabel = "VAT";
-        } else if (countryName.includes('usa') || countryName.includes('united states')) {
-            taxLabel = "Sales Tax";
-        }
+    } else if (companySettings?.company?.countries?.name) {
+        const country = companySettings.company.countries.name;
+        if (['India', 'Canada', 'Australia', 'New Zealand'].includes(country)) taxLabel = "GST";
+        else if (['United Kingdom', 'United Arab Emirates', 'Saudi Arabia', 'Germany', 'France', 'Italy', 'Netherlands'].includes(country)) taxLabel = "VAT";
+        else if (country === 'United States') taxLabel = "Sales Tax";
     }
 
     return (
-        <div className="container mx-auto p-6 max-w-4xl">
-            <header className="mb-8 border-b pb-4">
-                <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Accounting Settings</h1>
-                <p className="text-slate-500 mt-1">Configure automated journal posting rules.</p>
-            </header>
-
-            <AccountingSettingsForm
-                settings={settings}
-                accounts={accounts}
-                taxRates={taxRates}
-                taxLabel={taxLabel}
-            />
-        </div>
+        <AccountingSettingsForm
+            settings={settings}
+            accounts={accounts}
+            taxRates={taxRates}
+            taxLabel={taxLabel}
+            journals={journals}
+        />
     )
 }

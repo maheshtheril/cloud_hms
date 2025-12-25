@@ -39,6 +39,10 @@ model account_chart {
   company_settings_inventory_asset    company_accounting_settings[] @relation("company_accounting_settings_inventory_asset")
   company_settings_cogs               company_accounting_settings[] @relation("company_accounting_settings_cogs")
   company_settings_stock_adjustment   company_accounting_settings[] @relation("company_accounting_settings_stock_adjustment")
+  
+  company_settings_exchange_gain_loss company_accounting_settings[] @relation("company_accounting_settings_exchange_gain_loss")
+  company_settings_sales_discount     company_accounting_settings[] @relation("company_accounting_settings_sales_discount")
+  company_settings_purchase_discount  company_accounting_settings[] @relation("company_accounting_settings_purchase_discount")
 
   @@unique([company_id, code])
 }
@@ -351,6 +355,11 @@ model company_accounting_settings {
   cogs_account_id                                                                String?        @db.Uuid
   stock_adjustment_account_id                                                    String?        @db.Uuid
 
+  // 100% World Class Extras
+  exchange_gain_loss_account_id                                                  String?        @db.Uuid
+  sales_discount_account_id                                                      String?        @db.Uuid
+  purchase_discount_account_id                                                   String?        @db.Uuid
+
   created_at                                                                     DateTime       @default(now()) @db.Timestamptz(6)
   updated_at                                                                     DateTime       @default(now()) @db.Timestamptz(6)
   account_chart_company_accounting_settings_ap_account_idToaccount_chart         account_chart? @relation("company_accounting_settings_ap_account_idToaccount_chart", fields: [ap_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -373,6 +382,10 @@ model company_accounting_settings {
   account_chart_inventory_asset    account_chart? @relation("company_accounting_settings_inventory_asset", fields: [inventory_asset_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   account_chart_cogs               account_chart? @relation("company_accounting_settings_cogs", fields: [cogs_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   account_chart_stock_adjustment   account_chart? @relation("company_accounting_settings_stock_adjustment", fields: [stock_adjustment_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  
+  account_chart_exchange_gain_loss account_chart? @relation("company_accounting_settings_exchange_gain_loss", fields: [exchange_gain_loss_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  account_chart_sales_discount     account_chart? @relation("company_accounting_settings_sales_discount", fields: [sales_discount_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  account_chart_purchase_discount  account_chart? @relation("company_accounting_settings_purchase_discount", fields: [purchase_discount_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model company_menu_overrides {
