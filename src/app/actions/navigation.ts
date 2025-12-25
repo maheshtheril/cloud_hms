@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { getUserPermissions } from "./rbac"
+import { ensureAdminMenus } from "@/lib/menu-seeder"
 
 export async function getMenuItems() {
     const session = await auth();
@@ -17,6 +18,11 @@ export async function getMenuItems() {
     // or explicit roles.
 
     try {
+        // Self-Healing: Ensure Admin Menus Exist
+        if (isAdmin) {
+            await ensureAdminMenus();
+        }
+
         // Fetch Tenant Details for Industry Check
         let industry = '';
         if (session?.user?.tenantId) {
