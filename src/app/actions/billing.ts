@@ -261,10 +261,26 @@ export async function updateInvoice(invoiceId: string, data: any) {
     }
 
     try {
+        console.log("DEBUG: updateInvoice received line_items:", JSON.stringify(line_items, null, 2));
+
         // Calculate totals
-        const subtotal = line_items.reduce((sum: number, item: any) => sum + ((item.quantity * item.unit_price) - (item.discount_amount || 0)), 0);
+        // Subtotal (Sum of [Qty * Price - Discount])
+        const subtotal = line_items.reduce((sum: number, item: any) => {
+            const qty = Number(item.quantity) || 0;
+            const price = Number(item.unit_price) || 0;
+            const discount = Number(item.discount_amount) || 0;
+            const lineTotal = (qty * price) - discount;
+            console.log(`DEBUG: updateInvoice Line calc: qty=${qty}, price=${price}, disc=${discount}, total=${lineTotal}`);
+            return sum + lineTotal;
+        }, 0);
+
+        // Tax Total (Sum of line item taxes)
         const totalTaxAmount = line_items.reduce((sum: number, item: any) => sum + (Number(item.tax_amount || 0)), 0);
+
+        // Grand Total: Subtotal + Tax - Global Discount
         const total = Math.max(0, subtotal + totalTaxAmount - Number(total_discount || 0));
+
+        console.log(`DEBUG: updateInvoice Totals: Sub=${subtotal}, Tax=${totalTaxAmount}, Total=${total}`);
 
         const result = await prisma.$transaction(async (tx) => {
             // 1. Update Invoice Header
