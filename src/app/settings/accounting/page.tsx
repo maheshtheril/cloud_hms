@@ -5,6 +5,7 @@ import { redirect } from "next/navigation"
 import { AccountingSettingsForm } from "@/components/settings/accounting-settings-form"
 import { ensureDefaultAccounts } from "@/lib/account-seeder"
 import { ensureAccountingMenu, ensureAdminMenus } from "@/lib/menu-seeder"
+import { ensureDefaultJournals } from "@/lib/journal-seeder"
 
 export const dynamic = 'force-dynamic'
 
@@ -23,12 +24,13 @@ export default async function AccountingSettingsPage() {
     const companyId = session.user.companyId;
     if (!companyId) return <div>No company found</div>
 
-    // Self-Healing: Ensure Basic Accounts Exist
+    // Self-Healing: Ensure Basic Accounts and Journals Exist
     if (session.user.tenantId) {
         try {
             await ensureDefaultAccounts(companyId, session.user.tenantId);
+            await ensureDefaultJournals(companyId, session.user.tenantId);
         } catch (e) {
-            console.error("Account seeding failed", e);
+            console.error("Account/Journal seeding failed", e);
         }
     }
 
