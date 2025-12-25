@@ -141,12 +141,21 @@ export async function createInvoice(data: any) {
     }
 
     try {
+        console.log("DEBUG: createInvoice received line_items:", JSON.stringify(line_items, null, 2));
+
         // Generate human-readable invoice number (Simple timestamp based for MVP, can be sequence based)
         const invoiceNo = `INV-${Date.now().toString().slice(-6)}`;
 
         // Calculate totals
         // Subtotal (Sum of [Qty * Price - Discount])
-        const subtotal = line_items.reduce((sum: number, item: any) => sum + ((item.quantity * item.unit_price) - (item.discount_amount || 0)), 0);
+        const subtotal = line_items.reduce((sum: number, item: any) => {
+            const qty = Number(item.quantity) || 0;
+            const price = Number(item.unit_price) || 0;
+            const discount = Number(item.discount_amount) || 0;
+            const lineTotal = (qty * price) - discount;
+            console.log(`DEBUG: Line calc: qty=${qty}, price=${price}, disc=${discount}, total=${lineTotal}`);
+            return sum + lineTotal;
+        }, 0);
 
         // Tax Total (Sum of line item taxes)
         const totalTaxAmount = line_items.reduce((sum: number, item: any) => sum + (Number(item.tax_amount || 0)), 0);
@@ -154,10 +163,12 @@ export async function createInvoice(data: any) {
         // Grand Total: Subtotal + Tax - Global Discount
         const total = Math.max(0, subtotal + totalTaxAmount - Number(total_discount || 0));
 
+        console.log(`DEBUG: Calculated Totals: Sub=${subtotal}, Tax=${totalTaxAmount}, Total=${total}`);
+
         // DEBUG: Check Triggers
         try {
             const triggers = await prisma.$queryRaw`SELECT trigger_name, event_manipulation, event_object_table FROM information_schema.triggers WHERE event_object_table IN ('hms_invoice', 'hms_invoice_lines')`;
-            console.log("DEBUG: Active Triggers on Invoice/Lines:", triggers);
+            // console.log("DEBUG: Active Triggers on Invoice/Lines:", triggers);
         } catch (e) {
             console.error("DEBUG: Failed to check triggers", e);
         }
