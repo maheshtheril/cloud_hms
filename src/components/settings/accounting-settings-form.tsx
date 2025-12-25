@@ -25,19 +25,30 @@ export function AccountingSettingsForm({ settings, accounts, taxRates }: {
 
     const handleSave = async () => {
         setLoading(true)
-        const toastId = toast.loading('Saving configuration...')
 
         try {
             const res = await updateAccountingSettings(formData)
 
             if (res.success) {
-                toast.success('Configuration saved successfully', { id: toastId })
+                toast({
+                    title: "Success",
+                    description: "Configuration saved successfully",
+                    className: "bg-green-500 text-white border-none"
+                })
                 router.refresh()
             } else {
-                toast.error(res.error || 'Failed to save settings', { id: toastId })
+                toast({
+                    title: "Error",
+                    description: res.error || 'Failed to save settings',
+                    variant: "destructive"
+                })
             }
         } catch (error) {
-            toast.error('An unexpected error occurred', { id: toastId })
+            toast({
+                title: "Error",
+                description: 'An unexpected error occurred',
+                variant: "destructive"
+            })
         } finally {
             setLoading(false)
         }
@@ -45,8 +56,6 @@ export function AccountingSettingsForm({ settings, accounts, taxRates }: {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            <Toaster position="top-right" richColors />
-
             <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 shadow-xl shadow-slate-200/50 dark:shadow-black/20">
 
                 {/* Information Banner */}
