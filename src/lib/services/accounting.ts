@@ -38,60 +38,95 @@ export class AccountingService {
                 where: { company_id: invoice.company_id }
             });
 
-            if (!settings) throw new Error("Accounting settings not configured for this company.");
+            if (!settings) throw new Error("Accounting settings not configured for this company. Please verify Accounting Settings.");
 
             // 3. Determine Accounts
             // DEBIT SIDE:
-            // If Paid (Cash Sale) -> Cash/Bank Account (Using Cash Journal or settings)
-            // If Posted (Credit Sale) -> Accounts Receivable (AR)
+            // If Paid (Cash Sale) -> Cash/Bank Account or AR (Pending implementation of Cash Journals, defaulting to AR for consistency)
             let debitAccountId = settings.ar_account_id;
 
             if (invoice.status === 'paid') {
-                // For simplified Cash Sale, we debit the Cash/Bank account directly.
-                // In a full system, we might look up a specific "Cash on Hand" account 
-                // or the account linked to the Payment Method.
-                // Fallback: If no dedicated cash account in settings (schema has journals, not direct cash account id except inside journals),
-                // we'll use AR for now and assume a Payment Entry follows immediately (Process: Invoice -> AR -> Payment).
-                // BUT user wants "Cash & Carry" standard. 
-                // Let's stick to AR for the Invoice Journal to be consistent. 
-                // The "Payment" should ideally be a separate Journal Entry (Credit AR, Debit Cash).
-                // For this MVP step, we will post the INVOICE part (Dr AR, Cr Sales).
+                // Future: Use specific Cash/Bank account if available. For now, Debit AR to track the receivable, then Credit AR in Payment.
                 debitAccountId = settings.ar_account_id;
             }
 
             if (!debitAccountId) throw new Error("Accounts Receivable (AR) Account is not configured in settings.");
 
-            // CREDIT SIDE:
-            // Sales Income Account (from settings or product category)
-            const salesAccountId = settings.sales_account_id;
-            if (!salesAccountId) throw new Error("Sales/Income Account is not configured in settings.");
+            // CREDIT SIDE: Sales Income Account
+            // Default Account
+            const defaultSalesAccountId = settings.sales_account_id;
+            if (!defaultSalesAccountId) throw new Error("Default Sales/Income Account is not configured in settings.");
 
             // Tax Account (Output VAT)
             const taxAccountId = settings.output_tax_account_id;
             // Note: Tax account might be optional if no tax, but good to have if tax > 0
 
+            // 3.5 Fetch Product Logic for Granular Accounting (World Class)
+            // Since invoice lines might not have direct relation loaded, we fetch products to check categories.
+            const productIds = invoice.hms_invoice_lines
+                .map(l => l.product_id)
+                .filter(id => id !== null) as string[];
+
+            const productAccountMap = new Map<string, string>(); // productId -> incomeAccountId
+
+            if (productIds.length > 0) {
+                const products = await prisma.hms_product.findMany({
+                    where: { id: { in: productIds } },
+                    include: {
+                        hms_product_category_rel: {
+                            include: {
+                                hms_product_category: true
+                            }
+                        }
+                    }
+                });
+
+                products.forEach(p => {
+                    // Check for Category Override
+                    const catRel = p.hms_product_category_rel?.[0];
+                    const category = catRel?.hms_product_category;
+
+                    if (category?.income_account_id) {
+                        productAccountMap.set(p.id, category.income_account_id);
+                    }
+                });
+            }
+
             // 4. Prepare Journal Entry Data
             const journalDate = invoice.invoice_date || invoice.created_at;
-            const description = `Invoice #${invoice.invoice_number} - ${invoice.hms_patient ? 'Patient Sale' : 'Sale'}`;
 
             // Line Items for the Journal
             const journalLines: any[] = [];
 
-            // A. CREDIT: Sales Income (Net Amount of all lines)
-            // Logic: We can summarize all line items into one Credit line for Sales, 
-            // OR create one Journal Line per Invoice Line (more detailed).
-            // "World Standard" usually summarizes by Account. 
-            const totalNetSales = invoice.hms_invoice_lines.reduce((sum, line) => sum + Number(line.net_amount || 0), 0);
+            // A. CREDIT: Sales Income (Grouped by Account)
+            // Logic: Group line items by their target account (Default vs Category Specific)
+            const salesByAccount = new Map<string, number>(); // accountId -> amount
 
-            if (totalNetSales > 0) {
-                journalLines.push({
-                    account_id: salesAccountId,
-                    debit: 0,
-                    credit: totalNetSales,
-                    description: `Sales Revenue - ${invoice.invoice_number}`,
-                    metadata: { source: 'auto_generated' }
-                });
+            for (const line of invoice.hms_invoice_lines) {
+                const netAmount = Number(line.net_amount || 0);
+                if (netAmount === 0) continue;
+
+                // Determine Account
+                let targetAccount = defaultSalesAccountId;
+                if (line.product_id && productAccountMap.has(line.product_id)) {
+                    targetAccount = productAccountMap.get(line.product_id)!;
+                }
+
+                const currentTotal = salesByAccount.get(targetAccount) || 0;
+                salesByAccount.set(targetAccount, currentTotal + netAmount);
             }
+
+            salesByAccount.forEach((amount, accountId) => {
+                if (amount > 0) {
+                    journalLines.push({
+                        account_id: accountId,
+                        debit: 0,
+                        credit: amount,
+                        description: `Sales Revenue - Ref ${invoice.invoice_number}`,
+                        metadata: { source: 'auto_generated_invoice' }
+                    });
+                }
+            });
 
             // B. CREDIT: Output Tax
             const totalTax = Number(invoice.total_tax || 0);
@@ -103,7 +138,7 @@ export class AccountingService {
                     debit: 0,
                     credit: totalTax,
                     description: `Tax Payable - ${invoice.invoice_number}`,
-                    metadata: { source: 'auto_generated' }
+                    metadata: { source: 'auto_generated_tax' }
                 });
             }
 
@@ -117,7 +152,7 @@ export class AccountingService {
                     description: `Account Receivable - ${invoice.invoice_number}`,
                     party_type: 'patient',
                     party_id: invoice.patient_id,
-                    metadata: { source: 'auto_generated' }
+                    metadata: { source: 'auto_generated_ar' }
                 });
             }
 
@@ -125,15 +160,15 @@ export class AccountingService {
             const totalDebit = journalLines.reduce((sum, l) => sum + l.debit, 0);
             const totalCredit = journalLines.reduce((sum, l) => sum + l.credit, 0);
 
-            // Allow small float diff handling if needed, but for now exact check
+            // Allow small float diff handling (0.01)
             if (Math.abs(totalDebit - totalCredit) > 0.01) {
-                throw new Error(`Journal Entry Imbalanced: Debit ${totalDebit} != Credit ${totalCredit}`);
+                throw new Error(`Journal Entry Imbalanced: Debit ${totalDebit.toFixed(2)} != Credit ${totalCredit.toFixed(2)}`);
             }
 
             // 6. Create Transaction
             await prisma.$transaction(async (tx) => {
                 // Create Journal Header
-                const journalEntry = await tx.journal_entries.create({
+                await tx.journal_entries.create({
                     data: {
                         tenant_id: invoice.tenant_id,
                         company_id: invoice.company_id,
@@ -159,12 +194,6 @@ export class AccountingService {
                         }
                     }
                 });
-
-                // Mark Invoice as Posted (if we had a flag, or just rely on status)
-                // We'll trust the caller to handle invoice status flow, 
-                // but we might want to flag that JE exists.
-                // schema.prisma doesn't show `is_accounting_posted` on invoice, so we skip that update or add it if needed.
-                // For now, existence of `journal_entries.invoice_id` is the link.
             });
 
             return { success: true, journalId: 'created' };

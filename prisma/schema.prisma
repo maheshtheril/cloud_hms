@@ -89,6 +89,8 @@ model accounts {
   settings_exchange_gain_loss company_accounting_settings[] @relation("settings_exchange_gain_loss")
   settings_sales_discount     company_accounting_settings[] @relation("settings_sales_discount")
   settings_purchase_discount  company_accounting_settings[] @relation("settings_purchase_discount")
+  product_category_income     hms_product_category[]        @relation("category_income_account")
+  product_category_expense    hms_product_category[]        @relation("category_expense_account")
 
   @@unique([company_id, code])
   @@index([company_id], map: "idx_accounts_company")
@@ -1760,6 +1762,10 @@ model hms_product_category {
   metadata                 Json?                      @default("{}")
   created_at               DateTime                   @default(now()) @db.Timestamptz(6)
   default_tax_rate_id      String?                    @db.Uuid
+  income_account_id        String?                    @db.Uuid
+  expense_account_id       String?                    @db.Uuid
+  accounts_income          accounts?                  @relation("category_income_account", fields: [income_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_expense         accounts?                  @relation("category_expense_account", fields: [expense_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   tax_rates                tax_rates?                 @relation(fields: [default_tax_rate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_product_category_rel hms_product_category_rel[]
 
