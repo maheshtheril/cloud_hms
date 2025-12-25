@@ -2,9 +2,9 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Save, AlertCircle } from 'lucide-react'
 import { updateAccountingSettings } from '@/app/actions/accounting-settings'
-import { Toaster, toast } from 'sonner'
+import { useToast } from "@/components/ui/use-toast"
 
 export function AccountingSettingsForm({ settings, accounts, taxRates }: {
     settings: any,
@@ -12,6 +12,7 @@ export function AccountingSettingsForm({ settings, accounts, taxRates }: {
     taxRates: any[]
 }) {
     const router = useRouter()
+    const { toast } = useToast()
     const [loading, setLoading] = useState(false)
 
     // Form State
