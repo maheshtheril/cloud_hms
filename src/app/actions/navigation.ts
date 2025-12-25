@@ -171,7 +171,6 @@ export async function getMenuItems() {
                     items: [
                         { key: 'general-settings', label: 'General Settings', icon: 'Settings', url: '/settings/global' },
                         { key: 'hms-settings', label: 'HMS Configuration', icon: 'Activity', url: '/settings/hms' },
-                        { key: 'accounting-settings', label: 'Accounting Config', icon: 'Calculator', url: '/settings/accounting' },
                         { key: 'users', label: 'Users', icon: 'Users', url: '/settings/users' },
                         { key: 'roles', label: 'Roles', icon: 'Shield', url: '/settings/roles' },
                         { key: 'permissions', label: 'Permissions', icon: 'Key', url: '/settings/permissions' },
@@ -336,7 +335,6 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
                 { key: 'roles', label: 'RBAC & Security', icon: 'Shield', url: '/settings/roles' },
                 { key: 'settings', label: 'Global Settings', icon: 'Settings', url: '/settings/global' },
                 { key: 'hms-settings', label: 'HMS Configuration', icon: 'Activity', url: '/settings/hms' },
-                { key: 'accounting-settings', label: 'Accounting Config', icon: 'Calculator', url: '/settings/accounting' },
             ]
         });
     }

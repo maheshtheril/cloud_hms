@@ -3,12 +3,16 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { AccountingSettingsForm } from "@/components/settings/accounting-settings-form"
+import { ensureAccountingMenu } from "@/lib/menu-seeder"
 
 export const dynamic = 'force-dynamic'
 
 export default async function AccountingSettingsPage() {
     const session = await auth()
     if (!session?.user?.id) redirect('/login')
+
+    // Auto-fix menu existence if missing (Self-Healing)
+    await ensureAccountingMenu();
 
     const companyId = session.user.companyId;
     if (!companyId) return <div>No company found</div>
