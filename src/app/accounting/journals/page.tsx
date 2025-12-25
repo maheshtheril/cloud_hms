@@ -60,7 +60,7 @@ export default async function JournalsPage() {
                                     </span>
                                 </div>
                                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-1">
-                                    {entry.description || "Journal Entry"}
+                                    {entry.ref || "Journal Entry"}
                                 </h3>
                                 {entry.hms_invoice && (
                                     <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
@@ -98,7 +98,7 @@ export default async function JournalsPage() {
                                                 <div className="text-xs text-slate-400 font-mono">
                                                     {line.accounts?.code}
                                                 </div>
-                                                {line.description && line.description !== entry.description && (
+                                                {line.description && (
                                                     <div className="text-xs text-slate-400 mt-0.5 italic">
                                                         {line.description}
                                                     </div>
