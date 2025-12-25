@@ -35,29 +35,32 @@ export async function getMenuItems() {
             where: { is_active: true }
         });
 
-        // DEFINED ALLOWED MODULES BASED ON INDUSTRY
-        // Health Care -> HMS, Accounting, (Config/General implicit)
-        // Others -> CRM, (Config/General implicit)
+        // DEFINED ALLOWED MODULES
         let allowedModuleKeys = new Set<string>();
 
         if (session?.user?.tenantId) {
+
+            // 1. ADD SUBSCRIBED MODULES FIRST (Base Truth)
+            // We re-enable this to ensure paying attributes are respected.
+            const tenantModules = await prisma.tenant_module.findMany({
+                where: { tenant_id: session.user.tenantId, enabled: true }
+            });
+            tenantModules.forEach(tm => allowedModuleKeys.add(tm.module_key));
+
+            // 2. APPLY INDUSTRY DEFAULTS (Add if missing)
             if (isHealthcare) {
-                // FORCE ALLOW HMS & ACCOUNTING
                 allowedModuleKeys.add('hms');
                 allowedModuleKeys.add('accounting');
-                allowedModuleKeys.add('inventory'); // Usually goes with HMS
+                allowedModuleKeys.add('inventory');
             } else {
-                // FORCE ALLOW CRM
+                // FORCE CRM for non-healthcare
                 allowedModuleKeys.add('crm');
+
+                // If the user has NO subscriptions and is NOT healthcare, 
+                // we strictly default to CRM. 
+                // We do NOT add global active modules here to avoid leaking HMS.
             }
 
-            // Also allow explicitly enabled modules from tenant_module (if existing logic requires it, 
-            // but user request implies strict separation. We will ADD subscribed modules to the industry defaults 
-            // OR restrict? "others will show only crm". This implies restriction.)
-
-            // User said: "if industry is helath care then show hms and accounting... others will show only crm"
-            // This is a business rule override.
-            // We will stick to this rule but also allow 'configuration' and 'general' as base.
         } else {
             // No tenant? Allow all global.
             globalActiveModules.forEach(m => allowedModuleKeys.add(m.module_key));
@@ -67,18 +70,17 @@ export async function getMenuItems() {
         allowedModuleKeys.add('general');
         allowedModuleKeys.add('configuration');
 
-        // 1. FETCH ALL ITEMS ... (existing code)
+        // 1. FETCH ALL ITEMS
         const allMenuItems = await prisma.menu_items.findMany({
             orderBy: { sort_order: 'asc' },
             include: { module_menu_map: { include: { modules: true } } }
         });
 
         if (allMenuItems.length === 0) {
-            // ... fallback logic
             return getFallbackMenuItems(isAdmin);
         }
 
-        // 2. Build Tree ... (existing code)
+        // 2. Build Tree
         const itemMap = new Map();
         const rootItems: any[] = [];
         allMenuItems.forEach(item => { itemMap.set(item.id, { ...item, other_menu_items: [] }); });
@@ -122,8 +124,7 @@ export async function getMenuItems() {
                 continue;
             }
 
-            // If group doesn't exist (e.g. was global active but not in initial loop? or custom key?)
-            // We only create if allowed.
+            // If group doesn't exist
             if (!grouped[modKey]) {
                 grouped[modKey] = { module: { name: modKey.toUpperCase(), module_key: modKey }, items: [] };
             }
@@ -150,13 +151,11 @@ export async function getMenuItems() {
 
         // Filter groups
         Object.keys(grouped).forEach(key => {
-            // Filter restricted items AND Explicitly remove "Global Settings", "Settings", or "Custom Fields" if coming from DB
-            // to avoid duplicates or unwanted legacy items, as we inject Configuration manually if needed.
             grouped[key].items = filterRestricted(grouped[key].items).filter(item =>
                 item.label !== 'Global Settings' &&
                 item.label !== 'Settings' &&
                 item.label !== 'Custom Fields' &&
-                item.label !== 'Targets' && // Hide Targets from standard menu
+                item.label !== 'Targets' &&
                 item.url !== '/crm/targets' &&
                 item.url !== '/settings'
             );
@@ -169,23 +168,16 @@ export async function getMenuItems() {
             .sort((a, b) => {
                 const indexA = priority.indexOf(a.module?.module_key || '');
                 const indexB = priority.indexOf(b.module?.module_key || '');
-                // If both found, sort by priority
                 if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-                // If only A found, A comes first
                 if (indexA !== -1) return -1;
-                // If only B found, B comes first
                 if (indexB !== -1) return 1;
-                // Otherwise sort alphabetically
                 return (a.module?.name || '').localeCompare(b.module?.name || '');
             });
 
         // FORCE INJECT ADMIN MENU (Hybrid Approach)
-        // Ensure Admins always have access to Configuration, even if DB is missing these items.
-        // We check for isAdmin flag OR wildcard permission.
         const hasFullAccess = isAdmin || userPerms.has('*') || userPerms.has('settings:view');
 
         if (hasFullAccess) {
-            // 1. Define ALL Standard Config Items (Restoring missing CRM/Permissions items)
             const standardConfigItems = [
                 { key: 'general-settings', label: 'General Settings', icon: 'Settings', url: '/settings/global' },
                 { key: 'hms-settings', label: 'HMS Configuration', icon: 'Activity', url: '/settings/hms' },
@@ -198,11 +190,10 @@ export async function getMenuItems() {
                 { key: 'crm-targets', label: 'Targets', icon: 'Target', url: '/crm/targets' }
             ];
 
-            // 2. Find Existing Config Group from DB
             const existingConfig = result.find(g => g.module?.module_key === 'configuration' || g.module?.name === 'Configuration');
 
             if (existingConfig) {
-                // MERGE: Add standard items if they don't already exist
+                // MERGE
                 standardConfigItems.forEach((standardItem: any) => {
                     const exists = existingConfig.items.some((dbItem: any) =>
                         dbItem.key === standardItem.key || dbItem.url === standardItem.url
@@ -212,7 +203,7 @@ export async function getMenuItems() {
                     }
                 });
             } else {
-                // CREATE new group if it doesn't exist
+                // CREATE
                 result.push({
                     module: { name: 'Configuration', module_key: 'configuration' },
                     items: standardConfigItems
@@ -221,11 +212,14 @@ export async function getMenuItems() {
         }
 
         // 7. INJECT MISSING CORE MODULES (Hybrid Mode)
-        // If DB has HMS but lacks Accounting/Inventory/CRM, inject them from standard fallback
+        // STRICT CHECK: Only inject if the user is ALLOWED to see this module!
         const fallback = getFallbackMenuItems(isAdmin);
-        const coreKeys = ['accounting', 'inventory', 'crm'];
+        const coreKeys = ['accounting', 'inventory', 'crm', 'hms'];
 
         coreKeys.forEach(key => {
+            // KEY FIX: Only consider injection if the module is in allowedModuleKeys
+            if (!allowedModuleKeys.has(key)) return;
+
             const exists = result.find(g => g.module?.module_key === key);
             if (!exists) {
                 const fallbackGroup = fallback.find((g: any) => g.module?.module_key === key);
@@ -239,7 +233,6 @@ export async function getMenuItems() {
         result.sort((a, b) => {
             const indexA = priority.indexOf(a.module?.module_key || '');
             const indexB = priority.indexOf(b.module?.module_key || '');
-            // If both found, sort by priority
             if (indexA !== -1 && indexB !== -1) return indexA - indexB;
             if (indexA !== -1) return -1;
             if (indexB !== -1) return 1;
