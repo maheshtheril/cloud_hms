@@ -44,6 +44,11 @@ export default async function JournalsPage() {
                 </div>
             )}
 
+            {/* DEBUG INFO */}
+            <div className="p-2 text-xs text-gray-400">
+                Entries Found: {entries?.length ?? 0}
+            </div>
+
             {/* Journal Entries List */}
             <div className="space-y-4">
                 {entries?.map((entry) => (
