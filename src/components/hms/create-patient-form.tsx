@@ -192,49 +192,12 @@ export function CreatePatientForm({
                         if ((res as any)?.error) {
                             setMessage({ type: 'error', text: (res as any).error });
                         } else if (onSuccess) {
-                            // Check if billing is required (Client Side logic for now)
-                            const shouldCharge = formData.get('charge_registration') === 'on';
-                            const patientId = (res as any).id; // Cast to any to fix TS error
-
-                            if (shouldCharge && patientId) {
-                                // Redirect to billing with pre-filled item
-                                const billingParams = new URLSearchParams({
-                                    patientId: patientId,
-                                    items: JSON.stringify([{
-                                        id: registrationProductId || '',
-                                        name: registrationProductName,
-                                        description: registrationProductDescription || registrationProductName,
-                                        price: registrationFee,
-                                        quantity: 1,
-                                        type: 'service'
-                                    }])
-                                });
-                                // Force redirect for reliability
-                                window.location.assign(`/hms/billing/new?${billingParams.toString()}`);
-                            } else {
-                                onSuccess(res);
-                            }
+                            // Server-side billing is now handled in createPatient action
+                            onSuccess(res);
                         } else {
-                            // Standalone mode redirect logic
-                            const shouldCharge = formData.get('charge_registration') === 'on';
-                            const patientId = (res as any).id; // Cast to any to fix TS error
-
-                            if (shouldCharge && patientId) {
-                                const billingParams = new URLSearchParams({
-                                    patientId: patientId,
-                                    items: JSON.stringify([{
-                                        name: 'Patient Registration Fee',
-                                        price: registrationFee,
-                                        quantity: 1,
-                                        type: 'service'
-                                    }])
-                                });
-                                // Force redirect for reliability
-                                window.location.assign(`/hms/billing/new?${billingParams.toString()}`);
-                            } else {
-                                setMessage({ type: 'success', text: "Patient profile synchronized successfully." });
-                                setTimeout(() => window.location.reload(), 1000);
-                            }
+                            // Standalone mode
+                            setMessage({ type: 'success', text: "Patient profile created successfully." });
+                            setTimeout(() => window.location.reload(), 1000);
                         }
                     } catch (err: any) {
                         setMessage({ type: 'error', text: "Systems offline or validation failed." });
@@ -433,6 +396,7 @@ export function CreatePatientForm({
                             <label className="flex items-center gap-3 cursor-pointer group">
                                 <div className="relative">
                                     <input type="checkbox" name="charge_registration" defaultChecked className="peer sr-only" />
+                                    <input type="hidden" name="registration_fee" value={registrationFee} />
                                     <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-100 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
                                 </div>
                                 <div className="flex flex-col">

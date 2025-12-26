@@ -85,6 +85,7 @@ export async function createPatient(prevState: any, formData: FormData) {
             }
         })
 
+
         const patient = await prisma.hms_patient.create({
             data: {
                 id: crypto.randomUUID(),
@@ -101,6 +102,35 @@ export async function createPatient(prevState: any, formData: FormData) {
                 updated_by: userId
             }
         })
+
+        // WORLD-CLASS AUTOMATION: Auto-bill Registration Fee
+        const chargeRegistration = formData.get('charge_registration') === 'on';
+        if (chargeRegistration) {
+            try {
+                const fee = Number(formData.get('registration_fee')) || 500;
+                const { createInvoice } = await import('./billing'); // Dynamic import to safely handle circular refs if any
+
+                console.log("Auto-creating registration invoice for patient:", patient.id);
+
+                await createInvoice({
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    patient_id: patient.id,
+                    date: new Date(),
+                    status: 'paid', // Auto-collect (Cash)
+                    line_items: [{
+                        description: "Patient Registration Fee",
+                        quantity: 1,
+                        unit_price: fee,
+                        tax_amount: 0,
+                        discount_amount: 0
+                    }]
+                });
+            } catch (billingError) {
+                console.error("Failed to auto-bill registration:", billingError);
+                // We do not fail the patient creation, just log it.
+            }
+        }
 
         return patient;
 
