@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
+import { exec } from "child_process"
 
 export async function getJournalEntries(filters?: {
     startDate?: Date;
