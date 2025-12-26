@@ -54,6 +54,23 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
 
     const [globalDiscount, setGlobalDiscount] = useState(Number(initialInvoice?.total_discount || 0))
 
+    // UX Focus Management State
+    const [lastAddedId, setLastAddedId] = useState<number | null>(null)
+
+    // Effect to focus new row
+    useEffect(() => {
+        if (lastAddedId) {
+            // Tiny timeout to ensure DOM is ready
+            setTimeout(() => {
+                const el = document.getElementById(`product-search-${lastAddedId}`)
+                if (el) {
+                    el.focus()
+                }
+            }, 50)
+            setLastAddedId(null)
+        }
+    }, [lastAddedId])
+
     // --- REUSED LOGIC START ---
 
     // Auto-load medicines/items from URL
@@ -235,8 +252,9 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     const grandTotal = Math.max(0, subtotal + totalTax - globalDiscount)
 
     const handleAddItem = () => {
+        const newId = Date.now()
         setLines([...lines, {
-            id: Date.now(),
+            id: newId,
             product_id: '',
             description: '',
             quantity: 1,
@@ -246,6 +264,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             tax_amount: 0,
             discount_amount: 0
         }])
+        setLastAddedId(newId)
     }
 
     const handleRemoveItem = (id: number) => {
@@ -365,19 +384,34 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    {/* Patient Select (Inline) */}
-                    <div className="w-56">
-                        <select
-                            className="w-full text-xs py-1.5 px-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md focus:ring-1 focus:ring-indigo-500 outline-none"
+                <div className="flex items-center gap-4">
+                    {/* Patient Select (Searchable) */}
+                    <div className="w-64">
+                        <SearchableSelect
                             value={selectedPatientId}
-                            onChange={(e) => setSelectedPatientId(e.target.value)}
-                        >
-                            <option value="">Select Patient...</option>
-                            {patients.map(p => (
-                                <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>
-                            ))}
-                        </select>
+                            onChange={(id) => setSelectedPatientId(id || '')}
+                            onSearch={async (q) => {
+                                const lower = q.toLowerCase()
+                                return patients.filter(p =>
+                                    p.first_name.toLowerCase().includes(lower) ||
+                                    p.last_name.toLowerCase().includes(lower) ||
+                                    (p.patient_number && p.patient_number.toLowerCase().includes(lower)) ||
+                                    (p.contact?.phone && p.contact.phone.includes(lower))
+                                ).map(p => ({
+                                    id: p.id,
+                                    label: `${p.first_name} ${p.last_name}`,
+                                    subLabel: `ID: ${p.patient_number || 'N/A'} | Ph: ${p.contact?.phone || 'N/A'}`
+                                }))
+                            }}
+                            defaultOptions={patients.slice(0, 50).map(p => ({
+                                id: p.id,
+                                label: `${p.first_name} ${p.last_name}`,
+                                subLabel: `ID: ${p.patient_number || 'N/A'} | Ph: ${p.contact?.phone || 'N/A'}`
+                            }))}
+                            placeholder="Search Patient (Name, ID, Phone)..."
+                            className="w-full text-xs"
+                            inputId="patient-search-input"
+                        />
                     </div>
 
                     {/* Date (Inline) */}
@@ -416,18 +450,40 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                 <td className="px-3 py-2 text-[11px] text-slate-400 text-center font-mono">{idx + 1}</td>
                                 <td className="px-3 py-2">
                                     <SearchableSelect
+                                        inputId={`product-search-${line.id}`}
                                         value={line.product_id}
-                                        onChange={(id, option) => updateLine(line.id, 'product_id', id)}
+                                        onChange={(id, option) => {
+                                            updateLine(line.id, 'product_id', id)
+                                            // UX: Auto-focus Qty and select text
+                                            setTimeout(() => {
+                                                const qtyInput = document.getElementById(`qty-${line.id}`) as HTMLInputElement
+                                                if (qtyInput) {
+                                                    qtyInput.focus()
+                                                    qtyInput.select()
+                                                }
+                                            }, 100)
+                                        }}
                                         onSearch={async (query) => billableItems.filter(item => item.label.toLowerCase().includes(query.toLowerCase())).map(item => ({ id: item.id, label: `${item.label} - ₹${item.price}`, subLabel: item.description }))}
                                         defaultOptions={billableItems.map(item => ({ id: item.id, label: `${item.label} - ₹${item.price}`, subLabel: item.description }))}
                                         placeholder="Search item..."
                                         className="w-full mb-1 text-xs"
                                     />
-                                    {/* Description (Optional/Secondary) */}
-                                    {/* <input type="text" className="w-full text-[10px] text-slate-500 bg-transparent border-none p-0 outline-none" placeholder="Description..." value={line.description} onChange={(e) => updateLine(line.id, 'description', e.target.value)} /> */}
                                 </td>
                                 <td className="px-2 py-2">
-                                    <input type="number" min="1" className="w-full text-right bg-slate-50 dark:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 rounded px-1.5 py-1 text-xs outline-none font-medium" value={line.quantity} onChange={(e) => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)} />
+                                    <input
+                                        id={`qty-${line.id}`}
+                                        type="number"
+                                        min="1"
+                                        className="w-full text-right bg-slate-50 dark:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 rounded px-1.5 py-1 text-xs outline-none font-medium focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                                        value={line.quantity}
+                                        onChange={(e) => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                        onKeyDown={(e) => {
+                                            if ((e.key === 'Enter' || e.key === 'ArrowDown') && line.quantity > 0) {
+                                                e.preventDefault()
+                                                handleAddItem()
+                                            }
+                                        }}
+                                    />
                                 </td>
                                 <td className="px-2 py-2">
                                     <input type="number" min="0" className="w-full text-right bg-slate-50 dark:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 rounded px-1.5 py-1 text-xs outline-none font-medium" value={line.unit_price} onChange={(e) => updateLine(line.id, 'unit_price', parseFloat(e.target.value) || 0)} />

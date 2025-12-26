@@ -40,6 +40,7 @@ interface SearchableSelectProps {
     disabled?: boolean;
     variant?: 'default' | 'ghost';
     isDark?: boolean;
+    inputId?: string;
 }
 
 export function SearchableSelect({
@@ -54,6 +55,7 @@ export function SearchableSelect({
     disabled = false,
     variant = 'default',
     isDark = false,
+    inputId,
 }: SearchableSelectProps) {
     const [open, setOpen] = React.useState(false);
     const [query, setQuery] = React.useState("");
@@ -192,6 +194,7 @@ export function SearchableSelect({
                     ) : (
                         <input
                             ref={inputRef}
+                            id={inputId}
                             type="text"
                             className={`w-full border-none p-0 focus:ring-0 text-sm bg-transparent ${variant === 'ghost' ? 'text-inherit placeholder:text-inherit placeholder:opacity-50' : 'text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-neutral-600'}`}
                             placeholder={selectedOption ? selectedOption.label : placeholder}
