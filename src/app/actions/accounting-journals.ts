@@ -39,8 +39,8 @@ export async function getJournalEntries(filters?: {
                 created_at: true,
                 metadata: true,
                 // voltage_protection: Skip fields that might be missing in DB until migration runs
-                // amount_in_company_currency: true, 
-                // currency_id: true,
+                amount_in_company_currency: true,
+                currency_id: true,
 
                 journal_entry_lines: {
                     include: {
