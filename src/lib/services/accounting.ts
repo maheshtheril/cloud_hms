@@ -177,8 +177,8 @@ export class AccountingService {
                         posted: true,
                         posted_at: new Date(),
                         created_by: userId,
-                        // currency_id: settings.currency_id, 
-                        // amount_in_company_currency: totalReceivable,
+                        currency_id: settings.currency_id, // Default to company currency
+                        amount_in_company_currency: totalReceivable,
                         ref: invoice.invoice_number,
                         journal_entry_lines: {
                             create: journalLines.map(line => ({
