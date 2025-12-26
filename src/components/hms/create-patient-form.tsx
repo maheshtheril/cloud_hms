@@ -201,14 +201,18 @@ export function CreatePatientForm({
                                 if (warning) {
                                     setMessage({ type: 'error', text: `Registration done, but: ${warning}` });
                                 } else {
-                                    setMessage({ type: 'success', text: "Registration complete. Redirecting to Billing..." });
+                                    setMessage({ type: 'success', text: "Registration complete. Redirecting..." });
                                 }
 
-                                // Small delay to let user see success/warning message
+                                // Fast redirect
                                 setTimeout(() => {
                                     router.push(`/hms/billing/${(res as any).invoiceId}`);
-                                }, 1500);
-                                if (onSuccess) onSuccess(res); // Optional: still call onSuccess for parent refresh
+                                }, 800);
+                                if (onSuccess) onSuccess(res);
+                                return;
+                            } else if ((res as any).billingError) {
+                                setMessage({ type: 'error', text: `Registration done, but Billing Failed: ${(res as any).billingError}` });
+                                if (onSuccess) onSuccess(res);
                                 return;
                             }
 

@@ -110,6 +110,12 @@ export async function createPatient(prevState: any, formData: FormData) {
                 const fee = Number(formData.get('registration_fee')) || 500;
                 const { createInvoice } = await import('./billing'); // Dynamic import to safely handle circular refs if any
 
+                // Determine Invoice Status based on Billing Mode (Default to Paid/Spot Pay)
+                const billingMode = formData.get('billing_mode') as string;
+                let invoiceStatus = 'paid';
+                if (billingMode === 'bill_later') invoiceStatus = 'posted';
+                else if (billingMode === 'hold') invoiceStatus = 'draft';
+
                 console.log("Auto-creating registration invoice for patient:", patient.id);
 
                 const invoiceRes = await createInvoice({
@@ -117,7 +123,7 @@ export async function createPatient(prevState: any, formData: FormData) {
                     company_id: companyId,
                     patient_id: patient.id,
                     date: new Date(),
-                    status: 'paid', // Auto-collect (Cash)
+                    status: invoiceStatus,
                     line_items: [{
                         description: "Patient Registration Fee",
                         quantity: 1,
@@ -131,12 +137,18 @@ export async function createPatient(prevState: any, formData: FormData) {
                     return {
                         ...patient,
                         invoiceId: invoiceRes.data.id,
-                        warning: (invoiceRes as any).warning // Pass billing/accounting warnings to UI
+                        warning: (invoiceRes as any).warning
                     };
+                } else {
+                    throw new Error(invoiceRes.error || "Invoice creation failed");
                 }
-            } catch (billingError) {
+
+            } catch (billingError: any) {
                 console.error("Failed to auto-bill registration:", billingError);
-                // We do not fail the patient creation, just log it.
+                return {
+                    ...patient,
+                    billingError: billingError.message || "Failed to create invoice"
+                };
             }
         }
 
