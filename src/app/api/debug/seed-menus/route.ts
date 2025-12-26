@@ -59,7 +59,7 @@ export async function GET() {
             },
 
             { key: 'hms-billing', label: 'Billing', icon: 'CreditCard', url: '/hms/billing', sort: 70 },
-            { key: 'hms-settings', label: 'Settings', icon: 'Settings', url: '/hms/settings', sort: 90 },
+            { key: 'hms-settings', label: 'Settings', icon: 'Settings', url: '/hms/settings/companies', sort: 90 },
         ];
 
         // 3. Insert
