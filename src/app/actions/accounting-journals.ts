@@ -40,7 +40,7 @@ export async function getJournalEntries(filters?: {
                     date: true,
                     posted: true,
                     created_at: true,
-                    metadata: true,
+                    // metadata: true,
                     amount_in_company_currency: true,
                     currency_id: true,
                     journal_id: true,

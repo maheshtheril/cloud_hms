@@ -234,7 +234,7 @@ export class AccountingService {
                                 credit: line.credit,
                                 description: line.description,
                                 partner_id: line.party_id, // Link to patient if applicable
-                                metadata: line.metadata
+                                // metadata: line.metadata
                             }))
                         }
                     }
