@@ -44,7 +44,7 @@ export default async function InvoiceDetailsPage({ params }: { params: Promise<{
                         invoiceId={invoice.id}
                         currentStatus={invoice.status || 'draft'}
                         outstandingAmount={Number(invoice.outstanding_amount || 0)}
-                        patientEmail={invoice.hms_patient?.email}
+                        patientEmail={(invoice.hms_patient?.contact as any)?.email}
                     />
                 </div>
             </div>
