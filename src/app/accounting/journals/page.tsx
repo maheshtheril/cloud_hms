@@ -78,7 +78,8 @@ export default async function JournalsPage() {
                             <div className="text-right">
                                 <div className="text-sm text-slate-400">Total Amount</div>
                                 <div className="text-xl font-bold text-slate-900 dark:text-white">
-                                    {formatCurrency(Number(entry.amount_in_company_currency || 0))}
+                                    {/* Calculated from lines as fallback */}
+                                    {formatCurrency(entry.journal_entry_lines.reduce((sum: number, line: any) => sum + Number(line.debit || 0), 0))}
                                 </div>
                             </div>
                         </div>
