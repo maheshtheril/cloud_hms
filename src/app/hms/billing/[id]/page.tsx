@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Printer, Download, CreditCard, Calendar, User, Building2 } from "lucide-react"
+import { ArrowLeft, Printer, Download, CreditCard, Calendar, User, Building2, Pencil, Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { InvoiceControlPanel } from "@/components/billing/invoice-control-panel";
 
 export default async function InvoiceDetailsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -40,6 +41,18 @@ export default async function InvoiceDetailsPage({ params }: { params: Promise<{
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    {invoice.status === 'draft' && (
+                        <Link href={`/hms/billing/${invoice.id}/edit`}>
+                            <Button variant="outline" size="sm">
+                                <Pencil className="h-4 w-4 mr-2" /> Edit
+                            </Button>
+                        </Link>
+                    )}
+                    <Link href={invoice.hms_patient?.id ? `/hms/billing/new?patientId=${invoice.hms_patient.id}` : '/hms/billing/new'}>
+                        <Button variant="outline" size="sm">
+                            <Plus className="h-4 w-4 mr-2" /> New Bill
+                        </Button>
+                    </Link>
                     <InvoiceControlPanel
                         invoiceId={invoice.id}
                         currentStatus={invoice.status || 'draft'}

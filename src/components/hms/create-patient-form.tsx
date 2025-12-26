@@ -207,8 +207,12 @@ export function CreatePatientForm({
 
                                 // Small delay to let user see success/warning message
                                 setTimeout(() => {
-                                    router.push(`/hms/billing/${(res as any).invoiceId}`);
-                                }, 2500); // Increased delay for reading warning
+                                    if (billingMode === 'hold') {
+                                        router.push(`/hms/billing/${(res as any).invoiceId}/edit`);
+                                    } else {
+                                        router.push(`/hms/billing/${(res as any).invoiceId}`);
+                                    }
+                                }, 1500);
                                 if (onSuccess) onSuccess(res); // Optional: still call onSuccess for parent refresh
                                 return;
                             }
