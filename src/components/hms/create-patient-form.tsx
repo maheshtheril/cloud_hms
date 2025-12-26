@@ -191,13 +191,26 @@ export function CreatePatientForm({
                         const res = await createPatient(initialData?.id || null, formData);
                         if ((res as any)?.error) {
                             setMessage({ type: 'error', text: (res as any).error });
-                        } else if (onSuccess) {
-                            // Server-side billing is now handled in createPatient action
-                            onSuccess(res);
                         } else {
-                            // Standalone mode
-                            setMessage({ type: 'success', text: "Patient profile created successfully." });
-                            setTimeout(() => window.location.reload(), 1000);
+                            if ((res as any).invoiceId) {
+                                // REDIRECT TO BILLING (Visual Confirmation of Payment)
+                                setMessage({ type: 'success', text: "Registration complete. Redirecting to Billing..." });
+                                // Small delay to let user see success message
+                                setTimeout(() => {
+                                    router.push(`/hms/billing/${(res as any).invoiceId}`);
+                                }, 800);
+                                if (onSuccess) onSuccess(res); // Optional: still call onSuccess for parent refresh
+                                return;
+                            }
+
+                            if (onSuccess) {
+                                // Server-side billing is now handled in createPatient action
+                                onSuccess(res);
+                            } else {
+                                // Standalone mode
+                                setMessage({ type: 'success', text: "Patient profile created successfully." });
+                                setTimeout(() => window.location.reload(), 1000);
+                            }
                         }
                     } catch (err: any) {
                         setMessage({ type: 'error', text: "Systems offline or validation failed." });

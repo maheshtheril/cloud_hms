@@ -34,11 +34,48 @@ export class AccountingService {
 
             // 2. Fetch Accounting Settings (Chart of Accounts Mapping)
             // We need to know where to book Sales, AR, and Tax.
-            const settings = await prisma.company_accounting_settings.findUnique({
+            // 2. Fetch Accounting Settings (Chart of Accounts Mapping)
+            // We need to know where to book Sales, AR, and Tax.
+            let settings = await prisma.company_accounting_settings.findUnique({
                 where: { company_id: invoice.company_id }
             });
 
-            if (!settings) throw new Error("Accounting settings not configured for this company. Please verify Accounting Settings.");
+            // SELF-HEALING: Auto-configure defaults if missing
+            if (!settings) {
+                console.warn("Accounting Settings missing. Attempting auto-configuration...");
+                try {
+                    // A. Ensure Accounts Exist
+                    const { ensureDefaultAccounts } = await import('@/lib/account-seeder');
+                    await ensureDefaultAccounts(invoice.company_id, invoice.tenant_id);
+
+                    // B. Find Standard Accounts
+                    const accounts = await prisma.accounts.findMany({
+                        where: { company_id: invoice.company_id }
+                    });
+
+                    const findId = (code: string) => accounts.find(a => a.code === code)?.id || '';
+
+                    // C. Create Default Settings
+                    settings = await prisma.company_accounting_settings.create({
+                        data: {
+                            company_id: invoice.company_id,
+                            tenant_id: invoice.tenant_id,
+                            ar_account_id: findId('1200'), // Accounts Receivable
+                            ap_account_id: findId('2000'), // Accounts Payable
+                            sales_account_id: findId('4000'), // Sales
+                            purchase_account_id: findId('5000'), // COGS
+                            output_tax_account_id: findId('2200'), // Output Tax
+                            input_tax_account_id: findId('2210'), // Input Tax
+                            fiscal_year_start: new Date(new Date().getFullYear(), 3, 1), // April 1st
+                            fiscal_year_end: new Date(new Date().getFullYear() + 1, 2, 31), // March 31st
+                        }
+                    });
+                } catch (configError) {
+                    console.error("Failed to auto-configure accounting:", configError);
+                }
+            }
+
+            if (!settings) throw new Error("Accounting settings not configured and auto-configuration failed.");
 
             // 3. Determine Accounts
             // DEBIT SIDE:
@@ -46,19 +83,27 @@ export class AccountingService {
             let debitAccountId = settings.ar_account_id;
 
             if (invoice.status === 'paid') {
-                // Future: Use specific Cash/Bank account if available. For now, Debit AR to track the receivable, then Credit AR in Payment.
                 debitAccountId = settings.ar_account_id;
             }
 
-            if (!debitAccountId) throw new Error("Accounts Receivable (AR) Account is not configured in settings.");
+            // SAFETY: If AR Account is missing/deleted, try to heal it again or fail gracefully
+            if (!debitAccountId) {
+                const ar = await prisma.accounts.findFirst({ where: { company_id: invoice.company_id, code: '1200' } });
+                if (ar) debitAccountId = ar.id;
+                else throw new Error("Critical: Accounts Receivable (1200) not found.");
+            }
 
             // CREDIT SIDE: Sales Income Account
             // Default Account
-            const defaultSalesAccountId = settings.sales_account_id;
-            if (!defaultSalesAccountId) throw new Error("Default Sales/Income Account is not configured in settings.");
+            let defaultSalesAccountId = settings.sales_account_id;
+            if (!defaultSalesAccountId) {
+                const sales = await prisma.accounts.findFirst({ where: { company_id: invoice.company_id, code: '4000' } });
+                if (sales) defaultSalesAccountId = sales.id;
+                else throw new Error("Critical: Sales Account (4000) not found.");
+            }
 
             // Tax Account (Output VAT)
-            const taxAccountId = settings.output_tax_account_id;
+            let taxAccountId = settings.output_tax_account_id;
             // Note: Tax account might be optional if no tax, but good to have if tax > 0
 
             // 3.5 Fetch Product Logic for Granular Accounting (World Class)
@@ -167,7 +212,7 @@ export class AccountingService {
 
             // 6. Create Transaction
             await prisma.$transaction(async (tx) => {
-                // Create Journal Header
+                // Create Journal Header (Sales Accrual)
                 await tx.journal_entries.create({
                     data: {
                         tenant_id: invoice.tenant_id,
@@ -194,6 +239,65 @@ export class AccountingService {
                         }
                     }
                 });
+
+                // PAYMENT HANDLING (AUTO-PAY)
+                // If invoice is 'paid', we must close the AR immediately by booking Cash.
+                if (invoice.status === 'paid' && totalReceivable > 0) {
+                    // Try to find a Cash/Bank account from the Chart of Accounts
+                    // We look for Assets with 'Cash' or 'Bank' in name, or code 1000 (Standard Cash)
+                    const cashAccount = await tx.accounts.findFirst({
+                        where: {
+                            company_id: invoice.company_id,
+                            type: 'Asset',
+                            OR: [
+                                { name: { contains: 'Cash', mode: 'insensitive' } },
+                                { name: { contains: 'Bank', mode: 'insensitive' } },
+                                { code: '1000' }
+                            ]
+                        },
+                        orderBy: { code: 'asc' } // Prefer 'Cash on Hand' (usually 1000) over Bank (1010)
+                    });
+
+                    if (cashAccount) {
+                        await tx.journal_entries.create({
+                            data: {
+                                tenant_id: invoice.tenant_id,
+                                company_id: invoice.company_id,
+                                invoice_id: invoice.id,
+                                date: new Date(journalDate),
+                                posted: true,
+                                posted_at: new Date(),
+                                created_by: userId,
+                                currency_id: settings.currency_id,
+                                amount_in_company_currency: totalReceivable,
+                                ref: `${invoice.invoice_number}-PMT`,
+                                journal_entry_lines: {
+                                    create: [
+                                        {
+                                            tenant_id: invoice.tenant_id,
+                                            company_id: invoice.company_id,
+                                            account_id: cashAccount.id,
+                                            debit: totalReceivable,
+                                            credit: 0,
+                                            description: `Cash Received`,
+                                        },
+                                        {
+                                            tenant_id: invoice.tenant_id,
+                                            company_id: invoice.company_id,
+                                            account_id: debitAccountId, // AR Account
+                                            debit: 0,
+                                            credit: totalReceivable,
+                                            description: `AR Cleared`,
+                                            partner_id: invoice.patient_id
+                                        }
+                                    ]
+                                }
+                            }
+                        });
+                    } else {
+                        console.warn("Invoice is Paid but no Cash Account found. AR left open.");
+                    }
+                }
             });
 
             return { success: true, journalId: 'created' };

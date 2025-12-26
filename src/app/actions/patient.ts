@@ -78,7 +78,7 @@ export async function createPatient(prevState: any, formData: FormData) {
     try {
         // WORLD-CLASS: Link to Accounts Head (Accounts Receivable)
         // Ensure revenue tracking is locked for this patient
-        const accountsReceivableAccount = await prisma.account_chart.findFirst({
+        const accountsReceivableAccount = await prisma.accounts.findFirst({
             where: {
                 tenant_id: tenantId,
                 name: { contains: 'Accounts Receivable', mode: 'insensitive' }
@@ -112,7 +112,7 @@ export async function createPatient(prevState: any, formData: FormData) {
 
                 console.log("Auto-creating registration invoice for patient:", patient.id);
 
-                await createInvoice({
+                const invoiceRes = await createInvoice({
                     tenant_id: tenantId,
                     company_id: companyId,
                     patient_id: patient.id,
@@ -126,6 +126,10 @@ export async function createPatient(prevState: any, formData: FormData) {
                         discount_amount: 0
                     }]
                 });
+
+                if (invoiceRes.success && invoiceRes.data?.id) {
+                    return { ...patient, invoiceId: invoiceRes.data.id };
+                }
             } catch (billingError) {
                 console.error("Failed to auto-bill registration:", billingError);
                 // We do not fail the patient creation, just log it.

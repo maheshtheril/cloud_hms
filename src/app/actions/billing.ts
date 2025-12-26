@@ -143,13 +143,6 @@ export async function createInvoice(data: any) {
     try {
         // console.log("DEBUG: createInvoice received line_items:", JSON.stringify(line_items, null, 2));
 
-        // DEBUG: Inspect first item detailed structure
-        if (line_items[0]) {
-            console.log("DEBUG: First Item Keys:", Object.keys(line_items[0]));
-            console.log("DEBUG: First Item Unit Price Type:", typeof line_items[0].unit_price);
-            console.log("DEBUG: First Item Quantity Type:", typeof line_items[0].quantity);
-        }
-
         // Generate human-readable invoice number (Simple timestamp based for MVP, can be sequence based)
         const invoiceNo = `INV-${Date.now().toString().slice(-6)}`;
 
@@ -160,7 +153,6 @@ export async function createInvoice(data: any) {
             const price = Number(item.unit_price) || 0;
             const discount = Number(item.discount_amount) || 0;
             const lineTotal = (qty * price) - discount;
-            console.log(`DEBUG: Line calc: qty=${qty}, price=${price}, disc=${discount}, total=${lineTotal}`);
             return sum + lineTotal;
         }, 0);
 
@@ -170,12 +162,9 @@ export async function createInvoice(data: any) {
         // Grand Total: Subtotal + Tax - Global Discount
         const total = Math.max(0, subtotal + totalTaxAmount - Number(total_discount || 0));
 
-        // console.log(`DEBUG: Calculated Totals: Sub=${subtotal}, Tax=${totalTaxAmount}, Total=${total}`);
-
         // DEBUG: Check Triggers
         try {
             const triggers = await prisma.$queryRaw`SELECT trigger_name, event_manipulation, event_object_table FROM information_schema.triggers WHERE event_object_table IN ('hms_invoice', 'hms_invoice_lines')`;
-            // console.log("DEBUG: Active Triggers on Invoice/Lines:", triggers);
         } catch (e) {
             console.error("DEBUG: Failed to check triggers", e);
         }
@@ -211,7 +200,6 @@ export async function createInvoice(data: any) {
                 }))
             }
         };
-        console.log("DEBUG PAYLOAD:", JSON.stringify(invoicePayload, null, 2));
 
         const result = await prisma.$transaction(async (tx) => {
             const newInvoice = await tx.hms_invoice.create({
@@ -280,8 +268,6 @@ export async function updateInvoice(invoiceId: string, data: any) {
     }
 
     try {
-        // console.log("DEBUG: updateInvoice received line_items:", JSON.stringify(line_items, null, 2));
-
         // Calculate totals
         // Subtotal (Sum of [Qty * Price - Discount])
         const subtotal = line_items.reduce((sum: number, item: any) => {
@@ -289,7 +275,6 @@ export async function updateInvoice(invoiceId: string, data: any) {
             const price = Number(item.unit_price) || 0;
             const discount = Number(item.discount_amount) || 0;
             const lineTotal = (qty * price) - discount;
-            console.log(`DEBUG: updateInvoice Line calc: qty=${qty}, price=${price}, disc=${discount}, total=${lineTotal}`);
             return sum + lineTotal;
         }, 0);
 
@@ -298,8 +283,6 @@ export async function updateInvoice(invoiceId: string, data: any) {
 
         // Grand Total: Subtotal + Tax - Global Discount
         const total = Math.max(0, subtotal + totalTaxAmount - Number(total_discount || 0));
-
-        // console.log(`DEBUG: updateInvoice Totals: Sub=${subtotal}, Tax=${totalTaxAmount}, Total=${total}`);
 
         const result = await prisma.$transaction(async (tx) => {
             // 1. Update Invoice Header
