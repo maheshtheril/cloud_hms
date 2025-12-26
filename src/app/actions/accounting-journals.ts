@@ -31,13 +31,23 @@ export async function getJournalEntries(filters?: {
 
         const entries = await prisma.journal_entries.findMany({
             where,
-            include: {
+            select: {
+                id: true,
+                ref: true,
+                date: true,
+                posted: true,
+                created_at: true,
+                metadata: true,
+                // voltage_protection: Skip fields that might be missing in DB until migration runs
+                // amount_in_company_currency: true, 
+                // currency_id: true,
+
                 journal_entry_lines: {
                     include: {
                         accounts: true
                     },
                     orderBy: {
-                        debit: 'desc' // Debits first usually
+                        debit: 'desc'
                     }
                 },
                 hms_invoice: {
