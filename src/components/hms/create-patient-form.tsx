@@ -56,6 +56,10 @@ export function CreatePatientForm({
     const [dob, setDob] = useState(initialData?.dob ? new Date(initialData.dob).toISOString().split('T')[0] : '');
     const [gender, setGender] = useState(initialData?.gender || 'male');
 
+    // Billing Options State
+    const [chargeRegistration, setChargeRegistration] = useState(true);
+    const [billingMode, setBillingMode] = useState<'pay_now' | 'bill_later' | 'hold'>('pay_now');
+
     const handleAgeChange = (value: string, unit: string) => {
         setAge(value);
         setAgeUnit(unit);
@@ -414,8 +418,15 @@ export function CreatePatientForm({
                         <div className="flex items-center gap-6">
                             <label className="flex items-center gap-3 cursor-pointer group">
                                 <div className="relative">
-                                    <input type="checkbox" name="charge_registration" defaultChecked className="peer sr-only" />
+                                    <input
+                                        type="checkbox"
+                                        checked={chargeRegistration}
+                                        onChange={(e) => setChargeRegistration(e.target.checked)}
+                                        className="peer sr-only"
+                                        name="charge_registration"
+                                    />
                                     <input type="hidden" name="registration_fee" value={registrationFee} />
+                                    <input type="hidden" name="billing_mode" value={billingMode} />
                                     <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-100 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
                                 </div>
                                 <div className="flex flex-col">
@@ -424,7 +435,30 @@ export function CreatePatientForm({
                                 </div>
                             </label>
 
-                            <label className="flex items-center gap-3 cursor-pointer group">
+                            {chargeRegistration && (
+                                <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/20 p-1.5 rounded-lg border border-indigo-100 dark:border-indigo-800">
+                                    {[
+                                        { id: 'pay_now', label: 'Spot Pay', icon: CheckCircle2, color: 'text-emerald-600' },
+                                        { id: 'bill_later', label: 'Bill Account', icon: Activity, color: 'text-blue-600' },
+                                        { id: 'hold', label: 'Hold', icon: AlertCircle, color: 'text-amber-600' }
+                                    ].map((mode) => (
+                                        <button
+                                            key={mode.id}
+                                            type="button"
+                                            onClick={() => setBillingMode(mode.id as any)}
+                                            className={`px-3 py-1.5 rounded-md text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all ${billingMode === mode.id
+                                                ? 'bg-white dark:bg-slate-800 shadow-sm ' + mode.color
+                                                : 'text-slate-500 hover:bg-white/50'
+                                                }`}
+                                        >
+                                            <mode.icon className="h-3 w-3" />
+                                            {mode.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+
+                            <label className="flex items-center gap-3 cursor-pointer group ml-4">
                                 <div className="relative">
                                     <input type="checkbox" name="issue_card" defaultChecked className="peer sr-only" />
                                     <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-emerald-100 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500"></div>
