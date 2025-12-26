@@ -128,7 +128,11 @@ export async function createPatient(prevState: any, formData: FormData) {
                 });
 
                 if (invoiceRes.success && invoiceRes.data?.id) {
-                    return { ...patient, invoiceId: invoiceRes.data.id };
+                    return {
+                        ...patient,
+                        invoiceId: invoiceRes.data.id,
+                        warning: (invoiceRes as any).warning // Pass billing/accounting warnings to UI
+                    };
                 }
             } catch (billingError) {
                 console.error("Failed to auto-bill registration:", billingError);

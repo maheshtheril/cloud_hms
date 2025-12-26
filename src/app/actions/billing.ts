@@ -237,8 +237,12 @@ export async function createInvoice(data: any) {
             const accountingRes = await AccountingService.postSalesInvoice(result.id, session.user.id);
             if (!accountingRes.success) {
                 console.warn("Accounting Post Failed:", accountingRes.error);
-                // Optionally append warning to UI? 
-                // return { success: true, data: result, warning: "Invoice saved but accounting entry failed: " + accountingRes.error };
+                // Attach warning to result so UI knows accounting failed
+                return {
+                    success: true,
+                    data: result,
+                    warning: `Invoice created/updated, but accounting posting failed: ${accountingRes.error}`
+                };
             }
         }
 
@@ -367,5 +371,53 @@ export async function updateInvoice(invoiceId: string, data: any) {
     } catch (error: any) {
         console.error("Failed to update invoice:", error);
         return { error: `Failed to update invoice: ${error.message}` };
+    }
+}
+
+export async function updateInvoiceStatus(invoiceId: string, status: 'draft' | 'posted' | 'paid' | 'cancelled') {
+    const session = await auth();
+    if (!session?.user?.companyId) return { error: "Unauthorized" };
+
+    try {
+        const invoice = await prisma.hms_invoice.findUnique({ where: { id: invoiceId } });
+        if (!invoice) return { error: "Invoice not found" };
+
+        const result = await prisma.$transaction(async (tx) => {
+            const updated = await tx.hms_invoice.update({
+                where: { id: invoiceId },
+                data: {
+                    status: status,
+                    outstanding_amount: status === 'paid' ? 0 : (status === 'posted' ? invoice.total : invoice.outstanding_amount),
+                    updated_at: new Date()
+                }
+            });
+
+            // If paid, close appointment
+            if (status === 'paid' && updated.appointment_id) {
+                await tx.hms_appointments.update({
+                    where: { id: updated.appointment_id },
+                    data: { status: 'completed' }
+                });
+            }
+
+            return updated;
+        });
+
+        // Trigger Accounting
+        if (status === 'posted' || status === 'paid') {
+            const accountingRes = await AccountingService.postSalesInvoice(invoiceId, session.user.id);
+            if (!accountingRes.success) {
+                console.warn("Accounting Post Failed:", accountingRes.error);
+                return { success: true, warning: accountingRes.error };
+            }
+        }
+
+        revalidatePath(`/hms/billing/${invoiceId}`);
+        revalidatePath('/hms/billing');
+        return { success: true };
+
+    } catch (error: any) {
+        console.error("Failed to update status:", error);
+        return { error: `Failed to update status: ${error.message}` };
     }
 }

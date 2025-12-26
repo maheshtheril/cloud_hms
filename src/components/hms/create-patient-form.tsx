@@ -194,11 +194,17 @@ export function CreatePatientForm({
                         } else {
                             if ((res as any).invoiceId) {
                                 // REDIRECT TO BILLING (Visual Confirmation of Payment)
-                                setMessage({ type: 'success', text: "Registration complete. Redirecting to Billing..." });
-                                // Small delay to let user see success message
+                                const warning = (res as any).warning;
+                                if (warning) {
+                                    setMessage({ type: 'error', text: `Registration done, but: ${warning}` });
+                                } else {
+                                    setMessage({ type: 'success', text: "Registration complete. Redirecting to Billing..." });
+                                }
+
+                                // Small delay to let user see success/warning message
                                 setTimeout(() => {
                                     router.push(`/hms/billing/${(res as any).invoiceId}`);
-                                }, 800);
+                                }, 2500); // Increased delay for reading warning
                                 if (onSuccess) onSuccess(res); // Optional: still call onSuccess for parent refresh
                                 return;
                             }

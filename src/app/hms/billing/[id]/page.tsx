@@ -4,6 +4,7 @@ import { auth } from "@/auth"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Printer, Download, CreditCard, Calendar, User, Building2 } from "lucide-react"
+import { InvoiceControlPanel } from "@/components/billing/invoice-control-panel";
 
 export default async function InvoiceDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const session = await auth();
@@ -39,21 +40,23 @@ export default async function InvoiceDetailsPage({ params }: { params: Promise<{
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Link href={`/hms/billing/${invoice.id}/print`} target="_blank" className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors text-sm font-medium">
-                        <Printer className="h-4 w-4" />
-                        Print
-                    </Link>
+                    <InvoiceControlPanel
+                        invoiceId={invoice.id}
+                        currentStatus={invoice.status || 'draft'}
+                        outstandingAmount={Number(invoice.outstanding_amount || 0)}
+                        patientEmail={invoice.hms_patient?.email}
+                    />
                 </div>
             </div>
 
             {/* Status Banner */}
             <div className={`p-4 rounded-lg flex items-center justify-between ${invoice.status === 'paid' ? 'bg-green-50 text-green-700 border border-green-100' :
-                    invoice.status === 'posted' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                        'bg-slate-50 text-slate-700 border border-slate-200'
+                invoice.status === 'posted' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                    'bg-slate-50 text-slate-700 border border-slate-200'
                 }`}>
                 <div className="flex items-center gap-3">
                     <div className={`h-2 w-2 rounded-full ${invoice.status === 'paid' ? 'bg-green-500' :
-                            invoice.status === 'posted' ? 'bg-blue-500' : 'bg-slate-500'
+                        invoice.status === 'posted' ? 'bg-blue-500' : 'bg-slate-500'
                         }`} />
                     <span className="font-semibold capitalize">{invoice.status}</span>
                 </div>

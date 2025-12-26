@@ -53,7 +53,7 @@ export class AccountingService {
                         where: { company_id: invoice.company_id }
                     });
 
-                    const findId = (code: string) => accounts.find(a => a.code === code)?.id || '';
+                    const findId = (code: string) => accounts.find(a => a.code === code)?.id || null;
 
                     // C. Create Default Settings
                     settings = await prisma.company_accounting_settings.create({
@@ -242,10 +242,11 @@ export class AccountingService {
 
                 // PAYMENT HANDLING (AUTO-PAY)
                 // If invoice is 'paid', we must close the AR immediately by booking Cash.
+                // PAYMENT HANDLING (AUTO-PAY)
+                // If invoice is 'paid', we must close the AR immediately by booking Cash.
                 if (invoice.status === 'paid' && totalReceivable > 0) {
-                    // Try to find a Cash/Bank account from the Chart of Accounts
-                    // We look for Assets with 'Cash' or 'Bank' in name, or code 1000 (Standard Cash)
-                    const cashAccount = await tx.accounts.findFirst({
+                    // Try to find a Cash/Bank account
+                    let cashAccount = await tx.accounts.findFirst({
                         where: {
                             company_id: invoice.company_id,
                             type: 'Asset',
@@ -255,48 +256,58 @@ export class AccountingService {
                                 { code: '1000' }
                             ]
                         },
-                        orderBy: { code: 'asc' } // Prefer 'Cash on Hand' (usually 1000) over Bank (1010)
+                        orderBy: { code: 'asc' }
                     });
 
-                    if (cashAccount) {
-                        await tx.journal_entries.create({
+                    // FINAL FALLBACK: Create Cash Account if absolutely nothing exists
+                    if (!cashAccount) {
+                        cashAccount = await tx.accounts.create({
                             data: {
                                 tenant_id: invoice.tenant_id,
                                 company_id: invoice.company_id,
-                                invoice_id: invoice.id,
-                                date: new Date(journalDate),
-                                posted: true,
-                                posted_at: new Date(),
-                                created_by: userId,
-                                currency_id: settings.currency_id,
-                                amount_in_company_currency: totalReceivable,
-                                ref: `${invoice.invoice_number}-PMT`,
-                                journal_entry_lines: {
-                                    create: [
-                                        {
-                                            tenant_id: invoice.tenant_id,
-                                            company_id: invoice.company_id,
-                                            account_id: cashAccount.id,
-                                            debit: totalReceivable,
-                                            credit: 0,
-                                            description: `Cash Received`,
-                                        },
-                                        {
-                                            tenant_id: invoice.tenant_id,
-                                            company_id: invoice.company_id,
-                                            account_id: debitAccountId, // AR Account
-                                            debit: 0,
-                                            credit: totalReceivable,
-                                            description: `AR Cleared`,
-                                            partner_id: invoice.patient_id
-                                        }
-                                    ]
-                                }
+                                name: 'Cash on Hand',
+                                code: '1000',
+                                type: 'Asset',
+                                is_active: true
                             }
                         });
-                    } else {
-                        console.warn("Invoice is Paid but no Cash Account found. AR left open.");
                     }
+
+                    await tx.journal_entries.create({
+                        data: {
+                            tenant_id: invoice.tenant_id,
+                            company_id: invoice.company_id,
+                            invoice_id: invoice.id,
+                            date: new Date(journalDate),
+                            posted: true,
+                            posted_at: new Date(),
+                            created_by: userId,
+                            currency_id: settings.currency_id,
+                            amount_in_company_currency: totalReceivable,
+                            ref: `${invoice.invoice_number}-PMT`,
+                            journal_entry_lines: {
+                                create: [
+                                    {
+                                        tenant_id: invoice.tenant_id,
+                                        company_id: invoice.company_id,
+                                        account_id: cashAccount.id,
+                                        debit: totalReceivable,
+                                        credit: 0,
+                                        description: `Cash Received`,
+                                    },
+                                    {
+                                        tenant_id: invoice.tenant_id,
+                                        company_id: invoice.company_id,
+                                        account_id: debitAccountId, // AR Account
+                                        debit: 0,
+                                        credit: totalReceivable,
+                                        description: `AR Cleared`,
+                                        partner_id: invoice.patient_id
+                                    }
+                                ]
+                            }
+                        }
+                    });
                 }
             });
 
