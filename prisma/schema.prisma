@@ -2429,9 +2429,9 @@ model journal_entries {
   currency_id                String?               @db.Uuid
   amount_in_company_currency Decimal?              @db.Decimal(18, 6)
   fx_rate                    Decimal?              @db.Decimal(18, 6)
-  is_posted                  Boolean               @default(true)
-  is_locked                  Boolean               @default(false)
-  locked_at                  DateTime?             @db.Timestamptz(6)
+  // is_posted                  Boolean               @default(true)
+  // is_locked                  Boolean               @default(false)
+  // locked_at                  DateTime?             @db.Timestamptz(6)
   currencies                 currencies?           @relation(fields: [currency_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_invoice                hms_invoice?          @relation(fields: [invoice_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journals                   journals?             @relation(fields: [journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
