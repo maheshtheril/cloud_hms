@@ -3,10 +3,11 @@ import { getJournalEntries } from "@/app/actions/accounting-journals"
 import { Book, Filter, Search, FileText, ArrowUpRight, ArrowDownLeft } from "lucide-react"
 
 // Simple formatter for currency
-const formatCurrency = (amount: number, currency = 'INR') => {
+// Simple formatter for currency
+const formatCurrency = (amount: number, currency: string | null = 'INR') => {
     return new Intl.NumberFormat('en-IN', {
         style: 'currency',
-        currency: currency,
+        currency: currency || 'INR', // Fallback if null passed
     }).format(amount);
 }
 
