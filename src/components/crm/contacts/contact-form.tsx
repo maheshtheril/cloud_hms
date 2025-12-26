@@ -58,17 +58,17 @@ export function ContactForm() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="first_name">First Name <span className="text-red-500">*</span></Label>
-                            <Input id="first_name" name="first_name" required placeholder="John" />
+                            <Input id="first_name" name="first_name" required placeholder="Given Name" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="last_name">Last Name</Label>
-                            <Input id="last_name" name="last_name" placeholder="Doe" />
+                            <Input id="last_name" name="last_name" placeholder="Family Name" />
                         </div>
                     </div>
 
                     <div className="space-y-2">
                         <Label htmlFor="email">Email Address</Label>
-                        <Input id="email" name="email" type="email" placeholder="john.doe@example.com" />
+                        <Input id="email" name="email" type="email" placeholder="contact@email.com" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">

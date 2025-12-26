@@ -27,14 +27,14 @@ export default function NewDoctorPage() {
                             <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                             <div className="relative">
                                 <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                                <input name="first_name" type="text" placeholder="John" required className="w-full pl-10 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                <input name="first_name" type="text" placeholder="Given Name" required className="w-full pl-10 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                             </div>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
                             <div className="relative">
                                 <User className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
-                                <input name="last_name" type="text" placeholder="Doe" required className="w-full pl-10 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                                <input name="last_name" type="text" placeholder="Family Name" required className="w-full pl-10 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
                             </div>
                         </div>
                     </div>

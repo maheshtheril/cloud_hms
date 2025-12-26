@@ -246,12 +246,12 @@ export function CreatePatientForm({
                                             </div>
                                             <div className="flex-1">
                                                 <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">First Name</label>
-                                                <input defaultValue={initialData?.first_name} name="first_name" type="text" placeholder="John" required className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors" />
+                                                <input defaultValue={initialData?.first_name} name="first_name" type="text" placeholder="Given Name" required className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors" />
                                             </div>
                                         </div>
                                         <div>
                                             <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Last Name</label>
-                                            <input defaultValue={initialData?.last_name} name="last_name" type="text" placeholder="Doe" required className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors" />
+                                            <input defaultValue={initialData?.last_name} name="last_name" type="text" placeholder="Family Name" required className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs outline-none focus:border-indigo-500 transition-colors" />
                                         </div>
                                         <div className="grid grid-cols-2 gap-3">
                                             <div>
@@ -311,7 +311,7 @@ export function CreatePatientForm({
                             {/* TAB 2: RESIDENCY - High Link Density */}
                             <div className={activeTab === 'residency' ? 'block' : 'hidden'}>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                                    <div className="space-y-4 bg-whiteダークbg-slate-800/40 p-5 rounded-[1.5rem] shadow-sm border border-slate-100 dark:border-slate-800">
+                                    <div className="space-y-4 bg-white dark:bg-slate-800/40 p-5 rounded-[1.5rem] shadow-sm border border-slate-100 dark:border-slate-800">
                                         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
                                             <Phone className="h-3 w-3 text-indigo-500" /> Contact Grid
                                         </h3>
@@ -326,7 +326,7 @@ export function CreatePatientForm({
                                             <label className="block text-[9px] font-black text-slate-500 mb-1 uppercase tracking-wider">Institutional Email</label>
                                             <div className="relative">
                                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
-                                                <input defaultValue={initialData?.contact?.email} name="email" type="email" placeholder="john@example.com" className="w-full pl-10 p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs" />
+                                                <input defaultValue={initialData?.contact?.email} name="email" type="email" placeholder="patient@email.com" className="w-full pl-10 p-2.5 bg-slate-50 dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 rounded-xl font-bold text-xs" />
                                             </div>
                                         </div>
                                     </div>
