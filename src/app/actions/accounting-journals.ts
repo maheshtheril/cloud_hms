@@ -74,7 +74,7 @@ export async function getJournalEntries(filters?: {
                         date: true,
                         posted: true,
                         created_at: true,
-                        metadata: true,
+                        // metadata: true, // REMOVED: Causing crashes if DB schema drifts
                         journal_entry_lines: {
                             include: { accounts: true },
                             orderBy: { debit: 'desc' }
