@@ -58,7 +58,6 @@ export function CreatePatientForm({
 
     // Billing Options State
     const [chargeRegistration, setChargeRegistration] = useState(true);
-    const [billingMode, setBillingMode] = useState<'pay_now' | 'bill_later' | 'hold'>('pay_now');
 
     const handleAgeChange = (value: string, unit: string) => {
         setAge(value);
@@ -207,11 +206,7 @@ export function CreatePatientForm({
 
                                 // Small delay to let user see success/warning message
                                 setTimeout(() => {
-                                    if (billingMode === 'hold') {
-                                        router.push(`/hms/billing/${(res as any).invoiceId}/edit`);
-                                    } else {
-                                        router.push(`/hms/billing/${(res as any).invoiceId}`);
-                                    }
+                                    router.push(`/hms/billing/${(res as any).invoiceId}`);
                                 }, 1500);
                                 if (onSuccess) onSuccess(res); // Optional: still call onSuccess for parent refresh
                                 return;
@@ -430,7 +425,6 @@ export function CreatePatientForm({
                                         name="charge_registration"
                                     />
                                     <input type="hidden" name="registration_fee" value={registrationFee} />
-                                    <input type="hidden" name="billing_mode" value={billingMode} />
                                     <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-100 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
                                 </div>
                                 <div className="flex flex-col">
@@ -438,29 +432,6 @@ export function CreatePatientForm({
                                     <span className="text-[8px] font-bold text-slate-400">Standard Service ({registrationFee.toFixed(2)})</span>
                                 </div>
                             </label>
-
-                            {chargeRegistration && (
-                                <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/20 p-1.5 rounded-lg border border-indigo-100 dark:border-indigo-800">
-                                    {[
-                                        { id: 'pay_now', label: 'Spot Pay', icon: CheckCircle2, color: 'text-emerald-600' },
-                                        { id: 'bill_later', label: 'Bill Account', icon: Activity, color: 'text-blue-600' },
-                                        { id: 'hold', label: 'Hold', icon: AlertCircle, color: 'text-amber-600' }
-                                    ].map((mode) => (
-                                        <button
-                                            key={mode.id}
-                                            type="button"
-                                            onClick={() => setBillingMode(mode.id as any)}
-                                            className={`px-3 py-1.5 rounded-md text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all ${billingMode === mode.id
-                                                ? 'bg-white dark:bg-slate-800 shadow-sm ' + mode.color
-                                                : 'text-slate-500 hover:bg-white/50'
-                                                }`}
-                                        >
-                                            <mode.icon className="h-3 w-3" />
-                                            {mode.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
 
                             <label className="flex items-center gap-3 cursor-pointer group ml-4">
                                 <div className="relative">
