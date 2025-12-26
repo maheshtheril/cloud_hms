@@ -25,8 +25,7 @@ export async function getJournalEntries(filters?: {
         }
         if (filters?.search) {
             where.OR = [
-                { ref: { contains: filters.search, mode: 'insensitive' } },
-                { description: { contains: filters.search, mode: 'insensitive' } }
+                { ref: { contains: filters.search, mode: 'insensitive' } }
             ];
         }
 

@@ -141,7 +141,14 @@ export async function createInvoice(data: any) {
     }
 
     try {
-        console.log("DEBUG: createInvoice received line_items:", JSON.stringify(line_items, null, 2));
+        // console.log("DEBUG: createInvoice received line_items:", JSON.stringify(line_items, null, 2));
+
+        // DEBUG: Inspect first item detailed structure
+        if (line_items[0]) {
+            console.log("DEBUG: First Item Keys:", Object.keys(line_items[0]));
+            console.log("DEBUG: First Item Unit Price Type:", typeof line_items[0].unit_price);
+            console.log("DEBUG: First Item Quantity Type:", typeof line_items[0].quantity);
+        }
 
         // Generate human-readable invoice number (Simple timestamp based for MVP, can be sequence based)
         const invoiceNo = `INV-${Date.now().toString().slice(-6)}`;
@@ -163,7 +170,7 @@ export async function createInvoice(data: any) {
         // Grand Total: Subtotal + Tax - Global Discount
         const total = Math.max(0, subtotal + totalTaxAmount - Number(total_discount || 0));
 
-        console.log(`DEBUG: Calculated Totals: Sub=${subtotal}, Tax=${totalTaxAmount}, Total=${total}`);
+        // console.log(`DEBUG: Calculated Totals: Sub=${subtotal}, Tax=${totalTaxAmount}, Total=${total}`);
 
         // DEBUG: Check Triggers
         try {
@@ -219,6 +226,18 @@ export async function createInvoice(data: any) {
                 });
             }
 
+            // FORCE UPDATE TOTAL: Ensure DB triggers didn't override the total to 0
+            // This happens if a trigger calculates total from lines before lines are fully visible/committed
+            await tx.hms_invoice.update({
+                where: { id: newInvoice.id },
+                data: {
+                    total: total,
+                    subtotal: subtotal,
+                    total_tax: totalTaxAmount,
+                    outstanding_amount: (status === 'posted') ? total : 0
+                }
+            });
+
             return newInvoice;
         });
 
@@ -261,7 +280,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
     }
 
     try {
-        console.log("DEBUG: updateInvoice received line_items:", JSON.stringify(line_items, null, 2));
+        // console.log("DEBUG: updateInvoice received line_items:", JSON.stringify(line_items, null, 2));
 
         // Calculate totals
         // Subtotal (Sum of [Qty * Price - Discount])
@@ -280,7 +299,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
         // Grand Total: Subtotal + Tax - Global Discount
         const total = Math.max(0, subtotal + totalTaxAmount - Number(total_discount || 0));
 
-        console.log(`DEBUG: updateInvoice Totals: Sub=${subtotal}, Tax=${totalTaxAmount}, Total=${total}`);
+        // console.log(`DEBUG: updateInvoice Totals: Sub=${subtotal}, Tax=${totalTaxAmount}, Total=${total}`);
 
         const result = await prisma.$transaction(async (tx) => {
             // 1. Update Invoice Header
@@ -331,7 +350,24 @@ export async function updateInvoice(invoiceId: string, data: any) {
                 });
             }
 
-            return updatedInvoice;
+            // FORCE UPDATE TOTAL: Ensure DB triggers didn't override the total to 0
+            // This happens if a trigger calculates total from lines before lines are fully visible/committed
+            await tx.hms_invoice.update({
+                where: { id: invoiceId },
+                data: {
+                    total: total,
+                    subtotal: subtotal,
+                    total_tax: totalTaxAmount,
+                    outstanding_amount: (status === 'posted') ? total : 0
+                }
+            });
+
+            // Note: Returning updatedInvoice here might not reflect the force update if fetched from 'update' result earlier.
+            // But since we just updated it again, if we wanted the fresh object we'd need to fetch it.
+            // For now, assuming the caller just needs the ID or basic success.
+            // To be safe, let's return a constructed object or just the earlier reference (the amount might be wrong in the returned object but correct in DB).
+            // Actually, let's just return the result of the LAST update.
+            return { ...updatedInvoice, total, subtotal, total_tax: totalTaxAmount };
         });
 
         if ((result.status === 'posted' || result.status === 'paid') && result.id) {
