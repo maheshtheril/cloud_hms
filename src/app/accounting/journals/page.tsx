@@ -75,12 +75,12 @@ export default async function JournalsPage() {
                                     </div>
                                 )}
                             </div>
-                            <div className="text-right">
-                                <div className="text-sm text-slate-400">Total Amount</div>
-                                <div className="text-xl font-bold text-slate-900 dark:text-white">
-                                    {/* Calculated from lines as fallback */}
-                                    {formatCurrency(entry.journal_entry_lines.reduce((sum: number, line: any) => sum + Number(line.debit || 0), 0))}
-                                </div>
+                            <div className="text-xl font-bold text-slate-900 dark:text-white">
+                                {/* World-Class Display: Use specialized header amount/currency if available, else derive from lines */}
+                                {entry.amount_in_company_currency
+                                    ? formatCurrency(Number(entry.amount_in_company_currency), entry.currency_id)
+                                    : formatCurrency(entry.journal_entry_lines.reduce((sum: number, line: any) => sum + Number(line.debit || 0), 0))
+                                }
                             </div>
                         </div>
 
