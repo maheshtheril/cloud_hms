@@ -2456,6 +2456,7 @@ model journal_entry_lines {
   tax_type_id         String?            @db.Uuid
   tax_rate_id         String?            @db.Uuid
   description         String?
+  metadata            Json?              @default("{}")
   created_at          DateTime?          @default(now()) @db.Timestamptz(6)
   analytic_account_id String?            @db.Uuid
   analytic_tag_ids    String[]           @default([]) @db.Uuid
