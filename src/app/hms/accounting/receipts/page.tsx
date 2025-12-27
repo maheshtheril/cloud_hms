@@ -41,6 +41,17 @@ export default function ReceiptsPage() {
     const countDraft = filtered.filter(p => !p.posted).length;
     const countPosted = filtered.filter(p => p.posted).length;
 
+    const safeFormat = (date: any, fmt: string) => {
+        try {
+            if (!date) return 'N/A';
+            const d = new Date(date);
+            if (isNaN(d.getTime())) return 'N/A';
+            return format(d, fmt);
+        } catch (e) {
+            return 'N/A';
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-neutral-950 font-sans relative overflow-hidden">
             {/* Background Gradients */}
@@ -170,7 +181,7 @@ export default function ReceiptsPage() {
                                         >
                                             <td className="px-6 py-5">
                                                 <div className="flex flex-col">
-                                                    <span className="text-white font-bold text-sm tracking-tight">{format(new Date(p.date), 'MMM dd, yyyy')}</span>
+                                                    <span className="text-white font-bold text-sm tracking-tight">{safeFormat(p.date, 'MMM dd, yyyy')}</span>
                                                     <span className="text-neutral-500 text-[10px] font-mono mt-0.5 uppercase tracking-tighter">{p.reference || 'NO_REF'}</span>
                                                 </div>
                                             </td>

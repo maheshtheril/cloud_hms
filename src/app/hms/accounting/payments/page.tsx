@@ -30,6 +30,17 @@ export default function PaymentsPage() {
         p.reference?.toLowerCase().includes(search.toLowerCase())
     );
 
+    const safeFormat = (date: any, fmt: string) => {
+        try {
+            if (!date) return 'N/A';
+            const d = new Date(date);
+            if (isNaN(d.getTime())) return 'N/A';
+            return format(d, fmt);
+        } catch (e) {
+            return 'N/A';
+        }
+    };
+
     return (
         <div className="min-h-screen bg-neutral-950 text-neutral-200 font-sans selection:bg-rose-500/30">
             {/* Header */}
@@ -116,7 +127,7 @@ export default function PaymentsPage() {
                                             </div>
                                         </td>
                                         <td className="py-4 px-6 text-sm text-neutral-400">
-                                            {format(new Date(payment.metadata?.date || payment.created_at), 'MMM dd, yyyy')}
+                                            {safeFormat(payment.metadata?.date || payment.created_at, 'MMM dd, yyyy')}
                                         </td>
                                         <td className="py-4 px-6">
                                             <div className="text-sm font-medium text-neutral-200">{payment.partner_name}</div>

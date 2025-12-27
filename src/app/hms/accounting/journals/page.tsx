@@ -42,6 +42,17 @@ export default function JournalsPage() {
         return sum + entryTotal;
     }, 0);
 
+    const safeFormat = (date: any, fmt: string) => {
+        try {
+            if (!date) return 'N/A';
+            const d = new Date(date);
+            if (isNaN(d.getTime())) return 'N/A';
+            return format(d, fmt);
+        } catch (e) {
+            return 'N/A';
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-neutral-950 font-sans relative overflow-hidden">
             {/* Background Gradients */}
@@ -158,7 +169,7 @@ export default function JournalsPage() {
                                             <div className="h-8 w-px bg-slate-200 dark:bg-white/10" />
                                             <div className="flex flex-col">
                                                 <span className="text-xs font-black uppercase tracking-widest text-neutral-500">Date</span>
-                                                <span className="text-sm font-medium text-slate-700 dark:text-neutral-300">{format(new Date(entry.date), 'MMMM dd, yyyy')}</span>
+                                                <span className="text-sm font-medium text-slate-700 dark:text-neutral-300">{safeFormat(entry.date, 'MMMM dd, yyyy')}</span>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-3">
