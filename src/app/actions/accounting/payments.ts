@@ -64,6 +64,7 @@ export async function upsertPayment(data: {
     reference?: string;
     date: Date; // Capture date in metadata
     memo?: string;
+    posted?: boolean;
 }) {
     const session = await auth();
     if (!session?.user?.companyId) return { error: "Unauthorized" };
@@ -102,7 +103,7 @@ export async function upsertPayment(data: {
                     ...payload,
                     payment_number: num,
                     payment_number_normalized: num,
-                    posted: false
+                    posted: data.posted ?? true // Default to TRUE (Posted) for better UX
                 }
             });
             revalidatePath(data.type === 'inbound' ? '/hms/accounting/receipts' : '/hms/accounting/payments');

@@ -52,7 +52,8 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
             method,
             reference,
             date: new Date(date),
-            memo
+            memo,
+            posted: true
         });
 
         if (res.error) {
