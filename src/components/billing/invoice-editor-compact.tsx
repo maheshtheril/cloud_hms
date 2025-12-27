@@ -397,7 +397,9 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                             <Receipt className="h-4 w-4" />
                         </div>
                         <div>
-                            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-tight">New Invoice</h2>
+                            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-tight">
+                                {initialInvoice ? 'Edit' : 'New'} Invoice
+                            </h2>
                             <div className="flex items-center gap-2 mt-0.5">
                                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
                                     {selectedPatientId ? 'Patient Selected' : 'Select Patient'}
@@ -638,35 +640,43 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                         </div>
 
                         {/* Right Side: Totals & Actions */}
-                        <div className="p-4 w-full sm:w-80 flex flex-col justify-between gap-4">
-                            <div className="space-y-1">
-                                <div className="flex items-center justify-between text-xs">
+                        <div className="p-4 w-full sm:w-80 flex flex-col justify-between gap-4 bg-slate-50/50 dark:bg-slate-900/50 sm:bg-transparent">
+                            <div className="space-y-1.5 pt-1">
+                                <div className="flex items-center justify-between text-xs font-medium">
                                     <span className="text-slate-500">Subtotal</span>
-                                    <span className="font-semibold text-slate-700 dark:text-slate-200">₹{subtotal.toFixed(2)}</span>
+                                    <span className="text-slate-700 dark:text-slate-200">₹{subtotal.toFixed(2)}</span>
                                 </div>
-                                <div className="flex items-center justify-between text-xs">
-                                    <span className="text-slate-500">Tax Breakdown</span>
-                                    <span className="font-medium text-indigo-500">₹{totalTax.toFixed(2)}</span>
+                                <div className="flex items-center justify-between text-xs font-medium">
+                                    <span className="text-slate-500">Tax</span>
+                                    <span className="text-indigo-500">₹{totalTax.toFixed(2)}</span>
                                 </div>
-                                <div className="flex items-center justify-between text-xs">
-                                    <span className="text-slate-500">Total Discount</span>
+                                <div className="flex items-center justify-between text-xs font-medium">
+                                    <span className="text-slate-500">Discount</span>
                                     <div className="relative w-20">
-                                        <input type="number" className="w-full bg-slate-50 dark:bg-slate-900 0 border-b border-dotted border-slate-300 text-right outline-none text-red-500 focus:border-red-500 transition-colors py-0.5 pr-0" value={globalDiscount || ''} placeholder="0" onChange={(e) => setGlobalDiscount(parseFloat(e.target.value) || 0)} />
+                                        <input type="number" className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1 text-right outline-none text-red-500 focus:ring-1 ring-red-500/20" value={globalDiscount || ''} placeholder="0" onChange={(e) => setGlobalDiscount(parseFloat(e.target.value) || 0)} />
                                     </div>
                                 </div>
-                                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 mt-2">
-                                    <span className="font-bold text-slate-700 dark:text-slate-300">Grand Total</span>
-                                    <span className="font-bold text-xl text-slate-800 dark:text-white tracking-tight">₹{grandTotal.toFixed(2)}</span>
+                                <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800 mt-2">
+                                    <span className="font-bold text-slate-800 dark:text-slate-100">Grand Total</span>
+                                    <span className="font-bold text-2xl text-slate-900 dark:text-white tracking-tighter">₹{grandTotal.toFixed(2)}</span>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3 mt-auto">
-                                <button onClick={() => handleSave('draft')} disabled={loading} className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 transition-all shadow-sm">
-                                    Save Draft
+                            <div className="grid grid-cols-2 gap-3 mt-2">
+                                <button
+                                    onClick={() => handleSave('draft')}
+                                    disabled={loading}
+                                    className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all border-b-2 active:translate-y-0.5 active:border-b-0"
+                                >
+                                    Draft
                                 </button>
-                                <button onClick={() => handleSave('paid' as any)} disabled={loading} className="px-4 py-2.5 bg-slate-900 dark:bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-slate-800 dark:hover:bg-indigo-500 hover:shadow-lg hover:-translate-y-0.5 transition-all shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2">
-                                    {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <DollarSign className="h-3.5 w-3.5" />}
-                                    Collect & Print
+                                <button
+                                    onClick={() => handleSave('paid' as any)}
+                                    disabled={loading}
+                                    className="px-4 py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-500/20 flex items-center justify-center gap-2 transition-all border-b-2 border-indigo-800 active:translate-y-0.5 active:border-b-0"
+                                >
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
+                                    Collect
                                 </button>
                             </div>
                         </div>

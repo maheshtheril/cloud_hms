@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import { ArrowLeft } from "lucide-react"
-import { InvoiceEditor } from "@/components/billing/invoice-editor"
+import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 import { getBillableItems, getTaxConfiguration } from "@/app/actions/billing"
 import { auth } from "@/auth"
 import { notFound } from "next/navigation"
@@ -52,25 +51,11 @@ export default async function EditInvoicePage({
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6">
-            <div className="flex items-center gap-4">
-                <Link href={`/hms/billing/${invoice.id}`} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                    <ArrowLeft className="h-5 w-5 text-gray-600" />
-                </Link>
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Edit Invoice</h1>
-                    <p className="text-gray-500">
-                        {invoice.invoice_number}
-                    </p>
-                </div>
-            </div>
-
-            <InvoiceEditor
-                patients={JSON.parse(JSON.stringify(patients))}
-                billableItems={JSON.parse(JSON.stringify(billableItems))}
-                taxConfig={JSON.parse(JSON.stringify(taxConfig))}
-                initialInvoice={JSON.parse(JSON.stringify(invoice))}
-            />
-        </div>
+        <CompactInvoiceEditor
+            patients={JSON.parse(JSON.stringify(patients))}
+            billableItems={JSON.parse(JSON.stringify(billableItems))}
+            taxConfig={JSON.parse(JSON.stringify(taxConfig))}
+            initialInvoice={JSON.parse(JSON.stringify(invoice))}
+        />
     )
 }

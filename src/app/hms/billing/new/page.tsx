@@ -50,23 +50,13 @@ export default async function NewInvoicePage({
     const initialItems = items ? JSON.parse(decodeURIComponent(items)) : (medicines ? JSON.parse(decodeURIComponent(medicines)) : undefined);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-            {/* Modal Container - Max size constrained to viewport to avoid scroll */}
-            <div className="w-full max-w-5xl h-[85vh] max-h-[800px] flex flex-col relative z-50">
-                {/* Close Overlay (Click outside) */}
-                <Link href="/hms/billing" className="absolute -top-10 right-0 text-white/80 hover:text-white flex items-center gap-2 text-sm font-medium transition-colors">
-                    Close <ArrowLeft className="h-4 w-4" />
-                </Link>
-
-                <CompactInvoiceEditor
-                    patients={JSON.parse(JSON.stringify(patients))}
-                    billableItems={JSON.parse(JSON.stringify(billableItems))}
-                    taxConfig={JSON.parse(JSON.stringify(taxConfig))}
-                    initialPatientId={patientId}
-                    initialMedicines={initialItems}
-                    appointmentId={appointmentId}
-                />
-            </div>
-        </div>
+        <CompactInvoiceEditor
+            patients={JSON.parse(JSON.stringify(patients))}
+            billableItems={JSON.parse(JSON.stringify(billableItems))}
+            taxConfig={JSON.parse(JSON.stringify(taxConfig))}
+            initialPatientId={patientId}
+            initialMedicines={initialItems}
+            appointmentId={appointmentId}
+        />
     )
 }
