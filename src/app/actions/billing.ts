@@ -458,3 +458,16 @@ export async function updateInvoiceStatus(invoiceId: string, status: 'draft' | '
         return { error: `Failed to update status: ${error.message}` };
     }
 }
+
+export async function shareInvoiceWhatsapp(invoiceId: string, pdfBase64?: string) {
+    const session = await auth();
+    if (!session?.user?.tenantId) return { error: "Unauthorized" };
+
+    try {
+        const result = await NotificationService.sendInvoiceWhatsapp(invoiceId, session.user.tenantId, pdfBase64);
+        return result;
+    } catch (error: any) {
+        console.error("Manual WhatsApp Share Failed:", error);
+        return { error: error.message };
+    }
+}

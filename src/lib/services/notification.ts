@@ -1,18 +1,20 @@
 import { prisma } from "@/lib/prisma";
+import { generateInvoicePDFBase64 } from "@/lib/utils/pdf-generator";
 
 export class NotificationService {
     /**
      * Sends an invoice notification to the patient via WhatsApp Business API / Gateway.
      * Supports UltraMsg style WhatsApp Gateway by default.
      */
-    static async sendInvoiceWhatsapp(invoiceId: string, tenantId: string) {
+    static async sendInvoiceWhatsapp(invoiceId: string, tenantId: string, pdfBase64?: string) {
         try {
             // 1. Fetch Invoice & Patient Details
             const invoice = await prisma.hms_invoice.findUnique({
                 where: { id: invoiceId },
                 include: {
                     hms_patient: true,
-                    hms_invoice_lines: true
+                    hms_invoice_lines: true,
+                    hms_invoice_payments: true
                 }
             });
 
@@ -36,7 +38,18 @@ export class NotificationService {
                 return { success: false, error: 'Patient phone number missing' };
             }
 
-            // 3. Construct Message
+            // 3. Generate PDF if not provided (Auto-generate)
+            let finalPdfBase64 = pdfBase64;
+            if (!finalPdfBase64) {
+                try {
+                    console.log(`[NotificationService] Auto-generating PDF for ${invoice.invoice_number}`);
+                    finalPdfBase64 = await generateInvoicePDFBase64(invoice);
+                } catch (pdfErr) {
+                    console.error("[NotificationService] PDF Generation failed, falling back to text only", pdfErr);
+                }
+            }
+
+            // 4. Construct Message
             const patientName = `${invoice.hms_patient.first_name} ${invoice.hms_patient.last_name}`;
             const billLink = `https://cloud-hms.onrender.com/hms/billing/${invoice.id}`;
             const message = `*Invoice Received: ${invoice.invoice_number}*\n\n` +
@@ -47,7 +60,7 @@ export class NotificationService {
                 `You can view/print your digital receipt here:\n${billLink}\n\n` +
                 `Thank you for visiting us!`;
 
-            // 4. API Configuration
+            // 5. API Configuration
             const instanceId = process.env.WHATSAPP_INSTANCE_ID || 'instance_mock_123';
             const token = process.env.WHATSAPP_TOKEN || 'token_mock_123';
 
@@ -57,23 +70,31 @@ export class NotificationService {
             const isMock = !process.env.WHATSAPP_TOKEN || process.env.WHATSAPP_TOKEN.includes('mock');
 
             if (isMock) {
-                console.log(`[WhatsApp-Mock] To: ${phone}\n[WhatsApp-Mock] Message: ${message}`);
+                console.log(`[WhatsApp-Mock] To: ${phone}\n[WhatsApp-Mock] Message: ${message}${finalPdfBase64 ? '\n[WhatsApp-Mock] Attachment: [PDF DETECTED]' : ''}`);
                 return {
                     success: true,
                     message: `Workflow confirmed. WhatsApp simulated for ${phone}. Add WHATSAPP_TOKEN to .env to go live.`
                 };
             }
 
-            // 5. Send Real HTTP Request
-            const response = await fetch(`https://api.ultramsg.com/${instanceId}/messages/chat`, {
+            // 6. Send Real HTTP Request (Switch between Chat and Document)
+            const endpoint = finalPdfBase64 ? 'document' : 'chat';
+            const payload: any = {
+                token: token,
+                to: phone,
+                body: finalPdfBase64 ? finalPdfBase64 : message,
+                priority: 10
+            };
+
+            if (finalPdfBase64) {
+                payload.filename = `Invoice_${invoice.invoice_number}.pdf`;
+                payload.caption = message; // Keep message as caption for the document
+            }
+
+            const response = await fetch(`https://api.ultramsg.com/${instanceId}/messages/${endpoint}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    token: token,
-                    to: phone,
-                    body: message,
-                    priority: 10
-                })
+                body: JSON.stringify(payload)
             });
 
             const result = await response.json();
