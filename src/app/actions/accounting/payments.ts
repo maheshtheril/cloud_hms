@@ -119,7 +119,7 @@ export async function upsertPayment(data: {
                     await tx.payment_lines.create({
                         data: {
                             tenant_id: (session.user.tenantId || payment.tenant_id || '') as string,
-                            company_id: session.user.companyId,
+                            company_id: (session.user.companyId || payment.company_id || '') as string,
                             payment_id: payment.id,
                             invoice_id: alloc.invoiceId,
                             amount: allocAmount,
@@ -131,7 +131,7 @@ export async function upsertPayment(data: {
                         await tx.hms_invoice_payments.create({
                             data: {
                                 tenant_id: (session.user.tenantId || payment.tenant_id || '') as string,
-                                company_id: session.user.companyId,
+                                company_id: (session.user.companyId || payment.company_id || '') as string,
                                 invoice_id: alloc.invoiceId,
                                 amount: allocAmount,
                                 method: data.method as any,
