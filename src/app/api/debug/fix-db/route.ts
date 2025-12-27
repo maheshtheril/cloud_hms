@@ -1,21 +1,11 @@
-
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
-let prisma: PrismaClient;
-
-if (process.env.NODE_ENV === 'production') {
-    prisma = new PrismaClient();
-} else {
-    if (!(global as any).prisma) {
-        (global as any).prisma = new PrismaClient();
-    }
-    prisma = (global as any).prisma;
-}
-
 export async function GET() {
+    // Instantiate ONLY inside the handler to prevent build-time initialization errors
+    const prisma = new PrismaClient();
     try {
         console.log("Attempting to drop broken triggers via API...");
 
