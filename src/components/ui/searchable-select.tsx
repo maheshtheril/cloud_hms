@@ -63,6 +63,7 @@ export function SearchableSelect({
     const [loading, setLoading] = React.useState(false);
     const [creating, setCreating] = React.useState(false);
     const [selectedOption, setSelectedOption] = React.useState<Option | null>(null);
+    const [activeIndex, setActiveIndex] = React.useState(0);
 
     React.useEffect(() => {
         // Only block updates if user is actively searching (query exists)
@@ -74,8 +75,14 @@ export function SearchableSelect({
         });
     }, [defaultOptions, open, query]);
 
+    // Reset active index when options change
+    React.useEffect(() => {
+        setActiveIndex(0);
+    }, [options]);
+
     const containerRef = React.useRef<HTMLDivElement>(null);
     const inputRef = React.useRef<HTMLInputElement>(null);
+    const listRef = React.useRef<HTMLUListElement>(null);
 
     React.useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -86,6 +93,16 @@ export function SearchableSelect({
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Scroll active item into view
+    React.useEffect(() => {
+        if (open && listRef.current) {
+            const activeItem = listRef.current.children[activeIndex] as HTMLElement;
+            if (activeItem) {
+                activeItem.scrollIntoView({ block: 'nearest' });
+            }
+        }
+    }, [activeIndex, open]);
 
     React.useEffect(() => {
         if (!value) {
@@ -139,6 +156,45 @@ export function SearchableSelect({
             console.error(err);
         } finally {
             setCreating(false);
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (!open) {
+            if (e.key === 'ArrowDown' || e.key === 'Enter') {
+                setOpen(true);
+                performSearch(query);
+            }
+            return;
+        }
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setActiveIndex(prev => (prev < options.length - 1 ? prev + 1 : prev));
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setActiveIndex(prev => (prev > 0 ? prev - 1 : prev));
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (options[activeIndex]) {
+                    handleSelect(options[activeIndex]);
+                } else if (onCreate && query && options.length === 0) {
+                    handleCreate();
+                }
+                break;
+            case 'Escape':
+                setOpen(false);
+                break;
+            case 'Tab':
+                if (options[activeIndex]) {
+                    // Optionally select on tab, or just let default behavior happen (blur)
+                    // handleSelect(options[activeIndex]);
+                }
+                setOpen(false);
+                break;
         }
     };
 
@@ -200,6 +256,7 @@ export function SearchableSelect({
                             placeholder={selectedOption ? selectedOption.label : placeholder}
                             value={query}
                             onChange={handleInputChange}
+                            onKeyDown={handleKeyDown}
                             onFocus={() => {
                                 if (!disabled) {
                                     setOpen(true);
@@ -207,6 +264,7 @@ export function SearchableSelect({
                                 }
                             }}
                             disabled={disabled}
+                            autoComplete="off"
                         />
                     )}
 
@@ -251,16 +309,18 @@ export function SearchableSelect({
                     )}
 
                     {!loading && options.length > 0 && (
-                        <ul className="py-1">
-                            {options.map((option) => (
+                        <ul className="py-1" ref={listRef}>
+                            {options.map((option, index) => (
                                 <li
                                     key={option.id}
                                     onClick={() => handleSelect(option)}
                                     className={`
                                         relative cursor-pointer select-none py-2.5 pl-3 pr-9 
+                                        ${index === activeIndex ? (isDark ? 'bg-white/10' : 'bg-indigo-50 dark:bg-white/10') : ''}
                                         ${isDark ? 'text-white hover:bg-white/10' : 'text-gray-900 dark:text-neutral-200 hover:bg-indigo-50 dark:hover:bg-white/5'}
                                         transition-colors flex flex-col
                                     `}
+                                    onMouseEnter={() => setActiveIndex(index)}
                                 >
                                     <span className="block truncate font-medium">{option.label}</span>
                                     {option.subLabel && (
