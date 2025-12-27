@@ -18,7 +18,60 @@ export async function POST(request: NextRequest) {
 
         // Create prescription and update appointment status in a transaction
         const prescription = await prisma.$transaction(async (tx) => {
-            // If this is linked to an appointment, check if one already exists and delete it to "update"
+            const userCompanyId = (session.user as any).companyId;
+
+            // 1. Resolve medicine IDs (handle custom medicines)
+            const resolvedMedicines = [];
+            for (const med of medicines) {
+                let mId = med.id || med.medicineId;
+
+                // If ID is missing, try to find by name or create a new product
+                if (!mId || mId === '' || mId === 'undefined') {
+                    if (!med.name) continue; // Skip if no name
+
+                    // Ensure we have a company_id for the product
+                    let targetCompanyId = userCompanyId;
+                    if (!targetCompanyId) {
+                        const firstCompany = await tx.company.findFirst({
+                            where: { tenant_id: session.user.tenantId },
+                            select: { id: true }
+                        });
+                        targetCompanyId = firstCompany?.id;
+                    }
+
+                    if (!targetCompanyId) {
+                        throw new Error(`Cannot create product "${med.name}" because no company is associated with this tenant.`);
+                    }
+
+                    const existingProduct = await tx.hms_product.findFirst({
+                        where: {
+                            name: { equals: med.name, mode: 'insensitive' },
+                            tenant_id: session.user.tenantId
+                        }
+                    });
+
+                    if (existingProduct) {
+                        mId = existingProduct.id;
+                    } else {
+                        const newProduct = await tx.hms_product.create({
+                            data: {
+                                tenant_id: session.user.tenantId,
+                                company_id: targetCompanyId,
+                                sku: `MED-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                                name: med.name,
+                                is_active: true,
+                                is_stockable: true,
+                                price: 0,
+                                uom: 'Unit'
+                            }
+                        });
+                        mId = newProduct.id;
+                    }
+                }
+                resolvedMedicines.push({ ...med, resolvedId: mId });
+            }
+
+            // 2. Clear existing prescription for this appointment if any
             if (appointmentId) {
                 const existing = await (tx.prescription as any).findFirst({
                     where: { appointment_id: appointmentId, tenant_id: session.user.tenantId }
@@ -28,6 +81,7 @@ export async function POST(request: NextRequest) {
                 }
             }
 
+            // 3. Create new prescription
             const pr = await (tx.prescription as any).create({
                 data: {
                     tenant_id: session.user.tenantId,
@@ -39,10 +93,10 @@ export async function POST(request: NextRequest) {
                     examination: examination || '',
                     plan: plan || '',
                     prescription_items: {
-                        create: medicines.map((med: any) => {
+                        create: resolvedMedicines.map((med: any) => {
                             const dosageParts = med.dosage.split('-').map((n: string) => parseInt(n) || 0)
                             return {
-                                medicine_id: med.id || med.medicineId,
+                                medicine_id: med.resolvedId,
                                 morning: dosageParts[0] || 0,
                                 afternoon: dosageParts[1] || 0,
                                 evening: dosageParts[2] || 0,

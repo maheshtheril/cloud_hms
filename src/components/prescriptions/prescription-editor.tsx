@@ -57,53 +57,30 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     })
     const [showConverted, setShowConverted] = useState(false)
 
-    // Quick Templates
-    const templates = [
-        { name: 'Common Cold', icon: <Thermometer className="h-3 w-3" />, meds: [{ name: 'Paracetamol 650mg', dosage: '1-0-1', days: '3', timing: 'After Food' }] },
-        {
-            name: 'Hypertension', icon: <Heart className="h-3 w-3" />, meds: [
-                { name: 'Amlodipine 5mg', dosage: '1-0-0', days: '30', timing: 'Empty Stomach' },
-                { name: 'Telmisartan 40mg', dosage: '0-0-1', days: '30', timing: 'After Food' }
-            ]
-        },
-        {
-            name: 'Type 2 Diabetes', icon: <ActivityIcon className="h-3 w-3" />, meds: [
-                { name: 'Metformin 500mg', dosage: '1-0-1', days: '30', timing: 'After Food' },
-                { name: 'Glimepiride 1mg', dosage: '1-0-0', days: '30', timing: 'Before Food' }
-            ]
-        },
-        {
-            name: 'UTI', icon: <ActivityIcon className="h-3 w-3" />, meds: [
-                { name: 'Nitrofurantoin 100mg', dosage: '1-0-1', days: '5', timing: 'After Food' },
-                { name: 'Phenazopyridine 200mg', dosage: '1-1-1', days: '2', timing: 'After Food' }
-            ]
-        },
-        {
-            name: 'Gastroenteritis', icon: <ActivityIcon className="h-3 w-3" />, meds: [
-                { name: 'ORS Sachet', dosage: 'SOS', days: '3', timing: 'With Food' },
-                { name: 'Ofloxacin & Ornidazole', dosage: '1-0-1', days: '5', timing: 'After Food' },
-                { name: 'Pantoprazole 40mg', dosage: '1-0-0', days: '5', timing: 'Before Food' }
-            ]
-        },
-        {
-            name: 'Lower Back Pain', icon: <ActivityIcon className="h-3 w-3" />, meds: [
-                { name: 'Naproxen 500mg', dosage: '1-0-1', days: '5', timing: 'After Food' },
-                { name: 'Cyclobenzaprine 5mg', dosage: '0-0-1', days: '5', timing: 'After Food' }
-            ]
-        },
-        {
-            name: 'Migraine', icon: <Brain className="h-3 w-3" />, meds: [
-                { name: 'Sumatriptan 50mg', dosage: 'SOS', days: '3', timing: 'After Food' },
-                { name: 'Naproxen 500mg', dosage: '1-0-1', days: '3', timing: 'After Food' }
-            ]
-        },
-        {
-            name: 'Acute Pharyngitis', icon: <ActivityIcon className="h-3 w-3" />, meds: [
-                { name: 'Amoxicillin 500mg', dosage: '1-1-1', days: '7', timing: 'After Food' },
-                { name: 'Gargle Solution', dosage: '1-1-1', days: '7', timing: 'Anytime' }
-            ]
-        }
-    ]
+    // Dynamic Masters from Database
+    const [dbTemplates, setDbTemplates] = useState<any[]>([])
+    const [loadingTemplates, setLoadingTemplates] = useState(true)
+
+    // Helper to get icon for a template
+    const getTemplateIcon = (name: string) => {
+        const lower = name.toLowerCase()
+        if (lower.includes('fever') || lower.includes('cold')) return <Thermometer className="h-3 w-3" />
+        if (lower.includes('heart') || lower.includes('tension')) return <Heart className="h-3 w-3" />
+        if (lower.includes('brain') || lower.includes('migraine')) return <Brain className="h-3 w-3" />
+        if (lower.includes('diabetes') || lower.includes('sugar')) return <ActivityIcon className="h-3 w-3" />
+        return <Zap className="h-3 w-3" />
+    }
+
+    // Fetch master templates
+    useEffect(() => {
+        fetch('/api/prescriptions/templates')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) setDbTemplates(data.templates)
+            })
+            .catch(err => console.error('Error fetching templates:', err))
+            .finally(() => setLoadingTemplates(false))
+    }, [])
 
     // Fetch patient data
     useEffect(() => {
@@ -240,13 +217,47 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     }
 
     const applyTemplate = (template: any) => {
-        setSelectedMedicines(template.meds.map((m: any) => ({
-            id: '',
+        // Handle both older format and DB format
+        const templateMeds = Array.isArray(template.medicines) ? template.medicines : template.meds;
+
+        setSelectedMedicines(templateMeds.map((m: any) => ({
+            id: m.id || m.medicineId || '',
             name: m.name,
             dosage: m.dosage,
-            days: m.days,
-            timing: 'After Food'
+            days: m.days || 5,
+            timing: m.timing || 'After Food'
         })))
+    }
+
+    const saveCurrentAsTemplate = async () => {
+        if (selectedMedicines.length === 0) {
+            alert('❌ Add at least one medicine to create a master template')
+            return
+        }
+
+        const name = prompt("Enter Master Template Name (e.g., 'Hypertension Protocol'):")
+        if (!name) return;
+
+        try {
+            const res = await fetch('/api/prescriptions/templates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    medicines: selectedMedicines
+                })
+            })
+            const data = await res.json()
+            if (data.success) {
+                alert('✅ Saved to Master Protocols!')
+                setDbTemplates(prev => [...prev, data.template])
+            } else {
+                alert('❌ Failed: ' + data.error)
+            }
+        } catch (err) {
+            console.error(err)
+            alert('❌ Connection error')
+        }
     }
 
     const openMedicineModal = (med: any, editIdx: number | null = null) => {
@@ -378,7 +389,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                     router.push('/hms/patients')
                 }
             } else {
-                alert('❌ Failed to save: ' + (data.error || 'Unknown error'))
+                alert(`❌ Failed to save: ${data.error || 'Unknown error'}\n${data.details ? `Details: ${data.details}` : ''}`)
             }
         } catch (error) {
             console.error('Save error:', error)
@@ -457,9 +468,9 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                             {loadingPrevious ? 'Loading...' : 'Copy Last Rx'}
                         </Button>
                         <div className="h-10 w-px bg-slate-100 mx-2" />
-                        {templates.map((template, idx) => (
+                        {dbTemplates.map((template, idx) => (
                             <motion.div
-                                key={idx}
+                                key={template.id || idx}
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                             >
@@ -469,11 +480,14 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                                     onClick={() => applyTemplate(template)}
                                     className="bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100 font-bold px-4 h-10 rounded-xl hover:border-indigo-300 transition-all flex items-center gap-2"
                                 >
-                                    {template.icon || <Zap className="h-3 w-3 fill-indigo-500 text-indigo-500" />}
+                                    {getTemplateIcon(template.name)}
                                     {template.name}
                                 </Button>
                             </motion.div>
                         ))}
+                        {dbTemplates.length === 0 && !loadingTemplates && (
+                            <span className="text-slate-400 text-sm font-medium italic py-2">No master protocols yet. Create one below.</span>
+                        )}
                     </div>
 
                     {/* Handwriting Sections */}
@@ -584,6 +598,17 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+
+                            <div className="flex gap-3 pt-4 border-t border-slate-50">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={saveCurrentAsTemplate}
+                                    className="flex-1 border-indigo-100 text-indigo-600 hover:bg-indigo-50 font-bold rounded-xl shadow-sm h-12"
+                                >
+                                    <Save className="mr-2 h-4 w-4" /> Save as Master Protocol
+                                </Button>
                             </div>
                         </div>
                     </div>

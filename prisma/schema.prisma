@@ -4149,6 +4149,18 @@ model prescription_items {
   @@index([medicine_id], map: "idx_prescription_items_medicine")
 }
 
+model hms_prescription_template {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id   String   @db.Uuid
+  name        String
+  description String?
+  medicines   Json     // Stores the array of medicines with dosages
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([tenant_id], map: "idx_presc_template_tenant")
+}
+
 model crm_contact_roles {
   id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id   String    @db.Uuid
