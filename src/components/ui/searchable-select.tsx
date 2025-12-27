@@ -278,7 +278,7 @@ export function SearchableSelect({
 
             {/* Dropdown with Dark Mode Support */}
             {open && !disabled && (
-                <div className={`absolute z-[9999] mt-1 max-h-60 w-full overflow-auto rounded-lg py-1 text-base shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm animate-in fade-in zoom-in-95 duration-100 ${isDark ? 'bg-neutral-950 border border-white/20' : 'bg-white dark:bg-neutral-950 border border-gray-200 dark:border-neutral-800'}`}>
+                <div className={`absolute z-[9999] mt-1 max-h-60 w-full overflow-auto rounded-lg py-1 text-base shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm animate-in fade-in zoom-in-95 duration-100 ${isDark ? 'bg-neutral-800 border border-neutral-700 text-white' : 'bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800'}`}>
                     {loading && (
 
                         <div className="px-4 py-3 text-center text-gray-500 dark:text-neutral-500 flex items-center justify-center gap-2">
