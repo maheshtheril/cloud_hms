@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { upsertPayment } from '@/app/actions/accounting/payments';
-import { searchSuppliers } from '@/app/actions/accounting/helpers';
-import { ArrowLeft, Save, Loader2, Calendar, CreditCard, Building2 } from 'lucide-react';
+import { searchSuppliers, getOutstandingPurchaseBills } from '@/app/actions/accounting/helpers';
+import { ArrowLeft, Save, Loader2, Calendar, CreditCard, Building2, FileText, ArrowRight } from 'lucide-react';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { useToast } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/toaster';
@@ -22,6 +22,39 @@ export default function NewPaymentPage() {
     const [method, setMethod] = useState('bank_transfer');
     const [reference, setReference] = useState('');
     const [memo, setMemo] = useState('');
+
+    // Allocation State
+    const [bills, setBills] = useState<any[]>([]);
+    const [allocations, setAllocations] = useState<Record<string, number>>({});
+    const [isFetchingBills, setIsFetchingBills] = useState(false);
+
+    // Fetch bills when vendor changes
+    const handleVendorChange = async (id: string | null, opt?: any) => {
+        setPartnerId(id);
+        setPartnerName(opt?.label || '');
+        if (id) {
+            setIsFetchingBills(true);
+            const res = await getOutstandingPurchaseBills(id);
+            if (res.success) {
+                setBills(res.data || []);
+                setAllocations({});
+            }
+            setIsFetchingBills(false);
+        } else {
+            setBills([]);
+            setAllocations({});
+        }
+    };
+
+    const handleAllocationChange = (billId: string, val: string) => {
+        const num = Number(val);
+        const newAllocations = { ...allocations, [billId]: num };
+        setAllocations(newAllocations);
+
+        // Update total amount based on allocations
+        const total = Object.values(newAllocations).reduce((sum, a) => sum + a, 0);
+        if (total > 0) setAmount(total.toString());
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -42,7 +75,10 @@ export default function NewPaymentPage() {
             method,
             reference,
             date: new Date(date),
-            memo
+            memo,
+            allocations: Object.entries(allocations)
+                .filter(([_, amt]) => amt > 0)
+                .map(([id, amt]) => ({ invoiceId: id, amount: amt }))
         });
 
         if (res.error) {
@@ -87,7 +123,7 @@ export default function NewPaymentPage() {
                                 </label>
                                 <SearchableSelect
                                     value={partnerId}
-                                    onChange={(id, opt) => { setPartnerId(id); setPartnerName(opt?.label || ''); }}
+                                    onChange={handleVendorChange}
                                     onSearch={async (q) => searchSuppliers(q)}
                                     placeholder="Select Vendor..."
                                     className="w-full bg-neutral-950 border border-white/10 rounded-lg text-sm"
@@ -114,6 +150,68 @@ export default function NewPaymentPage() {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Outstanding Bills Section */}
+                        {partnerId && (bills.length > 0 || isFetchingBills) && (
+                            <div className="space-y-4 border-t border-white/5 pt-8">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider flex items-center gap-2">
+                                        <FileText className="h-3 w-3 text-amber-500" /> Outstanding Bills
+                                    </label>
+                                    {bills.length > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const firstId = bills[0].id;
+                                                const remaining = Number(amount) || 0;
+                                                if (remaining > 0) handleAllocationChange(firstId, remaining.toString());
+                                            }}
+                                            className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors uppercase tracking-widest"
+                                        >
+                                            Auto-Allocate (FIFO)
+                                        </button>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {isFetchingBills ? (
+                                        <div className="md:col-span-2 py-8 flex flex-col items-center justify-center gap-2 text-neutral-600">
+                                            <Loader2 className="h-5 w-5 animate-spin" />
+                                            <span className="text-[10px] uppercase font-bold tracking-widest">Scanning Supplier Ledger...</span>
+                                        </div>
+                                    ) : (
+                                        bills.map((bill) => (
+                                            <div key={bill.id} className="group relative bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 rounded-xl p-4 transition-all flex items-center justify-between">
+                                                <div className="flex flex-col">
+                                                    <span className="text-xs font-bold text-white tracking-tight">{bill.number}</span>
+                                                    <span className="text-[10px] text-neutral-500 font-medium">Outstanding: ₹{bill.outstanding.toLocaleString()}</span>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="relative">
+                                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-rose-500/50">₹</span>
+                                                        <input
+                                                            type="number"
+                                                            value={allocations[bill.id] || ''}
+                                                            placeholder="0"
+                                                            onChange={(e) => handleAllocationChange(bill.id, e.target.value)}
+                                                            className="w-28 pl-7 pr-3 py-2 bg-black/40 border border-white/5 rounded-lg text-sm text-white focus:outline-none focus:border-rose-500/50 transition-all text-right font-mono"
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleAllocationChange(bill.id, bill.outstanding.toString())}
+                                                        className="h-9 w-9 flex items-center justify-center rounded-lg bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white transition-all border border-rose-500/20"
+                                                        title="Pay Full"
+                                                    >
+                                                        <ArrowRight className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         <div className="h-px bg-white/5 w-full"></div>
 

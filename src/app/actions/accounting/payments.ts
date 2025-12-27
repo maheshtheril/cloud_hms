@@ -66,6 +66,7 @@ export async function upsertPayment(data: {
     date: Date; // Capture date in metadata
     memo?: string;
     posted?: boolean;
+    allocations?: { invoiceId: string; amount: number }[];
 }) {
     const session = await auth();
     if (!session?.user?.companyId) return { error: "Unauthorized" };
@@ -78,44 +79,120 @@ export async function upsertPayment(data: {
             amount: data.amount,
             method: data.method,
             reference: data.reference,
-            // Store type and date in metadata
             metadata: {
                 type: data.type,
                 date: data.date.toISOString(),
-                memo: data.memo
+                memo: data.memo,
+                allocations: data.allocations // Store original intent in metadata too
             },
-            created_at: data.date // also match created_at for sorting
+            created_at: data.date
         };
 
-        if (data.id) {
-            const payment = await prisma.payments.update({
-                where: { id: data.id },
-                data: payload
-            });
-            revalidatePath(data.type === 'inbound' ? '/hms/accounting/receipts' : '/hms/accounting/payments');
-            return { success: true, data: payment };
-        } else {
-            // Generate number
-            const prefix = data.type === 'inbound' ? 'RCP' : 'PAY';
-            const num = `${prefix}-${Date.now().toString().slice(-6)}`;
+        const result = await prisma.$transaction(async (tx) => {
+            let payment;
+            if (data.id) {
+                payment = await tx.payments.update({
+                    where: { id: data.id },
+                    data: payload
+                });
+            } else {
+                const prefix = data.type === 'inbound' ? 'RCP' : 'PAY';
+                const num = `${prefix}-${Date.now().toString().slice(-6)}`;
 
-            const payment = await prisma.payments.create({
-                data: {
-                    ...payload,
-                    payment_number: num,
-                    payment_number_normalized: num,
-                    posted: data.posted ?? true // Default to TRUE (Posted) for better UX
-                }
-            });
-
-            // Post to Accounting if marked as posted
-            if (payment.posted) {
-                await AccountingService.postPaymentEntry(payment.id, session.user.id);
+                payment = await tx.payments.create({
+                    data: {
+                        ...payload,
+                        payment_number: num,
+                        payment_number_normalized: num,
+                        posted: data.posted ?? true
+                    }
+                });
             }
 
-            revalidatePath(data.type === 'inbound' ? '/hms/accounting/receipts' : '/hms/accounting/payments');
-            return { success: true, data: payment };
+            // Handle Allocation Logic
+            if (data.allocations && data.allocations.length > 0) {
+                for (const alloc of data.allocations) {
+                    const allocAmount = Number(alloc.amount);
+                    if (allocAmount <= 0) continue;
+
+                    // 1. Create Payment Line
+                    await tx.payment_lines.create({
+                        data: {
+                            tenant_id: (session.user.tenantId || payment.tenant_id || '') as string,
+                            company_id: session.user.companyId,
+                            payment_id: payment.id,
+                            invoice_id: alloc.invoiceId,
+                            amount: allocAmount,
+                        }
+                    });
+
+                    if (data.type === 'inbound') {
+                        // RECEIPT: Update hms_invoice
+                        await tx.hms_invoice_payments.create({
+                            data: {
+                                tenant_id: (session.user.tenantId || payment.tenant_id || '') as string,
+                                company_id: session.user.companyId,
+                                invoice_id: alloc.invoiceId,
+                                amount: allocAmount,
+                                method: data.method as any,
+                                payment_reference: payment.payment_number,
+                                paid_at: data.date
+                            }
+                        });
+
+                        await tx.hms_invoice.update({
+                            where: { id: alloc.invoiceId },
+                            data: {
+                                total_paid: { increment: allocAmount },
+                                outstanding: { decrement: allocAmount }
+                            }
+                        });
+
+                        const updatedInvoice = await tx.hms_invoice.findUnique({
+                            where: { id: alloc.invoiceId },
+                            select: { outstanding: true }
+                        });
+
+                        if (updatedInvoice && Number(updatedInvoice.outstanding || 0) <= 0) {
+                            await tx.hms_invoice.update({
+                                where: { id: alloc.invoiceId },
+                                data: { status: 'paid' }
+                            });
+                        }
+                    } else {
+                        // VENDOR PAYMENT: Update hms_purchase_invoice
+                        await tx.hms_purchase_invoice.update({
+                            where: { id: alloc.invoiceId },
+                            data: {
+                                paid_amount: { increment: allocAmount }
+                            }
+                        });
+
+                        const updatedBill = await tx.hms_purchase_invoice.findUnique({
+                            where: { id: alloc.invoiceId },
+                            select: { total_amount: true, paid_amount: true }
+                        });
+
+                        if (updatedBill && Number(updatedBill.paid_amount || 0) >= Number(updatedBill.total_amount || 0)) {
+                            await tx.hms_purchase_invoice.update({
+                                where: { id: alloc.invoiceId },
+                                data: { status: 'closed' } // Or 'paid' depending on standard
+                            });
+                        }
+                    }
+                }
+            }
+
+            return payment;
+        });
+
+        // Post to Accounting if marked as posted
+        if (result.posted) {
+            await AccountingService.postPaymentEntry(result.id, session.user.id);
         }
+
+        revalidatePath(data.type === 'inbound' ? '/hms/accounting/receipts' : '/hms/accounting/payments');
+        return { success: true, data: result };
 
     } catch (error: any) {
         console.error("Error saving payment:", error);

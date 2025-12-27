@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { upsertPayment } from '@/app/actions/accounting/payments';
-import { searchPatients } from '@/app/actions/accounting/helpers';
+import { searchPatients, getOutstandingInvoices } from '@/app/actions/accounting/helpers';
 import {
     Save, Loader2, Calendar, CreditCard, User,
     Receipt, FileText, CheckCircle2, AlertCircle, X, ArrowRight
@@ -33,6 +33,39 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
     const [reference, setReference] = useState('');
     const [memo, setMemo] = useState('');
 
+    // Allocation State
+    const [invoices, setInvoices] = useState<any[]>([]);
+    const [allocations, setAllocations] = useState<Record<string, number>>({});
+    const [isFetchingInvoices, setIsFetchingInvoices] = useState(false);
+
+    // Fetch invoices when partner changes
+    const handlePartnerChange = async (id: string | null) => {
+        setPartnerId(id);
+        if (id) {
+            setIsFetchingInvoices(true);
+            const res = await getOutstandingInvoices(id);
+            if (res.success) {
+                setInvoices(res.data || []);
+                // Reset allocations
+                setAllocations({});
+            }
+            setIsFetchingInvoices(false);
+        } else {
+            setInvoices([]);
+            setAllocations({});
+        }
+    };
+
+    const handleAllocationChange = (invoiceId: string, val: string) => {
+        const num = Number(val);
+        const newAllocations = { ...allocations, [invoiceId]: num };
+        setAllocations(newAllocations);
+
+        // Update total amount based on allocations
+        const total = Object.values(newAllocations).reduce((sum, a) => sum + a, 0);
+        if (total > 0) setAmount(total.toString());
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!partnerId) {
@@ -53,7 +86,10 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
             reference,
             date: new Date(date),
             memo,
-            posted: true
+            posted: true,
+            allocations: Object.entries(allocations)
+                .filter(([_, amt]) => amt > 0)
+                .map(([id, amt]) => ({ invoiceId: id, amount: amt }))
         });
 
         if (res.error) {
@@ -119,13 +155,82 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
                                 </label>
                                 <SearchableSelect
                                     value={partnerId}
-                                    onChange={(id) => setPartnerId(id)}
+                                    onChange={handlePartnerChange}
                                     onSearch={async (q) => searchPatients(q)}
                                     placeholder="Search Patient..."
                                     className="w-full bg-white/5 border-white/5 rounded-xl text-base hover:border-white/10 focus-within:border-emerald-500/50 transition-all shadow-2xl"
                                     isDark
                                 />
                             </motion.div>
+
+                            {/* Outstanding Invoices Section */}
+                            <AnimatePresence>
+                                {partnerId && (invoices.length > 0 || isFetchingInvoices) && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="space-y-4 overflow-hidden"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                <FileText className="h-3 w-3 text-amber-500" /> Outstanding Bills
+                                            </label>
+                                            {invoices.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const firstId = invoices[0].id;
+                                                        const remaining = Number(amount) || 0;
+                                                        if (remaining > 0) handleAllocationChange(firstId, remaining.toString());
+                                                    }}
+                                                    className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors uppercase tracking-widest"
+                                                >
+                                                    Auto-Allocate (FIFO)
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        <div className="space-y-2 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
+                                            {isFetchingInvoices ? (
+                                                <div className="py-8 flex flex-col items-center justify-center gap-2 text-neutral-600">
+                                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                                    <span className="text-[10px] uppercase font-bold tracking-widest">Scanning Ledgers...</span>
+                                                </div>
+                                            ) : (
+                                                invoices.map((inv) => (
+                                                    <div key={inv.id} className="group relative bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 rounded-xl p-4 transition-all flex items-center justify-between">
+                                                        <div className="flex flex-col">
+                                                            <span className="text-xs font-bold text-white tracking-tight">{inv.number}</span>
+                                                            <span className="text-[10px] text-neutral-500 font-medium">Outstanding: ₹{inv.outstanding.toLocaleString()}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="relative">
+                                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-emerald-500/50">₹</span>
+                                                                <input
+                                                                    type="number"
+                                                                    value={allocations[inv.id] || ''}
+                                                                    placeholder="0"
+                                                                    onChange={(e) => handleAllocationChange(inv.id, e.target.value)}
+                                                                    className="w-28 pl-7 pr-3 py-2 bg-black/40 border border-white/5 rounded-lg text-sm text-white focus:outline-none focus:border-emerald-500/50 transition-all text-right font-mono"
+                                                                />
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleAllocationChange(inv.id, inv.outstanding.toString())}
+                                                                className="h-9 w-9 flex items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all border border-emerald-500/20"
+                                                                title="Pay Full"
+                                                            >
+                                                                <ArrowRight className="h-4 w-4" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
                             {/* Amount - HERO */}
                             <motion.div

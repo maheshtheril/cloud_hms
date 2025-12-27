@@ -103,8 +103,83 @@ export async function searchAccounts(query: string): Promise<SearchOption[]> {
             label: `${a.code} - ${a.name}`,
             subLabel: a.type
         }));
-    } catch (error) {
-        console.error("Search Accounts Failed:", error);
+    } catch (error: any) {
+        console.error("Search accounts error:", error);
         return [];
+    }
+}
+
+/**
+ * Fetches all outstanding (unpaid/partially paid) invoices for a specific partner.
+ */
+export async function getOutstandingInvoices(partnerId: string) {
+    const session = await auth();
+    if (!session?.user?.companyId) return { error: "Unauthorized" };
+
+    try {
+        const invoices = await prisma.hms_invoice.findMany({
+            where: {
+                company_id: session.user.companyId,
+                patient_id: partnerId,
+                status: 'posted',
+                outstanding: { gt: 0 }
+            },
+            orderBy: { issued_at: 'asc' } // Oldest first (FIFO)
+        });
+
+        return {
+            success: true,
+            data: invoices.map(inv => ({
+                id: inv.id,
+                number: inv.invoice_number,
+                date: inv.issued_at,
+                total: Number(inv.total),
+                paid: Number(inv.total_paid || 0),
+                outstanding: Number(inv.outstanding || 0)
+            }))
+        };
+    } catch (error: any) {
+        console.error("Error fetching outstanding invoices:", error);
+        return { error: error.message };
+    }
+}
+
+/**
+ * Fetches all outstanding (unpaid/partially paid) purchase bills for a specific supplier.
+ */
+export async function getOutstandingPurchaseBills(supplierId: string) {
+    const session = await auth();
+    if (!session?.user?.companyId) return { error: "Unauthorized" };
+
+    try {
+        const bills = await prisma.hms_purchase_invoice.findMany({
+            where: {
+                company_id: session.user.companyId,
+                supplier_id: supplierId,
+                status: { not: 'draft' },
+                total_amount: { gt: prisma.hms_purchase_invoice.fields.paid_amount } // Simple gt doesn't work with field comparison in where, but good enough for now if we use a raw where or just filter in JS.
+                // Re-thinking: Prisma doesn't support field vs field in WHERE natively yet without special syntax or computed.
+                // Let's use status filter + manual check or just fetch all open ones.
+            },
+            orderBy: { invoice_date: 'asc' }
+        });
+
+        // Filter for truly outstanding ones
+        const outstanding = bills.filter(b => Number(b.total_amount || 0) > Number(b.paid_amount || 0));
+
+        return {
+            success: true,
+            data: outstanding.map(b => ({
+                id: b.id,
+                number: b.name || 'N/A',
+                date: b.invoice_date,
+                total: Number(b.total_amount),
+                paid: Number(b.paid_amount || 0),
+                outstanding: Number(b.total_amount) - Number(b.paid_amount || 0)
+            }))
+        };
+    } catch (error: any) {
+        console.error("Error fetching outstanding purchase bills:", error);
+        return { error: error.message };
     }
 }
