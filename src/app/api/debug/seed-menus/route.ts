@@ -2,9 +2,12 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+import { revalidatePath } from 'next/cache';
+
 export async function GET() {
     try {
         console.log('Seeding HMS menu items via API...')
+        revalidatePath('/', 'layout');
 
         // 1. Clean up (safely handling FKs)
         // Find IDs first
