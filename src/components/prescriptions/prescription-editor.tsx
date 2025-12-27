@@ -18,6 +18,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     const appointmentId = searchParams.get('appointmentId') // For billing integration
 
     const [patientInfo, setPatientInfo] = useState<any>(null)
+    const [resolvedPatientId, setResolvedPatientId] = useState<string | null>(patientId)
     const [medicines, setMedicines] = useState<any[]>([])
     const [selectedMedicines, setSelectedMedicines] = useState<any[]>([])
 
@@ -101,6 +102,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             .then(res => res.json())
             .then(data => {
                 if (data.appointment?.patient_id) {
+                    setResolvedPatientId(data.appointment.patient_id);
                     fetch(`/api/patients/${data.appointment.patient_id}`)
                         .then(res => res.json())
                         .then(pData => {
@@ -132,6 +134,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
 
                     // If we don't have patientId from URL, get it from prescription/appointment
                     if (!patientId && pr.patient_id) {
+                        setResolvedPatientId(pr.patient_id);
                         fetch(`/api/patients/${pr.patient_id}`)
                             .then(res => res.json())
                             .then(pData => {
@@ -410,7 +413,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    patientId,
+                    patientId: resolvedPatientId,
                     appointmentId,
                     vitals: convertedText.vitals || '',
                     diagnosis: convertedText.diagnosis || '',
@@ -427,7 +430,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                 if (redirectToBill && data.medicines && data.medicines.length > 0) {
                     const medicineParams = encodeURIComponent(JSON.stringify(data.medicines))
                     const appointmentParam = appointmentId ? `&appointmentId=${appointmentId}` : ''
-                    router.push(`/hms/billing/new?patientId=${patientId}&medicines=${medicineParams}${appointmentParam}`)
+                    router.push(`/hms/billing/new?patientId=${resolvedPatientId}&medicines=${medicineParams}${appointmentParam}`)
                 } else if (onClose) {
                     onClose()
                 } else {
