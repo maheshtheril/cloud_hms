@@ -513,20 +513,20 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
 
                                                                 return {
                                                                     productId: pId || "",
-                                                                    productName: item.productName,
+                                                                    productName: item.productName || "Unknown Product",
                                                                     receivedQty: qty,
                                                                     unitPrice: price,
-                                                                    batch: item.batch,
-                                                                    expiry: item.expiry,
-                                                                    mrp: Number(item.mrp),
+                                                                    batch: item.batch || "",
+                                                                    expiry: item.expiry || "",
+                                                                    mrp: Number(item.mrp) || 0,
                                                                     taxRate: rate,
                                                                     taxAmount: taxAmt,
-                                                                    hsn: item.hsn,
-                                                                    packing: item.packing,
-                                                                    uom: item.uom,
+                                                                    hsn: item.hsn || "",
+                                                                    packing: item.packing || "",
+                                                                    uom: item.uom || "PCS",
                                                                     schemeDiscount: sDisc,
                                                                     discountAmt: dAmt,
-                                                                    discountPct: item.discountPct ? Number(item.discountPct) : (taxable > 0 ? (dAmt / taxable) * 100 : 0)
+                                                                    discountPct: item.discountPct ? Number(item.discountPct) : (taxable > 0 ? (dAmt / (qty * price)) * 100 : 0)
                                                                 };
                                                             }));
                                                             setItems(mapped);
@@ -564,7 +564,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 )}
                             </div>
 
-                            <div className="rounded-2xl border border-white/5 bg-neutral-900/30 overflow-hidden">
+                            <div className="rounded-2xl border border-white/5 bg-neutral-900/30 overflow-x-auto">
                                 <table className="w-full text-left border-collapse min-w-[1300px]">
                                     <thead>
                                         <tr className="bg-white/[0.02] text-[10px] font-black uppercase tracking-widest text-neutral-500 border-b border-white/5">
