@@ -26,6 +26,7 @@ import { FileUpload } from "@/components/ui/file-upload";
 
 import { upsertPurchaseInvoice } from "@/app/actions/accounting/bills";
 import { scanInvoiceFromUrl } from "@/app/actions/scan-invoice";
+import { getSuppliers, getProductsPremium } from "@/app/actions/inventory";
 
 export default function NewPurchaseBillPage() {
     const router = useRouter();
@@ -50,12 +51,22 @@ export default function NewPurchaseBillPage() {
         attachments: {} as any
     });
 
-    // Mock loading data (In production, use server actions or hooks)
+    // Load data
     useEffect(() => {
-        // Fetch suppliers and products
-        // Replace with actual actions
-        // setSuppliers(...)
-        // setProducts(...)
+        const fetchData = async () => {
+            try {
+                const s = await getSuppliers();
+                setSuppliers(s);
+
+                const p = await getProductsPremium();
+                if (p.success) {
+                    setProducts(p.data);
+                }
+            } catch (error) {
+                console.error("Failed to load data", error);
+            }
+        };
+        fetchData();
     }, []);
 
     const calculateTotals = (items: any[]) => {
@@ -102,25 +113,29 @@ export default function NewPurchaseBillPage() {
         toast.info("Scanning invoice with AI...");
 
         try {
-            const result = await scanInvoiceFromUrl(url);
-            if (result) {
+            const result = (await scanInvoiceFromUrl(url)) as any;
+            if (result && result.success && result.data) {
+                const d = result.data;
                 // Map AI result to form
                 setBillData(prev => ({
                     ...prev,
-                    invoiceNumber: result.invoice_number || prev.invoiceNumber,
-                    invoiceDate: result.invoice_date || prev.invoiceDate,
-                    totalAmount: result.total_amount || prev.totalAmount,
-                    items: result.line_items?.map((li: any) => ({
+                    invoiceNumber: d.reference || prev.invoiceNumber,
+                    invoiceDate: d.date || prev.invoiceDate,
+                    totalAmount: d.grandTotal || prev.totalAmount,
+                    supplierId: d.supplierId || prev.supplierId,
+                    items: d.items?.map((li: any) => ({
                         id: crypto.randomUUID(),
-                        productId: "", // Needs matching
-                        description: li.description || "",
-                        qty: li.quantity || 1,
-                        unitPrice: li.unit_price || 0,
-                        lineTotal: (li.quantity || 1) * (li.unit_price || 0)
+                        productId: li.productId || "",
+                        description: li.productName || li.description || "",
+                        qty: li.qty || 1,
+                        unitPrice: li.unitPrice || 0,
+                        lineTotal: (li.qty || 1) * (li.unitPrice || 0)
                     })) || prev.items,
                     attachments: { url }
                 }));
                 toast.success("Invoice scanned successfully!");
+            } else if (result && result.error) {
+                toast.error(result.error);
             }
         } catch (error) {
             toast.error("AI Scanning failed. Please enter details manually.");
@@ -137,7 +152,7 @@ export default function NewPurchaseBillPage() {
 
         setLoading(true);
         try {
-            const res = await upsertPurchaseInvoice(billData);
+            const res = (await upsertPurchaseInvoice(billData)) as any;
             if (res.success) {
                 toast.success("Vendor Bill Saved & Posted to GL");
                 router.push("/hms/accounting/bills");
@@ -204,8 +219,9 @@ export default function NewPurchaseBillPage() {
                                             <SelectValue placeholder="Select Supplier" />
                                         </SelectTrigger>
                                         <SelectContent className="bg-zinc-900 border-white/10 text-white">
-                                            <SelectItem value="sup-1">Global Medical Supplies</SelectItem>
-                                            <SelectItem value="sup-2">PharmaDirect Inc.</SelectItem>
+                                            {suppliers.map(sup => (
+                                                <SelectItem key={sup.id} value={sup.id}>{sup.name}</SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>

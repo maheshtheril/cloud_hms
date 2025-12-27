@@ -12,6 +12,7 @@ interface FileUploadProps {
     currentFileUrl?: string | null;
     disabled?: boolean;
     showCamera?: boolean;
+    className?: string;
 }
 
 export function FileUpload({
@@ -22,6 +23,7 @@ export function FileUpload({
     currentFileUrl,
     disabled = false,
     showCamera = false,
+    className = "",
     maxSizeInBytes = 10 * 1024 * 1024 // 10MB default
 }: FileUploadProps & { maxSizeInBytes?: number }) {
     const [isDragging, setIsDragging] = useState(false);
@@ -203,6 +205,7 @@ export function FileUpload({
                     flex flex-col items-center justify-center text-center bg-slate-50/50 dark:bg-slate-900/20
                     ${isDragging ? 'border-indigo-500 bg-indigo-50/30 scale-[1.01]' : 'border-slate-200 dark:border-slate-800'}
                     ${previewUrl ? 'border-emerald-500/30 bg-emerald-50/10' : ''}
+                    ${className}
                 `}
                 onDragEnter={disabled || isCameraActive ? undefined : handleDrag}
                 onDragLeave={disabled || isCameraActive ? undefined : handleDrag}
@@ -309,11 +312,13 @@ export function FileUpload({
                 )}
             </div>
 
-            {error && (
-                <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-2 px-2 animate-in slide-in-from-top-1">
-                    <AlertCircle className="h-3.5 w-3.5" /> {error}
-                </p>
-            )}
-        </div>
+            {
+                error && (
+                    <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest flex items-center gap-2 px-2 animate-in slide-in-from-top-1">
+                        <AlertCircle className="h-3.5 w-3.5" /> {error}
+                    </p>
+                )
+            }
+        </div >
     )
 }
