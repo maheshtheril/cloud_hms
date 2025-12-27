@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, X, Loader2, CreditCard, Banknote, Smartphone, Landmark } from 'lucide-react'
+import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, X, Loader2, CreditCard, Banknote, Smartphone, Landmark, MessageCircle } from 'lucide-react'
 import { createInvoice, updateInvoice } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 
@@ -701,21 +701,29 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-3 mt-2">
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
                                 <button
                                     onClick={() => handleSave('draft')}
                                     disabled={loading}
-                                    className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all border-b-2 active:translate-y-0.5 active:border-b-0"
+                                    className="px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all border-b-2 active:translate-y-0.5 active:border-b-0"
                                 >
                                     Draft
                                 </button>
                                 <button
                                     onClick={() => handleSave('paid' as any)}
                                     disabled={loading}
-                                    className="px-4 py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-500/20 flex items-center justify-center gap-2 transition-all border-b-2 border-indigo-800 active:translate-y-0.5 active:border-b-0"
+                                    className="px-3 py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-500/20 flex items-center justify-center gap-1.5 transition-all border-b-2 border-indigo-800 active:translate-y-0.5 active:border-b-0"
                                 >
                                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
                                     Collect
+                                </button>
+                                <button
+                                    onClick={() => handleSave('paid' as any)}
+                                    disabled={loading}
+                                    className="col-span-2 lg:col-span-1 px-3 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-500/20 flex items-center justify-center gap-1.5 transition-all border-b-2 border-emerald-800 active:translate-y-0.5 active:border-b-0"
+                                >
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
+                                    WhatsApp
                                 </button>
                             </div>
                         </div>
