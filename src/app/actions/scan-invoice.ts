@@ -20,35 +20,39 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
     if (!session?.user?.companyId) return { error: "Unauthorized" };
 
     try {
-        // Resolve URL to file path. Assumes local storage in public/
-        const relativePath = fileUrl.startsWith('/') ? `.${fileUrl}` : fileUrl;
-        const fs = require('fs/promises');
-        const path = require('path');
-        const fullPath = path.resolve(process.cwd(), 'public', relativePath.replace(/^\/public\//, '').replace(/^\//, ''));
-
-        // Check if file exists
-        try {
-            await fs.access(fullPath);
-        } catch (err) {
-            console.error(`[ScanInvoice] File not found at path: ${fullPath}`, err);
-            return { error: `File not found on server at ${fullPath}` };
-        }
-
-        // --- API KEY CHECK ---
-        if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-            console.error("GOOGLE_GENERATIVE_AI_API_KEY is missing.");
-            return { error: "Configuration Error: AI API Key is missing on the server. Please check your .env file." };
-        }
-
-        const fileBuffer = await fs.readFile(fullPath);
-        const base64Image = fileBuffer.toString("base64");
-
-        // Determine mime type roughly
-        const ext = path.extname(fullPath).toLowerCase();
+        let base64Image = "";
         let mimeType = "image/jpeg";
-        if (ext === ".pdf") mimeType = "application/pdf";
-        else if (ext === ".png") mimeType = "image/png";
-        else if (ext === ".webp") mimeType = "image/webp";
+
+        // Handle Data URI (Base64) directly
+        if (fileUrl.startsWith('data:')) {
+            const match = fileUrl.match(/^data:([^;]+);base64,(.+)$/);
+            if (!match) return { error: "Invalid Data URI format" };
+            mimeType = match[1];
+            base64Image = match[2];
+        } else {
+            // Resolve URL to file path (Legacy/Filesystem fallback)
+            const relativePath = fileUrl.startsWith('/') ? `.${fileUrl}` : fileUrl;
+            const fs = require('fs/promises');
+            const path = require('path');
+            const fullPath = path.resolve(process.cwd(), 'public', relativePath.replace(/^\/public\//, '').replace(/^\//, ''));
+
+            // Check if file exists
+            try {
+                await fs.access(fullPath);
+            } catch (err) {
+                console.error(`[ScanInvoice] File not found at path: ${fullPath}`, err);
+                return { error: `File not found on server at ${fullPath}` };
+            }
+
+            const fileBuffer = await fs.readFile(fullPath);
+            base64Image = fileBuffer.toString("base64");
+
+            // Determine mime type roughly
+            const ext = path.extname(fullPath).toLowerCase();
+            if (ext === ".pdf") mimeType = "application/pdf";
+            else if (ext === ".png") mimeType = "image/png";
+            else if (ext === ".webp") mimeType = "image/webp";
+        }
 
         // List of models to try in order of preference
         // 'gemini-2.0-flash-exp' exists (returns 429). 

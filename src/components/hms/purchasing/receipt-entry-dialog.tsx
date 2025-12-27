@@ -240,6 +240,19 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         setItems(items.filter((_, i) => i !== index));
     };
 
+    const parseConversionFactor = (packing: string | undefined): number => {
+        if (!packing) return 1;
+        // Match 1x10, 10x10, etc.
+        const match = packing.match(/(\d+)\s*x\s*(\d+)/i);
+        if (match) {
+            return parseInt(match[1]) * parseInt(match[2]);
+        }
+        // Match "Pack of 10", "10 units", etc.
+        const numericMatch = packing.match(/(\d+)/);
+        if (numericMatch) return parseInt(numericMatch[0]);
+        return 1;
+    };
+
     const handleSubmit = async () => {
         setIsSubmitting(true);
         if (Math.abs(roundOff) > 0.5) {
@@ -262,27 +275,31 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
             reference,
             notes,
             attachmentUrl,
-            items: validItems.map(i => ({
-                productId: i.productId,
-                poLineId: i.poLineId,
-                qtyReceived: Number(i.receivedQty),
-                unitPrice: Number(i.unitPrice),
-                batch: i.batch,
-                expiry: i.expiry,
-                mrp: Number(i.mrp),
-                salePrice: i.salePrice ? Number(i.salePrice) : undefined,
-                marginPct: i.marginPct ? Number(i.marginPct) : undefined,
-                markupPct: i.markupPct ? Number(i.markupPct) : undefined,
-                pricingStrategy: i.pricingStrategy,
-                taxRate: Number(i.taxRate),
-                taxAmount: Number(i.taxAmount),
-                hsn: i.hsn,
-                packing: i.packing,
-                uom: i.uom,
-                schemeDiscount: i.schemeDiscount ? Number(i.schemeDiscount) : undefined,
-                discountPct: i.discountPct ? Number(i.discountPct) : undefined,
-                discountAmt: i.discountAmt ? Number(i.discountAmt) : undefined
-            }))
+            items: validItems.map(i => {
+                const cFactor = parseConversionFactor(i.packing);
+                return {
+                    productId: i.productId,
+                    poLineId: i.poLineId,
+                    qtyReceived: Number(i.receivedQty),
+                    unitPrice: Number(i.unitPrice),
+                    batch: i.batch,
+                    expiry: i.expiry,
+                    mrp: Number(i.mrp),
+                    salePrice: i.salePrice ? Number(i.salePrice) : undefined,
+                    marginPct: i.marginPct ? Number(i.marginPct) : undefined,
+                    markupPct: i.markupPct ? Number(i.markupPct) : undefined,
+                    pricingStrategy: i.pricingStrategy,
+                    taxRate: Number(i.taxRate),
+                    taxAmount: Number(i.taxAmount),
+                    hsn: i.hsn,
+                    packing: i.packing,
+                    purchaseUOM: i.uom || 'PCS',
+                    conversionFactor: cFactor,
+                    schemeDiscount: i.schemeDiscount ? Number(i.schemeDiscount) : undefined,
+                    discountPct: i.discountPct ? Number(i.discountPct) : undefined,
+                    discountAmt: i.discountAmt ? Number(i.discountAmt) : undefined
+                };
+            })
         };
 
         const res = await createPurchaseReceipt(payload);
