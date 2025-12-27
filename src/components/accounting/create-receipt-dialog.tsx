@@ -79,12 +79,15 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl p-0 overflow-hidden bg-neutral-950 border-white/10 text-neutral-200 shadow-2xl">
-                {/* Decorative Backgrounds */}
-                <div className="absolute top-0 right-0 w-[400px] h-[300px] bg-emerald-500/10 rounded-full blur-[80px] pointer-events-none -z-10" />
-                <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px] pointer-events-none -z-10" />
+            <DialogContent className="max-w-4xl p-0 bg-neutral-950 border-white/10 text-neutral-200 shadow-2xl rounded-2xl border-0 ring-0">
+                {/* Decorative Backgrounds - Moved inside a wrapper that clips ONLY background, not content */}
+                <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none z-0">
+                    <div className="absolute top-0 right-0 w-[400px] h-[300px] bg-emerald-500/10 rounded-full blur-[80px]" />
+                    <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-indigo-500/10 rounded-full blur-[80px]" />
+                </div>
 
-                <div className="flex flex-col md:flex-row h-full">
+
+                <div className="flex flex-col md:flex-row h-full relative z-10">
 
                     {/* LEFT PANEL: PRIMARY INPUTS */}
                     <div className="flex-1 p-8 space-y-8 relative">
