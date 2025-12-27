@@ -1,7 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import { MoreHorizontal, Pencil, Eye, Printer, Trash2 } from "lucide-react"
+import { MoreHorizontal, Pencil, Eye, Printer, Trash2, MessageCircle, Loader2 } from "lucide-react"
+import { useState } from "react"
+import { shareInvoiceWhatsapp } from "@/app/actions/billing"
+import { useToast } from "@/components/ui/use-toast"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -19,6 +22,37 @@ interface BillingActionsProps {
 }
 
 export function BillingActions({ invoiceId, invoiceNumber }: BillingActionsProps) {
+    const [isLoading, setIsLoading] = useState(false)
+    const { toast } = useToast()
+
+    async function handleWhatsappShare() {
+        setIsLoading(true);
+        try {
+            const res = await shareInvoiceWhatsapp(invoiceId) as any;
+            if (res && res.success) {
+                toast({
+                    title: "WhatsApp Shared",
+                    description: res.message || "Invoice PDF shared via WhatsApp",
+                });
+            } else {
+                toast({
+                    title: "Share Failed",
+                    description: (res && res.error) || "Could not send WhatsApp",
+                    variant: "destructive"
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            toast({
+                title: "Error",
+                description: "Failed to connect to WhatsApp service.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -47,6 +81,14 @@ export function BillingActions({ invoiceId, invoiceNumber }: BillingActionsProps
                         <Printer className="h-4 w-4 text-gray-500" />
                         Print
                     </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                    onClick={handleWhatsappShare}
+                    disabled={isLoading}
+                    className="cursor-pointer flex items-center gap-2 text-green-600 focus:text-green-700 focus:bg-green-50"
+                >
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
+                    Share WhatsApp
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

@@ -11,7 +11,8 @@ import {
     Loader2,
     CheckCircle2,
     XCircle,
-    Mail
+    Mail,
+    MessageCircle
 } from 'lucide-react';
 import {
     Dialog,
@@ -22,7 +23,7 @@ import {
     DialogTitle,
     DialogTrigger
 } from '@/components/ui/dialog';
-import { updateInvoiceStatus } from '@/app/actions/billing';
+import { updateInvoiceStatus, shareInvoiceWhatsapp } from '@/app/actions/billing';
 import { useToast } from '@/components/ui/use-toast';
 
 interface InvoiceControlPanelProps {
@@ -67,6 +68,34 @@ export function InvoiceControlPanel({
             toast({
                 title: "Error",
                 description: "Something went wrong.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    async function handleWhatsappShare() {
+        setIsLoading(true);
+        try {
+            const res = await shareInvoiceWhatsapp(invoiceId) as any;
+            if (res && res.success) {
+                toast({
+                    title: "WhatsApp Shared",
+                    description: res.message || "Invoice PDF shared via WhatsApp",
+                });
+            } else {
+                toast({
+                    title: "Share Failed",
+                    description: (res && res.error) || "Could not send WhatsApp",
+                    variant: "destructive"
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            toast({
+                title: "Error",
+                description: "Failed to connect to WhatsApp service.",
                 variant: "destructive"
             });
         } finally {
@@ -131,6 +160,16 @@ export function InvoiceControlPanel({
             <Button variant="outline" onClick={() => window.open(`/hms/billing/${invoiceId}/print`, '_blank')}>
                 <Printer className="mr-2 h-4 w-4" />
                 Print
+            </Button>
+
+            <Button
+                variant="outline"
+                onClick={handleWhatsappShare}
+                disabled={isLoading}
+                className="text-green-600 hover:text-green-700 hover:bg-green-50 border-green-200"
+            >
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageCircle className="mr-2 h-4 w-4" />}
+                WhatsApp
             </Button>
 
             <Button variant="outline" disabled={true} title="Email feature coming soon">
