@@ -43,18 +43,20 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
 
     const defaultTaxId = getDefaultTaxId();
 
-    const [lines, setLines] = useState<any[]>(initialInvoice?.hms_invoice_lines ? initialInvoice.hms_invoice_lines.map((l: any) => ({
-        id: l.id || Date.now() + Math.random(),
-        product_id: l.product_id || '',
-        description: l.description,
-        quantity: Number(l.quantity),
-        uom: 'PCS',
-        unit_price: Number(l.unit_price),
-        tax_rate_id: l.tax_rate_id || defaultTaxId,
-        tax_amount: Number(l.tax_amount),
-        discount_amount: Number(l.discount_amount),
-        net_amount: Number(l.net_amount)
-    })) : [
+    const [lines, setLines] = useState<any[]>(initialInvoice?.hms_invoice_lines ? initialInvoice.hms_invoice_lines
+        .filter((l: any) => l.description || l.product_id) // Filter empty rows from DB
+        .map((l: any) => ({
+            id: l.id || Date.now() + Math.random(),
+            product_id: l.product_id || '',
+            description: l.description,
+            quantity: Number(l.quantity),
+            uom: l.uom || 'PCS',
+            unit_price: Number(l.unit_price),
+            tax_rate_id: l.tax_rate_id || defaultTaxId,
+            tax_amount: Number(l.tax_amount),
+            discount_amount: Number(l.discount_amount),
+            net_amount: Number(l.net_amount)
+        })) : [
         { id: 1, product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0 }
     ])
     const [payments, setPayments] = useState<Payment[]>(
@@ -147,6 +149,9 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
 
     // Auto-load appointment fee and lab tests
     useEffect(() => {
+        // ONLY auto-load appointment data for NEW invoices
+        if (initialInvoice) return;
+
         const activeAppointmentId = appointmentId || urlAppointmentId
         if (activeAppointmentId) {
             const loadAppointmentData = async () => {
@@ -222,7 +227,13 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                         }
 
                         if (appointmentLines.length > 0) {
-                            setLines(prev => [...appointmentLines, ...prev])
+                            setLines(prev => {
+                                // If current is just one empty row, replace it
+                                if (prev.length === 1 && !prev[0].description && !prev[0].product_id) {
+                                    return appointmentLines;
+                                }
+                                return [...appointmentLines, ...prev];
+                            })
                         }
                     }
                 } catch (error) {
@@ -384,7 +395,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             patient_id: selectedPatientId,
             appointment_id: appointmentId || urlAppointmentId,
             date,
-            line_items: lines,
+            line_items: lines.filter(l => l.description || l.product_id), // Filter out empty lines on save
             status,
             total_discount: globalDiscount,
             payments: payments
