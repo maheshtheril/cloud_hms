@@ -6,7 +6,7 @@ import { upsertPayment } from '@/app/actions/accounting/payments';
 import { searchSuppliers, getOutstandingPurchaseBills } from '@/app/actions/accounting/helpers';
 import {
     ArrowLeft, Save, Loader2, Calendar, CreditCard,
-    Building2, FileText, ArrowRight, Wallet, Info
+    Building2, FileText, ArrowRight, Wallet, Info, CheckCircle2
 } from 'lucide-react';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { useToast } from '@/components/ui/use-toast';
