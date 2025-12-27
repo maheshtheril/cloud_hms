@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { Client } = require('pg');
 
-console.log("Starting direct PG trigger cleanup...");
+console.log("Starting dynamic cleanup of ALL triggers on invoice tables...");
 
 // Load .env manually
 let connectionString = process.env.DATABASE_URL;
@@ -17,7 +17,6 @@ if (!connectionString) {
                 const parts = line.split('=');
                 if (parts.length >= 2 && !line.trim().startsWith('#')) {
                     const key = parts[0].trim();
-                    // Join the rest back, but be careful with quotes
                     let val = parts.slice(1).join('=').trim();
                     if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
                         val = val.slice(1, -1);
@@ -40,7 +39,7 @@ if (!connectionString) {
 
 const client = new Client({
     connectionString: connectionString,
-    ssl: { rejectUnauthorized: false } // Required for Render/Cloud usually
+    ssl: { rejectUnauthorized: false }
 });
 
 async function main() {
@@ -48,28 +47,40 @@ async function main() {
         await client.connect();
         console.log("Connected to database.");
 
-        const sql = `
-            DROP TRIGGER IF EXISTS trg_hms_invoice_lines_after_change ON hms_invoice_lines CASCADE;
-            DROP FUNCTION IF EXISTS trg_hms_invoice_lines_after_change() CASCADE;
-            
-            DROP TRIGGER IF EXISTS trg_hms_invoice_after_change ON hms_invoice CASCADE;
-            DROP FUNCTION IF EXISTS trg_hms_invoice_after_change() CASCADE;
-            
-            DROP TRIGGER IF EXISTS update_invoice_total ON hms_invoice_lines CASCADE;
-            DROP FUNCTION IF EXISTS update_invoice_total() CASCADE;
+        const tableNames = ['hms_invoice', 'hms_invoice_lines'];
 
-            DROP TRIGGER IF EXISTS update_invoice_totals ON hms_invoice_lines CASCADE;
-            DROP FUNCTION IF EXISTS update_invoice_totals() CASCADE;
-
-            DROP TRIGGER IF EXISTS trg_hms_invoice_history ON hms_invoice CASCADE;
-            DROP FUNCTION IF EXISTS trg_hms_invoice_history() CASCADE;
-            
-            DROP TRIGGER IF EXISTS trg_hms_invoice_lines_history ON hms_invoice_lines CASCADE;
-            DROP FUNCTION IF EXISTS trg_hms_invoice_lines_history() CASCADE;
+        // 1. Fetch all triggers
+        const sqlFetch = `
+            SELECT tgname, relname
+            FROM pg_trigger
+            JOIN pg_class ON pg_trigger.tgrelid = pg_class.oid
+            WHERE pg_class.relname = ANY($1)
+            AND tgisinternal = false
         `;
 
-        await client.query(sql);
-        console.log("Successfully dropped triggers.");
+        const res = await client.query(sqlFetch, [tableNames]);
+
+        if (res.rows.length === 0) {
+            console.log("No triggers found on invoice tables.");
+            return;
+        }
+
+        console.log(`Found ${res.rows.length} triggers. Dropping them now...`);
+
+        // 2. Drop each trigger
+        for (const row of res.rows) {
+            const dropSql = `DROP TRIGGER IF EXISTS "${row.tgname}" ON "${row.relname}" CASCADE`;
+            console.log(`Executing: ${dropSql}`);
+            try {
+                await client.query(dropSql);
+                console.log(`  -> Dropped ${row.tgname}`);
+            } catch (dropErr) {
+                console.error(`  -> Failed to drop ${row.tgname}: ${dropErr.message}`);
+            }
+        }
+
+        console.log("Cleanup complete.");
+
     } catch (err) {
         console.error("Error executing SQL:", err.message);
     } finally {
