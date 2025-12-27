@@ -6,11 +6,15 @@ import { useRouter } from 'next/navigation';
 import { getPayments, type PaymentType } from '@/app/actions/accounting/payments';
 import { Plus, Search, Filter, Download, ExternalLink, CheckCircle2, CircleDashed, FileText, ArrowUpRight, ArrowDownLeft } from 'lucide-react';
 import { format } from 'date-fns';
+import { CreateReceiptDialog } from '@/components/accounting/create-receipt-dialog';
 
 export default function ReceiptsPage() {
     const [payments, setPayments] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState('');
+
+    // Popup State
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -51,20 +55,21 @@ export default function ReceiptsPage() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-500 group-focus-within:text-indigo-400 transition-colors" />
                             <input
                                 type="text"
-                                placeholder="Search receipts..."
+                                placeholder="Search...."
                                 value={search}
                                 onChange={e => setSearch(e.target.value)}
                                 className="h-10 pl-10 pr-4 bg-neutral-900 border border-white/10 rounded-lg text-sm text-neutral-200 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 w-64 transition-all"
                             />
                         </div>
                         <div className="h-8 w-px bg-white/10 mx-2"></div>
-                        <Link
-                            href="/hms/accounting/receipts/new"
+
+                        <button
+                            onClick={() => setIsCreateOpen(true)}
                             className="h-10 px-5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-emerald-900/20 hover:shadow-emerald-900/40"
                         >
                             <Plus className="h-4 w-4" />
                             New Receipt
-                        </Link>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -86,13 +91,13 @@ export default function ReceiptsPage() {
                         <p className="text-neutral-500 max-w-sm mb-8">
                             Record payments received from patients or customers to keep your accounts up to date.
                         </p>
-                        <Link
-                            href="/hms/accounting/receipts/new"
+                        <button
+                            onClick={() => setIsCreateOpen(true)}
                             className="h-10 px-6 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-sm font-medium rounded-full flex items-center gap-2 transition-all"
                         >
                             <Plus className="h-4 w-4" />
                             Create First Receipt
-                        </Link>
+                        </button>
                     </div>
                 ) : (
                     <div className="rounded-xl border border-white/5 bg-neutral-900/20 overflow-hidden backdrop-blur-sm">
@@ -154,6 +159,13 @@ export default function ReceiptsPage() {
                     </div>
                 )}
             </div>
+
+            {/* Create Receipt Dialog */}
+            <CreateReceiptDialog
+                open={isCreateOpen}
+                onOpenChange={setIsCreateOpen}
+                onSuccess={() => loadData()}
+            />
         </div>
     );
 }
