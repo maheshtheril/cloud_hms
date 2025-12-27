@@ -87,10 +87,10 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
                 </div>
 
 
-                <div className="flex flex-col md:flex-row h-full relative z-10">
+                <div className="flex flex-col md:flex-row h-full relative z-20 isolate">
 
-                    {/* LEFT PANEL: PRIMARY INPUTS */}
-                    <div className="flex-1 p-8 space-y-8 relative">
+                    {/* LEFT PANEL: PRIMARY INPUTS - High Z-Index to keep dropdowns above other content */}
+                    <div className="flex-1 p-8 space-y-8 relative z-50">
                         <div className="flex items-center gap-3 mb-6">
                             <div className="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-900/20">
                                 <Receipt className="h-5 w-5" />
@@ -140,8 +140,8 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
                         </form>
                     </div>
 
-                    {/* RIGHT PANEL: DETAILS (Darker Glass) */}
-                    <div className="w-full md:w-[380px] bg-black/40 border-l border-white/5 p-8 flex flex-col justify-between backdrop-blur-md">
+                    {/* RIGHT PANEL: DETAILS (Darker Glass) - Lower Z-Index */}
+                    <div className="w-full md:w-[380px] bg-black/40 border-l border-white/5 p-8 flex flex-col justify-between backdrop-blur-md relative z-10">
                         <div className="space-y-6">
                             <h3 className="text-xs font-bold text-white/50 uppercase tracking-widest mb-4">Transaction Details</h3>
 
