@@ -4,8 +4,21 @@ import Link from 'next/link'
 import { Building2, Stethoscope, Settings2, ChevronRight, Zap } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 
+interface LinkItem {
+    name: string;
+    href: string;
+    badge?: string;
+}
+
+interface Category {
+    title: string;
+    description: string;
+    icon: React.ReactNode;
+    links: LinkItem[];
+}
+
 export default function SettingsHubPage() {
-    const categories = [
+    const categories: Category[] = [
         {
             title: 'Organization',
             description: 'Manage companies, business units, and tenant settings.',
