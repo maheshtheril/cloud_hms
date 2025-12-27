@@ -99,8 +99,8 @@ export default async function PatientsPage({
                                     <td className="p-4 text-gray-600 capitalize">{patient.gender || '-'}</td>
                                     <td className="p-4">
                                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black tracking-wide ${(patient.metadata as any)?.blood_group
-                                                ? 'bg-rose-50 text-rose-600 border border-rose-100'
-                                                : 'bg-slate-50 text-slate-400'
+                                            ? 'bg-rose-50 text-rose-600 border border-rose-100'
+                                            : 'bg-slate-50 text-slate-400'
                                             }`}>
                                             {(patient.metadata as any)?.blood_group ? (
                                                 <>
@@ -113,12 +113,19 @@ export default async function PatientsPage({
                                     <td className="p-4 text-gray-600">
                                         {patient.updated_at ? new Date(patient.updated_at).toLocaleDateString() : '-'}
                                     </td>
-                                    <td className="p-4">
+                                    <td className="p-4 flex items-center gap-3">
                                         <Link
                                             href={`/hms/patients/${patient.id}`}
-                                            className="text-blue-600 hover:text-blue-800 font-medium text-sm"
+                                            className="text-blue-600 hover:text-blue-800 font-bold text-xs uppercase tracking-wider"
                                         >
                                             View
+                                        </Link>
+                                        <div className="h-4 w-px bg-slate-200" />
+                                        <Link
+                                            href={`/hms/prescriptions/new?patientId=${patient.id}`}
+                                            className="text-purple-600 hover:text-purple-800 font-bold text-xs uppercase tracking-wider"
+                                        >
+                                            Prescribe
                                         </Link>
                                     </td>
                                 </tr>

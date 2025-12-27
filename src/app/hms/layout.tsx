@@ -13,8 +13,10 @@ const IconMap: any = {
 
 export default async function HMSLayout({
     children,
+    modal,
 }: {
     children: React.ReactNode
+    modal: React.ReactNode
 }) {
     const menuItems = await getMenuItems();
     const currentCompany = await getCurrentCompany();
@@ -23,6 +25,7 @@ export default async function HMSLayout({
     return (
         <AppSidebar menuItems={menuItems} currentCompany={currentCompany} user={session?.user}>
             {children}
+            {modal}
         </AppSidebar>
     )
 }
