@@ -483,4 +483,127 @@ export class AccountingService {
             return { success: false, error: error.message };
         }
     }
+    /**
+     * Posts a Purchase Invoice (Vendor Bill) to the General Ledger.
+     * 
+     * @param invoiceId - The ID of the purchase invoice to post
+     * @param userId - ID of the user performing the action
+     */
+    static async postPurchaseInvoice(invoiceId: string, userId?: string) {
+        try {
+            // 1. Fetch Purchase Invoice with Lines and Supplier
+            const invoice = await prisma.hms_purchase_invoice.findUnique({
+                where: { id: invoiceId },
+                include: {
+                    hms_purchase_invoice_line: true,
+                    hms_supplier: true
+                }
+            });
+
+            if (!invoice) throw new Error("Purchase Invoice not found");
+
+            // Check if already posted
+            const existingJournal = await prisma.journal_entries.findFirst({
+                where: { purchase_invoice_id: invoiceId }
+            });
+
+            if (existingJournal) {
+                console.log("Purchase Invoice already posted.");
+                return { success: true, message: "Already posted" };
+            }
+
+            // 2. Fetch Accounting Settings
+            let settings = await prisma.company_accounting_settings.findUnique({
+                where: { company_id: invoice.company_id }
+            });
+
+            if (!settings) throw new Error("Accounting settings not configured.");
+
+            // 3. Determine Accounts
+            // DEBIT: Purchase/Expense Account
+            const debitAccountId = settings.purchase_account_id;
+            if (!debitAccountId) throw new Error("Purchase Account not configured.");
+
+            // CREDIT: Accounts Payable
+            const creditAccountId = settings.ap_account_id;
+            if (!creditAccountId) throw new Error("Accounts Payable Account not configured.");
+
+            // TAX: Input Tax (Debit)
+            const inputTaxAccountId = settings.input_tax_account_id;
+
+            // 4. Prepare Lines
+            const journalLines: any[] = [];
+            const totalAmount = Number(invoice.total_amount || 0);
+            const subtotal = Number(invoice.subtotal || 0);
+            const taxTotal = Number(invoice.tax_total || 0);
+
+            // A. DEBIT: Purchase Expense
+            journalLines.push({
+                account_id: debitAccountId,
+                debit: subtotal,
+                credit: 0,
+                description: `Purchase Expense - Ref ${invoice.name}`
+            });
+
+            // B. DEBIT: Input VAT (if any)
+            if (taxTotal > 0) {
+                if (!inputTaxAccountId) throw new Error("Input Tax Account not configured, but bill contains tax.");
+                journalLines.push({
+                    account_id: inputTaxAccountId,
+                    debit: taxTotal,
+                    credit: 0,
+                    description: `Input Tax - Ref ${invoice.name}`
+                });
+            }
+
+            // C. CREDIT: Accounts Payable
+            journalLines.push({
+                account_id: creditAccountId,
+                debit: 0,
+                credit: totalAmount,
+                description: `Accounts Payable - ${invoice.hms_supplier?.name || 'Vendor'}`,
+                partner_id: invoice.supplier_id
+            });
+
+            // 5. Create Transaction
+            await prisma.$transaction(async (tx) => {
+                await tx.journal_entries.create({
+                    data: {
+                        tenant_id: invoice.tenant_id,
+                        company_id: invoice.company_id,
+                        purchase_invoice_id: invoice.id,
+                        date: invoice.invoice_date || new Date(),
+                        posted: true,
+                        posted_at: new Date(),
+                        created_by: userId,
+                        currency_id: settings!.currency_id,
+                        amount_in_company_currency: totalAmount,
+                        ref: invoice.name,
+                        journal_entry_lines: {
+                            create: journalLines.map(line => ({
+                                tenant_id: invoice.tenant_id,
+                                company_id: invoice.company_id,
+                                account_id: line.account_id,
+                                debit: line.debit,
+                                credit: line.credit,
+                                description: line.description,
+                                partner_id: line.partner_id
+                            }))
+                        }
+                    }
+                });
+
+                // Update invoice status if needed
+                await tx.hms_purchase_invoice.update({
+                    where: { id: invoice.id },
+                    data: { status: 'posted', updated_at: new Date() }
+                });
+            });
+
+            return { success: true };
+        } catch (error: any) {
+            console.error("Purchase Posting Error:", error);
+            return { success: false, error: error.message };
+        }
+    }
 }

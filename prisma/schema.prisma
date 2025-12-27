@@ -1944,7 +1944,9 @@ model hms_purchase_invoice {
   created_at                DateTime                    @default(now()) @db.Timestamptz(6)
   updated_at                DateTime?                   @db.Timestamptz(6)
   hms_purchase_order        hms_purchase_order?         @relation(fields: [purchase_order_id], references: [id], onUpdate: NoAction, map: "hms_purchase_invoice_po_fkey")
+  hms_supplier              hms_supplier?               @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "hms_purchase_invoice_supplier_fkey")
   hms_purchase_invoice_line hms_purchase_invoice_line[]
+  journal_entries           journal_entries[]
 
   @@index([supplier_id], map: "ix_hms_purchase_invoice_supplier")
 }
@@ -2323,6 +2325,7 @@ model hms_supplier {
   hms_product_supplier hms_product_supplier[]
   hms_purchase_order   hms_purchase_order[]
   hms_purchase_receipt hms_purchase_receipt[]
+  hms_purchase_invoice hms_purchase_invoice[]
 }
 
 model hms_tax_rule {
@@ -2432,6 +2435,8 @@ model journal_entries {
   // is_posted                  Boolean               @default(true)
   // is_locked                  Boolean               @default(false)
   // locked_at                  DateTime?             @db.Timestamptz(6)
+  purchase_invoice_id        String?               @db.Uuid
+  hms_purchase_invoice       hms_purchase_invoice? @relation(fields: [purchase_invoice_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   currencies                 currencies?           @relation(fields: [currency_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_invoice                hms_invoice?          @relation(fields: [invoice_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journals                   journals?             @relation(fields: [journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -2440,6 +2445,7 @@ model journal_entries {
 
   @@index([company_id], map: "idx_journal_entries_company")
   @@index([invoice_id], map: "idx_journal_entries_invoice_id")
+  @@index([purchase_invoice_id], map: "idx_journal_entries_purchase_invoice_id")
   @@index([journal_id], map: "idx_journal_entries_journal")
 }
 
