@@ -7,7 +7,7 @@ import {
     MoreHorizontal, Download, FileText,
     Clock, CheckCircle2, AlertCircle,
     ChevronRight, LayoutGrid, List,
-    Calendar, User, Receipt
+    Calendar, User, Receipt, Eye, Trash2
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
