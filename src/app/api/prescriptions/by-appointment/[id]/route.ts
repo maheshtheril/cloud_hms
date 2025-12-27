@@ -29,7 +29,7 @@ export async function GET(
         })
 
         if (!prescription) {
-            return NextResponse.json({ success: false, error: 'Prescription not found' }, { status: 404 })
+            return NextResponse.json({ success: true, prescription: null })
         }
 
         // Format for frontend

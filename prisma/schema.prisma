@@ -4155,6 +4155,11 @@ model hms_prescription_template {
   name        String
   description String?
   medicines   Json     // Stores the array of medicines with dosages
+  vitals      String?
+  diagnosis   String?
+  complaint   String?
+  examination String?
+  plan        String?
   created_at  DateTime @default(now()) @db.Timestamptz(6)
   updated_at  DateTime @default(now()) @db.Timestamptz(6)
 

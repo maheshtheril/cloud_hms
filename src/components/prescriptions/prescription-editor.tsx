@@ -227,6 +227,19 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             days: m.days || 5,
             timing: m.timing || 'After Food'
         })))
+
+        // Populate clinical fields if present
+        if (template.diagnosis || template.plan || template.complaint || template.examination || template.vitals) {
+            setConvertedText(prev => ({
+                ...prev,
+                vitals: template.vitals || prev.vitals,
+                diagnosis: template.diagnosis || prev.diagnosis,
+                complaint: template.complaint || prev.complaint,
+                examination: template.examination || prev.examination,
+                plan: template.plan || prev.plan
+            }))
+            setShowConverted(true)
+        }
     }
 
     const saveCurrentAsTemplate = async () => {
@@ -244,7 +257,12 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name,
-                    medicines: selectedMedicines
+                    medicines: selectedMedicines,
+                    vitals: convertedText.vitals,
+                    diagnosis: convertedText.diagnosis,
+                    complaint: convertedText.complaint,
+                    examination: convertedText.examination,
+                    plan: convertedText.plan
                 })
             })
             const data = await res.json()

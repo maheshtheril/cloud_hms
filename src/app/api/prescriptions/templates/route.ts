@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { name, description, medicines } = body
+        const { name, description, medicines, vitals, diagnosis, complaint, examination, plan } = body
 
         if (!name || !medicines) {
             return NextResponse.json({ error: 'Name and medicines are required' }, { status: 400 })
@@ -40,7 +40,12 @@ export async function POST(request: NextRequest) {
                 tenant_id: session.user.tenantId,
                 name,
                 description,
-                medicines
+                medicines,
+                vitals,
+                diagnosis,
+                complaint,
+                examination,
+                plan
             }
         })
 

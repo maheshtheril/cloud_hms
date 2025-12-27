@@ -68,7 +68,16 @@ export async function POST(request: NextRequest) {
                         mId = newProduct.id;
                     }
                 }
+                if (!mId || mId === '' || mId === 'undefined') {
+                    throw new Error(`Technical Error: Could not resolve product ID for "${med.name}". Please ensure the medicine exists in the catalog or can be auto-created.`);
+                }
+
                 resolvedMedicines.push({ ...med, resolvedId: mId });
+            }
+
+            // 1.5 Safety check: Ensure all medicines have an ID
+            if (resolvedMedicines.length === 0 && medicines.length > 0) {
+                throw new Error("No valid medicines were found in the request.");
             }
 
             // 2. Clear existing prescription for this appointment if any
@@ -94,7 +103,7 @@ export async function POST(request: NextRequest) {
                     plan: plan || '',
                     prescription_items: {
                         create: resolvedMedicines.map((med: any) => {
-                            const dosageParts = med.dosage.split('-').map((n: string) => parseInt(n) || 0)
+                            const dosageParts = (med.dosage || '0-0-0').split('-').map((n: string) => parseInt(n) || 0)
                             return {
                                 medicine_id: med.resolvedId,
                                 morning: dosageParts[0] || 0,
@@ -121,12 +130,6 @@ export async function POST(request: NextRequest) {
                     }
                 }
             })
-
-            // If this is linked to an appointment, we just link it, don't change status to completed yet
-            // completed logic should follow payment/billing as per user request
-            if (appointmentId) {
-                // We keep the link, but don't update the status here
-            }
 
             return pr
         })
