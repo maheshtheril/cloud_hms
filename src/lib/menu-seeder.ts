@@ -47,10 +47,47 @@ export async function ensureAccountingMenu() {
         // 3. SEED JOURNALS MENU (Enterprise Feature)
         await ensureJournalMenu();
 
+
+        // D. Ensure 'Customers' and 'Vendors' Groups exist with Receipts/Payments
+        await ensurePaymentMenus();
+
     } catch (e) {
         console.error("Failed to auto-seed menu:", e);
     }
 }
+
+async function ensurePaymentMenus() {
+    // Customers -> Receipts
+    let custParent = await prisma.menu_items.findFirst({ where: { key: 'acc-customers' } });
+    if (!custParent) {
+        custParent = await prisma.menu_items.create({
+            data: { label: 'Customers', url: '#', key: 'acc-customers', module_key: 'accounting', icon: 'Users', sort_order: 10, is_global: true }
+        });
+    }
+
+    const receiptMenu = await prisma.menu_items.findFirst({ where: { key: 'acc-receipts' } });
+    if (!receiptMenu) {
+        await prisma.menu_items.create({
+            data: { label: 'Receipts', url: '/accounting/customer/receipts', key: 'acc-receipts', module_key: 'accounting', icon: 'ArrowDownLeft', parent_id: custParent.id, sort_order: 20, is_global: true }
+        });
+    }
+
+    // Vendors -> Payments
+    let vendParent = await prisma.menu_items.findFirst({ where: { key: 'acc-vendors' } });
+    if (!vendParent) {
+        vendParent = await prisma.menu_items.create({
+            data: { label: 'Vendors', url: '#', key: 'acc-vendors', module_key: 'accounting', icon: 'Truck', sort_order: 20, is_global: true }
+        });
+    }
+
+    const paymentMenu = await prisma.menu_items.findFirst({ where: { key: 'acc-payments' } });
+    if (!paymentMenu) {
+        await prisma.menu_items.create({
+            data: { label: 'Payments', url: '/accounting/vendor/payments', key: 'acc-payments', module_key: 'accounting', icon: 'ArrowUpRight', parent_id: vendParent.id, sort_order: 20, is_global: true }
+        });
+    }
+}
+
 
 async function ensureJournalMenu() {
     try {
