@@ -140,8 +140,8 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
                         </form>
                     </div>
 
-                    {/* RIGHT PANEL: DETAILS (Solid Background) */}
-                    <div className="w-full md:w-[380px] bg-neutral-900 border-l border-white/5 p-8 flex flex-col justify-between relative z-0">
+                    {/* RIGHT PANEL: DETAILS (Glassmorphism Restored) */}
+                    <div className="w-full md:w-[380px] bg-black/40 border-l border-white/5 p-8 flex flex-col justify-between backdrop-blur-xl relative z-0">
                         <div className="space-y-6">
                             <h3 className="text-xs font-bold text-white/50 uppercase tracking-widest mb-4">Transaction Details</h3>
 
