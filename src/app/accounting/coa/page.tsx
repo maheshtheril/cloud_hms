@@ -1,6 +1,7 @@
 
 import { getAccounts } from "@/app/actions/accounting/chart-of-accounts"
 import { ChartOfAccountsManager } from "@/components/accounting/coa-manager"
+import { ensureAccountingMenu } from "@/lib/menu-seeder"
 
 export const metadata = {
     title: "Chart of Accounts | Accounting",
@@ -8,6 +9,9 @@ export const metadata = {
 }
 
 export default async function ChartOfAccountsPage() {
+    // Self-Healing: Ensure Menu Exists
+    await ensureAccountingMenu().catch(console.error);
+
     const { data: accounts, error } = await getAccounts()
 
     if (error) {

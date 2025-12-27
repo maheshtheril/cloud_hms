@@ -94,6 +94,27 @@ async function ensureJournalMenu() {
                 }
             });
         }
+
+        // C. Ensure 'Chart of Accounts' Child Exists
+        const coaMenu = await prisma.menu_items.findFirst({
+            where: { key: 'acc-coa' }
+        });
+
+        if (!coaMenu) {
+            console.log("Creating Chart of Accounts menu...");
+            await prisma.menu_items.create({
+                data: {
+                    label: 'Chart of Accounts',
+                    url: '/accounting/coa',
+                    key: 'acc-coa',
+                    module_key: 'accounting',
+                    icon: 'ListTree',
+                    parent_id: ledgerParent.id,
+                    sort_order: 5, // Before Journals
+                    is_global: true
+                }
+            });
+        }
     } catch (error) {
         console.error("Failed to seed journal menus:", error);
     }
