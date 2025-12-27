@@ -90,150 +90,189 @@ export function CreateReceiptDialog({ open, onOpenChange, onSuccess }: CreateRec
                 <div className="flex flex-col md:flex-row h-full relative z-20 isolate">
 
                     {/* LEFT PANEL: PRIMARY INPUTS - High Z-Index to keep dropdowns above other content */}
-                    <div className="flex-1 p-8 space-y-8 relative z-50">
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        className="flex-1 p-8 space-y-8 relative z-50"
+                    >
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-900/20">
+                            <div className="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 shadow-lg shadow-emerald-900/20 border border-emerald-500/20">
                                 <Receipt className="h-5 w-5" />
                             </div>
                             <div>
                                 <DialogTitle className="text-xl font-bold text-white tracking-tight">New Receipt</DialogTitle>
-                                <DialogDescription className="text-neutral-500 text-xs">Record inbound payment</DialogDescription>
+                                <DialogDescription className="text-neutral-500 text-xs font-medium">Record inbound payment with precision</DialogDescription>
                             </div>
                         </div>
 
-                        <form id="receipt-form" onSubmit={handleSubmit} className="space-y-8">
+                        <form id="receipt-form" onSubmit={handleSubmit} className="space-y-10">
                             {/* Payer Selection */}
-                            <div className="space-y-3 relative z-10">
-                                <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest flex items-center gap-2">
-                                    <User className="h-3 w-3 text-indigo-400" /> Received From
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1, duration: 0.4 }}
+                                className="space-y-4 relative z-10"
+                            >
+                                <label className="text-[10px] font-bold text-neutral-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <User className="h-3 w-3 text-indigo-500" /> Received From
                                 </label>
                                 <SearchableSelect
                                     value={partnerId}
                                     onChange={(id) => setPartnerId(id)}
                                     onSearch={async (q) => searchPatients(q)}
                                     placeholder="Search Patient..."
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl text-base hover:border-white/20 focus-within:border-emerald-500/50 transition-all shadow-inner"
+                                    className="w-full bg-white/5 border-white/5 rounded-xl text-base hover:border-white/10 focus-within:border-emerald-500/50 transition-all shadow-2xl"
                                     isDark
                                 />
-                            </div>
+                            </motion.div>
 
                             {/* Amount - HERO */}
-                            <div className="space-y-3 relative z-10">
-                                <label className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest flex items-center gap-2">
-                                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.2, duration: 0.5, type: "spring", stiffness: 100 }}
+                                className="space-y-4 relative z-10"
+                            >
+                                <label className="text-[10px] font-bold text-emerald-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                                     Total Amount
                                 </label>
                                 <div className="relative group/amount">
-                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-500 font-medium text-3xl">₹</span>
+                                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-emerald-500 font-bold text-4xl select-none">₹</span>
                                     <input
                                         type="number"
                                         value={amount}
                                         onChange={(e) => setAmount(e.target.value)}
                                         placeholder="0.00"
-                                        className="w-full pl-14 pr-6 py-6 bg-white/5 border border-white/10 rounded-2xl text-4xl font-bold text-white placeholder:text-white/10 focus:outline-none focus:border-emerald-500/50 focus:bg-white/10 transition-all font-mono tracking-tight shadow-lg"
+                                        className="w-full pl-16 pr-8 py-8 bg-white/[0.03] border border-white/5 rounded-[2rem] text-5xl font-black text-white placeholder:text-white/5 focus:outline-none focus:border-emerald-500/40 focus:bg-white/[0.07] transition-all font-mono tracking-tighter shadow-3xl"
                                         autoFocus
                                     />
-                                    {/* Subtle Glow */}
-                                    <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/5 pointer-events-none group-focus-within/amount:ring-emerald-500/30" />
+                                    {/* Subtle Dynamic Glow */}
+                                    <div className="absolute -inset-0.5 rounded-[2rem] bg-gradient-to-r from-emerald-500/20 to-indigo-500/20 opacity-0 group-focus-within/amount:opacity-100 blur transition-opacity -z-10" />
                                 </div>
-                            </div>
+                            </motion.div>
                         </form>
-                    </div>
+                    </motion.div>
 
                     {/* RIGHT PANEL: DETAILS (Glassmorphism Restored) */}
-                    <div className="w-full md:w-[380px] bg-black/40 border-l border-white/5 p-8 flex flex-col justify-between backdrop-blur-xl relative z-0">
-                        <div className="space-y-6">
-                            <h3 className="text-xs font-bold text-white/50 uppercase tracking-widest mb-4">Transaction Details</h3>
+                    <motion.div
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        className="w-full md:w-[380px] bg-white/[0.02] border-l border-white/5 p-8 flex flex-col justify-between backdrop-blur-3xl relative z-0"
+                    >
+                        <div className="space-y-8">
+                            <h3 className="text-[10px] font-black text-white/30 uppercase tracking-[0.25em] mb-6 flex items-center gap-2">
+                                <span className="h-px w-4 bg-white/20" />
+                                Transaction Intel
+                            </h3>
 
                             {/* Date */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">Date</label>
-                                <div className="relative">
-                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-neutral-500" />
+                            <div className="space-y-3">
+                                <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold">Transaction Date</label>
+                                <div className="relative group/field">
+                                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-600 group-focus-within/field:text-emerald-500 transition-colors" />
                                     <input
                                         type="date"
                                         value={date}
                                         onChange={(e) => setDate(e.target.value)}
-                                        className="w-full pl-9 pr-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-neutral-300 focus:outline-none focus:border-white/20 transition-colors [color-scheme:dark]"
+                                        className="w-full pl-10 pr-3 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-neutral-300 focus:outline-none focus:border-white/20 focus:bg-white/10 transition-all [color-scheme:dark]"
                                     />
                                 </div>
                             </div>
 
                             {/* Method */}
-                            <div className="space-y-3">
-                                <label className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">Payment Method</label>
-                                <div className="grid grid-cols-2 gap-2">
-                                    {['cash', 'upi', 'card', 'bank'].map((m) => (
-                                        <button
+                            <div className="space-y-4">
+                                <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold">Payout Vector</label>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {['cash', 'upi', 'card', 'bank'].map((m, idx) => (
+                                        <motion.button
                                             key={m}
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
                                             type="button"
                                             onClick={() => setMethod(m)}
                                             className={cn(
-                                                "px-3 py-2 rounded-lg text-xs font-medium border transition-all capitalize flex items-center justify-center gap-2",
+                                                "px-4 py-3 rounded-xl text-[11px] font-bold border transition-all capitalize flex items-center justify-center gap-2 shadow-sm",
                                                 method === m
-                                                    ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400"
-                                                    : "bg-white/5 border-transparent text-neutral-500 hover:bg-white/10 hover:text-neutral-300"
+                                                    ? "bg-emerald-500/10 border-emerald-500/40 text-emerald-400 ring-1 ring-emerald-500/20"
+                                                    : "bg-white/5 border-white/5 text-neutral-500 hover:bg-white/10 hover:text-neutral-300"
                                             )}
                                         >
-                                            {m === 'cash' && <span className="w-1.5 h-1.5 rounded-full bg-current" />}
+                                            {method === m && <motion.span layoutId="active-dot" className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />}
                                             {m}
-                                        </button>
+                                        </motion.button>
                                     ))}
                                 </div>
                             </div>
 
                             {/* Reference */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">Reference ID</label>
-                                <input
-                                    type="text"
-                                    value={reference}
-                                    onChange={(e) => setReference(e.target.value)}
-                                    placeholder="Optional..."
-                                    className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-neutral-300 focus:outline-none focus:border-white/20 transition-colors placeholder:text-neutral-700"
-                                />
+                            <div className="space-y-3">
+                                <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold">Reference Token</label>
+                                <div className="relative group/field">
+                                    <FileText className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-600 group-focus-within/field:text-indigo-400 transition-colors" />
+                                    <input
+                                        type="text"
+                                        value={reference}
+                                        onChange={(e) => setReference(e.target.value)}
+                                        placeholder="TXN ID / REF..."
+                                        className="w-full pl-10 pr-3 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-neutral-300 focus:outline-none focus:border-white/20 focus:bg-white/10 transition-all placeholder:text-neutral-700 font-mono"
+                                    />
+                                </div>
                             </div>
 
                             {/* Memo */}
-                            <div className="space-y-2">
-                                <label className="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">Notes</label>
+                            <div className="space-y-3">
+                                <label className="text-[10px] text-neutral-500 uppercase tracking-widest font-bold">Internal Notes</label>
                                 <textarea
                                     value={memo}
                                     onChange={(e) => setMemo(e.target.value)}
-                                    placeholder="Type a note..."
-                                    rows={2}
-                                    className="w-full px-3 py-2.5 bg-white/5 border border-white/10 rounded-lg text-sm text-neutral-300 focus:outline-none focus:border-white/20 transition-colors placeholder:text-neutral-700 resize-none"
+                                    placeholder="Add context to this transaction..."
+                                    rows={3}
+                                    className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-sm text-neutral-300 focus:outline-none focus:border-white/20 focus:bg-white/10 transition-all placeholder:text-neutral-700 resize-none leading-relaxed"
                                 />
                             </div>
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="mt-8 pt-6 border-t border-white/5 flex gap-3">
+                        <div className="mt-10 pt-8 border-t border-white/5 flex gap-4">
                             <button
                                 type="button"
                                 onClick={() => onOpenChange(false)}
                                 disabled={isSubmitting}
-                                className="flex-1 py-3 px-4 rounded-xl border border-white/10 text-neutral-400 hover:bg-white/5 hover:text-white text-xs font-semibold uppercase tracking-wider transition-all"
+                                className="flex-1 py-4 px-4 rounded-2xl border border-white/5 text-neutral-500 hover:bg-white/5 hover:text-white text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-95"
                             >
-                                Cancel
+                                Reject
                             </button>
                             <button
                                 type="submit"
                                 form="receipt-form"
                                 disabled={isSubmitting}
                                 className={cn(
-                                    "flex-[2] py-3 px-4 rounded-xl text-white text-xs font-bold uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all",
+                                    "flex-[2.5] py-4 px-4 rounded-2xl text-white text-[11px] font-black uppercase tracking-[0.15em] shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-[0.98]",
                                     isSubmitting
                                         ? "bg-neutral-800 cursor-not-allowed text-neutral-500"
-                                        : "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-900/20 hover:shadow-emerald-900/40"
+                                        : "bg-emerald-600 hover:bg-emerald-500 shadow-emerald-500/20 hover:shadow-emerald-500/40 border border-emerald-400/20"
                                 )}
                             >
-                                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm Receipt"}
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        <span>Saving...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <CheckCircle2 className="h-4 w-4" />
+                                        <span>Confirm Receipt</span>
+                                    </>
+                                )}
                             </button>
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
             </DialogContent>
         </Dialog>
+
     );
 }
