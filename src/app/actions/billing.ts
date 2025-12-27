@@ -160,7 +160,7 @@ export async function createInvoice(data: any) {
 
         // Grand Total: Subtotal + Tax - Global Discount
         const total = Math.max(0, subtotal + totalTaxAmount - Number(total_discount || 0));
-        console.log(`[Billing] Calculated total: ${total}, Subtotal: ${subtotal}, Tax: ${totalTaxAmount}`);
+        console.log(`[Billing] (${new Date().toISOString()}) Calculated total: ${total}, Subtotal: ${subtotal}, Tax: ${totalTaxAmount}`);
 
         // Calculate Payment Totals
         const paymentList = payments || [];
