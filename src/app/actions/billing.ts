@@ -142,7 +142,24 @@ export async function createInvoice(data: any) {
     }
 
     try {
-        // ... (existing totals calculation) ...
+        // Generate human-readable invoice number (Simple timestamp based for MVP, can be sequence based)
+        const invoiceNo = `INV-${Date.now().toString().slice(-6)}`;
+
+        // Calculate totals
+        // Subtotal (Sum of [Qty * Price - Discount])
+        const subtotal = line_items.reduce((sum: number, item: any) => {
+            const qty = Number(item.quantity) || 0;
+            const price = Number(item.unit_price) || 0;
+            const discount = Number(item.discount_amount) || 0;
+            const lineTotal = (qty * price) - discount;
+            return sum + lineTotal;
+        }, 0);
+
+        // Tax Total (Sum of line item taxes)
+        const totalTaxAmount = line_items.reduce((sum: number, item: any) => sum + (Number(item.tax_amount || 0)), 0);
+
+        // Grand Total: Subtotal + Tax - Global Discount
+        const total = Math.max(0, subtotal + totalTaxAmount - Number(total_discount || 0));
 
         // Calculate Payment Totals
         const paymentList = payments || [];
