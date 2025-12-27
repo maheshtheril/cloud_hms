@@ -151,7 +151,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                             appointmentLines.push({
                                 id: Date.now() + 1000,
                                 product_id: '',
-                                description: 'Consultation Fee',
+                                description: appointment.clinician_name ? `Consultation Fee - Dr. ${appointment.clinician_name}` : 'Consultation Fee',
                                 quantity: 1,
                                 unit_price: parseFloat(appointment.consultation_fee.toString()),
                                 uom: 'Service',

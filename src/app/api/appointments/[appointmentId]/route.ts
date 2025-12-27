@@ -208,7 +208,8 @@ export async function GET(
                 test_code: t.test_code,
                 test_fee: Number(t.test_fee)
             })),
-            prescription_items
+            prescription_items,
+            clinician_name: (appointment as any).hms_clinician ? `${(appointment as any).hms_clinician.first_name} ${(appointment as any).hms_clinician.last_name}` : undefined
         }
 
         console.log('📋 Appointment billing data fetched:', {
