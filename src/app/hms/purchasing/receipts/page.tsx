@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getPurchaseReceipts } from '@/app/actions/receipt';
 import { ArrowLeft, Loader2, Plus, FileText, Calendar, Box, Search } from 'lucide-react';
+import { ReceiptEntryDialog } from '@/components/hms/purchasing/receipt-entry-dialog';
 
 type Receipt = {
     id: string;
@@ -21,20 +22,23 @@ export default function PurchaseReceiptsPage() {
     const [receipts, setReceipts] = useState<Receipt[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    async function load() {
+        setIsLoading(true);
+        try {
+            const res = await getPurchaseReceipts();
+            if (res.success && res.data) {
+                setReceipts(res.data);
+            }
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsLoading(false);
+        }
+    }
 
     useEffect(() => {
-        async function load() {
-            try {
-                const res = await getPurchaseReceipts();
-                if (res.success && res.data) {
-                    setReceipts(res.data);
-                }
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setIsLoading(false);
-            }
-        }
         load();
     }, []);
 
@@ -63,12 +67,12 @@ export default function PurchaseReceiptsPage() {
                             className="bg-neutral-900 border border-white/10 rounded-full pl-10 pr-4 py-2 text-sm text-neutral-200 placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 w-64 transition-all"
                         />
                     </div>
-                    <Link
-                        href="/hms/purchasing/receipts/new"
+                    <button
+                        onClick={() => setIsDialogOpen(true)}
                         className="bg-white text-black hover:bg-neutral-200 transition-colors px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-2"
                     >
                         <Plus className="h-4 w-4" /> New Receipt
-                    </Link>
+                    </button>
                 </div>
             </div>
 
@@ -85,12 +89,12 @@ export default function PurchaseReceiptsPage() {
                         </div>
                         <h3 className="text-lg font-medium text-neutral-300 mb-1">No receipts found</h3>
                         <p className="text-neutral-500 text-sm mb-6">Create a new purchase receipt to record incoming stock.</p>
-                        <Link
-                            href="/hms/purchasing/receipts/new"
+                        <button
+                            onClick={() => setIsDialogOpen(true)}
                             className="text-indigo-400 hover:text-indigo-300 text-sm font-medium"
                         >
                             + Create First Receipt
-                        </Link>
+                        </button>
                     </div>
                 ) : (
                     <div className="grid gap-4">
@@ -135,6 +139,15 @@ export default function PurchaseReceiptsPage() {
                     </div>
                 )}
             </div>
+
+            <ReceiptEntryDialog
+                isOpen={isDialogOpen}
+                onClose={() => setIsDialogOpen(false)}
+                onSuccess={() => {
+                    setIsDialogOpen(false);
+                    load();
+                }}
+            />
         </div>
     );
 }
