@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
 import { v4 as uuidv4 } from 'uuid'
+import { AccountingService } from "@/lib/services/accounting"
 
 export type PaymentType = 'inbound' | 'outbound';
 
@@ -106,6 +107,12 @@ export async function upsertPayment(data: {
                     posted: data.posted ?? true // Default to TRUE (Posted) for better UX
                 }
             });
+
+            // Post to Accounting if marked as posted
+            if (payment.posted) {
+                await AccountingService.postPaymentEntry(payment.id, session.user.id);
+            }
+
             revalidatePath(data.type === 'inbound' ? '/hms/accounting/receipts' : '/hms/accounting/payments');
             return { success: true, data: payment };
         }
@@ -125,10 +132,9 @@ export async function postPayment(id: string) {
     if (!session?.user?.companyId) return { error: "Unauthorized" };
 
     try {
-        await prisma.payments.update({
-            where: { id },
-            data: { posted: true, posted_at: new Date() }
-        });
+        const result = await AccountingService.postPaymentEntry(id, session.user.id);
+        if (!result.success) return { error: result.error };
+
         return { success: true };
     } catch (e: any) {
         return { error: e.message };

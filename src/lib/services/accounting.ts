@@ -322,4 +322,165 @@ export class AccountingService {
             return { success: false, error: error.message };
         }
     }
+
+    /**
+     * Posts a Payment (Receipt or Outbound) to the General Ledger.
+     * 
+     * @param paymentId - The ID of the payment to post
+     * @param userId - ID of the user performing the action
+     */
+    static async postPaymentEntry(paymentId: string, userId?: string) {
+        try {
+            // 1. Fetch Payment
+            const payment = await prisma.payments.findUnique({
+                where: { id: paymentId }
+            });
+
+            if (!payment) throw new Error("Payment not found");
+            if (payment.journal_entry_id) return { success: true, message: "Already posted" };
+
+            const metadata = payment.metadata as any;
+            const type: 'inbound' | 'outbound' = metadata?.type || 'inbound';
+            const journalDate = metadata?.date ? new Date(metadata.date) : (payment.created_at || new Date());
+
+            // 2. Fetch Accounting Settings
+            let settings = await prisma.company_accounting_settings.findUnique({
+                where: { company_id: payment.company_id }
+            });
+
+            // SELF-HEALING: Auto-configure defaults if missing
+            if (!settings) {
+                try {
+                    const { ensureDefaultAccounts } = await import('@/lib/account-seeder');
+                    await ensureDefaultAccounts(payment.company_id, payment.tenant_id!);
+
+                    const accounts = await prisma.accounts.findMany({
+                        where: { company_id: payment.company_id }
+                    });
+
+                    const findId = (code: string) => accounts.find(a => a.code === code)?.id || null;
+
+                    settings = await prisma.company_accounting_settings.create({
+                        data: {
+                            company_id: payment.company_id,
+                            tenant_id: payment.tenant_id!,
+                            ar_account_id: findId('1200'),
+                            ap_account_id: findId('2000'),
+                            sales_account_id: findId('4000'),
+                            purchase_account_id: findId('5000'),
+                            output_tax_account_id: findId('2200'),
+                            input_tax_account_id: findId('2210'),
+                            fiscal_year_start: new Date(new Date().getFullYear(), 3, 1),
+                            fiscal_year_end: new Date(new Date().getFullYear() + 1, 2, 31),
+                        }
+                    });
+                } catch (configError) {
+                    console.error("Failed to auto-configure accounting:", configError);
+                }
+            }
+
+            if (!settings) throw new Error("Accounting settings not configured.");
+
+            // 3. Determine Accounts
+            // Find Cash/Bank Accounts
+            const cashAccount = await prisma.accounts.findFirst({
+                where: { company_id: payment.company_id, code: '1000' }
+            }) || await prisma.accounts.create({
+                data: { tenant_id: payment.tenant_id!, company_id: payment.company_id, name: 'Cash on Hand', code: '1000', type: 'Asset', is_active: true }
+            });
+
+            const bankAccount = await prisma.accounts.findFirst({
+                where: { company_id: payment.company_id, code: '1100' }
+            }) || await prisma.accounts.create({
+                data: { tenant_id: payment.tenant_id!, company_id: payment.company_id, name: 'Bank Account', code: '1100', type: 'Asset', is_active: true }
+            });
+
+            const arAccount = settings.ar_account_id || (await prisma.accounts.findFirst({ where: { company_id: payment.company_id, code: '1200' } }))?.id;
+            const apAccount = settings.ap_account_id || (await prisma.accounts.findFirst({ where: { company_id: payment.company_id, code: '2000' } }))?.id;
+
+            if (type === 'inbound' && !arAccount) throw new Error("Accounts Receivable (1200) not found.");
+            if (type === 'outbound' && !apAccount) throw new Error("Accounts Payable (2000) not found.");
+
+            const moneyAccount = (payment.method === 'cash') ? cashAccount.id : bankAccount.id;
+            const amount = Number(payment.amount);
+
+            // 4. Prepare Lines
+            const journalLines: any[] = [];
+
+            if (type === 'inbound') {
+                // RECEIPT: Debit Cash/Bank, Credit AR
+                journalLines.push({
+                    account_id: moneyAccount,
+                    debit: amount,
+                    credit: 0,
+                    description: `Receipt Received - ${payment.payment_number}`
+                });
+                journalLines.push({
+                    account_id: arAccount,
+                    debit: 0,
+                    credit: amount,
+                    description: `AR Cleared - ${payment.payment_number}`,
+                    partner_id: payment.partner_id
+                });
+            } else {
+                // PAYMENT: Debit AP, Credit Cash/Bank
+                journalLines.push({
+                    account_id: apAccount,
+                    debit: amount,
+                    credit: 0,
+                    description: `Vendor Payment - ${payment.payment_number}`,
+                    partner_id: payment.partner_id
+                });
+                journalLines.push({
+                    account_id: moneyAccount,
+                    debit: 0,
+                    credit: amount,
+                    description: `Funds Disbursed - ${payment.payment_number}`
+                });
+            }
+
+            // 5. Create Transaction
+            await prisma.$transaction(async (tx) => {
+                const journal = await tx.journal_entries.create({
+                    data: {
+                        tenant_id: payment.tenant_id || settings!.tenant_id,
+                        company_id: payment.company_id,
+                        date: journalDate,
+                        posted: true,
+                        posted_at: new Date(),
+                        created_by: userId,
+                        currency_id: settings!.currency_id,
+                        amount_in_company_currency: amount,
+                        ref: payment.payment_number,
+                        journal_entry_lines: {
+                            create: journalLines.map(line => ({
+                                tenant_id: payment.tenant_id || settings!.tenant_id,
+                                company_id: payment.company_id,
+                                account_id: line.account_id,
+                                debit: line.debit,
+                                credit: line.credit,
+                                description: line.description,
+                                partner_id: line.partner_id
+                            }))
+                        }
+                    }
+                });
+
+                // Link back to payment
+                await tx.payments.update({
+                    where: { id: payment.id },
+                    data: {
+                        posted: true,
+                        posted_at: new Date(),
+                        journal_entry_id: journal.id
+                    }
+                });
+            });
+
+            return { success: true };
+        } catch (error: any) {
+            console.error("Payment Posting Error:", error);
+            return { success: false, error: error.message };
+        }
+    }
 }
