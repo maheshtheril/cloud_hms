@@ -279,7 +279,7 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
                 url: '#',
                 other_menu_items: [
                     { key: 'hms-billing', label: 'Patient Invoices', icon: 'Receipt', url: '/hms/billing' },
-                    { key: 'acc-payments', label: 'Payments Received', icon: 'CreditCard', url: '/accounting/income/payments' },
+                    { key: 'acc-payments', label: 'Payments Received', icon: 'CreditCard', url: '/hms/accounting/receipts' },
                 ]
             },
             {
@@ -289,7 +289,7 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
                 url: '#',
                 other_menu_items: [
                     { key: 'acc-bills', label: 'Vendor Bills', icon: 'FileMinus', url: '/hms/purchasing/bills' }, // Linked to Purchasing
-                    { key: 'acc-expenses', label: 'Expenses', icon: 'Receipt', url: '/accounting/expenses' },
+                    { key: 'acc-expenses', label: 'Expenses', icon: 'Receipt', url: '/hms/accounting/payments' },
                 ]
             },
             {
@@ -298,8 +298,8 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
                 icon: 'Book',
                 url: '#',
                 other_menu_items: [
-                    { key: 'acc-coa', label: 'Chart of Accounts', icon: 'List', url: '/accounting/coa' },
-                    { key: 'acc-journals', label: 'Journal Entries', icon: 'BookOpen', url: '/accounting/journals' },
+                    { key: 'acc-coa', label: 'Chart of Accounts', icon: 'List', url: '/hms/accounting/coa' },
+                    { key: 'acc-journals', label: 'Journal Entries', icon: 'BookOpen', url: '/hms/accounting/journals' },
                 ]
             }
         ]
