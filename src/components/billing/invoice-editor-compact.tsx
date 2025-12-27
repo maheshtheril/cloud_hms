@@ -388,266 +388,288 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
 
     // --- RENDER START ---
     return (
-        <div className="flex flex-col h-full bg-white dark:bg-slate-900 rounded-lg shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">
-            {/* 1. Header (Dense) */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900">
-                <div className="flex items-center gap-2">
-                    <div className="bg-indigo-100 dark:bg-indigo-900/30 p-1.5 rounded-lg text-indigo-600 dark:text-indigo-400">
-                        <Receipt className="h-4 w-4" />
-                    </div>
-                    <div>
-                        <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-tight">New Invoice</h2>
-                        <p className="text-[10px] text-slate-500 font-medium">Create bill for patient</p>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-4">
-                    {/* Patient Select (Searchable) */}
-                    <div className="w-64">
-                        <SearchableSelect
-                            value={selectedPatientId}
-                            onChange={(id) => setSelectedPatientId(id || '')}
-                            onSearch={async (q) => {
-                                const lower = q.toLowerCase()
-                                return patients.filter(p =>
-                                    p.first_name.toLowerCase().includes(lower) ||
-                                    p.last_name.toLowerCase().includes(lower) ||
-                                    (p.patient_number && p.patient_number.toLowerCase().includes(lower)) ||
-                                    (p.contact?.phone && p.contact.phone.includes(lower))
-                                ).map(p => ({
-                                    id: p.id,
-                                    label: `${p.first_name} ${p.last_name}`,
-                                    subLabel: `ID: ${p.patient_number || 'N/A'} | Ph: ${p.contact?.phone || 'N/A'}`
-                                }))
-                            }}
-                            defaultOptions={patients.slice(0, 50).map(p => ({
-                                id: p.id,
-                                label: `${p.first_name} ${p.last_name}`,
-                                subLabel: `ID: ${p.patient_number || 'N/A'} | Ph: ${p.contact?.phone || 'N/A'}`
-                            }))}
-                            placeholder="Search Patient (Name, ID, Phone)..."
-                            className="w-full text-xs"
-                            inputId="patient-search-input"
-                        />
-                    </div>
-
-                    {/* Date (Inline) */}
-                    <input
-                        type="date"
-                        className="text-xs py-1.5 px-2 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-md outline-none w-32"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                    />
-
-                    {/* Close Button */}
-                    <Link href="/hms/billing" className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md text-slate-400 hover:text-red-500 transition-colors">
-                        <X className="h-4 w-4" />
-                    </Link>
-                </div>
-            </div>
-
-            {/* 2. Scrollable Body (Table) */}
-            <div className="flex-1 overflow-y-auto bg-slate-50/30 dark:bg-slate-900/30">
-                <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-100 dark:bg-slate-800 sticky top-0 z-10 shadow-sm text-[11px] uppercase tracking-wider text-slate-500 font-semibold border-b border-slate-200 dark:border-slate-700">
-                        <tr>
-                            <th className="px-3 py-2 w-8 text-center">#</th>
-                            <th className="px-3 py-2 w-[35%]">Item Details</th>
-                            <th className="px-2 py-2 w-20 text-right">Qty</th>
-                            <th className="px-2 py-2 w-24 text-right">Price</th>
-                            <th className="px-2 py-2 w-20 text-right">Disc</th>
-                            <th className="px-2 py-2 w-24 text-right">Tax</th>
-                            <th className="px-3 py-2 text-right">Total</th>
-                            <th className="px-2 py-2 w-8"></th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                        {lines.map((line, idx) => (
-                            <tr key={line.id} className="bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800/50 group">
-                                <td className="px-3 py-2 text-[11px] text-slate-400 text-center font-mono">{idx + 1}</td>
-                                <td className="px-3 py-2">
-                                    <SearchableSelect
-                                        inputId={`product-search-${line.id}`}
-                                        value={line.product_id}
-                                        onChange={(id, option) => {
-                                            updateLine(line.id, 'product_id', id)
-                                            // UX: Auto-focus Qty and select text
-                                            setTimeout(() => {
-                                                const qtyInput = document.getElementById(`qty-${line.id}`) as HTMLInputElement
-                                                if (qtyInput) {
-                                                    qtyInput.focus()
-                                                    qtyInput.select()
-                                                }
-                                            }, 100)
-                                        }}
-                                        onSearch={async (query) => billableItems.filter(item => item.label.toLowerCase().includes(query.toLowerCase())).map(item => ({ id: item.id, label: `${item.label} - ₹${item.price}`, subLabel: item.description }))}
-                                        defaultOptions={billableItems.map(item => ({ id: item.id, label: `${item.label} - ₹${item.price}`, subLabel: item.description }))}
-                                        placeholder="Search item..."
-                                        className="w-full mb-1 text-xs"
-                                    />
-                                </td>
-                                <td className="px-2 py-2">
-                                    <input
-                                        id={`qty-${line.id}`}
-                                        type="number"
-                                        min="1"
-                                        className="w-full text-right bg-slate-50 dark:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 rounded px-1.5 py-1 text-xs outline-none font-medium focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                                        value={line.quantity}
-                                        onChange={(e) => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
-                                        onKeyDown={(e) => {
-                                            if ((e.key === 'Enter' || e.key === 'ArrowDown') && line.quantity > 0) {
-                                                e.preventDefault()
-                                                handleAddItem()
-                                            }
-                                        }}
-                                    />
-                                </td>
-                                <td className="px-2 py-2">
-                                    <input type="number" min="0" className="w-full text-right bg-slate-50 dark:bg-slate-800 border border-transparent hover:border-slate-200 dark:hover:border-slate-700 rounded px-1.5 py-1 text-xs outline-none font-medium" value={line.unit_price} onChange={(e) => updateLine(line.id, 'unit_price', parseFloat(e.target.value) || 0)} />
-                                </td>
-                                <td className="px-2 py-2">
-                                    <input type="number" min="0" className="w-full text-right bg-slate-50 dark:bg-slate-800 border border-transparent hover:border-red-200 dark:hover:border-red-900/50 rounded px-1.5 py-1 text-xs outline-none font-medium text-red-500" value={line.discount_amount || ''} placeholder="0" onChange={(e) => updateLine(line.id, 'discount_amount', parseFloat(e.target.value) || 0)} />
-                                </td>
-                                <td className="px-2 py-2">
-                                    <select className="w-full text-right bg-transparent text-[10px] outline-none" value={line.tax_rate_id} onChange={(e) => updateLine(line.id, 'tax_rate_id', e.target.value)}>
-                                        <option value="">-</option>
-                                        {taxConfig.taxRates.map(t => <option key={t.id} value={t.id}>{t.rate}%</option>)}
-                                    </select>
-                                    <div className="text-[10px] text-slate-400 text-right">₹{line.tax_amount?.toFixed(2)}</div>
-                                </td>
-                                <td className="px-3 py-2 text-right text-xs font-bold text-slate-700 dark:text-slate-200 font-mono">
-                                    ₹{((line.quantity * line.unit_price) - (line.discount_amount || 0) + (line.tax_amount || 0)).toFixed(2)}
-                                </td>
-                                <td className="px-2 py-2 text-center">
-                                    <button onClick={() => handleRemoveItem(line.id)} className="text-slate-300 hover:text-red-500 transition-colors disabled:opacity-0" disabled={lines.length === 1}>
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                        {/* Quick Add Row (Button inside table footer basically) */}
-                        <tr>
-                            <td colSpan={8} className="px-3 py-2 bg-slate-50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
-                                <button onClick={handleAddItem} className="flex items-center gap-1 text-xs font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">
-                                    <Plus className="h-3 w-3" /> Add Item
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                {/* Empty State / Hints */}
-                {lines.length < 3 && (
-                    <div className="p-8 flex flex-col items-center justify-center text-slate-400 opacity-50">
-                        <Search className="h-8 w-8 mb-2" />
-                        <p className="text-xs">Search and add items above</p>
-                    </div>
-                )}
-            </div>
-
-            {/* 3. Footer (Fixed) */}
-            <div className="bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 p-3 sm:px-5">
-                <div className="flex flex-col gap-2 mb-3">
-                    {/* Totals Row */}
-                    <div className="flex items-center justify-end gap-6 text-xs">
-                        <div className="flex items-center gap-2">
-                            <span className="text-slate-500">Subtotal:</span>
-                            <span className="font-semibold text-slate-700 dark:text-slate-200">₹{subtotal.toFixed(2)}</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+            <div className="relative w-full max-w-4xl h-[85vh] sm:h-[90vh] flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 ring-1 ring-slate-900/10">
+                {/* 1. Header (Dense) */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md z-10">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-gradient-to-br from-indigo-500 to-violet-600 p-2 rounded-lg text-white shadow-md shadow-indigo-500/20">
+                            <Receipt className="h-4 w-4" />
                         </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-slate-500">Tax:</span>
-                            <span className="font-semibold text-indigo-500">₹{totalTax.toFixed(2)}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-slate-500">Disc:</span>
-                            <input type="number" className="w-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1 text-right outline-none text-red-500" value={globalDiscount || ''} placeholder="0" onChange={(e) => setGlobalDiscount(parseFloat(e.target.value) || 0)} />
-                        </div>
-                        <div className="flex items-center gap-2 px-3 py-1 bg-slate-200 dark:bg-slate-800 rounded-lg">
-                            <span className="font-bold text-slate-600 dark:text-slate-400">Total:</span>
-                            <span className="font-bold text-lg text-emerald-600 dark:text-emerald-400">₹{grandTotal.toFixed(2)}</span>
-                        </div>
-                    </div>
-
-                    {/* Payment Splitting Row */}
-                    <div className="border-t border-slate-200 dark:border-slate-800 pt-3 mt-2">
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Payment Mode</div>
-                        <div className="space-y-2">
-                            {payments.map((p, idx) => (
-                                <div key={idx} className="flex items-center justify-end gap-2 group">
-                                    <div className="flex items-center bg-slate-100 dark:bg-slate-900 rounded-md p-1 border border-slate-200 dark:border-slate-800 focus-within:ring-2 ring-indigo-500/20 transition-all">
-                                        <div className="px-2 text-slate-500">
-                                            {p.method === 'cash' && <Banknote className="h-3.5 w-3.5" />}
-                                            {p.method === 'card' && <CreditCard className="h-3.5 w-3.5" />}
-                                            {p.method === 'upi' && <Smartphone className="h-3.5 w-3.5" />}
-                                            {p.method === 'bank_transfer' && <Landmark className="h-3.5 w-3.5" />}
-                                        </div>
-                                        <select
-                                            className="text-xs bg-transparent border-none outline-none w-24 font-medium text-slate-700 dark:text-slate-200"
-                                            value={p.method}
-                                            onChange={(e) => {
-                                                const newPayments = [...payments]
-                                                newPayments[idx].method = e.target.value as any
-                                                setPayments(newPayments)
-                                            }}
-                                        >
-                                            <option value="cash">Cash</option>
-                                            <option value="card">Card</option>
-                                            <option value="upi">UPI</option>
-                                            <option value="bank_transfer">Bank Transfer</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="relative">
-                                        <span className="absolute left-2 top-1.5 text-xs text-slate-400">₹</span>
-                                        <input
-                                            type="number"
-                                            className="w-24 text-xs text-right bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md pl-4 pr-2 py-1.5 outline-none focus:ring-2 ring-indigo-500/20 transition-all font-bold text-slate-700 dark:text-slate-200"
-                                            value={p.amount}
-                                            onChange={(e) => {
-                                                const newPayments = [...payments]
-                                                newPayments[idx].amount = parseFloat(e.target.value) || 0
-                                                setPayments(newPayments)
-                                            }}
-                                        />
-                                    </div>
-
-                                    {payments.length > 1 && (
-                                        <button onClick={() => setPayments(payments.filter((_, i) => i !== idx))} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1">
-                                            <X className="h-3 w-3" />
-                                        </button>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="flex items-center justify-between mt-3 bg-slate-100 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-200 dark:border-slate-800">
-                            <button onClick={() => setPayments([...payments, { method: 'cash', amount: Math.max(0, balanceDue), reference: '' }])} className="text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded transition-colors flex items-center gap-1">
-                                <Plus className="h-3 w-3" /> Split Payment
-                            </button>
-
-                            <div className="flex items-center gap-3">
-                                <span className="text-xs text-slate-500">Balance:</span>
-                                <span className={`text-sm font-bold px-2 py-0.5 rounded ${balanceDue > 1 ? "bg-red-100 text-red-600" : "bg-emerald-100 text-emerald-600"}`}>
-                                    {balanceDue > 1 ? `Due: ₹${balanceDue.toFixed(2)}` : 'PAID'}
+                        <div>
+                            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-tight">New Invoice</h2>
+                            <div className="flex items-center gap-2 mt-0.5">
+                                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
+                                    {selectedPatientId ? 'Patient Selected' : 'Select Patient'}
                                 </span>
+                                <span className="text-[10px] text-slate-400">•</span>
+                                <p className="text-[10px] text-slate-500 font-medium">Create bill for patient</p>
                             </div>
                         </div>
                     </div>
+
+                    <div className="flex items-center gap-3">
+                        {/* Patient Select (Searchable) */}
+                        <div className="w-56 sm:w-72 relative group">
+                            <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none text-slate-400">
+                                <User className="h-3.5 w-3.5" />
+                            </div>
+                            <div className="pl-7">
+                                <SearchableSelect
+                                    value={selectedPatientId}
+                                    onChange={(id) => setSelectedPatientId(id || '')}
+                                    onSearch={async (q) => {
+                                        const lower = q.toLowerCase()
+                                        return patients.filter(p =>
+                                            p.first_name.toLowerCase().includes(lower) ||
+                                            p.last_name.toLowerCase().includes(lower) ||
+                                            (p.patient_number && p.patient_number.toLowerCase().includes(lower)) ||
+                                            (p.contact?.phone && p.contact.phone.includes(lower))
+                                        ).map(p => ({
+                                            id: p.id,
+                                            label: `${p.first_name} ${p.last_name}`,
+                                            subLabel: `ID: ${p.patient_number || 'N/A'} | Ph: ${p.contact?.phone || 'N/A'}`
+                                        }))
+                                    }}
+                                    defaultOptions={patients.slice(0, 50).map(p => ({
+                                        id: p.id,
+                                        label: `${p.first_name} ${p.last_name}`,
+                                        subLabel: `ID: ${p.patient_number || 'N/A'} | Ph: ${p.contact?.phone || 'N/A'}`
+                                    }))}
+                                    placeholder="Search Patient..."
+                                    className="w-full text-xs border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                    inputId="patient-search-input"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Date (Inline) */}
+                        <div className="relative">
+                            <Calendar className="absolute left-2.5 top-1.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                            <input
+                                type="date"
+                                className="text-xs pl-8 pr-2 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-md outline-none w-32 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-600 dark:text-slate-300 font-medium"
+                                value={date}
+                                onChange={(e) => setDate(e.target.value)}
+                            />
+                        </div>
+
+                        {/* Close Button */}
+                        <Link href="/hms/billing" className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 hover:text-red-500 transition-all duration-200 hover:rotate-90">
+                            <X className="h-5 w-5" />
+                        </Link>
+                    </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-3">
-                    <button onClick={loadPrescriptionMedicines} className="text-xs font-medium text-indigo-600 hover:underline flex items-center gap-1" disabled={!selectedPatientId}>
-                        <FileText className="h-3 w-3" /> Fetch Prescriptions
-                    </button>
+                {/* 2. Scrollable Body (Table) */}
+                <div className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-slate-950/50 relative scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
+                    <table className="w-full text-left border-collapse">
+                        <thead className="bg-slate-50 dark:bg-slate-900 sticky top-0 z-20 shadow-sm text-[10px] uppercase tracking-wider text-slate-500 font-bold border-b border-slate-200 dark:border-slate-800">
+                            <tr>
+                                <th className="px-4 py-3 w-10 text-center bg-slate-50 dark:bg-slate-900">#</th>
+                                <th className="px-4 py-3 w-[40%] bg-slate-50 dark:bg-slate-900">Item Details</th>
+                                <th className="px-2 py-3 w-24 text-right bg-slate-50 dark:bg-slate-900">Qty</th>
+                                <th className="px-2 py-3 w-28 text-right bg-slate-50 dark:bg-slate-900">Price</th>
+                                <th className="px-2 py-3 w-24 text-right bg-slate-50 dark:bg-slate-900">Disc</th>
+                                <th className="px-2 py-3 w-28 text-right bg-slate-50 dark:bg-slate-900">Tax</th>
+                                <th className="px-4 py-3 text-right bg-slate-50 dark:bg-slate-900">Total</th>
+                                <th className="px-2 py-3 w-10 bg-slate-50 dark:bg-slate-900"></th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                            {lines.map((line, idx) => (
+                                <tr key={line.id} className="bg-white dark:bg-slate-900/40 hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 group transition-colors">
+                                    <td className="px-4 py-3 text-[11px] text-slate-400 text-center font-mono">{idx + 1}</td>
+                                    <td className="px-4 py-2">
+                                        <SearchableSelect
+                                            inputId={`product-search-${line.id}`}
+                                            value={line.product_id}
+                                            onChange={(id, option) => {
+                                                updateLine(line.id, 'product_id', id)
+                                                // UX: Auto-focus Qty and select text
+                                                setTimeout(() => {
+                                                    const qtyInput = document.getElementById(`qty-${line.id}`) as HTMLInputElement
+                                                    if (qtyInput) {
+                                                        qtyInput.focus()
+                                                        qtyInput.select()
+                                                    }
+                                                }, 100)
+                                            }}
+                                            onSearch={async (query) => billableItems.filter(item => item.label.toLowerCase().includes(query.toLowerCase())).map(item => ({ id: item.id, label: `${item.label} - ₹${item.price}`, subLabel: item.description }))}
+                                            defaultOptions={billableItems.map(item => ({ id: item.id, label: `${item.label} - ₹${item.price}`, subLabel: item.description }))}
+                                            placeholder="Search item..."
+                                            className="w-full text-xs font-medium"
+                                        />
+                                    </td>
+                                    <td className="px-2 py-2">
+                                        <input
+                                            id={`qty-${line.id}`}
+                                            type="number"
+                                            min="1"
+                                            className="w-full text-right bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 px-1 py-1 text-xs outline-none font-medium focus:border-indigo-500 focus:bg-indigo-50/20 transition-all text-slate-700 dark:text-slate-200"
+                                            value={line.quantity}
+                                            onChange={(e) => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                            onKeyDown={(e) => {
+                                                if ((e.key === 'Enter' || e.key === 'ArrowDown') && line.quantity > 0) {
+                                                    e.preventDefault()
+                                                    handleAddItem()
+                                                }
+                                            }}
+                                        />
+                                    </td>
+                                    <td className="px-2 py-2">
+                                        <div className="relative">
+                                            <span className="absolute left-1 top-1 text-[10px] text-slate-400">₹</span>
+                                            <input type="number" min="0" className="w-full text-right bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 pl-3 pr-1 py-1 text-xs outline-none font-medium focus:border-indigo-500 focus:bg-indigo-50/20 text-slate-700 dark:text-slate-200" value={line.unit_price} onChange={(e) => updateLine(line.id, 'unit_price', parseFloat(e.target.value) || 0)} />
+                                        </div>
+                                    </td>
+                                    <td className="px-2 py-2">
+                                        <input type="number" min="0" className="w-full text-right bg-transparent hover:bg-red-50 dark:hover:bg-red-900/10 border-b border-transparent hover:border-red-200 dark:hover:border-red-900/30 px-1 py-1 text-xs outline-none font-medium text-red-500 placeholder-red-200" value={line.discount_amount || ''} placeholder="0" onChange={(e) => updateLine(line.id, 'discount_amount', parseFloat(e.target.value) || 0)} />
+                                    </td>
+                                    <td className="px-2 py-2">
+                                        <select className="w-full text-right bg-transparent text-[11px] outline-none text-slate-600 dark:text-slate-400 cursor-pointer hover:text-indigo-600" value={line.tax_rate_id} onChange={(e) => updateLine(line.id, 'tax_rate_id', e.target.value)}>
+                                            <option value="">No Tax</option>
+                                            {taxConfig.taxRates.map(t => <option key={t.id} value={t.id}>{t.rate}%</option>)}
+                                        </select>
+                                        <div className="text-[10px] text-slate-400 text-right mt-0.5">₹{line.tax_amount?.toFixed(2)}</div>
+                                    </td>
+                                    <td className="px-4 py-2 text-right text-xs font-bold text-slate-800 dark:text-slate-100 font-mono tracking-tight bg-slate-50/30 dark:bg-slate-900/30">
+                                        ₹{((line.quantity * line.unit_price) - (line.discount_amount || 0) + (line.tax_amount || 0)).toFixed(2)}
+                                    </td>
+                                    <td className="px-2 py-2 text-center">
+                                        <button onClick={() => handleRemoveItem(line.id)} className="text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5 rounded-full transition-all disabled:opacity-0" disabled={lines.length === 1}>
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                            {/* Quick Add Row */}
+                            <tr>
+                                <td colSpan={8} className="px-4 py-3 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
+                                    <button onClick={handleAddItem} className="flex items-center gap-2 text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-3 py-1.5 rounded-md transition-all">
+                                        <div className="bg-indigo-100 dark:bg-indigo-900/50 p-0.5 rounded">
+                                            <Plus className="h-3 w-3" />
+                                        </div>
+                                        Add Line Item
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
 
-                    <div className="flex gap-2">
-                        <button onClick={() => handleSave('draft')} disabled={loading} className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                            Draft
-                        </button>
-                        <button onClick={() => handleSave('paid' as any)} disabled={loading} className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-green-600 text-white text-xs font-bold rounded-lg hover:shadow-lg hover:scale-105 transition-all flex items-center gap-2">
-                            {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <DollarSign className="h-3 w-3" />}
-                            Collect Pay
-                        </button>
+                    {/* Empty State / Hints */}
+                    {lines.length < 3 && (
+                        <div className="p-12 flex flex-col items-center justify-center text-slate-300 dark:text-slate-700 opacity-60 pointer-events-none">
+                            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-full mb-3">
+                                <Search className="h-8 w-8 text-slate-200 dark:text-slate-700" />
+                            </div>
+                            <p className="text-xs font-medium">Search items or medicines to add to bill</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* 3. Footer (Fixed) */}
+                <div className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)] z-20">
+                    <div className="flex flex-col sm:flex-row h-full">
+                        {/* Left Side: Payment Details */}
+                        <div className="flex-1 p-4 border-b sm:border-b-0 sm:border-r border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                    <CreditCard className="h-3 w-3" /> Payment Breakdown
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs text-slate-500">Balance Due:</span>
+                                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${balanceDue > 1 ? "bg-red-100 text-red-600 dark:text-red-400 dark:bg-red-500/10" : "bg-emerald-100 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-500/10"}`}>
+                                        {balanceDue > 1 ? `₹${balanceDue.toFixed(2)}` : 'PAID'}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
+                                {payments.map((p, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 group">
+                                        <div className="flex-1 flex items-center bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-700 focus-within:ring-2 ring-indigo-500/20 focus-within:border-indigo-400 transition-all shadow-sm">
+                                            <div className="pl-2 pr-1 text-slate-400">
+                                                {p.method === 'cash' && <Banknote className="h-3.5 w-3.5" />}
+                                                {p.method === 'card' && <CreditCard className="h-3.5 w-3.5" />}
+                                                {p.method === 'upi' && <Smartphone className="h-3.5 w-3.5" />}
+                                                {p.method === 'bank_transfer' && <Landmark className="h-3.5 w-3.5" />}
+                                            </div>
+                                            <select
+                                                className="text-xs bg-transparent border-none outline-none w-full py-2 font-medium text-slate-700 dark:text-slate-200 h-8"
+                                                value={p.method}
+                                                onChange={(e) => {
+                                                    const newPayments = [...payments]
+                                                    newPayments[idx].method = e.target.value as any
+                                                    setPayments(newPayments)
+                                                }}
+                                            >
+                                                <option value="cash">Cash</option>
+                                                <option value="card">Card</option>
+                                                <option value="upi">UPI</option>
+                                                <option value="bank_transfer">Transfer</option>
+                                            </select>
+                                        </div>
+
+                                        <div className="relative">
+                                            <span className="absolute left-2.5 top-2 text-[10px] text-slate-400 pointer-events-none">₹</span>
+                                            <input
+                                                type="number"
+                                                className="w-28 text-sm text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md pl-5 pr-3 py-1.5 outline-none focus:ring-2 ring-emerald-500/20 focus:border-emerald-500 transition-all font-bold text-emerald-600 dark:text-emerald-400 h-8 shadow-sm"
+                                                value={p.amount}
+                                                onChange={(e) => {
+                                                    const newPayments = [...payments]
+                                                    newPayments[idx].amount = parseFloat(e.target.value) || 0
+                                                    setPayments(newPayments)
+                                                }}
+                                            />
+                                        </div>
+
+                                        <button onClick={() => setPayments(payments.filter((_, i) => i !== idx))} className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all disabled:hidden" disabled={payments.length === 1}>
+                                            <X className="h-3.5 w-3.5" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button onClick={() => setPayments([...payments, { method: 'cash', amount: Math.max(0, balanceDue), reference: '' }])} className="mt-2 text-[10px] font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1.5 rounded transition-colors flex items-center justify-center gap-1 w-full border border-dashed border-indigo-200 dark:border-indigo-800">
+                                <Plus className="h-3 w-3" /> Split Payment (Add Mode)
+                            </button>
+                        </div>
+
+                        {/* Right Side: Totals & Actions */}
+                        <div className="p-4 w-full sm:w-80 flex flex-col justify-between gap-4">
+                            <div className="space-y-1">
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="text-slate-500">Subtotal</span>
+                                    <span className="font-semibold text-slate-700 dark:text-slate-200">₹{subtotal.toFixed(2)}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="text-slate-500">Tax Breakdown</span>
+                                    <span className="font-medium text-indigo-500">₹{totalTax.toFixed(2)}</span>
+                                </div>
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="text-slate-500">Total Discount</span>
+                                    <div className="relative w-20">
+                                        <input type="number" className="w-full bg-slate-50 dark:bg-slate-900 0 border-b border-dotted border-slate-300 text-right outline-none text-red-500 focus:border-red-500 transition-colors py-0.5 pr-0" value={globalDiscount || ''} placeholder="0" onChange={(e) => setGlobalDiscount(parseFloat(e.target.value) || 0)} />
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800 mt-2">
+                                    <span className="font-bold text-slate-700 dark:text-slate-300">Grand Total</span>
+                                    <span className="font-bold text-xl text-slate-800 dark:text-white tracking-tight">₹{grandTotal.toFixed(2)}</span>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3 mt-auto">
+                                <button onClick={() => handleSave('draft')} disabled={loading} className="px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 hover:border-slate-300 transition-all shadow-sm">
+                                    Save Draft
+                                </button>
+                                <button onClick={() => handleSave('paid' as any)} disabled={loading} className="px-4 py-2.5 bg-slate-900 dark:bg-indigo-600 text-white text-xs font-bold rounded-lg hover:bg-slate-800 dark:hover:bg-indigo-500 hover:shadow-lg hover:-translate-y-0.5 transition-all shadow-md shadow-indigo-500/20 flex items-center justify-center gap-2">
+                                    {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <DollarSign className="h-3.5 w-3.5" />}
+                                    Collect & Print
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
