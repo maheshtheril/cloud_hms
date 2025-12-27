@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, X, Loader2 } from 'lucide-react'
+import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, X, Loader2, CreditCard, Banknote, Smartphone, Landmark } from 'lucide-react'
 import { createInvoice, updateInvoice } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 
@@ -16,6 +16,12 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     appointmentId?: string,
     initialInvoice?: any
 }) {
+
+    interface Payment {
+        method: 'cash' | 'card' | 'upi' | 'bank_transfer';
+        amount: number;
+        reference?: string;
+    }
     const router = useRouter()
     const searchParams = useSearchParams()
     const [loading, setLoading] = useState(false)
@@ -51,6 +57,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     })) : [
         { id: 1, product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0 }
     ])
+    const [payments, setPayments] = useState<Payment[]>([{ method: 'cash', amount: 0, reference: '' }])
 
     const [globalDiscount, setGlobalDiscount] = useState(Number(initialInvoice?.total_discount || 0))
 
@@ -250,6 +257,15 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     const subtotal = lines.reduce((sum, line) => sum + ((line.quantity * line.unit_price) - (line.discount_amount || 0)), 0)
     const totalTax = lines.reduce((sum, line) => sum + (line.tax_amount || 0), 0)
     const grandTotal = Math.max(0, subtotal + totalTax - globalDiscount)
+    const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0)
+    const balanceDue = grandTotal - totalPaid
+
+    // Auto-update default payment if only one exists (UX convenience)
+    useEffect(() => {
+        if (payments.length === 1 && payments[0].amount !== grandTotal) {
+            setPayments([{ ...payments[0], amount: grandTotal }])
+        }
+    }, [grandTotal]) // Only run when total changes
 
     const handleAddItem = () => {
         const newId = Date.now()
@@ -351,7 +367,8 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             date,
             line_items: lines,
             status,
-            total_discount: globalDiscount
+            total_discount: globalDiscount,
+            payments: payments
         };
 
         if (initialInvoice?.id) {
@@ -530,22 +547,91 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
 
             {/* 3. Footer (Fixed) */}
             <div className="bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 p-3 sm:px-5">
-                <div className="flex items-center justify-end gap-6 mb-3 text-xs">
-                    <div className="flex items-center gap-2">
-                        <span className="text-slate-500">Subtotal:</span>
-                        <span className="font-semibold text-slate-700 dark:text-slate-200">₹{subtotal.toFixed(2)}</span>
+                <div className="flex flex-col gap-2 mb-3">
+                    {/* Totals Row */}
+                    <div className="flex items-center justify-end gap-6 text-xs">
+                        <div className="flex items-center gap-2">
+                            <span className="text-slate-500">Subtotal:</span>
+                            <span className="font-semibold text-slate-700 dark:text-slate-200">₹{subtotal.toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-slate-500">Tax:</span>
+                            <span className="font-semibold text-indigo-500">₹{totalTax.toFixed(2)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className="text-slate-500">Disc:</span>
+                            <input type="number" className="w-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1 text-right outline-none text-red-500" value={globalDiscount || ''} placeholder="0" onChange={(e) => setGlobalDiscount(parseFloat(e.target.value) || 0)} />
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1 bg-slate-200 dark:bg-slate-800 rounded-lg">
+                            <span className="font-bold text-slate-600 dark:text-slate-400">Total:</span>
+                            <span className="font-bold text-lg text-emerald-600 dark:text-emerald-400">₹{grandTotal.toFixed(2)}</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-slate-500">Tax:</span>
-                        <span className="font-semibold text-indigo-500">₹{totalTax.toFixed(2)}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="text-slate-500">Disc:</span>
-                        <input type="number" className="w-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1 text-right outline-none text-red-500" value={globalDiscount || ''} placeholder="0" onChange={(e) => setGlobalDiscount(parseFloat(e.target.value) || 0)} />
-                    </div>
-                    <div className="flex items-center gap-2 px-3 py-1 bg-slate-200 dark:bg-slate-800 rounded-lg">
-                        <span className="font-bold text-slate-600 dark:text-slate-400">Total:</span>
-                        <span className="font-bold text-lg text-emerald-600 dark:text-emerald-400">₹{grandTotal.toFixed(2)}</span>
+
+                    {/* Payment Splitting Row */}
+                    <div className="border-t border-slate-200 dark:border-slate-800 pt-3 mt-2">
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Payment Mode</div>
+                        <div className="space-y-2">
+                            {payments.map((p, idx) => (
+                                <div key={idx} className="flex items-center justify-end gap-2 group">
+                                    <div className="flex items-center bg-slate-100 dark:bg-slate-900 rounded-md p-1 border border-slate-200 dark:border-slate-800 focus-within:ring-2 ring-indigo-500/20 transition-all">
+                                        <div className="px-2 text-slate-500">
+                                            {p.method === 'cash' && <Banknote className="h-3.5 w-3.5" />}
+                                            {p.method === 'card' && <CreditCard className="h-3.5 w-3.5" />}
+                                            {p.method === 'upi' && <Smartphone className="h-3.5 w-3.5" />}
+                                            {p.method === 'bank_transfer' && <Landmark className="h-3.5 w-3.5" />}
+                                        </div>
+                                        <select
+                                            className="text-xs bg-transparent border-none outline-none w-24 font-medium text-slate-700 dark:text-slate-200"
+                                            value={p.method}
+                                            onChange={(e) => {
+                                                const newPayments = [...payments]
+                                                newPayments[idx].method = e.target.value as any
+                                                setPayments(newPayments)
+                                            }}
+                                        >
+                                            <option value="cash">Cash</option>
+                                            <option value="card">Card</option>
+                                            <option value="upi">UPI</option>
+                                            <option value="bank_transfer">Bank Transfer</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="relative">
+                                        <span className="absolute left-2 top-1.5 text-xs text-slate-400">₹</span>
+                                        <input
+                                            type="number"
+                                            className="w-24 text-xs text-right bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md pl-4 pr-2 py-1.5 outline-none focus:ring-2 ring-indigo-500/20 transition-all font-bold text-slate-700 dark:text-slate-200"
+                                            value={p.amount}
+                                            onChange={(e) => {
+                                                const newPayments = [...payments]
+                                                newPayments[idx].amount = parseFloat(e.target.value) || 0
+                                                setPayments(newPayments)
+                                            }}
+                                        />
+                                    </div>
+
+                                    {payments.length > 1 && (
+                                        <button onClick={() => setPayments(payments.filter((_, i) => i !== idx))} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1">
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="flex items-center justify-between mt-3 bg-slate-100 dark:bg-slate-900/50 p-2 rounded-lg border border-slate-200 dark:border-slate-800">
+                            <button onClick={() => setPayments([...payments, { method: 'cash', amount: Math.max(0, balanceDue), reference: '' }])} className="text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1 rounded transition-colors flex items-center gap-1">
+                                <Plus className="h-3 w-3" /> Split Payment
+                            </button>
+
+                            <div className="flex items-center gap-3">
+                                <span className="text-xs text-slate-500">Balance:</span>
+                                <span className={`text-sm font-bold px-2 py-0.5 rounded ${balanceDue > 1 ? "bg-red-100 text-red-600" : "bg-emerald-100 text-emerald-600"}`}>
+                                    {balanceDue > 1 ? `Due: ₹${balanceDue.toFixed(2)}` : 'PAID'}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

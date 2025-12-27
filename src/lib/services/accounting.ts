@@ -16,7 +16,8 @@ export class AccountingService {
                 where: { id: invoiceId },
                 include: {
                     hms_invoice_lines: true,
-                    hms_patient: true // Include patient for party name
+                    hms_patient: true, // Include patient for party name
+                    hms_invoice_payments: true
                 }
             });
 
@@ -240,74 +241,77 @@ export class AccountingService {
                     }
                 });
 
-                // PAYMENT HANDLING (AUTO-PAY)
-                // If invoice is 'paid', we must close the AR immediately by booking Cash.
-                // PAYMENT HANDLING (AUTO-PAY)
-                // If invoice is 'paid', we must close the AR immediately by booking Cash.
-                if (invoice.status === 'paid' && totalReceivable > 0) {
-                    // Try to find a Cash/Bank account
-                    let cashAccount = await tx.accounts.findFirst({
-                        where: {
-                            company_id: invoice.company_id,
-                            type: 'Asset',
-                            OR: [
-                                { name: { contains: 'Cash', mode: 'insensitive' } },
-                                { name: { contains: 'Bank', mode: 'insensitive' } },
-                                { code: '1000' }
-                            ]
-                        },
-                        orderBy: { code: 'asc' }
+                // PAYMENT HANDLING (Split & Partial)
+                // We book whatever is in hms_invoice_payments
+                const payments = invoice.hms_invoice_payments || [];
+
+                if (payments.length > 0) {
+                    // Find Accounts
+                    const cashAccount = await tx.accounts.findFirst({
+                        where: { company_id: invoice.company_id, code: '1000' }
+                    }) || await tx.accounts.create({
+                        data: { tenant_id: invoice.tenant_id, company_id: invoice.company_id, name: 'Cash on Hand', code: '1000', type: 'Asset', is_active: true }
                     });
 
-                    // FINAL FALLBACK: Create Cash Account if absolutely nothing exists
-                    if (!cashAccount) {
-                        cashAccount = await tx.accounts.create({
-                            data: {
-                                tenant_id: invoice.tenant_id,
-                                company_id: invoice.company_id,
-                                name: 'Cash on Hand',
-                                code: '1000',
-                                type: 'Asset',
-                                is_active: true
-                            }
+                    // Find or Create Bank Account (for Card/UPI)
+                    const bankAccount = await tx.accounts.findFirst({
+                        where: { company_id: invoice.company_id, code: '1100' }
+                    }) || await tx.accounts.create({
+                        data: { tenant_id: invoice.tenant_id, company_id: invoice.company_id, name: 'Bank Account', code: '1100', type: 'Asset', is_active: true }
+                    });
+
+                    // Prepare Payment Lines
+                    const paymentLines: any[] = [];
+                    let totalPaid = 0;
+
+                    for (const p of payments) {
+                        const amount = Number(p.amount);
+                        if (amount <= 0) continue;
+                        totalPaid += amount;
+
+                        const targetAccountId = (p.method === 'cash') ? cashAccount.id : bankAccount.id;
+
+                        paymentLines.push({
+                            tenant_id: invoice.tenant_id,
+                            company_id: invoice.company_id,
+                            account_id: targetAccountId,
+                            debit: amount,
+                            credit: 0,
+                            description: `Payment Received (${p.method})`,
+                            // metadata: { payment_id: p.id }
                         });
                     }
 
-                    await tx.journal_entries.create({
-                        data: {
+                    if (paymentLines.length > 0) {
+                        // Credit AR for the total paid
+                        paymentLines.push({
                             tenant_id: invoice.tenant_id,
                             company_id: invoice.company_id,
-                            invoice_id: invoice.id,
-                            date: new Date(journalDate),
-                            posted: true,
-                            posted_at: new Date(),
-                            created_by: userId,
-                            currency_id: settings.currency_id,
-                            amount_in_company_currency: totalReceivable,
-                            ref: `${invoice.invoice_number}-PMT`,
-                            journal_entry_lines: {
-                                create: [
-                                    {
-                                        tenant_id: invoice.tenant_id,
-                                        company_id: invoice.company_id,
-                                        account_id: cashAccount.id,
-                                        debit: totalReceivable,
-                                        credit: 0,
-                                        description: `Cash Received`,
-                                    },
-                                    {
-                                        tenant_id: invoice.tenant_id,
-                                        company_id: invoice.company_id,
-                                        account_id: debitAccountId, // AR Account
-                                        debit: 0,
-                                        credit: totalReceivable,
-                                        description: `AR Cleared`,
-                                        partner_id: invoice.patient_id
-                                    }
-                                ]
+                            account_id: debitAccountId, // AR Account
+                            debit: 0,
+                            credit: totalPaid,
+                            description: `AR Cleared - Ref ${invoice.invoice_number}`,
+                            partner_id: invoice.patient_id
+                        });
+
+                        await tx.journal_entries.create({
+                            data: {
+                                tenant_id: invoice.tenant_id,
+                                company_id: invoice.company_id,
+                                invoice_id: invoice.id,
+                                date: new Date(journalDate),
+                                posted: true,
+                                posted_at: new Date(),
+                                created_by: userId,
+                                currency_id: settings.currency_id,
+                                amount_in_company_currency: totalPaid,
+                                ref: `${invoice.invoice_number}-PMT`,
+                                journal_entry_lines: {
+                                    create: paymentLines
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
                 }
             });
 
