@@ -1,11 +1,10 @@
 import { prisma } from "@/lib/prisma"
-import Link from "next/link"
 import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 import { getBillableItems, getTaxConfiguration } from "@/app/actions/billing"
 import { auth } from "@/auth"
 import { notFound } from "next/navigation"
 
-export default async function EditInvoicePage({
+export default async function InterceptedEditInvoicePage({
     params
 }: {
     params: Promise<{ id: string }>
@@ -28,7 +27,7 @@ export default async function EditInvoicePage({
         }),
         prisma.hms_patient.findMany({
             where: {
-                tenant_id: tenantId // Filter by current user's tenant
+                tenant_id: tenantId
             },
             select: {
                 id: true,

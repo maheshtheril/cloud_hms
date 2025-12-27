@@ -275,7 +275,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
     const session = await auth();
     if (!session?.user?.companyId) return { error: "Unauthorized" };
 
-    const { patient_id, appointment_id, date, line_items, status = 'draft', total_discount = 0 } = data;
+    const { patient_id, appointment_id, date, line_items, status = 'draft', total_discount = 0, payments = [] } = data;
 
     if (!line_items || line_items.length === 0) {
         return { error: "At least one line item is required" };
@@ -298,6 +298,13 @@ export async function updateInvoice(invoiceId: string, data: any) {
         // Grand Total: Subtotal + Tax - Global Discount
         const total = Math.max(0, subtotal + totalTaxAmount - Number(total_discount || 0));
 
+        // Calculate Payment Totals
+        const paymentList = payments || [];
+        const totalPaid = paymentList.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
+
+        // Determine Outstanding
+        const outstandingAmount = (status === 'paid') ? 0 : Math.max(0, total - totalPaid);
+
         const result = await prisma.$transaction(async (tx) => {
             // 1. Update Invoice Header
             const updatedInvoice = await tx.hms_invoice.update({
@@ -311,7 +318,8 @@ export async function updateInvoice(invoiceId: string, data: any) {
                     subtotal: subtotal,
                     total_tax: totalTaxAmount,
                     total_discount: Number(total_discount),
-                    outstanding_amount: (status === 'posted') ? total : 0,
+                    total_paid: totalPaid,
+                    outstanding_amount: outstandingAmount,
                 }
             });
 
@@ -338,6 +346,25 @@ export async function updateInvoice(invoiceId: string, data: any) {
                     discount_amount: item.discount_amount || 0
                 }))
             });
+
+            // 4. Update Payments (Sync approach)
+            await tx.hms_invoice_payments.deleteMany({
+                where: { invoice_id: invoiceId }
+            });
+
+            if (paymentList.length > 0) {
+                await tx.hms_invoice_payments.createMany({
+                    data: paymentList.map((p: any) => ({
+                        tenant_id: session.user.tenantId,
+                        company_id: session.user.companyId,
+                        invoice_id: invoiceId,
+                        amount: Number(p.amount),
+                        method: p.method,
+                        payment_reference: p.reference || null,
+                        paid_at: new Date()
+                    }))
+                });
+            }
 
             // If status is paid and appointment is linked, mark appointment as completed
             if (status === 'paid' && appointment_id) {

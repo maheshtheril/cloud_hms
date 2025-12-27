@@ -1,34 +1,29 @@
 import { prisma } from "@/lib/prisma"
-import Link from "next/link"
 import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 import { getBillableItems, getTaxConfiguration } from "@/app/actions/billing"
 import { auth } from "@/auth"
-import { notFound } from "next/navigation"
 
-export default async function EditInvoicePage({
-    params
+export default async function InterceptedNewInvoicePage({
+    searchParams
 }: {
-    params: Promise<{ id: string }>
+    searchParams: Promise<{
+        patientId?: string
+        medicines?: string
+        items?: string
+        appointmentId?: string
+    }>
 }) {
     const session = await auth();
-    const { id } = await params;
-
     if (!session?.user?.companyId || !session?.user?.tenantId) return <div>Unauthorized</div>;
 
+    const { patientId, medicines, items, appointmentId } = await searchParams;
     const tenantId = session.user.tenantId;
 
     // Parallel data fetching
-    const [invoice, patients, itemsRes, taxRes] = await Promise.all([
-        prisma.hms_invoice.findUnique({
-            where: { id },
-            include: {
-                hms_invoice_lines: true,
-                hms_invoice_payments: true
-            }
-        }),
+    const [patients, itemsRes, taxRes] = await Promise.all([
         prisma.hms_patient.findMany({
             where: {
-                tenant_id: tenantId // Filter by current user's tenant
+                tenant_id: tenantId
             },
             select: {
                 id: true,
@@ -46,17 +41,19 @@ export default async function EditInvoicePage({
         getTaxConfiguration()
     ]);
 
-    if (!invoice) return notFound();
-
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
+
+    const initialItems = items ? JSON.parse(decodeURIComponent(items)) : (medicines ? JSON.parse(decodeURIComponent(medicines)) : undefined);
 
     return (
         <CompactInvoiceEditor
             patients={JSON.parse(JSON.stringify(patients))}
             billableItems={JSON.parse(JSON.stringify(billableItems))}
             taxConfig={JSON.parse(JSON.stringify(taxConfig))}
-            initialInvoice={JSON.parse(JSON.stringify(invoice))}
+            initialPatientId={patientId}
+            initialMedicines={initialItems}
+            appointmentId={appointmentId}
         />
     )
 }

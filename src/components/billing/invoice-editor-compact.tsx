@@ -57,7 +57,15 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     })) : [
         { id: 1, product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0 }
     ])
-    const [payments, setPayments] = useState<Payment[]>([{ method: 'cash', amount: 0, reference: '' }])
+    const [payments, setPayments] = useState<Payment[]>(
+        initialInvoice?.hms_invoice_payments?.length > 0
+            ? initialInvoice.hms_invoice_payments.map((p: any) => ({
+                method: (p.method?.toLowerCase() as any) || 'cash',
+                amount: Number(p.amount) || 0,
+                reference: p.reference || ''
+            }))
+            : [{ method: 'cash', amount: 0, reference: '' }]
+    )
 
     const [globalDiscount, setGlobalDiscount] = useState(Number(initialInvoice?.total_discount || 0))
 
@@ -388,8 +396,14 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
 
     // --- RENDER START ---
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="relative w-full max-w-4xl h-[85vh] sm:h-[90vh] flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 ring-1 ring-slate-900/10">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 animate-in fade-in duration-200"
+            onClick={() => router.back()}
+        >
+            <div
+                className="relative w-full max-w-5xl h-[95vh] sm:h-[90vh] flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 ring-1 ring-slate-900/10"
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* 1. Header (Dense) */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md z-10">
                     <div className="flex items-center gap-3">
@@ -457,9 +471,12 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                         </div>
 
                         {/* Close Button */}
-                        <Link href="/hms/billing" className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 hover:text-red-500 transition-all duration-200 hover:rotate-90">
+                        <button
+                            onClick={() => router.back()}
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 hover:text-red-500 transition-all duration-200 hover:rotate-90"
+                        >
                             <X className="h-5 w-5" />
-                        </Link>
+                        </button>
                     </div>
                 </div>
 
