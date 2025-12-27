@@ -10,7 +10,18 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json()
-        const { patientId, appointmentId, vitals, diagnosis, complaint, examination, plan, medicines } = body
+        let { patientId, appointmentId, vitals, diagnosis, complaint, examination, plan, medicines } = body
+
+        // If patientId is missing but appointmentId is present, try to find patientId from appointment
+        if (!patientId && appointmentId) {
+            const appointment = await prisma.hms_appointments.findUnique({
+                where: { id: appointmentId },
+                select: { patient_id: true }
+            });
+            if (appointment) {
+                patientId = appointment.patient_id;
+            }
+        }
 
         if (!patientId) {
             return NextResponse.json({ error: 'Patient ID required' }, { status: 400 })

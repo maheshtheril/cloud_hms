@@ -13,6 +13,7 @@ export async function GET(
         }
 
         const { id } = await params
+        console.log('🔍 GET prescription by appointment ID:', id)
 
         const prescription = await (prisma.prescription as any).findFirst({
             where: {

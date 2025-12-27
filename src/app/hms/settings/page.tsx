@@ -45,7 +45,7 @@ export default function SettingsHubPage() {
                         </CardHeader>
                         <CardContent className="p-6">
                             <div className="space-y-2">
-                                {cat.links.map(link => (
+                                {cat.links.map((link: any) => (
                                     <Link
                                         key={link.href}
                                         href={link.href}

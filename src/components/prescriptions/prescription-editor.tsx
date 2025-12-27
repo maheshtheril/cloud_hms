@@ -93,6 +93,24 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             .catch(err => console.error(err))
     }, [patientId])
 
+    // If no patientId but have appointmentId, fetch appointment to get patientId
+    useEffect(() => {
+        if (patientId || !appointmentId) return;
+
+        fetch(`/api/appointments/${appointmentId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.appointment?.patient_id) {
+                    fetch(`/api/patients/${data.appointment.patient_id}`)
+                        .then(res => res.json())
+                        .then(pData => {
+                            if (pData.patient) setPatientInfo(pData.patient)
+                        });
+                }
+            })
+            .catch(err => console.error('Error fetching appointment for patient info:', err));
+    }, [appointmentId, patientId]);
+
     // Fetch existing prescription if appointmentId is present
     useEffect(() => {
         if (!appointmentId) return;
@@ -111,10 +129,19 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                     });
                     setSelectedMedicines(pr.medicines || []);
                     setShowConverted(true);
+
+                    // If we don't have patientId from URL, get it from prescription/appointment
+                    if (!patientId && pr.patient_id) {
+                        fetch(`/api/patients/${pr.patient_id}`)
+                            .then(res => res.json())
+                            .then(pData => {
+                                if (pData.patient) setPatientInfo(pData.patient)
+                            });
+                    }
                 }
             })
             .catch(err => console.error('Error fetching existing prescription:', err));
-    }, [appointmentId]);
+    }, [appointmentId, patientId]);
 
     // Fetch medicines
     useEffect(() => {
@@ -379,7 +406,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
 
         setIsSaving(true)
         try {
-            const res = await fetch('/api/prescriptions/save', {
+            const response = await fetch('/api/prescriptions/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -394,9 +421,9 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                 })
             })
 
-            const data = await res.json()
+            const data = await response.json()
 
-            if (data.success) {
+            if (response.ok && data.success) {
                 if (redirectToBill && data.medicines && data.medicines.length > 0) {
                     const medicineParams = encodeURIComponent(JSON.stringify(data.medicines))
                     const appointmentParam = appointmentId ? `&appointmentId=${appointmentId}` : ''
@@ -407,7 +434,9 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                     router.push('/hms/patients')
                 }
             } else {
-                alert(`❌ Failed to save: ${data.error || 'Unknown error'}\n${data.details ? `Details: ${data.details}` : ''}`)
+                const errorMsg = data.error || 'Unknown error';
+                const details = data.details || '';
+                alert(`❌ Failed to save (${response.status}): ${errorMsg}\n${details ? `Details: ${details}` : ''}`)
             }
         } catch (error) {
             console.error('Save error:', error)
