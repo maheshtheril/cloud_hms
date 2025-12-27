@@ -268,12 +268,23 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0)
     const balanceDue = grandTotal - totalPaid
 
+    const [isMounted, setIsMounted] = useState(false)
+    useEffect(() => { setIsMounted(true) }, [])
+
     // Auto-update default payment if only one exists (UX convenience)
+    // ONLY for new invoices or when user is interacting (not on initial load of existing invoice)
     useEffect(() => {
+        if (!isMounted) return; // Skip on first run to protect DB values
+        if (initialInvoice && payments.length === 1 && payments[0].amount !== 0) {
+            // If we have an initial invoice and a non-zero payment, don't overwrite it automatically
+            // unless the user changes something else? For now, let's be conservative.
+            return;
+        }
+
         if (payments.length === 1 && payments[0].amount !== grandTotal) {
             setPayments([{ ...payments[0], amount: grandTotal }])
         }
-    }, [grandTotal]) // Only run when total changes
+    }, [grandTotal, isMounted])
 
     const handleAddItem = () => {
         const newId = Date.now()
