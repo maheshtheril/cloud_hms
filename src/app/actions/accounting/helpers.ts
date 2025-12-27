@@ -16,8 +16,8 @@ export async function searchPatients(query: string): Promise<SearchOption[]> {
     try {
         const patients = await prisma.hms_patient.findMany({
             where: {
-                tenant_id: session.user.tenantId,
-                company_id: session.user.companyId,
+                tenant_id: session.user.tenantId as string,
+                company_id: session.user.companyId as string,
                 OR: [
                     { first_name: { contains: query, mode: 'insensitive' } },
                     { last_name: { contains: query, mode: 'insensitive' } },
@@ -55,8 +55,8 @@ export async function searchSuppliers(query: string): Promise<SearchOption[]> {
     try {
         const suppliers = await prisma.hms_supplier.findMany({
             where: {
-                tenant_id: session.user.tenantId,
-                company_id: session.user.companyId,
+                tenant_id: session.user.tenantId as string,
+                company_id: session.user.companyId as string,
                 is_active: true,
                 name: { contains: query, mode: 'insensitive' }
             },
