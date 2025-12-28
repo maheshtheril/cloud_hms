@@ -323,7 +323,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-[98vw] w-full h-[98vh] p-0 flex flex-col bg-neutral-950 border-white/10 selection:bg-indigo-500/30">
+            <DialogContent className="max-w-[98vw] w-full h-[98vh] p-0 flex flex-col bg-background border-white/10 selection:bg-indigo-500/30 text-foreground">
 
                 <Toaster />
                 <SupplierDialog
@@ -337,7 +337,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                 />
 
                 {/* World-Class Fixed Header */}
-                <div className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-neutral-950/80 backdrop-blur-xl shrink-0 z-10">
+                <div className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-background/80 backdrop-blur-xl shrink-0 z-10">
                     <div className="flex items-center gap-4">
                         <div className="h-10 w-10 bg-indigo-500/10 rounded-xl flex items-center justify-center border border-indigo-500/20">
                             <Receipt className="h-5 w-5 text-indigo-400" />
@@ -383,9 +383,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     </div>
                 </div>
 
-                {/* Main Scrollable Content */}
-                <div className="flex-1 overflow-auto custom-scrollbar bg-neutral-950">
-                    <div className="px-8 py-8 space-y-12">
+                {/* Fixed Context Header Block */}
+                <div className="shrink-0 z-20 border-b border-white/5 bg-transparent px-8 py-6">
+                    <div className="space-y-6">
                         {/* Header Context Grid */}
                         <div className="grid grid-cols-12 gap-12">
                             {/* Vendor Section */}
@@ -555,23 +555,28 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 </div>
                             </div>
                         </div>
+                    </div>
+                </div>
 
+                {/* Main Scrollable Item Table */}
+                <div className="flex-1 overflow-auto custom-scrollbar bg-transparent relative">
+                    <div className="p-0">
                         {/* Item Manifest */}
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between px-2">
+                        <div className="bg-neutral-900 border-none min-h-full">
+                            <div className="flex items-center justify-between px-6 py-2 bg-neutral-800 border-b border-white/5 sticky top-0 z-20">
                                 <div className="flex items-center gap-3">
-                                    <div className="h-6 w-1 bg-indigo-500 rounded-full"></div>
-                                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-500">Item Manifest</h3>
+                                    <div className="h-4 w-1 bg-indigo-500 rounded-full"></div>
+                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-neutral-400">Items</h3>
                                 </div>
                                 {mode === 'direct' && (
-                                    <button onClick={addItem} className="text-xs font-bold text-indigo-400 flex items-center gap-1.5 hover:bg-indigo-500/10 px-3 py-1.5 rounded-lg transition-all">
-                                        <Plus className="h-3.5 w-3.5" /> ADD LINE
+                                    <button onClick={addItem} className="text-[10px] font-bold text-indigo-400 flex items-center gap-1.5 hover:bg-indigo-500/10 px-3 py-1.5 rounded-lg transition-all">
+                                        <Plus className="h-3.5 w-3.5" /> ADD
                                     </button>
                                 )}
                             </div>
 
-                            <div className="rounded-2xl border border-white/5 bg-neutral-900/30 overflow-x-auto pb-2 custom-scrollbar">
-                                <table className="w-full text-left border-collapse min-w-[2000px]">
+                            <div className="border border-white/5 bg-neutral-900/30">
+                                <table className="w-full text-left border-collapse min-w-[1500px]">
                                     <thead>
                                         <tr className="bg-white/[0.02] text-[10px] font-black uppercase tracking-widest text-neutral-500 border-b border-white/5">
                                             <th className="py-4 pl-6 w-[250px]">Product Description</th>
@@ -768,8 +773,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     </div>
                 </div>
 
-                {/* World-Class Fixed Footer */}
-                <div className="px-8 py-6 border-t border-white/5 bg-neutral-900/40 backdrop-blur-2xl shrink-0 flex items-center justify-between z-10">
+                {/* Fixed Action Footer */}
+                <div className="px-8 py-6 border-t border-white/5 bg-background/80 backdrop-blur-2xl shrink-0 flex items-center justify-between z-10">
                     <div className="flex items-center gap-12">
                         {/* Summary Stats */}
                         <div className="flex items-center gap-8">
