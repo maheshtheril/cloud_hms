@@ -405,9 +405,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     </div>
                 </div>
 
-                {/* Main Scrollable Content */}
-                <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
-                    <div className="px-8 py-8 space-y-12">
+                {/* Unified Main Scroll Container */}
+                <div className="flex-1 overflow-auto custom-scrollbar">
+                    <div className="px-8 py-8 space-y-12 min-w-[2000px]">
                         {/* Header Context Grid */}
                         <div className="grid grid-cols-12 gap-12">
                             {/* Vendor Section */}
@@ -568,7 +568,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                             </div>
                         </div>
 
-                        {/* Item Manifest */}
+                        {/* Item Manifest - Natural height in unified scroll */}
                         <div className="space-y-4">
                             <div className="flex items-center justify-between px-2">
                                 <div className="flex items-center gap-3">
@@ -582,30 +582,30 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 )}
                             </div>
 
-                            <div className="rounded-2xl border border-white/5 bg-neutral-900/30 overflow-x-auto custom-scrollbar w-full max-w-full">
+                            <div className="rounded-2xl border border-white/5 bg-neutral-900/30">
                                 <table className="w-full text-left border-collapse min-w-[2000px]">
                                     <thead>
-                                        <tr className="bg-white/[0.02] text-[10px] font-black uppercase tracking-widest text-neutral-500 border-b border-white/5">
-                                            <th className="py-4 pl-6 w-[250px] sticky left-0 z-20 bg-neutral-900 border-r border-white/5 shadow-2xl">Product Description</th>
-                                            <th className="py-4 px-2 w-24">HSN</th>
-                                            <th className="py-4 px-2 w-24">Pack</th>
-                                            <th className="py-4 px-2 w-28">Batch</th>
-                                            <th className="py-4 px-2 w-24">Exp</th>
-                                            <th className="py-4 px-2 w-24 text-right">MRP</th>
-                                            <th className="py-4 px-2 w-24 text-right text-emerald-400">Sale Price</th>
-                                            <th className="py-4 px-2 w-20 text-right">Margin %</th>
-                                            <th className="py-4 px-2 w-24 text-right text-indigo-300">Basic Price</th>
-                                            <th className="py-4 px-2 w-20 text-center">Qty</th>
-                                            <th className="py-4 px-2 w-20 text-right text-yellow-500">Disc %</th>
-                                            <th className="py-4 px-2 w-24 text-right text-yellow-500">Disc Amt</th>
-                                            <th className="py-4 px-2 w-24 text-right text-orange-400">Schm Amt</th>
-                                            <th className="py-4 px-2 w-28 text-right font-black text-white">Taxable Val</th>
-                                            <th className="py-4 px-2 w-24 text-right">Tax (%)</th>
-                                            <th className="py-4 px-2 w-20 text-right text-neutral-400">CGST</th>
-                                            <th className="py-4 px-2 w-20 text-right text-neutral-400">SGST</th>
-                                            <th className="py-4 px-2 w-20 text-right text-neutral-400">IGST</th>
-                                            <th className="py-4 px-2 w-24 text-right text-indigo-400">Net Cost</th>
-                                            <th className="py-4 pr-6 text-right w-32 sticky right-0 z-20 bg-neutral-900 border-l border-white/5 shadow-xl">Line Total</th>
+                                        <tr className="bg-neutral-900 text-[10px] font-black uppercase tracking-widest text-neutral-500 border-b border-white/5 sticky top-0 z-50">
+                                            <th className="py-4 pl-6 w-[250px] sticky left-0 z-50 bg-neutral-900 border-r border-white/5 shadow-2xl">Product Description</th>
+                                            <th className="py-4 px-2 w-24 bg-neutral-900">HSN</th>
+                                            <th className="py-4 px-2 w-24 bg-neutral-900">Pack</th>
+                                            <th className="py-4 px-2 w-28 bg-neutral-900">Batch</th>
+                                            <th className="py-4 px-2 w-24 bg-neutral-900">Exp</th>
+                                            <th className="py-4 px-2 w-24 text-right bg-neutral-900">MRP</th>
+                                            <th className="py-4 px-2 w-24 text-right bg-neutral-900">Sale Price</th>
+                                            <th className="py-4 px-2 w-20 text-right bg-neutral-900">Margin %</th>
+                                            <th className="py-4 px-2 w-24 text-right bg-neutral-900">Basic Price</th>
+                                            <th className="py-4 px-2 w-20 text-center bg-neutral-900">Qty</th>
+                                            <th className="py-4 px-2 w-20 text-right bg-neutral-900">Disc %</th>
+                                            <th className="py-4 px-2 w-24 text-right bg-neutral-900">Disc Amt</th>
+                                            <th className="py-4 px-2 w-24 text-right bg-neutral-900">Schm Amt</th>
+                                            <th className="py-4 px-2 w-28 text-right bg-neutral-900">Taxable Val</th>
+                                            <th className="py-4 px-2 w-24 text-right bg-neutral-900">Tax (%)</th>
+                                            <th className="py-4 px-2 w-20 text-right bg-neutral-900">CGST</th>
+                                            <th className="py-4 px-2 w-20 text-right bg-neutral-900">SGST</th>
+                                            <th className="py-4 px-2 w-20 text-right bg-neutral-900">IGST</th>
+                                            <th className="py-4 px-2 w-24 text-right bg-neutral-900">Net Cost</th>
+                                            <th className="py-4 pr-6 text-right w-32 sticky right-0 z-50 bg-neutral-900 border-l border-white/5 shadow-xl">Line Total</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/[0.03]">
