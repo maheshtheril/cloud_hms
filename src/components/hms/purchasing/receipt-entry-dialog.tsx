@@ -843,7 +843,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                         <SelectValue />
                                                     </SelectTrigger>
                                                     <SelectContent className="bg-neutral-900 border-white/10 text-white">
-                                                        {TAX_OPTIONS.map(v => <SelectItem key={v} value={v}>{v}%</SelectItem>)}
+                                                        {TAX_OPTIONS.map(v => <SelectItem key={v} value={String(v)}>{v}%</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
                                             </td>
