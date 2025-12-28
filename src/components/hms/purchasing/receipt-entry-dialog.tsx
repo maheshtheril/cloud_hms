@@ -173,7 +173,19 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     orderedQty: i.orderedQty,
                     pendingQty: i.pendingQty,
                     receivedQty: i.pendingQty,
-                    unitPrice: i.unitPrice
+                    unitPrice: i.unitPrice,
+                    batch: '',
+                    expiry: '',
+                    mrp: i.unitPrice || 0,
+                    salePrice: 0,
+                    marginPct: 0,
+                    taxRate: 0,
+                    taxAmount: 0,
+                    hsn: '',
+                    packing: '',
+                    schemeDiscount: 0,
+                    discountPct: 0,
+                    discountAmt: 0
                 })));
             }
         } catch (err) {
@@ -234,7 +246,19 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
             receivedQty: 1,
             unitPrice: 0,
             pendingQty: 0,
-            orderedQty: 0
+            orderedQty: 0,
+            batch: "",
+            expiry: "",
+            mrp: 0,
+            salePrice: 0,
+            marginPct: 0,
+            taxRate: 0,
+            taxAmount: 0,
+            hsn: "",
+            packing: "",
+            schemeDiscount: 0,
+            discountPct: 0,
+            discountAmt: 0
         }]);
     };
 
@@ -508,14 +532,19 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                                     productName: item.productName,
                                                                     receivedQty: qty,
                                                                     unitPrice: price,
-                                                                    batch: item.batch,
-                                                                    expiry: item.expiry,
-                                                                    mrp: Number(item.mrp),
+                                                                    batch: item.batch || "",
+                                                                    expiry: item.expiry || "",
+                                                                    mrp: Number(item.mrp) || price,
+                                                                    salePrice: 0,
+                                                                    marginPct: 0,
                                                                     taxRate: rate,
                                                                     taxAmount: (qty * price) * (rate / 100),
-                                                                    hsn: item.hsn,
-                                                                    packing: item.packing,
-                                                                    uom: item.uom
+                                                                    hsn: item.hsn || "",
+                                                                    packing: item.packing || "",
+                                                                    uom: item.uom || "",
+                                                                    schemeDiscount: 0,
+                                                                    discountPct: 0,
+                                                                    discountAmt: 0
                                                                 };
                                                             }));
                                                             setItems(mapped);
@@ -572,14 +601,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             <th className="py-4 px-2 w-24 text-right text-orange-400">Schm Amt</th>
                                             <th className="py-4 px-2 w-28 text-right font-black text-white">Taxable Val</th>
                                             <th className="py-4 px-2 w-24 text-right">Tax (%)</th>
-                                            {taxType === 'INTRA' ? (
-                                                <>
-                                                    <th className="py-4 px-2 w-20 text-right text-neutral-400">CGST</th>
-                                                    <th className="py-4 px-2 w-20 text-right text-neutral-400">SGST</th>
-                                                </>
-                                            ) : (
-                                                <th className="py-4 px-2 w-20 text-right text-neutral-400">IGST</th>
-                                            )}
+                                            <th className="py-4 px-2 w-20 text-right text-neutral-400">CGST</th>
+                                            <th className="py-4 px-2 w-20 text-right text-neutral-400">SGST</th>
+                                            <th className="py-4 px-2 w-20 text-right text-neutral-400">IGST</th>
                                             <th className="py-4 pr-6 text-right w-32 sticky right-0 z-20 bg-neutral-900 border-l border-white/5 shadow-xl">Line Total</th>
                                         </tr>
                                     </thead>
@@ -751,20 +775,15 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                         </SelectContent>
                                                     </Select>
                                                 </td>
-                                                {taxType === 'INTRA' ? (
-                                                    <>
-                                                        <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
-                                                            {((item.taxAmount || 0) / 2).toFixed(2)}
-                                                        </td>
-                                                        <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
-                                                            {((item.taxAmount || 0) / 2).toFixed(2)}
-                                                        </td>
-                                                    </>
-                                                ) : (
-                                                    <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
-                                                        {(item.taxAmount || 0).toFixed(2)}
-                                                    </td>
-                                                )}
+                                                <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
+                                                    {taxType === 'INTRA' ? ((item.taxAmount || 0) / 2).toFixed(2) : '-'}
+                                                </td>
+                                                <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
+                                                    {taxType === 'INTRA' ? ((item.taxAmount || 0) / 2).toFixed(2) : '-'}
+                                                </td>
+                                                <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
+                                                    {taxType === 'INTER' ? (item.taxAmount || 0).toFixed(2) : '-'}
+                                                </td>
                                                 <td className="py-4 pr-6 text-right font-mono font-black text-white sticky right-0 z-20 bg-neutral-900 border-l border-white/5">
                                                     {((item.unitPrice * item.receivedQty) - (item.schemeDiscount || 0) - (item.discountAmt || 0) + (item.taxAmount || 0)).toFixed(2)}
                                                 </td>
