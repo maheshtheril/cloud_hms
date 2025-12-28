@@ -66,6 +66,7 @@ type ReceiptItem = {
     schemeDiscount?: number;
     discountPct?: number;
     discountAmt?: number;
+    freeQty?: number;
 };
 
 interface ReceiptEntryDialogProps {
@@ -185,7 +186,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     packing: '',
                     schemeDiscount: 0,
                     discountPct: 0,
-                    discountAmt: 0
+                    discountAmt: 0,
+                    freeQty: 0
                 })));
             }
         } catch (err) {
@@ -258,7 +260,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
             packing: "",
             schemeDiscount: 0,
             discountPct: 0,
-            discountAmt: 0
+            discountAmt: 0,
+            freeQty: 0
         }]);
     };
 
@@ -316,7 +319,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                 uom: i.uom,
                 schemeDiscount: i.schemeDiscount ? Number(i.schemeDiscount) : undefined,
                 discountPct: i.discountPct ? Number(i.discountPct) : undefined,
-                discountAmt: i.discountAmt ? Number(i.discountAmt) : undefined
+                discountAmt: i.discountAmt ? Number(i.discountAmt) : undefined,
+                freeQty: i.freeQty ? Number(i.freeQty) : 0
             }))
         };
 
@@ -596,6 +600,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             <th className="py-4 px-2 w-20 text-right bg-neutral-900">Margin %</th>
                                             <th className="py-4 px-2 w-24 text-right bg-neutral-900">Basic Price</th>
                                             <th className="py-4 px-2 w-20 text-center bg-neutral-900">Qty</th>
+                                            <th className="py-4 px-2 w-20 text-center bg-neutral-900 text-orange-400">Schm Qty</th>
                                             <th className="py-4 px-2 w-20 text-right bg-neutral-900">Disc %</th>
                                             <th className="py-4 px-2 w-24 text-right bg-neutral-900">Disc Amt</th>
                                             <th className="py-4 px-2 w-24 text-right bg-neutral-900">Schm Amt</th>
@@ -736,6 +741,16 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                         className="w-12 mx-auto bg-neutral-800 rounded p-1 text-center font-bold text-white border-none focus:ring-1 focus:ring-indigo-500"
                                                     />
                                                 </td>
+                                                <td className="py-4 px-2 text-center">
+                                                    <input
+                                                        type="number" value={item.freeQty ?? 0}
+                                                        onChange={(e) => {
+                                                            const n = [...items]; n[index].freeQty = Number(e.target.value);
+                                                            setItems(n);
+                                                        }}
+                                                        className="w-12 mx-auto bg-neutral-800 rounded p-1 text-center font-bold text-orange-400 border-none focus:ring-1 focus:ring-orange-500"
+                                                    />
+                                                </td>
                                                 <td className="py-4 px-2 text-right">
                                                     <input
                                                         type="number" value={item.discountPct ?? 0}
@@ -804,8 +819,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                     {taxType === 'INTER' ? (item.taxAmount || 0).toFixed(2) : '-'}
                                                 </td>
                                                 <td className="py-4 px-2 text-right text-[11px] font-mono font-bold text-indigo-400">
-                                                    {item.receivedQty > 0
-                                                        ? (((item.unitPrice - (item.schemeDiscount || 0) - (item.discountAmt || 0)) * item.receivedQty + (item.taxAmount || 0)) / item.receivedQty).toFixed(2)
+                                                    {((item.receivedQty || 0) + (item.freeQty || 0)) > 0
+                                                        ? (((item.unitPrice - (item.schemeDiscount || 0) - (item.discountAmt || 0)) * item.receivedQty + (item.taxAmount || 0)) / (Number(item.receivedQty) + Number(item.freeQty || 0))).toFixed(2)
                                                         : '0.00'}
                                                 </td>
                                                 <td className="py-4 pr-6 text-right font-mono font-black text-white sticky right-0 z-20 bg-neutral-900 border-l border-white/5">

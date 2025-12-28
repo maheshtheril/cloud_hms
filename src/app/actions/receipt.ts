@@ -36,6 +36,7 @@ export type PurchaseReceiptData = {
         discountPct?: number
         discountAmt?: number
         schemeDiscount?: number
+        freeQty?: number
     }[]
 }
 
@@ -280,25 +281,31 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     sale_price_per_unit: item.salePricePerUnit,
                     discount_pct: item.discountPct,
                     discount_amt: item.discountAmt,
-                    scheme_discount: item.schemeDiscount
+                    scheme_discount: item.schemeDiscount,
+                    free_qty: item.freeQty
                 })}::jsonb,
                         NOW()
                     )
                 `;
 
                 // B. Convert UOM to Base for Stock Tracking
-                let stockQty = Number(item.qtyReceived) || 0;
-                let avgCostPerBaseUnit = Number(item.unitPrice) || 0;
+                const billedQty = Number(item.qtyReceived) || 0;
+                const freeQty = Number(item.freeQty) || 0;
+                const totalQty = billedQty + freeQty;
+
+                let stockQty = totalQty;
+                let avgCostPerBaseUnit = billedQty > 0 ? (billedQty * (Number(item.unitPrice) || 0)) / totalQty : 0;
 
                 // If item has UOM conversion data, convert to base units
                 if (item.purchaseUOM && item.conversionFactor && item.conversionFactor > 1) {
-                    // Example: 5 PACK-10 @ ₹45 per pack
-                    // stockQty = 5 × 10 = 50 PCS
-                    // avgCostPerBaseUnit = (5 × 45) / 50 = ₹4.50 per PCS
-                    stockQty = stockQty * item.conversionFactor;
-                    avgCostPerBaseUnit = (Number(item.qtyReceived) * Number(item.unitPrice)) / stockQty;
+                    // Example: 5 PACK-10 + 1 free PACK-10 @ ₹45 per pack
+                    // billedQty = 5, freeQty = 1, totalQty = 6
+                    // stockQty = 6 × 10 = 60 Units
+                    // avgCostPerBaseUnit = (5 × 45) / 60 = ₹3.75 per Unit
+                    stockQty = totalQty * item.conversionFactor;
+                    avgCostPerBaseUnit = (billedQty * (Number(item.unitPrice) || 0)) / stockQty;
 
-                    console.log(`[UOM Conversion] ${item.qtyReceived} ${item.purchaseUOM} = ${stockQty} PCS @ ₹${avgCostPerBaseUnit.toFixed(2)} per PCS`);
+                    console.log(`[UOM Conversion] ${totalQty} (Incl. ${freeQty} free) ${item.purchaseUOM} = ${stockQty} Units @ ₹${avgCostPerBaseUnit.toFixed(2)} per Unit`);
                 }
 
                 // C. Create Stock Ledger Entry (Inward) - Using BASE units
