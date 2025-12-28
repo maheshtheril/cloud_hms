@@ -70,6 +70,7 @@ export async function getPurchaseOrder(id: string) {
     const po = await prisma.hms_purchase_order.findUnique({
         where: { id },
         include: {
+            hms_supplier: true,
             hms_purchase_order_line: {
                 include: {
                     hms_product: true
@@ -80,19 +81,36 @@ export async function getPurchaseOrder(id: string) {
 
     if (!po) return { error: "PO not found" };
 
+    const supplierMeta = po.hms_supplier?.metadata as Record<string, any> || {};
+
     return {
         data: {
             id: po.id,
             supplierId: po.supplier_id,
-            items: po.hms_purchase_order_line.map(line => ({
-                poLineId: line.id,
-                productId: line.product_id,
-                productName: line.hms_product?.name || "Unknown Product",
-                orderedQty: Number(line.qty),
-                receivedQty: 0, // Default to 0 to let user fill
-                pendingQty: Number(line.qty), // Simplified
-                unitPrice: Number(line.unit_price)
-            }))
+            supplierName: po.hms_supplier?.name || "Unknown",
+            supplierGstin: supplierMeta.gstin || supplierMeta.GSTIN || undefined,
+            items: po.hms_purchase_order_line.map(line => {
+                const lineMeta = line.metadata as Record<string, any> || {};
+                const productMeta = line.hms_product?.metadata as Record<string, any> || {};
+
+                const ordered = Number(line.qty);
+                const received = Number(line.received_qty || 0);
+                const pending = Math.max(0, ordered - received);
+
+                return {
+                    poLineId: line.id,
+                    productId: line.product_id,
+                    productName: line.hms_product?.name || "Unknown Product",
+                    orderedQty: ordered,
+                    receivedQty: 0,
+                    pendingQty: pending,
+                    unitPrice: Number(line.unit_price),
+                    // If tax info exists in line, use it
+                    taxRate: lineMeta.tax_rate || productMeta.taxRate || productMeta.tax_rate || 0,
+                    hsn: lineMeta.hsn || productMeta.hsn || "",
+                    packing: lineMeta.packing || productMeta.packing || ""
+                };
+            })
         }
     };
 }
