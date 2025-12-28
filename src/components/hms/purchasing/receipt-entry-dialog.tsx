@@ -349,7 +349,12 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
 
     const searchSuppliers = async (query: string) => {
         const res = await getSuppliersList(query) as any;
-        return res?.data?.map((s: any) => ({ id: s.id, label: s.name, subLabel: s.gstin })) || [];
+        return res?.data?.map((s: any) => ({
+            id: s.id,
+            label: s.name,
+            subLabel: s.gstin,
+            metadata: { gstin: s.gstin, address: s.address }
+        })) || [];
     };
 
     const searchProducts = async (query: string) => {
@@ -368,11 +373,11 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         try {
             const res = await scanInvoiceAction(url) as any;
             if (res.data) {
-                const { supplierId, supplierName, date, reference: ref, items: scannedItems, gstin, grandTotal } = res.data;
+                const { supplierId, supplierName, date, reference: ref, items: scannedItems, gstin, address, grandTotal } = res.data;
                 if (supplierId) {
                     setSupplierId(supplierId);
                     setSupplierName(supplierName);
-                    setSupplierMeta({ gstin });
+                    setSupplierMeta({ gstin, address });
                 }
                 if (date) setReceivedDate(date);
                 if (ref) setReference(ref);
@@ -491,10 +496,10 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                 <SupplierDialog
                     isOpen={supplierDialogOpen}
                     onClose={() => setSupplierDialogOpen(false)}
-                    onSuccess={(newSupplier) => {
+                    onSuccess={(newSupplier: any) => {
                         setSupplierId(newSupplier.id);
                         setSupplierName(newSupplier.label);
-                        setSupplierMeta({ gstin: newSupplier.subLabel });
+                        setSupplierMeta(newSupplier.metadata || { gstin: newSupplier.subLabel });
                     }}
                 />
 
@@ -563,8 +568,12 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 <div className="group relative">
                                     <SearchableSelect
                                         value={supplierId}
-                                        defaultOptions={useMemo(() => supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin }] : [], [supplierId, supplierName, supplierMeta?.gstin])}
-                                        onChange={(id, opt) => { setSupplierId(id); setSupplierName(opt?.label || ''); }}
+                                        defaultOptions={useMemo(() => supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }] : [], [supplierId, supplierName, supplierMeta])}
+                                        onChange={(id, opt) => {
+                                            setSupplierId(id);
+                                            setSupplierName(opt?.label || '');
+                                            setSupplierMeta(opt?.metadata || null);
+                                        }}
                                         onSearch={searchSuppliers}
                                         placeholder="Search Supplier Name / GSTIN..."
                                         className="w-full bg-transparent border-none text-xl font-bold placeholder:text-neutral-800 p-0 focus:ring-0 dark"
@@ -573,11 +582,19 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                     />
                                     <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-all duration-300"></div>
                                 </div>
-                                {supplierMeta?.gstin && (
-                                    <Badge variant="outline" className="bg-indigo-500/5 border-indigo-500/10 text-indigo-400/70 text-[10px] font-mono">
-                                        GST: {supplierMeta.gstin}
-                                    </Badge>
-                                )}
+                                <div className="flex flex-wrap gap-2">
+                                    {supplierMeta?.gstin && (
+                                        <Badge variant="outline" className="bg-indigo-500/5 border-indigo-500/10 text-indigo-400/70 text-[10px] font-mono">
+                                            GST: {supplierMeta.gstin}
+                                        </Badge>
+                                    )}
+                                    {supplierMeta?.address && (
+                                        <div className="text-[10px] text-neutral-500 font-medium line-clamp-1 flex items-center gap-1">
+                                            <span className="shrink-0 bg-neutral-800 px-1 rounded text-[8px] border border-white/5">ADR</span>
+                                            {supplierMeta.address}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Info Section */}

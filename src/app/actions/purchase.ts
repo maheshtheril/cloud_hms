@@ -119,7 +119,11 @@ export async function createSupplier(data: {
             data: {
                 id: supplier.id,
                 label: supplier.name,
-                subLabel: data.gstin || data.address || undefined
+                subLabel: data.gstin,
+                metadata: {
+                    gstin: data.gstin,
+                    address: data.address
+                }
             }
         }
     } catch (error) {
@@ -334,7 +338,11 @@ export async function searchSuppliers(query: string) {
             return {
                 id: s.id,
                 label: s.name,
-                subLabel: meta.email || undefined
+                subLabel: meta.gstin || undefined,
+                metadata: {
+                    gstin: meta.gstin,
+                    address: meta.address
+                }
             }
         })
     } catch (error) {

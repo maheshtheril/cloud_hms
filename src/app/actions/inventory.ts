@@ -913,13 +913,18 @@ export async function getSuppliersList(query?: string, page: number = 1) {
 
         return {
             success: true,
-            data: suppliers.map(s => ({
-                id: s.id,
-                name: s.name,
-                productCount: s._count.hms_product_supplier,
-                orderCount: s._count.hms_purchase_order,
-                createdAt: s.created_at
-            })),
+            data: suppliers.map(s => {
+                const meta = s.metadata as any || {};
+                return {
+                    id: s.id,
+                    name: s.name,
+                    gstin: meta.gstin || '',
+                    address: meta.address || '',
+                    productCount: s._count.hms_product_supplier,
+                    orderCount: s._count.hms_purchase_order,
+                    createdAt: s.created_at
+                };
+            }),
             meta: { total, page, totalPages: Math.ceil(total / pageSize) }
         };
     } catch (error) {
