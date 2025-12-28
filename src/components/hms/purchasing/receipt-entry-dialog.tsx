@@ -630,27 +630,35 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                     />
                                                 </td>
                                                 <td className="py-4 px-2">
-                                                    <input
-                                                        value={item.packing || ''}
-                                                        onChange={(e) => { const n = [...items]; n[index].packing = e.target.value; setItems(n); }}
-                                                        placeholder="Pack" className="w-full bg-transparent border-none text-[11px] font-bold p-0 focus:ring-0 text-white"
+                                                    <SearchableSelect
+                                                        value={item.packing}
+                                                        onChange={(id, opt) => {
+                                                            const n = [...items];
+                                                            n[index].packing = opt?.label || id || '';
+                                                            setItems(n);
+                                                        }}
+                                                        onSearch={async (q) => PACKING_OPTIONS.filter(o => o.toLowerCase().includes(q.toLowerCase())).map(o => ({ id: o, label: o }))}
+                                                        onCreate={async (q) => ({ id: q, label: q })}
+                                                        defaultOptions={PACKING_OPTIONS.map(o => ({ id: o, label: o }))}
+                                                        placeholder="Pack"
+                                                        variant="ghost"
+                                                        className="w-full text-[11px] font-bold text-white placeholder:text-neutral-600 dark"
+                                                        isDark={true}
                                                     />
                                                 </td>
                                                 <td className="py-4 px-2">
-                                                    <td className="py-4 px-2">
-                                                        <input
-                                                            value={item.batch || ''}
-                                                            onChange={(e) => { const n = [...items]; n[index].batch = e.target.value; setItems(n); }}
-                                                            placeholder="Batch" className="w-full bg-transparent border-none text-[11px] font-mono p-0 focus:ring-0 text-white"
-                                                        />
-                                                    </td>
-                                                    <td className="py-4 px-2">
-                                                        <input
-                                                            value={item.expiry || ''}
-                                                            onChange={(e) => { const n = [...items]; n[index].expiry = e.target.value; setItems(n); }}
-                                                            placeholder="MM/YY" className="w-full bg-transparent border-none text-[11px] font-mono p-0 focus:ring-0 text-neutral-500"
-                                                        />
-                                                    </td>
+                                                    <input
+                                                        value={item.batch || ''}
+                                                        onChange={(e) => { const n = [...items]; n[index].batch = e.target.value; setItems(n); }}
+                                                        placeholder="Batch" className="w-full bg-transparent border-none text-[11px] font-mono p-0 focus:ring-0 text-white"
+                                                    />
+                                                </td>
+                                                <td className="py-4 px-2">
+                                                    <input
+                                                        value={item.expiry || ''}
+                                                        onChange={(e) => { const n = [...items]; n[index].expiry = e.target.value; setItems(n); }}
+                                                        placeholder="MM/YY" className="w-full bg-transparent border-none text-[11px] font-mono p-0 focus:ring-0 text-neutral-500"
+                                                    />
                                                 </td>
                                                 <td className="py-4 px-2 text-right font-mono font-bold text-white">
                                                     <input
