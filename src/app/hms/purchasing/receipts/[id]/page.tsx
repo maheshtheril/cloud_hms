@@ -168,7 +168,9 @@ export default function EditPurchaseReceiptPage() {
                     setSupplierName(r.supplierName);
                     setReceivedDate(r.date ? new Date(r.date).toISOString().split('T')[0] : '');
                     setReference(r.reference);
+                    setReference(r.reference);
                     setNotes(r.notes);
+                    setAttachmentUrl(r.attachmentUrl || '');
 
                     if (r.items) {
                         setItems(r.items.map((i: any) => ({
@@ -787,9 +789,19 @@ export default function EditPurchaseReceiptPage() {
                                     }
                                 }}
                                 folder="invoices"
+                                folder="invoices"
                                 label="Upload Invoice PDF (Auto-Scan)"
                                 accept="application/pdf,image/*"
                             />
+                            {attachmentUrl && (
+                                <div className="flex items-center gap-2 px-3 py-2 bg-neutral-900 rounded-lg border border-white/5">
+                                    <FileText className="h-4 w-4 text-indigo-400" />
+                                    <span className="text-xs text-neutral-300">Original Document Available</span>
+                                    <a href={attachmentUrl} target="_blank" rel="noopener noreferrer" className="ml-auto text-xs font-bold text-indigo-400 hover:text-indigo-300 hover:underline">
+                                        View File ↗
+                                    </a>
+                                </div>
+                            )}
                         </div>
 
                     </div>

@@ -519,6 +519,7 @@ export async function getPurchaseReceipt(id: string) {
             supplierName: receipt.hms_supplier?.name || "Unknown",
             reference: (receipt.metadata as any)?.reference || '',
             notes: (receipt.metadata as any)?.notes || '',
+            attachmentUrl: (receipt.metadata as any)?.attachment_url || (receipt.metadata as any)?.attachmentUrl || '',
             items: receipt.hms_purchase_receipt_line.map(line => {
                 const meta = line.metadata as any || {};
                 return {
