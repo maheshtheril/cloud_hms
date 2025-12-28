@@ -6,7 +6,7 @@ import { createPurchaseReceipt, getPendingPurchaseOrders, getPurchaseReceipt } f
 import { scanInvoiceFromUrl } from '@/app/actions/scan-invoice';
 import { searchSuppliers, searchProducts, createProductQuick, getCompanyDetails } from '@/app/actions/purchase';
 
-import { Loader2, Plus, Trash2, ArrowLeft, CheckCircle2, ScanLine, Box, ArrowRight, Settings } from 'lucide-react';
+import { Loader2, Plus, Trash2, ArrowLeft, CheckCircle2, ScanLine, Box, ArrowRight, Settings, FileText } from 'lucide-react';
 import { SearchableSelect, type Option } from '@/components/ui/searchable-select';
 import { FileUpload } from '@/components/ui/file-upload';
 import { useToast } from '@/components/ui/use-toast';
