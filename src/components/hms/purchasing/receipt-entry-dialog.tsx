@@ -413,7 +413,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                             hsn: item.hsn || "",
                             packing: item.packing || "",
                             uom: item.uom || "",
-                            uom: item.uom || "",
                             schemeDiscount: Number(item.schemeDiscount) || 0,
                             discountPct: Number(item.discountPct) || 0,
                             discountAmt: Number(item.discountAmt) || 0,
