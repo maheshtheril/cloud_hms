@@ -730,6 +730,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                                 setItems(n);
                                                             }
                                                         }}
+                                                        onSearch={async (q) => TAX_OPTIONS.filter(o => o.includes(q)).map(o => ({ id: o, label: o + '%' }))}
                                                         defaultOptions={TAX_OPTIONS.map(o => ({ id: o, label: o + '%' }))}
                                                         placeholder="%" className="w-full font-mono text-[11px] text-white dark text-right" variant="ghost" isDark={true}
                                                     />
