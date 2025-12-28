@@ -12,13 +12,13 @@ import {
     Plus, Search, Trash2, Receipt, ArrowRight, X,
     Calendar as CalendarIcon, FileText, Sparkles, Loader2, Scan
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { SearchableSelect, type Option } from "@/components/ui/searchable-select";
 import { Toaster } from "@/components/ui/toaster";
-import { getSuppliers } from "@/app/actions/supplier";
-import { getProducts, getProduct } from "@/app/actions/inventory";
-import { getPendingPurchaseOrders, createPurchaseReceipt } from "@/app/actions/receipt";
-import { getCompanyDetails } from "@/app/actions/company";
+import { getSuppliersList, getProductsPremium, getProduct, findOrCreateProduct } from "@/app/actions/inventory";
+import { getPendingPurchaseOrders, createPurchaseReceipt, getPurchaseOrder } from "@/app/actions/receipt";
+import { getCompanyDetails } from "@/app/actions/purchase";
+import { scanInvoiceFromUrl as scanInvoiceAction } from "@/app/actions/scan-invoice";
 import { SupplierDialog } from "./supplier-dialog";
 import { ProductCreationDialog } from "@/components/inventory/product-creation-dialog";
 import {
@@ -107,7 +107,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         if (!isOpen) return;
         async function loadCompany() {
             const details = await getCompanyDetails();
-            if (details) setCompanyDetails(details);
+            if (details) setCompanyDetails(details as any);
         }
         loadCompany();
     }, [isOpen]);
@@ -152,7 +152,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         setPoId(id);
         if (!id) return;
         try {
-            const { getPurchaseOrder } = await import('@/app/actions/receipt');
             const res = await getPurchaseOrder(id);
             if (res.data) {
                 if (res.data.supplierId) {
@@ -161,7 +160,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     setSupplierMeta({ gstin: res.data.supplierGstin });
                 }
                 // Fetch detailed product info to auto-fill Sell Price & MRP
-                const { getProduct } = await import('@/app/actions/inventory');
                 const enrichedItems = await Promise.all(res.data.items.map(async (i: any) => {
                     const p = await getProduct(i.productId);
                     const cost = i.unitPrice || 0;
@@ -350,25 +348,24 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
     };
 
     const searchSuppliers = async (query: string) => {
-        const res = await getSuppliers(query);
+        const res = await getSuppliersList(query);
         return res?.data?.map((s: any) => ({ id: s.id, label: s.name, subLabel: s.gstin })) || [];
     };
 
     const searchProducts = async (query: string) => {
-        const res = await getProducts(query);
-        return res?.data?.map((p: any) => ({ id: p.id, label: p.name, subLabel: p.categoryName })) || [];
+        const res = await getProductsPremium(query);
+        return res?.data?.map((p: any) => ({ id: p.id, label: p.name, subLabel: p.category })) || [];
     };
 
     const createProductQuick = async (name: string) => {
         setProductCreationOpen(true);
     };
 
-    const scanInvoiceFromUrl = async (url: string) => {
+    const handleScanInvoice = async (url: string) => {
         setIsScanning(true);
         setScanProgress('Analyzing Invoice...');
         try {
-            const { scanPurchaseInvoice } = await import('@/app/actions/ai-scan');
-            const res = await scanPurchaseInvoice(url);
+            const res = await scanInvoiceAction(url);
             if (res.data) {
                 const { supplierId, supplierName, date, reference: ref, items: scannedItems, gstin, grandTotal } = res.data;
                 if (supplierId) {
@@ -383,7 +380,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     setIsAutoRound(false);
                 }
                 if (scannedItems) {
-                    const { findOrCreateProduct } = await import('@/app/actions/inventory');
                     const mapped = await Promise.all(scannedItems.map(async (item: any) => {
                         let pId = item.productId;
                         if (!pId && item.productName) {
@@ -629,7 +625,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                     )}
                                     <div className="shrink-0 w-32 border border-white/5 rounded-md overflow-hidden">
                                         <FileUpload
-                                            onUploadComplete={(url) => { if (url) scanInvoiceFromUrl(url); }}
+                                            onUploadComplete={(url) => { if (url) handleScanInvoice(url); }}
                                             className="h-11 border-dashed border-indigo-500/20 bg-indigo-500/[0.02]"
                                         />
                                     </div>
