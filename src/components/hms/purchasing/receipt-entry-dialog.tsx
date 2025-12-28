@@ -140,7 +140,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
     useEffect(() => {
         if (!isOpen) return;
         async function loadPos() {
-            const res = await getPendingPurchaseOrders();
+            const res = await getPendingPurchaseOrders() as any;
             if (res?.data) {
                 setPoOptions(res.data.map((po: any) => ({ id: po.id, label: `${po.poNumber} - ${po.supplierName}` })));
             }
@@ -152,7 +152,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         setPoId(id);
         if (!id) return;
         try {
-            const res = await getPurchaseOrder(id);
+            const res = await getPurchaseOrder(id) as any;
             if (res.data) {
                 if (res.data.supplierId) {
                     setSupplierId(res.data.supplierId);
@@ -348,12 +348,12 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
     };
 
     const searchSuppliers = async (query: string) => {
-        const res = await getSuppliersList(query);
+        const res = await getSuppliersList(query) as any;
         return res?.data?.map((s: any) => ({ id: s.id, label: s.name, subLabel: s.gstin })) || [];
     };
 
     const searchProducts = async (query: string) => {
-        const res = await getProductsPremium(query);
+        const res = await getProductsPremium(query) as any;
         return res?.data?.map((p: any) => ({ id: p.id, label: p.name, subLabel: p.category })) || [];
     };
 
@@ -365,7 +365,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         setIsScanning(true);
         setScanProgress('Analyzing Invoice...');
         try {
-            const res = await scanInvoiceAction(url);
+            const res = await scanInvoiceAction(url) as any;
             if (res.data) {
                 const { supplierId, supplierName, date, reference: ref, items: scannedItems, gstin, grandTotal } = res.data;
                 if (supplierId) {
