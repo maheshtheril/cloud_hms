@@ -95,13 +95,15 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
                     * If you see "Box" → return "BOX"
                     * If you see "Bottle" → return "BOTTLE"
                     * If you see "NOS" or "PCS" or "Pieces" → return "PCS"
-                    * If you see "1x10" in packing, the UOM is what's being sold (usually STRIP or PACK-10)
+                    * If you see "1x10" in packing, the UOM is likely "STRIP" or "PACK-10". Do NOT put "1x10" in UOM. Put "1x10" in 'packing'.
                 - "packing": Packing details. CRITICAL - Extract ALL packing information you see:
                     * For tablets/capsules: "1x10", "10x10", "1x15", "2x15", etc.
                     * For bottles/syrups: "200ml", "100ml", "60ml", "500ml", etc.
                     * For sachets: "5gm", "10gm", etc.
                     * Look in these columns: "Pack", "Packing", "Pkg", "Size", or near the product name
                     * IMPORTANT: Do NOT leave this empty. Extract whatever packing/size info you see!
+                    * If you see "1x10" or "10x10", put this in "packing".
+                    * If you see "200ml" or "500gm", put this in "packing".
                 - "unitPrice": Unit Rate/Price PER PACK (before tax). Do NOT Use MRP. Look for 'Rate' or 'Price'. This is price per UOM.
                 - "mrp": Maximum Retail Price (MRP). Extract the numeric value. Do NOT return the words 'MRP' or 'Rate' or 'Price'. Return 0 if not found.
                 - "schemeDiscount": Scheme Discount Amount (if shown separately).

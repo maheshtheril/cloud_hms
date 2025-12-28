@@ -528,7 +528,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                                     uom: item.uom || "PCS",
                                                                     schemeDiscount: sDisc,
                                                                     discountAmt: dAmt,
-                                                                    discountPct: item.discountPct ? Number(item.discountPct) : (taxable > 0 ? (dAmt / (qty * price)) * 100 : 0)
+                                                                    discountPct: item.discountPct ? Number(item.discountPct) : (taxable > 0 ? (dAmt / (qty * price)) * 100 : 0),
+                                                                    currentStock: item.currentStock,
+                                                                    lastCost: item.lastCost
                                                                 };
                                                             }));
                                                             setItems(mapped);
@@ -707,6 +709,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                         }}
                                                         className="w-12 mx-auto bg-neutral-800 rounded p-1 text-center font-bold text-white border-none focus:ring-1 focus:ring-indigo-500"
                                                     />
+                                                    <span className="text-[9px] text-neutral-500 font-mono uppercase mt-1 block">{item.uom || 'PCS'}</span>
                                                 </td>
                                                 <td className="py-4 px-2 text-right font-mono font-bold text-white">
                                                     <input
