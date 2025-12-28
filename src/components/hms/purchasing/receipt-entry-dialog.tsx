@@ -613,7 +613,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                 onSearch={async (q) => poOptions.filter(o => o.label.toLowerCase().includes(q.toLowerCase()))}
                                                 placeholder="Select PO..."
                                                 className="w-full bg-neutral-900/50 border-white/5 h-11 font-mono font-bold"
-                                                variant="outline"
+                                                variant="ghost"
                                                 isDark={true}
                                             />
                                         </div>
