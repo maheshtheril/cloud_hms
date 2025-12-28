@@ -3,6 +3,7 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { AccountingService } from '@/lib/services/accounting'
 
 export type PurchaseReceiptData = {
     supplierId?: string
@@ -146,20 +147,24 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
     try {
         // 0. CHECK FOR DUPLICATES (Supplier + Reference)
         if (data.reference) {
-            // Simplify duplicate check: Fetch recent receipts for this supplier and check implementation in JS
-            // This avoids potential issues with Prisma JSON filtering syntax in some environments
-            const recentReceipts = await prisma.hms_purchase_receipt.findMany({
+            // Check for duplicates within last 60 days to prevent re-entering same invoice
+            const sixtydaysAgo = new Date();
+            sixtydaysAgo.setDate(sixtydaysAgo.getDate() - 60);
+
+            const existing = await prisma.hms_purchase_receipt.findFirst({
                 where: {
                     company_id: session.user.companyId,
                     supplier_id: data.supplierId,
-                },
-                select: { metadata: true }
+                    metadata: {
+                        path: ['reference'],
+                        equals: data.reference
+                    },
+                    created_at: { gte: sixtydaysAgo }
+                }
             });
 
-            const existing = recentReceipts.find(r => (r.metadata as any)?.reference === data.reference);
-
             if (existing) {
-                return { error: `Duplicate: Invoice '${data.reference}' has already been recorded for this supplier.` };
+                return { error: `Duplicate: Invoice '${data.reference}' has already been recorded for this supplier in the last 60 days.` };
             }
         }
 
@@ -451,6 +456,11 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
 
             return receipt
         })
+
+        if (result.id) {
+            // Trigger Accounting Post
+            await AccountingService.postPurchaseReceipt(result.id, session.user.id);
+        }
 
         revalidatePath('/hms/purchasing/receipts')
         return { success: true, data: result }

@@ -606,4 +606,149 @@ export class AccountingService {
             return { success: false, error: error.message };
         }
     }
+
+    /**
+     * Posts a Purchase Receipt (GRN) to the General Ledger.
+     * 
+     * @param receiptId - The ID of the purchase receipt to post
+     * @param userId - ID of the user performing the action
+     */
+    static async postPurchaseReceipt(receiptId: string, userId?: string) {
+        try {
+            // 1. Fetch Purchase Receipt with Lines and Supplier
+            const receipt = await prisma.hms_purchase_receipt.findUnique({
+                where: { id: receiptId },
+                include: {
+                    hms_purchase_receipt_line: true,
+                    hms_supplier: true
+                }
+            });
+
+            if (!receipt) throw new Error("Purchase Receipt not found");
+
+            // Check if already posted
+            const existingJournal = await prisma.journal_entries.findFirst({
+                where: { ref: receipt.name, company_id: receipt.company_id }
+            });
+
+            if (existingJournal) {
+                console.log("Purchase Receipt already posted.");
+                return { success: true, message: "Already posted" };
+            }
+
+            // 2. Fetch Accounting Settings
+            let settings = await prisma.company_accounting_settings.findUnique({
+                where: { company_id: receipt.company_id }
+            });
+
+            if (!settings) {
+                // Try heal or throw
+                const { ensureDefaultAccounts } = await import('@/lib/account-seeder');
+                await ensureDefaultAccounts(receipt.company_id, receipt.tenant_id);
+                settings = await prisma.company_accounting_settings.findUnique({ where: { company_id: receipt.company_id } });
+            }
+
+            if (!settings) throw new Error("Accounting settings not configured.");
+
+            // 3. Determine Accounts
+            // DEBIT: Inventory/Purchase Account
+            const debitAccountId = settings.purchase_account_id;
+            if (!debitAccountId) throw new Error("Purchase/Inventory Account not configured.");
+
+            // CREDIT: Accounts Payable (or Stock Received Not Invoiced - for simplicity we use AP)
+            const creditAccountId = settings.ap_account_id;
+            if (!creditAccountId) throw new Error("Accounts Payable Account not configured.");
+
+            const inputTaxAccountId = settings.input_tax_account_id;
+
+            // 4. Calculate Totals from Lines
+            let subtotal = 0;
+            let taxTotal = 0;
+
+            for (const line of receipt.hms_purchase_receipt_line) {
+                const qty = Number(line.qty || 0);
+                const price = Number(line.unit_price || 0);
+                const meta = line.metadata as any;
+
+                const lineSubtotal = qty * price;
+                const lineTax = Number(meta?.tax_amount || 0);
+
+                subtotal += lineSubtotal;
+                taxTotal += lineTax;
+            }
+
+            const totalAmount = subtotal + taxTotal;
+            if (totalAmount <= 0) return { success: true, message: "Zero amount receipt, skipping journal." };
+
+            // 5. Prepare Lines
+            const journalLines: any[] = [];
+
+            // A. DEBIT: Inventory/Purchase
+            journalLines.push({
+                account_id: debitAccountId,
+                debit: subtotal,
+                credit: 0,
+                description: `Purchase Stock - ${receipt.name}`
+            });
+
+            // B. DEBIT: Input Tax
+            if (taxTotal > 0) {
+                if (!inputTaxAccountId) throw new Error("Input Tax Account not configured.");
+                journalLines.push({
+                    account_id: inputTaxAccountId,
+                    debit: taxTotal,
+                    credit: 0,
+                    description: `Input Tax (GRN) - ${receipt.name}`
+                });
+            }
+
+            // C. CREDIT: Accounts Payable
+            journalLines.push({
+                account_id: creditAccountId,
+                debit: 0,
+                credit: totalAmount,
+                description: `Liability (GRN) - ${receipt.hms_supplier?.name || 'Vendor'}`,
+                partner_id: receipt.supplier_id
+            });
+
+            // 6. Create Transaction
+            await prisma.$transaction(async (tx) => {
+                await tx.journal_entries.create({
+                    data: {
+                        tenant_id: receipt.tenant_id,
+                        company_id: receipt.company_id,
+                        date: receipt.receipt_date || new Date(),
+                        posted: true,
+                        posted_at: new Date(),
+                        created_by: userId,
+                        currency_id: settings!.currency_id || 'INR', // Fallback to INR if missing
+                        amount_in_company_currency: totalAmount,
+                        ref: receipt.name,
+                        journal_entry_lines: {
+                            create: journalLines.map(line => ({
+                                tenant_id: receipt.tenant_id,
+                                company_id: receipt.company_id,
+                                account_id: line.account_id,
+                                debit: line.debit,
+                                credit: line.credit,
+                                description: line.description,
+                                partner_id: line.partner_id
+                            }))
+                        }
+                    }
+                });
+
+                // Update receipt status
+                await tx.hms_purchase_receipt.update({
+                    where: { id: receipt.id },
+                    data: { status: 'received', updated_at: new Date() }
+                });
+            });
+
+            return { success: true };
+        } catch (error: any) {
+            console.error("Purchase Receipt Posting Error:", error);
+            return { success: false, error: error.message };
+        }
+    }
 }

@@ -575,6 +575,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                     <SearchableSelect
                                         key={`${supplierId}-${supplierName}`} // Force reset on scan
                                         value={supplierId}
+                                        valueLabel={supplierName}
                                         defaultOptions={useMemo(() => supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }] : [], [supplierId, supplierName, supplierMeta])}
                                         onChange={(id, opt) => {
                                             setSupplierId(id);

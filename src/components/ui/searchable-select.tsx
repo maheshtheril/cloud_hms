@@ -32,6 +32,7 @@ export type Option = {
 
 interface SearchableSelectProps {
     value?: string | null;
+    valueLabel?: string; // Explicit label for programmatically set value
     onChange: (value: string | null, option?: Option | null) => void;
     onSearch: (query: string) => Promise<Option[]>;
     placeholder?: string;
@@ -47,6 +48,7 @@ interface SearchableSelectProps {
 
 export function SearchableSelect({
     value,
+    valueLabel,
     onChange,
     onSearch,
     placeholder = "Select...",
@@ -93,16 +95,18 @@ export function SearchableSelect({
             setSelectedOption(null);
             return;
         }
-        const found = options.find(o => o.id === value);
+
+        // Try finding in current options or default options
+        const found = options.find(o => o.id === value) || defaultOptions.find(o => o.id === value);
+
         if (found) {
             setSelectedOption(found);
             setQuery("");
-        } else if (defaultOptions.length > 0) {
-            // Check default options too
-            const foundDefault = defaultOptions.find(o => o.id === value);
-            if (foundDefault) setSelectedOption(foundDefault);
+        } else if (valueLabel) {
+            // Fallback to valueLabel if provided (e.g. after AI scan)
+            setSelectedOption({ id: value, label: valueLabel });
         }
-    }, [value, options, defaultOptions]);
+    }, [value, valueLabel, options, defaultOptions]);
 
     // Calculate position for portal
     React.useEffect(() => {
