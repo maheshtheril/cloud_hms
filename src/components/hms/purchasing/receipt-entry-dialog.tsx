@@ -65,6 +65,8 @@ type ReceiptItem = {
     schemeDiscount?: number;
     discountPct?: number;
     discountAmt?: number;
+    currentStock?: number;
+    lastCost?: number;
 };
 
 interface ReceiptEntryDialogProps {
@@ -368,7 +370,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 onClick={() => setMode('direct')}
                                 className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${mode === 'direct' ? 'bg-emerald-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
                             >
-                                DIRECT
+                                MANUAL / DIRECT
                             </button>
                         </div>
                         <Separator orientation="vertical" className="h-8 bg-white/5" />
@@ -537,8 +539,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                         }
                                                         toast({ title: "Scan Success", description: "Invoice details extracted." });
                                                     }
-                                                } catch (e) {
-                                                    toast({ title: "Scan Failed", variant: "destructive" });
+                                                } catch (e: any) {
+                                                    console.error("Scan Error:", e);
+                                                    toast({ title: "Scan Failed", description: e.message || "Could not read invoice data.", variant: "destructive" });
                                                 } finally {
                                                     setIsScanning(false);
                                                 }
@@ -564,11 +567,13 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 )}
                             </div>
 
-                            <div className="rounded-2xl border border-white/5 bg-neutral-900/30 overflow-x-auto">
-                                <table className="w-full text-left border-collapse min-w-[1300px]">
+                            <div className="rounded-2xl border border-white/5 bg-neutral-900/30 overflow-x-auto pb-2 custom-scrollbar">
+                                <table className="w-full text-left border-collapse min-w-[2000px]">
                                     <thead>
                                         <tr className="bg-white/[0.02] text-[10px] font-black uppercase tracking-widest text-neutral-500 border-b border-white/5">
                                             <th className="py-4 pl-6 w-[250px]">Product Description</th>
+                                            <th className="py-4 px-2 w-20 text-center text-neutral-600">Stock</th>
+                                            <th className="py-4 px-2 w-24 text-right text-neutral-600">Last Buy</th>
                                             <th className="py-4 px-2 w-24">HSN / Pack</th>
                                             <th className="py-4 px-2 w-24">Batch / Exp</th>
                                             <th className="py-4 px-2 w-24 text-right">MRP</th>
@@ -597,6 +602,10 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                                 const n = [...items];
                                                                 n[index].productId = id || "";
                                                                 n[index].productName = opt?.label || "";
+                                                                n[index].currentStock = opt?.stock;
+                                                                n[index].lastCost = opt?.cost;
+                                                                // Use default cost if available and unitPrice is 0
+                                                                if (!n[index].unitPrice && opt?.cost) n[index].unitPrice = opt.cost;
                                                                 setItems(n);
                                                             }}
                                                             onSearch={searchProducts}
@@ -608,6 +617,12 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                             isDark={true}
                                                         />
                                                     )}
+                                                </td>
+                                                <td className="py-4 px-2 text-center">
+                                                    <span className="text-[10px] font-mono text-neutral-500">{item.currentStock ?? '-'}</span>
+                                                </td>
+                                                <td className="py-4 px-2 text-right">
+                                                    <span className="text-[10px] font-mono text-neutral-500">{item.lastCost ? `₹${item.lastCost}` : '-'}</span>
                                                 </td>
                                                 <td className="py-4 px-2">
                                                     <div className="space-y-1">

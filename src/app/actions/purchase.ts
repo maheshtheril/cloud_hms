@@ -383,14 +383,28 @@ export async function searchProducts(query: string) {
             },
             take: 20,
             orderBy: { name: 'asc' },
-            select: { id: true, name: true, sku: true, price: true }
+            select: {
+                id: true,
+                name: true,
+                sku: true,
+                price: true,
+                default_cost: true,
+                hms_stock_levels: {
+                    select: { quantity: true }
+                }
+            }
         })
-        return products.map(p => ({
-            id: p.id,
-            label: p.name,
-            subLabel: p.sku ? `SKU: ${p.sku}` : undefined,
-            price: Number(p.price || 0)
-        }))
+        return products.map(p => {
+            const totalStock = p.hms_stock_levels.reduce((sum, lvl) => sum + Number(lvl.quantity || 0), 0);
+            return {
+                id: p.id,
+                label: p.name,
+                subLabel: p.sku ? `SKU: ${p.sku}` : undefined,
+                price: Number(p.price || 0),
+                cost: Number(p.default_cost || 0),
+                stock: totalStock
+            }
+        })
     } catch (error) {
         console.error("Search Products Failed:", error)
         return []

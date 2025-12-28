@@ -277,6 +277,10 @@ async function processInvoiceData(session: any, data: any) {
             name: true,
             sku: true,
             price: true,
+            default_cost: true,
+            hms_stock_levels: {
+                select: { quantity: true }
+            },
             metadata: true // For MRP check if stored there
         }
     });
@@ -382,7 +386,10 @@ async function processInvoiceData(session: any, data: any) {
                 hsn: item.hsn || data.defaultHsn,
                 schemeDiscount: parseNumber(item.schemeDiscount),
                 discountPct: parseNumber(item.discountPct),
-                discountAmt: parseNumber(item.discountAmt)
+                discountAmt: parseNumber(item.discountAmt),
+                // Context Data:
+                currentStock: productId ? (matchResult.product as any).hms_stock_levels?.reduce((sum: number, lvl: any) => sum + Number(lvl.quantity || 0), 0) : undefined,
+                lastCost: productId ? Number((matchResult.product as any).default_cost || 0) : undefined
             });
         }
     }
