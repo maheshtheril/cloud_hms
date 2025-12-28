@@ -101,9 +101,10 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
                     * For bottles/syrups: "200ml", "100ml", "60ml", "500ml", etc.
                     * For sachets: "5gm", "10gm", etc.
                     * Look in these columns: "Pack", "Packing", "Pkg", "Size", or near the product name
-                    * IMPORTANT: Do NOT leave this empty. Extract whatever packing/size info you see!
-                    * If you see "1x10" or "10x10", put this in "packing".
-                    * If you see "200ml" or "500gm", put this in "packing".
+                    * If you see "10;s" or "10:S" or "10S" or "10's", treat it as "PACK-10".
+                    * If you see "200ML" or "100ML", put this in "packing" and set UOM to "BOTTLE".
+                    * If you see "50 GM" or "15 GM", put this in "packing" and set UOM to "TUBE" or "PCS".
+                    * If the product is a Syrup/Liquid and no UOM is clear, default UOM to "BOTTLE".
                 - "unitPrice": Unit Rate/Price PER PACK (before tax). Do NOT Use MRP. Look for 'Rate' or 'Price'. This is price per UOM.
                 - "mrp": Maximum Retail Price (MRP). Extract the numeric value. Do NOT return the words 'MRP' or 'Rate' or 'Price'. Return 0 if not found.
                 - "schemeDiscount": Scheme Discount Amount (if shown separately).
