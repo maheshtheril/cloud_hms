@@ -570,16 +570,25 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                     <thead>
                                         <tr className="bg-white/[0.02] text-[10px] font-black uppercase tracking-widest text-neutral-500 border-b border-white/5">
                                             <th className="py-4 pl-6 w-[250px]">Product Description</th>
-                                            <th className="py-4 px-2 w-24">HSN / Pack</th>
+                                            <th className="py-4 px-2 w-20">HSN</th>
+                                            <th className="py-4 px-2 w-20">Pack</th>
                                             <th className="py-4 px-2 w-24">Batch / Exp</th>
-                                            <th className="py-4 px-2 w-24 text-right">MRP</th>
-                                            <th className="py-4 px-2 w-24 text-right text-emerald-400">Sale (Ex)</th>
-                                            <th className="py-4 px-2 w-20 text-right">Margin</th>
-                                            <th className="py-4 px-2 w-24 text-right text-yellow-500">Disc (₹/%)</th>
-                                            <th className="py-4 px-2 w-20 text-center">Qty</th>
-                                            <th className="py-4 px-2 w-24 text-right">Uni Cost</th>
-                                            <th className="py-4 px-2 w-24 text-right">Tax (%)</th>
-                                            <th className="py-4 pr-6 text-right w-32">Line Total</th>
+                                            <th className="py-4 px-2 w-20 text-right">MRP</th>
+                                            <th className="py-4 px-2 w-20 text-right text-emerald-400">Sale (Ex)</th>
+                                            <th className="py-4 px-2 w-16 text-right">Margin</th>
+                                            <th className="py-4 px-2 w-[88px] text-right text-yellow-500">Disc</th>
+                                            <th className="py-4 px-2 w-16 text-center">Qty</th>
+                                            <th className="py-4 px-2 w-20 text-right">Uni Cost</th>
+                                            <th className="py-4 px-2 w-16 text-right">Tax %</th>
+                                            {taxType === 'INTRA' ? (
+                                                <>
+                                                    <th className="py-4 px-2 w-16 text-right text-neutral-400">CGST</th>
+                                                    <th className="py-4 px-2 w-16 text-right text-neutral-400">SGST</th>
+                                                </>
+                                            ) : (
+                                                <th className="py-4 px-2 w-16 text-right text-neutral-400">IGST</th>
+                                            )}
+                                            <th className="py-4 pr-6 text-right w-28">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/[0.03]">
@@ -613,18 +622,18 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                     )}
                                                 </td>
                                                 <td className="py-4 px-2">
-                                                    <div className="space-y-1">
-                                                        <input
-                                                            value={item.hsn || ''}
-                                                            onChange={(e) => { const n = [...items]; n[index].hsn = e.target.value; setItems(n); }}
-                                                            placeholder="HSN" className="w-full bg-transparent border-none text-[11px] font-mono p-0 focus:ring-0 text-neutral-400"
-                                                        />
-                                                        <input
-                                                            value={item.packing || ''}
-                                                            onChange={(e) => { const n = [...items]; n[index].packing = e.target.value; setItems(n); }}
-                                                            placeholder="Pack" className="w-full bg-transparent border-none text-[11px] font-bold p-0 focus:ring-0 text-white"
-                                                        />
-                                                    </div>
+                                                    <input
+                                                        value={item.hsn || ''}
+                                                        onChange={(e) => { const n = [...items]; n[index].hsn = e.target.value; setItems(n); }}
+                                                        placeholder="HSN" className="w-full bg-transparent border-none text-[11px] font-mono p-0 focus:ring-0 text-neutral-400"
+                                                    />
+                                                </td>
+                                                <td className="py-4 px-2">
+                                                    <input
+                                                        value={item.packing || ''}
+                                                        onChange={(e) => { const n = [...items]; n[index].packing = e.target.value; setItems(n); }}
+                                                        placeholder="Pack" className="w-full bg-transparent border-none text-[11px] font-bold p-0 focus:ring-0 text-white"
+                                                    />
                                                 </td>
                                                 <td className="py-4 px-2">
                                                     <div className="space-y-1">
@@ -710,23 +719,35 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                     />
                                                 </td>
                                                 <td className="py-4 px-2 text-right">
-                                                    <Select
-                                                        value={item.taxRate?.toString() || "0"}
-                                                        onValueChange={(v) => {
-                                                            const n = [...items]; const r = Number(v); n[index].taxRate = r;
-                                                            const taxable = (n[index].unitPrice * n[index].receivedQty) - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0);
-                                                            n[index].taxAmount = taxable * (r / 100);
-                                                            setItems(n);
+                                                    <SearchableSelect
+                                                        value={item.taxRate?.toString()}
+                                                        onChange={(id) => {
+                                                            const n = [...items]; const rate = Number(id);
+                                                            if (!isNaN(rate)) {
+                                                                n[index].taxRate = rate;
+                                                                const taxable = (n[index].unitPrice * n[index].receivedQty) - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0);
+                                                                n[index].taxAmount = taxable * (rate / 100);
+                                                                setItems(n);
+                                                            }
                                                         }}
-                                                    >
-                                                        <SelectTrigger className="h-7 w-16 bg-transparent border-white/10 text-[10px] font-mono">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="bg-neutral-900 border-white/10 text-white">
-                                                            {TAX_OPTIONS.map(v => <SelectItem key={v} value={v}>{v}%</SelectItem>)}
-                                                        </SelectContent>
-                                                    </Select>
+                                                        defaultOptions={TAX_OPTIONS.map(o => ({ id: o, label: o + '%' }))}
+                                                        placeholder="%" className="w-full font-mono text-[11px] text-white dark text-right" variant="ghost" isDark={true}
+                                                    />
                                                 </td>
+                                                {taxType === 'INTRA' ? (
+                                                    <>
+                                                        <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
+                                                            {((item.taxAmount || 0) / 2).toFixed(2)}
+                                                        </td>
+                                                        <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
+                                                            {((item.taxAmount || 0) / 2).toFixed(2)}
+                                                        </td>
+                                                    </>
+                                                ) : (
+                                                    <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
+                                                        {(item.taxAmount || 0).toFixed(2)}
+                                                    </td>
+                                                )}
                                                 <td className="py-4 pr-6 text-right font-mono font-black text-white">
                                                     {((item.unitPrice * item.receivedQty) - (item.schemeDiscount || 0) - (item.discountAmt || 0) + (item.taxAmount || 0)).toFixed(2)}
                                                 </td>
