@@ -789,7 +789,6 @@ export default function EditPurchaseReceiptPage() {
                                     }
                                 }}
                                 folder="invoices"
-                                folder="invoices"
                                 label="Upload Invoice PDF (Auto-Scan)"
                                 accept="application/pdf,image/*"
                             />
