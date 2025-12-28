@@ -17,6 +17,7 @@ import { SearchableSelect, type Option } from "@/components/ui/searchable-select
 import { Toaster } from "@/components/ui/toaster";
 import { getSuppliersList, getProductsPremium, getProduct, findOrCreateProduct } from "@/app/actions/inventory";
 import { getPendingPurchaseOrders, createPurchaseReceipt, getPurchaseOrder } from "@/app/actions/receipt";
+import { motion } from "framer-motion";
 import { getCompanyDetails } from "@/app/actions/purchase";
 import { scanInvoiceFromUrl as scanInvoiceAction } from "@/app/actions/scan-invoice";
 import { SupplierDialog } from "./supplier-dialog";
