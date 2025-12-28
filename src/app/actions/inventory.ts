@@ -722,6 +722,7 @@ export async function getProduct(id: string) {
                     take: 1
                 },
                 product_tax_rules: {
+                    include: { tax_rates: true },
                     take: 1,
                     orderBy: { priority: 'asc' }
                 },
@@ -740,10 +741,14 @@ export async function getProduct(id: string) {
         return {
             ...product,
             price: Number(product.price || 0),
+            mrp: Number(product.price || 0),
+            hsn: (metadata.hsn as string) || '',
+            packing: (metadata.packing as string) || '',
             brand: metadata.brand || '',
             tracking: metadata.tracking || 'none',
             supplierId: product.hms_product_supplier[0]?.supplier_id || '',
             taxRateId: product.product_tax_rules[0]?.tax_rate_id || '',
+            taxRate: Number(product.product_tax_rules[0]?.tax_rates?.rate || 0),
             imageUrl: product.hms_product_image[0]?.url || '',
             default_cost: Number(product.default_cost || 0),
             categoryId: product.hms_product_category_rel[0]?.category_id || '',
