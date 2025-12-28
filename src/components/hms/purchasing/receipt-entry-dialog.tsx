@@ -10,7 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Plus, Search, Trash2, Receipt, ArrowRight, X,
-    Calendar as CalendarIcon, FileText, Sparkles, Loader2, Scan
+    Calendar as CalendarIcon, FileText, Sparkles, Loader2, Scan,
+    Maximize2, Minimize2
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { SearchableSelect, type Option } from "@/components/ui/searchable-select";
@@ -98,6 +99,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
     // AI Scanning State
     const [isScanning, setIsScanning] = useState(false);
     const [scanProgress, setScanProgress] = useState('');
+
+    // Window State
+    const [isMaximized, setIsMaximized] = useState(false);
 
     // Company & Tax Logic
     const [companyDetails, setCompanyDetails] = useState<{ gstin?: string, state?: string } | null>(null);
@@ -496,7 +500,12 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-[95vw] w-[1400px] h-[90vh] p-0 overflow-hidden bg-neutral-950 border-white/10 flex flex-col selection:bg-indigo-500/30">
+            <DialogContent
+                className={`p-0 overflow-hidden bg-neutral-950 border-white/10 flex flex-col selection:bg-indigo-500/30 transition-all duration-300 ${isMaximized
+                        ? 'max-w-none w-screen h-screen rounded-none border-none'
+                        : 'max-w-[95vw] w-[1400px] h-[90vh] rounded-2xl'
+                    }`}
+            >
                 <Toaster />
                 <SupplierDialog
                     isOpen={supplierDialogOpen}
@@ -553,9 +562,20 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                             </button>
                         </div>
                         <Separator orientation="vertical" className="h-8 bg-white/5" />
-                        <Button variant="ghost" size="icon" onClick={onClose} className="text-neutral-500 hover:text-white hover:bg-white/5 rounded-full h-10 w-10">
-                            <X className="h-5 w-5" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setIsMaximized(!isMaximized)}
+                                className="text-neutral-500 hover:text-white hover:bg-white/5 rounded-full h-10 w-10"
+                                title={isMaximized ? "Minimize" : "Maximize"}
+                            >
+                                {isMaximized ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={onClose} className="text-neutral-500 hover:text-white hover:bg-white/5 rounded-full h-10 w-10">
+                                <X className="h-5 w-5" />
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
