@@ -357,8 +357,9 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     await tx.hms_product.update({
                         where: { id: item.productId },
                         data: {
-                            // Update base price (per PCS)
+                            // Update base price (per PCS) and COST
                             price: salePricePerPCS || currentProduct?.price,
+                            default_cost: avgCostPerBaseUnit, // Update Last Buy Cost
                             metadata: {
                                 ...(currentProduct?.metadata as any || {}),
                                 purchase_tax_rate: item.taxRate,
@@ -377,8 +378,33 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     });
                 }
 
-                // D. Update Main Product Stock (Optional)
-                // await tx.hms_stock_levels.upsert(...) - Skipping for now, relying on ledger
+                // D. Update Main Product Stock (Synced from Ledger)
+                const existingStock = await tx.hms_stock_levels.findFirst({
+                    where: {
+                        company_id: companyId,
+                        product_id: item.productId,
+                        location_id: defaultLocation.id
+                    }
+                });
+
+                if (existingStock) {
+                    await tx.hms_stock_levels.update({
+                        where: { id: existingStock.id },
+                        data: {
+                            quantity: { increment: stockQty }
+                        }
+                    });
+                } else {
+                    await tx.hms_stock_levels.create({
+                        data: {
+                            tenant_id: session.user.tenantId!,
+                            company_id: companyId!,
+                            product_id: item.productId,
+                            location_id: defaultLocation.id,
+                            quantity: stockQty
+                        }
+                    });
+                }
             }
 
             // 4. Update PO Status if linked
