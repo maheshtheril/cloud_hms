@@ -101,7 +101,8 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
                     * For bottles/syrups: "200ml", "100ml", "60ml", "500ml", etc.
                     * For sachets: "5gm", "10gm", etc.
                     * Look in these columns: "Pack", "Packing", "Pkg", "Size", or near the product name
-                    * If you see "10;s" or "10:S" or "10S" or "10's", treat it as "PACK-10".
+                    * If you see "1x10", "10x10", return EXACTLY "1x10", "10x10". Do NOT convert to "PACK-10".
+                    * If you see "10;s" or "10:S" or "10S" or "10's", return "1x10" (standardize to 1xN format if possible, otherwise keep raw "10's").
                     * If you see "200ML" or "100ML", put this in "packing" and set UOM to "BOTTLE".
                     * If you see "50 GM" or "15 GM", put this in "packing" and set UOM to "TUBE" or "PCS".
                     * If the product is a Syrup/Liquid and no UOM is clear, default UOM to "BOTTLE".
