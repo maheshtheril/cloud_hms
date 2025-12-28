@@ -561,8 +561,17 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                 {/* Main Content Area */}
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                     {/* Fixed Top Info Grid */}
-                    <div className="shrink-0 px-8 py-6 border-b border-white/5 bg-neutral-900/10">
-                        <div className="grid grid-cols-12 gap-8 items-start">
+                    <div className="shrink-0 px-8 py-8 border-b border-white/5 bg-neutral-900/40 backdrop-blur-xl relative overflow-hidden">
+                        {/* Shimmer overlay when scanning */}
+                        {isScanning && (
+                            <motion.div
+                                initial={{ x: '-100%' }}
+                                animate={{ x: '100%' }}
+                                transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+                                className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-500/5 to-transparent skew-x-12 z-0"
+                            />
+                        )}
+                        <div className="grid grid-cols-12 gap-10 items-start relative z-10">
                             {/* Vendor Section */}
                             <div className="col-span-12 lg:col-span-4 space-y-4">
                                 <div className="flex items-center justify-between">
@@ -588,15 +597,15 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                     />
                                     <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-all duration-300"></div>
                                 </div>
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-2 pt-1">
                                     {supplierMeta?.gstin && (
-                                        <Badge variant="outline" className="bg-indigo-500/5 border-indigo-500/10 text-indigo-400/70 text-[10px] font-mono">
-                                            GST: {supplierMeta.gstin}
+                                        <Badge variant="outline" className="bg-indigo-500/10 border-indigo-500/20 text-indigo-400 font-mono text-[9px] px-1.5 py-0 h-5">
+                                            GST {supplierMeta.gstin}
                                         </Badge>
                                     )}
                                     {supplierMeta?.address && (
-                                        <div className="text-[10px] text-neutral-500 font-medium line-clamp-1 flex items-center gap-1">
-                                            <span className="shrink-0 bg-neutral-800 px-1 rounded text-[8px] border border-white/5">ADR</span>
+                                        <div className="text-[10px] text-neutral-400 font-medium line-clamp-1 flex items-center gap-1.5 opacity-60">
+                                            <span className="shrink-0 bg-neutral-800 px-1 rounded-[3px] text-[8px] border border-white/10 text-neutral-300">ADR</span>
                                             {supplierMeta.address}
                                         </div>
                                     )}
@@ -604,23 +613,23 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                             </div>
 
                             {/* Info Section */}
-                            <div className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-4">
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Received Date</label>
+                            <div className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-6 pt-1">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em]">Received Date</label>
                                     <Input
                                         type="date"
                                         value={receivedDate}
                                         onChange={(e) => setReceivedDate(e.target.value)}
-                                        className="bg-neutral-900/50 border-white/5 h-11 font-bold text-sm"
+                                        className="bg-white/5 border-white/10 h-11 font-bold text-sm text-white focus:border-indigo-500/50 transition-all"
                                     />
                                 </div>
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Invoice #</label>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em]">Invoice #</label>
                                     <Input
                                         value={reference}
                                         onChange={(e) => setReference(e.target.value)}
                                         placeholder="INV-000"
-                                        className="bg-neutral-900/50 border-white/5 h-11 font-mono font-bold text-white uppercase"
+                                        className="bg-white/5 border-white/10 h-11 font-mono font-bold text-white uppercase placeholder:text-neutral-700 focus:border-indigo-500/50 transition-all"
                                     />
                                 </div>
                             </div>
