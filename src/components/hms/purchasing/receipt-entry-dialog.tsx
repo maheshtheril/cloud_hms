@@ -441,6 +441,12 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
             return;
         }
 
+        const totalDifference = Math.abs(netTotal - scannedTotal);
+        if (scannedTotal > 0 && totalDifference > 0.01) {
+            toast({ title: "Total Mismatch", description: `The calculated total (${netTotal.toFixed(2)}) does not match the scanned total (${scannedTotal.toFixed(2)}). Difference: ${totalDifference.toFixed(2)}`, variant: "destructive" });
+            return;
+        }
+
         setIsSubmitting(true);
         const payload = {
             supplierId,
@@ -567,6 +573,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 </div>
                                 <div className="group relative">
                                     <SearchableSelect
+                                        key={`${supplierId}-${supplierName}`} // Force reset on scan
                                         value={supplierId}
                                         defaultOptions={useMemo(() => supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }] : [], [supplierId, supplierName, supplierMeta])}
                                         onChange={(id, opt) => {
@@ -925,8 +932,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 <p className="text-[9px] font-black text-neutral-500 uppercase tracking-widest">Scanned Total</p>
                                 <div className="flex items-center gap-2">
                                     <p className="text-sm font-mono font-bold text-neutral-300">₹{scannedTotal.toFixed(2)}</p>
-                                    <Badge className={Math.abs(scannedTotal - netTotal) < 0.1 ? 'bg-emerald-500/10 text-emerald-400 border-none' : 'bg-rose-500/10 text-rose-400 border-none'}>
-                                        {Math.abs(scannedTotal - netTotal) < 0.1 ? 'Matched' : `Diff: ₹${(netTotal - scannedTotal).toFixed(2)}`}
+                                    <Badge className={Math.abs(scannedTotal - netTotal) < 0.01 ? 'bg-emerald-500/10 text-emerald-400 border-none' : 'bg-rose-500/10 text-rose-400 border-none animate-pulse'}>
+                                        {Math.abs(scannedTotal - netTotal) < 0.01 ? 'Matched' : `Mismatch: ₹${(netTotal - scannedTotal).toFixed(2)}`}
                                     </Badge>
                                 </div>
                             </div>
@@ -934,10 +941,16 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     </div>
 
                     <div className="flex items-center gap-4">
+                        {scannedTotal > 0 && Math.abs(netTotal - scannedTotal) > 0.01 && (
+                            <div className="bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 rounded-lg flex items-center gap-2">
+                                <div className="h-1.5 w-1.5 bg-rose-500 rounded-full animate-ping" />
+                                <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest">Totals Mismatch - Blocked</span>
+                            </div>
+                        )}
                         <Button variant="ghost" className="text-neutral-400 hover:text-white" onClick={onClose}>Discard</Button>
                         <Button
-                            className="bg-white text-black hover:bg-neutral-200 h-12 px-8 rounded-xl font-bold transition-all transform active:scale-95 shadow-xl disabled:opacity-50"
-                            disabled={items.length === 0 || isSubmitting}
+                            className="bg-white text-black hover:bg-neutral-200 h-12 px-8 rounded-xl font-bold transition-all transform active:scale-95 shadow-xl disabled:opacity-50 disabled:grayscale"
+                            disabled={items.length === 0 || isSubmitting || (scannedTotal > 0 && Math.abs(scannedTotal - netTotal) > 0.01)}
                             onClick={handleSubmit}
                         >
                             {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Confirm & Post Entry <ArrowRight className="ml-2 w-5 h-5" /></>}
