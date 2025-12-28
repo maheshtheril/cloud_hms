@@ -604,6 +604,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             <th className="py-4 px-2 w-20 text-right text-neutral-400">CGST</th>
                                             <th className="py-4 px-2 w-20 text-right text-neutral-400">SGST</th>
                                             <th className="py-4 px-2 w-20 text-right text-neutral-400">IGST</th>
+                                            <th className="py-4 px-2 w-24 text-right text-indigo-400">Net Cost</th>
                                             <th className="py-4 pr-6 text-right w-32 sticky right-0 z-20 bg-neutral-900 border-l border-white/5 shadow-xl">Line Total</th>
                                         </tr>
                                     </thead>
@@ -783,6 +784,11 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                 </td>
                                                 <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
                                                     {taxType === 'INTER' ? (item.taxAmount || 0).toFixed(2) : '-'}
+                                                </td>
+                                                <td className="py-4 px-2 text-right text-[11px] font-mono font-bold text-indigo-400">
+                                                    {item.receivedQty > 0
+                                                        ? (((item.unitPrice * item.receivedQty) - (item.schemeDiscount || 0) - (item.discountAmt || 0) + (item.taxAmount || 0)) / item.receivedQty).toFixed(2)
+                                                        : '0.00'}
                                                 </td>
                                                 <td className="py-4 pr-6 text-right font-mono font-black text-white sticky right-0 z-20 bg-neutral-900 border-l border-white/5">
                                                     {((item.unitPrice * item.receivedQty) - (item.schemeDiscount || 0) - (item.discountAmt || 0) + (item.taxAmount || 0)).toFixed(2)}
