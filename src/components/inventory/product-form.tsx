@@ -18,9 +18,10 @@ interface ProductFormProps {
     uomCategories: { id: string, name: string, hms_uom: any[] }[];
     initialData?: any;
     onSuccess?: () => void;
+    onCancel?: () => void;
 }
 
-export function ProductForm({ suppliers, taxRates, uoms, categories, manufacturers, uomCategories, initialData, onSuccess }: ProductFormProps) {
+export function ProductForm({ suppliers, taxRates, uoms, categories, manufacturers, uomCategories, initialData, onSuccess, onCancel }: ProductFormProps) {
     const router = useRouter();
     const [activeSection, setActiveSection] = useState<'details' | 'logistics' | 'financials'>('details');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -39,10 +40,6 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
 
     const isEditing = !!initialData;
     const category = categories.find(c => c.id === selectedCategoryId);
-
-    // Quick Create Form States
-    // Removed refs as we use components now
-
 
     // Auto-select Tax Rate when Category changes
     useEffect(() => {
@@ -123,7 +120,10 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                     <div className="flex items-center gap-3">
                         <button
                             type="button"
-                            onClick={() => router.back()}
+                            onClick={() => {
+                                if (onCancel) onCancel();
+                                else router.back();
+                            }}
                             disabled={isSubmitting}
                             className="px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
                         >
@@ -462,40 +462,42 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                         </div>
                     </div>
                 </div>
-            </form>
+            </form >
 
             {/* QUICK CREATE MODALS */}
-            {modalOpen !== 'none' && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 m-4 animate-in zoom-in-95 duration-200">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-bold text-gray-900 capitalize">New {modalOpen}</h3>
-                            <button onClick={() => setModalOpen('none')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                                <X className="h-4 w-4 text-gray-500" />
-                            </button>
+            {
+                modalOpen !== 'none' && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 m-4 animate-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-lg font-bold text-gray-900 capitalize">New {modalOpen}</h3>
+                                <button onClick={() => setModalOpen('none')} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                                    <X className="h-4 w-4 text-gray-500" />
+                                </button>
+                            </div>
+
+                            {modalOpen === 'category' && (
+                                <QuickCategoryForm onSuccess={handleQuickSuccess} />
+                            )}
+
+                            {modalOpen === 'manufacturer' && (
+                                <QuickManufacturerForm onSuccess={handleQuickSuccess} />
+                            )}
+
+
+                            {modalOpen === 'uom' && (
+                                <UOMQuickCreate
+                                    categories={uomCategories}
+                                    uoms={uoms}
+                                    onClose={() => setModalOpen('none')}
+                                    onRefresh={() => router.refresh()}
+                                />
+                            )}
                         </div>
-
-                        {modalOpen === 'category' && (
-                            <QuickCategoryForm onSuccess={handleQuickSuccess} />
-                        )}
-
-                        {modalOpen === 'manufacturer' && (
-                            <QuickManufacturerForm onSuccess={handleQuickSuccess} />
-                        )}
-
-
-                        {modalOpen === 'uom' && (
-                            <UOMQuickCreate
-                                categories={uomCategories}
-                                uoms={uoms}
-                                onClose={() => setModalOpen('none')}
-                                onRefresh={() => router.refresh()}
-                            />
-                        )}
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     )
 }
 
