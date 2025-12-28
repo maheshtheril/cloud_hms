@@ -108,7 +108,7 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
                     * If the product is a Syrup/Liquid and no UOM is clear, default UOM to "BOTTLE".
                 - "unitPrice": Unit Rate/Price PER PACK (before tax). Do NOT Use MRP. Look for 'Rate' or 'Price'. This is price per UOM.
                 - "mrp": Maximum Retail Price (MRP). Extract the numeric value. Do NOT return the words 'MRP' or 'Rate' or 'Price'. Return 0 if not found.
-                - "schemeDiscount": Scheme Discount Amount (if shown separately).
+                - "schemeDiscount": Scheme Discount Amount (Schm Amt). Capture any discount amount labeled as 'Schm', 'Schm Amt', 'Scheme', or 'SCD'.
                 - "discountPct": Discount Percentage (if shown).
                 - "discountAmt": Total Discount Amount.
                 - "taxRate": Tax Percentage. IMPORTANT: If tax is split (e.g. CGST 2.5% + SGST 2.5%), return the SUM (e.g. 5.0). Return the TOTAL tax rate.
