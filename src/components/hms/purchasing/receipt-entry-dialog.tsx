@@ -1,46 +1,34 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { createPurchaseReceipt, getPendingPurchaseOrders } from '@/app/actions/receipt';
-import { scanInvoiceFromUrl } from '@/app/actions/scan-invoice';
-import { searchSuppliers, searchProducts, createProductQuick, getCompanyDetails } from '@/app/actions/purchase';
-import { updateSupplierPricingDefaults, getSupplierPricingDefaults } from '@/app/actions/supplier-pricing';
-
+import { useState, useEffect, useMemo } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-    Loader2, Plus, Trash2, ArrowLeft, CheckCircle2,
-    ScanLine, Box, ArrowRight, X, Scan,
-    Receipt, Info, Calculator, Calendar as CalendarIcon,
-    AlertCircle, Sparkles, FileText
-} from 'lucide-react';
-import { SearchableSelect, type Option } from '@/components/ui/searchable-select';
-import { FileUpload } from '@/components/ui/file-upload';
-import { useToast } from '@/components/ui/use-toast';
-import { Toaster } from '@/components/ui/toaster';
-import { SupplierDialog } from '@/components/hms/purchasing/supplier-dialog';
-import { ProductCreationDialog } from '@/components/inventory/product-creation-dialog';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger
-} from '@/components/ui/dialog';
+    Plus, Search, Trash2, Receipt, ArrowRight, X,
+    Calendar as CalendarIcon, FileText, Sparkles, Loader2, Scan
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { SearchableSelect, type Option } from "@/components/ui/searchable-select";
+import { Toaster } from "@/components/ui/toaster";
+import { getSuppliers } from "@/app/actions/supplier";
+import { getProducts, getProduct } from "@/app/actions/inventory";
+import { getPendingPurchaseOrders, createPurchaseReceipt } from "@/app/actions/receipt";
+import { getCompanyDetails } from "@/app/actions/company";
+import { SupplierDialog } from "./supplier-dialog";
+import { ProductCreationDialog } from "@/components/inventory/product-creation-dialog";
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select"
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-
-const PACKING_OPTIONS = ['1 Strip', '1 Box', '1 Bottle', '10x10', '1x10', '1x15', '1 Unit', '1 kg', '1 L'];
-const TAX_OPTIONS = ['0', '5', '12', '18', '28'];
+} from "@/components/ui/select";
+import { FileUpload } from "@/components/ui/file-upload";
 
 type ReceiptItem = {
     productId: string;
@@ -50,18 +38,18 @@ type ReceiptItem = {
     pendingQty?: number;
     receivedQty: number;
     unitPrice: number;
-    batch?: string;
-    expiry?: string;
-    mrp?: number;
-    salePrice?: number;
-    marginPct?: number;
+    batch: string;
+    expiry: string;
+    mrp: number;
+    salePrice: number;
+    marginPct: number;
     markupPct?: number;
-    pricingStrategy?: 'mrp_discount' | 'cost_markup' | 'custom' | 'manual';
+    pricingStrategy?: 'manual' | 'mrp_discount';
     mrpDiscountPct?: number;
-    taxRate?: number;
-    taxAmount?: number;
-    hsn?: string;
-    packing?: string;
+    taxRate: number;
+    taxAmount: number;
+    hsn: string;
+    packing: string;
     uom?: string;
     schemeDiscount?: number;
     discountPct?: number;
@@ -75,12 +63,14 @@ interface ReceiptEntryDialogProps {
     onSuccess?: () => void;
 }
 
+const TAX_OPTIONS = [0, 5, 12, 18, 28];
+
 export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryDialogProps) {
-    const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
     const [isProductCreationOpen, setProductCreationOpen] = useState(false);
+    const [globalMargin, setGlobalMargin] = useState<number>(20); // Default to 20%
 
     // Mode: 'po' (Linked to PO) | 'direct' (Ad-hoc)
     const [mode, setMode] = useState<'po' | 'direct'>('po');
@@ -137,9 +127,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
     useEffect(() => {
         if (!isAutoRound) return;
         const taxable = items.reduce((sum, item) => {
-            const baseAmount = item.unitPrice * Number(item.receivedQty);
-            const totalDiscount = (item.schemeDiscount || 0) + (item.discountAmt || 0);
-            return sum + Math.max(0, baseAmount - totalDiscount);
+            const taxablePerUnit = item.unitPrice - (item.schemeDiscount || 0) - (item.discountAmt || 0);
+            return sum + Math.max(0, taxablePerUnit * Number(item.receivedQty));
         }, 0);
         const tax = items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
         const rawTotal = taxable + tax;
@@ -166,29 +155,41 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
             const { getPurchaseOrder } = await import('@/app/actions/receipt');
             const res = await getPurchaseOrder(id);
             if (res.data) {
-                if (res.data.supplierId) setSupplierId(res.data.supplierId);
-                setItems(res.data.items.map((i: any) => ({
-                    productId: i.productId,
-                    productName: i.productName,
-                    poLineId: i.poLineId,
-                    orderedQty: i.orderedQty,
-                    pendingQty: i.pendingQty,
-                    receivedQty: i.pendingQty,
-                    unitPrice: i.unitPrice,
-                    batch: '',
-                    expiry: '',
-                    mrp: i.unitPrice || 0,
-                    salePrice: 0,
-                    marginPct: 0,
-                    taxRate: 0,
-                    taxAmount: 0,
-                    hsn: '',
-                    packing: '',
-                    schemeDiscount: 0,
-                    discountPct: 0,
-                    discountAmt: 0,
-                    freeQty: 0
-                })));
+                if (res.data.supplierId) {
+                    setSupplierId(res.data.supplierId);
+                    setSupplierName(res.data.supplierName || '');
+                    setSupplierMeta({ gstin: res.data.supplierGstin });
+                }
+                // Fetch detailed product info to auto-fill Sell Price & MRP
+                const { getProduct } = await import('@/app/actions/inventory');
+                const enrichedItems = await Promise.all(res.data.items.map(async (i: any) => {
+                    const p = await getProduct(i.productId);
+                    const cost = i.unitPrice || 0;
+                    const sp = p?.price || 0;
+                    return {
+                        productId: i.productId,
+                        productName: i.productName,
+                        poLineId: i.poLineId,
+                        orderedQty: i.orderedQty,
+                        pendingQty: i.pendingQty,
+                        receivedQty: i.pendingQty,
+                        unitPrice: cost,
+                        batch: '',
+                        expiry: '',
+                        mrp: p?.mrp || cost,
+                        salePrice: sp,
+                        marginPct: sp > 0 ? Number(calculateMargin(sp, cost).toFixed(2)) : 0,
+                        taxRate: i.taxRate || p?.taxRate || 0,
+                        taxAmount: (i.pendingQty * cost) * ((i.taxRate || p?.taxRate || 0) / 100),
+                        hsn: i.hsn || p?.hsn || '',
+                        packing: i.packing || p?.packing || '',
+                        schemeDiscount: 0,
+                        discountPct: 0,
+                        discountAmt: 0,
+                        freeQty: 0
+                    };
+                }));
+                setItems(enrichedItems);
             }
         } catch (err) {
             toast({ title: "Error", description: "Failed to load PO details", variant: "destructive" });
@@ -209,8 +210,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         const newItems = [...items];
         const item = newItems[index];
         if (item.mrp && salePrice > item.mrp) {
-            toast({ title: "Invalid Price", description: `Sale price cannot exceed MRP (₹${item.mrp})`, variant: "destructive" });
-            return;
+            // Keep it but show a toast warning (non-blocking)
+            toast({ title: "Price Warning", description: `Sale price (₹${salePrice}) is higher than MRP (₹${item.mrp})`, variant: "destructive" });
         }
         item.salePrice = salePrice;
         item.pricingStrategy = 'manual';
@@ -219,6 +220,90 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
             item.markupPct = Number(calculateMarkup(salePrice, item.unitPrice).toFixed(2));
         }
         setItems(newItems);
+    };
+
+    const handleProductSelect = async (index: number, id: string | null, opt: Option | null | undefined) => {
+        const n = [...items];
+        n[index].productId = id || "";
+        n[index].productName = opt?.label || "";
+        if (id) {
+            const p = await getProduct(id);
+            if (p) {
+                n[index].mrp = p.mrp || 0;
+                n[index].salePrice = p.price || 0;
+                n[index].hsn = p.hsn || "";
+                n[index].packing = p.packing || "";
+                n[index].taxRate = p.taxRate || 0;
+
+                if (n[index].salePrice > 0 && n[index].unitPrice > 0) {
+                    n[index].marginPct = Number(calculateMargin(n[index].salePrice, n[index].unitPrice).toFixed(2));
+                }
+
+                const taxable = (n[index].unitPrice - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0)) * n[index].receivedQty;
+                n[index].taxAmount = Math.max(0, taxable) * (n[index].taxRate / 100);
+            }
+        }
+        setItems(n);
+    };
+
+    const handleMarginChange = (index: number, margin: number) => {
+        const n = [...items];
+        const item = n[index];
+        item.marginPct = margin;
+        if (item.unitPrice > 0) {
+            const denominator = 1 - margin / 100;
+            if (denominator > 0) {
+                const calculatedSalePrice = Number((item.unitPrice / denominator).toFixed(2));
+                item.salePrice = calculatedSalePrice;
+            } else if (item.mrp) {
+                item.salePrice = item.mrp;
+            }
+            item.pricingStrategy = 'manual';
+        }
+        setItems(n);
+    };
+
+    const applyGlobalMargin = () => {
+        const margin = globalMargin;
+        const newItems = items.map(item => {
+            if (item.unitPrice > 0) {
+                const denominator = 1 - margin / 100;
+                let salePrice = item.salePrice;
+                if (denominator > 0) {
+                    salePrice = Number((item.unitPrice / denominator).toFixed(2));
+                } else if (item.mrp) {
+                    salePrice = item.mrp;
+                }
+
+                // If sale price exceeds MRP, cap it at MRP unless user manually changes it later
+                if (item.mrp && salePrice > item.mrp) {
+                    salePrice = item.mrp;
+                }
+
+                return {
+                    ...item,
+                    marginPct: margin,
+                    salePrice,
+                    pricingStrategy: 'manual' as any,
+                    markupPct: item.unitPrice > 0 ? Number(calculateMarkup(salePrice, item.unitPrice).toFixed(2)) : 0
+                };
+            }
+            return item;
+        });
+        setItems(newItems);
+        toast({ title: "Global Margin Applied", description: `Applied ${margin}% margin to all items.` });
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent, index: number, field: string) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            // Look for the same field in the next row
+            const nextInput = document.querySelector(`input[data-index="${index + 1}"][data-field="${field}"]`) as HTMLInputElement;
+            if (nextInput) {
+                nextInput.focus();
+                nextInput.select();
+            }
+        }
     };
 
     const applyQuickMargin = (marginTemplate: string) => {
@@ -231,8 +316,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     salePrice,
                     mrpDiscountPct: discountPct,
                     pricingStrategy: 'mrp_discount' as any,
-                    marginPct: item.unitPrice > 0 ? Number(calculateMargin(salePrice, item.unitPrice).toFixed(2)) : undefined,
-                    markupPct: item.unitPrice > 0 ? Number(calculateMarkup(salePrice, item.unitPrice).toFixed(2)) : undefined,
+                    marginPct: item.unitPrice > 0 ? Number(calculateMargin(salePrice, item.unitPrice).toFixed(2)) : 0,
+                    markupPct: item.unitPrice > 0 ? Number(calculateMarkup(salePrice, item.unitPrice).toFixed(2)) : 0,
                 };
             }
             return item;
@@ -248,7 +333,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
             receivedQty: 1,
             unitPrice: 0,
             pendingQty: 0,
-            orderedQty: 0,
             batch: "",
             expiry: "",
             mrp: 0,
@@ -265,62 +349,123 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         }]);
     };
 
-    const removeItem = (index: number) => {
-        setItems(items.filter((_, i) => i !== index));
+    const searchSuppliers = async (query: string) => {
+        const res = await getSuppliers(query);
+        return res?.data?.map((s: any) => ({ id: s.id, label: s.name, subLabel: s.gstin })) || [];
+    };
+
+    const searchProducts = async (query: string) => {
+        const res = await getProducts(query);
+        return res?.data?.map((p: any) => ({ id: p.id, label: p.name, subLabel: p.categoryName })) || [];
+    };
+
+    const createProductQuick = async (name: string) => {
+        setProductCreationOpen(true);
+    };
+
+    const scanInvoiceFromUrl = async (url: string) => {
+        setIsScanning(true);
+        setScanProgress('Analyzing Invoice...');
+        try {
+            const { scanPurchaseInvoice } = await import('@/app/actions/ai-scan');
+            const res = await scanPurchaseInvoice(url);
+            if (res.data) {
+                const { supplierId, supplierName, date, reference: ref, items: scannedItems, gstin, grandTotal } = res.data;
+                if (supplierId) {
+                    setSupplierId(supplierId);
+                    setSupplierName(supplierName);
+                    setSupplierMeta({ gstin });
+                }
+                if (date) setReceivedDate(date);
+                if (ref) setReference(ref);
+                if (grandTotal) {
+                    setScannedTotal(Number(grandTotal));
+                    setIsAutoRound(false);
+                }
+                if (scannedItems) {
+                    const { findOrCreateProduct } = await import('@/app/actions/inventory');
+                    const mapped = await Promise.all(scannedItems.map(async (item: any) => {
+                        let pId = item.productId;
+                        if (!pId && item.productName) {
+                            const pr = await findOrCreateProduct(item.productName, { mrp: Number(item.mrp), hsn: item.hsn });
+                            if (!('error' in pr)) pId = pr.productId;
+                        }
+                        const qty = Number(item.qty) || 0;
+                        const price = Number(item.unitPrice) || 0;
+                        const rate = Number(item.taxRate) || 0;
+                        return {
+                            productId: pId || "",
+                            productName: item.productName,
+                            receivedQty: qty,
+                            unitPrice: price,
+                            batch: item.batch || "",
+                            expiry: item.expiry || "",
+                            mrp: Number(item.mrp) || price,
+                            salePrice: 0,
+                            marginPct: 0,
+                            taxRate: rate,
+                            taxAmount: (qty * price) * (rate / 100),
+                            hsn: item.hsn || "",
+                            packing: item.packing || "",
+                            uom: item.uom || "",
+                            schemeDiscount: 0,
+                            discountPct: 0,
+                            discountAmt: 0,
+                            freeQty: 0
+                        };
+                    }));
+                    setItems(mapped as any);
+                }
+                setMode('direct');
+                toast({ title: "Scan Success", description: "Details extracted from invoice." });
+            }
+        } catch (e) {
+            toast({ title: "Scan Failed", description: "Failed to read invoice", variant: "destructive" });
+        } finally {
+            setIsScanning(false);
+        }
     };
 
     const handleSubmit = async () => {
+        if (!supplierId || items.length === 0) {
+            toast({ title: "Validation Error", description: "Please select a supplier and add at least one item.", variant: "destructive" });
+            return;
+        }
+
+        // Validate Sale Price
+        const invalidPrices = items.filter(i => !i.salePrice || i.salePrice <= 0);
+        if (invalidPrices.length > 0) {
+            toast({ title: "Missing Prices", description: `Sale Price is mandatory for all items. Found ${invalidPrices.length} items without sale price.`, variant: "destructive" });
+            return;
+        }
+
         setIsSubmitting(true);
-        if (Math.abs(roundOff) > 0.5) {
-            toast({ title: "Validation Error", description: "Round Off amount cannot exceed +/- 0.50.", variant: "destructive" });
-            setIsSubmitting(false);
-            return;
-        }
-
-        const validItems = items.filter(i => i.receivedQty > 0 && i.productId);
-
-        // Validation: Sale Price and Margin are mandatory
-        const invalidItems = validItems.filter(i => !i.salePrice || !i.marginPct);
-        if (invalidItems.length > 0) {
-            toast({ title: "Validation Error", description: "Sale Price and Margin are required for all items.", variant: "destructive" });
-            setIsSubmitting(false);
-            return;
-        }
-
-        if (validItems.length === 0) {
-            toast({ title: "Error", description: "No valid items to receive.", variant: "destructive" });
-            setIsSubmitting(false);
-            return;
-        }
-
         const payload = {
-            supplierId: supplierId || undefined,
-            purchaseOrderId: mode === 'po' ? poId : null,
-            receivedDate: new Date(receivedDate),
+            supplierId,
+            poId,
+            receivedDate,
             reference,
             notes,
             attachmentUrl,
-            items: validItems.map(i => ({
+            roundOff,
+            items: items.map(i => ({
                 productId: i.productId,
                 poLineId: i.poLineId,
-                qtyReceived: Number(i.receivedQty),
-                unitPrice: Number(i.unitPrice),
-                batch: i.batch,
-                expiry: i.expiry,
-                mrp: Number(i.mrp),
-                salePrice: i.salePrice ? Number(i.salePrice) : undefined,
-                marginPct: i.marginPct ? Number(i.marginPct) : undefined,
-                markupPct: i.markupPct ? Number(i.markupPct) : undefined,
-                pricingStrategy: i.pricingStrategy,
-                taxRate: Number(i.taxRate),
-                taxAmount: Number(i.taxAmount),
+                qtyReceived: i.receivedQty,
+                unitPrice: i.unitPrice,
+                batchNumber: i.batch,
+                expiryDate: i.expiry,
+                mrp: i.mrp,
+                salePrice: i.salePrice,
+                taxRate: i.taxRate,
+                taxAmount: i.taxAmount,
                 hsn: i.hsn,
                 packing: i.packing,
                 uom: i.uom,
-                schemeDiscount: i.schemeDiscount ? Number(i.schemeDiscount) : undefined,
-                discountPct: i.discountPct ? Number(i.discountPct) : undefined,
-                discountAmt: i.discountAmt ? Number(i.discountAmt) : undefined,
-                freeQty: i.freeQty ? Number(i.freeQty) : 0
+                schemeDiscount: i.schemeDiscount,
+                discountPct: i.discountPct,
+                discountAmt: i.discountAmt,
+                freeQty: i.freeQty || 0
             }))
         };
 
@@ -346,7 +491,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="max-w-[95vw] w-[1400px] h-[90vh] p-0 overflow-hidden bg-neutral-950 border-white/10 flex flex-col selection:bg-indigo-500/30">
-
                 <Toaster />
                 <SupplierDialog
                     isOpen={supplierDialogOpen}
@@ -367,8 +511,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     }}
                 />
 
-                {/* World-Class Fixed Header */}
-                <div className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-neutral-950/80 backdrop-blur-xl shrink-0 z-10">
+                {/* Fixed Title Header */}
+                <div className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-neutral-950 shrink-0 z-20">
                     <div className="flex items-center gap-4">
                         <div className="h-10 w-10 bg-indigo-500/10 rounded-xl flex items-center justify-center border border-indigo-500/20">
                             <Receipt className="h-5 w-5 text-indigo-400" />
@@ -409,428 +553,325 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     </div>
                 </div>
 
-                {/* Unified Main Scroll Container */}
-                <div className="flex-1 overflow-auto custom-scrollbar">
-                    <div className="px-8 py-8 space-y-12 min-w-[2000px]">
-                        {/* Header Context Grid */}
-                        <div className="grid grid-cols-12 gap-12">
+                {/* Main Content Area */}
+                <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                    {/* Fixed Top Info Grid */}
+                    <div className="shrink-0 px-8 py-6 border-b border-white/5 bg-neutral-900/10">
+                        <div className="grid grid-cols-12 gap-8 items-start">
                             {/* Vendor Section */}
-                            <div className="col-span-12 lg:col-span-4 space-y-6">
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Supplier Entity</label>
-                                        <button onClick={() => setSupplierDialogOpen(true)} className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-widest">Add New +</button>
-                                    </div>
-                                    <div className="group relative">
-                                        <SearchableSelect
-                                            value={supplierId}
-                                            defaultOptions={useMemo(() => supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin }] : [], [supplierId, supplierName, supplierMeta?.gstin])}
-                                            onChange={(id, opt) => { setSupplierId(id); setSupplierName(opt?.label || ''); }}
-                                            onSearch={searchSuppliers}
-                                            placeholder="Search Supplier Name / GSTIN..."
-                                            className="w-full bg-transparent border-none text-xl font-bold placeholder:text-neutral-800 p-0 focus:ring-0 dark"
-                                            variant="ghost"
-                                            isDark={true}
-                                        />
-                                        <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-all duration-300 scale-x-100 group-focus-within:scale-x-100 origin-left"></div>
-                                    </div>
-                                    {supplierMeta?.gstin && (
-                                        <Badge variant="outline" className="bg-indigo-500/5 border-indigo-500/10 text-indigo-400/70 text-[10px] font-mono">
-                                            GST: {supplierMeta.gstin}
-                                        </Badge>
-                                    )}
+                            <div className="col-span-12 lg:col-span-4 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Supplier Entity</label>
+                                    <button onClick={() => setSupplierDialogOpen(true)} className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-widest">Add New +</button>
                                 </div>
+                                <div className="group relative">
+                                    <SearchableSelect
+                                        value={supplierId}
+                                        defaultOptions={useMemo(() => supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin }] : [], [supplierId, supplierName, supplierMeta?.gstin])}
+                                        onChange={(id, opt) => { setSupplierId(id); setSupplierName(opt?.label || ''); }}
+                                        onSearch={searchSuppliers}
+                                        placeholder="Search Supplier Name / GSTIN..."
+                                        className="w-full bg-transparent border-none text-xl font-bold placeholder:text-neutral-800 p-0 focus:ring-0 dark"
+                                        variant="ghost"
+                                        isDark={true}
+                                    />
+                                    <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-all duration-300"></div>
+                                </div>
+                                {supplierMeta?.gstin && (
+                                    <Badge variant="outline" className="bg-indigo-500/5 border-indigo-500/10 text-indigo-400/70 text-[10px] font-mono">
+                                        GST: {supplierMeta.gstin}
+                                    </Badge>
+                                )}
+                            </div>
 
-                                {mode === 'po' && (
-                                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                                        <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Reference PO</label>
-                                        <div className="group relative">
+                            {/* Info Section */}
+                            <div className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-4">
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Received Date</label>
+                                    <Input
+                                        type="date"
+                                        value={receivedDate}
+                                        onChange={(e) => setReceivedDate(e.target.value)}
+                                        className="bg-neutral-900/50 border-white/5 h-11 font-bold text-sm"
+                                    />
+                                </div>
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Invoice #</label>
+                                    <Input
+                                        value={reference}
+                                        onChange={(e) => setReference(e.target.value)}
+                                        placeholder="INV-000"
+                                        className="bg-neutral-900/50 border-white/5 h-11 font-mono font-bold text-white uppercase"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Method/Scan Section */}
+                            <div className="col-span-12 lg:col-span-4 space-y-4">
+                                <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Quick Scan / Order</label>
+                                <div className="flex gap-4">
+                                    {mode === 'po' ? (
+                                        <div className="flex-1">
                                             <SearchableSelect
                                                 value={poId}
                                                 onChange={(id) => handlePoSelect(id)}
                                                 onSearch={async (q) => poOptions.filter(o => o.label.toLowerCase().includes(q.toLowerCase()))}
-                                                placeholder="Select Open Order..."
-                                                className="w-full bg-transparent border-none text-xl font-bold text-indigo-300 placeholder:text-neutral-800 p-0 focus:ring-0 font-mono dark"
-                                                variant="ghost"
+                                                placeholder="Select PO..."
+                                                className="w-full bg-neutral-900/50 border-white/5 h-11 font-mono font-bold"
+                                                variant="outline"
                                                 isDark={true}
                                             />
-                                            <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-all duration-300"></div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Reference & Date */}
-                            <div className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-8">
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Received Date</label>
-                                    <div className="flex items-center gap-3 border-b border-neutral-800 pb-2.5 focus-within:border-indigo-500 transition-colors">
-                                        <CalendarIcon className="h-4 w-4 text-neutral-600" />
-                                        <input
-                                            type="date"
-                                            value={receivedDate}
-                                            onChange={(e) => setReceivedDate(e.target.value)}
-                                            className="bg-transparent border-none p-0 text-sm font-bold text-white focus:ring-0 w-full [color-scheme:dark]"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Invoice / Ref</label>
-                                    <div className="flex items-center gap-3 border-b border-neutral-800 pb-2.5 focus-within:border-indigo-500 transition-colors">
-                                        <FileText className="h-4 w-4 text-neutral-600" />
-                                        <input
-                                            type="text"
-                                            value={reference}
-                                            onChange={(e) => setReference(e.target.value)}
-                                            placeholder="INV-2024-..."
-                                            className="bg-transparent border-none p-0 text-sm font-bold text-white focus:ring-0 w-full placeholder:text-neutral-800"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* AI Scanning */}
-                            <div className="col-span-12 lg:col-span-4">
-                                <div className="bg-indigo-500/5 border border-indigo-500/10 rounded-2xl p-4 relative overflow-hidden group/scan">
-                                    <div className="flex items-start justify-between relative z-10">
-                                        <div className="space-y-1">
-                                            <h4 className="text-xs font-bold text-indigo-400 flex items-center gap-1.5">
-                                                <Scan className="w-3.5 h-3.5" />
-                                                Smart Ingestion
-                                            </h4>
-                                            <p className="text-[10px] text-neutral-500 leading-relaxed max-w-[140px]">Upload a PDF to auto-fill items and taxes.</p>
+                                    ) : (
+                                        <div className="flex-1 h-11 flex items-center px-4 bg-emerald-500/5 border border-emerald-500/10 rounded-md text-[10px] font-black text-emerald-400 uppercase">
+                                            Direct Entry
                                         </div>
+                                    )}
+                                    <div className="shrink-0 w-32 border border-white/5 rounded-md overflow-hidden">
                                         <FileUpload
-                                            disabled={isScanning}
-                                            className="w-24 h-24 bg-neutral-900 border-indigo-500/20 group-hover/scan:border-indigo-500/40 transition-all rounded-xl cursor-pointer"
-                                            onUploadComplete={async (url) => {
-                                                if (!url) return;
-                                                setAttachmentUrl(url);
-                                                setIsScanning(true);
-                                                setScanProgress('Analyzing...');
-                                                try {
-                                                    const res = await scanInvoiceFromUrl(url);
-                                                    if (!('error' in res) && res.data) {
-                                                        const { supplierId, supplierName, date, reference: ref, items: scannedItems } = res.data;
-                                                        setMode('direct');
-                                                        if (supplierId) {
-                                                            setSupplierId(supplierId);
-                                                            setSupplierName(supplierName);
-                                                            setSupplierMeta({ gstin: res.data.gstin });
-                                                        }
-                                                        if (date) setReceivedDate(date);
-                                                        if (ref) setReference(ref);
-                                                        if (scannedItems) {
-                                                            const { findOrCreateProduct } = await import('@/app/actions/inventory');
-                                                            const mapped = await Promise.all(scannedItems.map(async (item: any) => {
-                                                                let pId = item.productId;
-                                                                if (!pId && item.productName) {
-                                                                    const pr = await findOrCreateProduct(item.productName, { mrp: Number(item.mrp), hsn: item.hsn });
-                                                                    if (!('error' in pr)) pId = pr.productId;
-                                                                }
-                                                                const qty = Number(item.qty) || 0;
-                                                                const price = Number(item.unitPrice) || 0;
-                                                                const rate = Number(item.taxRate) || 0;
-                                                                return {
-                                                                    productId: pId || "",
-                                                                    productName: item.productName,
-                                                                    receivedQty: qty,
-                                                                    unitPrice: price,
-                                                                    batch: item.batch || "",
-                                                                    expiry: item.expiry || "",
-                                                                    mrp: Number(item.mrp) || price,
-                                                                    salePrice: 0,
-                                                                    marginPct: 0,
-                                                                    taxRate: rate,
-                                                                    taxAmount: (qty * price) * (rate / 100),
-                                                                    hsn: item.hsn || "",
-                                                                    packing: item.packing || "",
-                                                                    uom: item.uom || "",
-                                                                    schemeDiscount: 0,
-                                                                    discountPct: 0,
-                                                                    discountAmt: 0
-                                                                };
-                                                            }));
-                                                            setItems(mapped);
-                                                            if (res.data.grandTotal) {
-                                                                setScannedTotal(Number(res.data.grandTotal));
-                                                                setIsAutoRound(false);
-                                                            }
-                                                        }
-                                                        toast({ title: "Scan Success", description: "Invoice details extracted." });
-                                                    }
-                                                } catch (e) {
-                                                    toast({ title: "Scan Failed", variant: "destructive" });
-                                                } finally {
-                                                    setIsScanning(false);
-                                                }
-                                            }}
+                                            onUploadComplete={(url) => { if (url) scanInvoiceFromUrl(url); }}
+                                            className="h-11 border-dashed border-indigo-500/20 bg-indigo-500/[0.02]"
                                         />
                                     </div>
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -translate-y-12 translate-x-12 blur-3xl group-hover/scan:bg-indigo-500/10 transition-all"></div>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        {/* Item Manifest - Natural height in unified scroll */}
-                        <div className="space-y-4">
-                            <div className="flex items-center justify-between px-2">
-                                <div className="flex items-center gap-3">
-                                    <div className="h-6 w-1 bg-indigo-500 rounded-full"></div>
-                                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-500">Item Manifest</h3>
+                    {/* Manifest Area - Scrolls vertically */}
+                    <div className="flex-1 flex flex-col min-h-0 px-8 py-6 space-y-4">
+                        <div className="flex items-center justify-between shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="h-6 w-1 bg-indigo-500 rounded-full"></div>
+                                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-500">Item Manifest</h3>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-900 border border-white/5 rounded-xl shadow-inner">
+                                    <span className="text-[9px] font-black text-neutral-500 uppercase tracking-wider">Bulk Strategy</span>
+                                    <div className="flex items-center gap-1.5 bg-neutral-950 border border-white/5 rounded-lg px-2 py-0.5 shadow-sm">
+                                        <input
+                                            type="number"
+                                            value={globalMargin}
+                                            onChange={(e) => setGlobalMargin(Number(e.target.value))}
+                                            className="w-10 bg-transparent border-none text-[10px] font-black text-green-400 p-0 focus:ring-0 text-center"
+                                        />
+                                        <span className="text-[9px] font-black text-neutral-600">%</span>
+                                    </div>
+                                    <button
+                                        onClick={applyGlobalMargin}
+                                        className="px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-400 text-[9px] font-black rounded-lg transition-all border border-green-500/20 uppercase tracking-widest hover:scale-105 active:scale-95"
+                                    >
+                                        Apply All
+                                    </button>
+                                </div>
+                                <div className="flex items-center gap-1.5 bg-neutral-900 rounded-xl p-1 border border-white/5">
+                                    {['MRP-5', 'MRP-10', 'MRP-12', 'MRP-15'].map(m => (
+                                        <button
+                                            key={m}
+                                            onClick={() => applyQuickMargin(m)}
+                                            className="px-3 py-1 text-[9px] font-black rounded-lg hover:bg-white/5 transition-all text-neutral-500 hover:text-white"
+                                        >
+                                            {m}%
+                                        </button>
+                                    ))}
                                 </div>
                                 {mode === 'direct' && (
-                                    <button onClick={addItem} className="text-xs font-bold text-indigo-400 flex items-center gap-1.5 hover:bg-indigo-500/10 px-3 py-1.5 rounded-lg transition-all">
-                                        <Plus className="h-3.5 w-3.5" /> ADD LINE
+                                    <button onClick={addItem} className="text-xs font-bold text-indigo-400 flex items-center gap-1.5 hover:bg-indigo-500/10 px-3 py-2 rounded-xl transition-all border border-indigo-500/10">
+                                        <Plus className="h-4 w-4" /> ADD LINE
                                     </button>
                                 )}
                             </div>
+                        </div>
 
-                            <div className="rounded-2xl border border-white/5 bg-neutral-900/30">
-                                <table className="w-full text-left border-collapse min-w-[2000px]">
-                                    <thead>
-                                        <tr className="bg-neutral-900 text-[10px] font-black uppercase tracking-widest text-neutral-500 border-b border-white/5 sticky top-0 z-50">
-                                            <th className="py-4 pl-6 w-[250px] sticky left-0 z-50 bg-neutral-900 border-r border-white/5 shadow-2xl">Product Description</th>
-                                            <th className="py-4 px-2 w-24 bg-neutral-900">HSN</th>
-                                            <th className="py-4 px-2 w-24 bg-neutral-900">Pack</th>
-                                            <th className="py-4 px-2 w-28 bg-neutral-900">Batch</th>
-                                            <th className="py-4 px-2 w-24 bg-neutral-900">Exp</th>
-                                            <th className="py-4 px-2 w-24 text-right bg-neutral-900">MRP</th>
-                                            <th className="py-4 px-2 w-24 text-right bg-neutral-900">Sale Price</th>
-                                            <th className="py-4 px-2 w-20 text-right bg-neutral-900">Margin %</th>
-                                            <th className="py-4 px-2 w-24 text-right bg-neutral-900">Basic Price</th>
-                                            <th className="py-4 px-2 w-20 text-center bg-neutral-900">Qty</th>
-                                            <th className="py-4 px-2 w-20 text-center bg-neutral-900 text-orange-400">Schm Qty</th>
-                                            <th className="py-4 px-2 w-20 text-right bg-neutral-900">Disc %</th>
-                                            <th className="py-4 px-2 w-24 text-right bg-neutral-900">Disc Amt</th>
-                                            <th className="py-4 px-2 w-24 text-right bg-neutral-900">Schm Amt</th>
-                                            <th className="py-4 px-2 w-28 text-right bg-neutral-900">Taxable Val</th>
-                                            <th className="py-4 px-2 w-24 text-right bg-neutral-900">Tax (%)</th>
-                                            <th className="py-4 px-2 w-20 text-right bg-neutral-900">CGST</th>
-                                            <th className="py-4 px-2 w-20 text-right bg-neutral-900">SGST</th>
-                                            <th className="py-4 px-2 w-20 text-right bg-neutral-900">IGST</th>
-                                            <th className="py-4 px-2 w-24 text-right bg-neutral-900">Net Cost</th>
-                                            <th className="py-4 pr-6 text-right w-32 sticky right-0 z-50 bg-neutral-900 border-l border-white/5 shadow-xl">Line Total</th>
+                        {/* Table Wrapper - Scrolls both ways */}
+                        <div className="flex-1 rounded-2xl border border-white/5 bg-neutral-900/30 overflow-auto custom-scrollbar relative">
+                            <table className="w-full text-left border-collapse min-w-[2200px]">
+                                <thead>
+                                    <tr className="bg-neutral-900 text-[10px] font-black uppercase tracking-widest text-neutral-500 border-b border-white/5 sticky top-0 z-50 shadow-md">
+                                        <th className="py-4 pl-6 w-[250px] sticky left-0 z-50 bg-neutral-900 border-r border-white/5">Product Description</th>
+                                        <th className="py-4 px-2 w-24">HSN</th>
+                                        <th className="py-4 px-2 w-24">Pack</th>
+                                        <th className="py-4 px-2 w-28">Batch</th>
+                                        <th className="py-4 px-2 w-24">Exp</th>
+                                        <th className="py-4 px-2 w-24 text-right">MRP</th>
+                                        <th className="py-4 px-2 w-24 text-right">Sale Price</th>
+                                        <th className="py-4 px-2 w-24 text-right text-green-400">Margin %</th>
+                                        <th className="py-4 px-2 w-24 text-right">Basic Price</th>
+                                        <th className="py-4 px-2 w-20 text-center">Qty</th>
+                                        <th className="py-4 px-2 w-20 text-center text-orange-400">Schm Qty</th>
+                                        <th className="py-4 px-2 w-20 text-right">Disc %</th>
+                                        <th className="py-4 px-2 w-24 text-right">Disc Amt</th>
+                                        <th className="py-4 px-2 w-24 text-right">Schm Amt</th>
+                                        <th className="py-4 px-2 w-28 text-right">Taxable Val</th>
+                                        <th className="py-4 px-2 w-24 text-right">Tax (%)</th>
+                                        <th className="py-4 px-2 w-20 text-right">CGST</th>
+                                        <th className="py-4 px-2 w-20 text-right">SGST</th>
+                                        <th className="py-4 px-2 w-20 text-right">IGST</th>
+                                        <th className="py-4 px-2 w-24 text-right">Net Cost</th>
+                                        <th className="py-4 pr-6 text-right w-32 sticky right-0 z-50 bg-neutral-900 border-l border-white/5 shadow-xl">Line Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/[0.03]">
+                                    {items.map((item, index) => (
+                                        <tr key={index} className="group hover:bg-white/[0.01] transition-all">
+                                            <td className="py-4 pl-6 sticky left-0 z-20 bg-neutral-950/20 backdrop-blur-sm border-r border-white/5">
+                                                {mode === 'po' ? (
+                                                    <div className="space-y-0.5">
+                                                        <div className="text-sm font-bold text-white">{item.productName}</div>
+                                                        <div className="text-[9px] text-neutral-500 font-mono">ID: {item.productId.split('-').pop()}</div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex gap-1 items-center">
+                                                        <div className="flex-1">
+                                                            <SearchableSelect
+                                                                value={item.productId}
+                                                                onChange={(id, opt) => handleProductSelect(index, id, opt)}
+                                                                onSearch={searchProducts}
+                                                                onCreate={createProductQuick}
+                                                                defaultOptions={item.productId ? [{ id: item.productId, label: item.productName }] : []}
+                                                                placeholder="Search..."
+                                                                className="w-full text-sm font-bold text-white dark"
+                                                                variant="ghost"
+                                                                isDark={true}
+                                                            />
+                                                        </div>
+                                                        <button onClick={() => setProductCreationOpen(true)} className="h-6 w-6 flex items-center justify-center rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400">
+                                                            <Plus className="h-3 w-3" />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td className="py-4 px-2">
+                                                <input value={item.hsn || ''} onChange={(e) => { const n = [...items]; n[index].hsn = e.target.value; setItems(n); }} className="w-full bg-transparent border-none text-[12px] font-mono p-0 focus:ring-0 text-neutral-400" />
+                                            </td>
+                                            <td className="py-4 px-2">
+                                                <input value={item.packing || ''} onChange={(e) => { const n = [...items]; n[index].packing = e.target.value; setItems(n); }} className="w-full bg-transparent border-none text-[12px] font-bold p-0 focus:ring-0 text-white" />
+                                            </td>
+                                            <td className="py-4 px-2">
+                                                <input value={item.batch || ''} onChange={(e) => { const n = [...items]; n[index].batch = e.target.value; setItems(n); }} className="w-full bg-transparent border-none text-[12px] font-mono p-0 focus:ring-0 text-white" />
+                                            </td>
+                                            <td className="py-4 px-2 text-center">
+                                                <input value={item.expiry || ''} onChange={(e) => { const n = [...items]; n[index].expiry = e.target.value; setItems(n); }} placeholder="MM/YY" className="w-full bg-transparent border-none text-[12px] font-mono p-0 focus:ring-0 text-neutral-500 text-center" />
+                                            </td>
+                                            <td className="py-4 px-2 text-right">
+                                                <input
+                                                    type="number"
+                                                    value={item.mrp || ''}
+                                                    onFocus={(e) => e.target.select()}
+                                                    onKeyDown={(e) => handleKeyDown(e, index, 'mrp')}
+                                                    data-index={index}
+                                                    data-field="mrp"
+                                                    onChange={(e) => { const n = [...items]; n[index].mrp = Number(e.target.value); setItems(n); }}
+                                                    className="w-full bg-transparent border-none text-right font-bold focus:ring-0 p-0 text-white"
+                                                />
+                                            </td>
+                                            <td className="py-4 px-2 text-right">
+                                                <input
+                                                    type="number"
+                                                    value={item.salePrice || ''}
+                                                    onFocus={(e) => e.target.select()}
+                                                    onKeyDown={(e) => handleKeyDown(e, index, 'salePrice')}
+                                                    data-index={index}
+                                                    data-field="salePrice"
+                                                    onChange={(e) => handleSalePriceChange(index, Number(e.target.value))}
+                                                    className="w-full bg-transparent border-none text-right font-bold text-emerald-400 focus:ring-0 p-0"
+                                                />
+                                            </td>
+                                            <td className="py-4 px-2 text-right">
+                                                <input
+                                                    type="number"
+                                                    value={item.marginPct ?? 0}
+                                                    onFocus={(e) => e.target.select()}
+                                                    onKeyDown={(e) => handleKeyDown(e, index, 'marginPct')}
+                                                    data-index={index}
+                                                    data-field="marginPct"
+                                                    onChange={(e) => handleMarginChange(index, Number(e.target.value))}
+                                                    className="w-full bg-transparent border-none text-right font-bold text-green-400 focus:ring-0 p-0"
+                                                />
+                                            </td>
+                                            <td className="py-4 px-2 text-right">
+                                                <input type="number" value={item.unitPrice} onChange={(e) => {
+                                                    const n = [...items]; const p = Number(e.target.value); n[index].unitPrice = p;
+                                                    const taxable = (p - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0)) * n[index].receivedQty;
+                                                    n[index].taxAmount = Math.max(0, taxable) * ((n[index].taxRate || 0) / 100);
+                                                    setItems(n);
+                                                }} className="w-full bg-transparent border-none text-right font-bold focus:ring-0 p-0 text-indigo-300" />
+                                            </td>
+                                            <td className="py-4 px-2 text-center">
+                                                <input type="number" value={item.receivedQty} onChange={(e) => {
+                                                    const n = [...items]; const q = Number(e.target.value); n[index].receivedQty = q;
+                                                    const taxable = (n[index].unitPrice - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0)) * q;
+                                                    n[index].taxAmount = Math.max(0, taxable) * ((n[index].taxRate || 0) / 100);
+                                                    setItems(n);
+                                                }} className="w-12 mx-auto bg-neutral-800 rounded p-1 text-center font-bold text-white border-none focus:ring-0" />
+                                            </td>
+                                            <td className="py-4 px-2 text-center">
+                                                <input type="number" value={item.freeQty ?? 0} onChange={(e) => { const n = [...items]; n[index].freeQty = Number(e.target.value); setItems(n); }} className="w-12 mx-auto bg-neutral-800 rounded p-1 text-center font-bold text-orange-400 border-none focus:ring-0" />
+                                            </td>
+                                            <td className="py-4 px-2 text-right">
+                                                <input type="number" value={item.discountPct ?? 0} onChange={(e) => {
+                                                    const n = [...items]; const pct = Number(e.target.value); n[index].discountPct = pct;
+                                                    n[index].discountAmt = Number(((n[index].unitPrice * pct) / 100).toFixed(2));
+                                                    const taxable = (n[index].unitPrice - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0)) * n[index].receivedQty;
+                                                    n[index].taxAmount = Math.max(0, taxable) * ((n[index].taxRate || 0) / 100);
+                                                    setItems(n);
+                                                }} className="w-full bg-transparent border-none text-right text-[12px] text-neutral-500 focus:ring-0 p-0" />
+                                            </td>
+                                            <td className="py-4 px-2 text-right">
+                                                <input type="number" value={item.discountAmt ?? 0} step="0.01" onChange={(e) => {
+                                                    const n = [...items]; n[index].discountAmt = Number(e.target.value);
+                                                    const taxable = (n[index].unitPrice - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0)) * n[index].receivedQty;
+                                                    n[index].taxAmount = Math.max(0, taxable) * ((n[index].taxRate || 0) / 100);
+                                                    setItems(n);
+                                                }} className="w-full bg-transparent border-none text-right text-[12px] text-yellow-500 focus:ring-0 p-0 font-bold" />
+                                            </td>
+                                            <td className="py-4 px-2 text-right">
+                                                <input type="number" value={item.schemeDiscount ?? 0} step="0.01" onChange={(e) => {
+                                                    const n = [...items]; n[index].schemeDiscount = Number(e.target.value);
+                                                    const taxable = (n[index].unitPrice - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0)) * n[index].receivedQty;
+                                                    n[index].taxAmount = Math.max(0, taxable) * ((n[index].taxRate || 0) / 100);
+                                                    setItems(n);
+                                                }} className="w-full bg-transparent border-none text-right text-[12px] text-orange-400 focus:ring-0 p-0 font-bold" />
+                                            </td>
+                                            <td className="py-4 px-2 text-right font-black text-white text-[12px]">
+                                                {((item.unitPrice - (item.schemeDiscount || 0) - (item.discountAmt || 0)) * item.receivedQty).toFixed(2)}
+                                            </td>
+                                            <td className="py-4 px-2 text-right">
+                                                <Select value={item.taxRate?.toString() || "0"} onValueChange={(v) => {
+                                                    const n = [...items]; const r = Number(v); n[index].taxRate = r;
+                                                    const taxable = (n[index].unitPrice - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0)) * n[index].receivedQty;
+                                                    n[index].taxAmount = Math.max(0, taxable) * (r / 100);
+                                                    setItems(n);
+                                                }}>
+                                                    <SelectTrigger className="h-7 w-16 bg-transparent border-white/10 text-[10px] font-mono text-white">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="bg-neutral-900 border-white/10 text-white">
+                                                        {TAX_OPTIONS.map(v => <SelectItem key={v} value={v}>{v}%</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                            </td>
+                                            <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
+                                                {taxType === 'INTRA' ? ((item.taxAmount || 0) / 2).toFixed(2) : '-'}
+                                            </td>
+                                            <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
+                                                {taxType === 'INTRA' ? ((item.taxAmount || 0) / 2).toFixed(2) : '-'}
+                                            </td>
+                                            <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
+                                                {taxType === 'INTER' ? (item.taxAmount || 0).toFixed(2) : '-'}
+                                            </td>
+                                            <td className="py-4 px-2 text-right text-[11px] font-mono font-bold text-indigo-400">
+                                                {((item.receivedQty || 0) + (item.freeQty || 0)) > 0
+                                                    ? (((item.unitPrice - (item.schemeDiscount || 0) - (item.discountAmt || 0)) * item.receivedQty + (item.taxAmount || 0)) / (Number(item.receivedQty) + Number(item.freeQty || 0))).toFixed(2)
+                                                    : '0.00'}
+                                            </td>
+                                            <td className="py-4 pr-6 text-right font-mono font-black text-white sticky right-0 z-20 bg-neutral-900 border-l border-white/5 shadow-xl">
+                                                {((item.unitPrice - (item.schemeDiscount || 0) - (item.discountAmt || 0)) * item.receivedQty + (item.taxAmount || 0)).toFixed(2)}
+                                            </td>
                                         </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-white/[0.03]">
-                                        {items.map((item, index) => (
-                                            <tr key={index} className="group hover:bg-white/[0.01] transition-all">
-                                                <td className="py-4 pl-6 sticky left-0 z-20 bg-neutral-900 border-r border-white/5">
-                                                    {mode === 'po' ? (
-                                                        <div className="space-y-0.5">
-                                                            <div className="text-sm font-bold text-white">{item.productName}</div>
-                                                            <div className="text-[9px] text-neutral-500 font-mono">ID: {item.productId.split('-').pop()}</div>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="flex gap-1 items-center">
-                                                            <div className="flex-1">
-                                                                <SearchableSelect
-                                                                    value={item.productId}
-                                                                    onChange={async (id, opt) => {
-                                                                        const n = [...items];
-                                                                        n[index].productId = id || "";
-                                                                        n[index].productName = opt?.label || "";
-
-                                                                        if (id) {
-                                                                            try {
-                                                                                const { getProduct } = await import('@/app/actions/inventory');
-                                                                                const p = await getProduct(id);
-                                                                                if (p) {
-                                                                                    n[index].mrp = p.mrp || 0;
-                                                                                    n[index].hsn = p.hsn || "";
-                                                                                    n[index].packing = p.packing || "";
-                                                                                    n[index].taxRate = p.taxRate || 0;
-                                                                                    // Recalculate tax amount with new rate
-                                                                                    const taxable = (n[index].unitPrice * n[index].receivedQty) - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0);
-                                                                                    n[index].taxAmount = taxable * (n[index].taxRate / 100);
-                                                                                }
-                                                                            } catch (err) {
-                                                                                console.error("Failed to fetch product details", err);
-                                                                            }
-                                                                        }
-                                                                        setItems(n);
-                                                                    }}
-                                                                    onSearch={searchProducts}
-                                                                    onCreate={createProductQuick}
-                                                                    defaultOptions={item.productId ? [{ id: item.productId, label: item.productName }] : []}
-                                                                    placeholder="Search Product..."
-                                                                    className="w-full text-sm font-bold text-white dark"
-                                                                    variant="ghost"
-                                                                    isDark={true}
-                                                                />
-                                                            </div>
-                                                            <button
-                                                                onClick={() => setProductCreationOpen(true)}
-                                                                className="h-6 w-6 flex items-center justify-center rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 transition-colors"
-                                                                title="Create New Product"
-                                                            >
-                                                                <Plus className="h-3 w-3" />
-                                                            </button>
-                                                        </div>
-                                                    )}
-                                                </td>
-                                                <td className="py-4 px-2">
-                                                    <input
-                                                        value={item.hsn || ''}
-                                                        onChange={(e) => { const n = [...items]; n[index].hsn = e.target.value; setItems(n); }}
-                                                        placeholder="HSN" className="w-full bg-transparent border-none text-[12px] font-mono p-0 focus:ring-0 text-neutral-400"
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-2">
-                                                    <input
-                                                        value={item.packing || ''}
-                                                        onChange={(e) => { const n = [...items]; n[index].packing = e.target.value; setItems(n); }}
-                                                        placeholder="Pack" className="w-full bg-transparent border-none text-[12px] font-bold p-0 focus:ring-0 text-white"
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-2">
-                                                    <input
-                                                        value={item.batch || ''}
-                                                        onChange={(e) => { const n = [...items]; n[index].batch = e.target.value; setItems(n); }}
-                                                        placeholder="Batch" className="w-full bg-transparent border-none text-[12px] font-mono p-0 focus:ring-0 text-white"
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-2">
-                                                    <input
-                                                        value={item.expiry || ''}
-                                                        onChange={(e) => { const n = [...items]; n[index].expiry = e.target.value; setItems(n); }}
-                                                        placeholder="MM/YY" className="w-full bg-transparent border-none text-[12px] font-mono p-0 focus:ring-0 text-neutral-500"
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-2 text-right font-mono font-bold text-white">
-                                                    <input
-                                                        type="number" value={item.mrp || ''}
-                                                        onChange={(e) => { const n = [...items]; n[index].mrp = Number(e.target.value); setItems(n); }}
-                                                        className="w-full bg-transparent border-none text-right font-bold focus:ring-0 p-0"
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-2 text-right">
-                                                    <input
-                                                        type="number" value={item.salePrice || ''}
-                                                        onChange={(e) => handleSalePriceChange(index, Number(e.target.value))}
-                                                        className="w-full bg-transparent border-none text-right font-bold text-emerald-400 focus:ring-0 p-0"
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-2 text-right">
-                                                    <span className={`text-[11px] font-black ${item.marginPct && item.marginPct > 20 ? 'text-green-400' : 'text-neutral-500'}`}>
-                                                        {item.marginPct ? `${item.marginPct}%` : '0%'}
-                                                    </span>
-                                                </td>
-                                                <td className="py-4 px-2 text-right font-mono font-bold text-indigo-300">
-                                                    <input
-                                                        type="number" value={item.unitPrice}
-                                                        onChange={(e) => {
-                                                            const n = [...items]; const p = Number(e.target.value); n[index].unitPrice = p;
-                                                            const taxable = (p - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0)) * n[index].receivedQty;
-                                                            n[index].taxAmount = Math.max(0, taxable) * ((n[index].taxRate || 0) / 100);
-                                                            setItems(n);
-                                                        }}
-                                                        className="w-full bg-transparent border-none text-right font-bold focus:ring-0 p-0"
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-2 text-center">
-                                                    <input
-                                                        type="number" value={item.receivedQty}
-                                                        onChange={(e) => {
-                                                            const n = [...items]; const q = Number(e.target.value); n[index].receivedQty = q;
-                                                            const taxable = (n[index].unitPrice - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0)) * q;
-                                                            n[index].taxAmount = Math.max(0, taxable) * ((n[index].taxRate || 0) / 100);
-                                                            setItems(n);
-                                                        }}
-                                                        className="w-12 mx-auto bg-neutral-800 rounded p-1 text-center font-bold text-white border-none focus:ring-1 focus:ring-indigo-500"
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-2 text-center">
-                                                    <input
-                                                        type="number" value={item.freeQty ?? 0}
-                                                        onChange={(e) => {
-                                                            const n = [...items]; n[index].freeQty = Number(e.target.value);
-                                                            setItems(n);
-                                                        }}
-                                                        className="w-12 mx-auto bg-neutral-800 rounded p-1 text-center font-bold text-orange-400 border-none focus:ring-1 focus:ring-orange-500"
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-2 text-right">
-                                                    <input
-                                                        type="number" value={item.discountPct ?? 0}
-                                                        onChange={(e) => {
-                                                            const n = [...items]; const pct = Number(e.target.value); n[index].discountPct = pct;
-                                                            n[index].discountAmt = Number(((n[index].unitPrice * pct) / 100).toFixed(2));
-                                                            const taxable = (n[index].unitPrice - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0)) * n[index].receivedQty;
-                                                            n[index].taxAmount = Math.max(0, taxable) * ((n[index].taxRate || 0) / 100);
-                                                            setItems(n);
-                                                        }}
-                                                        placeholder="%" className="w-full bg-transparent border-none text-right text-[12px] text-neutral-500 focus:ring-0 p-0"
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-2 text-right">
-                                                    <input
-                                                        type="number" value={item.discountAmt ?? 0} step="0.01"
-                                                        onChange={(e) => {
-                                                            const n = [...items]; n[index].discountAmt = Number(e.target.value);
-                                                            const taxable = (n[index].unitPrice - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0)) * n[index].receivedQty;
-                                                            n[index].taxAmount = Math.max(0, taxable) * ((n[index].taxRate || 0) / 100);
-                                                            setItems(n);
-                                                        }}
-                                                        placeholder="0.00" className="w-full bg-transparent border-none text-right text-[12px] text-yellow-500 focus:ring-0 p-0 font-bold"
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-2 text-right">
-                                                    <input
-                                                        type="number" value={item.schemeDiscount ?? 0} step="0.01"
-                                                        onChange={(e) => {
-                                                            const n = [...items]; n[index].schemeDiscount = Number(e.target.value);
-                                                            const taxable = (n[index].unitPrice - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0)) * n[index].receivedQty;
-                                                            n[index].taxAmount = Math.max(0, taxable) * ((n[index].taxRate || 0) / 100);
-                                                            setItems(n);
-                                                        }}
-                                                        placeholder="0.00" className="w-full bg-transparent border-none text-right text-[12px] text-orange-400 focus:ring-0 p-0 font-bold"
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-2 text-right font-black text-white text-[12px]">
-                                                    {((item.unitPrice - (item.schemeDiscount || 0) - (item.discountAmt || 0)) * item.receivedQty).toFixed(2)}
-                                                </td>
-                                                <td className="py-4 px-2 text-right">
-                                                    <Select
-                                                        value={item.taxRate?.toString() || "0"}
-                                                        onValueChange={(v) => {
-                                                            const n = [...items]; const r = Number(v); n[index].taxRate = r;
-                                                            const taxable = (n[index].unitPrice - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0)) * n[index].receivedQty;
-                                                            n[index].taxAmount = Math.max(0, taxable) * (r / 100);
-                                                            setItems(n);
-                                                        }}
-                                                    >
-                                                        <SelectTrigger className="h-7 w-16 bg-transparent border-white/10 text-[10px] font-mono text-white">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent className="bg-neutral-900 border-white/10 text-white">
-                                                            {TAX_OPTIONS.map(v => <SelectItem key={v} value={v}>{v}%</SelectItem>)}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </td>
-                                                <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
-                                                    {taxType === 'INTRA' ? ((item.taxAmount || 0) / 2).toFixed(2) : '-'}
-                                                </td>
-                                                <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
-                                                    {taxType === 'INTRA' ? ((item.taxAmount || 0) / 2).toFixed(2) : '-'}
-                                                </td>
-                                                <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
-                                                    {taxType === 'INTER' ? (item.taxAmount || 0).toFixed(2) : '-'}
-                                                </td>
-                                                <td className="py-4 px-2 text-right text-[11px] font-mono font-bold text-indigo-400">
-                                                    {((item.receivedQty || 0) + (item.freeQty || 0)) > 0
-                                                        ? (((item.unitPrice - (item.schemeDiscount || 0) - (item.discountAmt || 0)) * item.receivedQty + (item.taxAmount || 0)) / (Number(item.receivedQty) + Number(item.freeQty || 0))).toFixed(2)
-                                                        : '0.00'}
-                                                </td>
-                                                <td className="py-4 pr-6 text-right font-mono font-black text-white sticky right-0 z-20 bg-neutral-900 border-l border-white/5">
-                                                    {((item.unitPrice - (item.schemeDiscount || 0) - (item.discountAmt || 0)) * item.receivedQty + (item.taxAmount || 0)).toFixed(2)}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -838,7 +879,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                 {/* World-Class Fixed Footer */}
                 <div className="px-8 py-6 border-t border-white/5 bg-neutral-900/40 backdrop-blur-2xl shrink-0 flex items-center justify-between z-10">
                     <div className="flex items-center gap-12">
-                        {/* Summary Stats */}
                         <div className="flex items-center gap-8">
                             <div className="space-y-1">
                                 <p className="text-[9px] font-black text-neutral-500 uppercase tracking-widest">Total Taxable</p>
@@ -862,10 +902,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                             </div>
                         </div>
 
-                        {/* Grand Total - PROMINENT */}
                         <div className="bg-white/5 px-6 py-2 rounded-2xl border border-white/5 flex flex-col items-center">
                             <p className="text-[8px] font-black text-indigo-300 uppercase tracking-widest mb-0.5">Grand Total INR</p>
-                            <p className="text-2xl font-black text-white tracking-tighter transition-all">₹{netTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                            <p className="text-2xl font-black text-white tracking-tighter">₹{netTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                         </div>
 
                         {scannedTotal > 0 && (
