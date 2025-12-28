@@ -640,7 +640,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                         onSearch={async (q) => PACKING_OPTIONS.filter(o => o.toLowerCase().includes(q.toLowerCase())).map(o => ({ id: o, label: o }))}
                                                         onCreate={async (q) => ({ id: q, label: q })}
                                                         defaultOptions={PACKING_OPTIONS.map(o => ({ id: o, label: o }))}
-                                                        placeholder="Pack"
+                                                        placeholder="1x10"
                                                         variant="ghost"
                                                         className="w-full text-[11px] font-bold text-white placeholder:text-neutral-600 dark"
                                                         isDark={true}
