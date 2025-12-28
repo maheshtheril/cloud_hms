@@ -406,7 +406,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                 </div>
 
                 {/* Main Scrollable Content */}
-                <div className="flex-1 overflow-auto custom-scrollbar">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
                     <div className="px-8 py-8 space-y-12">
                         {/* Header Context Grid */}
                         <div className="grid grid-cols-12 gap-12">
@@ -582,7 +582,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 )}
                             </div>
 
-                            <div className="rounded-2xl border border-white/5 bg-neutral-900/30 overflow-x-auto custom-scrollbar">
+                            <div className="rounded-2xl border border-white/5 bg-neutral-900/30 overflow-x-auto custom-scrollbar w-full max-w-full">
                                 <table className="w-full text-left border-collapse min-w-[2000px]">
                                     <thead>
                                         <tr className="bg-white/[0.02] text-[10px] font-black uppercase tracking-widest text-neutral-500 border-b border-white/5">
