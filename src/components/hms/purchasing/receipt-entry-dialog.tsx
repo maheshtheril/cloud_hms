@@ -438,34 +438,33 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         setIsSubmitting(true);
         const payload = {
             supplierId,
-            poId,
-            receivedDate,
+            purchaseOrderId: poId,
+            receivedDate: new Date(receivedDate),
             reference,
             notes,
             attachmentUrl,
-            roundOff,
             items: items.map(i => ({
                 productId: i.productId,
                 poLineId: i.poLineId,
                 qtyReceived: i.receivedQty,
                 unitPrice: i.unitPrice,
-                batchNumber: i.batch,
-                expiryDate: i.expiry,
+                batch: i.batch,
+                expiry: i.expiry,
                 mrp: i.mrp,
                 salePrice: i.salePrice,
                 taxRate: i.taxRate,
                 taxAmount: i.taxAmount,
                 hsn: i.hsn,
                 packing: i.packing,
-                uom: i.uom,
+                purchaseUOM: i.uom,
                 schemeDiscount: i.schemeDiscount,
                 discountPct: i.discountPct,
                 discountAmt: i.discountAmt,
                 freeQty: i.freeQty || 0
             }))
-        };
+        } as any;
 
-        const res = await createPurchaseReceipt(payload);
+        const res = await createPurchaseReceipt(payload) as any;
         if (res.error) {
             toast({ title: "Error", description: res.error, variant: "destructive" });
         } else {
