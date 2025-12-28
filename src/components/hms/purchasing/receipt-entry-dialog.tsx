@@ -570,13 +570,14 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                     <thead>
                                         <tr className="bg-white/[0.02] text-[10px] font-black uppercase tracking-widest text-neutral-500 border-b border-white/5">
                                             <th className="py-4 pl-6 w-[250px]">Product Description</th>
-                                            <th className="py-4 px-2 w-20">HSN</th>
-                                            <th className="py-4 px-2 w-20">Pack</th>
-                                            <th className="py-4 px-2 w-24">Batch / Exp</th>
+                                            <th className="py-4 px-2 w-16">HSN</th>
+                                            <th className="py-4 px-2 w-16">Pack</th>
+                                            <th className="py-4 px-2 w-20">Batch</th>
+                                            <th className="py-4 px-2 w-16">Exp</th>
                                             <th className="py-4 px-2 w-20 text-right">MRP</th>
                                             <th className="py-4 px-2 w-20 text-right text-emerald-400">Sale (Ex)</th>
                                             <th className="py-4 px-2 w-16 text-right">Margin</th>
-                                            <th className="py-4 px-2 w-[88px] text-right text-yellow-500">Disc</th>
+                                            <th className="py-4 px-2 w-24 text-right text-yellow-500">Disc (Amt)</th>
                                             <th className="py-4 px-2 w-16 text-center">Qty</th>
                                             <th className="py-4 px-2 w-20 text-right">Uni Cost</th>
                                             <th className="py-4 px-2 w-16 text-right">Tax %</th>
@@ -636,18 +637,20 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                     />
                                                 </td>
                                                 <td className="py-4 px-2">
-                                                    <div className="space-y-1">
+                                                    <td className="py-4 px-2">
                                                         <input
                                                             value={item.batch || ''}
                                                             onChange={(e) => { const n = [...items]; n[index].batch = e.target.value; setItems(n); }}
                                                             placeholder="Batch" className="w-full bg-transparent border-none text-[11px] font-mono p-0 focus:ring-0 text-white"
                                                         />
+                                                    </td>
+                                                    <td className="py-4 px-2">
                                                         <input
                                                             value={item.expiry || ''}
                                                             onChange={(e) => { const n = [...items]; n[index].expiry = e.target.value; setItems(n); }}
                                                             placeholder="MM/YY" className="w-full bg-transparent border-none text-[11px] font-mono p-0 focus:ring-0 text-neutral-500"
                                                         />
-                                                    </div>
+                                                    </td>
                                                 </td>
                                                 <td className="py-4 px-2 text-right font-mono font-bold text-white">
                                                     <input
@@ -669,27 +672,18 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-2 text-right">
-                                                    <div className="space-y-1">
+                                                    <div className="flex items-center gap-1">
                                                         <input
                                                             type="number" value={item.discountAmt || ''}
                                                             onChange={(e) => {
-                                                                const n = [...items]; n[index].discountAmt = Number(e.target.value);
+                                                                const n = [...items];
+                                                                n[index].discountAmt = Number(e.target.value);
+                                                                // Recalculate Tax
                                                                 const taxable = (n[index].unitPrice * n[index].receivedQty) - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0);
                                                                 n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
                                                                 setItems(n);
                                                             }}
-                                                            placeholder="Amt" className="w-full bg-transparent border-none text-right text-[11px] text-yellow-500 focus:ring-0 p-0 font-bold"
-                                                        />
-                                                        <input
-                                                            type="number" value={item.discountPct || ''}
-                                                            onChange={(e) => {
-                                                                const n = [...items]; const pct = Number(e.target.value); n[index].discountPct = pct;
-                                                                n[index].discountAmt = (n[index].unitPrice * n[index].receivedQty * pct) / 100;
-                                                                const taxable = (n[index].unitPrice * n[index].receivedQty) - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0);
-                                                                n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
-                                                                setItems(n);
-                                                            }}
-                                                            placeholder="%" className="w-full bg-transparent border-none text-right text-[10px] text-neutral-500 focus:ring-0 p-0"
+                                                            placeholder="₹" className="w-full bg-transparent border-b border-white/10 text-right text-[11px] text-yellow-500 focus:ring-0 p-0 font-bold"
                                                         />
                                                     </div>
                                                 </td>
