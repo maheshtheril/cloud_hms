@@ -17,9 +17,10 @@ interface ProductFormProps {
     manufacturers: { id: string, name: string }[];
     uomCategories: { id: string, name: string, hms_uom: any[] }[];
     initialData?: any;
+    onSuccess?: () => void;
 }
 
-export function ProductForm({ suppliers, taxRates, uoms, categories, manufacturers, uomCategories, initialData }: ProductFormProps) {
+export function ProductForm({ suppliers, taxRates, uoms, categories, manufacturers, uomCategories, initialData, onSuccess }: ProductFormProps) {
     const router = useRouter();
     const [activeSection, setActiveSection] = useState<'details' | 'logistics' | 'financials'>('details');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -58,8 +59,6 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
         router.refresh();
     }
 
-    // ... (rest of code)
-
 
     async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
@@ -93,8 +92,12 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
             alert(res.error);
             setIsSubmitting(false);
         } else {
-            router.push('/hms/inventory/products');
-            router.refresh();
+            if (onSuccess) {
+                onSuccess();
+            } else {
+                router.push('/hms/inventory/products');
+                router.refresh();
+            }
         }
     }
 

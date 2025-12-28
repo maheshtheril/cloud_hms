@@ -11,7 +11,7 @@ import {
     Loader2, Plus, Trash2, ArrowLeft, CheckCircle2,
     ScanLine, Box, ArrowRight, X, Scan,
     Receipt, Info, Calculator, Calendar as CalendarIcon,
-    AlertCircle, Sparkles, FileText
+    AlertCircle, Sparkles
 } from 'lucide-react';
 import { SearchableSelect, type Option } from '@/components/ui/searchable-select';
 import { FileUpload } from '@/components/ui/file-upload';
@@ -30,13 +30,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 
 const PACKING_OPTIONS = ['1 Strip', '1 Box', '1 Bottle', '10x10', '1x10', '1x15', '1 Unit', '1 kg', '1 L'];
 const TAX_OPTIONS = ['0', '5', '12', '18', '28'];
@@ -240,19 +233,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         setItems(items.filter((_, i) => i !== index));
     };
 
-    const parseConversionFactor = (packing: string | undefined): number => {
-        if (!packing) return 1;
-        // Match 1x10, 10x10, etc.
-        const match = packing.match(/(\d+)\s*x\s*(\d+)/i);
-        if (match) {
-            return parseInt(match[1]) * parseInt(match[2]);
-        }
-        // Match "Pack of 10", "10 units", etc.
-        const numericMatch = packing.match(/(\d+)/);
-        if (numericMatch) return parseInt(numericMatch[0]);
-        return 1;
-    };
-
     const handleSubmit = async () => {
         setIsSubmitting(true);
         if (Math.abs(roundOff) > 0.5) {
@@ -275,31 +255,27 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
             reference,
             notes,
             attachmentUrl,
-            items: validItems.map(i => {
-                const cFactor = parseConversionFactor(i.packing);
-                return {
-                    productId: i.productId,
-                    poLineId: i.poLineId,
-                    qtyReceived: Number(i.receivedQty),
-                    unitPrice: Number(i.unitPrice),
-                    batch: i.batch,
-                    expiry: i.expiry,
-                    mrp: Number(i.mrp),
-                    salePrice: i.salePrice ? Number(i.salePrice) : undefined,
-                    marginPct: i.marginPct ? Number(i.marginPct) : undefined,
-                    markupPct: i.markupPct ? Number(i.markupPct) : undefined,
-                    pricingStrategy: i.pricingStrategy,
-                    taxRate: Number(i.taxRate),
-                    taxAmount: Number(i.taxAmount),
-                    hsn: i.hsn,
-                    packing: i.packing,
-                    purchaseUOM: i.uom || 'PCS',
-                    conversionFactor: cFactor,
-                    schemeDiscount: i.schemeDiscount ? Number(i.schemeDiscount) : undefined,
-                    discountPct: i.discountPct ? Number(i.discountPct) : undefined,
-                    discountAmt: i.discountAmt ? Number(i.discountAmt) : undefined
-                };
-            })
+            items: validItems.map(i => ({
+                productId: i.productId,
+                poLineId: i.poLineId,
+                qtyReceived: Number(i.receivedQty),
+                unitPrice: Number(i.unitPrice),
+                batch: i.batch,
+                expiry: i.expiry,
+                mrp: Number(i.mrp),
+                salePrice: i.salePrice ? Number(i.salePrice) : undefined,
+                marginPct: i.marginPct ? Number(i.marginPct) : undefined,
+                markupPct: i.markupPct ? Number(i.markupPct) : undefined,
+                pricingStrategy: i.pricingStrategy,
+                taxRate: Number(i.taxRate),
+                taxAmount: Number(i.taxAmount),
+                hsn: i.hsn,
+                packing: i.packing,
+                uom: i.uom,
+                schemeDiscount: i.schemeDiscount ? Number(i.schemeDiscount) : undefined,
+                discountPct: i.discountPct ? Number(i.discountPct) : undefined,
+                discountAmt: i.discountAmt ? Number(i.discountAmt) : undefined
+            }))
         };
 
         const res = await createPurchaseReceipt(payload);
@@ -323,7 +299,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-[98vw] w-full h-[98vh] p-0 flex flex-col bg-background border-white/10 selection:bg-indigo-500/30 text-foreground">
+            <DialogContent className="max-w-[95vw] w-[1400px] h-[90vh] p-0 overflow-hidden bg-neutral-950 border-white/10 flex flex-col selection:bg-indigo-500/30">
 
                 <Toaster />
                 <SupplierDialog
@@ -337,7 +313,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                 />
 
                 {/* World-Class Fixed Header */}
-                <div className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-background/80 backdrop-blur-xl shrink-0 z-10">
+                <div className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-neutral-950/80 backdrop-blur-xl shrink-0 z-10">
                     <div className="flex items-center gap-4">
                         <div className="h-10 w-10 bg-indigo-500/10 rounded-xl flex items-center justify-center border border-indigo-500/20">
                             <Receipt className="h-5 w-5 text-indigo-400" />
@@ -345,22 +321,17 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                         <div>
                             <DialogTitle className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
                                 New Purchase Entry
+                                {isScanning && (
+                                    <Badge className="bg-indigo-500/10 text-indigo-400 border-indigo-500/20 animate-pulse px-3">
+                                        <Sparkles className="w-3 h-3 mr-1.5" />
+                                        AI Scanning...
+                                    </Badge>
+                                )}
                             </DialogTitle>
                             <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-medium">Record Supplier Stock Inward</p>
                         </div>
                     </div>
 
-                    {isScanning && (
-                        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
-                            <div className="flex flex-col items-center gap-4 animate-in zoom-in duration-300">
-                                <Loader2 className="w-16 h-16 text-indigo-500 animate-spin" />
-                                <div className="text-center space-y-1">
-                                    <h3 className="text-xl font-bold text-white tracking-tight">Analyzing Invoice...</h3>
-                                    <p className="text-sm text-neutral-400 font-mono">{scanProgress}</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
                     <div className="flex items-center gap-4">
                         <div className="flex bg-neutral-900 rounded-lg p-1 border border-white/5">
                             <button
@@ -373,7 +344,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 onClick={() => setMode('direct')}
                                 className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${mode === 'direct' ? 'bg-emerald-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
                             >
-                                MANUAL / DIRECT
+                                DIRECT
                             </button>
                         </div>
                         <Separator orientation="vertical" className="h-8 bg-white/5" />
@@ -383,9 +354,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     </div>
                 </div>
 
-                {/* Fixed Context Header Block */}
-                <div className="shrink-0 z-20 border-b border-white/5 bg-transparent px-8 py-6">
-                    <div className="space-y-6">
+                {/* Main Scrollable Content */}
+                <div className="flex-1 overflow-auto custom-scrollbar">
+                    <div className="px-8 py-8 space-y-12">
                         {/* Header Context Grid */}
                         <div className="grid grid-cols-12 gap-12">
                             {/* Vendor Section */}
@@ -499,39 +470,25 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                             const mapped = await Promise.all(scannedItems.map(async (item: any) => {
                                                                 let pId = item.productId;
                                                                 if (!pId && item.productName) {
-                                                                    const pr = await findOrCreateProduct(item.productName, {
-                                                                        mrp: Number(item.mrp),
-                                                                        hsn: item.hsn,
-                                                                        packing: item.packing
-                                                                    });
+                                                                    const pr = await findOrCreateProduct(item.productName, { mrp: Number(item.mrp), hsn: item.hsn });
                                                                     if (!('error' in pr)) pId = pr.productId;
                                                                 }
                                                                 const qty = Number(item.qty) || 0;
                                                                 const price = Number(item.unitPrice) || 0;
                                                                 const rate = Number(item.taxRate) || 0;
-
-                                                                // Calculate tax amount after discounts if any (though scanning might not always provide them clearly)
-                                                                const sDisc = Number(item.schemeDiscount) || 0;
-                                                                const dAmt = Number(item.discountAmt) || 0;
-                                                                const taxable = Math.max(0, (qty * price) - sDisc - dAmt);
-                                                                const taxAmt = taxable * (rate / 100);
-
                                                                 return {
                                                                     productId: pId || "",
-                                                                    productName: item.productName || "Unknown Product",
+                                                                    productName: item.productName,
                                                                     receivedQty: qty,
                                                                     unitPrice: price,
-                                                                    batch: item.batch || "",
-                                                                    expiry: item.expiry || "",
-                                                                    mrp: Number(item.mrp) || 0,
+                                                                    batch: item.batch,
+                                                                    expiry: item.expiry,
+                                                                    mrp: Number(item.mrp),
                                                                     taxRate: rate,
-                                                                    taxAmount: taxAmt,
-                                                                    hsn: item.hsn || "",
-                                                                    packing: item.packing || "",
-                                                                    uom: item.uom || "PCS",
-                                                                    schemeDiscount: sDisc,
-                                                                    discountAmt: dAmt,
-                                                                    discountPct: item.discountPct ? Number(item.discountPct) : (taxable > 0 ? (dAmt / (qty * price)) * 100 : 0)
+                                                                    taxAmount: (qty * price) * (rate / 100),
+                                                                    hsn: item.hsn,
+                                                                    packing: item.packing,
+                                                                    uom: item.uom
                                                                 };
                                                             }));
                                                             setItems(mapped);
@@ -542,9 +499,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                         }
                                                         toast({ title: "Scan Success", description: "Invoice details extracted." });
                                                     }
-                                                } catch (e: any) {
-                                                    console.error("Scan Error:", e);
-                                                    toast({ title: "Scan Failed", description: e.message || "Could not read invoice data.", variant: "destructive" });
+                                                } catch (e) {
+                                                    toast({ title: "Scan Failed", variant: "destructive" });
                                                 } finally {
                                                     setIsScanning(false);
                                                 }
@@ -555,51 +511,36 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                {/* Main Scrollable Item Table */}
-                <div className="flex-1 overflow-auto custom-scrollbar bg-transparent relative">
-                    <div className="p-0">
                         {/* Item Manifest */}
-                        <div className="bg-neutral-900 border-none min-h-full">
-                            <div className="flex items-center justify-between px-6 py-2 bg-neutral-800 border-b border-white/5 sticky top-0 z-20">
+                        <div className="space-y-4">
+                            <div className="flex items-center justify-between px-2">
                                 <div className="flex items-center gap-3">
-                                    <div className="h-4 w-1 bg-indigo-500 rounded-full"></div>
-                                    <h3 className="text-xs font-black uppercase tracking-[0.2em] text-neutral-400">Items</h3>
+                                    <div className="h-6 w-1 bg-indigo-500 rounded-full"></div>
+                                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-500">Item Manifest</h3>
                                 </div>
                                 {mode === 'direct' && (
-                                    <button onClick={addItem} className="text-[10px] font-bold text-indigo-400 flex items-center gap-1.5 hover:bg-indigo-500/10 px-3 py-1.5 rounded-lg transition-all">
-                                        <Plus className="h-3.5 w-3.5" /> ADD
+                                    <button onClick={addItem} className="text-xs font-bold text-indigo-400 flex items-center gap-1.5 hover:bg-indigo-500/10 px-3 py-1.5 rounded-lg transition-all">
+                                        <Plus className="h-3.5 w-3.5" /> ADD LINE
                                     </button>
                                 )}
                             </div>
 
-                            <div className="border border-white/5 bg-neutral-900/30">
-                                <table className="w-full text-left border-collapse min-w-[1500px]">
+                            <div className="rounded-2xl border border-white/5 bg-neutral-900/30 overflow-hidden">
+                                <table className="w-full text-left border-collapse min-w-[1300px]">
                                     <thead>
                                         <tr className="bg-white/[0.02] text-[10px] font-black uppercase tracking-widest text-neutral-500 border-b border-white/5">
                                             <th className="py-4 pl-6 w-[250px]">Product Description</th>
-                                            <th className="py-4 px-2 w-16">HSN</th>
-                                            <th className="py-4 px-2 w-16">Pack</th>
-                                            <th className="py-4 px-2 w-20">Batch</th>
-                                            <th className="py-4 px-2 w-16">Exp</th>
-                                            <th className="py-4 px-2 w-20 text-right">MRP</th>
-                                            <th className="py-4 px-2 w-20 text-right text-emerald-400">Sale (Ex)</th>
-                                            <th className="py-4 px-2 w-16 text-right">Margin</th>
-                                            <th className="py-4 px-2 w-24 text-right text-yellow-500">Disc (Amt)</th>
-                                            <th className="py-4 px-2 w-16 text-center">Qty</th>
-                                            <th className="py-4 px-2 w-20 text-right">Uni Cost</th>
-                                            <th className="py-4 px-2 w-16 text-right">Tax %</th>
-                                            {taxType === 'INTRA' ? (
-                                                <>
-                                                    <th className="py-4 px-2 w-16 text-right text-neutral-400">CGST</th>
-                                                    <th className="py-4 px-2 w-16 text-right text-neutral-400">SGST</th>
-                                                </>
-                                            ) : (
-                                                <th className="py-4 px-2 w-16 text-right text-neutral-400">IGST</th>
-                                            )}
-                                            <th className="py-4 pr-6 text-right w-28">Total</th>
+                                            <th className="py-4 px-2 w-24">HSN / Pack</th>
+                                            <th className="py-4 px-2 w-24">Batch / Exp</th>
+                                            <th className="py-4 px-2 w-24 text-right">MRP</th>
+                                            <th className="py-4 px-2 w-24 text-right text-emerald-400">Sale (Ex)</th>
+                                            <th className="py-4 px-2 w-20 text-right">Margin</th>
+                                            <th className="py-4 px-2 w-24 text-right text-yellow-500">Disc (₹/%)</th>
+                                            <th className="py-4 px-2 w-20 text-center">Qty</th>
+                                            <th className="py-4 px-2 w-24 text-right">Uni Cost</th>
+                                            <th className="py-4 px-2 w-24 text-right">Tax (%)</th>
+                                            <th className="py-4 pr-6 text-right w-32">Line Total</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/[0.03]">
@@ -618,8 +559,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                                 const n = [...items];
                                                                 n[index].productId = id || "";
                                                                 n[index].productName = opt?.label || "";
-                                                                // Use default cost if available and unitPrice is 0
-                                                                if (!n[index].unitPrice && opt?.cost) n[index].unitPrice = opt.cost;
                                                                 setItems(n);
                                                             }}
                                                             onSearch={searchProducts}
@@ -633,42 +572,32 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                     )}
                                                 </td>
                                                 <td className="py-4 px-2">
-                                                    <input
-                                                        value={item.hsn || ''}
-                                                        onChange={(e) => { const n = [...items]; n[index].hsn = e.target.value; setItems(n); }}
-                                                        placeholder="HSN" className="w-full bg-transparent border-none text-[11px] font-mono p-0 focus:ring-0 text-neutral-400"
-                                                    />
+                                                    <div className="space-y-1">
+                                                        <input
+                                                            value={item.hsn || ''}
+                                                            onChange={(e) => { const n = [...items]; n[index].hsn = e.target.value; setItems(n); }}
+                                                            placeholder="HSN" className="w-full bg-transparent border-none text-[11px] font-mono p-0 focus:ring-0 text-neutral-400"
+                                                        />
+                                                        <input
+                                                            value={item.packing || ''}
+                                                            onChange={(e) => { const n = [...items]; n[index].packing = e.target.value; setItems(n); }}
+                                                            placeholder="Pack" className="w-full bg-transparent border-none text-[11px] font-bold p-0 focus:ring-0 text-white"
+                                                        />
+                                                    </div>
                                                 </td>
                                                 <td className="py-4 px-2">
-                                                    <SearchableSelect
-                                                        value={item.packing}
-                                                        onChange={(id, opt) => {
-                                                            const n = [...items];
-                                                            n[index].packing = opt?.label || id || '';
-                                                            setItems(n);
-                                                        }}
-                                                        onSearch={async (q) => PACKING_OPTIONS.filter(o => o.toLowerCase().includes(q.toLowerCase())).map(o => ({ id: o, label: o }))}
-                                                        onCreate={async (q) => ({ id: q, label: q })}
-                                                        defaultOptions={PACKING_OPTIONS.map(o => ({ id: o, label: o }))}
-                                                        placeholder="1x10"
-                                                        variant="ghost"
-                                                        className="w-full text-[11px] font-bold text-white placeholder:text-neutral-600 dark"
-                                                        isDark={true}
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-2">
-                                                    <input
-                                                        value={item.batch || ''}
-                                                        onChange={(e) => { const n = [...items]; n[index].batch = e.target.value; setItems(n); }}
-                                                        placeholder="Batch" className="w-full bg-transparent border-none text-[11px] font-mono p-0 focus:ring-0 text-white"
-                                                    />
-                                                </td>
-                                                <td className="py-4 px-2">
-                                                    <input
-                                                        value={item.expiry || ''}
-                                                        onChange={(e) => { const n = [...items]; n[index].expiry = e.target.value; setItems(n); }}
-                                                        placeholder="MM/YY" className="w-full bg-transparent border-none text-[11px] font-mono p-0 focus:ring-0 text-neutral-500"
-                                                    />
+                                                    <div className="space-y-1">
+                                                        <input
+                                                            value={item.batch || ''}
+                                                            onChange={(e) => { const n = [...items]; n[index].batch = e.target.value; setItems(n); }}
+                                                            placeholder="Batch" className="w-full bg-transparent border-none text-[11px] font-mono p-0 focus:ring-0 text-white"
+                                                        />
+                                                        <input
+                                                            value={item.expiry || ''}
+                                                            onChange={(e) => { const n = [...items]; n[index].expiry = e.target.value; setItems(n); }}
+                                                            placeholder="MM/YY" className="w-full bg-transparent border-none text-[11px] font-mono p-0 focus:ring-0 text-neutral-500"
+                                                        />
+                                                    </div>
                                                 </td>
                                                 <td className="py-4 px-2 text-right font-mono font-bold text-white">
                                                     <input
@@ -690,18 +619,27 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-2 text-right">
-                                                    <div className="flex items-center gap-1">
+                                                    <div className="space-y-1">
                                                         <input
                                                             type="number" value={item.discountAmt || ''}
                                                             onChange={(e) => {
-                                                                const n = [...items];
-                                                                n[index].discountAmt = Number(e.target.value);
-                                                                // Recalculate Tax
+                                                                const n = [...items]; n[index].discountAmt = Number(e.target.value);
                                                                 const taxable = (n[index].unitPrice * n[index].receivedQty) - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0);
                                                                 n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
                                                                 setItems(n);
                                                             }}
-                                                            placeholder="₹" className="w-full bg-transparent border-b border-white/10 text-right text-[11px] text-yellow-500 focus:ring-0 p-0 font-bold"
+                                                            placeholder="Amt" className="w-full bg-transparent border-none text-right text-[11px] text-yellow-500 focus:ring-0 p-0 font-bold"
+                                                        />
+                                                        <input
+                                                            type="number" value={item.discountPct || ''}
+                                                            onChange={(e) => {
+                                                                const n = [...items]; const pct = Number(e.target.value); n[index].discountPct = pct;
+                                                                n[index].discountAmt = (n[index].unitPrice * n[index].receivedQty * pct) / 100;
+                                                                const taxable = (n[index].unitPrice * n[index].receivedQty) - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0);
+                                                                n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
+                                                                setItems(n);
+                                                            }}
+                                                            placeholder="%" className="w-full bg-transparent border-none text-right text-[10px] text-neutral-500 focus:ring-0 p-0"
                                                         />
                                                     </div>
                                                 </td>
@@ -716,7 +654,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                         }}
                                                         className="w-12 mx-auto bg-neutral-800 rounded p-1 text-center font-bold text-white border-none focus:ring-1 focus:ring-indigo-500"
                                                     />
-                                                    <span className="text-[9px] text-neutral-500 font-mono uppercase mt-1 block">{item.uom || 'PCS'}</span>
                                                 </td>
                                                 <td className="py-4 px-2 text-right font-mono font-bold text-white">
                                                     <input
@@ -731,36 +668,23 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                     />
                                                 </td>
                                                 <td className="py-4 px-2 text-right">
-                                                    <SearchableSelect
-                                                        value={item.taxRate?.toString()}
-                                                        onChange={(id) => {
-                                                            const n = [...items]; const rate = Number(id);
-                                                            if (!isNaN(rate)) {
-                                                                n[index].taxRate = rate;
-                                                                const taxable = (n[index].unitPrice * n[index].receivedQty) - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0);
-                                                                n[index].taxAmount = taxable * (rate / 100);
-                                                                setItems(n);
-                                                            }
+                                                    <Select
+                                                        value={item.taxRate?.toString() || "0"}
+                                                        onValueChange={(v) => {
+                                                            const n = [...items]; const r = Number(v); n[index].taxRate = r;
+                                                            const taxable = (n[index].unitPrice * n[index].receivedQty) - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0);
+                                                            n[index].taxAmount = taxable * (r / 100);
+                                                            setItems(n);
                                                         }}
-                                                        onSearch={async (q) => TAX_OPTIONS.filter(o => o.includes(q)).map(o => ({ id: o, label: o + '%' }))}
-                                                        defaultOptions={TAX_OPTIONS.map(o => ({ id: o, label: o + '%' }))}
-                                                        placeholder="%" className="w-full font-mono text-[11px] text-white dark text-right" variant="ghost" isDark={true}
-                                                    />
+                                                    >
+                                                        <SelectTrigger className="h-7 w-16 bg-transparent border-white/10 text-[10px] font-mono">
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="bg-neutral-900 border-white/10 text-white">
+                                                            {TAX_OPTIONS.map(v => <SelectItem key={v} value={v}>{v}%</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
                                                 </td>
-                                                {taxType === 'INTRA' ? (
-                                                    <>
-                                                        <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
-                                                            {((item.taxAmount || 0) / 2).toFixed(2)}
-                                                        </td>
-                                                        <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
-                                                            {((item.taxAmount || 0) / 2).toFixed(2)}
-                                                        </td>
-                                                    </>
-                                                ) : (
-                                                    <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
-                                                        {(item.taxAmount || 0).toFixed(2)}
-                                                    </td>
-                                                )}
                                                 <td className="py-4 pr-6 text-right font-mono font-black text-white">
                                                     {((item.unitPrice * item.receivedQty) - (item.schemeDiscount || 0) - (item.discountAmt || 0) + (item.taxAmount || 0)).toFixed(2)}
                                                 </td>
@@ -773,8 +697,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     </div>
                 </div>
 
-                {/* Fixed Action Footer */}
-                <div className="px-8 py-6 border-t border-white/5 bg-background/80 backdrop-blur-2xl shrink-0 flex items-center justify-between z-10">
+                {/* World-Class Fixed Footer */}
+                <div className="px-8 py-6 border-t border-white/5 bg-neutral-900/40 backdrop-blur-2xl shrink-0 flex items-center justify-between z-10">
                     <div className="flex items-center gap-12">
                         {/* Summary Stats */}
                         <div className="flex items-center gap-8">
@@ -830,7 +754,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                         </Button>
                     </div>
                 </div>
-            </DialogContent >
-        </Dialog >
+            </DialogContent>
+        </Dialog>
     );
 }
