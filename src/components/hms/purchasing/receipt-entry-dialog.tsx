@@ -323,7 +323,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-[95vw] w-[1400px] h-[90vh] p-0 overflow-hidden bg-neutral-950 border-white/10 flex flex-col selection:bg-indigo-500/30">
+            <DialogContent className="max-w-[98vw] w-full h-[98vh] p-0 flex flex-col bg-neutral-950 border-white/10 selection:bg-indigo-500/30">
 
                 <Toaster />
                 <SupplierDialog
@@ -345,17 +345,22 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                         <div>
                             <DialogTitle className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
                                 New Purchase Entry
-                                {isScanning && (
-                                    <Badge className="bg-indigo-500/10 text-indigo-400 border-indigo-500/20 animate-pulse px-3">
-                                        <Sparkles className="w-3 h-3 mr-1.5" />
-                                        AI Scanning...
-                                    </Badge>
-                                )}
                             </DialogTitle>
                             <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-medium">Record Supplier Stock Inward</p>
                         </div>
                     </div>
 
+                    {isScanning && (
+                        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+                            <div className="flex flex-col items-center gap-4 animate-in zoom-in duration-300">
+                                <Loader2 className="w-16 h-16 text-indigo-500 animate-spin" />
+                                <div className="text-center space-y-1">
+                                    <h3 className="text-xl font-bold text-white tracking-tight">Analyzing Invoice...</h3>
+                                    <p className="text-sm text-neutral-400 font-mono">{scanProgress}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                     <div className="flex items-center gap-4">
                         <div className="flex bg-neutral-900 rounded-lg p-1 border border-white/5">
                             <button
@@ -379,7 +384,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                 </div>
 
                 {/* Main Scrollable Content */}
-                <div className="flex-1 overflow-auto custom-scrollbar">
+                <div className="flex-1 overflow-auto custom-scrollbar bg-neutral-950">
                     <div className="px-8 py-8 space-y-12">
                         {/* Header Context Grid */}
                         <div className="grid grid-cols-12 gap-12">
@@ -820,7 +825,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                         </Button>
                     </div>
                 </div>
-            </DialogContent>
-        </Dialog>
+            </DialogContent >
+        </Dialog >
     );
 }
