@@ -33,6 +33,9 @@ export type PurchaseReceiptData = {
         baseUOM?: string              // Product's base UOM (e.g., "Unit")
         conversionFactor?: number     // Conversion factor (e.g., 1 Strip = 15 Units)
         salePricePerUnit?: number     // Sale price for base UOM (calculated)
+        discountPct?: number
+        discountAmt?: number
+        schemeDiscount?: number
     }[]
 }
 
@@ -274,7 +277,10 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     purchase_uom: item.purchaseUOM,
                     base_uom: item.baseUOM,
                     conversion_factor: item.conversionFactor,
-                    sale_price_per_unit: item.salePricePerUnit
+                    sale_price_per_unit: item.salePricePerUnit,
+                    discount_pct: item.discountPct,
+                    discount_amt: item.discountAmt,
+                    scheme_discount: item.schemeDiscount
                 })}::jsonb,
                         NOW()
                     )
