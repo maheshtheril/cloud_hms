@@ -670,8 +670,12 @@ export class AccountingService {
                 const price = Number(line.unit_price || 0);
                 const meta = line.metadata as any;
 
-                const lineSubtotal = qty * price;
                 const lineTax = Number(meta?.tax_amount || 0);
+                const discountAmt = Number(meta?.discount_amt || 0);
+                const schemeDiscount = Number(meta?.scheme_discount || 0);
+
+                // Taxable Value logic: (Price * Qty) - Discounts
+                const lineSubtotal = Math.max(0, (qty * price) - (discountAmt + schemeDiscount));
 
                 subtotal += lineSubtotal;
                 taxTotal += lineTax;
