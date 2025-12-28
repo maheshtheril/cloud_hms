@@ -374,11 +374,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
             const res = await scanInvoiceAction(url) as any;
             if (res.data) {
                 const { supplierId, supplierName, date, reference: ref, items: scannedItems, gstin, address, grandTotal } = res.data;
-                if (supplierId) {
-                    setSupplierId(supplierId);
-                    setSupplierName(supplierName);
-                    setSupplierMeta({ gstin, address });
-                }
+                if (supplierName) setSupplierName(supplierName);
+                if (supplierId) setSupplierId(supplierId);
+                setSupplierMeta({ gstin, address });
                 if (date) setReceivedDate(date);
                 if (ref) setReference(ref);
                 if (grandTotal) {

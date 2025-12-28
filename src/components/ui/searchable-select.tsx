@@ -93,6 +93,11 @@ export function SearchableSelect({
     React.useEffect(() => {
         if (!value) {
             setSelectedOption(null);
+            if (valueLabel) {
+                setQuery(valueLabel);
+            } else {
+                setQuery("");
+            }
             return;
         }
 
@@ -101,12 +106,18 @@ export function SearchableSelect({
 
         if (found) {
             setSelectedOption(found);
-            setQuery("");
+            // In ghost variant, we want the text in the input
+            if (variant === 'ghost') {
+                setQuery(found.label);
+            } else if (!open) {
+                setQuery("");
+            }
         } else if (valueLabel) {
             // Fallback to valueLabel if provided (e.g. after AI scan)
             setSelectedOption({ id: value, label: valueLabel });
+            if (variant === 'ghost') setQuery(valueLabel);
         }
-    }, [value, valueLabel, options, defaultOptions]);
+    }, [value, valueLabel, options, defaultOptions, variant]);
 
     // Calculate position for portal
     React.useEffect(() => {
@@ -342,16 +353,16 @@ export function SearchableSelect({
                     <div className="flex items-center min-h-[42px] gap-2">
                         {variant === 'default' && <Search className="h-4 w-4 text-gray-400 dark:text-neutral-500 shrink-0" />}
 
-                        {selectedOption && !open ? (
+                        {selectedOption && !open && variant === 'default' ? (
                             <div className="flex-1 flex items-center justify-between">
                                 <div className="flex flex-col overflow-hidden">
-                                    <span className={`block truncate font-medium ${variant === 'ghost' ? 'text-inherit' : 'text-gray-900 dark:text-neutral-200'}`}>{selectedOption.label}</span>
+                                    <span className={`block truncate font-medium text-gray-900 dark:text-neutral-200`}>{selectedOption.label}</span>
                                     {selectedOption.subLabel && (
-                                        <span className={`block truncate text-xs ${variant === 'ghost' ? 'text-inherit opacity-70' : 'text-gray-500 dark:text-neutral-500'}`}>{selectedOption.subLabel}</span>
+                                        <span className={`block truncate text-xs text-gray-500 dark:text-neutral-500`}>{selectedOption.subLabel}</span>
                                     )}
                                 </div>
                                 {!disabled && (
-                                    <button type="button" onClick={handleClear} className={`${variant === 'ghost' ? 'text-inherit opacity-50 hover:opacity-100' : 'text-gray-400 hover:text-gray-600 dark:hover:text-neutral-300'} p-1 shrink-0`}>
+                                    <button type="button" onClick={handleClear} className="text-gray-400 hover:text-gray-600 dark:hover:text-neutral-300 p-1 shrink-0">
                                         <X className="h-4 w-4" />
                                     </button>
                                 )}
@@ -361,8 +372,8 @@ export function SearchableSelect({
                                 ref={inputRef}
                                 id={inputId}
                                 type="text"
-                                className={`w-full border-none p-0 focus:ring-0 text-sm bg-transparent ${variant === 'ghost' ? 'text-inherit placeholder:text-inherit placeholder:opacity-50' : 'text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-neutral-600'}`}
-                                placeholder={selectedOption ? selectedOption.label : placeholder}
+                                className={`w-full border-none p-0 focus:ring-0 bg-transparent ${variant === 'ghost' ? 'text-inherit font-inherit placeholder:text-inherit placeholder:opacity-50' : 'text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-neutral-600'}`}
+                                placeholder={selectedOption && variant === 'default' ? selectedOption.label : placeholder}
                                 value={query}
                                 onChange={handleInputChange}
                                 onKeyDown={handleKeyDown}
@@ -375,6 +386,12 @@ export function SearchableSelect({
                                 disabled={disabled}
                                 autoComplete="off"
                             />
+                        )}
+
+                        {selectedOption && variant === 'ghost' && !disabled && (
+                            <button type="button" onClick={handleClear} className="text-neutral-500 hover:text-neutral-300 p-1 shrink-0 mr-2">
+                                <X className="h-4 w-4" />
+                            </button>
                         )}
 
                         {!selectedOption && (
