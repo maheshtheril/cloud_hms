@@ -582,7 +582,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 )}
                             </div>
 
-                            <div className="rounded-2xl border border-white/5 bg-neutral-900/30 overflow-hidden">
+                            <div className="rounded-2xl border border-white/5 bg-neutral-900/30 overflow-x-auto custom-scrollbar">
                                 <table className="w-full text-left border-collapse min-w-[2000px]">
                                     <thead>
                                         <tr className="bg-white/[0.02] text-[10px] font-black uppercase tracking-widest text-neutral-500 border-b border-white/5">
@@ -622,10 +622,28 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                             <div className="flex-1">
                                                                 <SearchableSelect
                                                                     value={item.productId}
-                                                                    onChange={(id, opt) => {
+                                                                    onChange={async (id, opt) => {
                                                                         const n = [...items];
                                                                         n[index].productId = id || "";
                                                                         n[index].productName = opt?.label || "";
+
+                                                                        if (id) {
+                                                                            try {
+                                                                                const { getProduct } = await import('@/app/actions/inventory');
+                                                                                const p = await getProduct(id);
+                                                                                if (p) {
+                                                                                    n[index].mrp = p.mrp || 0;
+                                                                                    n[index].hsn = p.hsn || "";
+                                                                                    n[index].packing = p.packing || "";
+                                                                                    n[index].taxRate = p.taxRate || 0;
+                                                                                    // Recalculate tax amount with new rate
+                                                                                    const taxable = (n[index].unitPrice * n[index].receivedQty) - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0);
+                                                                                    n[index].taxAmount = taxable * (n[index].taxRate / 100);
+                                                                                }
+                                                                            } catch (err) {
+                                                                                console.error("Failed to fetch product details", err);
+                                                                            }
+                                                                        }
                                                                         setItems(n);
                                                                     }}
                                                                     onSearch={searchProducts}
