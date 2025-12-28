@@ -18,6 +18,7 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { useToast } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { SupplierDialog } from '@/components/hms/purchasing/supplier-dialog';
+import { ProductCreationDialog } from '@/components/inventory/product-creation-dialog';
 import {
     Dialog,
     DialogContent,
@@ -78,6 +79,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
+    const [isProductCreationOpen, setProductCreationOpen] = useState(false);
 
     // Mode: 'po' (Linked to PO) | 'direct' (Ad-hoc)
     const [mode, setMode] = useState<'po' | 'direct'>('po');
@@ -316,6 +318,15 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                         setSupplierId(newSupplier.id);
                         setSupplierName(newSupplier.label);
                         setSupplierMeta({ gstin: newSupplier.subLabel });
+                    }}
+                />
+
+                <ProductCreationDialog
+                    isOpen={isProductCreationOpen}
+                    onClose={() => setProductCreationOpen(false)}
+                    onSuccess={() => {
+                        setProductCreationOpen(false);
+                        toast({ title: "Product Created", description: "You can now search for the new product." });
                     }}
                 />
 
