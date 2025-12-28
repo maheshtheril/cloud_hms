@@ -357,8 +357,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         return res?.data?.map((p: any) => ({ id: p.id, label: p.name, subLabel: p.category })) || [];
     };
 
-    const createProductQuick = async (name: string) => {
+    const createProductQuick = async (name: string): Promise<Option | null> => {
         setProductCreationOpen(true);
+        return null;
     };
 
     const handleScanInvoice = async (url: string) => {
