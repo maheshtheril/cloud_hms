@@ -65,8 +65,6 @@ type ReceiptItem = {
     schemeDiscount?: number;
     discountPct?: number;
     discountAmt?: number;
-    currentStock?: number;
-    lastCost?: number;
 };
 
 interface ReceiptEntryDialogProps {
@@ -528,9 +526,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                                     uom: item.uom || "PCS",
                                                                     schemeDiscount: sDisc,
                                                                     discountAmt: dAmt,
-                                                                    discountPct: item.discountPct ? Number(item.discountPct) : (taxable > 0 ? (dAmt / (qty * price)) * 100 : 0),
-                                                                    currentStock: item.currentStock,
-                                                                    lastCost: item.lastCost
+                                                                    discountPct: item.discountPct ? Number(item.discountPct) : (taxable > 0 ? (dAmt / (qty * price)) * 100 : 0)
                                                                 };
                                                             }));
                                                             setItems(mapped);
@@ -574,8 +570,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                     <thead>
                                         <tr className="bg-white/[0.02] text-[10px] font-black uppercase tracking-widest text-neutral-500 border-b border-white/5">
                                             <th className="py-4 pl-6 w-[250px]">Product Description</th>
-                                            <th className="py-4 px-2 w-20 text-center text-neutral-600">Stock</th>
-                                            <th className="py-4 px-2 w-24 text-right text-neutral-600">Last Buy</th>
                                             <th className="py-4 px-2 w-24">HSN / Pack</th>
                                             <th className="py-4 px-2 w-24">Batch / Exp</th>
                                             <th className="py-4 px-2 w-24 text-right">MRP</th>
@@ -604,8 +598,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                                 const n = [...items];
                                                                 n[index].productId = id || "";
                                                                 n[index].productName = opt?.label || "";
-                                                                n[index].currentStock = opt?.stock;
-                                                                n[index].lastCost = opt?.cost;
                                                                 // Use default cost if available and unitPrice is 0
                                                                 if (!n[index].unitPrice && opt?.cost) n[index].unitPrice = opt.cost;
                                                                 setItems(n);
@@ -619,12 +611,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                             isDark={true}
                                                         />
                                                     )}
-                                                </td>
-                                                <td className="py-4 px-2 text-center">
-                                                    <span className="text-[10px] font-mono text-neutral-500">{item.currentStock ?? '-'}</span>
-                                                </td>
-                                                <td className="py-4 px-2 text-right">
-                                                    <span className="text-[10px] font-mono text-neutral-500">{item.lastCost ? `₹${item.lastCost}` : '-'}</span>
                                                 </td>
                                                 <td className="py-4 px-2">
                                                     <div className="space-y-1">
