@@ -317,18 +317,26 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 const totalQty = billedQty + freeQty;
 
                 let stockQty = totalQty;
-                let avgCostPerBaseUnit = billedQty > 0 ? (billedQty * (Number(item.unitPrice) || 0)) / totalQty : 0;
 
-                // If item has UOM conversion data, convert to base units
-                if (item.purchaseUOM && item.conversionFactor && item.conversionFactor > 1) {
-                    // Example: 5 PACK-10 + 1 free PACK-10 @ ₹45 per pack
-                    // billedQty = 5, freeQty = 1, totalQty = 6
-                    // stockQty = 6 × 10 = 60 Units
-                    // avgCostPerBaseUnit = (5 × 45) / 60 = ₹3.75 per Unit
-                    stockQty = totalQty * item.conversionFactor;
-                    avgCostPerBaseUnit = (billedQty * (Number(item.unitPrice) || 0)) / stockQty;
+                // DERIVE CONVERSION FACTOR
+                let effectiveConversion = item.conversionFactor || 1;
+                const effectiveUOM = item.purchaseUOM || 'PCS';
 
-                    console.log(`[UOM Conversion] ${totalQty} (Incl. ${freeQty} free) ${item.purchaseUOM} = ${stockQty} Units @ ₹${avgCostPerBaseUnit.toFixed(2)} per Unit`);
+                if (effectiveConversion === 1 && effectiveUOM !== 'PCS') {
+                    const match = effectiveUOM.match(/PACK-(\d+)/i);
+                    if (match) {
+                        effectiveConversion = parseInt(match[1]);
+                    } else if (effectiveUOM.toUpperCase() === 'STRIP') {
+                        effectiveConversion = 10;
+                    }
+                }
+
+                let avgCostPerBaseUnit = billedQty > 0 ? (billedQty * (Number(item.unitPrice) || 0)) / (totalQty * effectiveConversion) : 0;
+
+                // Adjust stock qty by conversion factor
+                if (effectiveConversion > 1) {
+                    stockQty = totalQty * effectiveConversion;
+                    console.log(`[UOM Conversion] ${totalQty} (Incl. ${freeQty} free) ${effectiveUOM} = ${stockQty} Units @ ₹${avgCostPerBaseUnit.toFixed(2)} per Unit`);
                 }
 
                 // C. Create Stock Ledger Entry (Inward) - Using BASE units
@@ -351,8 +359,8 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                             unit_cost: avgCostPerBaseUnit,
                             // Store original purchase details
                             purchase_qty: item.qtyReceived,
-                            purchase_uom: item.purchaseUOM || 'PCS',
-                            conversion_factor: item.conversionFactor || 1
+                            purchase_uom: effectiveUOM,
+                            conversion_factor: effectiveConversion
                         }
                     }
                 })
@@ -365,16 +373,8 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     });
 
                     // Extract UOM and calculate conversion factor
-                    const purchaseUOM = (item as any).uom || 'PCS';
-                    let conversionFactor = 1;
-
-                    // Parse PACK-10, PACK-15, etc.
-                    const match = purchaseUOM.match(/PACK-(\d+)/i);
-                    if (match) {
-                        conversionFactor = parseInt(match[1]);
-                    } else if (purchaseUOM === 'STRIP') {
-                        conversionFactor = 10; // Default strip size
-                    }
+                    const purchaseUOM = effectiveUOM;
+                    const conversionFactor = effectiveConversion;
 
                     // Calculate UOM pricing data for sales
                     const salePricePerPCS = item.salePrice && conversionFactor > 1
@@ -384,8 +384,8 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
 
                     console.log('💰 SAVING UOM PRICING:', {
                         product: item.productId,
-                        purchaseUOM,
-                        conversionFactor,
+                        purchaseUOM: purchaseUOM,
+                        conversionFactor: conversionFactor,
                         salePricePerPack,
                         salePricePerPCS
                     });

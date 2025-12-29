@@ -191,6 +191,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                         taxAmount: taxable * ((i.taxRate || p?.taxRate || 0) / 100),
                         hsn: i.hsn || p?.hsn || '',
                         packing: i.packing || p?.packing || '',
+                        uom: p?.uom || 'PCS',
                         schemeDiscount: 0,
                         discountPct: 0,
                         discountAmt: 0,
@@ -252,6 +253,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                 n[index].salePrice = p.price || 0;
                 n[index].hsn = p.hsn || "";
                 n[index].packing = p.packing || "";
+                n[index].uom = p.uom || "PCS";
                 n[index].taxRate = p.taxRate || 0;
 
                 if (n[index].salePrice > 0 && n[index].unitPrice > 0) {
@@ -830,6 +832,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                         <th className="py-4 pl-6 w-[250px] sticky left-0 z-50 bg-neutral-900 border-r border-white/5">Product Description</th>
                                         <th className="py-4 px-2 w-24">HSN</th>
                                         <th className="py-4 px-2 w-24">Pack</th>
+                                        <th className="py-4 px-2 w-24 text-indigo-400">UOM</th>
                                         <th className="py-4 px-2 w-28">Batch</th>
                                         <th className="py-4 px-2 w-24">Exp</th>
                                         <th className="py-4 px-2 w-24 text-right">MRP</th>
@@ -885,6 +888,14 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             </td>
                                             <td className="py-4 px-2">
                                                 <input value={item.packing || ''} onChange={(e) => { const n = [...items]; n[index].packing = e.target.value; setItems(n); }} className="w-full bg-transparent border-none text-[12px] font-bold p-0 focus:ring-0 text-white" />
+                                            </td>
+                                            <td className="py-4 px-2">
+                                                <input
+                                                    value={item.uom || ''}
+                                                    onChange={(e) => { const n = [...items]; n[index].uom = e.target.value; setItems(n); }}
+                                                    placeholder="PCS/PACK-10"
+                                                    className="w-full bg-transparent border-none text-[12px] font-bold p-0 focus:ring-0 text-indigo-400 uppercase placeholder:text-neutral-700"
+                                                />
                                             </td>
                                             <td className="py-4 px-2">
                                                 <input value={item.batch || ''} onChange={(e) => { const n = [...items]; n[index].batch = e.target.value; setItems(n); }} className="w-full bg-transparent border-none text-[12px] font-mono p-0 focus:ring-0 text-white" />
