@@ -21,7 +21,6 @@ import { getPendingPurchaseOrders, createPurchaseReceipt, getPurchaseOrder } fro
 import { motion } from "framer-motion";
 import { getCompanyDetails } from "@/app/actions/purchase";
 import { scanInvoiceFromUrl as scanInvoiceAction } from "@/app/actions/scan-invoice";
-import { SupplierDialog } from "./supplier-dialog";
 import { ProductCreationDialog } from "@/components/inventory/product-creation-dialog";
 import {
     Select,
@@ -70,7 +69,6 @@ const TAX_OPTIONS = [0, 5, 12, 18, 28];
 export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryDialogProps) {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
     const [isProductCreationOpen, setProductCreationOpen] = useState(false);
     const [globalMargin, setGlobalMargin] = useState<number>(20); // Default to 20%
 
@@ -575,15 +573,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     }`}
             >
                 <Toaster />
-                <SupplierDialog
-                    isOpen={supplierDialogOpen}
-                    onClose={() => setSupplierDialogOpen(false)}
-                    onSuccess={(newSupplier: any) => {
-                        setSupplierId(newSupplier.id);
-                        setSupplierName(newSupplier.label);
-                        setSupplierMeta(newSupplier.metadata || { gstin: newSupplier.subLabel });
-                    }}
-                />
 
                 <ProductCreationDialog
                     isOpen={isProductCreationOpen}
@@ -708,9 +697,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             variant="ghost"
                                         />
                                     </div>
-                                    <button onClick={() => setSupplierDialogOpen(true)} className="h-14 w-14 flex items-center justify-center rounded-xl bg-indigo-600 shadow-lg shadow-indigo-600/20 text-white hover:bg-indigo-700 transition-all active:scale-90 shrink-0">
-                                        <Plus className="h-6 w-6" />
-                                    </button>
                                 </div>
                                 <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-all duration-300"></div>
                                 <div className="flex flex-wrap gap-2 pt-1">

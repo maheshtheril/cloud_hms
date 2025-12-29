@@ -146,6 +146,8 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
                 - "taxAmount": Total Tax Amount.
                 - "schemeDiscount": Scheme Discount Amount. Look for 'Schm Amt', 'Sch Amt', 'Schm', 'Less', 'Disc', 'Scheme'.
                     * If found, return the absolute number value.
+                    * CRITICAL: Do NOT miss this column. It is often next to 'Disc %' or 'Taxable Val'.
+                    * If 'Schm Amt' column exists with value '48.50', schemeDiscount = 48.50.
                 - "discountPct": Discount %.
                 - "discountAmt": Discount Amount.
                 - "qty": Billed Quantity. The main quantity column.
