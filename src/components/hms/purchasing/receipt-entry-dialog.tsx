@@ -690,11 +690,22 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 <div className="flex gap-4">
                                     <div className="flex-1">
                                         <SearchableSelect
-                                            value={supplierId}
+                                            key={supplierName + supplierMeta?.gstin} // Force re-render on data change
+                                            value={supplierId || (supplierName ? "TEMP_SCAN_ID" : "")}
                                             valueLabel={supplierName}
-                                            onChange={(id, opt) => { setSupplierId(id); if (opt) { setSupplierName(opt.label); setSupplierMeta(opt.metadata); } }}
+                                            onChange={(id, opt) => {
+                                                if (id === "TEMP_SCAN_ID") return; // Ignore internal dummy
+                                                setSupplierId(id);
+                                                if (opt) {
+                                                    setSupplierName(opt.label);
+                                                    setSupplierMeta(opt.metadata);
+                                                }
+                                            }}
                                             onSearch={searchSuppliers}
-                                            defaultOptions={supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }] : []}
+                                            defaultOptions={[
+                                                ...(supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }] : []),
+                                                ...(supplierName && !supplierId ? [{ id: "TEMP_SCAN_ID", label: supplierName, subLabel: "Scanned (New)", metadata: supplierMeta }] : [])
+                                            ]}
                                             placeholder="Select Source Supplier..."
                                             className="w-full bg-background border-border h-14 font-black text-foreground"
                                             variant="ghost"
@@ -702,18 +713,27 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                     </div>
                                 </div>
                                 <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-all duration-300"></div>
-                                <div className="flex flex-wrap gap-2 pt-1">
-                                    {supplierMeta?.gstin && (
-                                        <Badge variant="outline" className="bg-indigo-500/10 border-indigo-500/20 text-indigo-400 font-mono text-[9px] px-1.5 py-0 h-5">
-                                            GST {supplierMeta.gstin}
-                                        </Badge>
-                                    )}
-                                    {supplierMeta?.address && (
-                                        <div className="text-[10px] text-muted-foreground font-medium line-clamp-1 flex items-center gap-1.5 opacity-60">
-                                            <span className="shrink-0 bg-muted px-1 rounded-[3px] text-[8px] border border-border text-muted-foreground">ADR</span>
-                                            {supplierMeta.address}
+                                <div className="flex flex-col gap-1 pt-1.5">
+                                    {/* Fallback Display for Scanned Data */}
+                                    {(!supplierId && supplierName) && (
+                                        <div className="text-xs text-emerald-500 font-bold flex items-center gap-2">
+                                            <Sparkles className="w-3 h-3" />
+                                            Scanned: {supplierName}
                                         </div>
                                     )}
+                                    <div className="flex flex-wrap gap-2">
+                                        {supplierMeta?.gstin && (
+                                            <Badge variant="outline" className="bg-indigo-500/10 border-indigo-500/20 text-indigo-400 font-mono text-[9px] px-1.5 py-0 h-5">
+                                                GST {supplierMeta.gstin}
+                                            </Badge>
+                                        )}
+                                        {supplierMeta?.address && (
+                                            <div className="text-[10px] text-muted-foreground font-medium line-clamp-1 flex items-center gap-1.5 opacity-60">
+                                                <span className="shrink-0 bg-muted px-1 rounded-[3px] text-[8px] border border-border text-muted-foreground">ADR</span>
+                                                {supplierMeta.address}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
@@ -1093,6 +1113,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     </div>
                 </div>
             </DialogContent>
-        </Dialog>
+        </Dialog >
     );
 }
