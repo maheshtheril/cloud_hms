@@ -206,6 +206,17 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         return ((salePrice - cost) / salePrice) * 100;
     };
 
+    const updateLineItemCalcs = (item: ReceiptItem): ReceiptItem => {
+        const baseTotal = item.unitPrice * item.receivedQty;
+        const deductions = (item.discountAmt || 0) + (item.schemeDiscount || 0);
+        const taxable = Math.max(0, baseTotal - deductions);
+        const taxAmt = taxable * ((item.taxRate || 0) / 100);
+        return {
+            ...item,
+            taxAmount: taxAmt
+        };
+    };
+
     const calculateMarkup = (salePrice: number, cost: number): number => {
         if (cost <= 0) return 0;
         return ((salePrice - cost) / cost) * 100;
@@ -244,10 +255,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     n[index].marginPct = Number(calculateMargin(n[index].salePrice, n[index].unitPrice).toFixed(2));
                 }
 
-                const baseTotal = n[index].unitPrice * n[index].receivedQty;
-                const deductions = (n[index].discountAmt || 0) + (n[index].schemeDiscount || 0);
-                const taxable = Math.max(0, baseTotal - deductions);
-                n[index].taxAmount = taxable * (n[index].taxRate / 100);
+                const taxable = (n[index].unitPrice * n[index].receivedQty) - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0);
+                n[index] = updateLineItemCalcs(n[index]);
             }
         }
         setItems(n);
@@ -869,31 +878,22 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             </td>
                                             <td className="py-4 px-2 text-right">
                                                 <input type="number" value={item.unitPrice} onChange={(e) => {
-                                                    const n = [...items]; const p = Number(e.target.value); n[index].unitPrice = p;
-                                                    // Formula: ((Price * Qty) - (Disc + Schm))
-                                                    const baseTotal = p * n[index].receivedQty;
-                                                    const deductions = (n[index].discountAmt || 0) + (n[index].schemeDiscount || 0);
-                                                    const taxable = Math.max(0, baseTotal - deductions);
-                                                    n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
+                                                    const n = [...items];
+                                                    n[index].unitPrice = Number(e.target.value);
+                                                    n[index] = updateLineItemCalcs(n[index]);
                                                     setItems(n);
                                                 }} className="w-full bg-transparent border-none text-right font-bold focus:ring-0 p-0 text-indigo-300" />
                                             </td>
                                             <td className="py-4 px-2 text-center">
                                                 <input type="number" value={item.receivedQty} onChange={(e) => {
-                                                    const n = [...items]; const q = Number(e.target.value); n[index].receivedQty = q;
-                                                    // Qty changed -> Update Base Total -> Recalculate Tax
-                                                    const baseTotal = n[index].unitPrice * q;
-
-                                                    // If discount was percentage based, we might need to update discountAmt? 
-                                                    // User logic implies DiscAmt is a fixed input unless calculated. 
-                                                    // We'll keep existing amounts but they are now TOTAL deductions.
+                                                    const n = [...items];
+                                                    n[index].receivedQty = Number(e.target.value);
+                                                    // Recalculate discount amount if percentage is set
                                                     if (n[index].discountPct) {
+                                                        const baseTotal = n[index].unitPrice * n[index].receivedQty;
                                                         n[index].discountAmt = Number(((baseTotal * n[index].discountPct!) / 100).toFixed(2));
                                                     }
-
-                                                    const deductions = (n[index].discountAmt || 0) + (n[index].schemeDiscount || 0);
-                                                    const taxable = Math.max(0, baseTotal - deductions);
-                                                    n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
+                                                    n[index] = updateLineItemCalcs(n[index]);
                                                     setItems(n);
                                                 }} className="w-12 mx-auto bg-neutral-800 rounded p-1 text-center font-bold text-white border-none focus:ring-0" />
                                             </td>
@@ -902,36 +902,28 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             </td>
                                             <td className="py-4 px-2 text-right">
                                                 <input type="number" value={item.discountPct ?? 0} onChange={(e) => {
-                                                    const n = [...items]; const pct = Number(e.target.value); n[index].discountPct = pct;
+                                                    const n = [...items];
+                                                    const pct = Number(e.target.value);
+                                                    n[index].discountPct = pct;
                                                     const baseTotal = n[index].unitPrice * n[index].receivedQty;
-                                                    // Calculate Total Discount Amount based on % of Total Base
                                                     n[index].discountAmt = Number(((baseTotal * pct) / 100).toFixed(2));
-
-                                                    const deductions = (n[index].discountAmt || 0) + (n[index].schemeDiscount || 0);
-                                                    const taxable = Math.max(0, baseTotal - deductions);
-                                                    n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
+                                                    n[index] = updateLineItemCalcs(n[index]);
                                                     setItems(n);
                                                 }} className="w-full bg-transparent border-none text-right text-[12px] text-neutral-500 focus:ring-0 p-0" />
                                             </td>
                                             <td className="py-4 px-2 text-right">
                                                 <input type="number" value={item.discountAmt ?? 0} step="0.01" onChange={(e) => {
-                                                    const n = [...items]; n[index].discountAmt = Number(e.target.value);
-                                                    // Manual overwrite of discount amount (Total)
-                                                    const baseTotal = n[index].unitPrice * n[index].receivedQty;
-                                                    const deductions = (n[index].discountAmt || 0) + (n[index].schemeDiscount || 0);
-                                                    const taxable = Math.max(0, baseTotal - deductions);
-                                                    n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
+                                                    const n = [...items];
+                                                    n[index].discountAmt = Number(e.target.value);
+                                                    n[index] = updateLineItemCalcs(n[index]);
                                                     setItems(n);
                                                 }} className="w-full bg-transparent border-none text-right text-[12px] text-yellow-500 focus:ring-0 p-0 font-bold" />
                                             </td>
                                             <td className="py-4 px-2 text-right">
                                                 <input type="number" value={item.schemeDiscount ?? 0} step="0.01" onChange={(e) => {
-                                                    const n = [...items]; n[index].schemeDiscount = Number(e.target.value);
-                                                    // Manual overwrite of scheme discount (Total)
-                                                    const baseTotal = n[index].unitPrice * n[index].receivedQty;
-                                                    const deductions = (n[index].discountAmt || 0) + (n[index].schemeDiscount || 0);
-                                                    const taxable = Math.max(0, baseTotal - deductions);
-                                                    n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
+                                                    const n = [...items];
+                                                    n[index].schemeDiscount = Number(e.target.value);
+                                                    n[index] = updateLineItemCalcs(n[index]);
                                                     setItems(n);
                                                 }} className="w-full bg-transparent border-none text-right text-[12px] text-orange-400 focus:ring-0 p-0 font-bold" />
                                             </td>
@@ -940,12 +932,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             </td>
                                             <td className="py-4 px-2 text-right">
                                                 <Select value={item.taxRate?.toString() || "0"} onValueChange={(v) => {
-                                                    const n = [...items]; const r = Number(v); n[index].taxRate = r;
-
-                                                    const baseTotal = n[index].unitPrice * n[index].receivedQty;
-                                                    const deductions = (n[index].discountAmt || 0) + (n[index].schemeDiscount || 0);
-                                                    const taxable = Math.max(0, baseTotal - deductions);
-                                                    n[index].taxAmount = taxable * (r / 100);
+                                                    const n = [...items];
+                                                    n[index].taxRate = Number(v);
+                                                    n[index] = updateLineItemCalcs(n[index]);
                                                     setItems(n);
                                                 }}>
                                                     <SelectTrigger className="h-7 w-16 bg-transparent border-white/10 text-[10px] font-mono text-white">
