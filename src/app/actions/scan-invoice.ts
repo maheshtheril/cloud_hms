@@ -7,12 +7,19 @@ import { uploadFile } from "@/app/actions/upload-file";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY || "");
 
-export async function scanInvoiceAction(formData: FormData): Promise<{ success?: boolean; data?: any; error?: string }> {
-    const res = await uploadFile(formData, 'invoices');
-    if (res.error) return { error: res.error };
-    if (!res.url) return { error: "Upload failed" };
+export async function scanInvoiceAction(input: FormData | string, supplierId?: string): Promise<{ success?: boolean; data?: any; error?: string }> {
+    let fileUrl = '';
 
-    return await scanInvoiceFromUrl(res.url);
+    if (typeof input === 'string') {
+        fileUrl = input;
+    } else {
+        const res = await uploadFile(input, 'invoices');
+        if (res.error) return { error: res.error };
+        if (!res.url) return { error: "Upload failed" };
+        fileUrl = res.url;
+    }
+
+    return await scanInvoiceFromUrl(fileUrl, supplierId);
 }
 
 
