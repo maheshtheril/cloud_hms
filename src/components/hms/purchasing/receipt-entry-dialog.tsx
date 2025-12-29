@@ -143,20 +143,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
     }, [items, isAutoRound]);
 
     // Force Re-calculation mechanism to ensure derived values are correct
-    useEffect(() => {
-        if (items.length > 0) {
-            const needsUpdate = items.some(item => {
-                const baseTotal = item.unitPrice * item.receivedQty;
-                const deductions = (item.discountAmt || 0) + (item.schemeDiscount || 0);
-                const taxable = Math.max(0, baseTotal - deductions);
-                const taxAmt = taxable * ((item.taxRate || 0) / 100);
-                return Math.abs((item.taxAmount || 0) - taxAmt) > 0.01;
-            });
-            if (needsUpdate) {
-                setItems(prev => prev.map(updateLineItemCalcs));
-            }
-        }
-    }, [items]);
+
 
     // Load POs
     useEffect(() => {
@@ -427,9 +414,13 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                         const qty = Number(item.qty) || 0;
                         const price = Number(item.unitPrice) || 0;
                         const rate = Number(item.taxRate) || 0;
-                        return {
+
+                        const rawItem = {
                             productId: pId || "",
                             productName: item.productName,
+                            poLineId: "",
+                            orderedQty: 0,
+                            pendingQty: 0,
                             receivedQty: qty,
                             unitPrice: price,
                             batch: item.batch || "",
@@ -438,7 +429,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                             salePrice: 0,
                             marginPct: 0,
                             taxRate: rate,
-                            taxAmount: (qty * price) * (rate / 100), // Default scan tax, users will overwrite adjustments
+                            taxAmount: 0, // Calculated by helper
                             hsn: item.hsn || "",
                             packing: item.packing || "",
                             uom: item.uom || "",
@@ -447,6 +438,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                             discountAmt: Number(item.discountAmt) || 0,
                             freeQty: Number(item.freeQty) || 0
                         };
+                        return updateLineItemCalcs(rawItem as any);
                     }));
                     setItems(mapped as any);
                 }
