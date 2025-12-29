@@ -690,13 +690,10 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 <div className="flex gap-4">
                                     <div className="flex-1">
                                         <SearchableSelect
-                                            value={supplierId || (supplierName ? "temp_scan" : "")}
+                                            value={supplierId}
+                                            valueLabel={supplierName}
                                             onChange={(id, opt) => {
-                                                if (id === "temp_scan" || id === "") {
-                                                    setSupplierId(null);
-                                                } else {
-                                                    setSupplierId(id);
-                                                }
+                                                setSupplierId(id);
                                                 if (opt) {
                                                     setSupplierName(opt.label);
                                                     setSupplierMeta(opt.metadata);
@@ -705,7 +702,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             onSearch={searchSuppliers}
                                             defaultOptions={supplierId
                                                 ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }]
-                                                : (supplierName ? [{ id: "temp_scan", label: supplierName, subLabel: "Scanned Value", metadata: supplierMeta }] : [])
+                                                : []
                                             }
                                             placeholder="Select Source Supplier..."
                                             className="w-full bg-background border-border h-14 font-black text-foreground"
