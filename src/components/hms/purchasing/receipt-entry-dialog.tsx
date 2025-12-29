@@ -142,6 +142,22 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         setRoundOff(Number((rounded - rawTotal).toFixed(2)));
     }, [items, isAutoRound]);
 
+    // Force Re-calculation mechanism to ensure derived values are correct
+    useEffect(() => {
+        if (items.length > 0) {
+            const needsUpdate = items.some(item => {
+                const baseTotal = item.unitPrice * item.receivedQty;
+                const deductions = (item.discountAmt || 0) + (item.schemeDiscount || 0);
+                const taxable = Math.max(0, baseTotal - deductions);
+                const taxAmt = taxable * ((item.taxRate || 0) / 100);
+                return Math.abs((item.taxAmount || 0) - taxAmt) > 0.01;
+            });
+            if (needsUpdate) {
+                setItems(prev => prev.map(updateLineItemCalcs));
+            }
+        }
+    }, [items]);
+
     // Load POs
     useEffect(() => {
         if (!isOpen) return;
@@ -928,7 +944,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                 }} className="w-full bg-transparent border-none text-right text-[12px] text-orange-400 focus:ring-0 p-0 font-bold" />
                                             </td>
                                             <td className="py-4 px-2 text-right font-black text-white text-[12px]">
-                                                {((item.unitPrice * item.receivedQty) - (item.discountAmt || 0) - (item.schemeDiscount || 0)).toFixed(2)}
+                                                {Math.max(0, (item.unitPrice * item.receivedQty) - (item.discountAmt || 0) - (item.schemeDiscount || 0)).toFixed(2)}
                                             </td>
                                             <td className="py-4 px-2 text-right">
                                                 <Select value={item.taxRate?.toString() || "0"} onValueChange={(v) => {
@@ -956,11 +972,11 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             </td>
                                             <td className="py-4 px-2 text-right text-[11px] font-mono font-bold text-indigo-400">
                                                 {((item.receivedQty || 0) + (item.freeQty || 0)) > 0
-                                                    ? ((((item.unitPrice * item.receivedQty) - (item.discountAmt || 0) - (item.schemeDiscount || 0)) + (item.taxAmount || 0)) / (Number(item.receivedQty) + Number(item.freeQty || 0))).toFixed(2)
+                                                    ? (((Math.max(0, (item.unitPrice * item.receivedQty) - (item.discountAmt || 0) - (item.schemeDiscount || 0))) + (item.taxAmount || 0)) / (Number(item.receivedQty) + Number(item.freeQty || 0))).toFixed(2)
                                                     : '0.00'}
                                             </td>
                                             <td className="py-4 pr-6 text-right font-mono font-black text-white sticky right-0 z-20 bg-neutral-900 border-l border-white/5 shadow-xl">
-                                                {(((item.unitPrice * item.receivedQty) - (item.discountAmt || 0) - (item.schemeDiscount || 0)) + (item.taxAmount || 0)).toFixed(2)}
+                                                {((Math.max(0, (item.unitPrice * item.receivedQty) - (item.discountAmt || 0) - (item.schemeDiscount || 0))) + (item.taxAmount || 0)).toFixed(2)}
                                             </td>
                                         </tr>
                                     ))}
