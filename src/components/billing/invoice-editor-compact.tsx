@@ -178,18 +178,25 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                         const appointmentLines: any[] = []
 
                         if (appointment.consultation_fee) {
-                            const taxRateObj = taxConfig.taxRates.find(t => t.id === defaultTaxId);
+                            // SMART LOOKUP: Find actual Consultation product for better tax/accounting
+                            const consultProduct = billableItems.find(p =>
+                                (p.label.toLowerCase().includes('consult') || p.label.toLowerCase().includes('opd')) &&
+                                p.id.length > 5 // Ensure it's not a dummy ID
+                            );
+
+                            const taxId = consultProduct?.categoryTaxId || defaultTaxId;
+                            const taxRateObj = taxConfig.taxRates.find(t => t.id === taxId);
                             const rate = taxRateObj ? taxRateObj.rate : 0;
                             const tax_amount = (appointment.consultation_fee * rate) / 100;
 
                             appointmentLines.push({
                                 id: Date.now() + 1000,
-                                product_id: '',
+                                product_id: consultProduct?.id || '',
                                 description: appointment.clinician_name ? `Consultation Fee - Dr. ${appointment.clinician_name}` : 'Consultation Fee',
                                 quantity: 1,
                                 unit_price: parseFloat(appointment.consultation_fee.toString()),
                                 uom: 'Service',
-                                tax_rate_id: defaultTaxId,
+                                tax_rate_id: taxId,
                                 tax_amount: tax_amount,
                                 discount_amount: 0
                             })
@@ -197,18 +204,21 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
 
                         if (appointment.lab_tests?.length > 0) {
                             appointment.lab_tests.forEach((test: any, idx: number) => {
-                                const taxRateObj = taxConfig.taxRates.find(t => t.id === defaultTaxId);
+                                // Try to find matched Lab product
+                                const labProduct = billableItems.find(p => p.label.toLowerCase() === test.test_name.toLowerCase());
+                                const taxId = labProduct?.categoryTaxId || defaultTaxId;
+                                const taxRateObj = taxConfig.taxRates.find(t => t.id === taxId);
                                 const rate = taxRateObj ? taxRateObj.rate : 0;
                                 const tax_amount = (test.test_fee * rate) / 100;
 
                                 appointmentLines.push({
                                     id: Date.now() + 2000 + idx,
-                                    product_id: '',
+                                    product_id: labProduct?.id || '',
                                     description: test.test_name,
                                     quantity: 1,
                                     unit_price: parseFloat(test.test_fee.toString()),
                                     uom: 'Test',
-                                    tax_rate_id: defaultTaxId,
+                                    tax_rate_id: taxId,
                                     tax_amount: tax_amount,
                                     discount_amount: 0
                                 })
@@ -577,6 +587,14 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                             }))}
                                             placeholder="Search item..."
                                             className="w-full text-xs font-medium"
+                                        />
+                                        {/* Description field for visibility (especially for non-product items like consultation) */}
+                                        <input
+                                            type="text"
+                                            className="w-full mt-1.5 px-2 py-1 text-[11px] bg-slate-50/50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800 focus:border-indigo-500/50 rounded outline-none text-slate-600 dark:text-slate-400 font-medium"
+                                            placeholder="Additional description..."
+                                            value={line.description || ''}
+                                            onChange={(e) => updateLine(line.id, 'description', e.target.value)}
                                         />
                                     </td>
                                     <td className="px-2 py-2">
