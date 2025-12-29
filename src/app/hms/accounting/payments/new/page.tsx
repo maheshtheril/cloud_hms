@@ -132,7 +132,7 @@ export default function NewPaymentPage() {
     const handleAccountSearch = async (query: string) => {
         const res = await getAccounts(query);
         return res.success ? res.data?.map((a: any) => ({
-            value: a.id,
+            id: a.id,
             label: `${a.code} - ${a.name}`,
             subLabel: a.type
         })) : [];
