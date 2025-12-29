@@ -445,7 +445,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                             schemeDiscount: Number(item.schemeDiscount) || 0,
                             discountPct: Number(item.discountPct) || 0,
                             discountAmt: Number(item.discountAmt) || 0,
-                            freeQty: 0
+                            freeQty: Number(item.freeQty) || 0
                         };
                     }));
                     setItems(mapped as any);

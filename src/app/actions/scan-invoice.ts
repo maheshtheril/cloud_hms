@@ -113,6 +113,7 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
                 - "discountAmt": Total Discount Amount.
                 - "taxRate": Tax Percentage. IMPORTANT: If tax is split (e.g. CGST 2.5% + SGST 2.5%), return the SUM (e.g. 5.0). Return the TOTAL tax rate.
                 - "taxAmount": Total Tax Amount for line.
+                - "freeQty": Scheme Quantity / Free Quantity. Look for columns labeled 'Sch Qty', 'Free', 'Bonus', 'Scheme', or 'Offer'. This is the quantity given for free.
                 - "amount": Final Line Amount.
             
             EXAMPLES:
