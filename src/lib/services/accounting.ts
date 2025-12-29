@@ -670,12 +670,20 @@ export class AccountingService {
                 const price = Number(line.unit_price || 0);
                 const meta = line.metadata as any;
 
-                const lineTax = Number(meta?.tax_amount || 0);
-                const discountAmt = Number(meta?.discount_amt || 0);
-                const schemeDiscount = Number(meta?.scheme_discount || 0);
+                console.log(`[AccountPost] Processing Line: ${line.id} | Item: ${meta.productName || '?'}`);
+                console.log(`[AccountPost] Raw Meta:`, JSON.stringify(meta));
+
+                // Robust extraction (supports snake_case and camelCase)
+                const lineTax = Number(meta?.tax_amount ?? meta?.taxAmount ?? 0);
+                const discountAmt = Number(meta?.discount_amt ?? meta?.discountAmt ?? 0);
+                const schemeDiscount = Number(meta?.scheme_discount ?? meta?.schemeDiscount ?? 0);
+
+                console.log(`[AccountPost] Values -> Price: ${price}, Qty: ${qty}, Tax: ${lineTax}, Disc: ${discountAmt}, Scheme: ${schemeDiscount}`);
 
                 // Taxable Value logic: (Price * Qty) - Discounts
                 const lineSubtotal = Math.max(0, (qty * price) - (discountAmt + schemeDiscount));
+
+                console.log(`[AccountPost] Calculated Line Subtotal (Taxable): ${lineSubtotal}`);
 
                 subtotal += lineSubtotal;
                 taxTotal += lineTax;
