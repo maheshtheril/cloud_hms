@@ -47,14 +47,15 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
         product_id: l.product_id || '',
         description: l.description,
         quantity: Number(l.quantity),
-        uom: 'PCS', // Default, should ideally come from DB if possible or metadata
+        uom: l.uom || 'PCS',
+        base_uom: 'PCS',
         unit_price: Number(l.unit_price),
         tax_rate_id: l.tax_rate_id || defaultTaxId,
         tax_amount: Number(l.tax_amount),
         discount_amount: Number(l.discount_amount),
         net_amount: Number(l.net_amount)
     })) : [
-        { id: 1, product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0 }
+        { id: 1, product_id: '', description: '', quantity: 1, uom: 'PCS', base_uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0 }
     ])
 
     const [globalDiscount, setGlobalDiscount] = useState(Number(initialInvoice?.total_discount || 0))
@@ -88,6 +89,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                         quantity: med.quantity || 1,
                         unit_price: parseFloat(med.price?.toString() || '0'),
                         uom: med.uom || 'PCS',
+                        base_uom: 'PCS',
                         tax_rate_id: defaultTaxId,
                         tax_amount: 0,
                         discount_amount: 0
@@ -200,6 +202,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                                     quantity: item.quantity,
                                     unit_price: item.price,
                                     uom: 'PCS',
+                                    base_uom: 'PCS',
                                     tax_rate_id: defaultItemTaxId,
                                     tax_amount: tax_amount,
                                     discount_amount: 0,
@@ -249,6 +252,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                     quantity: med.quantity,
                     unit_price: med.unit_price,
                     uom: 'PCS',
+                    base_uom: 'PCS',
                     tax_rate_id: defaultTaxId,
                     tax_amount: 0,
                     discount_amount: 0
@@ -309,15 +313,17 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                         const packPrice = product.metadata?.packPrice || product.price || 0;
                         const conversionFactor = product.metadata?.conversionFactor || 1;
                         const packUom = product.metadata?.packUom || 'PCS';
+                        const baseUom = product.metadata?.baseUom || 'PCS';
 
                         // Store pricing data for UOM calculations
                         updated.base_price = basePrice; // Price per PCS
                         updated.pack_price = packPrice; // Price per pack
                         updated.conversion_factor = conversionFactor;
                         updated.pack_uom = packUom;
+                        updated.base_uom = baseUom;
 
-                        // Default to base UOM (PCS) with base price
-                        updated.uom = 'PCS';
+                        // Default to base UOM
+                        updated.uom = baseUom;
                         updated.unit_price = basePrice;
 
                         console.log('Product selected:', {
@@ -398,6 +404,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                 if (!updated.base_price && line.base_price) updated.base_price = line.base_price;
                 if (!updated.pack_price && line.pack_price) updated.pack_price = line.pack_price;
                 if (!updated.pack_uom && line.pack_uom) updated.pack_uom = line.pack_uom;
+                if (!updated.base_uom && line.base_uom) updated.base_uom = line.base_uom;
                 if (!updated.conversion_factor && line.conversion_factor) updated.conversion_factor = line.conversion_factor;
 
                 return updated
@@ -593,34 +600,38 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
 
                                         {/* Quantity + UOM */}
                                         <td className="px-6 py-4">
-                                            <div className="flex items-center gap-2">
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    step="0.01"
-                                                    className="w-20 text-right p-2.5 border-2 border-gray-200 dark:border-slate-700 rounded-lg focus:border-blue-500 outline-none font-mono text-gray-900 dark:text-white font-bold bg-white dark:bg-slate-900"
-                                                    value={line.quantity}
-                                                    onChange={(e) => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
-                                                />
-                                                <select
-                                                    className="p-2.5 border-2 border-gray-200 dark:border-slate-700 rounded-lg focus:border-blue-500 outline-none text-sm text-gray-700 dark:text-slate-300 bg-white dark:bg-slate-900"
-                                                    value={line.uom || 'PCS'}
-                                                    onChange={(e) => {
-                                                        // Only update UOM - the updateLine handler will calculate price
-                                                        updateLine(line.id, 'uom', e.target.value);
-                                                    }}
-                                                    title="Unit of Measure"
-                                                >
-                                                    {/* Always show PCS (base unit) */}
-                                                    <option value="PCS">PCS</option>
-
-                                                    {/* Show product's configured pack UOM if available */}
-                                                    {line.pack_uom && line.pack_uom !== 'PCS' && (
-                                                        <option value={line.pack_uom}>
-                                                            {line.pack_uom.replace('PACK-', 'Pack-')}
-                                                        </option>
-                                                    )}
-                                                </select>
+                                            <div className="flex flex-col items-end">
+                                                <div className="flex items-center gap-2 bg-gray-50 dark:bg-slate-900 border-2 border-gray-200 dark:border-slate-700 rounded-lg focus-within:border-blue-500 transition-all p-1">
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        step="0.01"
+                                                        className="w-20 text-right bg-transparent border-none outline-none font-mono text-gray-900 dark:text-white font-bold"
+                                                        value={line.quantity}
+                                                        onChange={(e) => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                                    />
+                                                    <div className="w-px h-6 bg-gray-200 dark:bg-slate-700 mx-1" />
+                                                    <select
+                                                        className="bg-transparent border-none outline-none text-sm font-bold text-blue-600 dark:text-blue-400 cursor-pointer hover:underline"
+                                                        value={line.uom || 'PCS'}
+                                                        onChange={(e) => {
+                                                            updateLine(line.id, 'uom', e.target.value);
+                                                        }}
+                                                        title="Unit of Measure"
+                                                    >
+                                                        <option value={line.base_uom || 'PCS'}>{line.base_uom || 'PCS'}</option>
+                                                        {line.pack_uom && line.pack_uom !== (line.base_uom || 'PCS') && (
+                                                            <option value={line.pack_uom}>
+                                                                {line.pack_uom} {line.conversion_factor > 1 ? `(${line.conversion_factor}x)` : ''}
+                                                            </option>
+                                                        )}
+                                                    </select>
+                                                </div>
+                                                {line.uom !== (line.base_uom || 'PCS') && line.conversion_factor > 1 && (
+                                                    <div className="text-xs text-gray-500 font-medium mr-2 mt-1 animate-in fade-in slide-in-from-right-1">
+                                                        = {(line.quantity * line.conversion_factor).toFixed(0)} {line.base_uom || 'PCS'}
+                                                    </div>
+                                                )}
                                             </div>
                                         </td>
 

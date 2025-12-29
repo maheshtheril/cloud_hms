@@ -51,13 +51,14 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             description: l.description,
             quantity: Number(l.quantity),
             uom: l.uom || 'PCS',
+            base_uom: 'PCS', // Default fallback
             unit_price: Number(l.unit_price),
             tax_rate_id: l.tax_rate_id || defaultTaxId,
             tax_amount: Number(l.tax_amount),
             discount_amount: Number(l.discount_amount),
             net_amount: Number(l.net_amount)
         })) : [
-        { id: 1, product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0 }
+        { id: 1, product_id: '', description: '', quantity: 1, uom: 'PCS', base_uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0 }
     ])
     const [payments, setPayments] = useState<Payment[]>(
         initialInvoice?.hms_invoice_payments?.length > 0
@@ -115,6 +116,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                         quantity: med.quantity || 1,
                         unit_price: parseFloat(med.price?.toString() || '0'),
                         uom: med.uom || 'PCS',
+                        base_uom: 'PCS', // Default fallback
                         tax_rate_id: defaultTaxId,
                         tax_amount: 0,
                         discount_amount: 0
@@ -332,12 +334,14 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                         const packPrice = product.metadata?.packPrice || product.price || 0;
                         const conversionFactor = product.metadata?.conversionFactor || 1;
                         const packUom = product.metadata?.packUom || 'PCS';
+                        const baseUom = product.metadata?.baseUom || 'PCS';
 
                         updated.base_price = basePrice;
                         updated.pack_price = packPrice;
                         updated.conversion_factor = conversionFactor;
                         updated.pack_uom = packUom;
-                        updated.uom = 'PCS';
+                        updated.base_uom = baseUom;
+                        updated.uom = baseUom;
                         updated.unit_price = basePrice;
 
                         const purchaseTaxRate = product.metadata?.purchase_tax_rate;
@@ -379,6 +383,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                 if (!updated.base_price && line.base_price) updated.base_price = line.base_price;
                 if (!updated.pack_price && line.pack_price) updated.pack_price = line.pack_price;
                 if (!updated.pack_uom && line.pack_uom) updated.pack_uom = line.pack_uom;
+                if (!updated.base_uom && line.base_uom) updated.base_uom = line.base_uom;
                 if (!updated.conversion_factor && line.conversion_factor) updated.conversion_factor = line.conversion_factor;
 
                 return updated
@@ -509,7 +514,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                             <tr>
                                 <th className="px-4 py-3 w-10 text-center bg-slate-50 dark:bg-slate-900">#</th>
                                 <th className="px-4 py-3 w-[40%] bg-slate-50 dark:bg-slate-900">Item Details</th>
-                                <th className="px-2 py-3 w-24 text-right bg-slate-50 dark:bg-slate-900">Qty</th>
+                                <th className="px-2 py-3 w-32 text-right bg-slate-50 dark:bg-slate-900">Qty / UOM</th>
                                 <th className="px-2 py-3 w-28 text-right bg-slate-50 dark:bg-slate-900">Price</th>
                                 <th className="px-2 py-3 w-24 text-right bg-slate-50 dark:bg-slate-900">Disc</th>
                                 <th className="px-2 py-3 w-28 text-right bg-slate-50 dark:bg-slate-900">Tax</th>
@@ -543,20 +548,42 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                         />
                                     </td>
                                     <td className="px-2 py-2">
-                                        <input
-                                            id={`qty-${line.id}`}
-                                            type="number"
-                                            min="1"
-                                            className="w-full text-right bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 px-1 py-1 text-xs outline-none font-medium focus:border-indigo-500 focus:bg-indigo-50/20 transition-all text-slate-700 dark:text-slate-200"
-                                            value={line.quantity}
-                                            onChange={(e) => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
-                                            onKeyDown={(e) => {
-                                                if ((e.key === 'Enter' || e.key === 'ArrowDown') && line.quantity > 0) {
-                                                    e.preventDefault()
-                                                    handleAddItem()
-                                                }
-                                            }}
-                                        />
+                                        <div className="flex flex-col items-end">
+                                            <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/50 rounded-md px-1.5 py-0.5 border border-transparent focus-within:border-indigo-500 transition-all">
+                                                <input
+                                                    id={`qty-${line.id}`}
+                                                    type="number"
+                                                    min="1"
+                                                    className="w-14 text-right bg-transparent border-none px-0 py-1 text-xs outline-none font-bold text-slate-700 dark:text-slate-200"
+                                                    value={line.quantity}
+                                                    onChange={(e) => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
+                                                    onKeyDown={(e) => {
+                                                        if ((e.key === 'Enter' || e.key === 'ArrowDown') && line.quantity > 0) {
+                                                            e.preventDefault()
+                                                            handleAddItem()
+                                                        }
+                                                    }}
+                                                />
+                                                <div className="w-px h-3 bg-slate-200 dark:bg-slate-700 mx-0.5" />
+                                                <select
+                                                    value={line.uom || 'PCS'}
+                                                    onChange={(e) => updateLine(line.id, 'uom', e.target.value)}
+                                                    className="w-auto min-w-[3rem] bg-transparent text-[10px] font-bold text-indigo-600 dark:text-indigo-400 border-none outline-none cursor-pointer hover:underline focus:ring-0 text-left"
+                                                >
+                                                    <option value={line.base_uom || 'PCS'}>{line.base_uom || 'PCS'}</option>
+                                                    {line.pack_uom && line.pack_uom !== (line.base_uom || 'PCS') && (
+                                                        <option value={line.pack_uom}>
+                                                            {line.pack_uom} {line.conversion_factor > 1 ? `(${line.conversion_factor})` : ''}
+                                                        </option>
+                                                    )}
+                                                </select>
+                                            </div>
+                                            {line.uom !== (line.base_uom || 'PCS') && line.conversion_factor > 1 && (
+                                                <div className="text-[9px] text-slate-500 font-medium mr-1 mt-0.5 animate-in fade-in slide-in-from-right-1">
+                                                    = {line.quantity * line.conversion_factor} {line.base_uom || 'PCS'}
+                                                </div>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-2 py-2">
                                         <div className="relative">
