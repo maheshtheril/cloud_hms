@@ -689,32 +689,55 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 </div>
                                 <div className="flex gap-4">
                                     <div className="flex-1">
-                                        <SearchableSelect
-                                            key={supplierName + supplierMeta?.gstin} // Force re-render on data change
-                                            value={supplierId || (supplierName ? "TEMP_SCAN_ID" : "")}
-                                            valueLabel={supplierName}
-                                            onChange={(id, opt) => {
-                                                if (id === "TEMP_SCAN_ID") return; // Ignore internal dummy
-                                                setSupplierId(id);
-                                                if (opt) {
-                                                    setSupplierName(opt.label);
-                                                    setSupplierMeta(opt.metadata);
-                                                }
-                                            }}
-                                            onSearch={searchSuppliers}
-                                            defaultOptions={[
-                                                ...(supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }] : []),
-                                                ...(supplierName && !supplierId ? [{ id: "TEMP_SCAN_ID", label: supplierName, subLabel: "Scanned (New)", metadata: supplierMeta }] : [])
-                                            ]}
-                                            placeholder="Select Source Supplier..."
-                                            className="w-full bg-background border-border h-14 font-black text-foreground"
-                                            variant="ghost"
-                                        />
+                                        {(!supplierId && supplierName) ? (
+                                            <div className="flex gap-2">
+                                                <div className="relative flex-1">
+                                                    <Input
+                                                        value={supplierName}
+                                                        onChange={(e) => setSupplierName(e.target.value)}
+                                                        className="h-14 bg-emerald-500/10 border-emerald-500/50 text-emerald-600 font-bold px-4 text-lg rounded-xl focus-visible:ring-emerald-500 placeholder:text-emerald-600/50"
+                                                        placeholder="Supplier Name"
+                                                    />
+                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                                        <span className="text-[10px] bg-emerald-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm animate-pulse">SCANNED</span>
+                                                    </div>
+                                                </div>
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="h-14 w-14 shrink-0 border-dashed border-2 hover:bg-muted"
+                                                    onClick={() => {
+                                                        setSupplierName('');
+                                                        setSupplierMeta(null);
+                                                    }}
+                                                    title="Clear and Search Existing"
+                                                >
+                                                    <X className="h-5 w-5 text-muted-foreground" />
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <SearchableSelect
+                                                key={supplierName + supplierMeta?.gstin ?? 'empty'}
+                                                value={supplierId}
+                                                valueLabel={supplierName}
+                                                onChange={(id, opt) => {
+                                                    setSupplierId(id);
+                                                    if (opt) {
+                                                        setSupplierName(opt.label);
+                                                        setSupplierMeta(opt.metadata);
+                                                    }
+                                                }}
+                                                onSearch={searchSuppliers}
+                                                defaultOptions={supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }] : []}
+                                                placeholder="Select Source Supplier..."
+                                                className="w-full bg-background border-border h-14 font-black text-foreground"
+                                                variant="ghost"
+                                            />
+                                        )}
                                     </div>
                                 </div>
                                 <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-all duration-300"></div>
                                 <div className="flex flex-col gap-1 pt-1.5">
-                                    {/* Fallback Display for Scanned Data */}
                                     {(!supplierId && supplierName) && (
                                         <div className="text-xs text-emerald-500 font-bold flex items-center gap-2">
                                             <Sparkles className="w-3 h-3" />
