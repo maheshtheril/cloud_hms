@@ -972,11 +972,11 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             </td>
                                             <td className="py-4 px-2 text-right text-[11px] font-mono font-bold text-indigo-400">
                                                 {((item.receivedQty || 0) + (item.freeQty || 0)) > 0
-                                                    ? (((Math.max(0, (item.unitPrice * item.receivedQty) - (item.discountAmt || 0) - (item.schemeDiscount || 0))) + (item.taxAmount || 0)) / (Number(item.receivedQty) + Number(item.freeQty || 0))).toFixed(2)
+                                                    ? ((Math.max(0, (item.unitPrice * item.receivedQty) - (item.discountAmt || 0) - (item.schemeDiscount || 0)) + (item.taxAmount || 0)) / (Number(item.receivedQty) + Number(item.freeQty || 0))).toFixed(2)
                                                     : '0.00'}
                                             </td>
                                             <td className="py-4 pr-6 text-right font-mono font-black text-white sticky right-0 z-20 bg-neutral-900 border-l border-white/5 shadow-xl">
-                                                {((Math.max(0, (item.unitPrice * item.receivedQty) - (item.discountAmt || 0) - (item.schemeDiscount || 0))) + (item.taxAmount || 0)).toFixed(2)}
+                                                {(Math.max(0, (item.unitPrice * item.receivedQty) - (item.discountAmt || 0) - (item.schemeDiscount || 0)) + (item.taxAmount || 0)).toFixed(2)}
                                             </td>
                                         </tr>
                                     ))}
