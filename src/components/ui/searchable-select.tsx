@@ -87,30 +87,14 @@ export function SearchableSelect({
     const inputRef = React.useRef<HTMLInputElement>(null);
     const listRef = React.useRef<HTMLUListElement>(null);
 
-    const lastValueRef = React.useRef(value);
-    const lastLabelRef = React.useRef(valueLabel);
-
     // Initial value handling
     React.useEffect(() => {
-        const valueChanged = lastValueRef.current !== value;
-        const labelChanged = lastLabelRef.current !== valueLabel;
-        lastValueRef.current = value;
-        lastLabelRef.current = valueLabel;
-
-        if (!value && !valueLabel) {
+        if (!value) {
             setSelectedOption(null);
-            // Only clear query if NOT open or if the value was explicitly cleared from parent
-            if (!open || valueChanged) {
+            if (valueLabel) {
+                setQuery(valueLabel);
+            } else {
                 setQuery("");
-            }
-            return;
-        }
-
-        if (!value && valueLabel) {
-            setSelectedOption({ id: "temp", label: valueLabel });
-            if (!open || valueChanged || labelChanged) {
-                if (variant === 'ghost') setQuery(valueLabel);
-                else setQuery(valueLabel);
             }
             return;
         }
@@ -120,22 +104,18 @@ export function SearchableSelect({
 
         if (found) {
             setSelectedOption(found);
-            // Only update query if NOT open or if the value was explicitly changed from parent
-            if (!open || valueChanged) {
-                if (variant === 'ghost') {
-                    setQuery(found.label);
-                } else {
-                    setQuery("");
-                }
+            // In ghost variant, we want the text in the input
+            if (variant === 'ghost') {
+                setQuery(found.label);
+            } else if (!open) {
+                setQuery("");
             }
         } else if (valueLabel) {
             // Fallback to valueLabel if provided (e.g. after AI scan)
-            setSelectedOption({ id: value || "temp", label: valueLabel });
-            if (!open || valueChanged) {
-                if (variant === 'ghost') setQuery(valueLabel);
-            }
+            setSelectedOption({ id: value, label: valueLabel });
+            if (variant === 'ghost') setQuery(valueLabel);
         }
-    }, [value, valueLabel, options, defaultOptions, variant, open]);
+    }, [value, valueLabel, options, defaultOptions, variant]);
 
     // Calculate position for portal
     React.useEffect(() => {
@@ -273,12 +253,12 @@ export function SearchableSelect({
     };
 
     const baseStyles = variant === 'default'
-        ? "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 rounded-lg px-3"
-        : "bg-transparent border-none shadow-none focus-within:ring-0 focus-within:bg-slate-50/50 dark:focus-within:bg-white/5 rounded-md px-1";
+        ? "bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 shadow-sm focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 rounded-lg px-3"
+        : "bg-transparent border-none shadow-none focus-within:ring-0 focus-within:bg-gray-50/50 dark:focus-within:bg-white/5 rounded-md px-1";
 
     const dropdownContent = (
         <div
-            className={`fixed z-[99999] mt-1 overflow-hidden rounded-xl py-1 text-base shadow-2xl ring-1 ring-black/5 focus:outline-none sm:text-sm ${isDark || true ? 'bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white' : 'bg-white border border-gray-100 text-gray-900 shadow-lg'}`}
+            className={`fixed z-[99999] mt-1 overflow-hidden rounded-xl py-1 text-base shadow-2xl ring-1 ring-black/5 focus:outline-none sm:text-sm ${isDark ? 'bg-neutral-900 border border-white/10 text-white shadow-black' : 'bg-white border border-gray-100 text-gray-900 shadow-lg'}`}
             style={{
                 top: position.top,
                 left: position.left,
@@ -374,9 +354,9 @@ export function SearchableSelect({
                         {selectedOption && !open && variant === 'default' ? (
                             <div className="flex-1 flex items-center justify-between">
                                 <div className="flex flex-col overflow-hidden">
-                                    <span className={`block truncate font-medium text-slate-900 dark:text-white`}>{selectedOption.label}</span>
+                                    <span className={`block truncate font-medium text-gray-900 dark:text-neutral-200`}>{selectedOption.label}</span>
                                     {selectedOption.subLabel && (
-                                        <span className={`block truncate text-xs text-slate-500 dark:text-slate-400`}>{selectedOption.subLabel}</span>
+                                        <span className={`block truncate text-xs text-gray-500 dark:text-neutral-500`}>{selectedOption.subLabel}</span>
                                     )}
                                 </div>
                                 {!disabled && (
@@ -390,7 +370,7 @@ export function SearchableSelect({
                                 ref={inputRef}
                                 id={inputId}
                                 type="text"
-                                className={`w-full border-none p-0 focus:ring-0 bg-transparent ${variant === 'ghost' ? 'text-foreground font-inherit placeholder:text-muted-foreground placeholder:opacity-50' : 'text-sm text-foreground placeholder:text-muted-foreground'}`}
+                                className={`w-full border-none p-0 focus:ring-0 bg-transparent ${variant === 'ghost' ? `${isDark ? 'text-white' : 'text-gray-900'} font-inherit placeholder:text-inherit placeholder:opacity-30` : 'text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-neutral-600'}`}
                                 placeholder={selectedOption && variant === 'default' ? selectedOption.label : placeholder}
                                 value={query}
                                 onChange={handleInputChange}
