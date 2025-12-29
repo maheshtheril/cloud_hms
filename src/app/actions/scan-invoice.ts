@@ -404,7 +404,8 @@ async function processInvoiceData(session: any, data: any) {
                 hsn: item.hsn || data.defaultHsn,
                 schemeDiscount: parseNumber(item.schemeDiscount),
                 discountPct: parseNumber(item.discountPct),
-                discountAmt: parseNumber(item.discountAmt)
+                discountAmt: parseNumber(item.discountAmt),
+                freeQty: parseNumber(item.freeQty) // <-- Added freeQty back
             });
         }
     }
