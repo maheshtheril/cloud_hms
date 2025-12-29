@@ -568,9 +568,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent
-                className={`p-0 overflow-hidden bg-neutral-950 border-white/10 flex flex-col selection:bg-indigo-500/30 transition-all duration-300 ${isMaximized
+                className={`p-0 overflow-hidden bg-background border-border flex flex-col selection:bg-indigo-500/30 transition-all duration-300 ${isMaximized
                     ? 'max-w-none w-screen h-screen rounded-none border-none'
-                    : 'max-w-[95vw] w-[1400px] h-[90vh] rounded-2xl'
+                    : 'max-w-[95vw] w-[1400px] h-[90vh] rounded-2xl border shadow-2xl'
                     }`}
             >
                 <Toaster />
@@ -595,12 +595,12 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
 
                 {/* Centered Loading Overlay - Top Level */}
                 {isScanning && (
-                    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
-                        <div className="flex flex-col items-center p-8 rounded-2xl bg-neutral-900 border border-white/10 shadow-2xl space-y-4 max-w-sm w-full">
+                    <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/60 backdrop-blur-md">
+                        <div className="flex flex-col items-center p-8 rounded-2xl bg-card border border-border shadow-2xl space-y-4 max-w-sm w-full">
                             <Scan className="w-12 h-12 text-indigo-500 animate-pulse" />
                             <div className="space-y-2 text-center">
-                                <h3 className="text-xl font-bold text-white tracking-tight">AI Scanning...</h3>
-                                <p className="text-sm text-neutral-400">{scanProgress || "Analyzing Invoice..."}</p>
+                                <h3 className="text-xl font-bold text-foreground tracking-tight">AI Scanning...</h3>
+                                <p className="text-sm text-muted-foreground">{scanProgress || "Analyzing Invoice..."}</p>
                             </div>
                             <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
                                 <motion.div
@@ -610,7 +610,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                     transition={{ duration: 2, repeat: Infinity }}
                                 />
                             </div>
-                            <p className="text-[10px] text-neutral-500 text-center px-4">
+                            <p className="text-[10px] text-muted-foreground text-center px-4">
                                 May take up to 30s. Retrying automatically if needed.
                             </p>
                         </div>
@@ -618,43 +618,43 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                 )}
 
                 {/* Fixed Title Header */}
-                <div className="flex items-center justify-between px-8 py-4 border-b border-white/5 bg-neutral-950 shrink-0 z-20">
+                <div className="flex items-center justify-between px-8 py-4 border-b border-border bg-background/95 backdrop-blur-md shrink-0 z-20">
                     <div className="flex items-center gap-4">
                         <div className="h-10 w-10 bg-indigo-500/10 rounded-xl flex items-center justify-center border border-indigo-500/20">
                             <Receipt className="h-5 w-5 text-indigo-400" />
                         </div>
                         <div>
-                            <DialogTitle className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                            <DialogTitle className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
                                 New Purchase Entry
                             </DialogTitle>
-                            <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-medium">Record Supplier Stock Inward</p>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">Record Supplier Stock Inward</p>
                         </div>
                     </div>
 
 
 
                     <div className="flex items-center gap-4">
-                        <div className="flex bg-neutral-900 rounded-lg p-1 border border-white/5">
+                        <div className="flex bg-muted/50 rounded-lg p-1 border border-border">
                             <button
                                 onClick={() => setMode('po')}
-                                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${mode === 'po' ? 'bg-indigo-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
+                                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${mode === 'po' ? 'bg-indigo-600 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
                             >
                                 PO LINKED
                             </button>
                             <button
                                 onClick={() => setMode('direct')}
-                                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${mode === 'direct' ? 'bg-emerald-600 text-white shadow-lg' : 'text-neutral-500 hover:text-neutral-300'}`}
+                                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${mode === 'direct' ? 'bg-emerald-600 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
                             >
                                 DIRECT
                             </button>
                         </div>
-                        <Separator orientation="vertical" className="h-8 bg-white/5" />
+                        <Separator orientation="vertical" className="h-8 bg-border" />
                         <div className="flex items-center gap-1">
                             <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={resetForm}
-                                className="text-neutral-500 hover:text-white hover:bg-white/5 rounded-full h-10 w-10"
+                                className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-full h-10 w-10"
                                 title="Clear Form"
                             >
                                 <RotateCcw className="h-5 w-5" />
@@ -663,12 +663,12 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => setIsMaximized(!isMaximized)}
-                                className="text-neutral-500 hover:text-white hover:bg-white/5 rounded-full h-10 w-10"
+                                className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-full h-10 w-10"
                                 title={isMaximized ? "Minimize" : "Maximize"}
                             >
                                 {isMaximized ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={onClose} className="text-neutral-500 hover:text-white hover:bg-white/5 rounded-full h-10 w-10">
+                            <Button variant="ghost" size="icon" onClick={onClose} className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-full h-10 w-10">
                                 <X className="h-5 w-5" />
                             </Button>
                         </div>
@@ -678,7 +678,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                 {/* Main Content Area */}
                 <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                     {/* Fixed Top Info Grid */}
-                    <div className="shrink-0 px-8 py-8 border-b border-white/5 bg-neutral-900/40 backdrop-blur-xl relative overflow-hidden">
+                    <div className="shrink-0 px-8 py-4 border-b border-border bg-muted/30 backdrop-blur-xl relative overflow-hidden">
                         {/* Shimmer overlay when scanning */}
                         {isScanning && (
                             <motion.div
@@ -688,32 +688,29 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-500/5 to-transparent skew-x-12 z-0"
                             />
                         )}
-                        <div className="grid grid-cols-12 gap-10 items-start relative z-10">
+                        <div className="grid grid-cols-12 gap-8 items-start relative z-10">
                             {/* Vendor Section */}
                             <div className="col-span-12 lg:col-span-4 space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Supplier Entity</label>
-                                    <button onClick={() => setSupplierDialogOpen(true)} className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-widest">Add New +</button>
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Master Supplier</label>
+                                    <Badge variant="outline" className="text-[8px] bg-indigo-500/5 text-indigo-500 border-indigo-500/20 px-2 py-0">KYC VERIFIED</Badge>
                                 </div>
-                                <div className="group relative">
-                                    <SearchableSelect
-                                        key={`${supplierId}-${supplierName}`} // Force reset on scan
-                                        value={supplierId}
-                                        valueLabel={supplierName}
-                                        defaultOptions={useMemo(() => supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }] : [], [supplierId, supplierName, supplierMeta])}
-                                        onChange={(id, opt) => {
-                                            setSupplierId(id);
-                                            setSupplierName(opt?.label || '');
-                                            setSupplierMeta(opt?.metadata || null);
-                                        }}
-                                        onSearch={searchSuppliers}
-                                        placeholder="Search Supplier Name / GSTIN..."
-                                        className="w-full bg-transparent border-none text-xl font-bold placeholder:text-neutral-800 p-0 focus:ring-0 dark"
-                                        variant="ghost"
-                                        isDark={true}
-                                    />
-                                    <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-all duration-300"></div>
+                                <div className="flex gap-4">
+                                    <div className="flex-1">
+                                        <SearchableSelect
+                                            value={supplierId}
+                                            onChange={(id, opt) => { setSupplierId(id); if (opt) { setSupplierName(opt.label); setSupplierMeta(opt.metadata); } }}
+                                            onSearch={searchSuppliers}
+                                            placeholder="Select Source Supplier..."
+                                            className="w-full bg-background border-border h-14 font-black text-foreground"
+                                            variant="ghost"
+                                        />
+                                    </div>
+                                    <button onClick={() => setSupplierDialogOpen(true)} className="h-14 w-14 flex items-center justify-center rounded-xl bg-indigo-600 shadow-lg shadow-indigo-600/20 text-white hover:bg-indigo-700 transition-all active:scale-90 shrink-0">
+                                        <Plus className="h-6 w-6" />
+                                    </button>
                                 </div>
+                                <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-all duration-300"></div>
                                 <div className="flex flex-wrap gap-2 pt-1">
                                     {supplierMeta?.gstin && (
                                         <Badge variant="outline" className="bg-indigo-500/10 border-indigo-500/20 text-indigo-400 font-mono text-[9px] px-1.5 py-0 h-5">
@@ -721,39 +718,41 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                         </Badge>
                                     )}
                                     {supplierMeta?.address && (
-                                        <div className="text-[10px] text-neutral-400 font-medium line-clamp-1 flex items-center gap-1.5 opacity-60">
-                                            <span className="shrink-0 bg-neutral-800 px-1 rounded-[3px] text-[8px] border border-white/10 text-neutral-300">ADR</span>
+                                        <div className="text-[10px] text-muted-foreground font-medium line-clamp-1 flex items-center gap-1.5 opacity-60">
+                                            <span className="shrink-0 bg-muted px-1 rounded-[3px] text-[8px] border border-border text-muted-foreground">ADR</span>
                                             {supplierMeta.address}
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            {/* Info Section */}
-                            <div className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-6 pt-1">
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em]">Received Date</label>
+                            {/* Stock Metadata */}
+                            <div className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-6">
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Invoice Date</label>
                                     <Input
                                         type="date"
                                         value={receivedDate}
                                         onChange={(e) => setReceivedDate(e.target.value)}
-                                        className="bg-white/5 border-white/10 h-11 font-bold text-sm text-white focus:border-indigo-500/50 transition-all"
+                                        className="h-14 bg-background border-border text-foreground font-mono font-bold px-5 text-lg rounded-xl"
                                     />
                                 </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em]">Invoice #</label>
-                                    <Input
-                                        value={reference}
-                                        onChange={(e) => setReference(e.target.value)}
-                                        placeholder="INV-000"
-                                        className="bg-white/5 border-white/10 h-11 font-mono font-bold text-white uppercase placeholder:text-neutral-700 focus:border-indigo-500/50 transition-all"
-                                    />
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Invoice Number</label>
+                                    <div className="relative group">
+                                        <Receipt className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-indigo-400 transition-colors" />
+                                        <Input
+                                            placeholder="INV/24-25/..."
+                                            value={reference}
+                                            onChange={(e) => setReference(e.target.value)}
+                                            className="h-14 bg-background border-border text-foreground font-mono font-bold pl-12 pr-5 text-lg rounded-xl"
+                                        />
+                                    </div>
                                 </div>
                             </div>
-
                             {/* Method/Scan Section */}
-                            <div className="col-span-12 lg:col-span-4 space-y-4">
-                                <label className="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Quick Scan / Order</label>
+                            <div className="col-span-12 lg:col-span-4 space-y-3">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Intelligent Scan / Order</label>
                                 <div className="flex gap-4">
                                     {mode === 'po' ? (
                                         <div className="flex-1">
@@ -762,20 +761,24 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                 onChange={(id) => handlePoSelect(id)}
                                                 onSearch={async (q) => poOptions.filter(o => o.label.toLowerCase().includes(q.toLowerCase()))}
                                                 placeholder="Select PO..."
-                                                className="w-full bg-neutral-900/50 border-white/5 h-11 font-mono font-bold"
+                                                className="w-full bg-background border-border h-20 font-mono font-bold text-foreground"
                                                 variant="ghost"
-                                                isDark={true}
                                             />
                                         </div>
                                     ) : (
-                                        <div className="flex-1 h-11 flex items-center px-4 bg-emerald-500/5 border border-emerald-500/10 rounded-md text-[10px] font-black text-emerald-400 uppercase">
-                                            Direct Entry
+                                        <div className="flex-1 h-20 flex flex-col justify-center px-4 bg-emerald-500/[0.03] border border-emerald-500/10 rounded-xl">
+                                            <span className="text-[8px] font-black text-emerald-500/40 uppercase tracking-[0.2em] mb-1">Entry Mode</span>
+                                            <div className="flex items-center gap-2">
+                                                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Direct Stock Entry</span>
+                                            </div>
                                         </div>
                                     )}
-                                    <div className="shrink-0 w-32 border border-white/5 rounded-md overflow-hidden">
+                                    <div className="shrink-0 w-52 border border-border rounded-xl overflow-hidden group/scan shadow-2xl hover:shadow-indigo-500/20 transition-all bg-background">
                                         <FileUpload
                                             onUploadComplete={(url) => { if (url) handleScanInvoice(url); }}
-                                            className="h-11 border-dashed border-indigo-500/20 bg-indigo-500/[0.02]"
+                                            label="AI MAGIC SCAN"
+                                            className="h-20 border-dashed border-indigo-500/30 bg-indigo-500/[0.04] hover:bg-indigo-500/10 transition-colors"
                                         />
                                     </div>
                                 </div>
@@ -784,37 +787,37 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     </div>
 
                     {/* Manifest Area - Scrolls vertically */}
-                    <div className="flex-1 flex flex-col min-h-0 px-8 py-6 space-y-4">
+                    <div className="flex-1 flex flex-col min-h-0 px-8 py-3 space-y-3">
                         <div className="flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-3">
                                 <div className="h-6 w-1 bg-indigo-500 rounded-full"></div>
-                                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-neutral-500">Item Manifest</h3>
+                                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground">Item Manifest</h3>
                             </div>
                             <div className="flex items-center gap-4">
-                                <div className="flex items-center gap-2 px-3 py-1.5 bg-neutral-900 border border-white/5 rounded-xl shadow-inner">
-                                    <span className="text-[9px] font-black text-neutral-500 uppercase tracking-wider">Bulk Strategy</span>
-                                    <div className="flex items-center gap-1.5 bg-neutral-950 border border-white/5 rounded-lg px-2 py-0.5 shadow-sm">
+                                <div className="flex items-center gap-2 px-3 py-1.5 bg-muted border border-border rounded-xl shadow-inner">
+                                    <span className="text-[9px] font-black text-muted-foreground uppercase tracking-wider">Bulk Strategy</span>
+                                    <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg px-2 py-0.5 shadow-sm">
                                         <input
                                             type="number"
                                             value={globalMargin}
                                             onChange={(e) => setGlobalMargin(Number(e.target.value))}
-                                            className="w-10 bg-transparent border-none text-[10px] font-black text-green-400 p-0 focus:ring-0 text-center"
+                                            className="w-10 bg-transparent border-none text-[10px] font-black text-green-500 p-0 focus:ring-0 text-center"
                                         />
-                                        <span className="text-[9px] font-black text-neutral-600">%</span>
+                                        <span className="text-[9px] font-black text-muted-foreground/60">%</span>
                                     </div>
                                     <button
                                         onClick={applyGlobalMargin}
-                                        className="px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-400 text-[9px] font-black rounded-lg transition-all border border-green-500/20 uppercase tracking-widest hover:scale-105 active:scale-95"
+                                        className="px-3 py-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-500 text-[9px] font-black rounded-lg transition-all border border-green-500/20 uppercase tracking-widest hover:scale-105 active:scale-95"
                                     >
                                         Apply All
                                     </button>
                                 </div>
-                                <div className="flex items-center gap-1.5 bg-neutral-900 rounded-xl p-1 border border-white/5">
+                                <div className="flex items-center gap-1.5 bg-muted rounded-xl p-1 border border-border">
                                     {['MRP-5', 'MRP-10', 'MRP-12', 'MRP-15'].map(m => (
                                         <button
                                             key={m}
                                             onClick={() => applyQuickMargin(m)}
-                                            className="px-3 py-1 text-[9px] font-black rounded-lg hover:bg-white/5 transition-all text-neutral-500 hover:text-white"
+                                            className="px-3 py-1 text-[9px] font-black rounded-lg hover:bg-accent transition-all text-muted-foreground hover:text-foreground"
                                         >
                                             {m}%
                                         </button>
@@ -829,42 +832,42 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                         </div>
 
                         {/* Table Wrapper - Scrolls both ways */}
-                        <div className="flex-1 rounded-2xl border border-white/5 bg-neutral-900/30 overflow-auto custom-scrollbar relative">
+                        <div className="flex-1 rounded-2xl border border-border bg-muted/20 overflow-auto custom-scrollbar relative">
                             <table className="w-full text-left border-collapse min-w-[2200px]">
                                 <thead>
-                                    <tr className="bg-neutral-900 text-[10px] font-black uppercase tracking-widest text-neutral-500 border-b border-white/5 sticky top-0 z-50 shadow-md">
-                                        <th className="py-4 pl-6 w-[250px] sticky left-0 z-50 bg-neutral-900 border-r border-white/5">Product Description</th>
-                                        <th className="py-4 px-2 w-24">HSN</th>
-                                        <th className="py-4 px-2 w-24">Pack</th>
-                                        <th className="py-4 px-2 w-24 text-indigo-400">UOM</th>
-                                        <th className="py-4 px-2 w-28">Batch</th>
-                                        <th className="py-4 px-2 w-24">Exp</th>
-                                        <th className="py-4 px-2 w-24 text-right">MRP</th>
-                                        <th className="py-4 px-2 w-24 text-right">Sale Price</th>
-                                        <th className="py-4 px-2 w-24 text-right text-green-400">Margin %</th>
-                                        <th className="py-4 px-2 w-24 text-right">Basic Price</th>
-                                        <th className="py-4 px-2 w-20 text-center">Qty</th>
-                                        <th className="py-4 px-2 w-20 text-center text-orange-400">Schm Qty</th>
-                                        <th className="py-4 px-2 w-20 text-right">Disc %</th>
-                                        <th className="py-4 px-2 w-24 text-right">Disc Amt</th>
-                                        <th className="py-4 px-2 w-24 text-right">Schm Amt</th>
-                                        <th className="py-4 px-2 w-28 text-right">Taxable Val</th>
-                                        <th className="py-4 px-2 w-24 text-right">Tax (%)</th>
-                                        <th className="py-4 px-2 w-20 text-right">CGST</th>
-                                        <th className="py-4 px-2 w-20 text-right">SGST</th>
-                                        <th className="py-4 px-2 w-20 text-right">IGST</th>
-                                        <th className="py-4 px-2 w-24 text-right">Net Cost</th>
-                                        <th className="py-4 pr-6 text-right w-32 sticky right-0 z-50 bg-neutral-900 border-l border-white/5 shadow-xl">Line Total</th>
+                                    <tr className="bg-muted text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border sticky top-0 z-50 shadow-md">
+                                        <th className="py-2.5 pl-6 w-[250px] sticky left-0 z-50 bg-muted border-r border-border">Product Description</th>
+                                        <th className="py-2.5 px-2 w-24">HSN</th>
+                                        <th className="py-2.5 px-2 w-24">Pack</th>
+                                        <th className="py-2.5 px-2 w-24 text-indigo-400">UOM</th>
+                                        <th className="py-2.5 px-2 w-28">Batch</th>
+                                        <th className="py-2.5 px-2 w-24">Exp</th>
+                                        <th className="py-2.5 px-2 w-24 text-right">MRP</th>
+                                        <th className="py-2.5 px-2 w-24 text-right">Sale Price</th>
+                                        <th className="py-2.5 px-2 w-24 text-right text-green-400">Margin %</th>
+                                        <th className="py-2.5 px-2 w-24 text-right">Basic Price</th>
+                                        <th className="py-2.5 px-2 w-20 text-center">Qty</th>
+                                        <th className="py-2.5 px-2 w-20 text-center text-orange-400">Schm Qty</th>
+                                        <th className="py-2.5 px-2 w-20 text-right">Disc %</th>
+                                        <th className="py-2.5 px-2 w-24 text-right">Disc Amt</th>
+                                        <th className="py-2.5 px-2 w-24 text-right">Schm Amt</th>
+                                        <th className="py-2.5 px-2 w-28 text-right">Taxable Val</th>
+                                        <th className="py-2.5 px-2 w-24 text-right">Tax (%)</th>
+                                        <th className="py-2.5 px-2 w-20 text-right">CGST</th>
+                                        <th className="py-2.5 px-2 w-20 text-right">SGST</th>
+                                        <th className="py-2.5 px-2 w-20 text-right">IGST</th>
+                                        <th className="py-2.5 px-2 w-24 text-right">Net Cost</th>
+                                        <th className="py-2.5 pr-6 text-right w-32 sticky right-0 z-50 bg-muted border-l border-border shadow-2xl">Line Total</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-white/[0.03]">
+                                <tbody className="divide-y divide-border/30">
                                     {items.map((item, index) => (
-                                        <tr key={index} className="group hover:bg-white/[0.01] transition-all">
-                                            <td className="py-4 pl-6 sticky left-0 z-20 bg-neutral-950/20 backdrop-blur-sm border-r border-white/5">
+                                        <tr key={index} className="group hover:bg-accent/5 transition-all">
+                                            <td className="py-1.5 pl-6 sticky left-0 z-20 bg-background/80 backdrop-blur-sm border-r border-border">
                                                 {mode === 'po' ? (
                                                     <div className="space-y-0.5">
-                                                        <div className="text-sm font-bold text-white">{item.productName}</div>
-                                                        <div className="text-[9px] text-neutral-500 font-mono">ID: {item.productId.split('-').pop()}</div>
+                                                        <div className="text-[12px] font-bold text-foreground leading-tight">{item.productName}</div>
+                                                        <div className="text-[8px] text-muted-foreground font-mono">ID: {item.productId.split('-').pop()}</div>
                                                     </div>
                                                 ) : (
                                                     <div className="flex gap-1 items-center">
@@ -876,38 +879,37 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                                 onCreate={createProductQuick}
                                                                 defaultOptions={item.productId ? [{ id: item.productId, label: item.productName }] : []}
                                                                 placeholder="Search..."
-                                                                className="w-full text-sm font-bold text-white dark"
+                                                                className="w-full text-[12px] font-bold text-foreground py-0"
                                                                 variant="ghost"
-                                                                isDark={true}
                                                             />
                                                         </div>
-                                                        <button onClick={() => setProductCreationOpen(true)} className="h-6 w-6 flex items-center justify-center rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400">
+                                                        <button onClick={() => setProductCreationOpen(true)} className="h-5 w-5 flex items-center justify-center rounded bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 shrink-0">
                                                             <Plus className="h-3 w-3" />
                                                         </button>
                                                     </div>
                                                 )}
                                             </td>
-                                            <td className="py-4 px-2">
-                                                <input value={item.hsn || ''} onChange={(e) => { const n = [...items]; n[index].hsn = e.target.value; setItems(n); }} className="w-full bg-transparent border-none text-[12px] font-mono p-0 focus:ring-0 text-neutral-400" />
+                                            <td className="py-1.5 px-2">
+                                                <input value={item.hsn || ''} onChange={(e) => { const n = [...items]; n[index].hsn = e.target.value; setItems(n); }} className="w-full bg-transparent border-none text-[10px] font-mono p-0 focus:ring-0 text-muted-foreground" />
                                             </td>
-                                            <td className="py-4 px-2">
-                                                <input value={item.packing || ''} onChange={(e) => { const n = [...items]; n[index].packing = e.target.value; setItems(n); }} className="w-full bg-transparent border-none text-[12px] font-bold p-0 focus:ring-0 text-white" />
+                                            <td className="py-1.5 px-2">
+                                                <input value={item.packing || ''} onChange={(e) => { const n = [...items]; n[index].packing = e.target.value; setItems(n); }} className="w-full bg-transparent border-none text-[10px] font-bold p-0 focus:ring-0 text-foreground" />
                                             </td>
-                                            <td className="py-4 px-2">
+                                            <td className="py-1.5 px-2">
                                                 <input
                                                     value={item.uom || ''}
                                                     onChange={(e) => { const n = [...items]; n[index].uom = e.target.value; setItems(n); }}
-                                                    placeholder="PCS/PACK-10"
-                                                    className="w-full bg-transparent border-none text-[12px] font-bold p-0 focus:ring-0 text-indigo-400 uppercase placeholder:text-neutral-700"
+                                                    placeholder="PCS"
+                                                    className="w-full bg-transparent border-none text-[10px] font-black p-0 focus:ring-0 text-indigo-500 uppercase placeholder:text-muted-foreground/30"
                                                 />
                                             </td>
-                                            <td className="py-4 px-2">
-                                                <input value={item.batch || ''} onChange={(e) => { const n = [...items]; n[index].batch = e.target.value; setItems(n); }} className="w-full bg-transparent border-none text-[12px] font-mono p-0 focus:ring-0 text-white" />
+                                            <td className="py-1.5 px-2">
+                                                <input value={item.batch || ''} onChange={(e) => { const n = [...items]; n[index].batch = e.target.value; setItems(n); }} className="w-full bg-transparent border-none text-[10px] font-mono p-0 focus:ring-0 text-foreground" />
                                             </td>
-                                            <td className="py-4 px-2 text-center">
-                                                <input value={item.expiry || ''} onChange={(e) => { const n = [...items]; n[index].expiry = e.target.value; setItems(n); }} placeholder="MM/YY" className="w-full bg-transparent border-none text-[12px] font-mono p-0 focus:ring-0 text-neutral-500 text-center" />
+                                            <td className="py-1.5 px-2 text-center">
+                                                <input value={item.expiry || ''} onChange={(e) => { const n = [...items]; n[index].expiry = e.target.value; setItems(n); }} placeholder="MM/YY" className="w-full bg-transparent border-none text-[10px] font-mono p-0 focus:ring-0 text-muted-foreground text-center" />
                                             </td>
-                                            <td className="py-4 px-2 text-right">
+                                            <td className="py-1.5 px-2 text-right">
                                                 <input
                                                     type="number"
                                                     value={item.mrp || ''}
@@ -916,10 +918,10 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                     data-index={index}
                                                     data-field="mrp"
                                                     onChange={(e) => { const n = [...items]; n[index].mrp = Number(e.target.value); setItems(n); }}
-                                                    className="w-full bg-transparent border-none text-right font-bold focus:ring-0 p-0 text-white"
+                                                    className="w-full bg-transparent border-none text-right font-bold focus:ring-0 p-0 text-foreground text-[11px]"
                                                 />
                                             </td>
-                                            <td className="py-4 px-2 text-right">
+                                            <td className="py-1.5 px-2 text-right">
                                                 <input
                                                     type="number"
                                                     value={item.salePrice || ''}
@@ -928,10 +930,10 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                     data-index={index}
                                                     data-field="salePrice"
                                                     onChange={(e) => handleSalePriceChange(index, Number(e.target.value))}
-                                                    className="w-full bg-transparent border-none text-right font-bold text-emerald-400 focus:ring-0 p-0"
+                                                    className="w-full bg-transparent border-none text-right font-bold text-emerald-400 focus:ring-0 p-0 text-[11px]"
                                                 />
                                             </td>
-                                            <td className="py-4 px-2 text-right">
+                                            <td className="py-1.5 px-2 text-right">
                                                 <input
                                                     type="number"
                                                     value={item.marginPct ?? 0}
@@ -940,18 +942,18 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                     data-index={index}
                                                     data-field="marginPct"
                                                     onChange={(e) => handleMarginChange(index, Number(e.target.value))}
-                                                    className="w-full bg-transparent border-none text-right font-bold text-green-400 focus:ring-0 p-0"
+                                                    className="w-full bg-transparent border-none text-right font-bold text-green-400 focus:ring-0 p-0 text-[11px]"
                                                 />
                                             </td>
-                                            <td className="py-4 px-2 text-right">
+                                            <td className="py-1.5 px-2 text-right">
                                                 <input type="number" value={item.unitPrice} onChange={(e) => {
                                                     const n = [...items];
                                                     n[index].unitPrice = Number(e.target.value);
                                                     n[index] = updateLineItemCalcs(n[index]);
                                                     setItems(n);
-                                                }} className="w-full bg-transparent border-none text-right font-bold focus:ring-0 p-0 text-indigo-300" />
+                                                }} className="w-full bg-transparent border-none text-right font-bold focus:ring-0 p-0 text-indigo-300 text-[11px]" />
                                             </td>
-                                            <td className="py-4 px-2 text-center">
+                                            <td className="py-1.5 px-2 text-center">
                                                 <input type="number" value={item.receivedQty} onChange={(e) => {
                                                     const n = [...items];
                                                     n[index].receivedQty = Number(e.target.value);
@@ -962,12 +964,12 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                     }
                                                     n[index] = updateLineItemCalcs(n[index]);
                                                     setItems(n);
-                                                }} className="w-12 mx-auto bg-neutral-800 rounded p-1 text-center font-bold text-white border-none focus:ring-0" />
+                                                }} className="w-9 mx-auto bg-muted rounded p-0.5 text-center font-bold text-foreground border-none focus:ring-0 text-[11px]" />
                                             </td>
-                                            <td className="py-4 px-2 text-center">
-                                                <input type="number" value={item.freeQty ?? 0} onChange={(e) => { const n = [...items]; n[index].freeQty = Number(e.target.value); setItems(n); }} className="w-12 mx-auto bg-neutral-800 rounded p-1 text-center font-bold text-orange-400 border-none focus:ring-0" />
+                                            <td className="py-1.5 px-2 text-center">
+                                                <input type="number" value={item.freeQty ?? 0} onChange={(e) => { const n = [...items]; n[index].freeQty = Number(e.target.value); setItems(n); }} className="w-9 mx-auto bg-muted rounded p-0.5 text-center font-bold text-orange-500 border-none focus:ring-0 text-[11px]" />
                                             </td>
-                                            <td className="py-4 px-2 text-right">
+                                            <td className="py-1.5 px-2 text-right">
                                                 <input type="number" value={item.discountPct ?? 0} onChange={(e) => {
                                                     const n = [...items];
                                                     const pct = Number(e.target.value);
@@ -976,57 +978,57 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                     n[index].discountAmt = Number(((baseTotal * pct) / 100).toFixed(2));
                                                     n[index] = updateLineItemCalcs(n[index]);
                                                     setItems(n);
-                                                }} className="w-full bg-transparent border-none text-right text-[12px] text-neutral-500 focus:ring-0 p-0" />
+                                                }} className="w-full bg-transparent border-none text-right text-[10px] text-muted-foreground focus:ring-0 p-0" />
                                             </td>
-                                            <td className="py-4 px-2 text-right">
+                                            <td className="py-1.5 px-2 text-right">
                                                 <input type="number" value={item.discountAmt ?? 0} step="0.01" onChange={(e) => {
                                                     const n = [...items];
                                                     n[index].discountAmt = Number(e.target.value);
                                                     n[index] = updateLineItemCalcs(n[index]);
                                                     setItems(n);
-                                                }} className="w-full bg-transparent border-none text-right text-[12px] text-yellow-500 focus:ring-0 p-0 font-bold" />
+                                                }} className="w-full bg-transparent border-none text-right text-[10px] text-yellow-500/80 focus:ring-0 p-0 font-bold" />
                                             </td>
-                                            <td className="py-4 px-2 text-right">
+                                            <td className="py-1.5 px-2 text-right">
                                                 <input type="number" value={item.schemeDiscount ?? 0} step="0.01" onChange={(e) => {
                                                     const n = [...items];
                                                     n[index].schemeDiscount = Number(e.target.value);
                                                     n[index] = updateLineItemCalcs(n[index]);
                                                     setItems(n);
-                                                }} className="w-full bg-transparent border-none text-right text-[12px] text-orange-400 focus:ring-0 p-0 font-bold" />
+                                                }} className="w-full bg-transparent border-none text-right text-[10px] text-orange-500 focus:ring-0 p-0 font-bold" />
                                             </td>
-                                            <td className="py-4 px-2 text-right font-black text-white text-[12px]">
+                                            <td className="py-1.5 px-2 text-right font-black text-foreground text-[10px]">
                                                 {Math.max(0, (item.unitPrice * item.receivedQty) - (item.discountAmt || 0) - (item.schemeDiscount || 0)).toFixed(2)}
                                             </td>
-                                            <td className="py-4 px-2 text-right">
+                                            <td className="py-1.5 px-2 text-right">
                                                 <Select value={item.taxRate?.toString() || "0"} onValueChange={(v) => {
                                                     const n = [...items];
                                                     n[index].taxRate = Number(v);
                                                     n[index] = updateLineItemCalcs(n[index]);
                                                     setItems(n);
                                                 }}>
-                                                    <SelectTrigger className="h-7 w-16 bg-transparent border-white/10 text-[10px] font-mono text-white">
+                                                    <SelectTrigger className="h-5 w-12 bg-transparent border-border text-[9px] font-mono text-foreground px-1">
                                                         <SelectValue />
                                                     </SelectTrigger>
-                                                    <SelectContent className="bg-neutral-900 border-white/10 text-white">
+                                                    <SelectContent className="bg-background border-border text-foreground">
                                                         {TAX_OPTIONS.map(v => <SelectItem key={v} value={String(v)}>{v}%</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
                                             </td>
-                                            <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
+                                            <td className="py-1.5 px-2 text-right text-[9px] font-mono text-muted-foreground">
                                                 {taxType === 'INTRA' ? ((item.taxAmount || 0) / 2).toFixed(2) : '-'}
                                             </td>
-                                            <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
+                                            <td className="py-1.5 px-2 text-right text-[9px] font-mono text-muted-foreground">
                                                 {taxType === 'INTRA' ? ((item.taxAmount || 0) / 2).toFixed(2) : '-'}
                                             </td>
-                                            <td className="py-4 px-2 text-right text-[10px] font-mono text-neutral-500">
+                                            <td className="py-1.5 px-2 text-right text-[9px] font-mono text-muted-foreground">
                                                 {taxType === 'INTER' ? (item.taxAmount || 0).toFixed(2) : '-'}
                                             </td>
-                                            <td className="py-4 px-2 text-right text-[11px] font-mono font-bold text-indigo-400">
+                                            <td className="py-1.5 px-2 text-right text-[10px] font-mono font-bold text-indigo-400/80">
                                                 {((item.receivedQty || 0) + (item.freeQty || 0)) > 0
                                                     ? ((Math.max(0, (item.unitPrice * item.receivedQty) - (item.discountAmt || 0) - (item.schemeDiscount || 0)) + (item.taxAmount || 0)) / (Number(item.receivedQty) + Number(item.freeQty || 0))).toFixed(2)
                                                     : '0.00'}
                                             </td>
-                                            <td className="py-4 pr-6 text-right font-mono font-black text-white sticky right-0 z-20 bg-neutral-900 border-l border-white/5 shadow-xl">
+                                            <td className="py-1.5 pr-6 text-right font-mono font-black text-foreground sticky right-0 z-20 bg-muted border-l border-border shadow-2xl">
                                                 {(Math.max(0, (item.unitPrice * item.receivedQty) - (item.discountAmt || 0) - (item.schemeDiscount || 0)) + (item.taxAmount || 0)).toFixed(2)}
                                             </td>
                                         </tr>
@@ -1038,42 +1040,42 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                 </div>
 
                 {/* World-Class Fixed Footer */}
-                <div className="px-8 py-6 border-t border-white/5 bg-neutral-900/40 backdrop-blur-2xl shrink-0 flex items-center justify-between z-10">
+                <div className="px-8 py-6 border-t border-border bg-muted/80 backdrop-blur-3xl shrink-0 flex items-center justify-between z-10">
                     <div className="flex items-center gap-12">
                         <div className="flex items-center gap-8">
                             <div className="space-y-1">
-                                <p className="text-[9px] font-black text-neutral-500 uppercase tracking-widest">Total Taxable</p>
-                                <p className="text-sm font-mono font-bold text-white">₹{totalTaxable.toFixed(2)}</p>
+                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Total Taxable</p>
+                                <p className="text-sm font-mono font-bold text-foreground">₹{totalTaxable.toFixed(2)}</p>
                             </div>
-                            <div className="space-y-1 border-l border-white/5 pl-8">
-                                <p className="text-[9px] font-black text-neutral-500 uppercase tracking-widest">Aggregate Tax</p>
-                                <p className="text-sm font-mono font-bold text-indigo-400">₹{totalTax.toFixed(2)}</p>
+                            <div className="space-y-1 border-l border-border pl-8">
+                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Aggregate Tax</p>
+                                <p className="text-sm font-mono font-bold text-indigo-500">₹{totalTax.toFixed(2)}</p>
                             </div>
-                            <div className="flex flex-col space-y-1 border-l border-white/5 pl-8 group/round">
+                            <div className="flex flex-col space-y-1 border-l border-border pl-8 group/round">
                                 <div className="flex items-center gap-2">
-                                    <p className="text-[9px] font-black text-neutral-500 uppercase tracking-widest">Round Off</p>
-                                    <button onClick={() => setIsAutoRound(!isAutoRound)} className={`text-[8px] px-1 rounded ${isAutoRound ? 'bg-indigo-500/10 text-indigo-400' : 'bg-neutral-800 text-neutral-500'}`}>AUTO</button>
+                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Round Off</p>
+                                    <button onClick={() => setIsAutoRound(!isAutoRound)} className={`text-[8px] px-1 rounded ${isAutoRound ? 'bg-indigo-500/10 text-indigo-500' : 'bg-muted text-muted-foreground'}`}>AUTO</button>
                                 </div>
                                 <input
                                     type="number"
                                     value={roundOff}
                                     onChange={(e) => { setRoundOff(Number(e.target.value)); setIsAutoRound(false); }}
-                                    className="bg-transparent border-none p-0 text-sm font-mono font-bold text-neutral-400 focus:ring-0 w-16"
+                                    className="bg-transparent border-none p-0 text-sm font-mono font-bold text-muted-foreground focus:ring-0 w-16"
                                 />
                             </div>
                         </div>
 
-                        <div className="bg-white/5 px-6 py-2 rounded-2xl border border-white/5 flex flex-col items-center">
-                            <p className="text-[8px] font-black text-indigo-300 uppercase tracking-widest mb-0.5">Grand Total INR</p>
-                            <p className="text-2xl font-black text-white tracking-tighter">₹{netTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        <div className="bg-accent/50 px-6 py-2 rounded-2xl border border-border flex flex-col items-center">
+                            <p className="text-[8px] font-black text-indigo-500 uppercase tracking-widest mb-0.5">Grand Total INR</p>
+                            <p className="text-2xl font-black text-foreground tracking-tighter">₹{netTotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                         </div>
 
                         {scannedTotal > 0 && (
-                            <div className="flex flex-col items-start px-4 border-l border-white/5">
-                                <p className="text-[9px] font-black text-neutral-500 uppercase tracking-widest">Scanned Total</p>
+                            <div className="flex flex-col items-start px-4 border-l border-border">
+                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Scanned Total</p>
                                 <div className="flex items-center gap-2">
-                                    <p className="text-sm font-mono font-bold text-neutral-300">₹{scannedTotal.toFixed(2)}</p>
-                                    <Badge className={Math.abs(scannedTotal - netTotal) < 0.01 ? 'bg-emerald-500/10 text-emerald-400 border-none' : 'bg-rose-500/10 text-rose-400 border-none animate-pulse'}>
+                                    <p className="text-sm font-mono font-bold text-muted-foreground/80">₹{scannedTotal.toFixed(2)}</p>
+                                    <Badge className={Math.abs(scannedTotal - netTotal) < 0.01 ? 'bg-emerald-500/10 text-emerald-500 border-none' : 'bg-rose-500/10 text-rose-500 border-none animate-pulse'}>
                                         {Math.abs(scannedTotal - netTotal) < 0.01 ? 'Matched' : `Mismatch: ₹${(netTotal - scannedTotal).toFixed(2)}`}
                                     </Badge>
                                 </div>
@@ -1088,9 +1090,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 <span className="text-[9px] font-black text-rose-400 uppercase tracking-widest">Totals Mismatch - Blocked</span>
                             </div>
                         )}
-                        <Button variant="ghost" className="text-neutral-400 hover:text-white" onClick={onClose}>Discard</Button>
+                        <Button variant="ghost" className="text-muted-foreground hover:text-foreground" onClick={onClose}>Discard</Button>
                         <Button
-                            className="bg-white text-black hover:bg-neutral-200 h-12 px-8 rounded-xl font-bold transition-all transform active:scale-95 shadow-xl disabled:opacity-50 disabled:grayscale"
+                            className="bg-primary text-primary-foreground hover:opacity-90 h-12 px-8 rounded-xl font-bold transition-all transform active:scale-95 shadow-xl disabled:opacity-50 disabled:grayscale"
                             disabled={items.length === 0 || isSubmitting || (scannedTotal > 0 && Math.abs(scannedTotal - netTotal) > 0.01)}
                             onClick={handleSubmit}
                         >
