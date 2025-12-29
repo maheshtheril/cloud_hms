@@ -98,13 +98,15 @@ export class NotificationService {
             const payload: any = {
                 token: token,
                 to: phone,
-                body: finalPdfBase64 ? finalPdfBase64 : message,
                 priority: 10
             };
 
             if (finalPdfBase64) {
+                payload.document = finalPdfBase64;
                 payload.filename = `Invoice_${invoice.invoice_number}.pdf`;
-                payload.caption = message; // Keep message as caption for the document
+                payload.caption = message;
+            } else {
+                payload.body = message;
             }
 
             const response = await fetch(`https://api.ultramsg.com/${instanceId}/messages/${endpoint}`, {
@@ -196,7 +198,7 @@ export class NotificationService {
             const payload = {
                 token: token,
                 to: phone,
-                body: pdfBase64,
+                document: pdfBase64,
                 filename: `Prescription_${new Date(prescription.created_at).getTime()}.pdf`,
                 caption: message,
                 priority: 10
