@@ -88,11 +88,14 @@ export function SearchableSelect({
     const listRef = React.useRef<HTMLUListElement>(null);
 
     const lastValueRef = React.useRef(value);
+    const lastLabelRef = React.useRef(valueLabel);
 
     // Initial value handling
     React.useEffect(() => {
         const valueChanged = lastValueRef.current !== value;
+        const labelChanged = lastLabelRef.current !== valueLabel;
         lastValueRef.current = value;
+        lastLabelRef.current = valueLabel;
 
         if (!value && !valueLabel) {
             setSelectedOption(null);
@@ -105,7 +108,7 @@ export function SearchableSelect({
 
         if (!value && valueLabel) {
             setSelectedOption({ id: "temp", label: valueLabel });
-            if (!open || valueChanged) {
+            if (!open || valueChanged || labelChanged) {
                 if (variant === 'ghost') setQuery(valueLabel);
                 else setQuery(valueLabel);
             }
