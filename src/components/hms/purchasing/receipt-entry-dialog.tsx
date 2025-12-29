@@ -392,7 +392,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         setIsScanning(true);
         setScanProgress('Analyzing Invoice...');
         try {
-            const res = await scanInvoiceAction(url) as any;
+            // Pass supplierId if user has already selected one to get better AI results
+            const res = await scanInvoiceAction(url, supplierId) as any;
             if (res.data) {
                 const { supplierId, supplierName, date, reference: ref, items: scannedItems, gstin, address, grandTotal } = res.data;
                 if (supplierName) setSupplierName(supplierName);

@@ -15,7 +15,19 @@ export async function scanInvoiceAction(formData: FormData): Promise<{ success?:
     return await scanInvoiceFromUrl(res.url);
 }
 
-export async function scanInvoiceFromUrl(fileUrl: string) {
+
+
+export async function scanInvoiceFromUrlWithSupplier(fileUrl: string, supplierId?: string) {
+    const session = await auth();
+    if (!session?.user?.companyId) return { error: "Unauthorized" };
+
+    // DRY Principle: Reuse the file loading logic
+    // We'll refactor slightly to share the image loading code
+    return scanInvoiceFromUrl(fileUrl, supplierId);
+}
+
+// Updated signature to support supplierId
+export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
     const session = await auth();
     if (!session?.user?.companyId) return { error: "Unauthorized" };
 
@@ -23,50 +35,61 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
         let base64Image = "";
         let mimeType = "image/jpeg";
 
-        // Handle Data URI (Base64) directly
+        // ... (Image loading logic same as before) ...
         if (fileUrl.startsWith('data:')) {
             const match = fileUrl.match(/^data:([^;]+);base64,(.+)$/);
             if (!match) return { error: "Invalid Data URI format" };
             mimeType = match[1];
             base64Image = match[2];
         } else {
-            // Resolve URL to file path (Legacy/Filesystem fallback)
             const relativePath = fileUrl.startsWith('/') ? `.${fileUrl}` : fileUrl;
             const fs = require('fs/promises');
             const path = require('path');
             const fullPath = path.resolve(process.cwd(), 'public', relativePath.replace(/^\/public\//, '').replace(/^\//, ''));
-
-            // Check if file exists
-            try {
-                await fs.access(fullPath);
-            } catch (err) {
-                console.error(`[ScanInvoice] File not found at path: ${fullPath}`, err);
-                return { error: `File not found on server at ${fullPath}` };
-            }
-
+            try { await fs.access(fullPath); } catch (e) { return { error: "File not found" }; }
             const fileBuffer = await fs.readFile(fullPath);
             base64Image = fileBuffer.toString("base64");
-
-            // Determine mime type roughly
             const ext = path.extname(fullPath).toLowerCase();
             if (ext === ".pdf") mimeType = "application/pdf";
             else if (ext === ".png") mimeType = "image/png";
             else if (ext === ".webp") mimeType = "image/webp";
         }
 
-        // List of models to try in order of preference
-        // 'gemini-2.0-flash-exp' exists (returns 429). 
-        // 'gemini-1.5-*' returned 404. 
-        // Found 'gemini-2.5-flash-lite' and 'gemini-flash-latest' in active model list.
+        let supplierRules = "";
+        if (supplierId) {
+            const supplier = await prisma.hms_supplier.findUnique({
+                where: { id: supplierId },
+                select: { metadata: true, name: true }
+            });
+            if (supplier && supplier.metadata) {
+                const meta = supplier.metadata as any;
+                if (meta.ai_rules) {
+                    supplierRules = `\nSPECIFIC INSTRUCTIONS FOR SUPPLIER '${supplier.name}':\n${meta.ai_rules}\n(Prioritize these rules over general instructions).\n`;
+                }
+            }
+        }
+
         const candidateModels = [
             "gemini-2.0-flash-exp",   // Smartest (Experimental)
             "gemini-2.5-flash-lite",  // New Fast/Lite
-            "gemini-flash-latest"     // Stable Alias
+            "gemini-1.5-flash",
+            "gemini-1.5-pro",
+            "gemini-pro-vision"
         ];
 
         let lastError = null;
 
+        // Construct the prompt
+        // Inject supplier rules if available
         const prompt = `
+            ${supplierRules ? `
+            IMPORTANT - CUSTOM EXTRACTION RULES FOR THIS SUPPLIER:
+            ${supplierRules}
+            
+            Follow these custom rules STRICTLY over standard assumptions.
+            ------------------------------------------------------------
+            ` : ''}
+
             Analyze this purchase invoice and extract data into strict JSON.
             
             Header Details:
