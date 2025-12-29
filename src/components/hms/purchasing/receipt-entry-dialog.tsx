@@ -389,6 +389,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
     };
 
     const handleScanInvoice = async (url: string) => {
+        if (isScanning) return;
         setAttachmentUrl(url);
         setIsScanning(true);
         setScanProgress('Analyzing Invoice...');
