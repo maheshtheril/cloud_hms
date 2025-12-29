@@ -749,6 +749,23 @@ export class AccountingService {
                 partner_id: receipt.supplier_id
             });
 
+
+            // Safe Currency Resolution
+            let currencyId = settings!.currency_id;
+            if (!currencyId) {
+                const defaultCurrency = await prisma.currencies.findFirst({
+                    where: { code: 'INR' }
+                });
+                if (defaultCurrency) currencyId = defaultCurrency.id;
+            }
+            if (!currencyId) {
+                // Fallback to any active currency if INR missing
+                const anyCurrency = await prisma.currencies.findFirst({ where: { is_active: true } });
+                currencyId = anyCurrency?.id;
+            }
+
+            if (!currencyId) throw new Error("No active currency found in system.");
+
             // 6. Create Transaction
             await prisma.$transaction(async (tx) => {
                 await tx.journal_entries.create({
@@ -759,7 +776,7 @@ export class AccountingService {
                         posted: true,
                         posted_at: new Date(),
                         created_by: userId,
-                        currency_id: settings!.currency_id || 'INR', // Fallback to INR if missing
+                        currency_id: currencyId!,
                         amount_in_company_currency: totalAmount,
                         ref: receipt.name,
                         journal_entry_lines: {
