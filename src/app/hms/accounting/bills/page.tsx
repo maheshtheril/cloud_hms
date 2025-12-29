@@ -83,6 +83,9 @@ export default function PurchaseBillsPage() {
                         <Receipt className="w-4 h-4 text-indigo-400" />
                         Manage your purchase invoices and supplier payments.
                     </p>
+                    <div className="flex items-center gap-2 mt-2 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-md w-fit">
+                        <span className="text-[10px] text-indigo-400 font-medium">💡 Tip: Bills are auto-created when you add stock in <Link href="/hms/purchasing/receipts" className="underline hover:text-indigo-300">Purchase Receipts</Link></span>
+                    </div>
                 </div>
 
                 <div className="flex items-center gap-3">
