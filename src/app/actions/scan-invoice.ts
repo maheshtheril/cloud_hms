@@ -139,7 +139,8 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
                     * If you see separate "CGST %" and "SGST %" (e.g. 2.5% + 2.5%), SUM THEM UP (return 5.0).
                     * Return ONLY the number (e.g. 5, 12, 18).
                 - "taxAmount": Total Tax Amount.
-                - "schemeDiscount": Scheme Discount Amount (Schm Amt).
+                - "schemeDiscount": Scheme Discount Amount. Look for 'Schm Amt', 'Sch Amt', 'Schm', 'Less', 'Disc', 'Scheme'.
+                    * If found, return the absolute number value.
                 - "discountPct": Discount %.
                 - "discountAmt": Discount Amount.
                 - "qty": Billed Quantity. The main quantity column.
