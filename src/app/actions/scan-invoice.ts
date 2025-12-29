@@ -1,5 +1,10 @@
 'use server';
 // Force Rebuild: 2025-12-29 10:25 AM
+// -----------------------------------------------------------------------------
+// [LOCKED] INVOICE SCANNING LOGIC - DO NOT MODIFY WITHOUT PERMISSION
+// This file contains tuned prompts for India Pharma Invoice Scanning.
+// See .agent/LOCKED_INVOICE_PROMPT.md for backup.
+// -----------------------------------------------------------------------------
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { auth } from "@/auth";
