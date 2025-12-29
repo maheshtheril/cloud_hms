@@ -49,6 +49,10 @@ export function FileUpload({
     // Sync previewUrl with currentFileUrl from props
     useEffect(() => {
         setPreviewUrl(currentFileUrl || null);
+        // If external clear happened, clear the input so same file can be selected again
+        if (!currentFileUrl && fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     }, [currentFileUrl]);
 
     const handleDrag = (e: React.DragEvent) => {

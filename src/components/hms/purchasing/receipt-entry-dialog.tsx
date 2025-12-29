@@ -402,7 +402,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                 const { supplierId, supplierName, date, reference: ref, items: scannedItems, gstin, address, grandTotal } = res.data;
                 if (supplierName) setSupplierName(supplierName);
                 if (supplierId) setSupplierId(supplierId);
-                setSupplierMeta({ gstin, address });
+                // Merge new metadata with existing to avoid losing data if AI returns nulls
+                setSupplierMeta(prev => ({ ...prev, gstin: gstin || prev?.gstin, address: address || prev?.address }));
                 if (date) setReceivedDate(date);
                 if (ref) setReference(ref);
                 if (grandTotal) {
