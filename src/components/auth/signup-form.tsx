@@ -114,7 +114,7 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
                 </div>
 
                 {/* Form Area */}
-                <div className="p-8 flex-1 bg-white relative">
+                <div className="p-8 flex-1 bg-white dark:bg-slate-950 relative">
                     <form action={formAction} className="h-full flex flex-col">
                         <input type="hidden" name="email" value={formData.email} />
                         <input type="hidden" name="password" value={formData.password} />
@@ -127,43 +127,43 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
 
                         {step === 1 && (
                             <div className="flex-1 space-y-5 animate-in slide-in-from-right-4 fade-in duration-300">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">You Details</h3>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">You Details</h3>
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Full Name</label>
-                                    <input name="name" value={formData.name} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500" placeholder="Enter your full name" />
+                                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Full Name</label>
+                                    <input name="name" value={formData.name} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" placeholder="Enter your full name" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Work Email</label>
-                                    <input name="email" type="email" value={formData.email} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500" placeholder="name@company.com" />
+                                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Work Email</label>
+                                    <input name="email" type="email" value={formData.email} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" placeholder="name@company.com" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Password</label>
-                                    <input name="password" type="password" value={formData.password} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, password: e.target.value })} required className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500" placeholder="Min. 8 characters" />
+                                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Password</label>
+                                    <input name="password" type="password" value={formData.password} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, password: e.target.value })} required className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" placeholder="Min. 8 characters" />
                                 </div>
                             </div>
                         )}
 
                         {step === 2 && (
                             <div className="flex-1 space-y-5 animate-in slide-in-from-right-4 fade-in duration-300">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Organization Profile</h3>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Organization Profile</h3>
 
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Company Name</label>
+                                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Company Name</label>
                                     <div className="relative">
                                         <Building className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
-                                        <input name="companyName" value={formData.companyName} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, companyName: e.target.value })} required className="w-full border border-gray-200 rounded-lg pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500" placeholder="Acme Inc." />
+                                        <input name="companyName" value={formData.companyName} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, companyName: e.target.value })} required className="w-full border border-gray-200 dark:border-slate-800 rounded-lg pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" placeholder="My Organization Ltd." />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Country</label>
+                                        <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Country</label>
                                         <select
                                             name="countryId"
                                             value={formData.countryId}
                                             onChange={e => setFormData({ ...formData, countryId: e.target.value })}
                                             required
                                             onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                                            className="w-full border border-gray-200 rounded-lg px-3 py-3 focus:ring-2 focus:ring-blue-500 bg-white"
+                                            className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
                                         >
                                             <option value="">Select Country</option>
                                             {countries.map(c => (
@@ -172,31 +172,32 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Currency</label>
+                                        <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Currency</label>
                                         <select
                                             name="currencyId"
                                             value={formData.currencyId}
                                             onChange={e => setFormData({ ...formData, currencyId: e.target.value })}
                                             required
                                             onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
-                                            className="w-full border border-gray-200 rounded-lg px-3 py-3 focus:ring-2 focus:ring-blue-500 bg-white"
+                                            className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white"
                                         >
                                             <option value="">Select Currency</option>
                                             {currencies.map(c => (
-                                                <option key={c.id} value={c.id}>{c.code} ({c.symbol})</option>
+                                                <option key={c.id} value={c.id}>{c.code} - {c.name}</option>
                                             ))}
                                         </select>
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Industry</label>
-                                    <select name="industry" value={formData.industry} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, industry: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-3 focus:ring-2 focus:ring-blue-500 bg-white">
+                                    <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Industry</label>
+                                    <select name="industry" value={formData.industry} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, industry: e.target.value })} className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white">
                                         <option value="">Select Industry...</option>
-                                        <option value="Healthcare">Healthcare</option>
+                                        <option value="Healthcare">Healthcare / Hospital</option>
                                         <option value="Manufacturing">Manufacturing</option>
-                                        <option value="Retail">Retail</option>
-                                        <option value="Services">Services</option>
+                                        <option value="Retail">Retail / Pharmacy</option>
+                                        <option value="Services">Professional Services</option>
                                         <option value="Technology">Technology</option>
+                                        <option value="Other">Other</option>
                                     </select>
                                 </div>
                             </div>
@@ -204,7 +205,7 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
 
                         {step === 3 && (
                             <div className="flex-1 space-y-5 animate-in slide-in-from-right-4 fade-in duration-300">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-4">Modules & Preferences</h3>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Module Selection</h3>
                                 <p className="text-sm text-gray-500 mb-4">Select the modules relevant to your business.</p>
 
                                 <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-2">

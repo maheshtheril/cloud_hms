@@ -265,12 +265,12 @@ export function SearchableSelect({
     };
 
     const baseStyles = variant === 'default'
-        ? "bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 shadow-sm focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 rounded-lg px-3"
-        : "bg-transparent border-none shadow-none focus-within:ring-0 focus-within:bg-gray-50/50 dark:focus-within:bg-white/5 rounded-md px-1";
+        ? "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500 rounded-lg px-3"
+        : "bg-transparent border-none shadow-none focus-within:ring-0 focus-within:bg-slate-50/50 dark:focus-within:bg-white/5 rounded-md px-1";
 
     const dropdownContent = (
         <div
-            className={`fixed z-[99999] mt-1 overflow-hidden rounded-xl py-1 text-base shadow-2xl ring-1 ring-black/5 focus:outline-none sm:text-sm ${isDark ? 'bg-neutral-900 border border-white/10 text-white shadow-black' : 'bg-white border border-gray-100 text-gray-900 shadow-lg'}`}
+            className={`fixed z-[99999] mt-1 overflow-hidden rounded-xl py-1 text-base shadow-2xl ring-1 ring-black/5 focus:outline-none sm:text-sm ${isDark || true ? 'bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white' : 'bg-white border border-gray-100 text-gray-900 shadow-lg'}`}
             style={{
                 top: position.top,
                 left: position.left,
@@ -366,9 +366,9 @@ export function SearchableSelect({
                         {selectedOption && !open && variant === 'default' ? (
                             <div className="flex-1 flex items-center justify-between">
                                 <div className="flex flex-col overflow-hidden">
-                                    <span className={`block truncate font-medium text-gray-900 dark:text-neutral-200`}>{selectedOption.label}</span>
+                                    <span className={`block truncate font-medium text-slate-900 dark:text-white`}>{selectedOption.label}</span>
                                     {selectedOption.subLabel && (
-                                        <span className={`block truncate text-xs text-gray-500 dark:text-neutral-500`}>{selectedOption.subLabel}</span>
+                                        <span className={`block truncate text-xs text-slate-500 dark:text-slate-400`}>{selectedOption.subLabel}</span>
                                     )}
                                 </div>
                                 {!disabled && (
@@ -382,7 +382,7 @@ export function SearchableSelect({
                                 ref={inputRef}
                                 id={inputId}
                                 type="text"
-                                className={`w-full border-none p-0 focus:ring-0 bg-transparent ${variant === 'ghost' ? `${isDark ? 'text-white' : 'text-gray-900'} font-inherit placeholder:text-inherit placeholder:opacity-30` : 'text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-neutral-600'}`}
+                                className={`w-full border-none p-0 focus:ring-0 bg-transparent ${variant === 'ghost' ? `${isDark ? 'text-white' : 'text-slate-900'} font-inherit placeholder:text-inherit placeholder:opacity-30` : 'text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600'}`}
                                 placeholder={selectedOption && variant === 'default' ? selectedOption.label : placeholder}
                                 value={query}
                                 onChange={handleInputChange}

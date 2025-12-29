@@ -312,7 +312,7 @@ export function FinancialDashboard() {
                         <Card className="border-slate-200 dark:border-slate-800 h-full">
                             <CardHeader className="bg-slate-50 dark:bg-slate-900/50">
                                 <CardTitle className="text-rose-600 flex items-center gap-2">
-                                    <LANDMARK className="h-5 w-5" /> Liabilities & Equity
+                                    <Landmark className="h-5 w-5" /> Liabilities & Equity
                                 </CardTitle>
                                 <CardDescription>What the hospital owes</CardDescription>
                             </CardHeader>
@@ -354,8 +354,4 @@ export function FinancialDashboard() {
             </Tabs>
         </div>
     )
-}
-
-function LANDMARK(props: any) {
-    return <Landmark {...props} />
 }
