@@ -70,7 +70,7 @@ export async function GET() {
                 children: [
                     { key: 'hms-accounting-receipts', label: 'Receipts', url: '/hms/accounting/receipts', sort: 81 },
                     { key: 'hms-accounting-payments', label: 'Payments', url: '/hms/accounting/payments', sort: 82 },
-                    { key: 'hms-accounting-bills', label: 'Vendor Bills', url: '/hms/accounting/bills', sort: 83 },
+                    // { key: 'hms-accounting-bills', label: 'Vendor Bills', url: '/hms/accounting/bills', sort: 83 },
                     { key: 'hms-accounting-invoices', label: 'Invoices', url: '/hms/accounting/invoices', sort: 84 },
                     { key: 'hms-accounting-journals', label: 'Journal Entries', url: '/hms/accounting/journals', sort: 84 },
                     { key: 'hms-accounting-coa', label: 'Chart of Accounts', url: '/hms/accounting/coa', sort: 85 },

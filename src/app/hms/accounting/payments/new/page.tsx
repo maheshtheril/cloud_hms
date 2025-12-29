@@ -1,38 +1,69 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { upsertPayment } from '@/app/actions/accounting/payments';
 import { searchSuppliers, getOutstandingPurchaseBills } from '@/app/actions/accounting/helpers';
+import { getAccounts } from '@/app/actions/accounting/chart-of-accounts';
 import {
     ArrowLeft, Save, Loader2, Calendar, CreditCard,
-    Building2, FileText, ArrowRight, Wallet, Info, CheckCircle2
+    Building2, FileText, ArrowRight, Wallet, Info, CheckCircle2,
+    Briefcase, Plus, Trash2, Layers
 } from 'lucide-react';
 import { SearchableSelect } from '@/components/ui/searchable-select';
 import { useToast } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { motion, AnimatePresence } from 'framer-motion';
 
+type PaymentType = 'bill' | 'direct';
+
+interface DirectLine {
+    id: string;
+    accountId: string;
+    accountName: string;
+    description: string;
+    amount: string;
+}
+
 export default function NewPaymentPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Form State
+    // Mode: Bill Payment vs Direct Expense
+    const [paymentType, setPaymentType] = useState<PaymentType>('bill');
+
+    // Common State
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-    const [partnerId, setPartnerId] = useState<string | null>(null);
-    const [partnerName, setPartnerName] = useState('');
     const [amount, setAmount] = useState('');
     const [method, setMethod] = useState('bank_transfer');
     const [reference, setReference] = useState('');
     const [memo, setMemo] = useState('');
 
-    // Allocation State
+    // Bill Mode State
+    const [partnerId, setPartnerId] = useState<string | null>(null);
+    const [partnerName, setPartnerName] = useState('');
     const [bills, setBills] = useState<any[]>([]);
     const [allocations, setAllocations] = useState<Record<string, number>>({});
     const [isFetchingBills, setIsFetchingBills] = useState(false);
 
-    // Fetch bills when vendor changes
+    // Direct Mode State
+    const [payeeName, setPayeeName] = useState('');
+    const [directLines, setDirectLines] = useState<DirectLine[]>([
+        { id: '1', accountId: '', accountName: '', description: '', amount: '' }
+    ]);
+    const [accounts, setAccounts] = useState<any[]>([]);
+
+    // Load Accounts for Direct Mode
+    useEffect(() => {
+        if (paymentType === 'direct' && accounts.length === 0) {
+            getAccounts().then(res => {
+                if (res.success) setAccounts(res.data || []);
+            });
+        }
+    }, [paymentType]);
+
+    // --- Bill Logic ---
     const handleVendorChange = async (id: string | null, opt?: any) => {
         setPartnerId(id);
         setPartnerName(opt?.label || '');
@@ -50,40 +81,11 @@ export default function NewPaymentPage() {
         }
     };
 
-
-    // ... existing imports
-    const handleAmountChange = (val: string) => {
-        setAmount(val);
-        // Auto-allocate FIFO if global amount changes
-        const total = Number(val);
-        if (total > 0 && bills.length > 0) {
-            const newAllocations: Record<string, number> = {};
-            let remaining = total;
-
-            for (const bill of bills) {
-                if (remaining <= 0) break;
-                const toAllocate = Math.min(remaining, bill.outstanding);
-                newAllocations[bill.id] = toAllocate;
-                remaining -= toAllocate;
-            }
-            setAllocations(newAllocations);
-        } else {
-            // If cleared, clear allocations? Or keep them? 
-            // Standard: Clearing amount clears allocations usually, or we decouple them.
-            // Let's clear for now to sync.
-            if (!val) setAllocations({});
-        }
-    };
-
     const handleAllocationChange = (billId: string, val: string) => {
         const num = Number(val);
         const newAllocations = { ...allocations, [billId]: num };
         setAllocations(newAllocations);
-
-        // Update total amount based on allocations (Auto-Calculated)
         const total = (Object.values(newAllocations) as number[]).reduce((sum, a) => sum + a, 0);
-        // We update the main amount only if it differs significantly to avoid loops, 
-        // but since this is one-way binding from state to input, it should be fine.
         setAmount(total > 0 ? total.toString() : '');
     };
 
@@ -99,30 +101,96 @@ export default function NewPaymentPage() {
         setAmount('');
     }
 
+    // --- Direct Logic ---
+    const updateLine = (id: string, field: keyof DirectLine, val: string) => {
+        setDirectLines(lines => lines.map(l => l.id === id ? { ...l, [field]: val } : l));
+
+        // If updating amount, update total
+        if (field === 'amount') {
+            setTimeout(() => { // Defer to let state update
+                const total = directLines.reduce((sum, l) => sum + (l.id === id ? Number(val) : Number(l.amount)), 0);
+                setAmount(total > 0 ? total.toString() : '');
+            }, 0);
+        }
+    };
+
+    const addLine = () => {
+        setDirectLines(lines => [...lines, {
+            id: Math.random().toString(36).substr(2, 9),
+            accountId: '',
+            accountName: '',
+            description: '',
+            amount: ''
+        }]);
+    };
+
+    const removeLine = (id: string) => {
+        if (directLines.length === 1) return;
+        setDirectLines(lines => lines.filter(l => l.id !== id));
+    };
+
+    const handleAccountSearch = async (query: string) => {
+        const res = await getAccounts(query);
+        return res.success ? res.data?.map((a: any) => ({
+            value: a.id,
+            label: `${a.code} - ${a.name}`,
+            subLabel: a.type
+        })) : [];
+    };
+
+    // --- Submission ---
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!partnerId) {
-            toast({ title: "Validation Error", description: "Please select a Payee/Vendor", variant: "destructive" });
+
+        if (paymentType === 'bill' && !partnerId) {
+            toast({ title: "Validation Error", description: "Please select a Vendor", variant: "destructive" });
             return;
         }
+
+        if (paymentType === 'direct' && !payeeName) {
+            toast({ title: "Validation Error", description: "Please enter a Payee Name", variant: "destructive" });
+            return;
+        }
+
         if (!amount || Number(amount) <= 0) {
             toast({ title: "Validation Error", description: "Please enter a valid amount", variant: "destructive" });
             return;
         }
 
         setIsSubmitting(true);
-        const res = await upsertPayment({
+
+        const payload: any = {
             type: 'outbound',
-            partner_id: partnerId,
+            partner_id: paymentType === 'bill' ? partnerId : null,
+            payeeName: paymentType === 'direct' ? payeeName : undefined,
             amount: Number(amount),
             method,
             reference,
             date: new Date(date),
             memo,
-            allocations: Object.entries(allocations)
+        };
+
+        if (paymentType === 'bill') {
+            payload.allocations = Object.entries(allocations)
                 .filter(([_, amt]) => amt > 0)
-                .map(([id, amt]) => ({ invoiceId: id, amount: amt }))
-        });
+                .map(([id, amt]) => ({ invoiceId: id, amount: amt }));
+        } else {
+            payload.lines = directLines
+                .filter(l => l.accountId && Number(l.amount) > 0)
+                .map(l => ({
+                    accountId: l.accountId,
+                    amount: Number(l.amount),
+                    description: l.description
+                }));
+
+            if (payload.lines.length === 0) {
+                toast({ title: "Validation Error", description: "Please add at least one valid expense line", variant: "destructive" });
+                setIsSubmitting(false);
+                return;
+            }
+        }
+
+        const res = await upsertPayment(payload);
 
         if (res.error) {
             toast({ title: "Error", description: res.error, variant: "destructive" });
@@ -192,6 +260,25 @@ export default function NewPaymentPage() {
 
             {/* Content */}
             <div className="max-w-[1400px] mx-auto px-6 py-8">
+
+                {/* Mode Switcher */}
+                <div className="flex justify-center mb-8">
+                    <div className="bg-slate-100 dark:bg-neutral-900 p-1 rounded-xl flex items-center gap-1 shadow-inner">
+                        <button
+                            onClick={() => setPaymentType('bill')}
+                            className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${paymentType === 'bill' ? 'bg-white dark:bg-neutral-800 text-indigo-500 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                            Vendor Bill
+                        </button>
+                        <button
+                            onClick={() => setPaymentType('direct')}
+                            className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${paymentType === 'direct' ? 'bg-white dark:bg-neutral-800 text-rose-500 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                            Direct Expense
+                        </button>
+                    </div>
+                </div>
+
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
                     {/* Left Column: Payment Details */}
@@ -209,16 +296,28 @@ export default function NewPaymentPage() {
                                 {/* Payee Selection */}
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-500 dark:text-neutral-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                                        <Building2 className="h-3 w-3 text-rose-500" /> Destination Vendor
+                                        <Building2 className="h-3 w-3 text-rose-500" />
+                                        {paymentType === 'bill' ? 'Destination Vendor' : 'Payee Name'}
                                     </label>
-                                    <SearchableSelect
-                                        value={partnerId}
-                                        onChange={handleVendorChange}
-                                        onSearch={async (q) => searchSuppliers(q)}
-                                        placeholder="Identify supplier..."
-                                        className="w-full bg-slate-100/50 dark:bg-neutral-950 border border-slate-200 dark:border-white/10 rounded-2xl text-sm"
-                                        isDark
-                                    />
+
+                                    {paymentType === 'bill' ? (
+                                        <SearchableSelect
+                                            value={partnerId}
+                                            onChange={handleVendorChange}
+                                            onSearch={async (q) => searchSuppliers(q)}
+                                            placeholder="Identify supplier..."
+                                            className="w-full bg-slate-100/50 dark:bg-neutral-950 border border-slate-200 dark:border-white/10 rounded-2xl text-sm"
+                                            isDark
+                                        />
+                                    ) : (
+                                        <input
+                                            type="text"
+                                            value={payeeName}
+                                            onChange={(e) => setPayeeName(e.target.value)}
+                                            placeholder="e.g. Electric Company, Landlord, Employee..."
+                                            className="w-full px-4 py-3 bg-slate-100/50 dark:bg-neutral-950 border border-slate-200 dark:border-white/10 rounded-2xl text-sm font-bold placeholder:font-normal"
+                                        />
+                                    )}
                                 </div>
 
                                 {/* Amount */}
@@ -231,13 +330,19 @@ export default function NewPaymentPage() {
                                         <input
                                             type="number"
                                             value={amount}
-                                            onChange={(e) => handleAmountChange(e.target.value)}
+                                            onChange={(e) => setAmount(e.target.value)}
+                                            // Disabled in direct mode if auto-sum is active, but we allow override for now or auto-calc
+                                            // Best practice: Let user enter amount, or auto-calc. 
+                                            // In direct mode, let's keep it auto-calc from lines for consistency.
+                                            readOnly={paymentType === 'direct'}
                                             placeholder="0.00"
-                                            className="w-full pl-10 pr-4 py-4 bg-slate-100/50 dark:bg-neutral-950 border border-slate-200 dark:border-rose-500/30 rounded-2xl text-2xl font-black text-slate-900 dark:text-white focus:outline-none focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 transition-all font-mono"
+                                            className={`w-full pl-10 pr-4 py-4 bg-slate-100/50 dark:bg-neutral-950 border border-slate-200 dark:border-rose-500/30 rounded-2xl text-2xl font-black text-slate-900 dark:text-white focus:outline-none focus:border-rose-500 focus:ring-4 focus:ring-rose-500/10 transition-all font-mono ${paymentType === 'direct' ? 'opacity-80 cursor-not-allowed' : ''}`}
                                         />
                                     </div>
                                     <p className="text-[10px] text-slate-400">
-                                        Enter total amount to auto-allocate oldest bills first.
+                                        {paymentType === 'bill'
+                                            ? 'Enter total amount to auto-allocate oldest bills first.'
+                                            : 'Total is automatically calculated from expense lines.'}
                                     </p>
                                 </div>
 
@@ -297,7 +402,7 @@ export default function NewPaymentPage() {
                         </motion.div>
                     </div>
 
-                    {/* Right Column: Bill Allocation Table */}
+                    {/* Right Column: Allocation Table */}
                     <div className="lg:col-span-8 space-y-6">
                         <div className="bg-white/70 dark:bg-neutral-900/40 border border-slate-200 dark:border-white/5 rounded-3xl overflow-hidden backdrop-blur-2xl shadow-xl min-h-[600px] flex flex-col">
 
@@ -305,131 +410,183 @@ export default function NewPaymentPage() {
                             <div className="p-4 border-b border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-white/[0.02] flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     <div className="h-8 w-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-500 border border-indigo-500/20">
-                                        <FileText className="h-4 w-4" />
+                                        {paymentType === 'bill' ? <FileText className="h-4 w-4" /> : <Layers className="h-4 w-4" />}
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">Outstanding Bills</h3>
-                                        <p className="text-[10px] text-slate-500">Allocate payment amount against specific bills</p>
+                                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                                            {paymentType === 'bill' ? 'Outstanding Bills' : 'Expense Allocation'}
+                                        </h3>
+                                        <p className="text-[10px] text-slate-500">
+                                            {paymentType === 'bill' ? 'Allocate payment amount against specific bills' : 'Categorize expenses to Chart of Accounts'}
+                                        </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-3">
-                                    {bills.length > 0 && (
-                                        <>
-                                            <button
-                                                type="button"
-                                                onClick={handleClearAllocations}
-                                                className="text-[10px] font-black text-slate-400 hover:text-rose-500 transition-colors uppercase tracking-[0.1em]"
-                                            >
-                                                Clear
-                                            </button>
-                                            <div className="h-3 w-px bg-slate-200 dark:bg-white/10" />
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    const firstId = bills[0].id;
-                                                    const remaining = Number(amount) || 0;
-                                                    if (remaining > 0) handleAllocationChange(firstId, remaining.toString());
-                                                }}
-                                                className="text-[10px] font-black text-indigo-500 hover:text-indigo-400 transition-colors uppercase tracking-[0.1em]"
-                                            >
-                                                Auto-Allocate
-                                            </button>
-                                        </>
-                                    )}
-                                    <div className="text-right">
-                                        <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Allocated</span>
-                                        <span className={`text-lg font-black font-mono ${Number(amount) === Object.values(allocations).reduce((a: number, b: number) => a + b, 0) ? 'text-emerald-500' : 'text-amber-500'}`}>
-                                            ₹{Object.values(allocations).reduce((sum: number, a: number) => sum + a, 0).toLocaleString()}
-                                        </span>
+
+                                {paymentType === 'bill' && (
+                                    <div className="flex items-center gap-3">
+                                        {bills.length > 0 && (
+                                            <>
+                                                <button type="button" onClick={handleClearAllocations} className="text-[10px] font-black text-slate-400 hover:text-rose-500 transition-colors uppercase tracking-[0.1em]">Clear</button>
+                                                <div className="h-3 w-px bg-slate-200 dark:bg-white/10" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const firstId = bills[0].id;
+                                                        const remaining = Number(amount) || 0;
+                                                        if (remaining > 0) handleAllocationChange(firstId, remaining.toString());
+                                                    }}
+                                                    className="text-[10px] font-black text-indigo-500 hover:text-indigo-400 transition-colors uppercase tracking-[0.1em]"
+                                                >
+                                                    Auto-Allocate
+                                                </button>
+                                            </>
+                                        )}
+                                        <div className="text-right">
+                                            <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Allocated</span>
+                                            <span className={`text-lg font-black font-mono ${Number(amount) === Object.values(allocations).reduce((a: number, b: number) => a + b, 0) ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                                ₹{Object.values(allocations).reduce((sum: number, a: number) => sum + a, 0).toLocaleString()}
+                                            </span>
+                                        </div>
                                     </div>
-                                </div>
+                                )}
+
+                                {paymentType === 'direct' && (
+                                    <button
+                                        type="button"
+                                        onClick={addLine}
+                                        className="h-8 px-4 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold uppercase tracking-widest flex items-center gap-2"
+                                    >
+                                        <Plus className="h-3 w-3" /> Add Line
+                                    </button>
+                                )}
                             </div>
 
                             <div className="flex-1 overflow-auto p-0">
-                                {isFetchingBills ? (
-                                    <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-400">
-                                        <Loader2 className="h-8 w-8 animate-spin" />
-                                        <span className="text-xs font-bold uppercase tracking-widest">Fetching Ledger...</span>
-                                    </div>
-                                ) : !partnerId ? (
-                                    <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-400 opacity-50">
-                                        <Building2 className="h-12 w-12" />
-                                        <span className="text-xs font-bold uppercase tracking-widest">Select Vendor to View Bills</span>
-                                    </div>
-                                ) : bills.length === 0 ? (
-                                    <div className="h-full flex flex-col items-center justify-center gap-4 text-emerald-500">
-                                        <CheckCircle2 className="h-12 w-12" />
-                                        <span className="text-xs font-bold uppercase tracking-widest">All Cleared</span>
-                                        <p className="text-[10px] text-slate-400">No outstanding bills found for this vendor.</p>
-                                    </div>
+                                {paymentType === 'bill' ? (
+                                    // ... Bill Table Logic ...
+                                    isFetchingBills ? (
+                                        <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-400">
+                                            <Loader2 className="h-8 w-8 animate-spin" />
+                                            <span className="text-xs font-bold uppercase tracking-widest">Fetching Ledger...</span>
+                                        </div>
+                                    ) : !partnerId ? (
+                                        <div className="h-full flex flex-col items-center justify-center gap-4 text-slate-400 opacity-50">
+                                            <Building2 className="h-12 w-12" />
+                                            <span className="text-xs font-bold uppercase tracking-widest">Select Vendor to View Bills</span>
+                                        </div>
+                                    ) : bills.length === 0 ? (
+                                        <div className="h-full flex flex-col items-center justify-center gap-4 text-emerald-500">
+                                            <CheckCircle2 className="h-12 w-12" />
+                                            <span className="text-xs font-bold uppercase tracking-widest">All Cleared</span>
+                                            <p className="text-[10px] text-slate-400">No outstanding bills found for this vendor.</p>
+                                        </div>
+                                    ) : (
+                                        <table className="w-full text-left border-collapse">
+                                            <thead className="bg-slate-50 dark:bg-white/[0.02] sticky top-0 z-10 text-[10px] uppercase font-black tracking-wider text-slate-500">
+                                                <tr>
+                                                    <th className="px-6 py-3">Bill #</th>
+                                                    <th className="px-4 py-3">Date</th>
+                                                    <th className="px-4 py-3">Due Date</th>
+                                                    <th className="px-4 py-3 text-right">Total</th>
+                                                    <th className="px-4 py-3 text-right">Balance</th>
+                                                    <th className="px-6 py-3 text-right w-48">Payment</th>
+                                                    <th className="px-2 py-3"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-xs font-medium text-slate-700 dark:text-slate-300">
+                                                {bills.map((bill) => (
+                                                    <tr key={bill.id} className="group hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
+                                                        <td className="px-6 py-4 font-bold text-indigo-600 dark:text-indigo-400">{bill.number}</td>
+                                                        <td className="px-4 py-4">{new Date(bill.date).toLocaleDateString()}</td>
+                                                        <td className="px-4 py-4 text-slate-500">{bill.dueDate ? new Date(bill.dueDate).toLocaleDateString() : '-'}</td>
+                                                        <td className="px-4 py-4 text-right font-mono">{bill.total.toLocaleString()}</td>
+                                                        <td className="px-4 py-4 text-right font-mono font-bold text-rose-500">{bill.outstanding.toLocaleString()}</td>
+                                                        <td className="px-6 py-3 text-right">
+                                                            <input
+                                                                type="number"
+                                                                value={allocations[bill.id] || ''}
+                                                                placeholder="0.00"
+                                                                onChange={(e) => handleAllocationChange(bill.id, e.target.value)}
+                                                                className={`w-32 px-3 py-2 bg-slate-100 dark:bg-black/20 border rounded-lg text-right font-mono font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${(allocations[bill.id] || 0) > 0 ? 'border-indigo-500/50 text-indigo-600 dark:text-indigo-400' : 'border-transparent'}`}
+                                                            />
+                                                        </td>
+                                                        <td className="px-2 py-3 text-right">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handlePayFull(bill)}
+                                                                className="text-[10px] font-bold text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-all"
+                                                            >
+                                                                PAY FULL
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                            {/* Footer Totals */}
+                                            <tfoot className="bg-slate-50 dark:bg-white/[0.02] font-bold text-xs sticky bottom-0 z-10 border-t border-slate-200 dark:border-white/10">
+                                                <tr>
+                                                    <td colSpan={4} className="px-6 py-4 text-right uppercase tracking-wider text-slate-500">Total Outstanding</td>
+                                                    <td className="px-4 py-4 text-right font-mono text-rose-500">{bills.reduce((sum, b) => sum + b.outstanding, 0).toLocaleString()}</td>
+                                                    <td className="px-6 py-4 text-right font-mono text-indigo-500">{Object.values(allocations).reduce((sum, a) => sum + a, 0).toLocaleString()}</td>
+                                                    <td></td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    )
                                 ) : (
+                                    // --- Direct Expense Table ---
                                     <table className="w-full text-left border-collapse">
                                         <thead className="bg-slate-50 dark:bg-white/[0.02] sticky top-0 z-10 text-[10px] uppercase font-black tracking-wider text-slate-500">
                                             <tr>
-                                                <th className="px-6 py-3">Bill #</th>
-                                                <th className="px-4 py-3">Date</th>
-                                                <th className="px-4 py-3">Due Date</th>
-                                                <th className="px-4 py-3 text-right">Total</th>
-                                                <th className="px-4 py-3 text-right">Balance</th>
-                                                <th className="px-6 py-3 text-right w-48">Payment</th>
-                                                <th className="px-2 py-3"></th>
+                                                <th className="px-6 py-3 w-1/3">Expense Account</th>
+                                                <th className="px-4 py-3">Description</th>
+                                                <th className="px-4 py-3 text-right w-40">Amount</th>
+                                                <th className="px-2 py-3 w-10"></th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 dark:divide-white/5 text-xs font-medium text-slate-700 dark:text-slate-300">
-                                            {bills.map((bill) => (
-                                                <tr key={bill.id} className="group hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
-                                                    <td className="px-6 py-4 font-bold text-indigo-600 dark:text-indigo-400">
-                                                        {bill.number}
-                                                    </td>
-                                                    <td className="px-4 py-4">
-                                                        {new Date(bill.date).toLocaleDateString()}
-                                                    </td>
-                                                    <td className="px-4 py-4 text-slate-500">
-                                                        {bill.dueDate ? new Date(bill.dueDate).toLocaleDateString() : '-'}
-                                                    </td>
-                                                    <td className="px-4 py-4 text-right font-mono">
-                                                        {bill.total.toLocaleString()}
-                                                    </td>
-                                                    <td className="px-4 py-4 text-right font-mono font-bold text-rose-500">
-                                                        {bill.outstanding.toLocaleString()}
-                                                    </td>
-                                                    <td className="px-6 py-3 text-right">
-                                                        <input
-                                                            type="number"
-                                                            value={allocations[bill.id] || ''}
-                                                            placeholder="0.00"
-                                                            onChange={(e) => handleAllocationChange(bill.id, e.target.value)}
-                                                            className={`w-32 px-3 py-2 bg-slate-100 dark:bg-black/20 border rounded-lg text-right font-mono font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all ${(allocations[bill.id] || 0) > 0
-                                                                ? 'border-indigo-500/50 text-indigo-600 dark:text-indigo-400'
-                                                                : 'border-transparent'
-                                                                }`}
+                                            {directLines.map((line) => (
+                                                <tr key={line.id} className="group hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors relative">
+                                                    <td className="px-6 py-3">
+                                                        <SearchableSelect
+                                                            value={line.accountId}
+                                                            onChange={(id, opt) => updateLine(line.id, 'accountId', id || '')}
+                                                            onSearch={handleAccountSearch}
+                                                            placeholder="Select Account..."
+                                                            className="w-full bg-slate-100/50 dark:bg-neutral-950 border-transparent rounded-lg text-xs"
+                                                            isDark
                                                         />
                                                     </td>
-                                                    <td className="px-2 py-3 text-right">
+                                                    <td className="px-4 py-3">
+                                                        <input
+                                                            type="text"
+                                                            value={line.description}
+                                                            onChange={(e) => updateLine(line.id, 'description', e.target.value)}
+                                                            placeholder="Details about this expense..."
+                                                            className="w-full bg-transparent border-b border-transparent hover:border-slate-200 dark:hover:border-white/10 focus:border-indigo-500 px-0 py-2 focus:outline-none transition-all"
+                                                        />
+                                                    </td>
+                                                    <td className="px-4 py-3 text-right">
+                                                        <input
+                                                            type="number"
+                                                            value={line.amount}
+                                                            placeholder="0.00"
+                                                            onChange={(e) => updateLine(line.id, 'amount', e.target.value)}
+                                                            className="w-full bg-slate-100 dark:bg-black/20 border border-transparent rounded-lg px-3 py-2 text-right font-mono font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                                        />
+                                                    </td>
+                                                    <td className="px-2 py-3 text-center">
                                                         <button
                                                             type="button"
-                                                            onClick={() => handlePayFull(bill)}
-                                                            className="text-[10px] font-bold text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-all"
+                                                            onClick={() => removeLine(line.id)}
+                                                            className="text-slate-400 hover:text-rose-500 transition-colors opacity-50 hover:opacity-100"
                                                         >
-                                                            PAY FULL
+                                                            <Trash2 className="h-4 w-4" />
                                                         </button>
                                                     </td>
                                                 </tr>
                                             ))}
                                         </tbody>
-                                        {/* Footer Totals */}
-                                        <tfoot className="bg-slate-50 dark:bg-white/[0.02] font-bold text-xs sticky bottom-0 z-10 border-t border-slate-200 dark:border-white/10">
-                                            <tr>
-                                                <td colSpan={4} className="px-6 py-4 text-right uppercase tracking-wider text-slate-500">Total Outstanding</td>
-                                                <td className="px-4 py-4 text-right font-mono text-rose-500">
-                                                    {bills.reduce((sum, b) => sum + b.outstanding, 0).toLocaleString()}
-                                                </td>
-                                                <td className="px-6 py-4 text-right font-mono text-indigo-500">
-                                                    {Object.values(allocations).reduce((sum, a) => sum + a, 0).toLocaleString()}
-                                                </td>
-                                                <td></td>
-                                            </tr>
-                                        </tfoot>
                                     </table>
                                 )}
                             </div>

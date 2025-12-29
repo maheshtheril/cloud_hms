@@ -45,6 +45,10 @@ export async function getPayments(type: PaymentType, search?: string) {
                     const supplier = await prisma.hms_supplier.findUnique({ where: { id: p.partner_id }, select: { name: true } });
                     if (supplier) partnerName = supplier.name;
                 }
+            } else {
+                // Check metadata for direct payee
+                const meta = p.metadata as any;
+                if (meta?.payee_name) partnerName = meta.payee_name;
             }
             return { ...p, partner_name: partnerName };
         }));
@@ -59,7 +63,7 @@ export async function getPayments(type: PaymentType, search?: string) {
 export async function upsertPayment(data: {
     id?: string;
     type: PaymentType;
-    partner_id: string;
+    partner_id?: string | null;
     amount: number;
     method: string;
     reference?: string;
@@ -67,6 +71,8 @@ export async function upsertPayment(data: {
     memo?: string;
     posted?: boolean;
     allocations?: { invoiceId: string; amount: number }[];
+    lines?: { accountId: string; amount: number; description?: string }[];
+    payeeName?: string; // For direct payments
 }) {
     const session = await auth();
     if (!session?.user?.companyId) return { error: "Unauthorized" };
@@ -75,7 +81,7 @@ export async function upsertPayment(data: {
         const payload = {
             tenant_id: session.user.tenantId,
             company_id: session.user.companyId,
-            partner_id: data.partner_id,
+            partner_id: data.partner_id || null, // Allow null
             amount: data.amount,
             method: data.method,
             reference: data.reference,
@@ -83,7 +89,8 @@ export async function upsertPayment(data: {
                 type: data.type,
                 date: data.date.toISOString(),
                 memo: data.memo,
-                allocations: data.allocations // Store original intent in metadata too
+                allocations: data.allocations, // Store original intent in metadata too
+                payee_name: data.payeeName // Store payee name if partner_id is null
             },
             created_at: data.date
         };
@@ -180,6 +187,27 @@ export async function upsertPayment(data: {
                             });
                         }
                     }
+                }
+            }
+
+            // Handle Direct Expense Lines
+            if (data.lines && data.lines.length > 0) {
+                for (const line of data.lines) {
+                    const lineAmount = Number(line.amount);
+                    if (lineAmount <= 0) continue;
+
+                    await tx.payment_lines.create({
+                        data: {
+                            tenant_id: (session.user.tenantId || payment.tenant_id || '') as string,
+                            company_id: (session.user.companyId || payment.company_id || '') as string,
+                            payment_id: payment.id,
+                            amount: lineAmount,
+                            metadata: {
+                                account_id: line.accountId,
+                                description: line.description
+                            }
+                        }
+                    });
                 }
             }
 

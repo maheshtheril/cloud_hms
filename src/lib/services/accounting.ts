@@ -407,7 +407,44 @@ export class AccountingService {
             // 4. Prepare Lines
             const journalLines: any[] = [];
 
-            if (type === 'inbound') {
+            // Check for Direct Allocation Lines (Direct Payment)
+            const paymentLines = await prisma.payment_lines.findMany({
+                where: { payment_id: payment.id }
+            });
+
+            const isDirectPayment = paymentLines.some(l => (l.metadata as any)?.account_id);
+
+            if (isDirectPayment) {
+                // DIRECT PAYMENT / EXPENSE
+                // Debit: Expense Account(s)
+                // Credit: Bank/Cash
+                let totalDebited = 0;
+
+                for (const line of paymentLines) {
+                    const meta = line.metadata as any;
+                    if (meta?.account_id) {
+                        const lineAmt = Number(line.amount);
+                        totalDebited += lineAmt;
+
+                        journalLines.push({
+                            account_id: meta.account_id,
+                            debit: lineAmt,
+                            credit: 0,
+                            description: meta.description || `Direct Expense - ${payment.payment_number}`,
+                            partner_id: payment.partner_id
+                        });
+                    }
+                }
+
+                // Credit Bank/Cash
+                journalLines.push({
+                    account_id: moneyAccount,
+                    debit: 0,
+                    credit: totalDebited, // Using total from lines to be precise
+                    description: `Funds Disbursed - ${payment.payment_number}`
+                });
+
+            } else if (type === 'inbound') {
                 // RECEIPT: Debit Cash/Bank, Credit AR
                 journalLines.push({
                     account_id: moneyAccount,
@@ -423,7 +460,7 @@ export class AccountingService {
                     partner_id: payment.partner_id
                 });
             } else {
-                // PAYMENT: Debit AP, Credit Cash/Bank
+                // PAYMENT (Vendor Bill): Debit AP, Credit Cash/Bank
                 journalLines.push({
                     account_id: apAccount,
                     debit: amount,
