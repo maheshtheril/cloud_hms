@@ -691,7 +691,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 <div className="flex gap-4">
                                     <div className="flex-1">
                                         <SearchableSelect
-                                            key={supplierName || 'empty-supplier'}
                                             value={supplierId}
                                             valueLabel={supplierName}
                                             onChange={(id, opt) => {
@@ -706,7 +705,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                 ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }]
                                                 : []
                                             }
-                                            placeholder="Select Source Supplier..."
+                                            placeholder={supplierName ? `Scanned: ${supplierName}` : "Select Source Supplier..."}
                                             className="w-full bg-background border-border h-14 font-black text-foreground"
                                             variant="ghost"
                                         />
