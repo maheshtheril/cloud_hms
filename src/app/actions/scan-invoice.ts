@@ -106,7 +106,13 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
             Analyze this purchase invoice and extract data into strict JSON.
             
             Header Details:
-            - "supplierName": The Vendor/Supplier Name. LOCATION: Top-Left corner of the page. It is usually the very first text block you read. It is usually BOLD or LARGEST text. Look for keywords: 'Traders', 'Agencies', 'Enterprises', 'Pharma', 'Stores'. It is NOT 'Tax Invoice'. It is NOT the Buyer.
+            - "supplierName": The Vendor/Supplier Name. CRITICAL FIELD.
+                * LOCATION: Top of the page, usually header center or left. 
+                * Look for text that is BOLD, LARGE, or above/near address.
+                * Key indicators: "Sold By", "From", "Seller". 
+                * EXCLUDE: "Billed To", "Shipped To", "Buyer", "Consignee".
+                * EXCLUDE: "Tax Invoice", "Original Copy", "Credit Note". 
+                * If unsure, pick the entity with the GSTIN listed as 'Supplier' or 'Seller'.
             - "gstin": Supplier GSTIN / VAT Number.
             - "address": Supplier Full Address.
             - "contact": Sales Executive Name or Phone (if available).
