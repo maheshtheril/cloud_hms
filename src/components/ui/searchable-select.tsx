@@ -87,14 +87,22 @@ export function SearchableSelect({
     const inputRef = React.useRef<HTMLInputElement>(null);
     const listRef = React.useRef<HTMLUListElement>(null);
 
+    const lastValueRef = React.useRef(value);
+
     // Initial value handling
     React.useEffect(() => {
+        const valueChanged = lastValueRef.current !== value;
+        lastValueRef.current = value;
+
         if (!value) {
             setSelectedOption(null);
-            if (valueLabel) {
-                setQuery(valueLabel);
-            } else {
-                setQuery("");
+            // Only clear query if NOT open or if the value was explicitly cleared from parent
+            if (!open || valueChanged) {
+                if (valueLabel) {
+                    setQuery(valueLabel);
+                } else {
+                    setQuery("");
+                }
             }
             return;
         }
@@ -104,18 +112,22 @@ export function SearchableSelect({
 
         if (found) {
             setSelectedOption(found);
-            // In ghost variant, we want the text in the input
-            if (variant === 'ghost') {
-                setQuery(found.label);
-            } else if (!open) {
-                setQuery("");
+            // Only update query if NOT open or if the value was explicitly changed from parent
+            if (!open || valueChanged) {
+                if (variant === 'ghost') {
+                    setQuery(found.label);
+                } else {
+                    setQuery("");
+                }
             }
         } else if (valueLabel) {
             // Fallback to valueLabel if provided (e.g. after AI scan)
             setSelectedOption({ id: value, label: valueLabel });
-            if (variant === 'ghost') setQuery(valueLabel);
+            if (!open || valueChanged) {
+                if (variant === 'ghost') setQuery(valueLabel);
+            }
         }
-    }, [value, valueLabel, options, defaultOptions, variant]);
+    }, [value, valueLabel, options, defaultOptions, variant, open]);
 
     // Calculate position for portal
     React.useEffect(() => {
