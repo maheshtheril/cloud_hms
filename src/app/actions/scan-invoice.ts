@@ -90,7 +90,10 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
                 - "packing": Packing details (1x10, 10x10, 200ml, etc.).
                 - "unitPrice": Unit Rate/Price PER PACK (before tax). Look for 'Rate' or 'Price'.
                 - "mrp": Maximum Retail Price.
-                - "taxRate": GST Tax Percentage (5, 12, 18, etc.).
+                - "taxRate": GST Tax Percentage. Look for columns "GST %", "GST", "IGST", "SGST", "CGST".
+                    * If you see "GST %" column with values "5", "12", "18", return that number.
+                    * If you see separate "CGST %" and "SGST %" (e.g. 2.5% + 2.5%), SUM THEM UP (return 5.0).
+                    * Return ONLY the number (e.g. 5, 12, 18).
                 - "taxAmount": Total Tax Amount.
                 - "schemeDiscount": Scheme Discount Amount (Schm Amt).
                 - "discountPct": Discount %.

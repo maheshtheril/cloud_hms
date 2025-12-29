@@ -415,10 +415,11 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                             }
 
                             // Safe number parsing
-                            const qty = !isNaN(Number(item.qty)) ? Number(item.qty) : 0;
-                            const price = !isNaN(Number(item.unitPrice)) ? Number(item.unitPrice) : 0;
-                            const rate = !isNaN(Number(item.taxRate)) ? Number(item.taxRate) : 0;
-                            const freeQty = !isNaN(Number(item.freeQty)) ? Number(item.freeQty) : 0;
+                            // Safe number parsing
+                            const qty = !isNaN(parseFloat(item.qty)) ? parseFloat(item.qty) : 0;
+                            const price = !isNaN(parseFloat(item.unitPrice)) ? parseFloat(item.unitPrice) : 0;
+                            const rate = !isNaN(parseFloat(item.taxRate)) ? parseFloat(item.taxRate) : 0;
+                            const freeQty = !isNaN(parseFloat(item.freeQty)) ? parseFloat(item.freeQty) : 0;
 
                             const rawItem = {
                                 productId: pId || "",
