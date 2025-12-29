@@ -46,6 +46,18 @@ async function main() {
         },
 
         { key: 'hms-billing', label: 'Billing', icon: 'CreditCard', url: '/hms/billing', sort: 70 },
+
+        // Accounting Group (World Class)
+        {
+            key: 'hms-accounting', label: 'Accounting', icon: 'Landmark', url: null, sort: 80,
+            children: [
+                { key: 'hms-accounting-reports', label: 'Financial Reports', url: '/hms/accounting', sort: 81 },
+                { key: 'hms-accounting-coa', label: 'Chart of Accounts', url: '/hms/accounting/coa', sort: 82 },
+                { key: 'hms-accounting-journals', label: 'Journal Entries', url: '/hms/accounting/journals', sort: 83 },
+                { key: 'hms-accounting-payments', label: 'Payments', url: '/hms/accounting/payments', sort: 84 },
+            ]
+        },
+
         { key: 'hms-settings', label: 'Settings', icon: 'Settings', url: '/hms/settings', sort: 90 },
     ];
 

@@ -843,4 +843,214 @@ export class AccountingService {
             return { success: false, error: error.message };
         }
     }
+    /**
+     * Fetches a Daily Accounting Summary for a given date.
+     */
+    static async getDailyReport(companyId: string, date: Date = new Date()) {
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        try {
+            const [sales, payments, purchases, journalLines] = await Promise.all([
+                prisma.hms_invoice.findMany({
+                    where: { company_id: companyId, created_at: { gte: startOfDay, lte: endOfDay } }
+                }),
+                prisma.hms_invoice_payments.findMany({
+                    where: { hms_invoice: { company_id: companyId }, created_at: { gte: startOfDay, lte: endOfDay } }
+                }),
+                prisma.hms_purchase_receipt.findMany({
+                    where: { company_id: companyId, created_at: { gte: startOfDay, lte: endOfDay } },
+                    include: { hms_purchase_receipt_line: true }
+                }),
+                prisma.journal_entry_lines.findMany({
+                    where: {
+                        company_id: companyId,
+                        journal_entries: { date: { gte: startOfDay, lte: endOfDay }, posted: true }
+                    },
+                    include: { accounts: true }
+                })
+            ]);
+
+            const summary = {
+                totalSales: sales.reduce((sum, s) => sum + Number(s.total || 0), 0),
+                totalPaid: payments.reduce((sum, p) => sum + Number(p.amount || 0), 0),
+                totalPurchases: purchases.reduce((sum, p) => {
+                    const lineTotal = p.hms_purchase_receipt_line.reduce((lSum, l) => {
+                        const meta = l.metadata as any;
+                        const lineTax = Number(meta?.tax_amount ?? 0);
+                        const lineSubtotal = (Number(l.qty || 0) * Number(l.unit_price || 0)) - (Number(meta?.discount_amt || 0) + Number(meta?.scheme_discount || 0));
+                        return lSum + lineSubtotal + lineTax;
+                    }, 0);
+                    return sum + lineTotal;
+                }, 0),
+                netCashFlow: 0,
+                revenueByAccount: {} as Record<string, number>,
+                expenseByAccount: {} as Record<string, number>
+            };
+
+            journalLines.forEach(line => {
+                const type = line.accounts.type.toLowerCase();
+                const amount = Number(line.debit || 0) - Number(line.credit || 0);
+
+                if (type === 'revenue' || type === 'income') {
+                    const absVal = Math.abs(amount); // Revenue is usually credit
+                    summary.revenueByAccount[line.accounts.name] = (summary.revenueByAccount[line.accounts.name] || 0) + absVal;
+                } else if (type === 'expense') {
+                    summary.expenseByAccount[line.accounts.name] = (summary.expenseByAccount[line.accounts.name] || 0) + amount;
+                }
+            });
+
+            summary.netCashFlow = summary.totalPaid - summary.totalPurchases;
+
+            return { success: true, data: summary };
+        } catch (error: any) {
+            console.error("Daily Report Error:", error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Generates a Profit and Loss Statement.
+     */
+    static async getProfitAndLoss(companyId: string, startDate: Date, endDate: Date) {
+        try {
+            const journalLines = await prisma.journal_entry_lines.findMany({
+                where: {
+                    company_id: companyId,
+                    journal_entries: {
+                        date: { gte: startDate, lte: endDate },
+                        posted: true
+                    },
+                    accounts: {
+                        type: { in: ['Revenue', 'Income', 'Expense', 'COGS'] }
+                    }
+                },
+                include: { accounts: true }
+            });
+
+            const report = {
+                revenue: [] as any[],
+                expenses: [] as any[],
+                cogs: [] as any[],
+                totalRevenue: 0,
+                totalExpenses: 0,
+                totalCOGS: 0,
+                netProfit: 0
+            };
+
+            const accountsMap = new Map<string, { name: string, type: string, amount: number }>();
+
+            journalLines.forEach(line => {
+                const existing = accountsMap.get(line.account_id) || { name: line.accounts.name, type: line.accounts.type, amount: 0 };
+                // Revenue/Income: Credit - Debit
+                // Expense/COGS: Debit - Credit
+                const type = line.accounts.type.toLowerCase();
+                if (type === 'revenue' || type === 'income') {
+                    existing.amount += (Number(line.credit || 0) - Number(line.debit || 0));
+                } else {
+                    existing.amount += (Number(line.debit || 0) - Number(line.credit || 0));
+                }
+                accountsMap.set(line.account_id, existing);
+            });
+
+            accountsMap.forEach((val) => {
+                const type = val.type.toLowerCase();
+                if (type === 'revenue' || type === 'income') {
+                    report.revenue.push(val);
+                    report.totalRevenue += val.amount;
+                } else if (type === 'cogs') {
+                    report.cogs.push(val);
+                    report.totalCOGS += val.amount;
+                } else {
+                    report.expenses.push(val);
+                    report.totalExpenses += val.amount;
+                }
+            });
+
+            report.netProfit = report.totalRevenue - report.totalCOGS - report.totalExpenses;
+
+            return { success: true, data: report };
+        } catch (error: any) {
+            console.error("P&L Error:", error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Generates a Balance Sheet.
+     */
+    static async getBalanceSheet(companyId: string, date: Date = new Date()) {
+        try {
+            // Balance sheet is cumulative up to a date
+            const journalLines = await prisma.journal_entry_lines.findMany({
+                where: {
+                    company_id: companyId,
+                    journal_entries: {
+                        date: { lte: date },
+                        posted: true
+                    },
+                    accounts: {
+                        type: { in: ['Asset', 'Liability', 'Equity', 'Revenue', 'Income', 'Expense', 'COGS'] }
+                    }
+                },
+                include: { accounts: true }
+            });
+
+            const report = {
+                assets: [] as any[],
+                liabilities: [] as any[],
+                equity: [] as any[],
+                totalAssets: 0,
+                totalLiabilities: 0,
+                totalEquity: 0,
+                retainedEarnings: 0
+            };
+
+            const accountsMap = new Map<string, { name: string, type: string, amount: number }>();
+
+            journalLines.forEach(line => {
+                const existing = accountsMap.get(line.account_id) || { name: line.accounts.name, type: line.accounts.type, amount: 0 };
+                const type = line.accounts.type.toLowerCase();
+
+                // Asset / Expense / COGS: Debit - Credit
+                // Liability / Equity / Revenue / Income: Credit - Debit
+                if (['asset', 'expense', 'cogs'].includes(type)) {
+                    existing.amount += (Number(line.debit || 0) - Number(line.credit || 0));
+                } else {
+                    existing.amount += (Number(line.credit || 0) - Number(line.debit || 0));
+                }
+                accountsMap.set(line.account_id, existing);
+            });
+
+            accountsMap.forEach((val) => {
+                const type = val.type.toLowerCase();
+                if (type === 'asset') {
+                    report.assets.push(val);
+                    report.totalAssets += val.amount;
+                } else if (type === 'liability') {
+                    report.liabilities.push(val);
+                    report.totalLiabilities += val.amount;
+                } else if (type === 'equity') {
+                    report.equity.push(val);
+                    report.totalEquity += val.amount;
+                } else {
+                    // Revenue and Expenses transition to Retained Earnings
+                    // If Revenue: val.amount is positive (Cr-Dr)
+                    // If Expense: val.amount is negative (Cr-Dr would be negative since Dr is higher)
+                    // Actually for Expense, Cr-Dr is negative, which is correct for retained earnings reduction.
+                    report.retainedEarnings += val.amount;
+                }
+            });
+
+            report.totalEquity += report.retainedEarnings;
+
+            return { success: true, data: report };
+        } catch (error: any) {
+            console.error("Balance Sheet Error:", error);
+            return { success: false, error: error.message };
+        }
+    }
 }
+
