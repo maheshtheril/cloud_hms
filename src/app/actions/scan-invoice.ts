@@ -86,34 +86,11 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
                 - "hsn": HSN/SAC Code. extract the numeric code (e.g. 300490, 8517). Do NOT return the word 'HSN' or 'SAC'.
                 - "batch": Batch Number.
                 - "expiry": Expiry Date (YYYY-MM-DD or MM/YY).
-                - "qty": Quantity (numeric). This is the NUMBER of packs/units, not individual pieces.
-                - "uom": Unit of Measure. CRITICAL - Follow these rules:
-                    * If you see "10's" or "10S" or "Pack of 10" → return "PACK-10"
-                    * If you see "15's" or "15S" or "Pack of 15" → return "PACK-15"
-                    * If you see "20's" or "20S" or "Pack of 20" → return "PACK-20"
-                    * If you see "Strip" or "Blister" → return "STRIP"
-                    * If you see "Box" → return "BOX"
-                    * If you see "Bottle" → return "BOTTLE"
-                    * If you see "NOS" or "PCS" or "Pieces" → return "PCS"
-                    * If you see "1x10" in packing, the UOM is likely "STRIP" or "PACK-10". Do NOT put "1x10" in UOM. Put "1x10" in 'packing'.
-                - "packing": Packing details. CRITICAL - Extract ALL packing information you see:
-                    * For tablets/capsules: "1x10", "10x10", "1x15", "2x15", etc.
-                    * For bottles/syrups: "200ml", "100ml", "60ml", "500ml", etc.
-                    * For sachets: "5gm", "10gm", etc.
-                    * Look in these columns: "Pack", "Packing", "Pkg", "Size", or near the product name
-                    * If you see "1x10", "10x10", return EXACTLY "1x10", "10x10". Do NOT convert to "PACK-10".
-                    * If you see "10;s" or "10:S" or "10S" or "10's", return "1x10" (standardize to 1xN format if possible, otherwise keep raw "10's").
-                    * If you see "200ML" or "100ML", put this in "packing" and set UOM to "BOTTLE".
-                    * If you see "50 GM" or "15 GM", put this in "packing" and set UOM to "TUBE" or "PCS".
-                    * If the product is a Syrup/Liquid and no UOM is clear, default UOM to "BOTTLE".
-                - "unitPrice": Unit Rate/Price PER PACK (before tax). Do NOT Use MRP. Look for 'Rate' or 'Price'. This is price per UOM.
-                - "mrp": Maximum Retail Price (MRP). Extract the numeric value. Do NOT return the words 'MRP' or 'Rate' or 'Price'. Return 0 if not found.
-                - "schemeDiscount": Scheme Discount Amount (Schm Amt). Capture any discount amount labeled as 'Schm', 'Schm Amt', 'Scheme', or 'SCD'.
-                - "discountPct": Discount Percentage (if shown).
-                - "discountAmt": Total Discount Amount.
-                - "taxRate": Tax Percentage. IMPORTANT: If tax is split (e.g. CGST 2.5% + SGST 2.5%), return the SUM (e.g. 5.0). Return the TOTAL tax rate.
-                - "taxAmount": Total Tax Amount for line.
-                - "freeQty": Scheme Quantity / Free Quantity. Look for columns labeled 'Sch Qty', 'Free', 'Bonus', 'Scheme', or 'Offer'. This is the quantity given for free.
+                - "qty": Billed Quantity (numeric). This is the main quantity column. Do NOT include free/scheme items here.
+                - "freeQty": Scheme/Free Quantity. Look for columns labeled 'Sch Qty', 'Free', 'Bonus', 'Scheme'. 
+                    * Important: If the column contains a slash '/', '-', '\', or checkmark, treat it as 0. 
+                    * Only extract explicit NUMBERS (e.g. '10', '12', '6').
+                    * Do NOT sum this with the main 'qty'. Keep it separate.
                 - "amount": Final Line Amount.
             
             EXAMPLES:
