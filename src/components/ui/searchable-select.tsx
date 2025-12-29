@@ -94,15 +94,20 @@ export function SearchableSelect({
         const valueChanged = lastValueRef.current !== value;
         lastValueRef.current = value;
 
-        if (!value) {
+        if (!value && !valueLabel) {
             setSelectedOption(null);
             // Only clear query if NOT open or if the value was explicitly cleared from parent
             if (!open || valueChanged) {
-                if (valueLabel) {
-                    setQuery(valueLabel);
-                } else {
-                    setQuery("");
-                }
+                setQuery("");
+            }
+            return;
+        }
+
+        if (!value && valueLabel) {
+            setSelectedOption({ id: "temp", label: valueLabel });
+            if (!open || valueChanged) {
+                if (variant === 'ghost') setQuery(valueLabel);
+                else setQuery(valueLabel);
             }
             return;
         }
