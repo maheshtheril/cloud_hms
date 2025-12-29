@@ -297,12 +297,31 @@ async function processInvoiceData(session: any, data: any) {
         // Clean name for search (take first 2 words)
         const searchName = supplierName.split(' ').slice(0, 2).join(' ');
 
-        const existingSupplier = await prisma.hms_supplier.findFirst({
-            where: {
-                company_id: session.user.companyId,
-                name: { contains: searchName, mode: 'insensitive' }
-            }
-        });
+        let existingSupplier = null;
+
+        // 1. Try finding by GSTIN first (High Confidence)
+        if (data.gstin) {
+            // Check metadata->gstin in JSON field
+            existingSupplier = await prisma.hms_supplier.findFirst({
+                where: {
+                    company_id: session.user.companyId,
+                    metadata: {
+                        path: ['gstin'],
+                        equals: data.gstin
+                    }
+                }
+            });
+        }
+
+        // 2. Fallback to Name Search if not found
+        if (!existingSupplier) {
+            existingSupplier = await prisma.hms_supplier.findFirst({
+                where: {
+                    company_id: session.user.companyId,
+                    name: { contains: searchName, mode: 'insensitive' }
+                }
+            });
+        }
 
         if (existingSupplier) {
             supplierId = existingSupplier.id;
