@@ -454,20 +454,89 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 })
             }
 
-            return receipt
+            // 6. AUTO-CREATE PURCHASE INVOICE (Bill)
+            // This ensures the receipt appears in the "Payments" module as a payable bill.
+
+            // Calculate Totals
+            let invoiceSubtotal = 0;
+            let invoiceTaxTotal = 0;
+
+            const invoiceLinesData = data.items.map(item => {
+                const qty = Number(item.qtyReceived) || 0;
+                const price = Number(item.unitPrice) || 0;
+                const tax = Number(item.taxAmount) || 0;
+                const discount = (Number(item.discountAmt) || 0) + (Number(item.schemeDiscount) || 0);
+
+                const lineTotal = (qty * price) - discount + tax;
+                const taxable = (qty * price) - discount;
+
+                invoiceSubtotal += taxable;
+                invoiceTaxTotal += tax;
+
+                return {
+                    tenant_id: session.user.tenantId!,
+                    company_id: companyId!,
+                    product_id: item.productId,
+                    description: "Auto-created from Receipt",
+                    qty: qty,
+                    unit_price: price,
+                    tax: { rate: item.taxRate, amount: tax },
+                    line_total: lineTotal
+                };
+            });
+
+            const invoiceGrandTotal = invoiceSubtotal + invoiceTaxTotal;
+
+            // Create Invoice Header
+            const newInvoice = await tx.hms_purchase_invoice.create({
+                data: {
+                    tenant_id: session.user.tenantId!,
+                    company_id: companyId!,
+                    supplier_id: data.supplierId,
+                    purchase_order_id: data.purchaseOrderId,
+                    name: data.reference || receiptNumber.replace('GRN', 'BILL'),
+                    invoice_date: data.receivedDate,
+                    due_date: data.receivedDate,
+                    status: 'posted',
+                    currency: 'INR',
+                    subtotal: invoiceSubtotal,
+                    tax_total: invoiceTaxTotal,
+                    total_amount: invoiceGrandTotal,
+                    paid_amount: 0,
+                    metadata: {
+                        source_receipt_id: receipt.id,
+                        notes: data.notes
+                    }
+                }
+            });
+
+            // Create Invoice Lines
+            for (const line of invoiceLinesData) {
+                await tx.hms_purchase_invoice_line.create({
+                    data: {
+                        ...line,
+                        invoice_id: newInvoice.id
+                    }
+                });
+            }
+
+            return { receipt, invoiceId: newInvoice.id };
         })
 
-        if (result.id) {
-            // Trigger Accounting Post
-            const accResult = await AccountingService.postPurchaseReceipt(result.id, session.user.id);
+        if (result.invoiceId) {
+            // Trigger Accounting Post via INVOICE (Correct Workflow for AP)
+            // This books: Dr Purchase Expense, Dr Input Tax, Cr Accounts Payable
+            const accResult = await AccountingService.postPurchaseInvoice(result.invoiceId, session.user.id);
+
             if (!accResult.success) {
-                console.error("Accounting Post Failed:", accResult.error);
-                return { success: true, data: result, warning: `Receipt created but Accounting Journal failed: ${accResult.error}` };
+                console.error("Accounting Post Failed (Invoice):", accResult.error);
+                return { success: true, data: result.receipt, warning: `Receipt & Bill created, but Accounting failed: ${accResult.error}` };
             }
         }
 
-        revalidatePath('/hms/purchasing/receipts')
-        return { success: true, data: result }
+        revalidatePath('/hms/purchasing/receipts');
+        revalidatePath('/hms/accounting/bills'); // Refresh bills page too
+        return { success: true, data: result.receipt };
 
     } catch (error: any) {
         console.error("Failed to create receipt (Full Error):", JSON.stringify(error, Object.getOwnPropertyNames(error)));
