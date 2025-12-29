@@ -52,13 +52,17 @@ export class NotificationService {
             // 4. Construct Message
             const patientName = `${invoice.hms_patient.first_name} ${invoice.hms_patient.last_name}`;
             const billLink = `https://cloud-hms.onrender.com/hms/billing/${invoice.id}`;
-            const message = `*Invoice Received: ${invoice.invoice_number}*\n\n` +
+            const message = `✨ *Invoice From HealthCare Center* ✨\n\n` +
                 `Hello *${patientName}*,\n\n` +
-                `Your billing for today has been generated.\n\n` +
-                `*Total Amount:* ${invoice.currency} ${Number(invoice.total).toLocaleString('en-IN')}\n` +
-                `*Status:* ${invoice.status?.toUpperCase()}\n\n` +
-                `You can view/print your digital receipt here:\n${billLink}\n\n` +
-                `Thank you for visiting us!`;
+                `Thank you for choosing our services. Your invoice *${invoice.invoice_number}* is now ready.\n\n` +
+                `━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `💰 *Total:* ${invoice.currency} ${Number(invoice.total).toLocaleString('en-IN')}\n` +
+                `📝 *Status:* ${invoice.status?.toUpperCase()}\n` +
+                `📅 *Date:* ${new Date(invoice.issued_at || invoice.created_at).toLocaleDateString()}\n` +
+                `━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+                `🔗 *View Your Bill:* ${billLink}\n\n` +
+                `_If you have any questions, please feel free to reach out._\n\n` +
+                `Have a healthy day! ❤️`;
 
             // 5. API Configuration
             const instanceId = process.env.WHATSAPP_INSTANCE_ID || 'instance_mock_123';
@@ -68,12 +72,14 @@ export class NotificationService {
             // https://api.ultramsg.com/${instanceId}/messages/chat
 
             const isMock = !process.env.WHATSAPP_TOKEN || process.env.WHATSAPP_TOKEN.includes('mock');
+            const waMeUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
 
             if (isMock) {
                 console.log(`[WhatsApp-Mock] To: ${phone}\n[WhatsApp-Mock] Message: ${message}${finalPdfBase64 ? '\n[WhatsApp-Mock] Attachment: [PDF DETECTED]' : ''}`);
                 return {
                     success: true,
-                    message: `Workflow confirmed. WhatsApp simulated for ${phone}. Add WHATSAPP_TOKEN to .env to go live.`
+                    message: "WhatsApp manual share mode active. Opening WhatsApp...",
+                    whatsappUrl: waMeUrl
                 };
             }
 

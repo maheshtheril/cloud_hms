@@ -81,9 +81,13 @@ export function InvoiceControlPanel({
             const res = await shareInvoiceWhatsapp(invoiceId) as any;
             if (res && res.success) {
                 toast({
-                    title: "WhatsApp Shared",
-                    description: res.message || "Invoice PDF shared via WhatsApp",
+                    title: "WhatsApp",
+                    description: res.message || "Manual share mode active.",
                 });
+
+                if (res.whatsappUrl) {
+                    window.open(res.whatsappUrl, '_blank');
+                }
             } else {
                 toast({
                     title: "Share Failed",
