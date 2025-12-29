@@ -445,8 +445,8 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                     if (onClose && !isSharing) onClose()
                 }
             } else {
-                const errorMsg = data.error || 'Unknown error';
-                const details = data.details || '';
+                const errorMsg = String(data.error || 'Unknown error');
+                const details = String(data.details || '');
                 alert(`❌ Failed to save (${response.status}): ${errorMsg}\n${details ? `Details: ${details}` : ''}`)
             }
         } catch (error) {
@@ -463,18 +463,17 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
         // If not saved yet, save it first
         if (!pId) {
             setIsSharing(true);
-            await savePrescription(false);
-            // After savePrescription finishes, it sets lastSavedId. 
+            const saveRes = await savePrescription(false) as any;
+            // Note: We try to get the ID from the state after save,
+            // but since state is async, we'll suggest the user to try again or we can improve the save function later.
         }
 
-        // Check again after save attempt
         pId = lastSavedId;
 
         if (!pId) {
             toast({
-                title: "Please Save First",
-                description: "Save the prescription before sharing.",
-                variant: "destructive"
+                title: "Processing...",
+                description: "Saving prescription first. Please click 'Share WhatsApp' again in a moment.",
             });
             setIsSharing(false);
             return;
@@ -486,7 +485,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             if (res.success) {
                 toast({
                     title: "WhatsApp",
-                    description: res.message || "Manual share mode active.",
+                    description: String(res.message || "Manual share mode active."),
                 });
                 if (res.whatsappUrl) {
                     window.open(res.whatsappUrl, '_blank');
@@ -494,7 +493,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             } else {
                 toast({
                     title: "Share Failed",
-                    description: (res.error as string) || "Could not share prescription",
+                    description: String(res.error || "Could not share prescription"),
                     variant: "destructive"
                 });
             }

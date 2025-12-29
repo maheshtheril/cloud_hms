@@ -119,7 +119,8 @@ export class NotificationService {
                 return { success: true, message: 'WhatsApp sent successfully' };
             } else {
                 console.error('[WhatsApp-Error]', result);
-                return { success: false, error: result.error || 'Failed to deliver message' };
+                const errorMsg = typeof result.error === 'object' ? JSON.stringify(result.error) : (result.error || 'Failed to deliver message');
+                return { success: false, error: errorMsg };
             }
 
         } catch (error) {
@@ -150,8 +151,9 @@ export class NotificationService {
                 return { success: false, error: 'Prescription or Patient not found' };
             }
 
-            const company = prescription?.company_id
-                ? await prisma.company.findUnique({ where: { id: prescription.company_id } })
+            const companyId = prescription?.company_id;
+            const company = (companyId && typeof companyId === 'string' && companyId !== "undefined")
+                ? await prisma.company.findUnique({ where: { id: companyId } })
                 : null;
 
             // 2. Extract Phone
@@ -210,7 +212,8 @@ export class NotificationService {
             if (result.sent === "true" || result.success) {
                 return { success: true, message: 'Prescription sent via WhatsApp' };
             } else {
-                return { success: false, error: result.error || 'Failed to send WhatsApp' };
+                const errorMsg = typeof result.error === 'object' ? JSON.stringify(result.error) : (result.error || 'Failed to send WhatsApp');
+                return { success: false, error: errorMsg };
             }
 
         } catch (error) {
