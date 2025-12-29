@@ -173,6 +173,7 @@ export async function getOutstandingPurchaseBills(supplierId: string) {
                 id: b.id,
                 number: b.name || 'N/A',
                 date: b.invoice_date,
+                dueDate: b.due_date, // Added
                 total: Number(b.total_amount),
                 paid: Number(b.paid_amount || 0),
                 outstanding: Number(b.total_amount) - Number(b.paid_amount || 0)
