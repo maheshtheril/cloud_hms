@@ -132,8 +132,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
     useEffect(() => {
         if (!isAutoRound) return;
         const taxable = items.reduce((sum, item) => {
-            const taxablePerUnit = item.unitPrice - (item.schemeDiscount || 0) - (item.discountAmt || 0);
-            return sum + Math.max(0, taxablePerUnit * Number(item.receivedQty));
+            const baseTotal = item.unitPrice * Number(item.receivedQty);
+            const totalDeductions = (item.discountAmt || 0) + (item.schemeDiscount || 0);
+            return sum + Math.max(0, baseTotal - totalDeductions);
         }, 0);
         const tax = items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
         const rawTotal = taxable + tax;
@@ -169,6 +170,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     const p = await getProduct(i.productId);
                     const cost = i.unitPrice || 0;
                     const sp = p?.price || 0;
+                    const taxable = (cost * i.pendingQty) - 0; // PO items usually don't have discount yet
                     return {
                         productId: i.productId,
                         productName: i.productName,
@@ -183,7 +185,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                         salePrice: sp,
                         marginPct: sp > 0 ? Number(calculateMargin(sp, cost).toFixed(2)) : 0,
                         taxRate: i.taxRate || p?.taxRate || 0,
-                        taxAmount: (i.pendingQty * cost) * ((i.taxRate || p?.taxRate || 0) / 100),
+                        taxAmount: taxable * ((i.taxRate || p?.taxRate || 0) / 100),
                         hsn: i.hsn || p?.hsn || '',
                         packing: i.packing || p?.packing || '',
                         schemeDiscount: 0,
@@ -242,8 +244,10 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     n[index].marginPct = Number(calculateMargin(n[index].salePrice, n[index].unitPrice).toFixed(2));
                 }
 
-                const taxable = (n[index].unitPrice - (n[index].schemeDiscount || 0) - (n[index].discountAmt || 0)) * n[index].receivedQty;
-                n[index].taxAmount = Math.max(0, taxable) * (n[index].taxRate / 100);
+                const baseTotal = n[index].unitPrice * n[index].receivedQty;
+                const deductions = (n[index].discountAmt || 0) + (n[index].schemeDiscount || 0);
+                const taxable = Math.max(0, baseTotal - deductions);
+                n[index].taxAmount = taxable * (n[index].taxRate / 100);
             }
         }
         setItems(n);
@@ -409,7 +413,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                             salePrice: 0,
                             marginPct: 0,
                             taxRate: rate,
-                            taxAmount: (qty * price) * (rate / 100),
+                            taxAmount: (qty * price) * (rate / 100), // Default scan tax, users will overwrite adjustments
                             hsn: item.hsn || "",
                             packing: item.packing || "",
                             uom: item.uom || "",
