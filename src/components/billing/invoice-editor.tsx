@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, UserPlus } from 'lucide-react'
@@ -59,6 +59,18 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
     ])
 
     const [globalDiscount, setGlobalDiscount] = useState(Number(initialInvoice?.total_discount || 0))
+
+    // Memoize billable items as options for performance
+    const billableOptions = useMemo(() => {
+        return billableItems.map(item => ({
+            id: item.id,
+            label: item.label,
+            price: item.price,
+            sku: item.sku,
+            description: item.description,
+            metadata: item.metadata
+        }))
+    }, [billableItems])
 
     // Auto-load medicines/items from URL
     useEffect(() => {
@@ -570,21 +582,24 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                                                     updateLine(line.id, 'product_id', id);
                                                 }}
                                                 onSearch={async (query) => {
-                                                    return billableItems
+                                                    const lower = query.toLowerCase();
+                                                    return billableOptions
                                                         .filter(item =>
-                                                            item.label.toLowerCase().includes(query.toLowerCase()) ||
-                                                            item.description?.toLowerCase().includes(query.toLowerCase())
+                                                            item.label.toLowerCase().includes(lower) ||
+                                                            (item.sku && item.sku.toLowerCase().includes(lower)) ||
+                                                            (item.description && item.description.toLowerCase().includes(lower))
                                                         )
+                                                        .slice(0, 50)
                                                         .map(item => ({
                                                             id: item.id,
                                                             label: `${item.label} - ₹${item.price}`,
-                                                            subLabel: item.description
+                                                            subLabel: `${item.sku ? `[${item.sku}] ` : ''}${item.description || ''}`.trim()
                                                         }));
                                                 }}
-                                                defaultOptions={billableItems.map(item => ({
+                                                defaultOptions={billableOptions.slice(0, 50).map(item => ({
                                                     id: item.id,
                                                     label: `${item.label} - ₹${item.price}`,
-                                                    subLabel: item.description
+                                                    subLabel: `${item.sku ? `[${item.sku}] ` : ''}${item.description || ''}`.trim()
                                                 }))}
                                                 placeholder="Search product/service..."
                                                 className="w-full mb-2"

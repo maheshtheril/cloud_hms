@@ -71,14 +71,12 @@ export function SearchableSelect({
     const [position, setPosition] = React.useState({ top: 0, left: 0, width: 0 });
 
     React.useEffect(() => {
-        // Only block updates if user is actively searching (query exists)
-        if (open && query) return;
+        // Stop updating if user is searching. 
+        // We only want to sync options with defaultOptions when search is cleared/idle.
+        if (query) return;
 
-        setOptions(prev => {
-            if (JSON.stringify(prev) === JSON.stringify(defaultOptions)) return prev;
-            return defaultOptions;
-        });
-    }, [defaultOptions, open, query]);
+        setOptions(defaultOptions);
+    }, [defaultOptions, query]);
 
     // Reset active index when options change
     React.useEffect(() => {

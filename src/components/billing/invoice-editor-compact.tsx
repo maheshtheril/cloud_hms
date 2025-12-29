@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, X, Loader2, CreditCard, Banknote, Smartphone, Landmark, MessageCircle } from 'lucide-react'
@@ -71,6 +71,18 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     )
 
     const [globalDiscount, setGlobalDiscount] = useState(Number(initialInvoice?.total_discount || 0))
+
+    // Memoize billable items as options for performance
+    const billableOptions = useMemo(() => {
+        return billableItems.map(item => ({
+            id: item.id,
+            label: item.label,
+            price: item.price,
+            sku: item.sku,
+            description: item.description,
+            metadata: item.metadata
+        }))
+    }, [billableItems])
 
     // UX Focus Management State
     const [lastAddedId, setLastAddedId] = useState<number | null>(null)
@@ -468,11 +480,13 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                             p.last_name.toLowerCase().includes(lower) ||
                                             (p.patient_number && p.patient_number.toLowerCase().includes(lower)) ||
                                             (p.contact?.phone && p.contact.phone.includes(lower))
-                                        ).map(p => ({
-                                            id: p.id,
-                                            label: `${p.first_name} ${p.last_name}`,
-                                            subLabel: `ID: ${p.patient_number || 'N/A'} | Ph: ${p.contact?.phone || 'N/A'}`
-                                        }))
+                                        )
+                                            .slice(0, 50)
+                                            .map(p => ({
+                                                id: p.id,
+                                                label: `${p.first_name} ${p.last_name}`,
+                                                subLabel: `ID: ${p.patient_number || 'N/A'} | Ph: ${p.contact?.phone || 'N/A'}`
+                                            }))
                                     }}
                                     defaultOptions={patients.slice(0, 50).map(p => ({
                                         id: p.id,
@@ -541,8 +555,26 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                                     }
                                                 }, 100)
                                             }}
-                                            onSearch={async (query) => billableItems.filter(item => item.label.toLowerCase().includes(query.toLowerCase())).map(item => ({ id: item.id, label: `${item.label} - ₹${item.price}`, subLabel: item.description }))}
-                                            defaultOptions={billableItems.map(item => ({ id: item.id, label: `${item.label} - ₹${item.price}`, subLabel: item.description }))}
+                                            onSearch={async (query) => {
+                                                const lower = query.toLowerCase()
+                                                return billableOptions
+                                                    .filter(item =>
+                                                        item.label.toLowerCase().includes(lower) ||
+                                                        (item.sku && item.sku.toLowerCase().includes(lower)) ||
+                                                        (item.description && item.description.toLowerCase().includes(lower))
+                                                    )
+                                                    .slice(0, 50)
+                                                    .map(item => ({
+                                                        id: item.id,
+                                                        label: `${item.label} - ₹${item.price}`,
+                                                        subLabel: `${item.sku ? `[${item.sku}] ` : ''}${item.description || ''}`.trim()
+                                                    }))
+                                            }}
+                                            defaultOptions={billableOptions.slice(0, 50).map(item => ({
+                                                id: item.id,
+                                                label: `${item.label} - ₹${item.price}`,
+                                                subLabel: `${item.sku ? `[${item.sku}] ` : ''}${item.description || ''}`.trim()
+                                            }))}
                                             placeholder="Search item..."
                                             className="w-full text-xs font-medium"
                                         />
