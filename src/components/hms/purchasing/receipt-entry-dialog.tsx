@@ -401,8 +401,11 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                 if (date) setReceivedDate(date);
                 if (ref) setReference(ref);
                 if (grandTotal) {
-                    setScannedTotal(Number(grandTotal));
-                    setIsAutoRound(false);
+                    const parsedTotal = parseFloat(grandTotal);
+                    if (!isNaN(parsedTotal)) {
+                        setScannedTotal(parsedTotal);
+                        setIsAutoRound(false);
+                    }
                 }
                 if (scannedItems && Array.isArray(scannedItems)) {
                     console.log("Scanned Items:", scannedItems);
