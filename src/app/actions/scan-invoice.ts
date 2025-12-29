@@ -291,7 +291,8 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
 async function processInvoiceData(session: any, data: any) {
     // 1. Supplier: Find or Create
     let supplierId = null;
-    let supplierName = data.supplierName || "";
+    // Robust key check
+    let supplierName = data.supplierName || data.SupplierName || data.vendor || data.VendorName || "";
 
     if (supplierName) {
         // Clean name for search (take first 2 words)
