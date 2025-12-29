@@ -690,6 +690,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 <div className="flex gap-4">
                                     <div className="flex-1">
                                         <SearchableSelect
+                                            key={supplierName || 'empty-supplier'}
                                             value={supplierId}
                                             valueLabel={supplierName}
                                             onChange={(id, opt) => {
