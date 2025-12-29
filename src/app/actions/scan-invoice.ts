@@ -85,8 +85,13 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
             - "items": Array of objects:
                 - "productName": Full item description.
                 - "sku": Product Code / SKU.
-                - "hsn": HSN/SAC Code. extract the numeric code (e.g. 300490, 8517). Do NOT return the word 'HSN' or 'SAC'.
-                - "batch": Batch Number.
+                - "hsn": HSN/SAC Code. Look for 4-8 digit numbers.
+                - "batch": Batch Number. Look for "Batch", "Lot", "B.No". 
+                    * This often contains letters and numbers (e.g. SH245016, CR25002).
+                - "qty": Billed Quantity. 
+                    * MUST be a number. 
+                    * Do NOT confuse with Batch Number. If the value has letters (e.g. 'SH24...'), it is NOT the quantity.
+                    * Look for 'Qty', 'Quantity', 'Units'.
                 - "expiry": Expiry Date (YYYY-MM-DD or MM/YY).
                 - "uom": Unit of Measure (PACK-10, PACK-15, STRIP, BOX, BOTTLE, PCS).
                     * If packing is "1's" or "1s", default to "STRIP" or "PCS" depending on product.
