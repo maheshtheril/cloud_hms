@@ -694,7 +694,10 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             valueLabel={supplierName}
                                             onChange={(id, opt) => { setSupplierId(id); if (opt) { setSupplierName(opt.label); setSupplierMeta(opt.metadata); } }}
                                             onSearch={searchSuppliers}
-                                            defaultOptions={supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }] : []}
+                                            defaultOptions={supplierId
+                                                ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }]
+                                                : (supplierName ? [{ id: "temp_scan", label: supplierName, subLabel: "Scanned Value", metadata: supplierMeta }] : [])
+                                            }
                                             placeholder="Select Source Supplier..."
                                             className="w-full bg-background border-border h-14 font-black text-foreground"
                                             variant="ghost"
