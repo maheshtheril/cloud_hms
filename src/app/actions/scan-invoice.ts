@@ -175,6 +175,12 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
                     throw new Error("AI returned invalid JSON");
                 }
 
+                // VALIDATION: Ensure we actually got items. If not, consider it a failure for this model and try next.
+                if (!data.items || !Array.isArray(data.items) || data.items.length === 0) {
+                    console.warn(`[ScanInvoice] Model ${modelName} returned valid JSON but 0 items. Retrying with next model...`);
+                    throw new Error("AI found 0 items in invoice table.");
+                }
+
                 // If successful, process and return
                 const processed = await processInvoiceData(session, data);
                 console.log("[ScanInvoice] Processed Result:", JSON.stringify(processed, null, 2));
