@@ -459,7 +459,11 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
 
         if (result.id) {
             // Trigger Accounting Post
-            await AccountingService.postPurchaseReceipt(result.id, session.user.id);
+            const accResult = await AccountingService.postPurchaseReceipt(result.id, session.user.id);
+            if (!accResult.success) {
+                console.error("Accounting Post Failed:", accResult.error);
+                return { success: true, data: result, warning: `Receipt created but Accounting Journal failed: ${accResult.error}` };
+            }
         }
 
         revalidatePath('/hms/purchasing/receipts')

@@ -544,6 +544,10 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         const res = await createPurchaseReceipt(payload) as any;
         if (res.error) {
             toast({ title: "Error", description: res.error, variant: "destructive" });
+        } else if (res.warning) {
+            toast({ title: "Completed with Warning", description: res.warning, variant: "destructive" });
+            onSuccess?.();
+            onClose();
         } else {
             toast({ title: "Success", description: "Goods received successfully." });
             onSuccess?.();
