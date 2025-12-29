@@ -394,6 +394,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         try {
             // Pass supplierId if user has already selected one to get better AI results
             const res = await scanInvoiceAction(url, supplierId || undefined) as any;
+            if (res.error) {
+                throw new Error(res.error);
+            }
             if (res.data) {
                 const { supplierId, supplierName, date, reference: ref, items: scannedItems, gstin, address, grandTotal } = res.data;
                 if (supplierName) setSupplierName(supplierName);
