@@ -717,7 +717,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             </div>
                                         ) : (
                                             <SearchableSelect
-                                                key={supplierName + supplierMeta?.gstin ?? 'empty'}
+                                                key={supplierName + (supplierMeta?.gstin || '')}
                                                 value={supplierId}
                                                 valueLabel={supplierName}
                                                 onChange={(id, opt) => {
