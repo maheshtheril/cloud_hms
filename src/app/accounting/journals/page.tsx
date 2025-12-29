@@ -79,7 +79,7 @@ export default async function JournalsPage() {
                             <div className="text-xl font-bold text-slate-900 dark:text-white">
                                 {/* World-Class Display: Use specialized header amount/currency if available, else derive from lines */}
                                 {(entry as any).amount_in_company_currency
-                                    ? formatCurrency(Number((entry as any).amount_in_company_currency), (entry as any).currency_id)
+                                    ? formatCurrency(Number((entry as any).amount_in_company_currency), (entry as any).currencies?.code)
                                     : formatCurrency(entry.journal_entry_lines.reduce((sum: number, line: any) => sum + Number(line.debit || 0), 0))
                                 }
                             </div>
