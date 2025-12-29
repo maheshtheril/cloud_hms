@@ -11,7 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
     Plus, Search, Trash2, Receipt, ArrowRight, X,
     Calendar as CalendarIcon, FileText, Sparkles, Loader2, Scan,
-    Maximize2, Minimize2
+    Maximize2, Minimize2, RotateCcw
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { SearchableSelect, type Option } from "@/components/ui/searchable-select";
@@ -431,6 +431,21 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         }
     };
 
+    const resetForm = () => {
+        setItems([]);
+        setSupplierId(null);
+        setSupplierName('');
+        setSupplierMeta(null);
+        setReceivedDate(new Date().toISOString().split('T')[0]);
+        setReference('');
+        setNotes('');
+        setAttachmentUrl('');
+        setPoId(null);
+        setScannedTotal(0);
+        setMode('po');
+        toast({ title: "Form Cleared", description: "All fields have been reset." });
+    };
+
     const handleSubmit = async () => {
         if (!supplierId || items.length === 0) {
             toast({ title: "Validation Error", description: "Please select a supplier and add at least one item.", variant: "destructive" });
@@ -564,6 +579,15 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                         </div>
                         <Separator orientation="vertical" className="h-8 bg-white/5" />
                         <div className="flex items-center gap-1">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={resetForm}
+                                className="text-neutral-500 hover:text-white hover:bg-white/5 rounded-full h-10 w-10"
+                                title="Clear Form"
+                            >
+                                <RotateCcw className="h-5 w-5" />
+                            </Button>
                             <Button
                                 variant="ghost"
                                 size="icon"
