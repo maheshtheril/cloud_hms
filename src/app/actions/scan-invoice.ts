@@ -191,6 +191,26 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
 
                 // If successful, process and return
                 const processed = await processInvoiceData(session, data);
+
+                // FALLBACK: If we have a known supplierId but AI returned blank name/ID, force it.
+                if (supplierId) {
+                    const p = processed as any;
+                    if (!p.data) p.data = {};
+
+                    if (!p.data.supplierId || !p.data.supplierName) {
+                        const sup = await prisma.hms_supplier.findUnique({
+                            where: { id: supplierId },
+                            select: { id: true, name: true, metadata: true }
+                        });
+                        if (sup) {
+                            p.data.supplierId = sup.id;
+                            p.data.supplierName = sup.name;
+                            // Consolidate metadata if needed
+                            if (!p.data.gstin && (sup.metadata as any)?.gstin) p.data.gstin = (sup.metadata as any).gstin;
+                        }
+                    }
+                }
+
                 console.log("[ScanInvoice] Processed Result:", JSON.stringify(processed, null, 2));
                 return processed;
 

@@ -468,10 +468,10 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     setItems(mapped.filter(i => i.productName !== "Error Importing Item")); // Filter out failed items
                 }
                 setMode('direct');
-                toast({ title: "Scan Success", description: "Details extracted from invoice." });
+                toast({ id: "scan-success", title: "Scan Success", description: "Details extracted from invoice." });
             }
-        } catch (e) {
-            toast({ title: "Scan Failed", description: "Failed to read invoice", variant: "destructive" });
+        } catch (e: any) {
+            toast({ id: "scan-error", title: "Scan Failed", description: e.message || "Failed to read invoice", variant: "destructive" });
         } finally {
             setIsScanning(false);
         }
