@@ -395,6 +395,17 @@ async function processInvoiceData(session: any, data: any) {
             // Fallback: If no productId, we do NOT auto-create (as per user request)
             // productId stays null.
 
+            // HEURISTIC: Fix swapped Price/MRP
+            let finalPrice = parseNumber(item.unitPrice) || 0;
+            let finalMrp = parseNumber(item.mrp) || 0;
+
+            if (finalMrp > 0 && finalPrice > finalMrp) {
+                console.warn(`[ScanInvoice] Swapping Price (${finalPrice}) and MRP (${finalMrp}) as Price > MRP`);
+                const temp = finalPrice;
+                finalPrice = finalMrp;
+                finalMrp = temp;
+            }
+
             processedItems.push({
                 productId,
                 productName: finalName,
@@ -402,8 +413,8 @@ async function processInvoiceData(session: any, data: any) {
                 qty: parseNumber(item.qty) || 1,
                 uom: item.uom || 'PCS', // ← Add UOM
                 packing: item.packing, // ← Add packing
-                unitPrice: parseNumber(item.unitPrice) || 0,
-                mrp: parseNumber(item.mrp) || 0,
+                unitPrice: finalPrice,
+                mrp: finalMrp,
                 batch: item.batch,
                 expiry: item.expiry,
                 taxRate: item.taxRate,
