@@ -387,7 +387,7 @@ export function SearchableSelect({
                                 ref={inputRef}
                                 id={inputId}
                                 type="text"
-                                className={`w-full border-none p-0 focus:ring-0 bg-transparent ${variant === 'ghost' ? `${isDark ? 'text-white' : 'text-slate-900'} font-inherit placeholder:text-inherit placeholder:opacity-30` : 'text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600'}`}
+                                className={`w-full border-none p-0 focus:ring-0 bg-transparent ${variant === 'ghost' ? 'text-foreground font-inherit placeholder:text-muted-foreground placeholder:opacity-50' : 'text-sm text-foreground placeholder:text-muted-foreground'}`}
                                 placeholder={selectedOption && variant === 'default' ? selectedOption.label : placeholder}
                                 value={query}
                                 onChange={handleInputChange}
