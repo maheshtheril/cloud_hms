@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { generateInvoicePDFBase64 } from "@/lib/utils/pdf-generator";
+import { generatePrescriptionPDFBase64 } from "@/lib/utils/prescription-pdf-generator";
 
 export class NotificationService {
     /**
@@ -122,8 +123,99 @@ export class NotificationService {
             }
 
         } catch (error) {
-            console.error('[NotificationService] WhatsApp Exception:', error);
-            return { success: false, error: (error as Error).message };
+            console.error("[NotificationService] WhatsApp failed:", error);
+            return { success: false, error: 'Internal server error' };
+        }
+    }
+
+    /**
+     * Sends a prescription to the patient via WhatsApp.
+     */
+    static async sendPrescriptionWhatsapp(prescriptionId: string, tenantId: string) {
+        try {
+            // 1. Fetch Prescription & Patient Details
+            const prescription = await prisma.prescription.findUnique({
+                where: { id: prescriptionId },
+                include: {
+                    hms_patient: true,
+                    prescription_items: {
+                        include: {
+                            hms_product: true
+                        }
+                    }
+                }
+            });
+
+            if (!prescription || !prescription.hms_patient) {
+                return { success: false, error: 'Prescription or Patient not found' };
+            }
+
+            const company = await prisma.company.findUnique({
+                where: { id: prescription.company_id || undefined }
+            });
+
+            // 2. Extract Phone
+            const contact = prescription.hms_patient.contact as any;
+            let phone = contact?.phone || contact?.mobile || contact?.primary_phone || '';
+            phone = phone.replace(/\D/g, '');
+            if (phone.length === 10) phone = '91' + phone;
+
+            if (!phone) {
+                return { success: false, error: 'Patient phone number missing' };
+            }
+
+            // 3. Generate PDF
+            const pdfBase64 = await generatePrescriptionPDFBase64(prescription, company);
+
+            // 4. Construct Message
+            const patientName = `${prescription.hms_patient.first_name} ${prescription.hms_patient.last_name}`;
+            const companyName = company?.name || "HealthCare Center";
+            const message = `💊 *Prescription From ${companyName}* 💊\n\n` +
+                `Hello *${patientName}*,\n\n` +
+                `Your digital prescription from your recent visit is now ready. Please find the attached PDF for details.\n\n` +
+                `📅 *Date:* ${new Date(prescription.created_at).toLocaleDateString()}\n\n` +
+                `_Take care and get well soon!_ ❤️`;
+
+            // 5. configuration
+            const instanceId = process.env.WHATSAPP_INSTANCE_ID;
+            const token = process.env.WHATSAPP_TOKEN;
+            const isMock = !token || token.includes('mock');
+
+            if (isMock) {
+                const waMeUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+                return {
+                    success: true,
+                    message: "Manual share mode active for prescription.",
+                    whatsappUrl: waMeUrl
+                };
+            }
+
+            // 6. Send Real Request
+            const payload = {
+                token: token,
+                to: phone,
+                body: pdfBase64,
+                filename: `Prescription_${new Date(prescription.created_at).getTime()}.pdf`,
+                caption: message,
+                priority: 10
+            };
+
+            const response = await fetch(`https://api.ultramsg.com/${instanceId}/messages/document`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (result.sent === "true" || result.success) {
+                return { success: true, message: 'Prescription sent via WhatsApp' };
+            } else {
+                return { success: false, error: result.error || 'Failed to send WhatsApp' };
+            }
+
+        } catch (error) {
+            console.error("[NotificationService] Prescription WhatsApp failed:", error);
+            return { success: false, error: 'Internal server error' };
         }
     }
 }

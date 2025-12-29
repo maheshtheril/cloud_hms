@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Printer, Plus, Trash2, Copy, Eraser, Clock, Zap, X, Save, Thermometer, Brain, Heart, Activity as ActivityIcon } from 'lucide-react'
+import { Printer, Plus, Trash2, Copy, Eraser, Clock, Zap, X, Save, Thermometer, Brain, Heart, Activity as ActivityIcon, MessageCircle, FileText, Share2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useToast } from '@/components/ui/use-toast'
+import { sharePrescriptionWhatsapp } from '@/app/actions/prescription'
 
 interface PrescriptionEditorProps {
     isModal?: boolean
@@ -13,6 +15,7 @@ interface PrescriptionEditorProps {
 
 export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEditorProps) {
     const router = useRouter()
+    const { toast } = useToast()
     const searchParams = useSearchParams()
     const patientId = searchParams.get('patientId')
     const appointmentId = searchParams.get('appointmentId') // For billing integration
@@ -47,6 +50,8 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     const [isConverting, setIsConverting] = useState(false)
     const [loadingPrevious, setLoadingPrevious] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
+    const [isSharing, setIsSharing] = useState(false)
+    const [lastSavedId, setLastSavedId] = useState<string | null>(null)
 
     // Converted text
     const [convertedText, setConvertedText] = useState({
@@ -427,14 +432,17 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             const data = await response.json()
 
             if (response.ok && data.success) {
+                setLastSavedId(data.prescriptionId)
                 if (redirectToBill && data.medicines && data.medicines.length > 0) {
                     const medicineParams = encodeURIComponent(JSON.stringify(data.medicines))
                     const appointmentParam = appointmentId ? `&appointmentId=${appointmentId}` : ''
                     router.push(`/hms/billing/new?patientId=${resolvedPatientId}&medicines=${medicineParams}${appointmentParam}`)
-                } else if (onClose) {
-                    onClose()
-                } else {
-                    router.push('/hms/patients')
+                } else if (!redirectToBill) {
+                    toast({
+                        title: "Prescription Saved",
+                        description: "Your changes have been saved successfully.",
+                    })
+                    if (onClose && !isSharing) onClose()
                 }
             } else {
                 const errorMsg = data.error || 'Unknown error';
@@ -446,6 +454,59 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             alert('❌ Failed to save prescription')
         } finally {
             setIsSaving(false)
+        }
+    }
+
+    const handleWhatsappShare = async () => {
+        let pId = lastSavedId;
+
+        // If not saved yet, save it first
+        if (!pId) {
+            setIsSharing(true);
+            await savePrescription(false);
+            // After savePrescription finishes, it sets lastSavedId. 
+        }
+
+        // Check again after save attempt
+        pId = lastSavedId;
+
+        if (!pId) {
+            toast({
+                title: "Please Save First",
+                description: "Save the prescription before sharing.",
+                variant: "destructive"
+            });
+            setIsSharing(false);
+            return;
+        }
+
+        setIsSharing(true);
+        try {
+            const res = await sharePrescriptionWhatsapp(pId);
+            if (res.success) {
+                toast({
+                    title: "WhatsApp",
+                    description: res.message || "Manual share mode active.",
+                });
+                if (res.whatsappUrl) {
+                    window.open(res.whatsappUrl, '_blank');
+                }
+            } else {
+                toast({
+                    title: "Share Failed",
+                    description: (res.error as string) || "Could not share prescription",
+                    variant: "destructive"
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            toast({
+                title: "Error",
+                description: "An unexpected error occurred",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSharing(false);
         }
     }
 
@@ -692,6 +753,15 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                     >
                         {isConverting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Printer className="mr-2 h-5 w-5" />}
                         Digitize & Print
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={handleWhatsappShare}
+                        disabled={isSharing || isSaving}
+                        className="px-8 py-6 rounded-2xl border-green-200 hover:bg-green-50 text-green-700 font-bold"
+                    >
+                        {isSharing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <MessageCircle className="mr-2 h-5 w-5" />}
+                        Share WhatsApp
                     </Button>
                     {!isModal && (
                         <Button variant="ghost" onClick={() => router.back()} className="px-8 py-6 rounded-2xl">
