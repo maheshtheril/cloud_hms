@@ -130,11 +130,11 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
                                 <h3 className="text-lg font-semibold text-gray-900 mb-4">You Details</h3>
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Full Name</label>
-                                    <input name="name" value={formData.name} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500" placeholder="John Doe" />
+                                    <input name="name" value={formData.name} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500" placeholder="Enter your full name" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Work Email</label>
-                                    <input name="email" type="email" value={formData.email} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500" placeholder="john@company.com" />
+                                    <input name="email" type="email" value={formData.email} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="w-full border border-gray-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500" placeholder="name@company.com" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Password</label>

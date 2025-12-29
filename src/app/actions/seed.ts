@@ -42,7 +42,7 @@ export async function seedSuppliers(targetEmail?: string) {
 
         // 2. Seeding Data
         const suppliersToSeed = [
-            { name: "Global Pharma Distributors", email: "orders@globalpharma.test", contact_person: "John Doe", phone: "555-0101", address: "123 Supply Drive, Logistics City" },
+            { name: "Global Pharma Distributors", email: "orders@globalpharma.test", contact_person: "Managing Director", phone: "555-0101", address: "123 Supply Drive, Logistics City" },
             { name: "MediTech Solutions", email: "sales@meditech.test", contact_person: "Jane Smith", phone: "555-0102", address: "45 Innovation Blvd, Tech Park" },
             { name: "Apex Surgical Supplies", email: "contact@apexsurgical.test", contact_person: "Mike Ross", phone: "555-0103", address: "888 Health Way, Wellness Town" },
             { name: "Reliable Lab Equipment", email: "info@reliablelab.test", contact_person: "Sarah Connor", phone: "555-0104", address: "99 Science Ct, Research Valley" },

@@ -163,7 +163,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                                 <Input
                                     id="fullName"
                                     type="text"
-                                    placeholder="John Doe"
+                                    placeholder="Enter full name"
                                     value={formData.fullName}
                                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                                     className="h-10"

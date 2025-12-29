@@ -250,11 +250,11 @@ export function CreatePatientForm({
                                                 <div className="col-span-9 grid grid-cols-2 gap-4">
                                                     <div>
                                                         <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">First Name</label>
-                                                        <input defaultValue={initialData?.first_name} name="first_name" type="text" placeholder="John" required className="w-full h-12 px-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
+                                                        <input defaultValue={initialData?.first_name} name="first_name" type="text" placeholder="First Name" required className="w-full h-12 px-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
                                                     </div>
                                                     <div>
                                                         <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">Last Name</label>
-                                                        <input defaultValue={initialData?.last_name} name="last_name" type="text" placeholder="Doe" required className="w-full h-12 px-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
+                                                        <input defaultValue={initialData?.last_name} name="last_name" type="text" placeholder="Last Name" required className="w-full h-12 px-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
                                                     </div>
                                                 </div>
                                             </div>
@@ -357,7 +357,7 @@ export function CreatePatientForm({
                                                 <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Email Address</label>
                                                 <div className="relative group">
                                                     <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                                                    <input defaultValue={initialData?.contact?.email} name="email" type="email" placeholder="john.doe@example.com" className="w-full h-14 pl-12 pr-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 transition-all" />
+                                                    <input defaultValue={initialData?.contact?.email} name="email" type="email" placeholder="email@example.com" className="w-full h-14 pl-12 pr-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 transition-all" />
                                                 </div>
                                             </div>
                                         </div>
