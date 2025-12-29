@@ -761,7 +761,7 @@ export class AccountingService {
             if (!currencyId) {
                 // Fallback to any active currency if INR missing
                 const anyCurrency = await prisma.currencies.findFirst({ where: { is_active: true } });
-                currencyId = anyCurrency?.id;
+                currencyId = anyCurrency?.id || null;
             }
 
             if (!currencyId) throw new Error("No active currency found in system.");
