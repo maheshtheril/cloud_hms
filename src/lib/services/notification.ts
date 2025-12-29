@@ -47,7 +47,7 @@ export class NotificationService {
             if (!finalPdfBase64) {
                 try {
                     console.log(`[NotificationService] Auto-generating PDF for ${invoice.invoice_number}`);
-                    finalPdfBase64 = await generateInvoicePDFBase64(invoice);
+                    finalPdfBase64 = await generateInvoicePDFBase64(invoice, company);
                 } catch (pdfErr) {
                     console.error("[NotificationService] PDF Generation failed, falling back to text only", pdfErr);
                 }

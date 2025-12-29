@@ -1,6 +1,6 @@
 import PDFDocument from 'pdfkit';
 
-export async function generateInvoicePDFBase64(invoice: any): Promise<string> {
+export async function generateInvoicePDFBase64(invoice: any, company?: any): Promise<string> {
     return new Promise((resolve, reject) => {
         try {
             const doc = new PDFDocument({ margin: 50, size: 'A4' });
@@ -20,13 +20,21 @@ export async function generateInvoicePDFBase64(invoice: any): Promise<string> {
                 .text(`Invoice #: ${invoice.invoice_number}`, 50, 75)
                 .text(`Date: ${new Date(invoice.invoice_date || invoice.created_at).toLocaleDateString()}`, 50, 90);
 
+            // Company Branding
+            const companyName = company?.name || 'Hospital Management System';
+            const meta = company?.metadata as any;
+            const address = meta?.address || 'Healthcare Excellence';
+            const contactStr = (meta?.email || meta?.phone)
+                ? `${meta?.email || ''} ${meta?.email && meta?.phone ? '|' : ''} ${meta?.phone || ''}`
+                : 'Premium Healthcare Services';
+
             doc.fontSize(14)
                 .fillColor('#4f46e5')
-                .text('Hospital Management System', 200, 50, { align: 'right' })
+                .text(companyName, 200, 50, { align: 'right' })
                 .fontSize(10)
                 .fillColor('#666666')
-                .text('123 Health Street, Clinic Tower', 200, 70, { align: 'right' })
-                .text('contact@hms.com | +91 99999 88888', 200, 85, { align: 'right' });
+                .text(address, 200, 70, { align: 'right' })
+                .text(contactStr, 200, 85, { align: 'right' });
 
             doc.moveTo(50, 115).lineTo(550, 115).stroke('#eeeeee');
 
@@ -46,14 +54,17 @@ export async function generateInvoicePDFBase64(invoice: any): Promise<string> {
 
             // --- Table Header ---
             const tableTop = 230;
+            const currency = invoice.currency || 'INR';
+            const symbol = currency === 'INR' ? '₹' : currency + ' ';
+
             doc.font('Helvetica-Bold')
                 .fontSize(10)
                 .fillColor('#444444');
 
             doc.text('Item Description', 50, tableTop)
                 .text('Qty', 280, tableTop, { width: 50, align: 'right' })
-                .text('Price', 350, tableTop, { width: 70, align: 'right' })
-                .text('Total', 450, tableTop, { width: 100, align: 'right' });
+                .text(`Price (${currency})`, 330, tableTop, { width: 90, align: 'right' })
+                .text(`Total (${currency})`, 450, tableTop, { width: 100, align: 'right' });
 
             doc.moveTo(50, tableTop + 15).lineTo(550, tableTop + 15).stroke('#eeeeee');
 
@@ -69,8 +80,8 @@ export async function generateInvoicePDFBase64(invoice: any): Promise<string> {
 
                 doc.text(description, 50, currentY, { width: 220 })
                     .text(qty.toString(), 280, currentY, { width: 50, align: 'right' })
-                    .text(`₹${price.toFixed(2)}`, 350, currentY, { width: 70, align: 'right' })
-                    .text(`₹${total.toFixed(2)}`, 450, currentY, { width: 100, align: 'right' });
+                    .text(`${price.toLocaleString('en-IN')}`, 350, currentY, { width: 70, align: 'right' })
+                    .text(`${total.toLocaleString('en-IN')}`, 450, currentY, { width: 100, align: 'right' });
 
                 currentY += 25;
             });
@@ -84,15 +95,15 @@ export async function generateInvoicePDFBase64(invoice: any): Promise<string> {
 
             doc.fontSize(10)
                 .text('Subtotal:', rightLabelX, totalsY + 15, { width: 100, align: 'left' })
-                .text(`₹${Number(invoice.subtotal).toFixed(2)}`, rightValueX, totalsY + 15, { width: 100, align: 'right' });
+                .text(`${symbol}${Number(invoice.subtotal).toLocaleString('en-IN')}`, rightValueX, totalsY + 15, { width: 100, align: 'right' });
 
             doc.text('Tax:', rightLabelX, totalsY + 30)
-                .text(`₹${Number(invoice.total_tax).toFixed(2)}`, rightValueX, totalsY + 30, { width: 100, align: 'right' });
+                .text(`${symbol}${Number(invoice.total_tax).toLocaleString('en-IN')}`, rightValueX, totalsY + 30, { width: 100, align: 'right' });
 
             if (Number(invoice.total_discount) > 0) {
                 doc.fillColor('#ef4444')
                     .text('Discount:', rightLabelX, totalsY + 45)
-                    .text(`-₹${Number(invoice.total_discount).toFixed(2)}`, rightValueX, totalsY + 45, { width: 100, align: 'right' });
+                    .text(`-${symbol}${Number(invoice.total_discount).toLocaleString('en-IN')}`, rightValueX, totalsY + 45, { width: 100, align: 'right' });
             }
 
             const grandTotalY = totalsY + 70;
@@ -102,14 +113,14 @@ export async function generateInvoicePDFBase64(invoice: any): Promise<string> {
                 .fontSize(12)
                 .text('GRAND TOTAL', 360, grandTotalY)
                 .fontSize(14)
-                .text(`₹${Number(invoice.total).toFixed(2)}`, 450, grandTotalY, { width: 90, align: 'right' });
+                .text(`${symbol}${Number(invoice.total).toLocaleString('en-IN')}`, 450, grandTotalY, { width: 90, align: 'right' });
 
             // --- Footer ---
             doc.font('Helvetica')
                 .fontSize(8)
                 .fillColor('#999999')
                 .text('This is a computer generated invoice and does not require a signature.', 0, 750, { align: 'center', width: 595 })
-                .text(`Generated by Cloud HMS on ${new Date().toLocaleString()}`, 0, 765, { align: 'center', width: 595 });
+                .text(`Powered by cloud-hms.onrender.com | Generated on ${new Date().toLocaleString()}`, 0, 765, { align: 'center', width: 595 });
 
             doc.end();
         } catch (err) {
