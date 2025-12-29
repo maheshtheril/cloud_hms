@@ -19,9 +19,9 @@ export class NotificationService {
                 }
             });
 
-            const company = await prisma.company.findUnique({
-                where: { id: invoice?.company_id }
-            });
+            const company = invoice?.company_id
+                ? await prisma.company.findUnique({ where: { id: invoice.company_id } })
+                : null;
 
             if (!invoice || !invoice.hms_patient) {
                 return { success: false, error: 'Patient or Invoice not found' };
@@ -150,9 +150,9 @@ export class NotificationService {
                 return { success: false, error: 'Prescription or Patient not found' };
             }
 
-            const company = await prisma.company.findUnique({
-                where: { id: prescription.company_id || undefined }
-            });
+            const company = prescription?.company_id
+                ? await prisma.company.findUnique({ where: { id: prescription.company_id } })
+                : null;
 
             // 2. Extract Phone
             const contact = prescription.hms_patient.contact as any;

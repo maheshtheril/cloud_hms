@@ -105,6 +105,7 @@ export async function POST(request: NextRequest) {
             const pr = await (tx.prescription as any).create({
                 data: {
                     tenant_id: session.user.tenantId,
+                    company_id: userCompanyId || null,
                     patient_id: patientId,
                     appointment_id: appointmentId || null,
                     vitals: vitals || '',
