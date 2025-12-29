@@ -86,26 +86,20 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
                 - "hsn": HSN/SAC Code. extract the numeric code (e.g. 300490, 8517). Do NOT return the word 'HSN' or 'SAC'.
                 - "batch": Batch Number.
                 - "expiry": Expiry Date (YYYY-MM-DD or MM/YY).
-                - "qty": Billed Quantity (numeric). This is the main quantity column. Do NOT include free/scheme items here.
-                - "freeQty": Scheme/Free Quantity. Look for columns labeled 'Sch Qty', 'Free', 'Bonus', 'Scheme'. 
-                    * Important: If the column contains a slash '/', '-', '\', or checkmark, treat it as 0. 
-                    * Only extract explicit NUMBERS (e.g. '10', '12', '6').
-                    * Do NOT sum this with the main 'qty'. Keep it separate.
-                - "amount": Final Line Amount.
-            
-            EXAMPLES:
-            If invoice shows: "Paracetamol 500mg | 10's | Qty: 5 | Rate: 45.00"
-            Return: { "productName": "Paracetamol 500mg", "uom": "PACK-10", "packing": "1x10", "qty": 5, "unitPrice": 45.00 }
-            
-            If invoice shows: "Amoxicillin 250mg | Strip | Packing: 1x15 | Qty: 20 | Rate: 12.50"
-            Return: { "productName": "Amoxicillin 250mg", "uom": "PACK-15", "packing": "1x15", "qty": 20, "unitPrice": 12.50 }
-            
-            If invoice shows: "Rabemac OS Syrup | Bottle | 200ml | Qty: 30 | Rate: 85.00"
-            Return: { "productName": "Rabemac OS Syrup", "uom": "BOTTLE", "packing": "200ml", "qty": 30, "unitPrice": 85.00 }
-            
-            Return ONLY raw JSON. No markdown formatting.
-            
-            Return ONLY raw JSON. No markdown formatting.
+                - "uom": Unit of Measure (PACK-10, PACK-15, STRIP, BOX, BOTTLE, PCS).
+                - "packing": Packing details (1x10, 10x10, 200ml, etc.).
+                - "unitPrice": Unit Rate/Price PER PACK (before tax). Look for 'Rate' or 'Price'.
+                - "mrp": Maximum Retail Price.
+                - "taxRate": GST Tax Percentage (5, 12, 18, etc.).
+                - "taxAmount": Total Tax Amount.
+                - "schemeDiscount": Scheme Discount Amount (Schm Amt).
+                - "discountPct": Discount %.
+                - "discountAmt": Discount Amount.
+                - "qty": Billed Quantity. The main quantity column.
+                - "freeQty": Scheme/Free Quantity. Look for 'Sch Qty', 'Free', 'Bonus'. 
+                    * Extract explicit numbers only (10, 12+1 -> 12).
+                    * Ignore checkmarks, slashes, or empty cells.
+                    * If column 'Sch Qty' has '12' and 'Qty' has '30', return freeQty=12, qty=30.
         `;
 
         for (const modelName of candidateModels) {
