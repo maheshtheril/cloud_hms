@@ -53,8 +53,8 @@ export default function PurchaseReceiptsPage() {
             {/* Header */}
             <div className="max-w-[1600px] mx-auto mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-2xl font-semibold tracking-tight mb-2">Purchase Entries</h1>
-                    <p className="text-neutral-400 text-sm">Review stock inward records and invoices.</p>
+                    <h1 className="text-2xl font-semibold tracking-tight mb-2">Purchase Receipts (GRN)</h1>
+                    <p className="text-neutral-400 text-sm">Review stock inward records. (Goods Received Notes)</p>
                 </div>
                 <div className="flex items-center gap-4">
                     <div className="relative group">
