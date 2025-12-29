@@ -77,8 +77,10 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
             - "date": Invoice Date in YYYY-MM-DD format.
             - "reference": Invoice Number / Bill Number.
             - "defaultHsn": Common HSN/SAC code if listed in header/footer/summary (fallback).
-            - "grandTotal": Final Invoice Grand Total Amount (Numeric).
-            
+            - "grandTotal": Final Invoice Grand Total / Net Payable Amount.
+                * Look for "Net Payable", "Grand Total", "Invoice Total", "Total Amount".
+                * If multiple totals exist (e.g. Sub Total, Taxable), pick the FINAL PAYABLE amount.
+                
             Line Items (Table rows):
             - "items": Array of objects:
                 - "productName": Full item description.
@@ -87,7 +89,13 @@ export async function scanInvoiceFromUrl(fileUrl: string) {
                 - "batch": Batch Number.
                 - "expiry": Expiry Date (YYYY-MM-DD or MM/YY).
                 - "uom": Unit of Measure (PACK-10, PACK-15, STRIP, BOX, BOTTLE, PCS).
-                - "packing": Packing details (1x10, 10x10, 200ml, etc.).
+                    * If packing is "1's" or "1s", default to "STRIP" or "PCS" depending on product.
+                - "packing": Packing details. CRITICAL.
+                    * Look for "1x10", "10x10", "1x15", "200ml", "10's", "10S".
+                    * Check 'Packing' column, 'Pack' column, OR inside 'Particulars'/'Description'.
+                    * If column says "1's", look at Product Name for clues (e.g. "10TAB" -> 1x10).
+                    * If product is Syrup/Liquid -> "200ml", "100ml".
+                    * Standardize to "1x10" format if possible.
                 - "unitPrice": Unit Rate/Price PER PACK (before tax). Look for 'Rate' or 'Price'.
                 - "mrp": Maximum Retail Price.
                 - "taxRate": GST Tax Percentage. Look for columns "GST %", "GST", "IGST", "SGST", "CGST".
