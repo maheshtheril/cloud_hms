@@ -107,11 +107,12 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
             
             Header Details:
             - "supplierName": The Vendor/Supplier Name. CRITICAL FIELD.
-                * LOCATION: Top of the page, usually header center or left. 
-                * Look for text that is BOLD, LARGE, or above/near address.
+                * LOCATION: TOP LEFT of the document. Look here FIRST.
+                * Often adjacent to the logo or the very first lines of text.
+                * Look for text that is BOLD, LARGE, or above address lines.
                 * Key indicators: "Sold By", "From", "Seller". 
-                * EXCLUDE: "Billed To", "Shipped To", "Buyer", "Consignee".
-                * EXCLUDE: "Tax Invoice", "Original Copy", "Credit Note". 
+                * EXCLUDE: "Billed To", "Shipped To", "Buyer", "Consignee" (usually appearing lower or on the right).
+                * EXCLUDE: "Tax Invoice", "Original Copy" headers.
                 * If unsure, pick the entity with the GSTIN listed as 'Supplier' or 'Seller'.
             - "gstin": Supplier GSTIN / VAT Number.
             - "address": Supplier Full Address.
