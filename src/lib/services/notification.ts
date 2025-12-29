@@ -18,6 +18,10 @@ export class NotificationService {
                 }
             });
 
+            const company = await prisma.company.findUnique({
+                where: { id: invoice?.company_id }
+            });
+
             if (!invoice || !invoice.hms_patient) {
                 return { success: false, error: 'Patient or Invoice not found' };
             }
@@ -51,8 +55,13 @@ export class NotificationService {
 
             // 4. Construct Message
             const patientName = `${invoice.hms_patient.first_name} ${invoice.hms_patient.last_name}`;
-            const billLink = `https://cloud-hms.onrender.com/hms/billing/${invoice.id}`;
-            const message = `✨ *Invoice From HealthCare Center* ✨\n\n` +
+            const companyName = company?.name || "HealthCare Center";
+
+            // Get base URL for the billing link
+            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://cloud-hms.onrender.com';
+            const billLink = `${baseUrl}/hms/billing/${invoice.id}`;
+
+            const message = `✨ *Invoice From ${companyName}* ✨\n\n` +
                 `Hello *${patientName}*,\n\n` +
                 `Thank you for choosing our services. Your invoice *${invoice.invoice_number}* is now ready.\n\n` +
                 `━━━━━━━━━━━━━━━━━━━━━━━━\n` +
