@@ -157,9 +157,6 @@ export async function getOutstandingPurchaseBills(supplierId: string) {
                 company_id: session.user.companyId,
                 supplier_id: supplierId,
                 status: { not: 'draft' },
-                total_amount: { gt: prisma.hms_purchase_invoice.fields.paid_amount } // Simple gt doesn't work with field comparison in where, but good enough for now if we use a raw where or just filter in JS.
-                // Re-thinking: Prisma doesn't support field vs field in WHERE natively yet without special syntax or computed.
-                // Let's use status filter + manual check or just fetch all open ones.
             },
             orderBy: { invoice_date: 'asc' }
         });
