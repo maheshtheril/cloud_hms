@@ -695,7 +695,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                     <Input
                                                         value={supplierName}
                                                         onChange={(e) => setSupplierName(e.target.value)}
-                                                        className="h-14 bg-emerald-500/10 border-emerald-500/50 text-emerald-600 font-bold px-4 text-lg rounded-xl focus-visible:ring-emerald-500 placeholder:text-emerald-600/50"
+                                                        className="h-14 bg-background border-emerald-500/50 text-foreground font-bold px-4 text-lg rounded-xl focus-visible:ring-emerald-500 placeholder:text-muted-foreground"
                                                         placeholder="Supplier Name"
                                                     />
                                                     <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
