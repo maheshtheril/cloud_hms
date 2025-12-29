@@ -78,10 +78,10 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
         }
 
         const candidateModels = [
-            "gemini-2.0-flash-exp",   // Smartest (Experimental)
-            "gemini-2.5-flash-lite",  // New Fast/Lite
-            "gemini-1.5-flash",
-            "gemini-1.5-pro",
+            "gemini-1.5-flash",       // Stable, fast, good with docs
+            "gemini-1.5-pro",         // High intelligence, good fallback
+            "gemini-2.0-flash-exp",   // Experimental
+            "gemini-2.5-flash-lite",
             "gemini-pro-vision"
         ];
 
