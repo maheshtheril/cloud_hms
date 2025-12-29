@@ -404,43 +404,59 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     setScannedTotal(Number(grandTotal));
                     setIsAutoRound(false);
                 }
-                if (scannedItems) {
+                if (scannedItems && Array.isArray(scannedItems)) {
+                    console.log("Scanned Items:", scannedItems);
                     const mapped = await Promise.all(scannedItems.map(async (item: any) => {
-                        let pId = item.productId;
-                        if (!pId && item.productName) {
-                            const pr = await findOrCreateProduct(item.productName, { mrp: Number(item.mrp), hsn: item.hsn });
-                            if (!('error' in pr)) pId = pr.productId;
-                        }
-                        const qty = Number(item.qty) || 0;
-                        const price = Number(item.unitPrice) || 0;
-                        const rate = Number(item.taxRate) || 0;
+                        try {
+                            let pId = item.productId;
+                            if (!pId && item.productName) {
+                                const pr = await findOrCreateProduct(item.productName, { mrp: Number(item.mrp), hsn: item.hsn });
+                                if (pr && !('error' in pr)) pId = pr.productId;
+                            }
 
-                        const rawItem = {
-                            productId: pId || "",
-                            productName: item.productName,
-                            poLineId: "",
-                            orderedQty: 0,
-                            pendingQty: 0,
-                            receivedQty: qty,
-                            unitPrice: price,
-                            batch: item.batch || "",
-                            expiry: item.expiry || "",
-                            mrp: Number(item.mrp) || price,
-                            salePrice: 0,
-                            marginPct: 0,
-                            taxRate: rate,
-                            taxAmount: 0, // Calculated by helper
-                            hsn: item.hsn || "",
-                            packing: item.packing || "",
-                            uom: item.uom || "",
-                            schemeDiscount: Number(item.schemeDiscount) || 0,
-                            discountPct: Number(item.discountPct) || 0,
-                            discountAmt: Number(item.discountAmt) || 0,
-                            freeQty: Number(item.freeQty) || 0
-                        };
-                        return updateLineItemCalcs(rawItem as any);
+                            // Safe number parsing
+                            const qty = !isNaN(Number(item.qty)) ? Number(item.qty) : 0;
+                            const price = !isNaN(Number(item.unitPrice)) ? Number(item.unitPrice) : 0;
+                            const rate = !isNaN(Number(item.taxRate)) ? Number(item.taxRate) : 0;
+                            const freeQty = !isNaN(Number(item.freeQty)) ? Number(item.freeQty) : 0;
+
+                            const rawItem = {
+                                productId: pId || "",
+                                productName: item.productName || "Unknown Item",
+                                poLineId: "",
+                                orderedQty: 0,
+                                pendingQty: 0,
+                                receivedQty: qty,
+                                unitPrice: price,
+                                batch: item.batch || "",
+                                expiry: item.expiry || "",
+                                mrp: Number(item.mrp) || price,
+                                salePrice: 0,
+                                marginPct: 0,
+                                taxRate: rate,
+                                taxAmount: 0, // Calculated by helper
+                                hsn: item.hsn || "",
+                                packing: item.packing || "",
+                                uom: item.uom || "",
+                                schemeDiscount: Number(item.schemeDiscount) || 0,
+                                discountPct: Number(item.discountPct) || 0,
+                                discountAmt: Number(item.discountAmt) || 0,
+                                freeQty: freeQty
+                            };
+                            return updateLineItemCalcs(rawItem as any);
+                        } catch (err) {
+                            console.error("Error mapping scanned item:", item, err);
+                            // Return a safe dummy item to avoid crashing the whole list
+                            return {
+                                productId: "",
+                                productName: "Error Importing Item",
+                                receivedQty: 0,
+                                unitPrice: 0,
+                                taxAmount: 0
+                            } as any;
+                        }
                     }));
-                    setItems(mapped as any);
+                    setItems(mapped.filter(i => i.productName !== "Error Importing Item")); // Filter out failed items
                 }
                 setMode('direct');
                 toast({ title: "Scan Success", description: "Details extracted from invoice." });
