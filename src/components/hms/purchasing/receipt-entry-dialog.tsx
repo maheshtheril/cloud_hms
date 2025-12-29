@@ -391,6 +391,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
     };
 
     const handleScanInvoice = async (url: string) => {
+        setAttachmentUrl(url);
         setIsScanning(true);
         setScanProgress('Analyzing Invoice...');
         try {
@@ -701,6 +702,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             value={supplierId}
                                             onChange={(id, opt) => { setSupplierId(id); if (opt) { setSupplierName(opt.label); setSupplierMeta(opt.metadata); } }}
                                             onSearch={searchSuppliers}
+                                            defaultOptions={supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }] : []}
                                             placeholder="Select Source Supplier..."
                                             className="w-full bg-background border-border h-14 font-black text-foreground"
                                             variant="ghost"
@@ -776,7 +778,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                     )}
                                     <div className="shrink-0 w-52 border border-border rounded-xl overflow-hidden group/scan shadow-2xl hover:shadow-indigo-500/20 transition-all bg-background">
                                         <FileUpload
-                                            onUploadComplete={(url) => { if (url) handleScanInvoice(url); }}
+                                            onUploadComplete={(url) => { if (url) handleScanInvoice(url); else setAttachmentUrl(''); }}
+                                            currentFileUrl={attachmentUrl}
                                             label="AI MAGIC SCAN"
                                             className="h-20 border-dashed border-indigo-500/30 bg-indigo-500/[0.04] hover:bg-indigo-500/10 transition-colors"
                                         />

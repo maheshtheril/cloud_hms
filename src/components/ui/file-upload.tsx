@@ -46,6 +46,11 @@ export function FileUpload({
         };
     }, [cameraStream]);
 
+    // Sync previewUrl with currentFileUrl from props
+    useEffect(() => {
+        setPreviewUrl(currentFileUrl || null);
+    }, [currentFileUrl]);
+
     const handleDrag = (e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
