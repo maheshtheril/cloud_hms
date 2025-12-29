@@ -127,7 +127,7 @@ export function SearchableSelect({
             }
         } else if (valueLabel) {
             // Fallback to valueLabel if provided (e.g. after AI scan)
-            setSelectedOption({ id: value, label: valueLabel });
+            setSelectedOption({ id: value || "temp", label: valueLabel });
             if (!open || valueChanged) {
                 if (variant === 'ghost') setQuery(valueLabel);
             }
