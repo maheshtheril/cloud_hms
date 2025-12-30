@@ -84,6 +84,8 @@ export async function getPurchaseOrder(id: string) {
 
 // --- Supplier Actions ---
 
+import { AccountingService } from "@/lib/services/accounting"
+
 export async function createSupplier(data: {
     name: string
     gstin?: string
@@ -91,6 +93,8 @@ export async function createSupplier(data: {
     email?: string
     phone?: string
     contactPerson?: string
+    openingBalance?: number
+    openingBalanceDate?: Date
 }) {
     const session = await auth()
     if (!session?.user?.companyId) return { error: "Unauthorized" }
@@ -109,10 +113,19 @@ export async function createSupplier(data: {
                     address: data.address,
                     email: data.email,
                     phone: data.phone,
-                    contact_person: data.contactPerson
+                    contact_person: data.contactPerson,
+                    opening_balance: data.openingBalance,
+                    opening_balance_date: data.openingBalanceDate
                 }
             }
         })
+
+        // Post Opening Balance if present
+        if (data.openingBalance && data.openingBalance > 0) {
+            const obDate = data.openingBalanceDate ? new Date(data.openingBalanceDate) : new Date();
+            // Fire and forget accounting (or await if critical)
+            await AccountingService.postOpeningBalance(supplier.id, 'supplier', data.openingBalance, obDate, session.user.id);
+        }
 
         return {
             success: true,
@@ -128,6 +141,7 @@ export async function createSupplier(data: {
         }
     } catch (error) {
         console.error("Create Supplier Failed:", error)
+        return { error: "Failed to create supplier" }
     }
 }
 

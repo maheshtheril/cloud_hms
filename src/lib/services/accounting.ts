@@ -1052,5 +1052,130 @@ export class AccountingService {
             return { success: false, error: error.message };
         }
     }
-}
 
+    /**
+     * Posts an Opening Balance for a Supplier (Liability) or Customer (Asset).
+     * 
+     * @param entityId - The ID of the supplier or customer
+     * @param entityType - 'supplier' | 'customer'
+     * @param amount - The amount (Positive for Owed TO Supplier, Positive for Owed BY Customer)
+     * @param date - The date of the opening balance
+     * @param userId - ID of the user performing the action
+     */
+    static async postOpeningBalance(entityId: string, entityType: 'supplier' | 'customer', amount: number, date: Date, userId?: string) {
+        try {
+            if (amount === 0) return { success: true };
+
+            let entityName = '';
+            let companyId = '';
+            let tenantId = '';
+
+            // 1. Fetch Entity Details
+            if (entityType === 'supplier') {
+                const s = await prisma.hms_supplier.findUnique({ where: { id: entityId } });
+                if (!s) throw new Error("Supplier not found");
+                entityName = s.name;
+                companyId = s.company_id;
+                tenantId = s.tenant_id;
+            } else {
+                // Future Support for Customers (Patients)
+                return { success: false, error: "Customer opening balance not yet supported" };
+            }
+
+            // 2. Fetch/Create Accounts
+            // A. Opening Balance Equity (Contra/Offset)
+            let openingBalanceAccount = await prisma.accounts.findFirst({
+                where: { company_id: companyId, code: '3999' }
+            });
+
+            if (!openingBalanceAccount) {
+                openingBalanceAccount = await prisma.accounts.create({
+                    data: {
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        name: 'Opening Balance Equity',
+                        code: '3999',
+                        type: 'Equity',
+                        is_active: true
+                    }
+                });
+            }
+
+            // B. AP/AR Account
+            let targetAccountCode = (entityType === 'supplier') ? '2000' : '1200';
+            let targetAccount = await prisma.accounts.findFirst({
+                where: { company_id: companyId, code: targetAccountCode }
+            });
+
+            // Check Accounting Settings if default code fails
+            if (!targetAccount) {
+                const settings = await prisma.company_accounting_settings.findUnique({ where: { company_id: companyId } });
+                const settingId = (entityType === 'supplier') ? settings?.ap_account_id : settings?.ar_account_id;
+                if (settingId) {
+                    targetAccount = await prisma.accounts.findUnique({ where: { id: settingId } });
+                }
+            }
+
+            if (!targetAccount) throw new Error(`${entityType === 'supplier' ? 'Accounts Payable' : 'Accounts Receivable'} account not found.`);
+
+            // 3. Prepare Journal Entry
+            // For Supplier (We Owe Them): Credit AP, Debit Opening Balance Equity
+            // For Customer (They Owe Us): Debit AR, Credit Opening Balance Equity
+
+            const journalLines: any[] = [];
+
+            if (entityType === 'supplier') {
+                // Debit Equity (Reduces Equity, balances the Liability)
+                journalLines.push({
+                    account_id: openingBalanceAccount.id,
+                    debit: amount,
+                    credit: 0,
+                    description: `Opening Balance Adjustment`
+                });
+
+                // Credit AP (Liability)
+                journalLines.push({
+                    account_id: targetAccount.id,
+                    debit: 0,
+                    credit: amount,
+                    description: `Opening Balance - ${entityName}`,
+                    partner_id: entityId
+                });
+            }
+
+            // 4. Create Transaction
+            await prisma.$transaction(async (tx) => {
+                await tx.journal_entries.create({
+                    data: {
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        date: date,
+                        posted: true,
+                        posted_at: new Date(),
+                        created_by: userId,
+                        // currency_id: ... (Optional, defaults null for functional currency)
+                        amount_in_company_currency: amount,
+                        ref: `OB-${entityName.substring(0, 5)}-${date.getFullYear()}`,
+                        journal_entry_lines: {
+                            create: journalLines.map(line => ({
+                                tenant_id: tenantId,
+                                company_id: companyId,
+                                account_id: line.account_id,
+                                debit: line.debit,
+                                credit: line.credit,
+                                description: line.description,
+                                partner_id: line.partner_id
+                            }))
+                        }
+                    }
+                });
+            });
+
+            return { success: true };
+
+        } catch (error: any) {
+            console.error("Opening Balance Post Error:", error);
+            return { success: false, error: error.message };
+        }
+    }
+}

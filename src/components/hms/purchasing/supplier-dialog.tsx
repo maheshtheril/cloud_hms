@@ -20,7 +20,9 @@ export function SupplierDialog({ isOpen, onClose, onSuccess }: SupplierDialogPro
         address: '',
         phone: '',
         email: '',
-        contactPerson: ''
+        contactPerson: '',
+        openingBalance: 0,
+        openingBalanceDate: new Date()
     });
 
     if (!isOpen) return null;
@@ -143,6 +145,40 @@ export function SupplierDialog({ isOpen, onClose, onSuccess }: SupplierDialogPro
                                         className="w-full pl-9 pr-3 py-2 bg-neutral-50 dark:bg-neutral-800 border-none rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 text-neutral-900 dark:text-white placeholder:text-neutral-400 transition-all"
                                         value={formData.phone}
                                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Accounting - Opening Balance */}
+                        <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800">
+                            <h3 className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-3">Accounting</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+                                        Opening Balance
+                                    </label>
+                                    <div className="relative">
+                                        <span className="absolute left-3 top-2 text-neutral-400">$</span>
+                                        <input
+                                            type="number"
+                                            placeholder="0.00"
+                                            className="w-full pl-7 pr-3 py-2 bg-neutral-50 dark:bg-neutral-800 border-none rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 text-neutral-900 dark:text-white placeholder:text-neutral-400 transition-all font-mono"
+                                            value={formData.openingBalance || ''}
+                                            onChange={e => setFormData({ ...formData, openingBalance: parseFloat(e.target.value) })}
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-neutral-400 mt-1">Amount you owe them (Liability)</p>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1.5">
+                                        As of Date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-800 border-none rounded-lg text-sm focus:ring-1 focus:ring-indigo-500 text-neutral-900 dark:text-white placeholder:text-neutral-400 transition-all"
+                                        value={formData.openingBalanceDate ? new Date(formData.openingBalanceDate).toISOString().split('T')[0] : ''}
+                                        onChange={e => setFormData({ ...formData, openingBalanceDate: e.target.valueAsDate || new Date() })} // Store as Date object or handle conversion
                                     />
                                 </div>
                             </div>
