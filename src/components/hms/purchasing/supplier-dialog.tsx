@@ -7,7 +7,7 @@ import { createSupplier } from '@/app/actions/purchase';
 interface SupplierDialogProps {
     isOpen: boolean;
     onClose: () => void;
-    onSuccess: (supplier: { id: string; label: string; subLabel?: string }) => void;
+    onSuccess: (supplier: { id: string; label: string; subLabel?: string; metadata?: any }) => void;
 }
 
 export function SupplierDialog({ isOpen, onClose, onSuccess }: SupplierDialogProps) {

@@ -585,6 +585,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     onSuccess={(sup) => {
                         setSupplierId(sup.id);
                         setSupplierName(sup.label);
+                        if (sup.metadata) {
+                            setSupplierMeta(sup.metadata);
+                        }
                         setSupplierCreateOpen(false);
                         toast({ title: "Supplier Created", description: `${sup.label} has been added.` });
                     }}
