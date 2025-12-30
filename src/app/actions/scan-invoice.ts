@@ -107,58 +107,38 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
             
             Header Details:
             - "supplierName": The Vendor/Supplier Name. CRITICAL FIELD.
-                * Look for text that is BOLD, LARGE, or above address lines.
-                * Key indicators: "Sold By", "From", "Seller". 
-                * Prioritize the entity that owns the GSTIN labeled as 'Supplier' or 'Seller'.
-                * EXCLUDE: "Billed To", "Shipped To", "Buyer" (usually appearing lower or on the right).
-            - "gstin": Supplier GSTIN / VAT Number.
+                * ACTION: Find the entity labeled "Sold By", "From", "Seller", "Supplier", or "Billed From".
+                * ACTION: If multiple names exist, pick the one clearly identified as the SELLER (top left or top center usually).
+                * ACTION: Do NOT pick the "Ship To" or "Billed To" name.
+                * ACTION: If a logo text is present at the top, that is likely the supplier.
+            - "gstin": Supplier GSTIN / VAT Number. (Format: 15 alphanumeric chars, e.g., 29ABCDE1234F1Z5).
             - "address": Supplier Full Address.
-            - "contact": Sales Executive Name or Phone (if available).
-            - "date": Invoice Date in YYYY-MM-DD format.
-            - "reference": Invoice Number / Bill Number.
-            - "defaultHsn": Common HSN/SAC code if listed in header/footer/summary (fallback).
-            - "grandTotal": Final Invoice Grand Total / Net Payable Amount.
-                * Look for "Net Payable", "Grand Total", "Invoice Total", "Total Amount".
-                * If multiple totals exist (e.g. Sub Total, Taxable), pick the FINAL PAYABLE amount.
-                
-            Line Items (Table rows):
-            - "items": Array of objects:
-                - "productName": Full item description.
-                - "sku": Product Code / SKU.
-                - "hsn": HSN/SAC Code. Look for 4-8 digit numbers.
-                - "batch": Batch Number. Look for "Batch", "Lot", "B.No". 
-                    * This often contains letters and numbers (e.g. SH245016, CR25002).
-                - "qty": Billed Quantity. 
-                    * MUST be a number. 
-                    * Do NOT confuse with Batch Number. If the value has letters (e.g. 'SH24...'), it is NOT the quantity.
-                    * Look for 'Qty', 'Quantity', 'Units'.
-                - "expiry": Expiry Date (YYYY-MM-DD or MM/YY).
-                - "uom": Unit of Measure (PACK-10, PACK-15, STRIP, BOX, BOTTLE, PCS).
-                    * If packing is "1's" or "1s", default to "STRIP" or "PCS" depending on product.
-                - "packing": Packing details. CRITICAL.
-                    * Look for "1x10", "10x10", "1x15", "200ml", "10's", "10S".
-                    * Check 'Packing' column, 'Pack' column, OR inside 'Particulars'/'Description'.
-                    * If column says "1's", look at Product Name for clues (e.g. "10TAB" -> 1x10).
-                    * If product is Syrup/Liquid -> "200ml", "100ml".
-                    * Standardize to "1x10" format if possible.
-                - "unitPrice": Unit Rate/Price PER PACK (before tax). Look for 'Rate' or 'Price'.
-                - "mrp": Maximum Retail Price.
-                - "taxRate": GST Tax Percentage. Look for columns "GST %", "GST", "IGST", "SGST", "CGST".
-                    * If you see "GST %" column with values "5", "12", "18", return that number.
-                    * If you see separate "CGST %" and "SGST %" (e.g. 2.5% + 2.5%), SUM THEM UP (return 5.0).
-                    * Return ONLY the number (e.g. 5, 12, 18).
-                - "taxAmount": Total Tax Amount.
-                - "schemeDiscount": Scheme Discount Amount. Look for 'Schm Amt', 'Sch Amt', 'Schm', 'Less', 'Disc', 'Scheme'.
-                    * If found, return the absolute number value.
-                    * CRITICAL: Do NOT miss this column. It is often next to 'Disc %' or 'Taxable Val'.
-                    * If 'Schm Amt' column exists with value '48.50', schemeDiscount = 48.50.
+            - "contact": Sales Executive Name or Phone.
+            - "date": Invoice Date (YYYY-MM-DD).
+            - "reference": Invoice Number / Bill No.
+            - "defaultHsn": Common HSN code if in summary.
+            - "grandTotal": Final Invoice Grand Total / Net Payable.
+                * ACTION: Find the final bold amount at the bottom.
+                * Label might be "Total", "Net Amount", "Grand Total", "Total Payable".
+            
+            Line Items (Table Items):
+            - "items": Array of items.
+                - "productName": Item Name / Description.
+                - "hsn": HSN/SAC Code.
+                - "batch": Batch Number. (Alphanumeric, e.g., "GH4521"). 
+                    * WARNING: Do NOT confuse Batch with Qty. Batch usually has letters.
+                - "mrp": Maximum Retail Price. (Number).
+                - "unitPrice": Rate / Price to Retailer (PTR).
+                - "qty": Billed Quantity. (Integer).
+                    * WARNING: If column says "10x10", Qty is 10.
+                    * Look for 'Qty', 'Billed Qty', 'Units'.
+                - "freeQty": Free / Scheme Quantity. (Integer).
+                - "taxRate": GST %. (e.g., 5, 12, 18).
                 - "discountPct": Discount %.
                 - "discountAmt": Discount Amount.
-                - "qty": Billed Quantity. The main quantity column.
-                - "freeQty": Scheme/Free Quantity. Look for 'Sch Qty', 'Free', 'Bonus'. 
-                    * Extract explicit numbers only (10, 12+1 -> 12).
-                    * Ignore checkmarks, slashes, or empty cells.
-                    * If column 'Sch Qty' has '12' and 'Qty' has '30', return freeQty=12, qty=30.
+                - "schemeDiscount": Scheme Amount (in currency, not qty).
+                - "expiry": Expiry (YYYY-MM-DD).
+                - "packing": Packing format (e.g., "10S", "1x10", "10TAB").
         `;
 
         for (const modelName of candidateModels) {
@@ -176,7 +156,7 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
                 ]);
 
                 const responseText = result.response.text();
-                console.log(`[ScanInvoice] Raw AI Response for ${modelName}:`, responseText);
+                console.log(`[ScanInvoice] Raw AI Response for ${modelName}: `, responseText);
 
                 const cleanedText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
                 let data;

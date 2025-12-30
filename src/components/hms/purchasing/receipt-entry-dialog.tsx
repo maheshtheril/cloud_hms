@@ -823,13 +823,54 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                     {/* Manifest Area - Scrolls vertically */}
                     <div className="flex-1 flex flex-col min-h-0 px-8 py-3 space-y-3">
                         <div className="flex items-center justify-between shrink-0">
-                            <div className="flex items-center gap-3">
-                                <div className="h-6 w-1 bg-indigo-500 rounded-full"></div>
-                                <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground">Item Manifest</h3>
+                            <div className="flex items-center gap-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-6 w-1 bg-indigo-500 rounded-full"></div>
+                                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground">Item Manifest</h3>
+                                    <Badge variant="outline" className="border-indigo-500/20 text-indigo-500 text-[10px] font-bold">
+                                        Total Items: {items.length}
+                                    </Badge>
+                                </div>
+
+                                {/* SCANNED STATS DISPLAY */}
+                                {(scannedTotal > 0 || netTotal > 0) && (
+                                    <div className="flex items-center gap-4 px-4 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg">
+
+                                        {scannedTotal > 0 && (
+                                            <div className="flex flex-col">
+                                                <span className="text-[9px] font-bold text-slate-400 uppercase">AI Scanned Total</span>
+                                                <span className="text-sm font-black text-slate-700 dark:text-slate-200">₹{scannedTotal.toFixed(2)}</span>
+                                            </div>
+                                        )}
+
+                                        <div className="h-8 w-px bg-slate-200 dark:bg-slate-700"></div>
+
+                                        <div className="flex flex-col">
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase">Input Total</span>
+                                            <span className={`text-sm font-black ${Math.abs(scannedTotal - netTotal) > 1 && scannedTotal > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                                ₹{netTotal.toFixed(2)}
+                                            </span>
+                                        </div>
+
+                                        {scannedTotal > 0 && Math.abs(scannedTotal - netTotal) > 0.01 && (
+                                            <>
+                                                <div className="h-8 w-px bg-slate-200 dark:bg-slate-700"></div>
+                                                <div className="flex flex-col">
+                                                    <span className="text-[9px] font-bold text-rose-400 uppercase">Difference</span>
+                                                    <span className="text-sm font-black text-rose-500 animate-pulse">
+                                                        ₹{Math.abs(scannedTotal - netTotal).toFixed(2)}
+                                                    </span>
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                )}
                             </div>
+
+
                             <div className="flex items-center gap-4">
                                 <div className="flex items-center gap-2 px-3 py-1.5 bg-muted border border-border rounded-xl shadow-inner">
-                                    <span className="text-[9px] font-black text-muted-foreground uppercase tracking-wider">Bulk Strategy</span>
+                                    <span className="text-[9px] font-black text-muted-foreground uppercase tracking-wider">Bulk Margin</span>
                                     <div className="flex items-center gap-1.5 bg-background border border-border rounded-lg px-2 py-0.5 shadow-sm">
                                         <input
                                             type="number"
@@ -870,7 +911,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                             <table className="w-full text-left border-collapse min-w-[2200px]">
                                 <thead>
                                     <tr className="bg-muted text-[10px] font-black uppercase tracking-widest text-muted-foreground border-b border-border sticky top-0 z-50 shadow-md">
-                                        <th className="py-2.5 pl-6 w-[250px] sticky left-0 z-50 bg-muted border-r border-border">Product Description</th>
+                                        <th className="py-2.5 px-2 w-10 text-center sticky left-0 z-50 bg-muted border-r border-border">#</th>
+                                        <th className="py-2.5 pl-4 w-[250px] sticky left-10 z-50 bg-muted border-r border-border">Product Description</th>
                                         <th className="py-2.5 px-2 w-24">HSN</th>
                                         <th className="py-2.5 px-2 w-24">Pack</th>
                                         <th className="py-2.5 px-2 w-24 text-indigo-400">UOM</th>
@@ -897,7 +939,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 <tbody className="divide-y divide-border/30">
                                     {items.map((item, index) => (
                                         <tr key={index} className="group hover:bg-accent/5 transition-all">
-                                            <td className="py-1.5 pl-6 sticky left-0 z-20 bg-background/80 backdrop-blur-sm border-r border-border">
+                                            <td className="py-1.5 px-2 text-center sticky left-0 z-20 bg-background/80 backdrop-blur-sm border-r border-border text-[9px] font-bold text-muted-foreground">{index + 1}</td>
+                                            <td className="py-1.5 pl-4 sticky left-10 z-20 bg-background/80 backdrop-blur-sm border-r border-border">
                                                 {mode === 'po' ? (
                                                     <div className="space-y-0.5">
                                                         <div className="text-[12px] font-bold text-foreground leading-tight">{item.productName}</div>
