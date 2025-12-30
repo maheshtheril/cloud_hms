@@ -215,6 +215,32 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
         setCurrentCanvas(null)
     }
 
+    const startDrawingTouch = (e: React.TouchEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
+        // e.preventDefault() // Explicitly handling preventing default in canvas props if needed, but it's tricky in React
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
+        setIsDrawing(true)
+        setCurrentCanvas(canvas)
+        const rect = canvas.getBoundingClientRect()
+        const touch = e.touches[0]
+        ctx.beginPath()
+        ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top)
+        ctx.lineWidth = 2
+        ctx.lineCap = 'round'
+        ctx.strokeStyle = '#000'
+    }
+
+    const drawTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
+        if (!isDrawing || !currentCanvas) return
+        // e.preventDefault() 
+        const ctx = currentCanvas.getContext('2d')
+        if (!ctx) return
+        const rect = currentCanvas.getBoundingClientRect()
+        const touch = e.touches[0]
+        ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top)
+        ctx.stroke()
+    }
+
     const clearCanvas = (canvas: HTMLCanvasElement | null) => {
         if (!canvas) return
         const ctx = canvas.getContext('2d')
@@ -510,7 +536,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     }
 
     const content = (
-        <div className={`flex flex-col h-full bg-white relative overflow-hidden ${isModal ? 'rounded-2xl shadow-2xl border border-slate-200' : 'min-h-screen p-6 bg-gradient-to-br from-blue-50 via-white to-purple-50'}`}>
+        <div className={`flex flex-col h-full bg-slate-50 relative overflow-hidden ${isModal ? 'rounded-2xl shadow-2xl border border-slate-200' : 'h-[92vh] max-w-[98vw] mx-auto border border-slate-200 rounded-xl shadow-xl'}`}>
             {/* Header */}
             <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 p-6 flex justify-between items-center shrink-0">
                 <div className="flex items-center gap-4">
@@ -533,8 +559,8 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             </header>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
-                <div className="max-w-4xl mx-auto space-y-6">
+            <div className="flex-1 overflow-y-auto p-3 scroll-smooth">
+                <div className="w-full space-y-4">
                     {/* Patient Card */}
                     <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 shadow-sm">
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
@@ -621,11 +647,15 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                                             ref={section.ref}
                                             width={900}
                                             height={section.height}
-                                            className="border-2 border-slate-100 rounded-xl cursor-crosshair w-full bg-white group-hover:border-blue-200 transition-all duration-300"
+                                            className="border-2 border-slate-100 rounded-xl cursor-crosshair w-full bg-white group-hover:border-blue-200 transition-all duration-300 touch-none"
                                             onMouseDown={(e) => startDrawing(e, section.ref.current!)}
                                             onMouseMove={draw}
                                             onMouseUp={stopDrawing}
                                             onMouseLeave={stopDrawing}
+                                            onTouchStart={(e) => startDrawingTouch(e, section.ref.current!)}
+                                            onTouchMove={drawTouch}
+                                            onTouchEnd={stopDrawing}
+                                            style={{ touchAction: 'none' }}
                                         />
                                         <button
                                             onClick={() => clearCanvas(section.ref.current)}
