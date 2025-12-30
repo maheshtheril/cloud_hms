@@ -166,6 +166,7 @@ export async function ensureAdminMenus() {
             { key: 'crm-masters', label: 'CRM Masters', url: '/settings/crm', icon: 'Database', sort: 92 },
             { key: 'import-leads', label: 'Import Leads', url: '/crm/import/leads', icon: 'UploadCloud', sort: 93 },
             { key: 'crm-targets', label: 'Targets', url: '/crm/targets', icon: 'Target', sort: 94 },
+            { key: 'hms-config', label: 'HMS Configuration', url: '/settings/hms', icon: 'Stethoscope', sort: 96 },
             { key: 'custom-fields', label: 'Custom Fields', url: '/settings/custom-fields', icon: 'FileText', sort: 95 },
         ];
 
