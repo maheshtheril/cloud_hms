@@ -11,6 +11,7 @@ export async function getAppointmentsProp(start: Date, end: Date) {
     try {
         const appointments = await prisma.hms_appointments.findMany({
             where: {
+                tenant_id: session.user.tenantId, // Strict scope
                 company_id: session.user.companyId,
                 starts_at: {
                     gte: start,
