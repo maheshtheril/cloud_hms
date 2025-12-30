@@ -61,7 +61,7 @@ export default async function AppointmentsPage() {
                         <div className="absolute bottom-0 right-0 w-96 h-96 bg-pink-300 rounded-full blur-3xl animate-pulse delay-700"></div>
                     </div>
 
-                    <div className="relative z-10 flex items-center justify-between">
+                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-0">
                         <div className="flex items-center gap-6">
                             <div className="h-16 w-16 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center shadow-lg">
                                 <Calendar className="h-8 w-8 text-white" />
