@@ -258,11 +258,11 @@ export function CreatePatientForm({
                                                 <div className="col-span-9 grid grid-cols-2 gap-4">
                                                     <div>
                                                         <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">First Name</label>
-                                                        <input defaultValue={initialData?.first_name} name="first_name" type="text" placeholder="First Name" required className="w-full h-12 px-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
+                                                        <input defaultValue={initialData?.first_name} name="first_name" type="text" placeholder="First Name" required onChange={(e) => e.target.value = e.target.value.replace(/\b\w/g, c => c.toUpperCase())} className="w-full h-12 px-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
                                                     </div>
                                                     <div>
                                                         <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">Last Name</label>
-                                                        <input defaultValue={initialData?.last_name} name="last_name" type="text" placeholder="Last Name" required className="w-full h-12 px-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
+                                                        <input defaultValue={initialData?.last_name} name="last_name" type="text" placeholder="Last Name" required onChange={(e) => e.target.value = e.target.value.replace(/\b\w/g, c => c.toUpperCase())} className="w-full h-12 px-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
                                                     </div>
                                                 </div>
                                             </div>
@@ -369,52 +369,7 @@ export function CreatePatientForm({
                                                     />
 
                                                     {/* Phone Prompt Overlay */}
-                                                    {showPhonePrompt && (
-                                                        <div className="absolute inset-0 z-[60] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-                                                            <div className="bg-white dark:bg-slate-900 w-full max-w-md p-6 rounded-3xl shadow-2xl border border-white/20 animate-in zoom-in-95">
-                                                                <div className="flex items-center gap-4 mb-6">
-                                                                    <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-                                                                        <Phone className="h-6 w-6" />
-                                                                    </div>
-                                                                    <div>
-                                                                        <h3 className="text-lg font-black text-slate-900 dark:text-white">Mobile Required</h3>
-                                                                        <p className="text-xs text-slate-500 font-bold uppercase">Please enter WhatsApp Number</p>
-                                                                    </div>
-                                                                </div>
-                                                                <div className="space-y-4">
-                                                                    <input
-                                                                        autoFocus
-                                                                        value={phone}
-                                                                        onChange={(e) => setPhone(e.target.value)}
-                                                                        placeholder="WhatsApp Number"
-                                                                        className="w-full h-16 px-6 text-xl bg-slate-50 border-2 border-indigo-500 rounded-2xl font-black text-slate-800 outline-none"
-                                                                    />
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={(e) => {
-                                                                            e.preventDefault();
-                                                                            e.stopPropagation();
-                                                                            if (phone && phone.length === 10) {
-                                                                                setShowPhonePrompt(false);
-                                                                                // The main form submit mechanism needs to be triggered or we just close and let them click save again?
-                                                                                // User said "then ok for saves patient".
-                                                                                // Better: We close prompt and immediately trigger the submit logic? 
-                                                                                // Actually, since we updated state 'phone', clicking the main 'Complete' button again is natural. 
-                                                                                // But to be seamless, we can try to submit form programmatically.
-                                                                                const form = document.querySelector('form#patient-master-form') as HTMLFormElement;
-                                                                                if (form) form.requestSubmit();
-                                                                            } else {
-                                                                                setMessage({ type: 'error', text: 'Please enter a valid 10-digit number' });
-                                                                            }
-                                                                        }}
-                                                                        className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold uppercase tracking-widest transition-colors"
-                                                                    >
-                                                                        Save & Continue
-                                                                    </button>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    )}
+
                                                 </div>
                                             </div>
                                             <div>
@@ -512,6 +467,55 @@ export function CreatePatientForm({
                     </div>
                 </form>
             </div>
+
+            {/* Global Phone Prompt Overlay (Placed here to ensure visibility over tabs) */}
+            {showPhonePrompt && (
+                <div className="absolute inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-sm p-8 rounded-3xl shadow-2xl border border-white/20 animate-in zoom-in-95 scale-100 ring-4 ring-indigo-500/20">
+                        <div className="flex flex-col items-center text-center mb-8">
+                            <div className="h-16 w-16 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-4 shadow-inner">
+                                <Phone className="h-8 w-8" />
+                            </div>
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Mobile Required</h3>
+                            <p className="text-slate-500 font-medium text-sm">Please enter the patient's WhatsApp-enabled mobile number to proceed.</p>
+                        </div>
+                        <div className="space-y-6">
+                            <div className="relative">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">+91</span>
+                                <input
+                                    autoFocus
+                                    value={phone}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(/\D/g, '');
+                                        if (val.length <= 10) setPhone(val);
+                                    }}
+                                    placeholder="Mobile Number"
+                                    className="w-full h-16 pl-14 pr-6 text-2xl bg-slate-50 border-2 border-indigo-100 focus:border-indigo-500 rounded-2xl font-black text-slate-800 outline-none tracking-widest text-center transition-all shadow-sm focus:shadow-md"
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (phone && phone.length === 10) {
+                                        setShowPhonePrompt(false);
+                                        const form = document.querySelector('form#patient-master-form') as HTMLFormElement;
+                                        if (form) form.requestSubmit();
+                                    } else {
+                                        setMessage({ type: 'error', text: 'Please enter a valid 10-digit number' });
+                                    }
+                                }}
+                                className="w-full h-16 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:scale-[1.02] shadow-xl shadow-indigo-500/30 flex items-center justify-center gap-2"
+                            >
+                                <CheckCircle2 className="h-5 w-5" />
+                                Save & Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
+
     );
 }
