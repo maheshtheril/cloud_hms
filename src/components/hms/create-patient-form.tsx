@@ -5,6 +5,7 @@ import { X, User, Phone, Calendar, Camera, FileText, Shield, MapPin, Mail, Alert
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { FileUpload } from "@/components/ui/file-upload"
+import { VoiceWrapper } from "@/components/ui/voice-wrapper"
 
 interface CreatePatientFormProps {
     tenantCountry?: string
@@ -257,11 +258,15 @@ export function CreatePatientForm({
                                                 <div className="col-span-9 grid grid-cols-2 gap-3">
                                                     <div>
                                                         <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wide">First Name</label>
-                                                        <input defaultValue={initialData?.first_name} name="first_name" type="text" placeholder="First Name" required onChange={(e) => e.target.value = e.target.value.replace(/\b\w/g, c => c.toUpperCase())} className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
+                                                        <VoiceWrapper>
+                                                            <input defaultValue={initialData?.first_name} name="first_name" type="text" placeholder="First Name" required onChange={(e) => e.target.value = e.target.value.replace(/\b\w/g, c => c.toUpperCase())} className="w-full h-10 px-3 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
+                                                        </VoiceWrapper>
                                                     </div>
                                                     <div>
                                                         <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wide">Last Name</label>
-                                                        <input defaultValue={initialData?.last_name} name="last_name" type="text" placeholder="Last Name" required onChange={(e) => e.target.value = e.target.value.replace(/\b\w/g, c => c.toUpperCase())} className="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
+                                                        <VoiceWrapper>
+                                                            <input defaultValue={initialData?.last_name} name="last_name" type="text" placeholder="Last Name" required onChange={(e) => e.target.value = e.target.value.replace(/\b\w/g, c => c.toUpperCase())} className="w-full h-10 px-3 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
+                                                        </VoiceWrapper>
                                                     </div>
                                                 </div>
                                             </div>
@@ -389,7 +394,9 @@ export function CreatePatientForm({
                                             </div>
                                         </div>
                                         <div className="space-y-3">
-                                            <textarea defaultValue={initialData?.contact?.address?.street} name="street" placeholder="Street Address, Area, Landmark" className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 transition-all min-h-[60px] resize-none" />
+                                            <VoiceWrapper>
+                                                <textarea defaultValue={initialData?.contact?.address?.street} name="street" placeholder="Street Address, Area, Landmark" className="w-full p-3 pr-10 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 transition-all min-h-[60px] resize-none" />
+                                            </VoiceWrapper>
                                             <div className="grid grid-cols-2 gap-3">
                                                 <input defaultValue={initialData?.contact?.address?.city} name="city" type="text" placeholder="City" className="w-full h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 outline-none focus:border-indigo-500 transition-all text-sm" />
                                                 <input defaultValue={initialData?.contact?.address?.zip} name="zip" type="text" placeholder="Pincode" className="w-full h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 outline-none focus:border-indigo-500 transition-all text-sm" />
