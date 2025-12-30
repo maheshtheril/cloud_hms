@@ -82,8 +82,7 @@ export class NotificationService {
                 console.log(`[WhatsApp-Mock] To: ${phone}\n[WhatsApp-Mock] Message: ${message}${finalPdfBase64 ? '\n[WhatsApp-Mock] Attachment: [PDF DETECTED]' : ''}`);
                 return {
                     success: true,
-                    message: "WhatsApp manual share mode active. Opening WhatsApp...",
-                    whatsappUrl: waMeUrl
+                    message: "WhatsApp notification simulated (Mock Mode)."
                 };
             }
 
@@ -179,11 +178,9 @@ export class NotificationService {
             const isMock = !token || token.includes('mock');
 
             if (isMock) {
-                const waMeUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
                 return {
                     success: true,
-                    message: "Manual share mode active for prescription.",
-                    whatsappUrl: waMeUrl
+                    message: "WhatsApp prescription simulated (Mock Mode)."
                 };
             }
 

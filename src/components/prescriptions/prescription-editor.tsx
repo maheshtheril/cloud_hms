@@ -508,10 +508,8 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                     title: "WhatsApp",
                     description: String(res.message || "Sent successfully."),
                 });
-                if (res.whatsappUrl) {
-                    // Only open if backend explicitly requests it (e.g. Mock Mode)
-                    window.open(res.whatsappUrl, '_blank');
-                }
+                // Frontend no longer opens popups. Backend handles automatic sending.
+                // res.whatsappUrl is ignored to prevent manual share mode from interrupting workflow.
             } else {
                 toast({
                     title: "Share Failed",
