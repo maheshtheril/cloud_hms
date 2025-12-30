@@ -59,6 +59,10 @@ export function CreatePatientForm({
     // Billing Options State
     const [chargeRegistration, setChargeRegistration] = useState(true);
 
+    // Prompt for missing phone
+    const [phone, setPhone] = useState(initialData?.contact?.phone || '');
+    const [showPhonePrompt, setShowPhonePrompt] = useState(false);
+
     const handleAgeChange = (value: string, unit: string) => {
         setAge(value);
         setAgeUnit(unit);
@@ -155,6 +159,10 @@ export function CreatePatientForm({
                     for (const field of requiredFields) {
                         const value = formData.get(field.name);
                         if (!value || value.toString().trim() === '') {
+                            if (field.name === 'phone') {
+                                setShowPhonePrompt(true);
+                                return;
+                            }
                             if (activeTab !== field.tab) {
                                 setActiveTab(field.tab as any);
                                 await new Promise(resolve => setTimeout(resolve, 100)); // Allow render
@@ -170,7 +178,7 @@ export function CreatePatientForm({
                             const phoneRegex = /^\d{10}$/;
                             const cleanPhone = value.toString().replace(/\D/g, '');
                             if (!phoneRegex.test(cleanPhone)) {
-                                setMessage({ type: 'error', text: 'Phone number must be exactly 10 digits' });
+                                setShowPhonePrompt(true);
                                 return;
                             }
                         }
@@ -350,7 +358,63 @@ export function CreatePatientForm({
                                                 <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wide">Mobile Number <span className="text-rose-500">*</span></label>
                                                 <div className="relative group">
                                                     <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                                                    <input defaultValue={initialData?.contact?.phone} name="phone" type="tel" placeholder="e.g. 9876543210" required className="w-full h-14 pl-12 pr-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 transition-all text-lg tracking-wide" />
+                                                    <input
+                                                        value={phone}
+                                                        onChange={(e) => setPhone(e.target.value)}
+                                                        name="phone"
+                                                        type="tel"
+                                                        placeholder="e.g. 9876543210"
+                                                        required
+                                                        className="w-full h-14 pl-12 pr-4 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 transition-all text-lg tracking-wide"
+                                                    />
+
+                                                    {/* Phone Prompt Overlay */}
+                                                    {showPhonePrompt && (
+                                                        <div className="absolute inset-0 z-[60] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+                                                            <div className="bg-white dark:bg-slate-900 w-full max-w-md p-6 rounded-3xl shadow-2xl border border-white/20 animate-in zoom-in-95">
+                                                                <div className="flex items-center gap-4 mb-6">
+                                                                    <div className="h-12 w-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                                                                        <Phone className="h-6 w-6" />
+                                                                    </div>
+                                                                    <div>
+                                                                        <h3 className="text-lg font-black text-slate-900 dark:text-white">Mobile Required</h3>
+                                                                        <p className="text-xs text-slate-500 font-bold uppercase">Please enter WhatsApp Number</p>
+                                                                    </div>
+                                                                </div>
+                                                                <div className="space-y-4">
+                                                                    <input
+                                                                        autoFocus
+                                                                        value={phone}
+                                                                        onChange={(e) => setPhone(e.target.value)}
+                                                                        placeholder="WhatsApp Number"
+                                                                        className="w-full h-16 px-6 text-xl bg-slate-50 border-2 border-indigo-500 rounded-2xl font-black text-slate-800 outline-none"
+                                                                    />
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            e.stopPropagation();
+                                                                            if (phone && phone.length === 10) {
+                                                                                setShowPhonePrompt(false);
+                                                                                // The main form submit mechanism needs to be triggered or we just close and let them click save again?
+                                                                                // User said "then ok for saves patient".
+                                                                                // Better: We close prompt and immediately trigger the submit logic? 
+                                                                                // Actually, since we updated state 'phone', clicking the main 'Complete' button again is natural. 
+                                                                                // But to be seamless, we can try to submit form programmatically.
+                                                                                const form = document.querySelector('form#patient-master-form') as HTMLFormElement;
+                                                                                if (form) form.requestSubmit();
+                                                                            } else {
+                                                                                setMessage({ type: 'error', text: 'Please enter a valid 10-digit number' });
+                                                                            }
+                                                                        }}
+                                                                        className="w-full h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold uppercase tracking-widest transition-colors"
+                                                                    >
+                                                                        Save & Continue
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                             <div>
