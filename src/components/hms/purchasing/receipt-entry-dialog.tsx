@@ -22,6 +22,7 @@ import { motion } from "framer-motion";
 import { getCompanyDetails } from "@/app/actions/purchase";
 import { scanInvoiceFromUrl as scanInvoiceAction } from "@/app/actions/scan-invoice";
 import { ProductCreationDialog } from "@/components/inventory/product-creation-dialog";
+import { SupplierDialog } from "./supplier-dialog";
 import {
     Select,
     SelectContent,
@@ -71,6 +72,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isProductCreationOpen, setProductCreationOpen] = useState(false);
     const [globalMargin, setGlobalMargin] = useState<number>(20); // Default to 20%
+    const [isSupplierCreateOpen, setSupplierCreateOpen] = useState(false);
 
     // Mode: 'po' (Linked to PO) | 'direct' (Ad-hoc)
     const [mode, setMode] = useState<'po' | 'direct'>('po');
@@ -577,6 +579,17 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
             >
                 <Toaster />
 
+                <SupplierDialog
+                    isOpen={isSupplierCreateOpen}
+                    onClose={() => setSupplierCreateOpen(false)}
+                    onSuccess={(sup) => {
+                        setSupplierId(sup.id);
+                        setSupplierName(sup.label);
+                        setSupplierCreateOpen(false);
+                        toast({ title: "Supplier Created", description: `${sup.label} has been added.` });
+                    }}
+                />
+
                 <ProductCreationDialog
                     isOpen={isProductCreationOpen}
                     onClose={() => setProductCreationOpen(false)}
@@ -709,6 +722,15 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             className="w-full bg-background border-border h-14 font-black text-foreground"
                                             variant="ghost"
                                         />
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setSupplierCreateOpen(true)}
+                                            className="h-14 w-14 rounded-xl border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
+                                            title="Create New Supplier"
+                                        >
+                                            <Plus className="h-6 w-6" />
+                                        </Button>
                                     </div>
                                 </div>
                                 <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-all duration-300"></div>
