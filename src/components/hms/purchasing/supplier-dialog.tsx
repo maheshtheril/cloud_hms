@@ -15,6 +15,19 @@ export function SupplierDialog({ isOpen, onClose, onSuccess, initialData }: Supp
     // State for currency
     const [currencySymbol, setCurrencySymbol] = React.useState('₹');
 
+    const [loading, setLoading] = React.useState(false);
+    const [error, setError] = React.useState<string | null>(null);
+    const [formData, setFormData] = React.useState({
+        name: '',
+        gstin: '',
+        contactPerson: '',
+        email: '',
+        phone: '',
+        address: '',
+        openingBalance: 0,
+        openingBalanceDate: new Date(),
+    });
+
     React.useEffect(() => {
         // Fetch currency on mount
         getCompanyDefaults().then(defaults => {
@@ -29,6 +42,37 @@ export function SupplierDialog({ isOpen, onClose, onSuccess, initialData }: Supp
             }
         });
     }, []);
+
+    // Initialize form with initialData when it changes
+    React.useEffect(() => {
+        if (initialData) {
+            setFormData({
+                name: initialData.name || '',
+                gstin: initialData.gstin || '',
+                contactPerson: initialData.contactPerson || initialData.contact_person || '', // handle likely DB naming difference
+                email: initialData.email || '',
+                phone: initialData.phone || '',
+                address: initialData.address || '',
+                openingBalance: initialData.openingBalance || initialData.opening_balance || 0,
+                openingBalanceDate: initialData.openingBalanceDate ? new Date(initialData.openingBalanceDate) : new Date(),
+            });
+        } else {
+            // Reset if no initialData (i.e. strictly create mode, though dialog usually unmounts or we want persistence)
+            // Ideally we reset on open, but for now let's just leave it or reset if !isOpen?
+            // Typical pattern is to reset when dialog opens. 
+            // For now, let's just handle the initialData set. 
+            setFormData({
+                name: '',
+                gstin: '',
+                contactPerson: '',
+                email: '',
+                phone: '',
+                address: '',
+                openingBalance: 0,
+                openingBalanceDate: new Date(),
+            });
+        }
+    }, [initialData, isOpen]);
 
     if (!isOpen) return null;
 
