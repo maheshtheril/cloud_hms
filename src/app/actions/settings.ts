@@ -184,20 +184,8 @@ export async function getHMSSettings() {
         const tenantId = session.user.tenantId;
 
         // 1. Fetch Registration Fee Product
-        // We look for a product that looks like "Registration Fee".
-        // In a real world app, we might store the product_id in settings, 
-        // but looking up by name is a safe fallback for this MVP.
-        const regFeeProduct = await prisma.hms_product.findFirst({
-            where: {
-                company_id: companyId,
-                name: { contains: 'Registration', mode: 'insensitive' },
-                description: { contains: 'fee', mode: 'insensitive' },
-                is_active: true
-            }
-        });
-
-        // Fallback search strictly by name if fuzzy match fails
-        const regFeeProductFallback = regFeeProduct || await prisma.hms_product.findFirst({
+        // Priority 1: Exact match logic used in updateHMSSettings ("Registration Fee")
+        let regFeeProduct = await prisma.hms_product.findFirst({
             where: {
                 company_id: companyId,
                 name: { contains: 'Registration Fee', mode: 'insensitive' },
@@ -205,7 +193,19 @@ export async function getHMSSettings() {
             }
         });
 
-        const finalProduct = regFeeProductFallback;
+        // Priority 2: Fallback to broader search
+        if (!regFeeProduct) {
+            regFeeProduct = await prisma.hms_product.findFirst({
+                where: {
+                    company_id: companyId,
+                    name: { contains: 'Registration', mode: 'insensitive' },
+                    description: { contains: 'fee', mode: 'insensitive' },
+                    is_active: true
+                }
+            });
+        }
+
+        const finalProduct = regFeeProduct;
 
         // 2. Fetch HMS Specific Settings
         const hmsConfigRecord = await prisma.hms_settings.findFirst({
