@@ -725,7 +725,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                 ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }]
                                                 : []
                                             }
-                                            placeholder={supplierName ? `Scanned: ${supplierName}` : "Select Source Supplier..."}
+                                            placeholder="Select Source Supplier..."
                                             className="w-full bg-background border-border h-14 font-black text-foreground"
                                             variant="ghost"
                                         />
@@ -742,12 +742,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 </div>
                                 <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-all duration-300"></div>
                                 <div className="flex flex-col gap-1 pt-1.5">
-                                    {(!supplierId && supplierName) && (
-                                        <div className="text-xs text-emerald-500 font-bold flex items-center gap-2">
-                                            <Sparkles className="w-3 h-3" />
-                                            Scanned: {supplierName}
-                                        </div>
-                                    )}
                                     <div className="flex flex-wrap gap-2">
                                         {supplierMeta?.gstin && (
                                             <Badge variant="outline" className="bg-indigo-500/10 border-indigo-500/20 text-indigo-400 font-mono text-[9px] px-1.5 py-0 h-5">
