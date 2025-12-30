@@ -89,6 +89,10 @@ export function SearchableSelect({
 
     // Initial value handling
     React.useEffect(() => {
+        // If the dropdown is open (user is interacting/searching), DO NOT touch the query.
+        // This prevents overwriting user's typing with the current value/label.
+        if (open) return;
+
         if (!value) {
             setSelectedOption(null);
             if (valueLabel) {
