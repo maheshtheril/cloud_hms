@@ -145,15 +145,41 @@ export async function createSupplier(data: {
     }
 }
 
-export async function updateSupplier(id: string, data: { name?: string, is_active?: boolean }) {
+export async function updateSupplier(id: string, data: {
+    name?: string
+    gstin?: string
+    address?: string
+    email?: string
+    phone?: string
+    contactPerson?: string
+    is_active?: boolean
+}) {
     const session = await auth()
     if (!session?.user?.companyId) return { error: "Unauthorized" }
 
     try {
+        // Fetch current to merge metadata
+        const current = await prisma.hms_supplier.findUnique({
+            where: { id, company_id: session.user.companyId }
+        })
+
+        if (!current) return { error: "Supplier not found" }
+
+        const currentMeta = current.metadata as any || {}
+
         await prisma.hms_supplier.update({
             where: { id, company_id: session.user.companyId },
             data: {
-                ...data
+                name: data.name,
+                is_active: data.is_active,
+                metadata: {
+                    ...currentMeta, // Keep existing fields like opening balance
+                    ...(data.gstin !== undefined && { gstin: data.gstin }),
+                    ...(data.address !== undefined && { address: data.address }),
+                    ...(data.email !== undefined && { email: data.email }),
+                    ...(data.phone !== undefined && { phone: data.phone }),
+                    ...(data.contactPerson !== undefined && { contact_person: data.contactPerson })
+                }
             }
         })
         revalidatePath('/hms/purchasing/suppliers')

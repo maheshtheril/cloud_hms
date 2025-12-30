@@ -95,7 +95,7 @@ export default async function SuppliersPage(props: { searchParams: Promise<{ q?:
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <SupplierActions supplierId={supplier.id} isActive={supplier.is_active} />
+                                            <SupplierActions supplier={supplier} />
                                         </TableCell>
                                     </TableRow>
                                 ))}
