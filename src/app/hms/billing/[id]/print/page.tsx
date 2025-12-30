@@ -3,12 +3,139 @@ import { auth } from "@/auth"
 import { notFound } from "next/navigation"
 import { Receipt, Building2, User, Calendar, CreditCard } from "lucide-react"
 
-export default async function PrintInvoicePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function PrintPage({ params, searchParams }: {
+    params: Promise<{ id: string }>,
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
     const session = await auth();
     const { id } = await params;
+    const { type } = await searchParams;
 
     if (!session?.user?.companyId) return <div>Unauthorized</div>;
 
+    // --- Prescription Print View ---
+    if (type === 'prescription') {
+        const prescription = await (prisma.prescription as any).findFirst({
+            where: { id }, // Prisma usually handles ID uniqueness well enough with findFirst or findUnique
+            include: {
+                hms_patient: true,
+                prescription_items: {
+                    include: { hms_product: true }
+                }
+            }
+        });
+
+        if (!prescription) return notFound();
+
+        return (
+            <div className="min-h-screen bg-white p-8 sm:p-12 font-sans text-slate-900" id="print-area">
+                {/* Header */}
+                <div className="flex justify-between items-start border-b-2 border-slate-100 pb-6 mb-8">
+                    <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                            <span className="font-bold text-xl">Rx</span>
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight text-slate-900">PRESCRIPTION</h1>
+                            <p className="text-sm font-semibold text-slate-500 font-mono uppercase tracking-wider">#{prescription.id.substring(0, 8)}</p>
+                        </div>
+                    </div>
+                    <div className="text-right">
+                        <h2 className="text-lg font-bold text-slate-800">Hospital Management System</h2>
+                        <p className="text-sm text-slate-500">123 Health Street, Clinic Tower</p>
+                        <p className="text-sm text-slate-500">+91 99999 88888 | contact@hms.com</p>
+                    </div>
+                </div>
+
+                {/* Patient Info */}
+                <div className="grid grid-cols-2 gap-8 mb-8 bg-slate-50 p-6 rounded-xl border border-slate-100">
+                    <div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Patient Details</p>
+                        <p className="text-lg font-bold text-slate-900">{prescription.hms_patient?.first_name} {prescription.hms_patient?.last_name}</p>
+                        <p className="text-sm text-slate-600">{prescription.hms_patient?.gender}, {prescription.hms_patient?.age ? `${prescription.hms_patient.age} Years` : 'N/A'}</p>
+                        <p className="text-sm text-slate-600 mt-1">ID: {prescription.hms_patient?.patient_number || 'N/A'}</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Date</p>
+                        <p className="text-lg font-bold text-slate-900">{new Date(prescription.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    </div>
+                </div>
+
+                {/* Clinical Notes */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
+                    {prescription.vitals && (
+                        <div className="space-y-1">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Vitals</h3>
+                            <p className="text-sm font-medium text-slate-800 whitespace-pre-wrap">{prescription.vitals}</p>
+                        </div>
+                    )}
+                    {prescription.diagnosis && (
+                        <div className="space-y-1">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Diagnosis</h3>
+                            <p className="text-sm font-medium text-slate-800 whitespace-pre-wrap">{prescription.diagnosis}</p>
+                        </div>
+                    )}
+                    {prescription.complaint && (
+                        <div className="col-span-2 space-y-1 border-t border-dashed border-slate-200 pt-4">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Complaints</h3>
+                            <p className="text-sm text-slate-600 whitespace-pre-wrap">{prescription.complaint}</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Medicines Table */}
+                <div className="mb-12">
+                    <h3 className="text-sm font-bold text-slate-900 uppercase tracking-widest border-b border-slate-900 pb-2 mb-4">Rx / Medicines</h3>
+                    <table className="w-full text-left">
+                        <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
+                            <tr>
+                                <th className="px-4 py-3 rounded-l-lg">Medicine Name</th>
+                                <th className="px-4 py-3">Dosage</th>
+                                <th className="px-4 py-3">Duration</th>
+                                <th className="px-4 py-3 rounded-r-lg text-right">Qty</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 text-sm">
+                            {prescription.prescription_items.map((item: any, idx: number) => (
+                                <tr key={idx}>
+                                    <td className="px-4 py-3">
+                                        <p className="font-bold text-slate-900">{item.hms_product?.name || 'Unknown Medicine'}</p>
+                                        <p className="text-xs text-slate-400 italic">Generic: {item.hms_product?.generic_name || '-'}</p>
+                                    </td>
+                                    <td className="px-4 py-3 font-mono font-medium text-slate-700">
+                                        {item.morning}-{item.afternoon}-{item.evening}-{item.night}
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-600">
+                                        {item.days} Days
+                                    </td>
+                                    <td className="px-4 py-3 text-right font-bold text-slate-900">
+                                        {(item.morning + item.afternoon + item.evening + item.night) * item.days}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Footer / Signature */}
+                <div className="mt-20 flex justify-end">
+                    <div className="text-center">
+                        <div className="h-16 w-32 border-b border-slate-400 mb-2"></div>
+                        <p className="text-xs font-bold text-slate-500 uppercase">Doctor's Signature</p>
+                    </div>
+                </div>
+
+                {/* Terms / Disclaimer */}
+                <div className="mt-12 pt-6 border-t border-slate-100 text-center">
+                    <p className="text-[10px] text-slate-400 uppercase tracking-wider">Instructions: Take medicines as prescribed. Review after medicines are finished.</p>
+                </div>
+
+                <script dangerouslySetInnerHTML={{ __html: `setTimeout(() => window.print(), 500)` }} />
+            </div>
+        );
+    }
+
+    // --- Standard Invoice Print View ---
     const invoice = await prisma.hms_invoice.findUnique({
         where: {
             id,
@@ -157,7 +284,7 @@ export default async function PrintInvoicePage({ params }: { params: Promise<{ i
             </div>
 
             {/* Print trigger */}
-            <script dangerouslySetInnerHTML={{ __html: `window.print()` }} />
+            <script dangerouslySetInnerHTML={{ __html: `setTimeout(() => window.print(), 500)` }} />
         </div>
     )
 }
