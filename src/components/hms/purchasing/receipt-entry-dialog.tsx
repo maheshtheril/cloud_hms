@@ -726,17 +726,17 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                 : []
                                             }
                                             placeholder="Select Source Supplier..."
-                                            className="w-full bg-background border-border h-14 font-black text-foreground"
+                                            className="w-full bg-background border-border h-10 text-sm font-bold text-foreground"
                                             variant="ghost"
                                         />
                                         <Button
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => setSupplierCreateOpen(true)}
-                                            className="h-14 w-14 rounded-xl border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
+                                            className="h-10 w-10 rounded-xl border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
                                             title="Create New Supplier"
                                         >
-                                            <Plus className="h-6 w-6" />
+                                            <Plus className="h-5 w-5" />
                                         </Button>
                                     </div>
                                 </div>
@@ -766,7 +766,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                         type="date"
                                         value={receivedDate}
                                         onChange={(e) => setReceivedDate(e.target.value)}
-                                        className="h-14 bg-background border-border text-foreground font-mono font-bold px-5 text-lg rounded-xl"
+                                        className="h-10 bg-background border-border text-foreground font-mono font-bold px-3 text-sm rounded-lg"
                                     />
                                 </div>
                                 <div className="space-y-4">
@@ -777,7 +777,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             placeholder="INV/24-25/..."
                                             value={reference}
                                             onChange={(e) => setReference(e.target.value)}
-                                            className="h-14 bg-background border-border text-foreground font-mono font-bold pl-12 pr-5 text-lg rounded-xl"
+                                            className="h-10 bg-background border-border text-foreground font-mono font-bold pl-10 pr-3 text-sm rounded-lg"
                                         />
                                     </div>
                                 </div>
@@ -793,16 +793,16 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                 onChange={(id) => handlePoSelect(id)}
                                                 onSearch={async (q) => poOptions.filter(o => o.label.toLowerCase().includes(q.toLowerCase()))}
                                                 placeholder="Select PO..."
-                                                className="w-full bg-background border-border h-20 font-mono font-bold text-foreground"
+                                                className="w-full bg-background border-border h-10 text-sm font-mono font-bold text-foreground"
                                                 variant="ghost"
                                             />
                                         </div>
                                     ) : (
-                                        <div className="flex-1 h-20 flex flex-col justify-center px-4 bg-emerald-500/[0.03] border border-emerald-500/10 rounded-xl">
-                                            <span className="text-[8px] font-black text-emerald-500/40 uppercase tracking-[0.2em] mb-1">Entry Mode</span>
+                                        <div className="flex-1 h-10 flex items-center justify-between px-4 bg-emerald-500/[0.03] border border-emerald-500/10 rounded-lg">
+                                            <span className="text-[8px] font-black text-emerald-500/40 uppercase tracking-[0.2em]">Entry Mode</span>
                                             <div className="flex items-center gap-2">
                                                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Direct Stock Entry</span>
+                                                <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Direct</span>
                                             </div>
                                         </div>
                                     )}
