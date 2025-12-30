@@ -218,8 +218,8 @@ export async function getHMSSettings() {
 
         const configData = (hmsConfigRecord?.value as any) || {};
 
-        // 3. Finalize Fee (Priority: Config JSON Value > Product Price > Fallback 500)
-        let finalFee = 500;
+        // 3. Finalize Fee (Priority: Config JSON Value > Product Price > Fallback 100)
+        let finalFee = 100;
         if (configData.fee !== undefined) {
             finalFee = parseFloat(configData.fee);
         } else if (finalProduct) {

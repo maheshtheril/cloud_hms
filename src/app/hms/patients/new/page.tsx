@@ -10,7 +10,7 @@ export default async function NewPatientPage() {
 
     // Fetch dynamic registration fee
     const hmsSettings = await getHMSSettings();
-    const { registrationFee, registrationProductId, registrationProductName, registrationProductDescription } = hmsSettings.success ? hmsSettings.settings : { registrationFee: 500, registrationProductId: null, registrationProductName: 'Patient Registration Fee', registrationProductDescription: 'Standard Service' };
+    const { registrationFee, registrationProductId, registrationProductName, registrationProductDescription } = hmsSettings.success ? hmsSettings.settings : { registrationFee: 100, registrationProductId: null, registrationProductName: 'Patient Registration Fee', registrationProductDescription: 'Standard Service' };
 
     return <CreatePatientForm
         tenantCountry={tenantCountry}

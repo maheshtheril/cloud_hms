@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation"
 import { FileUpload } from "@/components/ui/file-upload"
 import { VoiceWrapper } from "@/components/ui/voice-wrapper"
 
+import { getHMSSettings } from "@/app/actions/settings"
+
 interface CreatePatientFormProps {
     tenantCountry?: string
     onClose?: () => void
@@ -25,15 +27,38 @@ export function CreatePatientForm({
     onSuccess,
     isDialog = false,
     initialData,
-    registrationFee = 500,
-    registrationProductId = null,
-    registrationProductName = 'Patient Registration Fee',
-    registrationProductDescription = 'Standard Service'
+    registrationFee: propFee,
+    registrationProductId: propId = null,
+    registrationProductName: propName = 'Patient Registration Fee',
+    registrationProductDescription: propDesc = 'Standard Service'
 }: CreatePatientFormProps) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'basic' | 'residency' | 'vault'>('basic');
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [isPending, setIsPending] = useState(false);
+
+    // Dynamic Settings State (World Standard: Component handles its own critical data sync)
+    const [registrationFee, setRegistrationFee] = useState(propFee ?? 100);
+    const [registrationProductId, setRegistrationProductId] = useState(propId);
+    const [registrationProductName, setRegistrationProductName] = useState(propName);
+    const [registrationProductDescription, setRegistrationProductDescription] = useState(propDesc);
+
+    useEffect(() => {
+        const syncSettings = async () => {
+            try {
+                const res = await getHMSSettings();
+                if (res.success && res.settings) {
+                    setRegistrationFee(res.settings.registrationFee);
+                    setRegistrationProductId(res.settings.registrationProductId);
+                    setRegistrationProductName(res.settings.registrationProductName);
+                    setRegistrationProductDescription(res.settings.registrationProductDescription);
+                }
+            } catch (err) {
+                console.error("Failed to sync HMS settings:", err);
+            }
+        };
+        syncSettings();
+    }, [propFee]); // Sync if prop changes, or on mount
 
     // State for Vault
     const [profileImageUrl, setProfileImageUrl] = useState(initialData?.profile_image_url || initialData?.metadata?.profile_image_url || '');
