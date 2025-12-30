@@ -132,6 +132,9 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
                     * Look for 'Qty', 'Billed Qty', 'Units'.
                 - "freeQty": Free / Scheme Quantity. (Integer).
                 - "taxRate": GST %. (e.g., 5, 12, 18).
+                    * ACTION: If "GST %" column exists, use it.
+                    * ACTION: If "GST %" is missing, but "CGST %" (e.g. 2.5 or 6) and "SGST %" (2.5 or 6) exist, SUM THEM (2.5+2.5=5, 6+6=12).
+                    * ACTION: Return the TOTAL percentage (5, 12, 18, 28).
                 - "discountPct": Discount %.
                 - "discountAmt": Discount Amount.
                 - "schemeDiscount": Scheme Amount (in currency, not qty).
