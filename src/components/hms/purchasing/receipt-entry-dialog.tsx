@@ -721,6 +721,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                 }
                                             }}
                                             onSearch={searchSuppliers}
+                                            onCreate={async (q) => { setSupplierName(q); setSupplierId(null); return null; }}
                                             defaultOptions={supplierId
                                                 ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }]
                                                 : []
