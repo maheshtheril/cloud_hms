@@ -95,7 +95,8 @@ export async function updateGlobalSettings(data: {
     currencyId: string,
     address?: string,
     phone?: string,
-    email?: string
+    email?: string,
+    gstin?: string
 }) {
     const session = await auth();
     if (!session?.user?.id) return { error: "Not authenticated" };
@@ -125,7 +126,8 @@ export async function updateGlobalSettings(data: {
                         ...currentMeta,
                         address: data.address,
                         phone: data.phone,
-                        email: data.email
+                        email: data.email,
+                        gstin: data.gstin
                     }
                 }
             });

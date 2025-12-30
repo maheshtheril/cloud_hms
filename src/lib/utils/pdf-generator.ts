@@ -35,6 +35,10 @@ export async function generateInvoicePDFBase64(invoice: any, company?: any): Pro
         doc.text(address, pageWidth - 50, 78, { align: 'right' });
         doc.text(contactStr, pageWidth - 50, 93, { align: 'right' });
 
+        if (meta?.gstin) {
+            doc.text(`GSTIN: ${meta.gstin}`, pageWidth - 50, 108, { align: 'right' });
+        }
+
         // Divider
         doc.setDrawColor(238, 238, 238);
         doc.line(50, 115, pageWidth - 50, 115);

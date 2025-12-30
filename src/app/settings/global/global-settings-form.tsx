@@ -28,6 +28,7 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
     const [address, setAddress] = useState(meta.address || '')
     const [phone, setPhone] = useState(meta.phone || '')
     const [email, setEmail] = useState(meta.email || '')
+    const [gstin, setGstin] = useState(meta.gstin || '')
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -41,7 +42,8 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
             currencyId,
             address,
             phone,
-            email
+            email,
+            gstin
         })
 
         if (result.success) {
@@ -161,6 +163,15 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
                                 placeholder="billing@company.com"
                             />
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Detailed Tax ID / GSTIN</Label>
+                        <Input
+                            value={gstin}
+                            onChange={e => setGstin(e.target.value)}
+                            placeholder="e.g. 29AAAAA0000A1Z5"
+                        />
                     </div>
                 </CardContent>
             </Card>
