@@ -139,7 +139,8 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
                 - "discountAmt": Discount Amount.
                 - "schemeDiscount": Scheme Amount (in currency, not qty).
                 - "expiry": Expiry (YYYY-MM-DD).
-                - "packing": Packing format (e.g., "10S", "1x10", "10TAB").
+                - "uom": Unit of Measure (e.g., "10S", "STRIP", "BOX", "PACK-10").
+                - "packing": Packing format (e.g., "1x10", "10 TAB", "15 CAP").
         `;
 
         for (const modelName of candidateModels) {
@@ -448,13 +449,23 @@ async function processInvoiceData(session: any, data: any) {
                 finalMrp = temp;
             }
 
+            // HEURISTIC: Identify UOM from either uom or packing field if one is missing
+            let finalUom = item.uom;
+            if (!finalUom && item.packing) {
+                // If packing looks like a UOM (contains numbers or pharma terms), use it as UOM
+                if (item.packing.match(/\d+/) || /STRIP|BOX|PACK|VIAL|AMP/i.test(item.packing)) {
+                    finalUom = item.packing;
+                }
+            }
+            finalUom = finalUom || 'PCS';
+
             processedItems.push({
                 productId,
                 productName: finalName,
                 sku: item.sku,
                 qty: parseNumber(item.qty) || 1,
-                uom: item.uom || 'PCS', // ← Add UOM
-                packing: item.packing, // ← Add packing
+                uom: finalUom,
+                packing: item.packing,
                 unitPrice: finalPrice,
                 mrp: finalMrp,
                 batch: item.batch,
@@ -465,7 +476,7 @@ async function processInvoiceData(session: any, data: any) {
                 schemeDiscount: parseNumber(item.schemeDiscount),
                 discountPct: parseNumber(item.discountPct),
                 discountAmt: parseNumber(item.discountAmt),
-                freeQty: parseNumber(item.freeQty) // <-- Added freeQty back
+                freeQty: parseNumber(item.freeQty)
             });
         }
     }

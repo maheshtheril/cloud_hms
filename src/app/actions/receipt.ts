@@ -320,14 +320,28 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
 
                 // DERIVE CONVERSION FACTOR
                 let effectiveConversion = item.conversionFactor || 1;
-                const effectiveUOM = item.purchaseUOM || 'PCS';
+                const effectiveUOM = (item.purchaseUOM || 'PCS').toUpperCase();
 
                 if (effectiveConversion === 1 && effectiveUOM !== 'PCS') {
-                    const match = effectiveUOM.match(/PACK-(\d+)/i);
-                    if (match) {
-                        effectiveConversion = parseInt(match[1]);
-                    } else if (effectiveUOM.toUpperCase() === 'STRIP') {
+                    // 1. Try PACK-10, BOX-15 patterns
+                    const packMatch = effectiveUOM.match(/(?:PACK|BOX|STRIP|TRAY)-(\d+)/i);
+                    // 2. Try 10S, 10'S, 10X1 patterns
+                    const simpleMatch = effectiveUOM.match(/^(\d+)(?:'S|S|X\d+|X)?$/i);
+
+                    if (packMatch) {
+                        effectiveConversion = parseInt(packMatch[1]);
+                    } else if (simpleMatch) {
+                        effectiveConversion = parseInt(simpleMatch[1]);
+                    } else if (effectiveUOM === 'STRIP') {
                         effectiveConversion = 10;
+                    } else if (effectiveUOM === 'BOX') {
+                        effectiveConversion = 1; // Default to 1 if no number
+                    }
+
+                    // 3. Fallback: Check packing string if UOM didn't yield anything
+                    if (effectiveConversion === 1 && item.packing) {
+                        const packMatch2 = item.packing.match(/^(\d+)/);
+                        if (packMatch2) effectiveConversion = parseInt(packMatch2[1]);
                     }
                 }
 

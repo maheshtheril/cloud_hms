@@ -461,17 +461,24 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                 }
 
                 if (field === 'uom') {
-                    const selectedUom = value;
-                    if (line.base_price && line.conversion_factor) {
-                        if (selectedUom === 'PCS') {
+                    const selectedUom = (value || '').toUpperCase();
+                    if (line.base_price) {
+                        if (selectedUom === 'PCS' || selectedUom === (line.base_uom || 'PCS').toUpperCase()) {
                             updated.unit_price = line.base_price;
-                        } else if (selectedUom === line.pack_uom && line.pack_price) {
+                        } else if (line.pack_uom && selectedUom === line.pack_uom.toUpperCase() && line.pack_price) {
                             updated.unit_price = line.pack_price;
                         } else {
-                            const match = selectedUom.match(/PACK-(\d+)/i);
-                            if (match) {
-                                const packSize = parseInt(match[1]);
-                                updated.unit_price = line.base_price * packSize;
+                            // Smart derive for common patterns if metadata didn't catch it
+                            const packMatch = selectedUom.match(/(?:PACK|BOX|STRIP|TRAY)-(\d+)/i);
+                            const simpleMatch = selectedUom.match(/^(\d+)(?:'S|S|X\d+|X)?$/i);
+
+                            let derivedFactor = 0;
+                            if (packMatch) derivedFactor = parseInt(packMatch[1]);
+                            else if (simpleMatch) derivedFactor = parseInt(simpleMatch[1]);
+                            else if (selectedUom === 'STRIP') derivedFactor = 10;
+
+                            if (derivedFactor > 0) {
+                                updated.unit_price = line.base_price * derivedFactor;
                             }
                         }
                     }

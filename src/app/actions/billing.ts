@@ -69,9 +69,9 @@ export async function getBillableItems() {
                     baseUom: uomData.base_uom || 'PCS',
                     basePrice: uomData.base_price || Number(item.price) || 0,
                     conversionFactor: uomData.conversion_factor || 1,
-                    packUom: uomData.pack_uom || 'PCS',
+                    packUom: uomData.pack_uom || (uomData.conversion_factor > 1 ? `PACK-${uomData.conversion_factor}` : 'PCS'),
                     packPrice: uomData.pack_price || (Number(item.price) * (uomData.conversion_factor || 1)),
-                    packSize: uomData.pack_size || 1
+                    packSize: uomData.pack_size || uomData.conversion_factor || 1
                 },
                 // Extract category tax for auto-suggest
                 categoryTaxId: category?.default_tax_rate_id || null,

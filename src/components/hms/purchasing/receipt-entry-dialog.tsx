@@ -53,6 +53,7 @@ type ReceiptItem = {
     hsn: string;
     packing: string;
     uom?: string;
+    conversionFactor?: number;
     schemeDiscount?: number;
     discountPct?: number;
     discountAmt?: number;
@@ -451,10 +452,10 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                 salePrice: 0,
                                 marginPct: 0,
                                 taxRate: rate,
-                                taxAmount: 0, // Calculated by helper
                                 hsn: item.hsn || "",
                                 packing: item.packing || "",
                                 uom: item.uom || "",
+                                conversionFactor: 1, // Will be derived on the server or manually adjusted
                                 schemeDiscount: Number(item.schemeDiscount) || 0,
                                 discountPct: Number(item.discountPct) || 0,
                                 discountAmt: Number(item.discountAmt) || 0,
@@ -542,6 +543,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                 hsn: i.hsn,
                 packing: i.packing,
                 purchaseUOM: i.uom,
+                conversionFactor: i.conversionFactor,
                 schemeDiscount: i.schemeDiscount,
                 discountPct: i.discountPct,
                 discountAmt: i.discountAmt,
@@ -916,6 +918,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                         <th className="py-2.5 px-2 w-24">HSN</th>
                                         <th className="py-2.5 px-2 w-24">Pack</th>
                                         <th className="py-2.5 px-2 w-24 text-indigo-400">UOM</th>
+                                        <th className="py-2.5 px-2 w-16 text-indigo-400">Conv</th>
                                         <th className="py-2.5 px-2 w-28">Batch</th>
                                         <th className="py-2.5 px-2 w-24">Exp</th>
                                         <th className="py-2.5 px-2 w-24 text-right">MRP</th>
@@ -975,9 +978,28 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             <td className="py-1.5 px-2">
                                                 <input
                                                     value={item.uom || ''}
-                                                    onChange={(e) => { const n = [...items]; n[index].uom = e.target.value; setItems(n); }}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value;
+                                                        const n = [...items];
+                                                        n[index].uom = val;
+                                                        // Try auto-derive conversion if not set
+                                                        if (!n[index].conversionFactor || n[index].conversionFactor === 1) {
+                                                            const match = val.match(/(\d+)/);
+                                                            if (match) n[index].conversionFactor = parseInt(match[1]);
+                                                            else if (val.toUpperCase() === 'STRIP') n[index].conversionFactor = 10;
+                                                        }
+                                                        setItems(n);
+                                                    }}
                                                     placeholder="PCS"
                                                     className="w-full bg-transparent border-none text-[10px] font-black p-0 focus:ring-0 text-indigo-500 uppercase placeholder:text-muted-foreground/30"
+                                                />
+                                            </td>
+                                            <td className="py-1.5 px-2">
+                                                <input
+                                                    type="number"
+                                                    value={item.conversionFactor || 1}
+                                                    onChange={(e) => { const n = [...items]; n[index].conversionFactor = Number(e.target.value); setItems(n); }}
+                                                    className="w-full bg-transparent border-none text-[10px] font-bold p-0 focus:ring-0 text-indigo-400 text-center"
                                                 />
                                             </td>
                                             <td className="py-1.5 px-2">
