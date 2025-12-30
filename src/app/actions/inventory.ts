@@ -1036,7 +1036,7 @@ export async function getStockReport(query?: string, page: number = 1) {
             return { success: true, data: [], meta: { total: 0, page, totalPages: 0 } };
         }
 
-        // 2. Aggregate Stock from Ledger (Source of Truth)
+        // 3. Aggregate Stock from Ledger (Source of Truth) for the current page
         const productIds = products.map(p => p.id);
         const aggregates = await prisma.hms_product_stock_ledger.groupBy({
             by: ['product_id'],
@@ -1054,7 +1054,7 @@ export async function getStockReport(query?: string, page: number = 1) {
             stockMap.set(agg.product_id, Number(agg._sum.change_qty || 0));
         });
 
-        // 3. Map Results
+        // 4. Map Results
         const reportData = products.map(p => {
             const stock = stockMap.get(p.id) || 0;
             const cost = Number(p.default_cost || 0);
@@ -1070,13 +1070,54 @@ export async function getStockReport(query?: string, page: number = 1) {
             };
         });
 
+        // 5. Calculate Global Totals (across all pages)
+        // We use hms_stock_levels for global aggregation as it's more efficient than aggregating the entire ledger
+        let totalStockOnHand = 0;
+        let totalValue = 0;
+
+        try {
+            const allMatchingStock = await prisma.hms_stock_levels.findMany({
+                where: {
+                    company_id: session.user.companyId,
+                    hms_product: {
+                        is_active: true,
+                        ...(query ? {
+                            OR: [
+                                { name: { contains: query, mode: 'insensitive' } },
+                                { sku: { contains: query, mode: 'insensitive' } }
+                            ]
+                        } : {})
+                    }
+                },
+                include: {
+                    hms_product: {
+                        select: { default_cost: true }
+                    }
+                }
+            });
+
+            allMatchingStock.forEach(item => {
+                const qty = Number(item.quantity || 0);
+                const cost = Number(item.hms_product?.default_cost || 0);
+                totalStockOnHand += qty;
+                totalValue += qty * cost;
+            });
+        } catch (e) {
+            console.error("Failed to calculate global totals:", e);
+            // Fail silently on totals if optimization fails
+        }
+
         return {
             success: true,
             data: reportData,
             meta: {
                 total,
                 page,
-                totalPages: Math.ceil(total / pageSize)
+                totalPages: Math.ceil(total / pageSize),
+                summary: {
+                    totalStockOnHand,
+                    totalValue
+                }
             }
         };
 

@@ -39,14 +39,19 @@ export default function StockReportPage() {
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<any[]>([]);
-    const [meta, setMeta] = useState({ total: 0, page: 1, totalPages: 1 });
+    const [meta, setMeta] = useState({
+        total: 0,
+        page: 1,
+        totalPages: 1,
+        summary: { totalStockOnHand: 0, totalValue: 0 }
+    });
 
     const loadData = async () => {
         setLoading(true);
         const result = await getStockReport(debouncedSearch, page);
         if (result.success && result.data) {
             setData(result.data);
-            setMeta(result.meta!);
+            setMeta(result.meta as any);
         }
         setLoading(false);
     };
@@ -99,6 +104,49 @@ export default function StockReportPage() {
                         <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                     </Button>
                 </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                            Total Inventory Value
+                        </CardTitle>
+                        <div className="h-4 w-4 text-muted-foreground">₹</div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">
+                            {loading ? (
+                                <span className="animate-pulse">...</span>
+                            ) : (
+                                `₹${meta.summary?.totalValue?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}`
+                            )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Based on {meta.total} products
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                            Total Stock Quantity
+                        </CardTitle>
+                        <div className="h-4 w-4 text-muted-foreground">#</div>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">
+                            {loading ? (
+                                <span className="animate-pulse">...</span>
+                            ) : (
+                                meta.summary?.totalStockOnHand?.toLocaleString('en-IN') || '0'
+                            )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Units across all locations
+                        </p>
+                    </CardContent>
+                </Card>
             </div>
 
             <Card className="flex-1">
