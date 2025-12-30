@@ -83,11 +83,9 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
         }
 
         const candidateModels = [
-            "gemini-1.5-flash",       // Stable, fast, good with docs
-            "gemini-1.5-pro",         // High intelligence, good fallback
-            "gemini-2.0-flash-exp",   // Experimental
-            "gemini-2.5-flash-lite",
-            "gemini-pro-vision"
+            "gemini-1.5-pro",         // Priority 1: High intelligence, strict reasoning
+            "gemini-2.0-flash-exp",   // Priority 2: Newest experimental
+            "gemini-1.5-flash",       // Priority 3: Fast fallback
         ];
 
         let lastError = null;
@@ -144,7 +142,16 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
         for (const modelName of candidateModels) {
             try {
                 console.log(`[ScanInvoice] Trying model: ${modelName}`);
-                const model = genAI.getGenerativeModel({ model: modelName });
+                // Zero-Temperature Config to ensure "Same Bill = Same Result"
+                const model = genAI.getGenerativeModel({
+                    model: modelName,
+                    generationConfig: {
+                        temperature: 0,
+                        topP: 0.1,
+                        topK: 1,
+                        responseMimeType: "application/json"
+                    }
+                });
                 const result = await model.generateContent([
                     prompt,
                     {
