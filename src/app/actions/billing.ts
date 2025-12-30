@@ -142,8 +142,42 @@ export async function createInvoice(data: any) {
     }
 
     try {
-        // Generate human-readable invoice number (Simple timestamp based for MVP, can be sequence based)
-        const invoiceNo = `INV-${Date.now().toString().slice(-6)}`;
+        // Generate world-standard sequential invoice number: INV-{FY}-{SEQ}
+        // India FY: Apr 1 - Mar 31
+        const invDate = new Date(date);
+        const month = invDate.getMonth(); // 0-based
+        const year = invDate.getFullYear();
+
+        let fyStart = year;
+        let fyEnd = year + 1;
+        if (month < 3) { // Jan, Feb, Mar belong to previous FY start
+            fyStart = year - 1;
+            fyEnd = year;
+        }
+        const fyString = `${fyStart.toString().slice(-2)}-${fyEnd.toString().slice(-2)}`;
+        const prefix = `INV-${fyString}-`;
+
+        // Find last invoice in this series
+        // Note: String sorting works for sequence ONLY if padded length is consistent.
+        // We use created_at desc as proxy for latest, which is generally safe for sequential creation.
+        const lastInvoice = await prisma.hms_invoice.findFirst({
+            where: {
+                company_id: session.user.companyId,
+                invoice_number: { startsWith: prefix }
+            },
+            orderBy: { created_at: 'desc' },
+            select: { invoice_number: true }
+        });
+
+        let nextSeq = 1;
+        if (lastInvoice?.invoice_number) {
+            const parts = lastInvoice.invoice_number.split('-');
+            const lastSeqStr = parts[parts.length - 1];
+            const lastSeq = parseInt(lastSeqStr);
+            if (!isNaN(lastSeq)) nextSeq = lastSeq + 1;
+        }
+
+        const invoiceNo = `${prefix}${nextSeq.toString().padStart(5, '0')}`;
 
         // Calculate totals
         // Subtotal (Sum of [Qty * Price - Discount])
