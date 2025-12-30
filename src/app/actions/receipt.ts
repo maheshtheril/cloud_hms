@@ -25,6 +25,7 @@ export type PurchaseReceiptData = {
         marginPct?: number            // Profit margin percentage
         markupPct?: number            // Markup percentage on cost
         pricingStrategy?: string      // How the price was set
+        mrpDiscountPct?: number       // Discount % from MRP (e.g., 10 for MRP-10%)
         taxRate?: number
         taxAmount?: number
         hsn?: string
@@ -293,6 +294,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     margin_pct: item.marginPct,
                     markup_pct: item.markupPct,
                     pricing_strategy: item.pricingStrategy,
+                    mrp_discount_pct: item.mrpDiscountPct,
                     tax_rate: item.taxRate,
                     tax_amount: item.taxAmount,
                     hsn: item.hsn,
@@ -659,7 +661,12 @@ export async function getPurchaseReceipt(id: string) {
                     batch: meta.batch || '',
                     expiry: meta.expiry || '',
                     mrp: safeNum(meta.mrp),
-                    pack: meta.packing || '',
+                    salePrice: safeNum(meta.sale_price),
+                    marginPct: safeNum(meta.margin_pct),
+                    markupPct: safeNum(meta.markup_pct),
+                    pricingStrategy: meta.pricing_strategy || 'manual',
+                    mrpDiscountPct: safeNum(meta.mrp_discount_pct),
+                    pack: meta.packing || meta.purchase_uom || '',
                     taxRate: safeNum(meta.tax_rate),
                     hsn: meta.hsn || ''
                 };
@@ -725,6 +732,7 @@ export async function updatePurchaseReceipt(id: string, data: PurchaseReceiptDat
                             margin_pct: item.marginPct,
                             markup_pct: item.markupPct,
                             pricing_strategy: item.pricingStrategy,
+                            mrp_discount_pct: item.mrpDiscountPct,
                             tax_rate: item.taxRate,
                             tax_amount: item.taxAmount,
                             hsn: item.hsn,
