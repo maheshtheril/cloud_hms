@@ -378,7 +378,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
         setSelectedMedicines(selectedMedicines.filter((_, i) => i !== index))
     }
 
-    const convertAndPrint = async () => {
+    const runTranscription = async () => {
         setIsConverting(true)
         try {
             const canvases = [
@@ -389,16 +389,27 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                 { ref: planCanvasRef, field: 'plan' }
             ]
 
-            const converted: any = {}
+            const converted: any = { ...convertedText }
+            let hasAnyContent = false
+
             for (const { ref, field } of canvases) {
                 if (!ref.current) continue
+
+                // Check if canvas is empty (simplified check)
+                const ctx = ref.current.getContext('2d')
+                if (!ctx) continue
+
+                // Check if any pixels are drawn (rough check by looking at data)
+                // If it's empty, we might skip it to save API calls
+
                 await new Promise((resolve) => {
                     ref.current!.toBlob(async (blob) => {
-                        if (!blob) {
-                            converted[field] = ''
+                        if (!blob || blob.size < 1000) { // Very small blobs are likely empty
                             resolve(null)
                             return
                         }
+
+                        hasAnyContent = true
                         const formData = new FormData()
                         formData.append('image', blob, `${field}.jpg`)
                         try {
@@ -407,21 +418,21 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                                 body: formData
                             })
                             const data = await res.json()
-                            converted[field] = data.text || ''
+                            if (data.text) converted[field] = data.text
                         } catch (err) {
-                            converted[field] = ''
+                            console.error(`Failed to transcribe ${field}`, err)
                         }
                         resolve(null)
                     }, 'image/jpeg', 0.8)
                 })
             }
+
             setConvertedText(converted)
-            setShowConverted(true)
-            setTimeout(() => window.print(), 500)
+            if (hasAnyContent) setShowConverted(true)
+            return converted
         } catch (error) {
-            console.error('Error:', error)
-            alert('Failed to convert. Printing as handwritten.')
-            window.print()
+            console.error('Transcription Error:', error)
+            return convertedText
         } finally {
             setIsConverting(false)
         }
@@ -430,17 +441,23 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     const savePrescription = async (redirectToBill = false) => {
         setIsSaving(true)
         try {
+            // 1. Perform transcription first if not already done or if we want to ensure latest
+            let finalTexts = convertedText
+            if (!showConverted) {
+                finalTexts = await runTranscription()
+            }
+
             const response = await fetch('/api/prescriptions/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     patientId: resolvedPatientId,
                     appointmentId,
-                    vitals: convertedText.vitals || '',
-                    diagnosis: convertedText.diagnosis || '',
-                    complaint: convertedText.complaint || '',
-                    examination: convertedText.examination || '',
-                    plan: convertedText.plan || '',
+                    vitals: finalTexts.vitals || '',
+                    diagnosis: finalTexts.diagnosis || '',
+                    complaint: finalTexts.complaint || '',
+                    examination: finalTexts.examination || '',
+                    plan: finalTexts.plan || '',
                     medicines: selectedMedicines
                 })
             })
@@ -605,20 +622,47 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                     </div>
 
                     {/* Handwriting Sections */}
-                    <div className="space-y-8 bg-white rounded-2xl p-8 border border-slate-100 shadow-sm">
+                    <div className="space-y-8 bg-white rounded-2xl p-8 border border-slate-100 shadow-sm relative">
+                        <div className="flex justify-between items-center mb-4">
+                            <h2 className="text-lg font-black text-slate-800 tracking-tight">Clinical Findings</h2>
+                            <div className="flex gap-2">
+                                {!showConverted ? (
+                                    <Button
+                                        onClick={runTranscription}
+                                        disabled={isConverting}
+                                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg shadow-purple-100 px-6"
+                                    >
+                                        {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+                                        Spells Transcribe
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        variant="outline"
+                                        onClick={() => setShowConverted(false)}
+                                        className="text-slate-500 hover:bg-slate-50 font-bold rounded-xl border-slate-200"
+                                    >
+                                        <Eraser className="mr-2 h-4 w-4" /> Back to Drawing
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+
                         {[
-                            { title: 'VITALS', ref: vitalsCanvasRef, height: 80 },
-                            { title: 'DIAGNOSIS', ref: diagnosisCanvasRef, height: 80 },
-                            { title: 'PRESENTING COMPLAINT', ref: complaintCanvasRef, height: 100 },
-                            { title: 'GENERAL EXAMINATION', ref: examinationCanvasRef, height: 120 },
-                            { title: 'PLAN', ref: planCanvasRef, height: 80 }
+                            { title: 'VITALS', ref: vitalsCanvasRef, height: 80, key: 'vitals' },
+                            { title: 'DIAGNOSIS', ref: diagnosisCanvasRef, height: 80, key: 'diagnosis' },
+                            { title: 'PRESENTING COMPLAINT', ref: complaintCanvasRef, height: 100, key: 'complaint' },
+                            { title: 'GENERAL EXAMINATION', ref: examinationCanvasRef, height: 120, key: 'examination' },
+                            { title: 'PLAN', ref: planCanvasRef, height: 80, key: 'plan' }
                         ].map((section, idx) => (
                             <div key={idx} className="space-y-2">
                                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{section.title}</h3>
                                 {showConverted ? (
-                                    <div className="min-h-[80px] p-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 leading-relaxed font-medium">
-                                        {convertedText[section.title.toLowerCase().split(' ')[0] as keyof typeof convertedText] || 'No content'}
-                                    </div>
+                                    <textarea
+                                        value={convertedText[section.key as keyof typeof convertedText] || ''}
+                                        onChange={(e) => setConvertedText({ ...convertedText, [section.key]: e.target.value })}
+                                        className="w-full min-h-[80px] p-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 leading-relaxed font-medium focus:ring-2 focus:ring-purple-100 outline-none transition-all"
+                                        placeholder={`No ${section.title.toLowerCase()} recorded...`}
+                                    />
                                 ) : (
                                     <div className="group relative">
                                         <canvas

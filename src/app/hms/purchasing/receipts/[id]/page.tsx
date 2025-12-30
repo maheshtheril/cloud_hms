@@ -511,7 +511,7 @@ export default function EditPurchaseReceiptPage() {
     const netTotal = totalTaxable + totalTax + roundOff;
 
     return (
-        <div className="min-h-screen bg-neutral-950 text-white selection:bg-indigo-500/30 selection:text-indigo-200 font-sans">
+        <div className="min-h-screen bg-background text-foreground transition-colors duration-300 selection:bg-indigo-500/30 selection:text-indigo-200 font-sans">
             <Toaster />
             <SupplierDialog
                 isOpen={supplierDialogOpen}
@@ -544,14 +544,14 @@ export default function EditPurchaseReceiptPage() {
             />
 
             {/* Navbar */}
-            <nav className="fixed top-0 w-full z-50 border-b border-white/5 bg-neutral-950/80 backdrop-blur-md">
+            <nav className="fixed top-0 w-full z-50 border-b border-border bg-background/80 backdrop-blur-md">
                 <div className="max-w-[1600px] mx-auto px-8 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <button onClick={() => router.back()} className="text-neutral-400 hover:text-white transition-colors">
+                        <button onClick={() => router.back()} className="text-muted-foreground hover:text-foreground transition-colors">
                             <ArrowLeft className="h-5 w-5" />
                         </button>
-                        <div className="h-6 w-px bg-white/10 mx-2"></div>
-                        <h1 className="text-sm font-medium tracking-wide text-neutral-200">Edit Purchase Entry <span className="text-neutral-500 font-mono ml-2">#{params.id.split('-').pop()}</span></h1>
+                        <div className="h-6 w-px bg-border mx-2"></div>
+                        <h1 className="text-sm font-bold tracking-wide text-foreground uppercase">Edit Purchase Entry <span className="text-muted-foreground font-mono ml-2">#{params.id.split('-').pop()}</span></h1>
                     </div>
                 </div>
             </nav>
@@ -563,28 +563,28 @@ export default function EditPurchaseReceiptPage() {
                     <div className="col-span-12 lg:col-span-4 space-y-12 animate-in fade-in slide-in-from-left-4 duration-700">
 
                         {/* 1. View Mode Selection - PROMINENT */}
-                        <div className="bg-neutral-900/50 p-1.5 rounded-lg border border-white/5 flex gap-1 mb-8">
+                        <div className="bg-muted p-1.5 rounded-xl border border-border flex gap-1 mb-8">
                             <button
                                 type="button"
                                 onClick={() => setMode('po')}
-                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 ${mode === 'po'
-                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-                                    : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                                className={`flex-1 py-3 px-4 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 ${mode === 'po'
+                                    ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20 scale-[1.02]'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                                     }`}
                             >
                                 <ScanLine className="h-4 w-4" />
-                                Receieve against PO
+                                PO Mode
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setMode('direct')}
-                                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 ${mode === 'direct'
-                                    ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'
-                                    : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                                className={`flex-1 py-3 px-4 rounded-lg text-xs font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 ${mode === 'direct'
+                                    ? 'bg-emerald-600 text-white shadow-xl shadow-emerald-500/20 scale-[1.02]'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
                                     }`}
                             >
                                 <Plus className="h-4 w-4" />
-                                Direct Entry
+                                Direct Mode
                             </button>
                         </div>
 
@@ -619,19 +619,18 @@ export default function EditPurchaseReceiptPage() {
                                     onChange={(id, opt) => { setSupplierId(id); setSupplierName(opt?.label || ''); }}
                                     onSearch={searchSuppliers}
                                     placeholder="Select Vendor..."
-                                    className="w-full bg-transparent border-none text-xl font-medium placeholder:text-neutral-700 p-0 focus:ring-0 dark"
+                                    className="w-full bg-transparent border-none text-2xl font-black placeholder:text-muted/30 p-0 focus:ring-0"
                                     variant="ghost"
-                                    isDark={true}
                                 />
-                                <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-colors duration-500"></div>
+                                <div className="h-0.5 w-full bg-muted absolute bottom-0 left-0 group-focus-within:bg-blue-500 transition-colors duration-500"></div>
                             </div>
 
                             {/* Extracted Supplier Meta Display */}
                             {supplierMeta && (
-                                <div className="bg-neutral-900/50 rounded-lg p-4 border border-white/5 space-y-2 text-xs text-neutral-400">
-                                    {supplierMeta.gstin && <div className="flex justify-between"><span>GSTIN:</span> <span className="text-neutral-200 font-mono">{supplierMeta.gstin}</span></div>}
-                                    {supplierMeta.address && <div className="flex justify-between gap-4"><span>Address:</span> <span className="text-neutral-200 text-right">{supplierMeta.address}</span></div>}
-                                    {supplierMeta.contact && <div className="flex justify-between"><span>Contact:</span> <span className="text-neutral-200">{supplierMeta.contact}</span></div>}
+                                <div className="bg-muted/50 rounded-xl p-6 border border-border space-y-3 text-xs text-muted-foreground shadow-inner">
+                                    {supplierMeta.gstin && <div className="flex justify-between"><span>GSTIN:</span> <span className="text-foreground font-mono font-bold">{supplierMeta.gstin}</span></div>}
+                                    {supplierMeta.address && <div className="flex justify-between gap-4"><span>Address:</span> <span className="text-foreground text-right">{supplierMeta.address}</span></div>}
+                                    {supplierMeta.contact && <div className="flex justify-between"><span>Contact:</span> <span className="text-foreground font-bold">{supplierMeta.contact}</span></div>}
                                 </div>
                             )}
                         </div>
@@ -648,11 +647,10 @@ export default function EditPurchaseReceiptPage() {
                                         onChange={(id, opt) => handlePoSelect(id, opt)}
                                         onSearch={async (q) => poOptions.filter(o => o.label.toLowerCase().includes(q.toLowerCase()))}
                                         placeholder="Search Purchase Order..."
-                                        className="w-full bg-transparent border-none text-xl font-medium text-neutral-200 placeholder:text-neutral-700 p-0 focus:ring-0 font-mono dark"
+                                        className="w-full bg-transparent border-none text-2xl font-black text-foreground placeholder:text-muted/30 p-0 focus:ring-0 font-mono"
                                         variant="ghost"
-                                        isDark={true}
                                     />
-                                    <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-colors duration-500"></div>
+                                    <div className="h-0.5 w-full bg-muted absolute bottom-0 left-0 group-focus-within:bg-blue-500 transition-colors duration-500"></div>
                                 </div>
                                 {poId && <div className="text-xs text-emerald-500 font-medium">✓ Items loaded from order</div>}
                             </div>
@@ -666,7 +664,7 @@ export default function EditPurchaseReceiptPage() {
                                     type="date"
                                     value={receivedDate}
                                     onChange={(e) => setReceivedDate(e.target.value)}
-                                    className="w-full bg-transparent border-b border-neutral-800 focus:border-indigo-500 p-0 pb-2 text-sm font-medium text-neutral-200 focus:ring-0 transition-colors [color-scheme:dark]"
+                                    className="w-full bg-transparent border-b border-muted focus:border-blue-500 p-0 pb-2 text-base font-bold text-foreground focus:ring-0 transition-colors"
                                 />
                             </div>
                             <div className="space-y-2 group">
@@ -676,13 +674,13 @@ export default function EditPurchaseReceiptPage() {
                                     value={reference}
                                     onChange={(e) => setReference(e.target.value)}
                                     placeholder="e.g. GT-8821"
-                                    className="w-full bg-transparent border-b border-neutral-800 focus:border-indigo-500 p-0 pb-2 text-sm font-medium text-neutral-200 focus:ring-0 transition-colors placeholder:text-neutral-700"
+                                    className="w-full bg-transparent border-b border-muted focus:border-blue-500 p-0 pb-2 text-base font-bold text-foreground focus:ring-0 transition-colors placeholder:text-muted/30"
                                 />
                             </div>
                         </div>
 
                         {/* 4. Attachments */}
-                        <div className="space-y-4 pt-4 border-t border-white/5">
+                        <div className="space-y-4 pt-4 border-t border-border">
                             <label className="text-xs font-medium text-neutral-500 uppercase tracking-wider">Invoice / Attachment</label>
                             <FileUpload
                                 onUploadComplete={async (url) => {
@@ -793,10 +791,10 @@ export default function EditPurchaseReceiptPage() {
                                 accept="application/pdf,image/*"
                             />
                             {attachmentUrl && (
-                                <div className="flex items-center gap-2 px-3 py-2 bg-neutral-900 rounded-lg border border-white/5">
-                                    <FileText className="h-4 w-4 text-indigo-400" />
-                                    <span className="text-xs text-neutral-300">Original Document Available</span>
-                                    <a href={attachmentUrl} target="_blank" rel="noopener noreferrer" className="ml-auto text-xs font-bold text-indigo-400 hover:text-indigo-300 hover:underline">
+                                <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg border border-border">
+                                    <FileText className="h-4 w-4 text-blue-400" />
+                                    <span className="text-xs text-muted-foreground">Original Document Available</span>
+                                    <a href={attachmentUrl} target="_blank" rel="noopener noreferrer" className="ml-auto text-xs font-bold text-blue-500 hover:text-blue-600 hover:underline">
                                         View File ↗
                                     </a>
                                 </div>
@@ -807,14 +805,14 @@ export default function EditPurchaseReceiptPage() {
 
                     {/* Right Panel: Items Grid */}
                     <div className="col-span-12 lg:col-span-8 space-y-6 animate-in fade-in slide-in-from-right-4 duration-700 delay-100">
-                        <div className="flex items-center justify-between px-2 text-neutral-500">
+                        <div className="flex items-center justify-between px-2 text-muted-foreground">
                             <div className="flex items-center gap-2">
-                                <Box className="h-4 w-4" />
-                                <span className="text-xs font-medium uppercase tracking-wider">Manifest</span>
+                                <Box className="h-4 w-4 text-blue-500" />
+                                <span className="text-sm font-black uppercase tracking-widest text-foreground">Manifest</span>
                             </div>
                             {mode === 'direct' && (
-                                <button type="button" onClick={addItem} className="text-xs font-bold uppercase tracking-wider text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-2">
-                                    <Plus className="h-4 w-4" /> Add Line
+                                <button type="button" onClick={addItem} className="text-xs font-black uppercase tracking-widest text-blue-500 hover:text-blue-600 transition-all flex items-center gap-2 hover:scale-105 active:scale-95">
+                                    <Plus className="h-4 w-4" /> Add Line Item
                                 </button>
                             )}
                         </div>
@@ -857,43 +855,43 @@ export default function EditPurchaseReceiptPage() {
                             </div>
                         )}
 
-                        <div className="min-h-[400px] rounded-lg border border-white/5 bg-black/20">
+                        <div className="min-h-[400px] rounded-2xl border border-border bg-muted/20 overflow-hidden shadow-xl shadow-black/5">
                             <table className="w-full text-left border-collapse min-w-[1400px]">
-                                <thead>
-                                    <tr className="border-b border-white/5 text-neutral-500">
-                                        <th className="py-4 pl-4 font-medium text-xs uppercase tracking-wider w-[20%]">Item</th>
-                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-left w-16 text-white">HSN</th>
-                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-left w-16 text-white">Pack</th>
-                                        {mode === 'po' && <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-center w-16">Ord</th>}
-                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-left w-20 text-white">Batch</th>
-                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-left w-20 text-white">Exp</th>
-                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-white">MRP</th>
-                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-emerald-400">Sale Price</th>
-                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-emerald-400">Margin %</th>
-                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-white">Qty</th>
-                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-white">Price</th>
-                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-24 text-white">Taxable</th>
-                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-16 text-white">Tax %</th>
+                                <thead className="bg-muted/50">
+                                    <tr className="border-b border-border text-muted-foreground">
+                                        <th className="py-4 pl-4 font-black text-[10px] uppercase tracking-widest w-[20%] text-foreground">Product Details</th>
+                                        <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-left w-16 text-foreground">HSN</th>
+                                        <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-left w-24 text-foreground">Pack</th>
+                                        {mode === 'po' && <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-center w-16 text-foreground">Ord</th>}
+                                        <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-left w-24 text-foreground">Batch</th>
+                                        <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-left w-24 text-foreground">Exp</th>
+                                        <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-20 text-foreground">MRP</th>
+                                        <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-24 text-emerald-600">Sale Price</th>
+                                        <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-20 text-emerald-600">Margin</th>
+                                        <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-20 text-foreground">Qty</th>
+                                        <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-24 text-foreground">Price/Rate</th>
+                                        <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-24 text-foreground">Taxable</th>
+                                        <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-16 text-foreground">Tax%</th>
                                         {taxType === 'INTRA' ? (
                                             <>
-                                                <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-white">CGST</th>
-                                                <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-white">SGST</th>
+                                                <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-20 text-foreground">CGST</th>
+                                                <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-20 text-foreground">SGST</th>
                                             </>
                                         ) : (
-                                            <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-20 text-white">IGST</th>
+                                            <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-20 text-foreground">IGST</th>
                                         )}
-                                        <th className="py-4 px-2 font-medium text-xs uppercase tracking-wider text-right w-24 text-white">Total</th>
+                                        <th className="py-4 px-2 font-black text-[10px] uppercase tracking-widest text-right w-28 text-foreground">Net Total</th>
                                         <th className="w-8"></th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-white/5">
+                                <tbody className="divide-y divide-border">
                                     {items.map((item, index) => (
                                         <tr key={index} className="group hover:bg-white/[0.02] transition-colors">
                                             <td className="py-3 pl-4">
                                                 {mode === 'po' ? (
-                                                    <div>
-                                                        <div className="text-sm font-medium text-neutral-200">{item.productName}</div>
-                                                        {item.poLineId && <div className="text-[10px] text-neutral-600 font-mono mt-0.5">REF: {item.poLineId.split('-').pop()}</div>}
+                                                    <div className="py-2">
+                                                        <div className="text-sm font-bold text-foreground uppercase tracking-tight">{item.productName}</div>
+                                                        {item.poLineId && <div className="text-[10px] text-muted-foreground font-mono mt-0.5 opacity-60">ID: {item.poLineId.split('-').pop()}</div>}
                                                     </div>
                                                 ) : (
                                                     <SearchableSelect
@@ -902,10 +900,9 @@ export default function EditPurchaseReceiptPage() {
                                                         onSearch={searchProducts}
                                                         onCreate={createProductQuick}
                                                         defaultOptions={item.productId ? [{ id: item.productId, label: item.productName }] : []}
-                                                        placeholder={item.productName || "Select Product..."}
+                                                        placeholder={item.productName || "Search Product..."}
                                                         variant="ghost"
-                                                        className="w-full text-sm font-semibold text-white placeholder:text-neutral-400 dark"
-                                                        isDark={true}
+                                                        className="w-full text-sm font-bold text-foreground placeholder:text-muted/30"
                                                     />
                                                 )}
                                             </td>
@@ -914,7 +911,7 @@ export default function EditPurchaseReceiptPage() {
                                                     placeholder="HSN"
                                                     value={item.hsn || ''}
                                                     onChange={(e) => { const n = [...items]; n[index].hsn = e.target.value; setItems(n); }}
-                                                    className="w-full bg-transparent border-b border-white/10 text-[10px] font-mono focus:border-indigo-500"
+                                                    className="w-full bg-transparent border-b border-border text-[10px] font-mono focus:border-blue-500 font-bold text-foreground"
                                                 />
                                             </td>
                                             <td className="py-3 px-2">
@@ -933,8 +930,7 @@ export default function EditPurchaseReceiptPage() {
                                                     ]}
                                                     placeholder="Pack"
                                                     variant="ghost"
-                                                    className="w-full text-[10px] font-mono text-white placeholder:text-neutral-600 dark"
-                                                    isDark={true}
+                                                    className="w-full text-[10px] font-bold font-mono text-foreground placeholder:text-muted/30"
                                                 />
                                             </td>
                                             {mode === 'po' && (
@@ -947,7 +943,7 @@ export default function EditPurchaseReceiptPage() {
                                                     placeholder="Batch"
                                                     value={item.batch || ''}
                                                     onChange={(e) => { const n = [...items]; n[index].batch = e.target.value; setItems(n); }}
-                                                    className="w-full bg-transparent border-b border-white/10 text-[10px] font-mono focus:border-indigo-500"
+                                                    className="w-full bg-transparent border-b border-border text-[10px] font-mono focus:border-blue-500 font-bold text-foreground"
                                                 />
                                             </td>
                                             <td className="py-3 px-2">
@@ -955,7 +951,7 @@ export default function EditPurchaseReceiptPage() {
                                                     placeholder="Exp"
                                                     value={item.expiry || ''}
                                                     onChange={(e) => { const n = [...items]; n[index].expiry = e.target.value; setItems(n); }}
-                                                    className="w-full bg-transparent border-b border-white/10 text-[10px] font-mono focus:border-indigo-500"
+                                                    className="w-full bg-transparent border-b border-border text-[10px] font-mono focus:border-blue-500 font-bold text-foreground"
                                                 />
                                             </td>
                                             <td className="py-3 px-2 text-right">
@@ -964,7 +960,7 @@ export default function EditPurchaseReceiptPage() {
                                                     type="number"
                                                     value={item.mrp || ''}
                                                     onChange={(e) => { const n = [...items]; n[index].mrp = Number(e.target.value); setItems(n); }}
-                                                    className="w-full bg-transparent border-b border-white/10 text-[10px] font-mono text-right focus:border-indigo-500"
+                                                    className="w-full bg-transparent border-b border-border text-[10px] font-mono text-right focus:border-blue-500 font-bold text-foreground"
                                                 />
                                             </td>
                                             {/* Sale Price - Editable with MRP validation */}
@@ -998,16 +994,16 @@ export default function EditPurchaseReceiptPage() {
 
                                             {/* Margin % - Auto-calculated, color-coded */}
                                             <td className="py-3 px-2 text-right">
-                                                <div className={`text-xs font-bold ${!item.marginPct ? 'text-neutral-600' :
-                                                    item.marginPct >= 25 ? 'text-green-400' :
-                                                        item.marginPct >= 15 ? 'text-yellow-400' :
-                                                            item.marginPct >= 10 ? 'text-orange-400' :
-                                                                'text-red-400'
+                                                <div className={`text-xs font-black ${!item.marginPct ? 'text-muted-foreground' :
+                                                    item.marginPct >= 25 ? 'text-emerald-600' :
+                                                        item.marginPct >= 15 ? 'text-blue-600' :
+                                                            item.marginPct >= 10 ? 'text-orange-600' :
+                                                                'text-rose-600'
                                                     }`}>
                                                     {item.marginPct !== undefined ? `${item.marginPct.toFixed(1)}%` : '-'}
                                                 </div>
                                                 {item.marginPct !== undefined && item.marginPct < 10 && (
-                                                    <div className="text-[8px] text-red-400">Low!</div>
+                                                    <div className="text-[8px] text-rose-500 font-bold">LOW</div>
                                                 )}
                                             </td>
 
@@ -1024,7 +1020,7 @@ export default function EditPurchaseReceiptPage() {
                                                         n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
                                                         setItems(n);
                                                     }}
-                                                    className="w-full bg-transparent border-b border-white/10 text-center font-mono focus:border-indigo-500"
+                                                    className="w-full bg-transparent border-b border-border text-center font-mono font-bold text-foreground focus:border-blue-500"
                                                 />
                                             </td>
                                             <td className="py-3 px-2 text-right">
@@ -1040,13 +1036,12 @@ export default function EditPurchaseReceiptPage() {
                                                         n[index].taxAmount = taxable * ((n[index].taxRate || 0) / 100);
                                                         setItems(n);
                                                     }}
-                                                    className="w-full bg-transparent border-b border-white/10 text-right font-mono focus:border-indigo-500"
+                                                    className="w-full bg-transparent border-b border-border text-right font-mono font-bold text-foreground focus:border-blue-500"
                                                 />
-                                                <div className="text-[10px] text-neutral-600 mt-1">Cost</div>
                                             </td>
 
                                             {/* Taxable Value (Calculated) */}
-                                            <td className="py-3 px-2 text-right text-sm font-mono text-neutral-300">
+                                            <td className="py-3 px-2 text-right text-sm font-mono font-bold text-muted-foreground">
                                                 {(item.unitPrice * item.receivedQty).toFixed(2)}
                                             </td>
 
@@ -1077,29 +1072,28 @@ export default function EditPurchaseReceiptPage() {
                                                     ]}
                                                     placeholder="%"
                                                     variant="ghost"
-                                                    className="w-full text-[10px] font-mono text-right text-white placeholder:text-neutral-600 dark"
-                                                    isDark={true}
+                                                    className="w-full text-[10px] font-mono text-right font-bold text-foreground placeholder:text-muted/30"
                                                 />
                                             </td>
 
                                             {/* Taxes: CGST/SGST or IGST */}
                                             {taxType === 'INTRA' ? (
                                                 <>
-                                                    <td className="py-3 px-2 text-right text-sm font-mono text-neutral-400">
+                                                    <td className="py-3 px-2 text-right text-sm font-mono text-muted-foreground">
                                                         {((item.taxAmount || 0) / 2).toFixed(2)}
                                                     </td>
-                                                    <td className="py-3 px-2 text-right text-sm font-mono text-neutral-400">
+                                                    <td className="py-3 px-2 text-right text-sm font-mono text-muted-foreground">
                                                         {((item.taxAmount || 0) / 2).toFixed(2)}
                                                     </td>
                                                 </>
                                             ) : (
-                                                <td className="py-3 px-2 text-right text-sm font-mono text-neutral-400">
+                                                <td className="py-3 px-2 text-right text-sm font-mono text-muted-foreground">
                                                     {(item.taxAmount || 0).toFixed(2)}
                                                 </td>
                                             )}
 
                                             {/* Total */}
-                                            <td className="py-3 px-2 text-right text-sm font-mono font-bold text-white">
+                                            <td className="py-3 px-2 text-right text-sm font-mono font-black text-foreground">
                                                 {((item.unitPrice * item.receivedQty) + (item.taxAmount || 0)).toFixed(2)}
                                             </td>
 
@@ -1115,13 +1109,14 @@ export default function EditPurchaseReceiptPage() {
                                     {items.length === 0 && (
                                         <tr>
                                             <td colSpan={15} className="py-24 text-center">
-                                                <div className="flex flex-col items-center gap-3 text-neutral-700">
-                                                    <div className="p-4 rounded-full bg-neutral-900 border border-white/5">
-                                                        <ScanLine className="h-6 w-6 opacity-50" />
+                                                <div className="flex flex-col items-center gap-4 text-muted-foreground">
+                                                    <div className="p-6 rounded-full bg-muted border border-border shadow-inner">
+                                                        <ScanLine className="h-8 w-8 text-blue-500 opacity-50" />
                                                     </div>
-                                                    <span className="text-sm font-medium">
-                                                        {mode === 'po' ? 'Select a Source Order above to load items' : 'Scan an invoice or use "Add Line" to begin'}
-                                                    </span>
+                                                    <div className="space-y-1">
+                                                        <p className="text-base font-black text-foreground uppercase tracking-widest">No Manifest Items</p>
+                                                        <p className="text-xs font-medium">Scan an invoice or select a Source Order above to begin.</p>
+                                                    </div>
                                                 </div>
                                             </td>
                                         </tr>
@@ -1131,26 +1126,26 @@ export default function EditPurchaseReceiptPage() {
                         </div>
 
                         {/* Totals Summary */}
-                        <div className="flex justify-end mt-4">
-                            <div className="bg-neutral-900/50 p-6 rounded-xl border border-white/10 min-w-[320px] shadow-sm">
-                                <div className="space-y-3">
+                        <div className="flex justify-end mt-8">
+                            <div className="bg-muted p-8 rounded-3xl border border-border min-w-[360px] shadow-2xl space-y-6">
+                                <div className="space-y-4">
                                     <div className="flex justify-between items-center text-sm">
-                                        <span className="text-neutral-400">Taxable Value</span>
-                                        <span className="text-white font-mono tracking-tight">{totalTaxable.toFixed(2)}</span>
+                                        <span className="text-muted-foreground font-medium uppercase tracking-widest text-[10px]">Taxable Value</span>
+                                        <span className="text-foreground font-black font-mono text-lg tracking-tighter">₹{totalTaxable.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-sm">
-                                        <span className="text-neutral-400">Total Tax</span>
-                                        <span className="text-white font-mono tracking-tight">{totalTax.toFixed(2)}</span>
+                                        <span className="text-muted-foreground font-medium uppercase tracking-widest text-[10px]">Total Tax</span>
+                                        <span className="text-foreground font-black font-mono text-lg tracking-tighter">₹{totalTax.toFixed(2)}</span>
                                     </div>
                                     <div className="flex justify-between items-center text-sm">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-neutral-400">Round Off</span>
+                                            <span className="text-muted-foreground font-medium uppercase tracking-widest text-[10px]">Round Off</span>
                                             <button
                                                 type="button"
                                                 onClick={() => setIsAutoRound(!isAutoRound)}
-                                                className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors ${isAutoRound
-                                                    ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30'
-                                                    : 'bg-transparent text-neutral-600 border-neutral-800 hover:text-neutral-400'
+                                                className={`text-[8px] font-black px-2 py-0.5 rounded-full border transition-all ${isAutoRound
+                                                    ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-500/20'
+                                                    : 'bg-muted text-muted-foreground border-border hover:text-foreground'
                                                     }`}
                                             >
                                                 AUTO
@@ -1163,38 +1158,40 @@ export default function EditPurchaseReceiptPage() {
                                                 setRoundOff(Number(e.target.value));
                                                 setIsAutoRound(false); // Switch to manual on edit
                                             }}
-                                            className={`bg-transparent border-b text-right w-20 font-mono tracking-tight focus:outline-none ${isAutoRound ? 'text-neutral-500 border-dashed border-neutral-700' : 'text-white border-white/10 focus:border-indigo-500'}`}
+                                            className={`bg-transparent border-b text-right w-24 font-black font-mono text-lg tracking-tighter focus:outline-none transition-all ${isAutoRound ? 'text-muted-foreground border-dashed border-border' : 'text-foreground border-blue-500/30 focus:border-blue-500'}`}
                                             step="0.01"
                                         />
                                     </div>
 
                                     {/* Calculated Total */}
-                                    <div className="pt-3 border-t border-white/10 flex justify-between items-start">
+                                    <div className="pt-6 border-t border-border flex justify-between items-center">
                                         <div className="flex flex-col">
-                                            <span className="text-base font-semibold text-white">Net Total</span>
-                                            <span className="text-[10px] text-neutral-500 font-medium uppercase tracking-wider">INR (Rounded)</span>
+                                            <span className="text-xs font-black text-foreground uppercase tracking-[0.2em]">Net Payable</span>
+                                            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest opacity-60">Rounded Total</span>
                                         </div>
-                                        <span className="text-2xl font-bold text-white font-mono tracking-tight">
-                                            {netTotal.toFixed(2)}
-                                        </span>
+                                        <div className="text-right">
+                                            <span className="text-4xl font-black text-foreground font-mono tracking-tighter block">
+                                                ₹{netTotal.toFixed(2)}
+                                            </span>
+                                        </div>
                                     </div>
 
                                     {/* Scanned Comparison */}
                                     {scannedTotal > 0 && (
-                                        <div className="mt-4 p-3 bg-black/40 rounded-lg border border-white/5 space-y-2">
-                                            <div className="flex justify-between items-center text-xs">
-                                                <span className="text-neutral-500">Scanned Bill Total:</span>
-                                                <span className="text-neutral-300 font-mono">{scannedTotal.toFixed(2)}</span>
+                                        <div className="mt-6 p-4 bg-background rounded-2xl border border-border space-y-3 shadow-inner">
+                                            <div className="flex justify-between items-center text-[10px] uppercase font-black tracking-widest">
+                                                <span className="text-muted-foreground">Scanned Total</span>
+                                                <span className="text-foreground font-mono">₹{scannedTotal.toFixed(2)}</span>
                                             </div>
                                             {Math.abs(scannedTotal - netTotal) > 0.01 ? (
-                                                <div className="flex justify-between items-center text-xs font-bold text-red-400">
-                                                    <span>Difference:</span>
-                                                    <span className="font-mono">{(netTotal - scannedTotal).toFixed(2)}</span>
+                                                <div className="flex justify-between items-center text-[10px] uppercase font-black tracking-widest text-rose-500">
+                                                    <span>Mismatch</span>
+                                                    <span className="font-mono">₹{(netTotal - scannedTotal).toFixed(2)}</span>
                                                 </div>
                                             ) : (
-                                                <div className="flex justify-between items-center text-xs font-bold text-emerald-400">
-                                                    <span>Matched</span>
-                                                    <span className="font-mono">✓</span>
+                                                <div className="flex justify-between items-center text-[10px] uppercase font-black tracking-widest text-emerald-600">
+                                                    <span>Verified</span>
+                                                    <span className="font-mono">MATCH OK ✓</span>
                                                 </div>
                                             )}
                                         </div>
@@ -1209,18 +1206,18 @@ export default function EditPurchaseReceiptPage() {
 
             {/* Sticky Footer for Action */}
             <div className="fixed bottom-8 left-0 w-full flex justify-center z-40 pointer-events-none">
-                <div className={`bg-neutral-900/90 backdrop-blur-xl border border-white/10 rounded-full p-2 pl-6 pr-2 flex items-center gap-6 shadow-2xl pointer-events-auto transition-all duration-500 ${items.length === 0 ? 'translate-y-24 opacity-0' : 'translate-y-0 opacity-100'}`}>
-                    <div className="flex items-center gap-3 text-xs font-medium text-neutral-400">
-                        <span className="flex items-center gap-1.5"><Box className="h-3 w-3 text-indigo-400" /> {items.reduce((a, c) => a + Number(c.receivedQty), 0)} Units</span>
-                        <span className="w-1 h-1 rounded-full bg-neutral-700"></span>
-                        <span>{mode === 'po' ? 'PO Linked' : 'Direct Entry'}</span>
+                <div className={`bg-background/90 backdrop-blur-2xl border border-border rounded-full p-2.5 pl-8 pr-2.5 flex items-center gap-10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.3)] pointer-events-auto transition-all duration-700 ${items.length === 0 ? 'translate-y-24 opacity-0 scale-90' : 'translate-y-0 opacity-100 scale-100'}`}>
+                    <div className="flex items-center gap-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                        <span className="flex items-center gap-2"><Box className="h-4 w-4 text-blue-500" /> {items.reduce((a, c) => a + Number(c.receivedQty), 0)} Units</span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-border"></span>
+                        <span className="text-foreground">{mode === 'po' ? 'PO Tracking' : 'Direct Entry'}</span>
                     </div>
                     <button
                         onClick={handleSubmit}
                         disabled={isSubmitting || items.length === 0}
-                        className="bg-white text-black hover:bg-neutral-200 transition-colors px-6 py-2.5 rounded-full text-sm font-semibold flex items-center gap-2 disabled:opacity-50"
+                        className="bg-foreground text-background hover:scale-[1.02] active:scale-[0.98] transition-all px-10 py-4 rounded-full text-xs font-black uppercase tracking-[0.2em] flex items-center gap-3 disabled:opacity-50 shadow-xl shadow-foreground/10"
                     >
-                        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <>{params.id ? "Update Receipt" : "Confirm Receipt"} <ArrowRight className="h-4 w-4" /></>}
+                        {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <>{params.id ? "Update Entry" : "Finalize Entry"} <ArrowRight className="h-4 w-4" /></>}
                     </button>
                 </div>
             </div>
