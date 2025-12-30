@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,6 +98,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
 
     // AI Scanning State
     const [isScanning, setIsScanning] = useState(false);
+    const isScanningRef = useRef(false);
     const [scanProgress, setScanProgress] = useState('');
 
     // Window State
@@ -391,7 +392,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
     };
 
     const handleScanInvoice = async (url: string) => {
-        if (isScanning) return;
+        if (isScanningRef.current) return;
+        isScanningRef.current = true;
+
         setAttachmentUrl(url);
         setIsScanning(true);
         setScanProgress('Analyzing Invoice...');
@@ -479,6 +482,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
             toast({ title: "Scan Failed", description: e.message || "Failed to read invoice", variant: "destructive" });
         } finally {
             setIsScanning(false);
+            isScanningRef.current = false;
         }
     };
 
