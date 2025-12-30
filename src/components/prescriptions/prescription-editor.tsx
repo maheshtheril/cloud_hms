@@ -502,7 +502,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
 
         setIsSharing(true);
         try {
-            const res = await sharePrescriptionWhatsapp(pId);
+            const res = await sharePrescriptionWhatsapp(pId!);
             if (res.success) {
                 toast({
                     title: "WhatsApp",
