@@ -221,23 +221,23 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">First Name</label>
-                                                <input type="text" name="first_name" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" placeholder="e.g. Liam" />
+                                                <input type="text" name="first_name" className="w-full p-4 text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" placeholder="e.g. Liam" />
                                             </div>
                                             <div>
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Last Name</label>
-                                                <input type="text" name="last_name" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" placeholder="e.g. Smith" />
+                                                <input type="text" name="last_name" className="w-full p-4 text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" placeholder="e.g. Smith" />
                                             </div>
                                         </div>
                                         <div>
                                             <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Professional Email</label>
                                             <div className="relative">
                                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                <input type="email" name="email" className="w-full pl-12 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" placeholder="clinician@hospital.com" />
+                                                <input type="email" name="email" className="w-full pl-12 p-4 text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" placeholder="clinician@hospital.com" />
                                             </div>
                                         </div>
                                         <div>
                                             <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Professional Qualification</label>
-                                            <select name="qualification" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm">
+                                            <select name="qualification" className="w-full p-4 text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm">
                                                 <option value="">Select Qualification</option>
                                                 {WORLD_CLASS_QUALIFICATIONS.map(q => <option key={q} value={q}>{q}</option>)}
                                             </select>
@@ -246,7 +246,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                             <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Medical License No.</label>
                                             <div className="relative">
                                                 <Shield className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                                                <input type="text" name="license_no" className="w-full pl-12 p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" placeholder="e.g. MED-2024-XX" />
+                                                <input type="text" name="license_no" className="w-full pl-12 p-4 text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 outline-none font-bold text-sm" placeholder="e.g. MED-2024-XX" />
                                             </div>
                                         </div>
                                     </div>
@@ -259,19 +259,19 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                         </h3>
                                         <div>
                                             <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider flex items-center gap-2"><Hash className="h-3 w-3" /> Employee ID</label>
-                                            <input type="text" name="employee_id" value={empId} onChange={(e) => setEmpId(e.target.value)} className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm" />
+                                            <input type="text" name="employee_id" value={empId} onChange={(e) => setEmpId(e.target.value)} className="w-full p-4 text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm" />
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Designation</label>
-                                                <select name="designation" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
+                                                <select name="designation" className="w-full p-4 text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
                                                     <option value="">Select</option>
                                                     {WORLD_CLASS_DESIGNATIONS.map(d => <option key={d} value={d}>{d}</option>)}
                                                 </select>
                                             </div>
                                             <div>
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Institutional Role</label>
-                                                <select name="role_id" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
+                                                <select name="role_id" className="w-full p-4 text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
                                                     <option value="">Select Role</option>
                                                     {roles.map(role => <option key={role.id} value={role.id}>{role.name}</option>)}
                                                 </select>
@@ -279,7 +279,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                         </div>
                                         <div>
                                             <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Specialization</label>
-                                            <select name="specialization_id" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
+                                            <select name="specialization_id" className="w-full p-4 text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
                                                 <option value="">None / General</option>
                                                 {specializations.map(spec => <option key={spec.id} value={spec.id}>{spec.name}</option>)}
                                             </select>
@@ -305,7 +305,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                                     </button>
                                                 </div>
                                             )}
-                                            <select name="department_id" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
+                                            <select name="department_id" className="w-full p-4 text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:ring-4 focus:ring-indigo-100 font-bold text-sm">
                                                 <option value="">Select Department</option>
                                                 {renderDepartmentOptions(departments)}
                                             </select>
@@ -324,21 +324,21 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Shift Start</label>
-                                                <input type="time" name="consultation_start_time" defaultValue="09:00" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
+                                                <input type="time" name="consultation_start_time" defaultValue="09:00" className="w-full p-4 text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
                                             </div>
                                             <div>
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Shift End</label>
-                                                <input type="time" name="consultation_end_time" defaultValue="17:00" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
+                                                <input type="time" name="consultation_end_time" defaultValue="17:00" className="w-full p-4 text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl outline-none font-bold text-sm" />
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Slot (Min)</label>
-                                                <input type="number" name="consultation_slot_duration" defaultValue="30" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm" />
+                                                <input type="number" name="consultation_slot_duration" defaultValue="30" className="w-full p-4 text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm" />
                                             </div>
                                             <div>
                                                 <label className="block text-[11px] font-black text-slate-500 mb-1.5 uppercase tracking-wider">Experience (Yrs)</label>
-                                                <input type="number" name="experience_years" defaultValue="0" className="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm" />
+                                                <input type="number" name="experience_years" defaultValue="0" className="w-full p-4 text-slate-900 bg-slate-50 border-2 border-slate-100 rounded-2xl font-bold text-sm" />
                                             </div>
                                         </div>
                                         <div>
