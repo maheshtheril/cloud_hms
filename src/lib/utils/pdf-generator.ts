@@ -58,7 +58,7 @@ export async function generateInvoicePDFBase64(invoice: any, company?: any): Pro
         // --- Table Headers ---
         const tableTop = 230;
         const currency = invoice.currency || 'INR';
-        const symbol = currency === 'INR' ? '₹' : currency + ' ';
+        const symbol = currency === 'INR' ? 'Rs. ' : currency + ' ';
 
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
