@@ -487,31 +487,48 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     }
 
     const handleWhatsappShare = async () => {
-        setIsSharing(true);
         let pId = lastSavedId;
 
         // If not saved yet, save it first
         if (!pId) {
-            pId = await savePrescription(false);
-            if (!pId) {
+            setIsSharing(true);
+            const savedId = await savePrescription(false);
+            if (!savedId) {
                 setIsSharing(false);
-                return; // Save failed
+                return;
             }
+            pId = savedId;
         }
 
-        const link = `${window.location.origin}/hms/prescriptions/${pId}/print`;
-        const patientName = patientInfo?.first_name || 'Patient';
-        const msg = `Hello ${patientName}, here is your prescription from the clinic. View/Download: ${link}`;
-        const phone = patientInfo?.contact?.phone || patientInfo?.phone || '';
-
-        if (phone) {
-            const url = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
-            window.open(url, '_blank');
-        } else {
-            alert('Patient phone number not found.');
+        setIsSharing(true);
+        try {
+            const res = await sharePrescriptionWhatsapp(pId);
+            if (res.success) {
+                toast({
+                    title: "WhatsApp",
+                    description: String(res.message || "Sent successfully."),
+                });
+                if (res.whatsappUrl) {
+                    // Only open if backend explicitly requests it (e.g. Mock Mode)
+                    window.open(res.whatsappUrl, '_blank');
+                }
+            } else {
+                toast({
+                    title: "Share Failed",
+                    description: String(res.error || "Could not share prescription"),
+                    variant: "destructive"
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            toast({
+                title: "Error",
+                description: "An unexpected error occurred",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSharing(false);
         }
-
-        setIsSharing(false);
     }
 
     const content = (

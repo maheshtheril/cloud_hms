@@ -62,17 +62,11 @@ export class NotificationService {
             const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://cloud-hms.onrender.com';
             const billLink = `${baseUrl}/hms/billing/${invoice.id}`;
 
-            const message = `✨ *Invoice From ${companyName}* ✨\n\n` +
-                `Hello *${patientName}*,\n\n` +
-                `Thank you for choosing our services. Your invoice *${invoice.invoice_number}* is now ready.\n\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━━━\n` +
-                `💰 *Total:* ${invoice.currency} ${Number(invoice.total).toLocaleString('en-IN')}\n` +
-                `📝 *Status:* ${invoice.status?.toUpperCase()}\n` +
-                `📅 *Date:* ${new Date(invoice.issued_at || invoice.created_at).toLocaleDateString()}\n` +
-                `━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-                `🔗 *View Your Bill:* ${billLink}\n\n` +
-                `_If you have any questions, please feel free to reach out._\n\n` +
-                `Have a healthy day! ❤️`;
+            const message = `Hello *${patientName}*,\n\n` +
+                `Here is your invoice for *${invoice.currency} ${Number(invoice.total).toLocaleString('en-IN')}*.\n` +
+                `Please find the attached PDF.\n\n` +
+                `Thank you,\n*${companyName}*\n\n` +
+                `🔗 Bill Link: ${billLink}`;
 
             // 5. API Configuration
             const instanceId = process.env.WHATSAPP_INSTANCE_ID || 'instance_mock_123';
@@ -174,11 +168,10 @@ export class NotificationService {
             // 4. Construct Message
             const patientName = `${prescription.hms_patient.first_name} ${prescription.hms_patient.last_name}`;
             const companyName = company?.name || "HealthCare Center";
-            const message = `💊 *Prescription From ${companyName}* 💊\n\n` +
-                `Hello *${patientName}*,\n\n` +
-                `Your digital prescription from your recent visit is now ready. Please find the attached PDF for details.\n\n` +
-                `📅 *Date:* ${new Date(prescription.created_at).toLocaleDateString()}\n\n` +
-                `_Take care and get well soon!_ ❤️`;
+            const message = `Hello *${patientName}*,\n\n` +
+                `Here is your digital prescription from *${companyName}*.\n` +
+                `Please find the attached PDF.\n\n` +
+                `Thank you.`;
 
             // 5. configuration
             const instanceId = process.env.WHATSAPP_INSTANCE_ID;
