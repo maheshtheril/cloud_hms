@@ -67,44 +67,54 @@ export function DashboardClient({ user, stats, appointments, patients, doctors }
 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <StatsCard
-                        title="Total Patients"
-                        value={stats.totalPatients.toString()}
-                        icon={Users}
-                        trend="Registered in system"
-                        color="blue"
-                    />
-                    <StatsCard
-                        title="Today's Appointments"
-                        value={stats.todayAppointments.toString()}
-                        icon={Calendar}
-                        trend={`${pendingApts} upcoming`}
-                        color="indigo"
-                        highlight
-                    />
-                    <StatsCard
-                        title="Pending Bills"
-                        value={stats.pendingBills.toString()}
-                        icon={Activity}
-                        trend="Invoices to process"
-                        color="orange"
-                    />
-                    <StatsCard
-                        title="Total Revenue"
-                        value={`₹${stats.revenue.toLocaleString()}`}
-                        icon={IndianRupee}
-                        trend="Monthly collection"
-                        color="green"
-                    />
+                    <Link href="/hms/patients" className="block transition-transform hover:scale-[1.02]">
+                        <StatsCard
+                            title="Total Patients"
+                            value={stats.totalPatients.toString()}
+                            icon={Users}
+                            trend="Registered in system"
+                            color="blue"
+                        />
+                    </Link>
+                    <Link href="/hms/appointments" className="block transition-transform hover:scale-[1.02]">
+                        <StatsCard
+                            title="Today's Appointments"
+                            value={stats.todayAppointments.toString()}
+                            icon={Calendar}
+                            trend={`${pendingApts} upcoming`}
+                            color="indigo"
+                            highlight
+                        />
+                    </Link>
+                    <Link href="/hms/billing?status=pending" className="block transition-transform hover:scale-[1.02]">
+                        <StatsCard
+                            title="Pending Bills"
+                            value={stats.pendingBills.toString()}
+                            icon={Activity}
+                            trend="Invoices to process"
+                            color="orange"
+                        />
+                    </Link>
+                    <Link href="/hms/billing" className="block transition-transform hover:scale-[1.02]">
+                        <StatsCard
+                            title="Total Revenue"
+                            value={`₹${stats.revenue.toLocaleString()}`}
+                            icon={IndianRupee}
+                            trend="Monthly collection"
+                            color="green"
+                        />
+                    </Link>
                 </div>
 
                 {/* Highlighted Appointment Table Section */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                            <Calendar className="h-5 w-5 text-indigo-500" />
-                            Today's Schedule
-                        </h2>
+                        <Link href="/hms/appointments" className="hover:text-indigo-600 transition-colors">
+                            <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                                <Calendar className="h-5 w-5 text-indigo-500" />
+                                Today's Schedule
+                            </h2>
+                        </Link>
                         <div className="flex gap-2">
                             <div className="relative">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
