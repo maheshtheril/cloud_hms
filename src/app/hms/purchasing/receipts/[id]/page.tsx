@@ -855,7 +855,7 @@ export default function EditPurchaseReceiptPage() {
                             </div>
                         )}
 
-                        <div className="min-h-[400px] rounded-2xl border border-border bg-muted/20 overflow-hidden shadow-xl shadow-black/5">
+                        <div className="min-h-[400px] rounded-2xl border border-border bg-muted/20 overflow-x-auto shadow-xl shadow-black/5 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
                             <table className="w-full text-left border-collapse min-w-[1400px]">
                                 <thead className="bg-muted/50">
                                     <tr className="border-b border-border text-muted-foreground">
