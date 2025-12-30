@@ -59,6 +59,16 @@ export async function generateInvoicePDFBase64(invoice: any, company?: any): Pro
         doc.text(`Patient ID: ${invoice.hms_patient?.patient_number || 'N/A'}`, 50, 170);
         doc.text(`Mobile: ${((invoice.hms_patient?.contact as any)?.phone) || 'N/A'}`, 50, 185);
 
+        const patientMeta = invoice.hms_patient?.metadata as any;
+        if (patientMeta?.registration_expiry) {
+            const expiryStr = new Date(patientMeta.registration_expiry).toLocaleDateString();
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(220, 38, 38); // Red-600
+            doc.text(`Registration Valid Till: ${expiryStr}`, 50, 200);
+            doc.setTextColor(102, 102, 102);
+            doc.setFont('helvetica', 'normal');
+        }
+
         // --- Table Headers ---
         const tableTop = 230;
         const currency = invoice.currency || 'INR';

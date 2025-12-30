@@ -54,6 +54,16 @@ export async function generatePrescriptionPDFBase64(prescription: any, company?:
         doc.setFont('helvetica', 'normal');
         doc.text(`Age/Gender: ${prescription.hms_patient?.age || 'N/A'} / ${prescription.hms_patient?.gender || 'N/A'}`, 50, 170);
 
+        const patientMeta = prescription.hms_patient?.metadata as any;
+        if (patientMeta?.registration_expiry) {
+            const expiryStr = new Date(patientMeta.registration_expiry).toLocaleDateString();
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(220, 38, 38); // Red-600
+            doc.text(`Registration Valid Till: ${expiryStr}`, 50, 185);
+            doc.setTextColor(102, 102, 102);
+            doc.setFont('helvetica', 'normal');
+        }
+
         // --- Clinical Findings ---
         let currentY = 210;
         const sections = [

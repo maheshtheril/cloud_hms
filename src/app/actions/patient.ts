@@ -53,12 +53,22 @@ export async function createPatient(prevState: any, formData: FormData) {
         email: formData.get('email')
     }
 
+    // Dynamic Expiry Calculation
+    const { getHMSSettings } = await import('./settings');
+    const hmsSettings = await getHMSSettings();
+    const validity = (hmsSettings as any).settings?.registrationValidity || 365;
+    const registrationDate = new Date();
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + Number(validity));
+
     const metadata = {
         title: formData.get("title") as string,
         blood_group: blood_group,
         profile_image_url: formData.get("profile_image_url") as string,
         id_card_url: formData.get("id_card_url") as string,
-        insurance
+        insurance,
+        registration_date: registrationDate.toISOString(),
+        registration_expiry: expiryDate.toISOString()
     }
 
     // Get current user's tenant and company from session
@@ -107,7 +117,7 @@ export async function createPatient(prevState: any, formData: FormData) {
         const chargeRegistration = formData.get('charge_registration') === 'on';
         if (chargeRegistration) {
             try {
-                const fee = Number(formData.get('registration_fee')) || 500;
+                const fee = Number(formData.get('registration_fee')) || (hmsSettings as any).settings?.registrationFee || 100;
                 const { createInvoice } = await import('./billing'); // Dynamic import to safely handle circular refs if any
 
                 // Determine Invoice Status based on Billing Mode (Default to Paid/Spot Pay)

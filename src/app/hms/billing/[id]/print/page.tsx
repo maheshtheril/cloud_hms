@@ -53,6 +53,11 @@ export default async function PrintInvoicePage({ params }: { params: Promise<{ i
                         <p className="text-lg font-bold text-slate-900">{invoice.hms_patient?.first_name} {invoice.hms_patient?.last_name}</p>
                         <p className="text-sm text-slate-600">Patient ID: {invoice.hms_patient?.patient_number || 'N/A'}</p>
                         <p className="text-sm text-slate-600">Contact: {((invoice.hms_patient?.contact as any)?.phone) || 'N/A'}</p>
+                        {(invoice.hms_patient?.metadata as any)?.registration_expiry && (
+                            <p className="text-sm font-bold text-red-600 mt-1">
+                                Registration Valid Till: {new Date((invoice.hms_patient?.metadata as any).registration_expiry).toLocaleDateString()}
+                            </p>
+                        )}
                     </div>
                 </div>
                 <div className="space-y-4 text-right">

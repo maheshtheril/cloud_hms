@@ -76,7 +76,7 @@ export class NotificationService {
             // https://api.ultramsg.com/${instanceId}/messages/chat
 
             const isMock = !process.env.WHATSAPP_TOKEN || process.env.WHATSAPP_TOKEN.includes('mock');
-            const waMeUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
 
             if (isMock) {
                 console.log(`[WhatsApp-Mock] To: ${phone}\n[WhatsApp-Mock] Message: ${message}${finalPdfBase64 ? '\n[WhatsApp-Mock] Attachment: [PDF DETECTED]' : ''}`);

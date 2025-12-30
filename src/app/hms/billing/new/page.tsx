@@ -34,7 +34,8 @@ export default async function NewInvoicePage({
                 contact: true,
                 patient_number: true,
                 dob: true,
-                gender: true
+                gender: true,
+                metadata: true
             },
             orderBy: { updated_at: 'desc' },
             take: 50

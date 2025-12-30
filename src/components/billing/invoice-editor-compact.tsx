@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, X, Loader2, CreditCard, Banknote, Smartphone, Landmark, MessageCircle } from 'lucide-react'
 import { createInvoice, updateInvoice } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
+import { useToast } from '@/components/ui/use-toast'
 
 export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice }: {
     patients: any[],
@@ -24,6 +25,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     }
     const router = useRouter()
     const searchParams = useSearchParams()
+    const { toast } = useToast()
     const [loading, setLoading] = useState(false)
 
     // Read URL parameters for auto-fill
@@ -267,6 +269,87 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             loadAppointmentData()
         }
     }, [urlAppointmentId, appointmentId])
+
+    // Registration Expiry Check & Auto-Add
+    useEffect(() => {
+        if (!selectedPatientId || initialInvoice) return;
+
+        const patient = patients.find((p: any) => p.id === selectedPatientId);
+        if (patient) {
+            const meta = patient.metadata as any;
+            if (meta?.registration_expiry) {
+                const expiry = new Date(meta.registration_expiry);
+                const today = new Date();
+                if (expiry < today) {
+                    // Check if already added
+                    const alreadyAdded = lines.some((l: any) =>
+                        l.description?.toLowerCase().includes('registration') ||
+                        l.description?.toLowerCase().includes('renewal')
+                    );
+
+                    if (!alreadyAdded) {
+                        toast({
+                            title: "Registration Expired",
+                            description: `Patient registration expired on ${expiry.toLocaleDateString()}. Adding renewal fee.`,
+                            variant: "destructive"
+                        });
+
+                        // Add the fee
+                        const regProduct = billableItems.find((p: any) => p.label.toLowerCase().includes('registration'));
+                        const taxId = regProduct?.categoryTaxId || defaultTaxId;
+                        const taxRateObj = taxConfig.taxRates.find((t: any) => t.id === taxId);
+                        const rate = taxRateObj ? taxRateObj.rate : 0;
+                        const price = regProduct?.price || 100;
+
+                        setLines(prev => {
+                            // Logic: If registration fee is being added, check if there's a consultation fee.
+                            // Some clinics treat registration as the consultation fee for that day.
+                            let newLines = [...prev];
+
+                            // 1. Find consultation line if any
+                            const consultLineIdx = newLines.findIndex(l =>
+                                l.description?.toLowerCase().includes('consult') ||
+                                l.description?.toLowerCase().includes('opd')
+                            );
+
+                            if (consultLineIdx !== -1) {
+                                // Automatically discount the consultation fee 100% since registration is being paid
+                                // This matches the user's "registration fee will be the consulting fee also" rule.
+                                newLines[consultLineIdx] = {
+                                    ...newLines[consultLineIdx],
+                                    discount_amount: newLines[consultLineIdx].unit_price, // 100% discount
+                                    net_amount: 0
+                                };
+                                toast({
+                                    title: "Billing Adjusted",
+                                    description: "Consultation fee discounted as it is covered by the registration fee.",
+                                });
+                            }
+
+                            const itemToAdd = {
+                                id: Date.now() + 4000,
+                                product_id: regProduct?.id || '',
+                                description: 'Patient Registration Renewal Fee',
+                                quantity: 1,
+                                unit_price: Number(price),
+                                uom: 'Service',
+                                tax_rate_id: taxId,
+                                tax_amount: (Number(price) * rate) / 100,
+                                discount_amount: 0,
+                                net_amount: Number(price) + ((Number(price) * rate) / 100)
+                            };
+
+                            if (newLines.length === 1 && !newLines[0].description && !newLines[0].product_id) {
+                                return [itemToAdd];
+                            }
+                            return [...newLines, itemToAdd];
+                        });
+                    }
+                }
+            }
+        }
+    }, [selectedPatientId, patients, billableItems, toast, lines.length]);
+
 
     const loadPrescriptionMedicines = async () => {
         if (!selectedPatientId) return alert('Please select a patient first')

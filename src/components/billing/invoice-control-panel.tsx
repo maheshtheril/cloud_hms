@@ -110,28 +110,7 @@ export function InvoiceControlPanel({
     async function handleWhatsappShare() {
         setIsLoading(true);
         try {
-            // Attempt native share with PDF file first
-            if (invoiceData && navigator.share) {
-                try {
-                    const b64 = await generateInvoicePDFBase64(invoiceData);
-                    const blob = base64ToBlob(b64, 'application/pdf');
-                    const file = new File([blob], `Invoice-${invoiceData.invoice_number}.pdf`, { type: 'application/pdf' });
-
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: `Invoice from ${invoiceData.company?.name || 'Hospital'}`,
-                            text: `Here is your invoice ${invoiceData.invoice_number}. Link: ${window.location.origin}/hms/billing/${invoiceId}`,
-                            url: `${window.location.origin}/hms/billing/${invoiceId}` // Also share link as fallback/addition
-                        });
-                        toast({ title: "Shared", description: "PDF Shared successfully." });
-                        setIsLoading(false);
-                        return;
-                    }
-                } catch (e) {
-                    console.warn("Native share failed, falling back", e);
-                }
-            }
+            // Native share removed to ensure fully automatic background sending as per user request.
 
             const res = await shareInvoiceWhatsapp(invoiceId) as any;
             if (res && res.success) {
@@ -140,9 +119,8 @@ export function InvoiceControlPanel({
                     description: res.message || "Manual share mode active.",
                 });
 
-                if (res.whatsappUrl) {
-                    window.open(res.whatsappUrl, '_blank');
-                }
+                // Removed window.open - the backend handles automatic sending.
+                // We no longer support manual share popups as per user request.
             } else {
                 toast({
                     title: "Share Failed",

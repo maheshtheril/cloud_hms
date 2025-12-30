@@ -9,24 +9,24 @@ datasource db {
 }
 
 model account_chart {
-  id                                                                                           String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id                                                                                    String                        @db.Uuid
-  company_id                                                                                   String?                       @db.Uuid
-  code                                                                                         String
-  name                                                                                         String
-  type_id                                                                                      String?                       @db.Uuid
-  is_active                                                                                    Boolean                       @default(true)
-  created_at                                                                                   DateTime                      @default(now()) @db.Timestamptz(6)
-  account_types                                                                                account_types?                @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  fiscal_position_account_map_fiscal_position_account_map_from_account_idToaccount_chart       fiscal_position_account_map[] @relation("fiscal_position_account_map_from_account_idToaccount_chart")
-  fiscal_position_account_map_fiscal_position_account_map_to_account_idToaccount_chart         fiscal_position_account_map[] @relation("fiscal_position_account_map_to_account_idToaccount_chart")
-  ledger_posting_rules_ledger_posting_rules_credit_account_idToaccount_chart                   ledger_posting_rules[]        @relation("ledger_posting_rules_credit_account_idToaccount_chart")
-  ledger_posting_rules_ledger_posting_rules_debit_account_idToaccount_chart                    ledger_posting_rules[]        @relation("ledger_posting_rules_debit_account_idToaccount_chart")
-  posting_rules_posting_rules_credit_account_idToaccount_chart                                 posting_rules[]               @relation("posting_rules_credit_account_idToaccount_chart")
-  posting_rules_posting_rules_debit_account_idToaccount_chart                                  posting_rules[]               @relation("posting_rules_debit_account_idToaccount_chart")
-  tax_gl_accounts_tax_gl_accounts_input_account_idToaccount_chart                              tax_gl_accounts[]             @relation("tax_gl_accounts_input_account_idToaccount_chart")
-  tax_gl_accounts_tax_gl_accounts_output_account_idToaccount_chart                             tax_gl_accounts[]             @relation("tax_gl_accounts_output_account_idToaccount_chart")
-  tax_gl_accounts_tax_gl_accounts_reverse_charge_account_idToaccount_chart                     tax_gl_accounts[]             @relation("tax_gl_accounts_reverse_charge_account_idToaccount_chart")
+  id                                                                                     String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id                                                                              String                        @db.Uuid
+  company_id                                                                             String?                       @db.Uuid
+  code                                                                                   String
+  name                                                                                   String
+  type_id                                                                                String?                       @db.Uuid
+  is_active                                                                              Boolean                       @default(true)
+  created_at                                                                             DateTime                      @default(now()) @db.Timestamptz(6)
+  account_types                                                                          account_types?                @relation(fields: [type_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  fiscal_position_account_map_fiscal_position_account_map_from_account_idToaccount_chart fiscal_position_account_map[] @relation("fiscal_position_account_map_from_account_idToaccount_chart")
+  fiscal_position_account_map_fiscal_position_account_map_to_account_idToaccount_chart   fiscal_position_account_map[] @relation("fiscal_position_account_map_to_account_idToaccount_chart")
+  ledger_posting_rules_ledger_posting_rules_credit_account_idToaccount_chart             ledger_posting_rules[]        @relation("ledger_posting_rules_credit_account_idToaccount_chart")
+  ledger_posting_rules_ledger_posting_rules_debit_account_idToaccount_chart              ledger_posting_rules[]        @relation("ledger_posting_rules_debit_account_idToaccount_chart")
+  posting_rules_posting_rules_credit_account_idToaccount_chart                           posting_rules[]               @relation("posting_rules_credit_account_idToaccount_chart")
+  posting_rules_posting_rules_debit_account_idToaccount_chart                            posting_rules[]               @relation("posting_rules_debit_account_idToaccount_chart")
+  tax_gl_accounts_tax_gl_accounts_input_account_idToaccount_chart                        tax_gl_accounts[]             @relation("tax_gl_accounts_input_account_idToaccount_chart")
+  tax_gl_accounts_tax_gl_accounts_output_account_idToaccount_chart                       tax_gl_accounts[]             @relation("tax_gl_accounts_output_account_idToaccount_chart")
+  tax_gl_accounts_tax_gl_accounts_reverse_charge_account_idToaccount_chart               tax_gl_accounts[]             @relation("tax_gl_accounts_reverse_charge_account_idToaccount_chart")
 
   @@unique([company_id, code])
 }
@@ -56,41 +56,39 @@ model accounting_periods {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model accounts {
-  id                                                    String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id                                             String                @db.Uuid
-  company_id                                            String                @db.Uuid
-  parent_id                                             String?               @db.Uuid
+  id                                                    String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id                                             String                        @db.Uuid
+  company_id                                            String                        @db.Uuid
+  parent_id                                             String?                       @db.Uuid
   code                                                  String
   name                                                  String
   type                                                  String
-  is_reconcilable                                       Boolean?              @default(false)
-  is_active                                             Boolean?              @default(true)
-  currency_id                                           String?               @db.Uuid
-  metadata                                              Json?                 @default("{}")
-  created_at                                            DateTime?             @default(now()) @db.Timestamptz(6)
-  updated_at                                            DateTime?             @default(now()) @db.Timestamptz(6)
-  currencies                                            currencies?           @relation(fields: [currency_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  is_reconcilable                                       Boolean?                      @default(false)
+  is_active                                             Boolean?                      @default(true)
+  currency_id                                           String?                       @db.Uuid
+  metadata                                              Json?                         @default("{}")
+  created_at                                            DateTime?                     @default(now()) @db.Timestamptz(6)
+  updated_at                                            DateTime?                     @default(now()) @db.Timestamptz(6)
+  currencies                                            currencies?                   @relation(fields: [currency_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  settings_ap                                           company_accounting_settings[] @relation("settings_ap")
+  settings_ar                                           company_accounting_settings[] @relation("settings_ar")
+  settings_cogs                                         company_accounting_settings[] @relation("settings_cogs")
+  settings_exchange_gain_loss                           company_accounting_settings[] @relation("settings_exchange_gain_loss")
+  settings_input_tax                                    company_accounting_settings[] @relation("settings_input_tax")
+  settings_inventory                                    company_accounting_settings[] @relation("settings_inventory")
+  settings_output_tax                                   company_accounting_settings[] @relation("settings_output_tax")
+  settings_purchase                                     company_accounting_settings[] @relation("settings_purchase")
+  settings_purchase_discount                            company_accounting_settings[] @relation("settings_purchase_discount")
+  settings_retained_earnings                            company_accounting_settings[] @relation("settings_retained_earnings")
+  settings_sales                                        company_accounting_settings[] @relation("settings_sales")
+  settings_sales_discount                               company_accounting_settings[] @relation("settings_sales_discount")
+  settings_stock_adjustment                             company_accounting_settings[] @relation("settings_stock_adjustment")
+  product_category_expense                              hms_product_category[]        @relation("category_expense_account")
+  product_category_income                               hms_product_category[]        @relation("category_income_account")
   journal_entry_lines                                   journal_entry_lines[]
   journal_lines                                         journal_lines[]
-  journals_journals_default_credit_account_idToaccounts journals[]            @relation("journals_default_credit_account_idToaccounts")
-  journals_journals_default_debit_account_idToaccounts  journals[]            @relation("journals_default_debit_account_idToaccounts")
-
-  // Settings Relations
-  settings_ap               company_accounting_settings[] @relation("settings_ap")
-  settings_ar               company_accounting_settings[] @relation("settings_ar")
-  settings_sales            company_accounting_settings[] @relation("settings_sales")
-  settings_purchase         company_accounting_settings[] @relation("settings_purchase")
-  settings_output_tax       company_accounting_settings[] @relation("settings_output_tax")
-  settings_input_tax        company_accounting_settings[] @relation("settings_input_tax")
-  settings_retained_earnings company_accounting_settings[] @relation("settings_retained_earnings")
-  settings_inventory         company_accounting_settings[] @relation("settings_inventory")
-  settings_cogs              company_accounting_settings[] @relation("settings_cogs")
-  settings_stock_adjustment  company_accounting_settings[] @relation("settings_stock_adjustment")
-  settings_exchange_gain_loss company_accounting_settings[] @relation("settings_exchange_gain_loss")
-  settings_sales_discount     company_accounting_settings[] @relation("settings_sales_discount")
-  settings_purchase_discount  company_accounting_settings[] @relation("settings_purchase_discount")
-  product_category_income     hms_product_category[]        @relation("category_income_account")
-  product_category_expense    hms_product_category[]        @relation("category_expense_account")
+  journals_journals_default_credit_account_idToaccounts journals[]                    @relation("journals_default_credit_account_idToaccounts")
+  journals_journals_default_debit_account_idToaccounts  journals[]                    @relation("journals_default_debit_account_idToaccounts")
 
   @@unique([company_id, code])
   @@index([company_id], map: "idx_accounts_company")
@@ -225,10 +223,10 @@ model app_user {
   role                      String?
   is_platform_admin         Boolean                     @default(false)
   is_tenant_admin           Boolean                     @default(false)
-  leads                     crm_leads[]
-  deals                     crm_deals[]
   accounts                  crm_accounts[]
   contacts                  crm_contacts[]
+  deals                     crm_deals[]
+  leads                     crm_leads[]
   email_verification_tokens email_verification_tokens[]
   hms_user_roles            hms_user_roles[]
   user_permission           user_permission[]
@@ -324,72 +322,61 @@ model company {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model company_accounting_settings {
-  id                                                                             String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id                                                                      String         @db.Uuid
-  company_id                                                                     String         @unique @db.Uuid
-  default_sale_tax_id                                                            String?        @db.Uuid
-  default_purchase_tax_id                                                        String?        @db.Uuid
-  currency_id                                                                    String?        @db.Uuid
-  currency_precision                                                             Int            @default(2)
-  rounding_method                                                                String         @default("ROUND_HALF_UP")
-  fiscal_year_start                                                              DateTime       @default(dbgenerated("'2025-04-01'::date")) @db.Date
-  fiscal_year_end                                                                DateTime       @default(dbgenerated("'2026-03-31'::date")) @db.Date
-  ar_account_id                                                                  String?        @db.Uuid
-  ap_account_id                                                                  String?        @db.Uuid
-  sales_account_id                                                               String?        @db.Uuid
-  purchase_account_id                                                            String?        @db.Uuid
-  output_tax_account_id                                                          String?        @db.Uuid
-  input_tax_account_id                                                           String?        @db.Uuid
-  sales_journal_id                                                               String?        @db.Uuid
-  purchase_journal_id                                                            String?        @db.Uuid
-  cash_journal_id                                                                String?        @db.Uuid
-  bank_journal_id                                                                String?        @db.Uuid
-  general_journal_id                                                             String?        @db.Uuid
-  localization                                                                   String?
-  enable_reverse_charge                                                          Boolean?       @default(true)
-  enable_zero_rate                                                               Boolean?       @default(true)
-  
-  // World Class Features
-  lock_date                                                                      DateTime?      @db.Date
-  retained_earnings_account_id                                                   String?        @db.Uuid
-  inventory_asset_account_id                                                     String?        @db.Uuid
-  cogs_account_id                                                                String?        @db.Uuid
-  stock_adjustment_account_id                                                    String?        @db.Uuid
-
-  // 100% World Class Extras
-  exchange_gain_loss_account_id                                                  String?        @db.Uuid
-  sales_discount_account_id                                                      String?        @db.Uuid
-  purchase_discount_account_id                                                   String?        @db.Uuid
-
-  created_at                                                                     DateTime       @default(now()) @db.Timestamptz(6)
-  updated_at                                                                     DateTime       @default(now()) @db.Timestamptz(6)
-  
-  // Relations to ACCOUNTS (Corrected from account_chart)
-  accounts_ap               accounts?      @relation("settings_ap", fields: [ap_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  accounts_ar               accounts?      @relation("settings_ar", fields: [ar_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  accounts_sales            accounts?      @relation("settings_sales", fields: [sales_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  accounts_purchase         accounts?      @relation("settings_purchase", fields: [purchase_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  accounts_output_tax       accounts?      @relation("settings_output_tax", fields: [output_tax_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  accounts_input_tax        accounts?      @relation("settings_input_tax", fields: [input_tax_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  
-  accounts_retained_earnings accounts?     @relation("settings_retained_earnings", fields: [retained_earnings_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  accounts_inventory         accounts?     @relation("settings_inventory", fields: [inventory_asset_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  accounts_cogs              accounts?     @relation("settings_cogs", fields: [cogs_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  accounts_stock_adjustment  accounts?     @relation("settings_stock_adjustment", fields: [stock_adjustment_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  
-  accounts_exchange_gain_loss accounts?    @relation("settings_exchange_gain_loss", fields: [exchange_gain_loss_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  accounts_sales_discount     accounts?    @relation("settings_sales_discount", fields: [sales_discount_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  accounts_purchase_discount  accounts?    @relation("settings_purchase_discount", fields: [purchase_discount_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-
-  // Other Relations
-  journals_company_accounting_settings_bank_journal_idTojournals                 journals?      @relation("company_accounting_settings_bank_journal_idTojournals", fields: [bank_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  journals_company_accounting_settings_cash_journal_idTojournals                 journals?      @relation("company_accounting_settings_cash_journal_idTojournals", fields: [cash_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  currencies                                                                     currencies?    @relation(fields: [currency_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  tax_rates_company_accounting_settings_default_purchase_tax_idTotax_rates       tax_rates?     @relation("company_accounting_settings_default_purchase_tax_idTotax_rates", fields: [default_purchase_tax_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  tax_rates_company_accounting_settings_default_sale_tax_idTotax_rates           tax_rates?     @relation("company_accounting_settings_default_sale_tax_idTotax_rates", fields: [default_sale_tax_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  journals_company_accounting_settings_general_journal_idTojournals              journals?      @relation("company_accounting_settings_general_journal_idTojournals", fields: [general_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  journals_company_accounting_settings_purchase_journal_idTojournals             journals?      @relation("company_accounting_settings_purchase_journal_idTojournals", fields: [purchase_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  journals_company_accounting_settings_sales_journal_idTojournals                journals?      @relation("company_accounting_settings_sales_journal_idTojournals", fields: [sales_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id                                                                       String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id                                                                String      @db.Uuid
+  company_id                                                               String      @unique @db.Uuid
+  default_sale_tax_id                                                      String?     @db.Uuid
+  default_purchase_tax_id                                                  String?     @db.Uuid
+  currency_id                                                              String?     @db.Uuid
+  currency_precision                                                       Int         @default(2)
+  rounding_method                                                          String      @default("ROUND_HALF_UP")
+  fiscal_year_start                                                        DateTime    @default(dbgenerated("'2025-04-01'::date")) @db.Date
+  fiscal_year_end                                                          DateTime    @default(dbgenerated("'2026-03-31'::date")) @db.Date
+  ar_account_id                                                            String?     @db.Uuid
+  ap_account_id                                                            String?     @db.Uuid
+  sales_account_id                                                         String?     @db.Uuid
+  purchase_account_id                                                      String?     @db.Uuid
+  output_tax_account_id                                                    String?     @db.Uuid
+  input_tax_account_id                                                     String?     @db.Uuid
+  sales_journal_id                                                         String?     @db.Uuid
+  purchase_journal_id                                                      String?     @db.Uuid
+  cash_journal_id                                                          String?     @db.Uuid
+  bank_journal_id                                                          String?     @db.Uuid
+  general_journal_id                                                       String?     @db.Uuid
+  localization                                                             String?
+  enable_reverse_charge                                                    Boolean?    @default(true)
+  enable_zero_rate                                                         Boolean?    @default(true)
+  created_at                                                               DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at                                                               DateTime    @default(now()) @db.Timestamptz(6)
+  cogs_account_id                                                          String?     @db.Uuid
+  inventory_asset_account_id                                               String?     @db.Uuid
+  lock_date                                                                DateTime?   @db.Date
+  retained_earnings_account_id                                             String?     @db.Uuid
+  stock_adjustment_account_id                                              String?     @db.Uuid
+  exchange_gain_loss_account_id                                            String?     @db.Uuid
+  purchase_discount_account_id                                             String?     @db.Uuid
+  sales_discount_account_id                                                String?     @db.Uuid
+  accounts_ap                                                              accounts?   @relation("settings_ap", fields: [ap_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_ar                                                              accounts?   @relation("settings_ar", fields: [ar_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  journals_company_accounting_settings_bank_journal_idTojournals           journals?   @relation("company_accounting_settings_bank_journal_idTojournals", fields: [bank_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  journals_company_accounting_settings_cash_journal_idTojournals           journals?   @relation("company_accounting_settings_cash_journal_idTojournals", fields: [cash_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_cogs                                                            accounts?   @relation("settings_cogs", fields: [cogs_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  currencies                                                               currencies? @relation(fields: [currency_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tax_rates_company_accounting_settings_default_purchase_tax_idTotax_rates tax_rates?  @relation("company_accounting_settings_default_purchase_tax_idTotax_rates", fields: [default_purchase_tax_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  tax_rates_company_accounting_settings_default_sale_tax_idTotax_rates     tax_rates?  @relation("company_accounting_settings_default_sale_tax_idTotax_rates", fields: [default_sale_tax_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_exchange_gain_loss                                              accounts?   @relation("settings_exchange_gain_loss", fields: [exchange_gain_loss_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  journals_company_accounting_settings_general_journal_idTojournals        journals?   @relation("company_accounting_settings_general_journal_idTojournals", fields: [general_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_input_tax                                                       accounts?   @relation("settings_input_tax", fields: [input_tax_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_inventory                                                       accounts?   @relation("settings_inventory", fields: [inventory_asset_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_output_tax                                                      accounts?   @relation("settings_output_tax", fields: [output_tax_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_purchase                                                        accounts?   @relation("settings_purchase", fields: [purchase_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_purchase_discount                                               accounts?   @relation("settings_purchase_discount", fields: [purchase_discount_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  journals_company_accounting_settings_purchase_journal_idTojournals       journals?   @relation("company_accounting_settings_purchase_journal_idTojournals", fields: [purchase_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_retained_earnings                                               accounts?   @relation("settings_retained_earnings", fields: [retained_earnings_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_sales                                                           accounts?   @relation("settings_sales", fields: [sales_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_sales_discount                                                  accounts?   @relation("settings_sales_discount", fields: [sales_discount_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  journals_company_accounting_settings_sales_journal_idTojournals          journals?   @relation("company_accounting_settings_sales_journal_idTojournals", fields: [sales_journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_stock_adjustment                                                accounts?   @relation("settings_stock_adjustment", fields: [stock_adjustment_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model company_menu_overrides {
@@ -957,34 +944,34 @@ model hms_appointment_tags {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model hms_appointments {
-  id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id        String      @db.Uuid
-  company_id       String?     @db.Uuid
-  patient_id       String      @db.Uuid
-  clinician_id     String      @db.Uuid
-  department_id    String?     @db.Uuid
-  location_id      String?     @db.Uuid
-  room_id          String?     @db.Uuid
-  starts_at        DateTime    @db.Timestamptz(6)
-  ends_at          DateTime    @db.Timestamptz(6)
-  duration_minutes Int?        @default(dbgenerated("((EXTRACT(epoch FROM (ends_at - starts_at)) / (60)::numeric))::integer"))
-  status           String      @default("scheduled")
-  type             String?     @default("consultation")
-  mode             String?     @default("in_person")
-  priority         String?     @default("normal")
+  id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id        String         @db.Uuid
+  company_id       String?        @db.Uuid
+  patient_id       String         @db.Uuid
+  clinician_id     String         @db.Uuid
+  department_id    String?        @db.Uuid
+  location_id      String?        @db.Uuid
+  room_id          String?        @db.Uuid
+  starts_at        DateTime       @db.Timestamptz(6)
+  ends_at          DateTime       @db.Timestamptz(6)
+  duration_minutes Int?           @default(dbgenerated("((EXTRACT(epoch FROM (ends_at - starts_at)) / (60)::numeric))::integer"))
+  status           String         @default("scheduled")
+  type             String?        @default("consultation")
+  mode             String?        @default("in_person")
+  priority         String?        @default("normal")
   notes            String?
-  source           String?     @default("manual")
+  source           String?        @default("manual")
   ai_suggestion    Json?
   external_ref     String?
-  created_at       DateTime?   @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime?   @default(now()) @db.Timestamptz(6)
-  created_by       String?     @db.Uuid
-  updated_by       String?     @db.Uuid
-  deleted_at       DateTime?   @db.Timestamptz(6)
-  hms_patient      hms_patient @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  created_at       DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime?      @default(now()) @db.Timestamptz(6)
+  created_by       String?        @db.Uuid
+  updated_by       String?        @db.Uuid
+  deleted_at       DateTime?      @db.Timestamptz(6)
   hms_clinician    hms_clinicians @relation(fields: [clinician_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  prescription     prescription[]
+  hms_patient      hms_patient    @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   hms_invoice      hms_invoice[]
+  prescription     prescription[]
 
   @@index([clinician_id, starts_at], map: "idx_hms_appointments_clinician_starts_at")
   @@index([patient_id], map: "idx_hms_appointments_patient")
@@ -1033,37 +1020,37 @@ model hms_clinician_availability {
 }
 
 model hms_clinicians {
-  id                  String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id           String               @db.Uuid
-  company_id          String               @db.Uuid
-  department_id       String?              @db.Uuid
-  first_name          String
-  last_name           String
-  email               String?              @unique
-  phone               String?
-  profile_image_url   String?
-  signature_url       String?
-  document_urls       Json?                @default("[]")
-  employee_id         String?              @unique
-  designation         String?
-  qualification       String?
-  role                String?
-  specialization      String?
-  license_no          String?
-  experience_years    Int?
-  is_active           Boolean?             @default(true)
-  consultation_start_time String?          @default("09:00")
-  consultation_end_time   String?          @default("17:00")
-  consultation_slot_duration Int?          @default(30)
-  consultation_fee    Decimal?             @default(500) @db.Decimal(14, 2)
-  working_days        String[]             @default(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
-  created_at          DateTime?            @default(now()) @db.Timestamptz(6)
-  updated_at          DateTime?            @default(now()) @db.Timestamptz(6)
-  role_id             String?              @db.Uuid
-  specialization_id   String?              @db.Uuid
-  hms_roles           hms_roles?           @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  hms_specializations hms_specializations? @relation(fields: [specialization_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  hms_appointments    hms_appointments[]
+  id                         String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id                  String               @db.Uuid
+  company_id                 String               @db.Uuid
+  department_id              String?              @db.Uuid
+  first_name                 String
+  last_name                  String
+  email                      String?              @unique
+  phone                      String?
+  role                       String?
+  specialization             String?
+  license_no                 String?
+  experience_years           Int?
+  is_active                  Boolean?             @default(true)
+  created_at                 DateTime?            @default(now()) @db.Timestamptz(6)
+  updated_at                 DateTime?            @default(now()) @db.Timestamptz(6)
+  role_id                    String?              @db.Uuid
+  specialization_id          String?              @db.Uuid
+  consultation_end_time      String?              @default("17:00")
+  consultation_slot_duration Int?                 @default(30)
+  consultation_start_time    String?              @default("09:00")
+  consultation_fee           Decimal?             @default(500) @db.Decimal(14, 2)
+  designation                String?
+  employee_id                String?              @unique
+  qualification              String?
+  working_days               String[]             @default(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
+  document_urls              Json?                @default("[]")
+  profile_image_url          String?
+  signature_url              String?
+  hms_appointments           hms_appointments[]
+  hms_roles                  hms_roles?           @relation(fields: [role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hms_specializations        hms_specializations? @relation(fields: [specialization_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model hms_credit_note {
@@ -1257,14 +1244,14 @@ model hms_invoice {
   due_date                DateTime?                 @db.Date
   posted_at               DateTime?                 @db.Timestamptz(6)
   outstanding_amount      Decimal?                  @default(0) @db.Decimal
+  appointment_id          String?                   @db.Uuid
+  hms_appointment         hms_appointments?         @relation(fields: [appointment_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_encounter           hms_encounter?            @relation(fields: [encounter_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_patient             hms_patient?              @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_invoice_lines       hms_invoice_lines[]
   hms_invoice_payments    hms_invoice_payments[]
   hms_payment_allocations hms_payment_allocations[]
   journal_entries         journal_entries[]
-  appointment_id          String?                   @db.Uuid
-  hms_appointment         hms_appointments?         @relation(fields: [appointment_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([tenant_id, company_id, invoice_number], map: "ux_hms_invoice_company_number")
   @@index([tenant_id, company_id, issued_at(sort: Desc)], map: "ix_hms_invoice_tenant_company_issued_desc")
@@ -1763,11 +1750,11 @@ model hms_product_category {
   metadata                 Json?                      @default("{}")
   created_at               DateTime                   @default(now()) @db.Timestamptz(6)
   default_tax_rate_id      String?                    @db.Uuid
-  income_account_id        String?                    @db.Uuid
   expense_account_id       String?                    @db.Uuid
-  accounts_income          accounts?                  @relation("category_income_account", fields: [income_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  accounts_expense         accounts?                  @relation("category_expense_account", fields: [expense_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  income_account_id        String?                    @db.Uuid
   tax_rates                tax_rates?                 @relation(fields: [default_tax_rate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_expense         accounts?                  @relation("category_expense_account", fields: [expense_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  accounts_income          accounts?                  @relation("category_income_account", fields: [income_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_product_category_rel hms_product_category_rel[]
 
   @@index([tenant_id], map: "ix_hms_product_category_tenant")
@@ -2323,9 +2310,9 @@ model hms_supplier {
   created_at           DateTime               @default(now()) @db.Timestamptz(6)
   is_active            Boolean                @default(true)
   hms_product_supplier hms_product_supplier[]
+  hms_purchase_invoice hms_purchase_invoice[]
   hms_purchase_order   hms_purchase_order[]
   hms_purchase_receipt hms_purchase_receipt[]
-  hms_purchase_invoice hms_purchase_invoice[]
 }
 
 model hms_tax_rule {
@@ -2432,14 +2419,11 @@ model journal_entries {
   currency_id                String?               @db.Uuid
   amount_in_company_currency Decimal?              @db.Decimal(18, 6)
   fx_rate                    Decimal?              @db.Decimal(18, 6)
-  // is_posted                  Boolean               @default(true)
-  // is_locked                  Boolean               @default(false)
-  // locked_at                  DateTime?             @db.Timestamptz(6)
   purchase_invoice_id        String?               @db.Uuid
-  hms_purchase_invoice       hms_purchase_invoice? @relation(fields: [purchase_invoice_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   currencies                 currencies?           @relation(fields: [currency_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_invoice                hms_invoice?          @relation(fields: [invoice_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journals                   journals?             @relation(fields: [journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hms_purchase_invoice       hms_purchase_invoice? @relation(fields: [purchase_invoice_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journal_entry_lines        journal_entry_lines[]
   journal_lines              journal_lines[]
 
@@ -2462,11 +2446,11 @@ model journal_entry_lines {
   tax_type_id         String?            @db.Uuid
   tax_rate_id         String?            @db.Uuid
   description         String?
-  metadata            Json?              @default("{}")
   created_at          DateTime?          @default(now()) @db.Timestamptz(6)
   analytic_account_id String?            @db.Uuid
   analytic_tag_ids    String[]           @default([]) @db.Uuid
   is_tax_line         Boolean?           @default(false)
+  metadata            Json?              @default("{}")
   accounts            accounts           @relation(fields: [account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   analytic_accounts   analytic_accounts? @relation(fields: [analytic_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journal_entries     journal_entries    @relation(fields: [journal_entry_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -3365,9 +3349,9 @@ model crm_deals {
   commissions         crm_commissions[]
   account             crm_accounts?     @relation(fields: [account_id], references: [id])
   lost_reason         crm_lost_reasons? @relation(fields: [lost_reason_id], references: [id])
+  owner               app_user?         @relation(fields: [owner_id], references: [id])
   pipeline            crm_pipelines?    @relation(fields: [pipeline_id], references: [id])
   stage               crm_stages?       @relation(fields: [stage_id], references: [id])
-  owner               app_user?         @relation(fields: [owner_id], references: [id])
 }
 
 model crm_pipelines {
@@ -4128,10 +4112,10 @@ model prescription {
   plan               String?
   created_at         DateTime             @default(now()) @db.Timestamptz(6)
   updated_at         DateTime             @default(now()) @db.Timestamptz(6)
-  hms_patient        hms_patient          @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  prescription_items prescription_items[]
   appointment_id     String?              @db.Uuid
   hms_appointment    hms_appointments?    @relation(fields: [appointment_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hms_patient        hms_patient          @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  prescription_items prescription_items[]
 
   @@index([patient_id], map: "idx_prescription_patient")
   @@index([tenant_id], map: "idx_prescription_tenant")
@@ -4160,14 +4144,14 @@ model hms_prescription_template {
   tenant_id   String   @db.Uuid
   name        String
   description String?
-  medicines   Json     // Stores the array of medicines with dosages
-  vitals      String?
-  diagnosis   String?
-  complaint   String?
-  examination String?
-  plan        String?
+  medicines   Json
   created_at  DateTime @default(now()) @db.Timestamptz(6)
   updated_at  DateTime @default(now()) @db.Timestamptz(6)
+  complaint   String?
+  diagnosis   String?
+  examination String?
+  plan        String?
+  vitals      String?
 
   @@index([tenant_id], map: "idx_presc_template_tenant")
 }
@@ -4277,4 +4261,3 @@ enum visit_status {
   cancelled
   no_show
 }
-
