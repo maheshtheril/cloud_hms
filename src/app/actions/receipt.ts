@@ -580,15 +580,24 @@ export async function getPurchaseReceipts() {
 
         return {
             success: true,
-            data: receipts.map(r => ({
-                id: r.id,
-                number: r.name,
-                date: r.receipt_date,
-                supplierName: r.hms_supplier?.name || "Unknown",
-                reference: (r.metadata as any)?.reference || 'N/A',
-                itemCount: r.hms_purchase_receipt_line.length,
-                status: r.status
-            }))
+            data: receipts.map(r => {
+                const totalAmount = r.hms_purchase_receipt_line.reduce((sum, line) => {
+                    const meta = line.metadata as any || {};
+                    const lineTotal = (Number(line.qty) * Number(line.unit_price)) + (Number(meta.tax_amount) || 0);
+                    return sum + lineTotal;
+                }, 0);
+
+                return {
+                    id: r.id,
+                    number: r.name,
+                    date: r.receipt_date,
+                    supplierName: r.hms_supplier?.name || "Unknown",
+                    reference: (r.metadata as any)?.reference || 'N/A',
+                    itemCount: r.hms_purchase_receipt_line.length,
+                    totalAmount: Number(totalAmount.toFixed(2)),
+                    status: r.status
+                };
+            })
         };
     } catch (error) {
         console.error("Failed to fetch receipts:", error);
