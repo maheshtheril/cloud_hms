@@ -770,12 +770,29 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                     </Button>
                     <Button
                         variant="outline"
-                        onClick={convertAndPrint}
+                        onClick={async () => {
+                            if (isConverting) return;
+                            setIsConverting(true);
+                            try {
+                                // First ensure saved
+                                let pId = lastSavedId;
+                                if (!pId) {
+                                    pId = await savePrescription(false);
+                                }
+
+                                if (pId) {
+                                    // Navigate to the Print Preview Page for proper PDF printing
+                                    window.open(`/hms/billing/${pId}/print?type=prescription`, '_blank');
+                                }
+                            } finally {
+                                setIsConverting(false);
+                            }
+                        }}
                         disabled={isConverting}
                         className="px-8 py-6 rounded-2xl border-slate-200 hover:bg-slate-50"
                     >
                         {isConverting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Printer className="mr-2 h-5 w-5" />}
-                        Digitize & Print
+                        Print PDF
                     </Button>
                     <Button
                         variant="outline"
