@@ -296,19 +296,19 @@ export function CreatePatientForm({
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 grid grid-cols-12 gap-4">
-                                                <div className="col-span-5">
+                                            <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 md:grid-cols-12 gap-4">
+                                                <div className="col-span-2 md:col-span-5">
                                                     <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">Date of Birth</label>
                                                     <input name="dob" type="date" value={dob} onChange={(e) => handleDobChange(e.target.value)} className="w-full h-12 px-4 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-xl font-bold text-slate-700 outline-none focus:border-indigo-500" />
                                                 </div>
-                                                <div className="col-span-2 flex items-center justify-center pt-6">
+                                                <div className="col-span-2 md:col-span-2 flex items-center justify-center pt-2 md:pt-6">
                                                     <span className="text-xs font-bold text-slate-300">OR</span>
                                                 </div>
-                                                <div className="col-span-3">
+                                                <div className="col-span-1 md:col-span-3">
                                                     <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">Age</label>
                                                     <input type="number" value={age} onChange={(e) => handleAgeChange(e.target.value, ageUnit)} className="w-full h-12 px-4 bg-white dark:bg-slate-800 border-2 border-emerald-100 dark:border-emerald-900/30 rounded-xl font-black text-emerald-600 text-lg outline-none focus:border-emerald-500" placeholder="0" />
                                                 </div>
-                                                <div className="col-span-2">
+                                                <div className="col-span-1 md:col-span-2">
                                                     <label className="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">Unit</label>
                                                     <select value={ageUnit} onChange={(e) => handleAgeChange(age, e.target.value)} className="w-full h-12 px-2 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-xl font-bold text-xs outline-none focus:border-indigo-500">
                                                         <option>Years</option><option>Months</option><option>Days</option>
