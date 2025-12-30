@@ -106,16 +106,16 @@ export function SearchableSelect({
             setSelectedOption(found);
             // In ghost variant, we want the text in the input
             if (variant === 'ghost') {
-                setQuery(found.label);
+                if (!open) setQuery(found.label);
             } else if (!open) {
                 setQuery("");
             }
         } else if (valueLabel) {
             // Fallback to valueLabel if provided (e.g. after AI scan)
             setSelectedOption({ id: value, label: valueLabel });
-            if (variant === 'ghost') setQuery(valueLabel);
+            if (variant === 'ghost' && !open) setQuery(valueLabel);
         }
-    }, [value, valueLabel, options, defaultOptions, variant]);
+    }, [value, valueLabel, options, defaultOptions, variant, open]);
 
     // Calculate position for portal
     React.useEffect(() => {
