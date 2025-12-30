@@ -99,7 +99,15 @@ export function SupplierDialog({ isOpen, onClose, onSuccess, initialData }: Supp
             } else if (result.error) {
                 setError(result.error);
             } else if (result.success) {
-                onSuccess(result.data || { id: initialData?.id || 'unknown', label: formData.name });
+                // If it's an update, 'data' might be missing, so we fallback to initialData + form updates
+                // If it's a create, 'data' is the new supplier
+                const successData = (result as any).data || {
+                    id: initialData?.id || 'unknown',
+                    label: formData.name,
+                    subLabel: formData.gstin,
+                    metadata: { ...formData }
+                };
+                onSuccess(successData);
                 onClose();
             }
         } catch (err) {
