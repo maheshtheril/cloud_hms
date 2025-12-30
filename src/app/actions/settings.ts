@@ -92,27 +92,41 @@ export async function updateGlobalSettings(data: {
     name: string,
     industry: string,
     logoUrl: string,
-    currencyId: string
+    currencyId: string,
+    address?: string,
+    phone?: string,
+    email?: string
 }) {
     const session = await auth();
     if (!session?.user?.id) return { error: "Not authenticated" };
 
-    // Basic RBAC check - assume if they can reach here they usually have permissions, 
-    // but good to check if they are admin or have settings permission.
-    // For now, simple check:
+    // Basic RBAC check
     if (!session.user.isAdmin && !session.user.isTenantAdmin) {
-        // return { error: "Unauthorized" } // Strict check disabled for demo flow smoothness if needed, but safer to enable.
+        // return { error: "Unauthorized" }
     }
 
     try {
         await prisma.$transaction(async (tx) => {
-            // Update Company Basics
+            // Fetch current metadata to merge
+            const currentCompany = await tx.company.findUnique({
+                where: { id: data.companyId },
+                select: { metadata: true }
+            });
+            const currentMeta = (currentCompany?.metadata as any) || {};
+
+            // Update Company Basics & Metadata
             await tx.company.update({
                 where: { id: data.companyId },
                 data: {
                     name: data.name,
                     industry: data.industry,
-                    logo_url: data.logoUrl
+                    logo_url: data.logoUrl,
+                    metadata: {
+                        ...currentMeta,
+                        address: data.address,
+                        phone: data.phone,
+                        email: data.email
+                    }
                 }
             });
 

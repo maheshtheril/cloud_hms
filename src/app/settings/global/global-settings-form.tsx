@@ -23,6 +23,12 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
     const [logoUrl, setLogoUrl] = useState(company.logo_url || '')
     const [currencyId, setCurrencyId] = useState(company.company_settings?.currency_id || '')
 
+    // Contact Info (stored in metadata)
+    const meta = (company.metadata as any) || {}
+    const [address, setAddress] = useState(meta.address || '')
+    const [phone, setPhone] = useState(meta.phone || '')
+    const [email, setEmail] = useState(meta.email || '')
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
@@ -32,7 +38,10 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
             name,
             industry,
             logoUrl,
-            currencyId
+            currencyId,
+            address,
+            phone,
+            email
         })
 
         if (result.success) {
@@ -125,6 +134,34 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
                             </Select>
                         </div>
                     </div>
+
+                    <div className="space-y-2">
+                        <Label>Official Address</Label>
+                        <Input
+                            value={address}
+                            onChange={e => setAddress(e.target.value)}
+                            placeholder="Full address for invoicing"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                            <Label>Official Phone</Label>
+                            <Input
+                                value={phone}
+                                onChange={e => setPhone(e.target.value)}
+                                placeholder="+91 ..."
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Official Email</Label>
+                            <Input
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                placeholder="billing@company.com"
+                            />
+                        </div>
+                    </div>
                 </CardContent>
             </Card>
 
@@ -175,6 +212,6 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
                     )}
                 </Button>
             </div>
-        </form>
+        </form >
     )
 }
