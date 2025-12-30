@@ -304,11 +304,6 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     }
 
     const saveCurrentAsTemplate = async () => {
-        if (selectedMedicines.length === 0) {
-            alert('❌ Add at least one medicine to create a master template')
-            return
-        }
-
         const name = prompt("Enter Master Template Name (e.g., 'Hypertension Protocol'):")
         if (!name) return;
 
@@ -433,11 +428,6 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     }
 
     const savePrescription = async (redirectToBill = false) => {
-        if (selectedMedicines.length === 0) {
-            alert('❌ Please add at least one medicine')
-            return
-        }
-
         setIsSaving(true)
         try {
             const response = await fetch('/api/prescriptions/save', {
@@ -468,7 +458,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                         title: "Prescription Saved",
                         description: "Your changes have been saved successfully.",
                     })
-                    if (onClose && !isSharing) onClose()
+                    // Don't close so they can keep editing
                 }
                 return data.prescriptionId;
             } else {
@@ -487,17 +477,11 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     }
 
     const handleWhatsappShare = async () => {
-        let pId = lastSavedId;
-
-        // If not saved yet, save it first
+        setIsSharing(true);
+        const pId = await savePrescription(false);
         if (!pId) {
-            setIsSharing(true);
-            const savedId = await savePrescription(false);
-            if (!savedId) {
-                setIsSharing(false);
-                return;
-            }
-            pId = savedId;
+            setIsSharing(false);
+            return;
         }
 
         setIsSharing(true);
@@ -774,11 +758,8 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                             if (isConverting) return;
                             setIsConverting(true);
                             try {
-                                // First ensure saved
-                                let pId = lastSavedId;
-                                if (!pId) {
-                                    pId = await savePrescription(false);
-                                }
+                                // Always save latest changes first
+                                const pId = await savePrescription(false);
 
                                 if (pId) {
                                     // Navigate to the Print Preview Page for proper PDF printing

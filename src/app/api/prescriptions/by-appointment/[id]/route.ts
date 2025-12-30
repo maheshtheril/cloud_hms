@@ -37,7 +37,7 @@ export async function GET(
         const medicines = (prescription as any).prescription_items.map((item: any) => ({
             id: item.hms_product.id,
             name: item.hms_product.name,
-            dosage: `${item.morning}-${item.afternoon}-${item.evening}${item.night > 0 ? `-${item.night}` : ''}`,
+            dosage: `${item.morning}-${item.afternoon}-${item.evening}-${item.night}`,
             days: item.days.toString(),
             timing: 'After Food', // Defaulting as it's not in DB yet
             quantity: (item.morning + item.afternoon + item.evening + item.night) * item.days
