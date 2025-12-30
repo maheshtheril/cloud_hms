@@ -83,7 +83,7 @@ export function CreatePatientForm({
     const [gender, setGender] = useState(initialData?.gender || 'male');
 
     // Billing Options State
-    const [chargeRegistration, setChargeRegistration] = useState(true);
+    const [chargeRegistration, setChargeRegistration] = useState(!initialData);
 
     // Prompt for missing phone
     const [phone, setPhone] = useState(initialData?.contact?.phone || '');
@@ -489,7 +489,7 @@ export function CreatePatientForm({
                                 {isPending ? (
                                     <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                                 ) : <CheckCircle2 className="h-4 w-4" />}
-                                Complete Registration
+                                {initialData ? 'Update Profile' : 'Complete Registration'}
                             </button>
                         </div>
                     </div>

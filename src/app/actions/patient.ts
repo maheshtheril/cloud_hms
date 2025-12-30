@@ -14,7 +14,7 @@ const normalizeGender = (gender: string | null) => {
     return null;
 }
 
-export async function createPatient(prevState: any, formData: FormData) {
+export async function createPatient(existingId: string | null | any, formData: FormData) {
     const firstName = formData.get("first_name") as string
     const lastName = formData.get("last_name") as string
     const nextAction = formData.get("next_action") as string // Get the next action
@@ -61,14 +61,18 @@ export async function createPatient(prevState: any, formData: FormData) {
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + Number(validity));
 
-    const metadata = {
+    // Combine metadata (Merge if update, Create new if create)
+    let metadata: any = {
         title: formData.get("title") as string,
         blood_group: blood_group,
         profile_image_url: formData.get("profile_image_url") as string,
         id_card_url: formData.get("id_card_url") as string,
         insurance,
-        registration_date: registrationDate.toISOString(),
-        registration_expiry: expiryDate.toISOString()
+        // Only set these on create or if forced?
+        // Actually for updates we might want to preserve original reg dates unless we are renewing?
+        // For now, assuming "Edit" updates these fields is okay,
+        // BUT if we are just editing a typo, we shouldn't reset registration date.
+        // Let's handle that in the update logic block.
     }
 
     // Get current user's tenant and company from session
@@ -86,32 +90,62 @@ export async function createPatient(prevState: any, formData: FormData) {
     }
 
     try {
-        // WORLD-CLASS: Link to Accounts Head (Accounts Receivable)
-        // Ensure revenue tracking is locked for this patient
-        const accountsReceivableAccount = await prisma.accounts.findFirst({
-            where: {
-                tenant_id: tenantId,
-                name: { contains: 'Accounts Receivable', mode: 'insensitive' }
-            }
-        })
+        let patient;
+        // Check if we are updating or creating
+        if (typeof existingId === 'string' && existingId.length > 5) { // Simple check for likely UUID
+            // Fetch existing to preserve metadata that shouldn't change
+            const currentPatient = await prisma.hms_patient.findUnique({ where: { id: existingId } });
+            if (!currentPatient) return { error: "Patient not found for update" };
 
+            const currentMeta = currentPatient.metadata as any || {};
 
-        const patient = await prisma.hms_patient.create({
-            data: {
-                id: crypto.randomUUID(),
-                tenant_id: tenantId,
-                company_id: companyId || tenantId,
-                first_name: firstName,
-                last_name: lastName || '',
-                dob: dob ? new Date(dob) : null,
-                gender: normalizeGender(gender),
-                contact: contact as any,
-                metadata: metadata as any,
-                patient_number: `PAT-${Date.now()}`,
-                created_by: userId,
-                updated_by: userId
+            // Merge metadata: Keep existing reg date if present, unless explicitly changing?
+            // For simple edit, we usually don't want to reset registration expiry unless it's a renewal.
+            // But the form submits new calculation. 
+            // Let's keep original registration dates if they exist, to prevent accidental renewal on profile edit.
+            if (currentMeta.registration_date) {
+                metadata.registration_date = currentMeta.registration_date;
+                metadata.registration_expiry = currentMeta.registration_expiry;
+            } else {
+                // Fallback for old records
+                metadata.registration_date = registrationDate.toISOString();
+                metadata.registration_expiry = expiryDate.toISOString();
             }
-        })
+
+            patient = await prisma.hms_patient.update({
+                where: { id: existingId },
+                data: {
+                    first_name: firstName,
+                    last_name: lastName || '',
+                    dob: dob ? new Date(dob) : null,
+                    gender: normalizeGender(gender),
+                    contact: contact as any,
+                    metadata: { ...currentMeta, ...metadata }, // deeply merge manually
+                    updated_by: userId
+                }
+            });
+        } else {
+            // Create New
+            metadata.registration_date = registrationDate.toISOString();
+            metadata.registration_expiry = expiryDate.toISOString();
+
+            patient = await prisma.hms_patient.create({
+                data: {
+                    id: crypto.randomUUID(),
+                    tenant_id: tenantId,
+                    company_id: companyId || tenantId,
+                    first_name: firstName,
+                    last_name: lastName || '',
+                    dob: dob ? new Date(dob) : null,
+                    gender: normalizeGender(gender),
+                    contact: contact as any,
+                    metadata: metadata as any,
+                    patient_number: `PAT-${Date.now()}`,
+                    created_by: userId,
+                    updated_by: userId
+                }
+            })
+        }
 
         // WORLD-CLASS AUTOMATION: Auto-bill Registration Fee
         const chargeRegistration = formData.get('charge_registration') === 'on';
