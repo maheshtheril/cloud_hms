@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { X, Loader2, Building, Mail, Phone, MapPin, FileText } from 'lucide-react';
-import { createSupplier, updateSupplier } from '@/app/actions/purchase';
+import { createSupplier, updateSupplier, getCompanyDefaults } from '@/app/actions/purchase';
 
 interface SupplierDialogProps {
     isOpen: boolean;
@@ -12,49 +12,23 @@ interface SupplierDialogProps {
 }
 
 export function SupplierDialog({ isOpen, onClose, onSuccess, initialData }: SupplierDialogProps) {
-    const [loading, setLoading] = React.useState(false);
-    const [error, setError] = React.useState<string | null>(null);
+    // State for currency
+    const [currencySymbol, setCurrencySymbol] = React.useState('₹');
 
-    const [formData, setFormData] = React.useState({
-        name: '',
-        gstin: '',
-        address: '',
-        phone: '',
-        email: '',
-        contactPerson: '',
-        openingBalance: 0,
-        openingBalanceDate: new Date()
-    });
-
-    // Populate form if editing
     React.useEffect(() => {
-        if (initialData) {
-            setFormData({
-                name: initialData.name || '',
-                gstin: initialData.metadata?.gstin || '',
-                address: initialData.metadata?.address || '',
-                phone: initialData.metadata?.phone || '',
-                email: initialData.metadata?.email || '',
-                contactPerson: initialData.metadata?.contact_person || '',
-                openingBalance: initialData.metadata?.opening_balance || 0,
-                // If it's a string from DB, parse it, otherwise default to now
-                openingBalanceDate: initialData.metadata?.opening_balance_date ? new Date(initialData.metadata.opening_balance_date) : new Date()
-            });
-        } else {
-            // Reset for new entry
-            setFormData({
-                name: '',
-                gstin: '',
-                address: '',
-                phone: '',
-                email: '',
-                contactPerson: '',
-                openingBalance: 0,
-                openingBalanceDate: new Date()
-            });
-        }
-    }, [initialData, isOpen]);
-
+        // Fetch currency on mount
+        getCompanyDefaults().then(defaults => {
+            if (defaults.currency) {
+                const symbols: Record<string, string> = {
+                    'USD': '$',
+                    'EUR': '€',
+                    'GBP': '£',
+                    'INR': '₹'
+                };
+                setCurrencySymbol(symbols[defaults.currency] || defaults.currency);
+            }
+        });
+    }, []);
 
     if (!isOpen) return null;
 
@@ -229,7 +203,7 @@ export function SupplierDialog({ isOpen, onClose, onSuccess, initialData }: Supp
                                         Opening Balance
                                     </label>
                                     <div className="relative">
-                                        <span className="absolute left-3 top-2 text-neutral-400">$</span>
+                                        <span className="absolute left-3 top-2 text-neutral-400">{currencySymbol}</span>
                                         <input
                                             type="number"
                                             placeholder="0.00"
@@ -294,7 +268,7 @@ export function SupplierDialog({ isOpen, onClose, onSuccess, initialData }: Supp
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }
