@@ -470,69 +470,48 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                     })
                     if (onClose && !isSharing) onClose()
                 }
+                return data.prescriptionId;
             } else {
                 const errorMsg = String(data.error || 'Unknown error');
                 const details = String(data.details || '');
                 alert(`❌ Failed to save (${response.status}): ${errorMsg}\n${details ? `Details: ${details}` : ''}`)
+                return null;
             }
         } catch (error) {
             console.error('Save error:', error)
             alert('❌ Failed to save prescription')
+            return null;
         } finally {
             setIsSaving(false)
         }
     }
 
     const handleWhatsappShare = async () => {
+        setIsSharing(true);
         let pId = lastSavedId;
 
         // If not saved yet, save it first
         if (!pId) {
-            setIsSharing(true);
-            const saveRes = await savePrescription(false) as any;
-            // Note: We try to get the ID from the state after save,
-            // but since state is async, we'll suggest the user to try again or we can improve the save function later.
-        }
-
-        pId = lastSavedId;
-
-        if (!pId) {
-            toast({
-                title: "Processing...",
-                description: "Saving prescription first. Please click 'Share WhatsApp' again in a moment.",
-            });
-            setIsSharing(false);
-            return;
-        }
-
-        setIsSharing(true);
-        try {
-            const res = await sharePrescriptionWhatsapp(pId);
-            if (res.success) {
-                toast({
-                    title: "WhatsApp",
-                    description: String(res.message || "Manual share mode active."),
-                });
-                if (res.whatsappUrl) {
-                    window.open(res.whatsappUrl, '_blank');
-                }
-            } else {
-                toast({
-                    title: "Share Failed",
-                    description: String(res.error || "Could not share prescription"),
-                    variant: "destructive"
-                });
+            pId = await savePrescription(false);
+            if (!pId) {
+                setIsSharing(false);
+                return; // Save failed
             }
-        } catch (error) {
-            console.error(error);
-            toast({
-                title: "Error",
-                description: "An unexpected error occurred",
-                variant: "destructive"
-            });
-        } finally {
-            setIsSharing(false);
         }
+
+        const link = `${window.location.origin}/hms/prescriptions/${pId}/print`;
+        const patientName = patientInfo?.first_name || 'Patient';
+        const msg = `Hello ${patientName}, here is your prescription from the clinic. View/Download: ${link}`;
+        const phone = patientInfo?.contact?.phone || patientInfo?.phone || '';
+
+        if (phone) {
+            const url = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
+        } else {
+            alert('Patient phone number not found.');
+        }
+
+        setIsSharing(false);
     }
 
     const content = (

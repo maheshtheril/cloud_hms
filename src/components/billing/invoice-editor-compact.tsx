@@ -414,7 +414,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
         }))
     }
 
-    const handleSave = async (status: 'draft' | 'posted') => {
+    const handleSave = async (status: 'draft' | 'posted' | 'paid', action: 'save' | 'whatsapp' = 'save') => {
         if (!selectedPatientId) return alert('Please select a patient')
         setLoading(true)
         let res;
@@ -423,7 +423,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             appointment_id: appointmentId || urlAppointmentId,
             date,
             line_items: lines.filter(l => l.description || l.product_id), // Filter out empty lines on save
-            status,
+            status: status === 'paid' ? 'paid' : status,
             total_discount: globalDiscount,
             payments: payments
         };
@@ -435,6 +435,22 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
         }
 
         if (res.success) {
+            if (action === 'whatsapp') {
+                const invoiceId = res.data?.id || initialInvoice?.id;
+                const patient = patients.find(p => p.id === selectedPatientId);
+                const phone = patient?.contact?.phone || patient?.phone || '';
+                const link = `${window.location.origin}/hms/billing/${invoiceId}/print`;
+                const text = `Hello ${patient?.first_name || ''}, here is your invoice from the clinic. View/Download: ${link}`;
+
+                // Clean phone check
+                if (phone) {
+                    const url = `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`;
+                    window.open(url, '_blank');
+                } else {
+                    alert('Patient phone number not found. Invoice saved.');
+                }
+            }
+
             router.push('/hms/billing')
             router.refresh()
         } else {
@@ -795,7 +811,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                     Collect
                                 </button>
                                 <button
-                                    onClick={() => handleSave('paid' as any)}
+                                    onClick={() => handleSave('paid', 'whatsapp')}
                                     disabled={loading}
                                     className="col-span-2 lg:col-span-1 px-3 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-500/20 flex items-center justify-center gap-1.5 transition-all border-b-2 border-emerald-800 active:translate-y-0.5 active:border-b-0"
                                 >
