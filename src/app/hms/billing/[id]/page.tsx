@@ -21,7 +21,8 @@ export default async function InvoiceDetailsPage({ params }: { params: Promise<{
         include: {
             hms_patient: true,
             hms_invoice_lines: true,
-            hms_invoice_payments: true
+            hms_invoice_payments: true,
+            company: true
         }
     });
 
@@ -58,6 +59,7 @@ export default async function InvoiceDetailsPage({ params }: { params: Promise<{
                         currentStatus={invoice.status || 'draft'}
                         outstandingAmount={Number(invoice.outstanding_amount || 0)}
                         patientEmail={(invoice.hms_patient?.contact as any)?.email}
+                        invoiceData={invoice as any} // Pass full data for PDF generation
                     />
                 </div>
             </div>

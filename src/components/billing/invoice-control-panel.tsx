@@ -25,19 +25,22 @@ import {
 } from '@/components/ui/dialog';
 import { updateInvoiceStatus, shareInvoiceWhatsapp } from '@/app/actions/billing';
 import { useToast } from '@/components/ui/use-toast';
+import { generateInvoicePDFBase64 } from '@/lib/utils/pdf-generator';
 
 interface InvoiceControlPanelProps {
     invoiceId: string;
     currentStatus: string;
     outstandingAmount: number;
     patientEmail?: string | null;
+    invoiceData?: any;
 }
 
 export function InvoiceControlPanel({
     invoiceId,
     currentStatus,
     outstandingAmount,
-    patientEmail
+    patientEmail,
+    invoiceData
 }: InvoiceControlPanelProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -75,9 +78,61 @@ export function InvoiceControlPanel({
         }
     }
 
+    const base64ToBlob = (base64: string, type: string) => {
+        const binStr = atob(base64);
+        const len = binStr.length;
+        const arr = new Uint8Array(len);
+        for (let i = 0; i < len; i++) {
+            arr[i] = binStr.charCodeAt(i);
+        }
+        return new Blob([arr], { type });
+    };
+
+    const handlePrintPdf = async () => {
+        if (!invoiceData) {
+            window.open(`/hms/billing/${invoiceId}/print`, '_blank');
+            return;
+        }
+        setIsLoading(true);
+        try {
+            const b64 = await generateInvoicePDFBase64(invoiceData);
+            const blob = base64ToBlob(b64, 'application/pdf');
+            const url = URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        } catch (e) {
+            console.error(e);
+            window.open(`/hms/billing/${invoiceId}/print`, '_blank');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     async function handleWhatsappShare() {
         setIsLoading(true);
         try {
+            // Attempt native share with PDF file first
+            if (invoiceData && navigator.share) {
+                try {
+                    const b64 = await generateInvoicePDFBase64(invoiceData);
+                    const blob = base64ToBlob(b64, 'application/pdf');
+                    const file = new File([blob], `Invoice-${invoiceData.invoice_number}.pdf`, { type: 'application/pdf' });
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: `Invoice from ${invoiceData.company?.name || 'Hospital'}`,
+                            text: `Here is your invoice ${invoiceData.invoice_number}. Link: ${window.location.origin}/hms/billing/${invoiceId}`,
+                            url: `${window.location.origin}/hms/billing/${invoiceId}` // Also share link as fallback/addition
+                        });
+                        toast({ title: "Shared", description: "PDF Shared successfully." });
+                        setIsLoading(false);
+                        return;
+                    }
+                } catch (e) {
+                    console.warn("Native share failed, falling back", e);
+                }
+            }
+
             const res = await shareInvoiceWhatsapp(invoiceId) as any;
             if (res && res.success) {
                 toast({
@@ -161,8 +216,8 @@ export function InvoiceControlPanel({
             )}
 
             {/* PRINT & SHARE ACTIONS - Always Available */}
-            <Button variant="outline" onClick={() => window.open(`/hms/billing/${invoiceId}/print`, '_blank')}>
-                <Printer className="mr-2 h-4 w-4" />
+            <Button variant="outline" onClick={handlePrintPdf} disabled={isLoading}>
+                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
                 Print
             </Button>
 
