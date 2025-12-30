@@ -1,6 +1,6 @@
 
 import Link from "next/link"
-import { Plus, Building2, Phone, Mail, MoreHorizontal } from "lucide-react"
+import { Building2, Phone, Mail } from "lucide-react"
 import { getSuppliers } from "@/app/actions/purchase"
 import { SearchInput } from "@/components/ui/search-input"
 import {
@@ -11,6 +11,8 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import { SupplierActions } from "@/components/hms/purchasing/supplier-actions"
+import { CreateSupplierButton } from "@/components/hms/purchasing/create-supplier-button"
 
 export default async function SuppliersPage(props: { searchParams: Promise<{ q?: string, page?: string }> }) {
     const searchParams = await props.searchParams;
@@ -27,14 +29,7 @@ export default async function SuppliersPage(props: { searchParams: Promise<{ q?:
                     <h1 className="text-2xl font-bold text-gray-900 tracking-tight dark:text-white">Suppliers</h1>
                     <p className="text-gray-500 text-sm mt-1 dark:text-neutral-400">Manage vendor relationships.</p>
                 </div>
-                <button
-                    disabled
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 shadow-md opacity-70 cursor-not-allowed transition-colors"
-                    title="Coming Soon (Use PO creation)"
-                >
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Supplier
-                </button>
+                <CreateSupplierButton />
             </div>
 
             <div className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -100,9 +95,7 @@ export default async function SuppliersPage(props: { searchParams: Promise<{ q?:
                                             </span>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <button className="text-neutral-400 hover:text-indigo-600 transition-colors p-2">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </button>
+                                            <SupplierActions supplierId={supplier.id} isActive={supplier.is_active} />
                                         </TableCell>
                                     </TableRow>
                                 ))}

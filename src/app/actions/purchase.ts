@@ -145,6 +145,42 @@ export async function createSupplier(data: {
     }
 }
 
+export async function updateSupplier(id: string, data: { name?: string, is_active?: boolean }) {
+    const session = await auth()
+    if (!session?.user?.companyId) return { error: "Unauthorized" }
+
+    try {
+        await prisma.hms_supplier.update({
+            where: { id, company_id: session.user.companyId },
+            data: {
+                ...data
+            }
+        })
+        revalidatePath('/hms/purchasing/suppliers')
+        return { success: true }
+    } catch (error) {
+        console.error("Update Supplier Failed:", error)
+        return { error: "Failed to update supplier" }
+    }
+}
+
+export async function deleteSupplier(id: string) {
+    const session = await auth()
+    if (!session?.user?.companyId) return { error: "Unauthorized" }
+
+    try {
+        // Check for dependencies (soft delete if needed, but for now hard delete)
+        await prisma.hms_supplier.delete({
+            where: { id, company_id: session.user.companyId }
+        })
+        revalidatePath('/hms/purchasing/suppliers')
+        return { success: true }
+    } catch (error) {
+        console.error("Delete Supplier Failed:", error)
+        return { error: "Failed to delete supplier (may be in use)" }
+    }
+}
+
 export async function createProductQuick(name: string) {
     const session = await auth()
     if (!session?.user?.companyId) return null
