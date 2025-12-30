@@ -218,11 +218,19 @@ export async function getHMSSettings() {
 
         const configData = (hmsConfigRecord?.value as any) || {};
 
+        // 3. Finalize Fee (Priority: Config JSON Value > Product Price > Fallback 500)
+        let finalFee = 500;
+        if (configData.fee !== undefined) {
+            finalFee = parseFloat(configData.fee);
+        } else if (finalProduct) {
+            finalFee = parseFloat(finalProduct.price?.toString() || '0');
+        }
+
         return {
             success: true,
             settings: {
-                registrationFee: finalProduct ? parseFloat(finalProduct.price?.toString() || '0') : 500,
-                registrationProductId: finalProduct?.id || null,
+                registrationFee: finalFee,
+                registrationProductId: finalProduct?.id || configData.productId || null,
                 registrationProductName: finalProduct?.name || 'Patient Registration Fee',
                 registrationProductDescription: finalProduct?.description || 'Standard Registration Service',
                 registrationValidity: configData.validity || 365,
@@ -256,11 +264,11 @@ export async function updateHMSSettings(data: any) {
         if (regProduct) {
             await prisma.hms_product.update({
                 where: { id: regProduct.id },
-                data: { price: feeAmount, is_service: true, is_stockable: false }
+                data: { price: feeAmount, is_service: true, is_stockable: false, is_active: true }
             });
         } else {
             // Create if missing!
-            await prisma.hms_product.create({
+            const newProduct = await prisma.hms_product.create({
                 data: {
                     tenant_id: tenantId!,
                     company_id: companyId,
@@ -274,12 +282,10 @@ export async function updateHMSSettings(data: any) {
                     is_active: true
                 }
             });
+            regProduct = newProduct;
         }
 
         // 2. Upsert HMS Settings
-        // We use findFirst + update/create pattern to avoid guessing the unique index name if uncertain,
-        // although upsert is preferred. Given schema uncertainty on unique constraint naming, manual upsert is safer.
-
         const existingConfig = await prisma.hms_settings.findFirst({
             where: {
                 company_id: companyId,
@@ -290,13 +296,15 @@ export async function updateHMSSettings(data: any) {
 
         const configValue = {
             validity: parseInt(data.registrationValidity),
-            enableCardIssuance: data.enableCardIssuance
+            enableCardIssuance: data.enableCardIssuance,
+            fee: feeAmount, // Store the fee directly here too for robustness
+            productId: regProduct?.id
         };
 
         if (existingConfig) {
             await prisma.hms_settings.update({
                 where: { id: existingConfig.id },
-                data: { value: configValue }
+                data: { value: configValue as any }
             });
         } else {
             await prisma.hms_settings.create({
@@ -304,13 +312,14 @@ export async function updateHMSSettings(data: any) {
                     tenant_id: tenantId!,
                     company_id: companyId,
                     key: 'registration_config',
-                    value: configValue,
+                    value: configValue as any,
                     scope: 'company'
                 }
             });
         }
 
         revalidatePath('/settings/hms');
+        revalidatePath('/hms/patients/new');
         return { success: true };
 
     } catch (error: any) {
