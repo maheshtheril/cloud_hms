@@ -96,8 +96,10 @@ export async function updateGlobalSettings(data: {
     address?: string,
     phone?: string,
     email?: string,
-    gstin?: string
+    gstin?: string,
+    invoicePrefix?: string
 }) {
+
     const session = await auth();
     if (!session?.user?.id) return { error: "Not authenticated" };
 
@@ -134,6 +136,8 @@ export async function updateGlobalSettings(data: {
 
             // Update Company Settings (Currency)
             // Upsert because it might not exist
+            // Update Company Settings (Currency & Invoice Prefix)
+            // Upsert because it might not exist
             const existingSettings = await tx.company_settings.findUnique({
                 where: { company_id: data.companyId }
             });
@@ -141,7 +145,10 @@ export async function updateGlobalSettings(data: {
             if (existingSettings) {
                 await tx.company_settings.update({
                     where: { id: existingSettings.id },
-                    data: { currency_id: data.currencyId }
+                    data: {
+                        currency_id: data.currencyId,
+                        numbering_prefix: data.invoicePrefix
+                    }
                 });
             } else {
                 // Should exist ideally, but fallback create
@@ -149,7 +156,8 @@ export async function updateGlobalSettings(data: {
                     data: {
                         tenant_id: session.user.tenantId!,
                         company_id: data.companyId,
-                        currency_id: data.currencyId
+                        currency_id: data.currencyId,
+                        numbering_prefix: data.invoicePrefix || 'INV'
                     }
                 });
             }

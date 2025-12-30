@@ -22,6 +22,7 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
     const [industry, setIndustry] = useState(company.industry || '')
     const [logoUrl, setLogoUrl] = useState(company.logo_url || '')
     const [currencyId, setCurrencyId] = useState(company.company_settings?.currency_id || '')
+    const [invoicePrefix, setInvoicePrefix] = useState(company.company_settings?.numbering_prefix || 'INV')
 
     // Contact Info (stored in metadata)
     const meta = (company.metadata as any) || {}
@@ -43,7 +44,8 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
             address,
             phone,
             email,
-            gstin
+            gstin,
+            invoicePrefix
         })
 
         if (result.success) {
@@ -203,6 +205,19 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
                         </Select>
                         <p className="text-xs text-muted-foreground mt-1">
                             Note: Changing currency may affect how historical data is displayed in reports.
+                        </p>
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>Invoice Prefix</Label>
+                        <Input
+                            value={invoicePrefix}
+                            onChange={e => setInvoicePrefix(e.target.value.toUpperCase())}
+                            placeholder="INV"
+                            maxLength={5}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                            Format will be: <span className="font-mono font-bold text-slate-700">{invoicePrefix || 'INV'}-{new Date().getFullYear().toString().slice(-2)}-{(new Date().getFullYear() + 1).toString().slice(-2)}-00001</span>
                         </p>
                     </div>
                 </CardContent>

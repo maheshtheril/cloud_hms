@@ -144,6 +144,14 @@ export async function createInvoice(data: any) {
     try {
         // Generate world-standard sequential invoice number: INV-{FY}-{SEQ}
         // India FY: Apr 1 - Mar 31
+
+        // Fetch custom prefix
+        const settings = await prisma.company_settings.findUnique({
+            where: { company_id: session.user.companyId },
+            select: { numbering_prefix: true }
+        });
+        const customPrefix = settings?.numbering_prefix || 'INV';
+
         const invDate = new Date(date);
         const month = invDate.getMonth(); // 0-based
         const year = invDate.getFullYear();
@@ -155,7 +163,7 @@ export async function createInvoice(data: any) {
             fyEnd = year;
         }
         const fyString = `${fyStart.toString().slice(-2)}-${fyEnd.toString().slice(-2)}`;
-        const prefix = `INV-${fyString}-`;
+        const prefix = `${customPrefix}-${fyString}-`;
 
         // Find last invoice in this series
         // Note: String sorting works for sequence ONLY if padded length is consistent.
