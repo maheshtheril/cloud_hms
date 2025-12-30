@@ -203,7 +203,7 @@ export function DashboardClient({ user, stats, appointments, patients, doctors }
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-4 text-right">
-                                                    <div className="flex items-center justify-end gap-1 sm:gap-2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+                                                    <div className="flex items-center justify-end gap-1 sm:gap-2 whitespace-nowrap">
                                                         {apt.prescription && apt.prescription.length > 0 ? (
                                                             <Link
                                                                 href={`/hms/prescriptions/new?patientId=${apt.patient_id}&appointmentId=${apt.id}`}
