@@ -69,7 +69,7 @@ export default function PunchWidget() {
                     toast({
                         title: "Mission Started",
                         description: "Shift initialized successfully.",
-                        className: "glass-card bg-emerald-500/10 border-emerald-500/50 text-emerald-200"
+                        className: "glass-card bg-emerald-500/20 border-emerald-500/50 text-emerald-800 dark:text-emerald-200"
                     })
                 } else {
                     toast({ variant: "destructive", title: "Failure", description: result.error as string })
@@ -84,7 +84,7 @@ export default function PunchWidget() {
                     toast({
                         title: "Shift Concluded",
                         description: "Data synchronized to global roster.",
-                        className: "glass-card bg-blue-500/10 border-blue-500/50 text-blue-200"
+                        className: "glass-card bg-blue-500/20 border-blue-500/50 text-blue-800 dark:text-blue-200"
                     })
                 } else {
                     toast({ variant: "destructive", title: "Failure", description: result.error as string })
