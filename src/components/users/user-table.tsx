@@ -47,6 +47,44 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
         router.push(`/settings/users?${params.toString()}`)
     }
 
+    const handleResendInvite = async (userId: string) => {
+        const result = await resendInvitation(userId)
+
+        if (result.error) {
+            toast({
+                title: 'Error',
+                description: result.error,
+                variant: 'destructive'
+            })
+        } else {
+            const isEmailFailed = result.emailStatus === 'failed'
+
+            toast({
+                title: isEmailFailed ? 'Email Delivery Failed' : 'Invitation Sent',
+                className: isEmailFailed ? 'bg-amber-50 border-amber-200 text-amber-900 shadow-xl' : '',
+                description: (
+                    <div className="flex flex-col gap-2 mt-1">
+                        <p>{result.message}</p>
+                        {result.inviteLink && (
+                            <button
+                                onClick={() => {
+                                    navigator.clipboard.writeText(result.inviteLink!)
+                                    alert("Magic Link copied!")
+                                }}
+                                className="bg-white/50 border border-slate-200 p-2 rounded-lg text-blue-600 hover:bg-white text-left font-medium text-xs flex items-center gap-1 transition-all"
+                            >
+                                <Check className="h-3 w-3" />
+                                Copy Manual Invite Link
+                            </button>
+                        )}
+                    </div>
+                ),
+                duration: 15000,
+            })
+            router.refresh()
+        }
+    }
+
     const handleToggleStatus = async (userId: string, currentStatus: boolean) => {
         const result = await updateUserStatus(userId, !currentStatus)
         if (result.error) {
@@ -234,6 +272,15 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
+                                            {!user.is_active && (
+                                                <button
+                                                    onClick={() => handleResendInvite(user.id)}
+                                                    className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                                    title="Resend Invitation"
+                                                >
+                                                    <Mail className="h-4 w-4" />
+                                                </button>
+                                            )}
                                             <button
                                                 onClick={() => router.push(`/settings/users/${user.id}`)}
                                                 className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"

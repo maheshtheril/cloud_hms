@@ -131,8 +131,9 @@ export async function inviteUser(data: InviteUserData) {
             }
         })
 
-        // Generate invitation token and send email
+        let inviteLink: string | undefined;
         let emailError = null;
+
         try {
             const token = crypto.randomBytes(32).toString('hex')
             const expiresAt = new Date()
@@ -162,7 +163,6 @@ export async function inviteUser(data: InviteUserData) {
             emailError = "Internal system error during mail generation";
         }
 
-        // ... (Role assignment code remains) ...
         if (data.roleId) {
             try {
                 await prisma.hms_user_roles.create({
@@ -186,6 +186,66 @@ export async function inviteUser(data: InviteUserData) {
     } catch (error: any) {
         console.error('Error inviting user:', error)
         return { error: error.message || 'Failed to invite user' }
+    }
+}
+
+/**
+ * Resend invitation to an existing user
+ */
+export async function resendInvitation(userId: string) {
+    const session = await auth()
+    if (!session?.user?.tenantId) return { error: 'Unauthorized' }
+
+    const user = await prisma.app_user.findUnique({
+        where: { id: userId, tenant_id: session.user.tenantId }
+    })
+
+    if (!user) return { error: 'User not found' }
+
+    if (user.password && user.is_active) {
+        return { error: 'User has already activated their account' }
+    }
+
+    let emailError = null;
+    let inviteLink: string | undefined;
+
+    try {
+        const token = crypto.randomBytes(32).toString('hex')
+        const expiresAt = new Date()
+        expiresAt.setHours(expiresAt.getHours() + 48)
+
+        await prisma.email_verification_tokens.deleteMany({
+            where: { user_id: userId }
+        })
+
+        await prisma.email_verification_tokens.create({
+            data: {
+                user_id: user.id,
+                email: user.email,
+                token: token,
+                expires_at: expiresAt
+            }
+        })
+
+        const emailResult = await sendInvitationEmail(user.email, token, user.full_name || user.name || 'User')
+
+        if (!emailResult.success) {
+            emailError = typeof emailResult.error === 'string' ? emailResult.error : 'Mail delivery failed (Check API Key/Sandbox)';
+        }
+
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cloud-hms.onrender.com');
+        inviteLink = `${appUrl}/auth/accept-invite?token=${token}`;
+
+    } catch (e) {
+        console.error("Resend error:", e)
+        emailError = "Internal system failure";
+    }
+
+    return {
+        success: true,
+        message: emailError ? `Email failed: ${emailError}` : 'Invitation resent successfully.',
+        inviteLink,
+        emailStatus: emailError ? 'failed' : 'sent'
     }
 }
 
@@ -285,7 +345,6 @@ export async function deleteUser(userId: string) {
     }
 
     try {
-        // Prevent self-deletion
         if (userId === session.user.id) {
             return { error: 'Cannot delete your own account' }
         }
@@ -297,7 +356,6 @@ export async function deleteUser(userId: string) {
             },
             data: {
                 is_active: false,
-                // Optionally add deleted_at timestamp if column exists
             }
         })
 
@@ -315,7 +373,6 @@ export async function deleteUser(userId: string) {
  */
 export async function acceptInvitation(token: string, password: string) {
     try {
-        // 1. Validate token
         const tokenRecord = await prisma.email_verification_tokens.findFirst({
             where: { token: token }
         })
@@ -328,7 +385,6 @@ export async function acceptInvitation(token: string, password: string) {
             return { error: 'Token expired' }
         }
 
-        // 2. Update user password securely using pgcrypto
         const userId = tokenRecord.user_id
 
         await prisma.$executeRaw`
@@ -338,7 +394,6 @@ export async function acceptInvitation(token: string, password: string) {
             WHERE id = ${userId}::uuid
         `
 
-        // 3. Delete token
         await prisma.email_verification_tokens.delete({
             where: { id: tokenRecord.id }
         })
@@ -360,7 +415,6 @@ export async function deleteUserPermanently(userId: string) {
     }
 
     try {
-        // 1. Transaction Check
         const [
             encounters,
             appointments,
@@ -388,12 +442,10 @@ export async function deleteUserPermanently(userId: string) {
             }
         }
 
-        // 2. Clean up dependencies
         await prisma.hms_user_roles.deleteMany({ where: { user_id: userId } })
         await prisma.user_permission.deleteMany({ where: { user_id: userId } })
         await prisma.email_verification_tokens.deleteMany({ where: { user_id: userId } })
 
-        // 3. Delete the User
         await prisma.app_user.delete({ where: { id: userId } })
 
         revalidatePath('/settings/users')
