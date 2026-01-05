@@ -35,7 +35,8 @@ export function LeadForm({
     defaultCurrency,
     supportedCurrencies = [],
     users = [],
-    targetTypes = []
+    targetTypes = [],
+    isManager = false
 }: {
     customFields?: CustomFieldDefinition[],
     pipelines?: any[],
