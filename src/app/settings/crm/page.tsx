@@ -17,7 +17,7 @@ const MENU_ITEMS = [
     { id: 'pipelines', label: 'Pipelines & Stages', icon: GitBranch, description: 'Manage sales pipelines and deal stages' },
     { id: 'sources', label: 'Lead Sources', icon: UserPlus, description: 'Define where your leads come from' },
     { id: 'industries', label: 'Industries', icon: Factory, description: 'Categorize leads by industry sectors' },
-    { id: 'target_types', label: 'Target Types', icon: Target, description: 'Strategic entity classifications (Enterprise, Govt, etc)' },
+    { id: 'target_types', label: 'Account Types', icon: Target, description: 'Strategic entity classifications (Enterprise, Govt, etc)' },
     { id: 'roles', label: 'Contact Roles', icon: Users, description: 'Define roles for contacts in deals (e.g. Decision Maker)' },
     { id: 'lost_reasons', label: 'Lost Reasons', icon: XCircle, description: 'Standardize reasons for lost opportunities' },
 ]

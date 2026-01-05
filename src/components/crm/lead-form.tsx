@@ -176,7 +176,7 @@ export function LeadForm({
 
                         <div className="space-y-2">
                             <div className="flex items-center justify-between px-1">
-                                <Label htmlFor="target_type_id" className="text-xs font-bold uppercase tracking-widest text-slate-500">Target Type</Label>
+                                <Label htmlFor="target_type_id" className="text-xs font-bold uppercase tracking-widest text-slate-500">Account Type</Label>
                                 {isAdmin && (
                                     <Dialog open={isAddingTargetType} onOpenChange={setIsAddingTargetType}>
                                         <DialogTrigger asChild>
@@ -187,9 +187,9 @@ export function LeadForm({
                                         </DialogTrigger>
                                         <DialogContent className="sm:max-w-[425px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-white/20 rounded-3xl">
                                             <DialogHeader>
-                                                <DialogTitle className="text-2xl font-black text-gradient-primary">Define Target Type</DialogTitle>
+                                                <DialogTitle className="text-2xl font-black text-gradient-primary">Define Account Type</DialogTitle>
                                                 <DialogDescription className="text-slate-500">
-                                                    Establish a new categorization parameter for lead signals.
+                                                    Establish a new categorization parameter for account segments.
                                                 </DialogDescription>
                                             </DialogHeader>
                                             <div className="py-6">
@@ -224,7 +224,7 @@ export function LeadForm({
                                 defaultValue={initialData?.target_type_id}
                                 className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm focus:border-indigo-500 transition-all outline-none font-medium text-slate-900 dark:text-white"
                             >
-                                <option value="">Select Target Type</option>
+                                <option value="">Select Account Type</option>
                                 {localTargetTypes.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
                             </select>
                         </div>

@@ -23,7 +23,7 @@ export function TargetTypeManager({ data }: { data: any[] }) {
         if (!name.trim()) return
         const result = await upsertTargetType({ id, name, description })
         if (result.success) {
-            toast.success('Target Type saved successfully')
+            toast.success('Account Type saved successfully')
             setIsAdding(false)
             setEditingId(null)
             setName('')
@@ -40,15 +40,15 @@ export function TargetTypeManager({ data }: { data: any[] }) {
                 <div>
                     <CardTitle className="text-2xl font-black uppercase tracking-tighter flex items-center gap-2 text-indigo-600">
                         <Target className="w-6 h-6" />
-                        Target Classifications
+                        Account Types
                     </CardTitle>
                     <CardDescription className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mt-1">
-                        Define strategic entity types for lead categorization
+                        Define strategic entity types for account categorization
                     </CardDescription>
                 </div>
                 {!isAdding && (
                     <Button onClick={() => setIsAdding(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold uppercase tracking-widest text-[10px] px-6">
-                        <Plus className="w-4 h-4 mr-2" /> Initialize Type
+                        <Plus className="w-4 h-4 mr-2" /> Initialize Account Type
                     </Button>
                 )}
             </CardHeader>
