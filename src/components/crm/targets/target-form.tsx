@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SelectNative } from '@/components/ui/select-native'
 import { useToast } from '@/components/ui/use-toast'
-import { Loader2, Target, Sparkles, TrendingUp, Zap, Calendar } from 'lucide-react'
+import { Loader2, Target, Sparkles, TrendingUp, Zap, Calendar, Check } from 'lucide-react'
 import Link from 'next/link'
 
 interface TargetFormProps {
@@ -26,6 +26,23 @@ export function TargetForm(props: TargetFormProps) {
     const [loading, setLoading] = useState(false)
     const { toast } = useToast()
     const router = useRouter()
+
+    // State for multi-selection
+    const [selectedAssignees, setSelectedAssignees] = useState<string[]>(
+        props.initialData?.assignee_id ? [props.initialData.assignee_id] : []
+    )
+
+    const toggleAssignee = (id: string) => {
+        if (props.initialData) return // Lock selection in edit mode or handle differently
+
+        setSelectedAssignees(prev => {
+            if (prev.includes(id)) {
+                return prev.filter(x => x !== id)
+            } else {
+                return [...prev, id]
+            }
+        })
+    }
 
     // Helper to format date for input
     const formatDate = (dateString: string | Date | undefined) => {
@@ -67,7 +84,14 @@ export function TargetForm(props: TargetFormProps) {
 
     return (
         <form onSubmit={handleSubmit} className="max-w-3xl mx-auto">
+            {/* Hidden inputs for FormData */}
+            {selectedAssignees.map(id => (
+                <input key={id} type="hidden" name="assignee_id" value={id} />
+            ))}
+
+            {/* ... container ... */}
             <div className="glass shadow-2xl rounded-[2.5rem] overflow-hidden border border-white/20 backdrop-blur-xl">
+                {/* ... header ... */}
                 <div className="bg-gradient-to-r from-indigo-500/10 to-purple-500/10 p-8 border-b border-white/10 relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-8 opacity-10">
                         <Target className="w-24 h-24 text-indigo-500" />
@@ -82,24 +106,58 @@ export function TargetForm(props: TargetFormProps) {
                 </div>
 
                 <div className="p-8 space-y-8">
-                    {/* Assignee Section */}
+                    {/* Assignee Section - Multi-Select Grid for World Class UX */}
                     {(props.assignees && props.assignees.length > 0) && (
                         <div className="space-y-4">
-                            <Label htmlFor="assignee_id" className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Designated Agent</Label>
-                            <SelectNative
-                                id="assignee_id"
-                                name="assignee_id"
-                                required
-                                defaultValue={props.initialData?.assignee_id || ""}
-                                className="h-14 pl-4 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-slate-900 dark:text-slate-100"
-                            >
-                                <option value="" disabled>Select Agent...</option>
-                                {props.assignees.map(user => (
-                                    <option key={user.id} value={user.id} className="text-slate-900">
-                                        {user.full_name || user.email} ({user.role || 'User'})
-                                    </option>
-                                ))}
-                            </SelectNative>
+                            <Label className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">
+                                {props.initialData ? 'Target Owner (Locked)' : 'Designated Agents (Select Multiple)'}
+                            </Label>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto p-1 custom-scrollbar">
+                                {props.assignees.map(user => {
+                                    const isSelected = selectedAssignees.includes(user.id)
+                                    return (
+                                        <div
+                                            key={user.id}
+                                            onClick={() => toggleAssignee(user.id)}
+                                            className={`
+                                                relative flex items-center p-4 rounded-2xl border cursor-pointer transition-all duration-300 group
+                                                ${isSelected
+                                                    ? 'bg-indigo-600 border-indigo-500 shadow-lg shadow-indigo-500/30 transform scale-[1.02]'
+                                                    : 'bg-white/50 dark:bg-slate-900/50 border-slate-200/50 hover:bg-white hover:border-indigo-300'
+                                                }
+                                                ${props.initialData ? 'cursor-not-allowed opacity-80' : ''}
+                                            `}
+                                        >
+                                            <div className={`
+                                                w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold mr-4 transition-colors
+                                                ${isSelected ? 'bg-white text-indigo-600' : 'bg-indigo-100 text-indigo-600 dark:bg-slate-800 dark:text-slate-200'}
+                                            `}>
+                                                {user.full_name ? user.full_name.charAt(0) : user.email.charAt(0)}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`text-sm font-bold truncate ${isSelected ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>
+                                                    {user.full_name || 'Unknown User'}
+                                                </p>
+                                                <p className={`text-xs truncate ${isSelected ? 'text-indigo-200' : 'text-slate-500'}`}>
+                                                    {user.email}
+                                                </p>
+                                                <p className={`text-[10px] font-black uppercase tracking-wider mt-1 ${isSelected ? 'text-indigo-200' : 'text-indigo-500'}`}>
+                                                    {user.role || 'Agent'}
+                                                </p>
+                                            </div>
+                                            {isSelected && (
+                                                <div className="absolute top-4 right-4">
+                                                    <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)] animate-pulse" />
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                            <p className="text-[10px] text-slate-400 font-medium px-2">
+                                * {selectedAssignees.length} agent{selectedAssignees.length !== 1 ? 's' : ''} receive this objective.
+                            </p>
                         </div>
                     )}
 
