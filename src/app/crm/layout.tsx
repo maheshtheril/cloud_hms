@@ -7,6 +7,9 @@ import { getCurrentCompany } from '../actions/company'
 import { checkCrmLoginStatus } from '@/app/actions/crm/auth'
 import { LoginWorkflowWrapper } from '@/components/crm/login-workflow/wrapper'
 import { AppSidebar } from '@/components/layout/app-sidebar'
+import { getUserComplianceStatus } from '@/app/actions/crm/target-compliance'
+import { GatedComplianceLock } from '@/components/crm/targets/compliance-lock'
+import { headers } from 'next/headers'
 
 export default async function CRMLayout({
     children,
@@ -17,16 +20,30 @@ export default async function CRMLayout({
     const currentCompany = await getCurrentCompany();
     const loginStatus = await checkCrmLoginStatus();
     const session = await auth();
+    const headersList = await headers();
+    const pathname = headersList.get('x-pathname') || '';
+
+    // CRM Intelligence: Force Gated Compliance Check
+    let compliance = { isBlocked: false, reason: '', targetId: '', deadline: '' };
+    if (session?.user?.id) {
+        compliance = await getUserComplianceStatus(session.user.id) as any;
+    }
+
+    // Don't block the Targets page itself so they can see his failure details
+    const isTargetPage = pathname.includes('/crm/targets');
+    const shouldShowLock = compliance.isBlocked && !isTargetPage;
 
     return (
         <AppSidebar menuItems={menuItems} currentCompany={currentCompany} user={session?.user}>
             <div className="flex-1 bg-slate-50 dark:bg-slate-950 min-h-screen relative">
-                {/* Mobile Header (Now managed by AppSidebar, but keeping CRM branding implies specific header needs? 
-                    AppSidebar has a 'HMS Core' header. If CRM needs 'CRM Module' header on mobile, 
-                    we might want to update AppSidebar to accept a module name or custom header. 
-                    For now, the unified AppSidebar header is better for consistency.
-                    Keeping the Workflow wrapper.
-                 */}
+                {shouldShowLock && (
+                    <GatedComplianceLock
+                        reason={compliance.reason}
+                        targetId={compliance.targetId}
+                        deadline={compliance.deadline}
+                    />
+                )}
+
                 <div className="p-4 md:p-8">
                     <LoginWorkflowWrapper status={loginStatus}>
                         {children}

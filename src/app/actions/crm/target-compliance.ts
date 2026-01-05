@@ -85,7 +85,7 @@ export async function updateTargetProgress(userId: string) {
  * High-performance compliance audit.
  * Checks for blocking failures and restricts access.
  */
-export async function checkAndBlockUser(userId: string) {
+export async function getUserComplianceStatus(userId: string) {
     const user = await prisma.app_user.findUnique({
         where: { id: userId },
         include: {
@@ -93,13 +93,15 @@ export async function checkAndBlockUser(userId: string) {
         }
     })
 
-    if (!user || user.is_admin || user.is_platform_admin || user.is_tenant_admin) return false
+    if (!user || user.is_admin || user.is_platform_admin || user.is_tenant_admin) {
+        return { isBlocked: false }
+    }
 
     // World Class: Only block Sales roles
     const isSales = user.role?.match(/sales/i) ||
         user.hms_user_roles.some(ur => ur.hms_role.name.match(/sales/i))
 
-    if (!isSales) return false
+    if (!isSales) return { isBlocked: false }
 
     // Synchronize progress first
     await updateTargetProgress(userId)
@@ -146,16 +148,29 @@ export async function checkAndBlockUser(userId: string) {
 
     if (complianceFailure) {
         const reason = (complianceFailure as any).milestones?.[0]
-            ? `Failed Critical Gate: ${(complianceFailure as any).milestones[0].name}`
-            : `Missed Performance Target: ${(complianceFailure as any).target_type}`
+            ? `FAILED CRITICAL GATE: ${(complianceFailure as any).milestones[0].name}`
+            : `MISSED REVENUE QUOTA: ${(complianceFailure as any).target_type}`
 
+        return {
+            isBlocked: true,
+            reason,
+            targetId: complianceFailure.id,
+            deadline: (complianceFailure as any).milestones?.[0]?.deadline || (complianceFailure as any).period_end
+        }
+    }
+
+    return { isBlocked: false }
+}
+
+export async function checkAndBlockUser(userId: string) {
+    const status = await getUserComplianceStatus(userId)
+    if (status.isBlocked) {
         await prisma.app_user.update({
             where: { id: userId },
             data: {
                 is_active: false,
                 metadata: {
-                    ...(user.metadata as object || {}),
-                    blocked_reason: reason,
+                    blocked_reason: status.reason,
                     blocked_at: new Date().toISOString(),
                     blocked_by: 'Automated Compliance Engine'
                 }
@@ -163,7 +178,6 @@ export async function checkAndBlockUser(userId: string) {
         })
         return true
     }
-
     return false
 }
 
