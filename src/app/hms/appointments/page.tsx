@@ -92,12 +92,12 @@ export default async function AppointmentsPage() {
 
                             <Link
                                 href="/hms/appointments/new"
-                                className="group relative hidden lg:flex px-8 py-4 bg-white text-indigo-600 rounded-2xl hover:shadow-2xl hover:scale-105 transition-all duration-300 items-center gap-3 font-bold shadow-xl"
+                                className="group relative px-4 md:px-8 py-3 md:py-4 bg-white text-indigo-600 rounded-2xl hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center gap-3 font-bold shadow-xl"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-pink-400 rounded-2xl opacity-0 group-hover:opacity-20 transition-opacity"></div>
-                                <Plus className="h-5 w-5" />
-                                <span>Book Appointment</span>
-                                <Zap className="h-4 w-4 text-yellow-500" />
+                                <Plus className="h-5 w-5 md:h-5 md:w-5" />
+                                <span className="hidden md:inline">Book Appointment</span>
+                                <Zap className="h-4 w-4 text-yellow-500 hidden md:inline" />
                             </Link>
                         </div>
                     </div>
