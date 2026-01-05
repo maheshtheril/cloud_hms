@@ -255,3 +255,35 @@ export async function getManagementOverview() {
 
     return { targets, stats };
 }
+
+export async function getTarget(id: string) {
+    const session = await auth()
+    if (!session?.user?.id || !session?.user?.tenantId) return null
+
+    return await prisma.crm_targets.findUnique({
+        where: { id, tenant_id: session.user.tenantId },
+        include: {
+            milestones: {
+                orderBy: { step_order: 'asc' }
+            }
+        }
+    })
+}
+
+export async function getPotentialAssignees() {
+    const session = await auth()
+    if (!session?.user?.tenantId) return []
+
+    return await prisma.app_user.findMany({
+        where: {
+            tenant_id: session.user.tenantId,
+            is_active: true
+        },
+        select: {
+            id: true,
+            email: true,
+            full_name: true,
+            role: true
+        }
+    })
+}
