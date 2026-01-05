@@ -5,9 +5,10 @@ import { motion, AnimatePresence } from "framer-motion"
 import {
     UserPlus, CalendarPlus, LogIn, CreditCard,
     PhoneIncoming, IdCard, Users, Search,
-    Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone
+    Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone, MoreVertical, Edit
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
 import { AppointmentForm } from "@/components/appointments/appointment-form"
 import { Card } from "@/components/ui/card"
@@ -28,7 +29,8 @@ interface ReceptionActionCenterProps {
 export function ReceptionActionCenter({ todayAppointments, patients, doctors }: ReceptionActionCenterProps) {
     const router = useRouter()
     const { toast } = useToast()
-    const [activeModal, setActiveModal] = useState<null | 'register' | 'appointment' | 'billing' | 'checkin' | 'visitor'>(null)
+    const [activeModal, setActiveModal] = useState<null | 'register' | 'appointment' | 'billing' | 'checkin' | 'visitor' | 'edit-appointment'>(null)
+    const [editingAppointment, setEditingAppointment] = useState<any>(null)
     const [selectedDoctor, setSelectedDoctor] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
     const [statusLoading, setStatusLoading] = useState<string | null>(null)
@@ -39,6 +41,11 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors }: 
             return
         }
         setActiveModal(actionId as any)
+    }
+
+    const handleEditClick = (apt: any) => {
+        setEditingAppointment(apt)
+        setActiveModal('edit-appointment')
     }
 
     // Filter Logic
@@ -227,30 +234,39 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors }: 
 
                                         {/* Action */}
                                         <div className="col-span-3 flex items-center justify-end gap-2">
-                                            <Badge variant="outline" className={`
+                                            <div className="flex items-center gap-2">
+                                                {apt.status === 'scheduled' || apt.status === 'confirmed' ? (
+                                                    <Button
+                                                        size="sm"
+                                                        className="h-8 bg-indigo-600 hover:bg-indigo-700 text-white"
+                                                        disabled={statusLoading === apt.id}
+                                                        onClick={() => handleStatusUpdate(apt.id, 'arrived')}
+                                                    >
+                                                        {statusLoading === apt.id ? 'Saving...' : 'Mark Arrived'}
+                                                    </Button>
+                                                ) : <Badge variant="outline" className={`
                                                 ${apt.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' :
-                                                    apt.status === 'arrived' ? 'bg-purple-50 text-purple-700 border-purple-200' :
-                                                        apt.status === 'scheduled' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                                            'bg-slate-100 text-slate-600'} 
+                                                        apt.status === 'arrived' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                                            apt.status === 'scheduled' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                                                'bg-slate-100 text-slate-600'} 
                                                 capitalize px-2 py-0.5
                                             `}>
-                                                {apt.status}
-                                            </Badge>
+                                                    {apt.status}
+                                                </Badge>}
 
-                                            {apt.status === 'scheduled' || apt.status === 'confirmed' ? (
-                                                <Button
-                                                    size="sm"
-                                                    className="h-8 bg-indigo-600 hover:bg-indigo-700 text-white"
-                                                    disabled={statusLoading === apt.id}
-                                                    onClick={() => handleStatusUpdate(apt.id, 'arrived')}
-                                                >
-                                                    {statusLoading === apt.id ? 'Saving...' : 'Mark Arrived'}
-                                                </Button>
-                                            ) : apt.status === 'arrived' ? (
-                                                <Button size="sm" variant="outline" className="h-8 text-green-600 border-green-200 bg-green-50" disabled>
-                                                    <CheckCircle className="h-3.5 w-3.5 mr-1" /> Checked-In
-                                                </Button>
-                                            ) : null}
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onClick={() => handleEditClick(apt)}>
+                                                            <Edit className="h-4 w-4 mr-2" /> Edit Details
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
                                         </div>
                                     </div>
                                 ))
@@ -332,6 +348,18 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors }: 
                         patients={patients}
                         doctors={doctors}
                     />
+                </DialogContent>
+            </Dialog>
+
+            {/* 2.5 Edit Appointment Modal */}
+            <Dialog open={activeModal === 'edit-appointment'} onOpenChange={() => setActiveModal(null)}>
+                <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden p-0 bg-white dark:bg-slate-900">
+                    {editingAppointment && <AppointmentForm
+                        onClose={() => setActiveModal(null)}
+                        patients={patients}
+                        doctors={doctors}
+                        editingAppointment={editingAppointment}
+                    />}
                 </DialogContent>
             </Dialog>
 

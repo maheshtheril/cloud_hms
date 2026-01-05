@@ -1,6 +1,6 @@
 'use client'
 
-import { createAppointment } from "@/app/actions/appointment"
+import { createAppointment, updateAppointmentDetails } from "@/app/actions/appointment"
 import { ArrowLeft, Calendar, Clock, FileText, CheckCircle, MapPin, Video, Phone, AlertCircle, Stethoscope, IndianRupee } from "lucide-react"
 import Link from "next/link"
 import { PatientDoctorSelectors } from "@/components/appointments/patient-doctor-selectors"
@@ -16,30 +16,41 @@ interface AppointmentFormProps {
         date?: string
         time?: string
     }
+    editingAppointment?: any // Pass full object for editing
     onClose?: () => void
 }
 
-export function AppointmentForm({ patients, doctors, appointments = [], initialData = {}, onClose }: AppointmentFormProps) {
+export function AppointmentForm({ patients, doctors, appointments = [], initialData = {}, editingAppointment, onClose }: AppointmentFormProps) {
     const { patient_id: initialPatientId, date: initialDate, time: initialTime } = initialData
-    const [localPatients, setLocalPatients] = useState(patients)
-    const [selectedPatientId, setSelectedPatientId] = useState(initialPatientId || '')
-    const [showNewPatientModal, setShowNewPatientModal] = useState(false)
-    const [selectedClinicianId, setSelectedClinicianId] = useState('')
-    const [suggestedTime, setSuggestedTime] = useState(initialTime || '')
 
-    // Smart Slot Calculation
+    // Derived state for editing
+    const defaultPatientId = editingAppointment?.patient_id || initialPatientId || ''
+    const defaultDate = editingAppointment ? new Date(editingAppointment.start_time).toISOString().split('T')[0] : (initialDate || new Date().toISOString().split('T')[0])
+    const defaultTime = editingAppointment ? new Date(editingAppointment.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : (initialTime || '')
+    const defaultClinicianId = editingAppointment?.clinician?.id || ''
+
+    const [localPatients, setLocalPatients] = useState(patients)
+    const [selectedPatientId, setSelectedPatientId] = useState(defaultPatientId)
+    const [showNewPatientModal, setShowNewPatientModal] = useState(false)
+    const [selectedClinicianId, setSelectedClinicianId] = useState(defaultClinicianId)
+    const [suggestedTime, setSuggestedTime] = useState(defaultTime)
+
+    // ... (Smart slot logic remains, but we might want to skip it on initial load if editing)
+
     const handleClinicianChange = (clinicianId: string) => {
         setSelectedClinicianId(clinicianId)
-
         if (!clinicianId) return
 
-        // Get doctor's default settings
+        // If we are editing and haven't changed the doctor, keep original time
+        if (editingAppointment && clinicianId === editingAppointment.clinician?.id) {
+            setSuggestedTime(defaultTime)
+            return
+        }
+
+        // ... (rest of smart slot logic) ...
         const doctor = doctors.find(d => d.id === clinicianId)
         const defaultStart = doctor?.consultation_start_time || "09:00"
         const defaultEnd = doctor?.consultation_end_time || "17:00"
-        const slotDuration = doctor?.consultation_slot_duration || 30
-
-        // Filter appointments for this doctor today
         const doctorApts = appointments.filter(a => a.clinician_id === clinicianId)
 
         if (doctorApts.length === 0) {
@@ -47,7 +58,6 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
             return
         }
 
-        // Find the latest appointment by ends_at
         const lastApt = doctorApts.reduce((latest, current) => {
             return new Date(current.ends_at) > new Date(latest.ends_at) ? current : latest
         }, doctorApts[0])
@@ -55,8 +65,6 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
         if (lastApt && lastApt.ends_at) {
             const lastEnd = new Date(lastApt.ends_at)
             const nextSlotTime = new Date(lastEnd.getTime())
-
-            // Check if next slot would exceed end time
             const [endH, endM] = defaultEnd.split(':').map(Number)
             const endTimeObj = new Date(lastEnd)
             endTimeObj.setHours(endH, endM, 0, 0)
@@ -80,8 +88,14 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     return (
         <div className="h-full">
             <form action={async (formData) => {
-                await createAppointment(formData)
+                if (editingAppointment) {
+                    await updateAppointmentDetails(formData)
+                } else {
+                    await createAppointment(formData)
+                }
             }} className="space-y-4 h-full flex flex-col">
+                {editingAppointment && <input type="hidden" name="id" value={editingAppointment.id} />}
+
                 {/* Premium Header - Compact */}
                 <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4 flex-shrink-0">
                     <div className="flex items-center justify-between">
@@ -105,7 +119,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
 
                             <div>
                                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-                                    Book New Appointment
+                                    {editingAppointment ? 'Edit Appointment' : 'Book New Appointment'}
                                 </h1>
                             </div>
                         </div>
@@ -133,7 +147,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                                 className={`px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white rounded-lg hover:shadow-lg hover:scale-[1.02] font-medium text-sm flex items-center gap-2 transition-all ${suggestedTime === 'Fully Booked' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
                             >
                                 <CheckCircle className="h-4 w-4" />
-                                Confirm Booking
+                                {editingAppointment ? 'Update Booking' : 'Confirm Booking'}
                             </button>
 
                             <button
