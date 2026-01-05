@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getRoles } from '@/app/actions/role'
 import Link from 'next/link'
-import { UserPlus, Mail, Shield, User, Loader2, Check } from 'lucide-react'
+import { UserPlus, Mail, Shield, User, Loader2, Check, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
