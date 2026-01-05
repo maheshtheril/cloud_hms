@@ -374,12 +374,12 @@ export function CreatePatientForm({
                                             <div className="space-y-3 relative z-10">
                                                 <div className="p-3 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md">
                                                     <label className="block text-[10px] font-bold text-indigo-200 mb-1 uppercase">Profile Photo</label>
-                                                    <FileUpload onUploadComplete={(url) => setProfileImageUrl(url)} folder="patients/profiles" label="Upload Photo" accept="image/*" showCamera={true} />
+                                                    <FileUpload onUploadComplete={(url) => setProfileImageUrl(url)} folder="patients/profiles" label="Upload Photo" accept="image/*" showCamera={true} compact={true} />
                                                     <input type="hidden" name="profile_image_url" value={profileImageUrl} />
                                                 </div>
                                                 <div className="p-3 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md">
                                                     <label className="block text-[10px] font-bold text-indigo-200 mb-1 uppercase">Govt ID Proof</label>
-                                                    <FileUpload onUploadComplete={(url) => setIdCardUrl(url)} folder="patients/ids" label="Upload Document" accept="application/pdf,image/*" />
+                                                    <FileUpload onUploadComplete={(url) => setIdCardUrl(url)} folder="patients/ids" label="Upload Document" accept="application/pdf,image/*" compact={true} />
                                                     <input type="hidden" name="id_card_url" value={idCardUrl} />
                                                 </div>
                                             </div>

@@ -13,6 +13,7 @@ interface FileUploadProps {
     disabled?: boolean;
     showCamera?: boolean;
     className?: string;
+    compact?: boolean;
 }
 
 export function FileUpload({
@@ -24,6 +25,7 @@ export function FileUpload({
     disabled = false,
     showCamera = false,
     className = "",
+    compact = false,
     maxSizeInBytes = 10 * 1024 * 1024 // 10MB default
 }: FileUploadProps & { maxSizeInBytes?: number }) {
     const [isDragging, setIsDragging] = useState(false);
@@ -210,10 +212,11 @@ export function FileUpload({
             <div
                 className={`
                     relative group transition-all duration-300
-                    border-2 border-dashed rounded-3xl p-4 overflow-hidden
+                    border-2 border-dashed rounded-3xl overflow-hidden
                     flex flex-col items-center justify-center text-center bg-slate-50/50 dark:bg-slate-900/20
                     ${isDragging ? 'border-indigo-500 bg-indigo-50/30 scale-[1.01]' : 'border-slate-200 dark:border-slate-800'}
                     ${previewUrl ? 'border-emerald-500/30 bg-emerald-50/10' : ''}
+                    ${compact ? 'p-2' : 'p-4'}
                     ${className}
                 `}
                 onDragEnter={disabled || isCameraActive ? undefined : handleDrag}
@@ -252,71 +255,73 @@ export function FileUpload({
                                 className="px-6 py-3 bg-indigo-600 text-white rounded-xl font-black text-[11px] uppercase tracking-widest shadow-xl shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all active:scale-95 flex items-center gap-2"
                             >
                                 <Sparkles className="h-4 w-4" />
-                                Capture Snapshot
+                                Snapshot
                             </button>
                         </div>
                     </div>
                 ) : isUploading ? (
                     <div className="py-6 flex flex-col items-center">
                         <RefreshCw className="h-10 w-10 text-indigo-500 animate-spin mb-3" />
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Encrypting Artifact...</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Encrypting...</p>
                     </div>
                 ) : previewUrl ? (
-                    <div className="flex items-center gap-4 w-full p-2 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-                        <div className="h-16 w-16 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-800">
+                    <div className={`flex items-center gap-4 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 ${compact ? 'p-1.5' : 'p-2'}`}>
+                        <div className={`rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center shrink-0 border border-emerald-100 dark:border-emerald-800 ${compact ? 'h-10 w-10' : 'h-16 w-16'}`}>
                             {previewUrl.toLowerCase().endsWith('.pdf') ? (
-                                <FileText className="h-8 w-8 text-emerald-600" />
+                                <FileText className={`${compact ? 'h-5 w-5' : 'h-8 w-8'} text-emerald-600`} />
                             ) : (
                                 <img src={previewUrl} alt="Preview" className="h-full w-full object-cover rounded-xl" />
                             )}
                         </div>
                         <div className="flex-1 text-left">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Synchronization Secure</p>
+                            {!compact && <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 italic">Synchronization Secure</p>}
                             <div className="flex items-center gap-2">
                                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                                <span className="text-xs font-black text-slate-700 dark:text-slate-200">Asset Ready</span>
+                                <span className="text-xs font-black text-slate-700 dark:text-slate-200">Ready</span>
                             </div>
                         </div>
                         <button
                             type="button"
                             onClick={clearFile}
-                            className="h-10 w-10 flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-900/20 text-slate-400 hover:text-rose-500 rounded-xl transition-all"
+                            className={`${compact ? 'h-8 w-8' : 'h-10 w-10'} flex items-center justify-center hover:bg-rose-50 dark:hover:bg-rose-900/20 text-slate-400 hover:text-rose-500 rounded-xl transition-all`}
                         >
-                            <X className="h-5 w-5" />
+                            <X className={`${compact ? 'h-4 w-4' : 'h-5 w-5'}`} />
                         </button>
                     </div>
                 ) : (
-                    <div className="w-full py-4 flex flex-col items-center gap-4">
+                    <div className={`w-full flex flex-col items-center gap-2 ${compact ? 'py-2' : 'py-4 gap-4'}`}>
                         <div className="flex gap-4">
                             <button
                                 type="button"
                                 onClick={() => fileInputRef.current?.click()}
-                                className="flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all border border-transparent hover:border-slate-200 group/upload"
+                                className={`flex flex-col items-center gap-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all border border-transparent hover:border-slate-200 group/upload ${compact ? 'p-2' : 'p-4'}`}
                             >
-                                <div className="h-12 w-12 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-center group-hover/upload:scale-110 transition-all">
-                                    <Upload className="h-6 w-6 text-indigo-500" />
+                                <div className={`bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-center group-hover/upload:scale-110 transition-all ${compact ? 'h-8 w-8' : 'h-12 w-12'}`}>
+                                    <Upload className={`${compact ? 'h-4 w-4' : 'h-6 w-6'} text-indigo-500`} />
                                 </div>
-                                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Cloud Upload</span>
+                                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Upload</span>
                             </button>
 
                             {showCamera && (
                                 <button
                                     type="button"
                                     onClick={startCamera}
-                                    className="flex flex-col items-center gap-2 p-4 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all border border-transparent hover:border-slate-200 group/camera"
+                                    className={`flex flex-col items-center gap-2 rounded-2xl hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-all border border-transparent hover:border-slate-200 group/camera ${compact ? 'p-2' : 'p-4'}`}
                                 >
-                                    <div className="h-12 w-12 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-center group-hover/camera:scale-110 transition-all">
-                                        <Camera className="h-6 w-6 text-emerald-500" />
+                                    <div className={`bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 flex items-center justify-center group-hover/camera:scale-110 transition-all ${compact ? 'h-8 w-8' : 'h-12 w-12'}`}>
+                                        <Camera className={`${compact ? 'h-4 w-4' : 'h-6 w-6'} text-emerald-500`} />
                                     </div>
-                                    <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Bio Capture</span>
+                                    <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">Camera</span>
                                 </button>
                             )}
                         </div>
 
-                        <div className="space-y-1">
-                            <p className="text-xs font-bold text-slate-600 dark:text-slate-400">{label}</p>
-                            <p className="text-[9px] text-slate-400 font-mono tracking-tighter italic">DRAG & DROP SUPPORTED • MAX {Math.round(maxSizeInBytes / (1024 * 1024))}MB</p>
-                        </div>
+                        {!compact && (
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-slate-600 dark:text-slate-400">{label}</p>
+                                <p className="text-[9px] text-slate-400 font-mono tracking-tighter italic">MAX {Math.round(maxSizeInBytes / (1024 * 1024))}MB</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
