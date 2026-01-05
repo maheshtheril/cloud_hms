@@ -11,7 +11,11 @@ export const metadata: Metadata = {
     description: 'Establish new performance achievement parameters',
 }
 
-export default function NewTargetPage() {
+import { getPotentialAssignees } from '@/app/actions/crm/targets'
+
+export default async function NewTargetPage() {
+    const potentialAssignees = await getPotentialAssignees()
+
     return (
         <div className="min-h-screen bg-futuristic">
             {/* Animated Background Effects */}
@@ -33,7 +37,7 @@ export default function NewTargetPage() {
                 </div>
 
                 <div className="px-4 pb-12">
-                    <TargetForm />
+                    <TargetForm assignees={potentialAssignees as any[]} />
                 </div>
             </div >
         </div >

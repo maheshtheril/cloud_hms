@@ -43,12 +43,14 @@ export async function createTarget(formData: FormData) {
     const startDate = new Date(formData.get('period_start') as string)
     const endDate = new Date(formData.get('period_end') as string)
 
+    const assigneeId = (formData.get('assignee_id') as string) || session.user.id
+
     try {
         const target = await prisma.crm_targets.create({
             data: {
                 tenant_id: session.user.tenantId,
                 assignee_type: 'user',
-                assignee_id: session.user.id,
+                assignee_id: assigneeId,
                 period_type: periodType,
                 period_start: startDate,
                 period_end: endDate,
@@ -106,4 +108,25 @@ export async function createTarget(formData: FormData) {
     } catch (e: any) {
         return { error: e.message }
     }
+}
+
+export async function getPotentialAssignees() {
+    const session = await auth()
+    if (!session?.user?.id || !session?.user?.tenantId) return []
+
+    // Fetch all active users in the tenant
+    const users = await prisma.app_user.findMany({
+        where: {
+            tenant_id: session.user.tenantId,
+            is_active: true
+        },
+        select: {
+            id: true,
+            email: true,
+            full_name: true,
+            role: true
+        }
+    })
+
+    return users
 }

@@ -12,7 +12,16 @@ import { useToast } from '@/components/ui/use-toast'
 import { Loader2, Target, Sparkles, TrendingUp, Zap, Calendar } from 'lucide-react'
 import Link from 'next/link'
 
-export function TargetForm() {
+interface TargetFormProps {
+    assignees?: {
+        id: string
+        email: string
+        full_name: string | null
+        role: string | null
+    }[]
+}
+
+export function TargetForm(props: TargetFormProps) {
     const [loading, setLoading] = useState(false)
     const { toast } = useToast()
     const router = useRouter()
@@ -57,6 +66,21 @@ export function TargetForm() {
                 </div>
 
                 <div className="p-8 space-y-8">
+                    {/* Assignee Section (New) */}
+                    {(props.assignees && props.assignees.length > 0) && (
+                        <div className="space-y-4">
+                            <Label htmlFor="assignee_id" className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Designated Agent</Label>
+                            <SelectNative id="assignee_id" name="assignee_id" required className="h-14 pl-4 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-slate-900 dark:text-slate-100">
+                                <option value="" disabled selected>Select Agent...</option>
+                                {props.assignees.map(user => (
+                                    <option key={user.id} value={user.id} className="text-slate-900">
+                                        {user.full_name || user.email} ({user.role || 'User'})
+                                    </option>
+                                ))}
+                            </SelectNative>
+                        </div>
+                    )}
+
                     {/* Core Type & Value Section */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="space-y-4">
