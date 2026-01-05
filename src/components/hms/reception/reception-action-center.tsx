@@ -33,6 +33,14 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors }: 
     const [searchQuery, setSearchQuery] = useState("")
     const [statusLoading, setStatusLoading] = useState<string | null>(null)
 
+    const handleAction = (actionId: string) => {
+        if (actionId === 'register') {
+            router.push('/hms/patients/new')
+            return
+        }
+        setActiveModal(actionId as any)
+    }
+
     // Filter Logic
     const filteredAppointments = todayAppointments.filter(apt => {
         const matchesDoctor = selectedDoctor === 'all' || apt.clinician?.id === selectedDoctor
@@ -263,7 +271,7 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors }: 
                             key={action.id}
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={() => setActiveModal(action.id as any)}
+                            onClick={() => handleAction(action.id)}
                             className={`text-left p-4 rounded-xl border ${action.border} ${action.bg} shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32`}
                         >
                             <div className={`p-2 w-fit rounded-lg bg-white dark:bg-slate-900 shadow-sm ${action.color}`}>
