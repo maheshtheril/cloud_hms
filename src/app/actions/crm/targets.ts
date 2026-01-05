@@ -215,7 +215,7 @@ export async function updateTarget(id: string, formData: FormData) {
     }
 }
 
-export async function syncAllTeamTargets() {
+export async function syncAllTeamTargets(formData?: FormData) {
     const session = await auth()
     if (!session?.user?.id || !session?.user?.tenantId) return { error: "Unauthorized" }
 
