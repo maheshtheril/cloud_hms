@@ -1574,6 +1574,7 @@ model hms_patient {
   updated_by        String?             @db.Uuid
   full_name         String?             @default(dbgenerated("TRIM(BOTH ' '::text FROM ((COALESCE(first_name, ''::text) || ' '::text) || COALESCE(last_name, ''::text)))"))
   profile_image_url String?
+  blood_group       String?
   hms_admission     hms_admission[]
   hms_appointments  hms_appointments[]
   hms_encounter     hms_encounter[]
@@ -2088,6 +2089,7 @@ model hms_role {
   tenant_id            String                 @db.Uuid
   name                 String
   description          String?
+  module               String                 @default("hms")
   hms_role_permissions hms_role_permissions[]
   hms_user_roles       hms_user_roles[]
 

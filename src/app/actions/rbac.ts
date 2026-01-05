@@ -172,6 +172,9 @@ export async function seedRolesAndPermissions() {
 /**
  * Create a new role
  */
+/**
+ * Create a new role
+ */
 export async function createRole(data: { key: string; name: string; permissions: string[] }) {
     const session = await auth();
 
@@ -182,24 +185,34 @@ export async function createRole(data: { key: string; name: string; permissions:
     try {
         const tenantId = session.user.tenantId;
 
-        // Check if role key already exists for this tenant
-        const existing = await prisma.role.findFirst({
+        // Check if role name already exists for this tenant
+        const existing = await prisma.hms_role.findFirst({
             where: {
                 tenant_id: tenantId,
-                key: data.key
+                name: data.name
             }
         });
 
         if (existing) {
-            return { error: "A role with this key already exists" };
+            return { error: "A role with this name already exists" };
         }
 
-        const role = await prisma.role.create({
+        // Determine module based on permissions or default
+        let module = 'system';
+        if (data.permissions.some(p => p.startsWith('hms'))) module = 'hms';
+        else if (data.permissions.some(p => p.startsWith('crm'))) module = 'crm';
+        else if (data.permissions.some(p => p.startsWith('account'))) module = 'accounts';
+        else if (data.permissions.some(p => p.startsWith('inventory'))) module = 'inventory';
+
+        const role = await prisma.hms_role.create({
             data: {
                 tenant_id: tenantId,
-                key: data.key,
                 name: data.name,
-                permissions: data.permissions
+                module: module,
+                description: 'Custom Role',
+                hms_role_permissions: {
+                    create: data.permissions.map(p => ({ permission: p }))
+                }
             }
         });
 
@@ -226,7 +239,7 @@ export async function updateRole(roleId: string, data: { name: string; permissio
         const tenantId = session.user.tenantId;
 
         // Verify the role belongs to this tenant
-        const existing = await prisma.role.findFirst({
+        const existing = await prisma.hms_role.findFirst({
             where: {
                 id: roleId,
                 tenant_id: tenantId
@@ -237,17 +250,29 @@ export async function updateRole(roleId: string, data: { name: string; permissio
             return { error: "Role not found or access denied" };
         }
 
-        const role = await prisma.role.update({
+        // Update name
+        await prisma.hms_role.update({
             where: { id: roleId },
-            data: {
-                name: data.name,
-                permissions: data.permissions
-            }
+            data: { name: data.name }
         });
+
+        // Update permissions: Delete all and re-insert
+        await prisma.hms_role_permissions.deleteMany({
+            where: { role_id: roleId }
+        });
+
+        if (data.permissions.length > 0) {
+            await prisma.hms_role_permissions.createMany({
+                data: data.permissions.map(p => ({
+                    role_id: roleId,
+                    permission: p
+                }))
+            });
+        }
 
         revalidatePath('/settings/roles');
 
-        return { success: true, data: role };
+        return { success: true, data: { ...existing, permissions: data.permissions } };
     } catch (error) {
         console.error("Failed to update role:", error);
         return { error: `Failed to update role: ${(error as Error).message}` };
@@ -268,7 +293,7 @@ export async function deleteRole(roleId: string) {
         const tenantId = session.user.tenantId;
 
         // Verify the role belongs to this tenant
-        const existing = await prisma.role.findFirst({
+        const existing = await prisma.hms_role.findFirst({
             where: {
                 id: roleId,
                 tenant_id: tenantId
@@ -279,8 +304,8 @@ export async function deleteRole(roleId: string) {
             return { error: "Role not found or access denied" };
         }
 
-        // Check if any users are assigned this role
-        const usersWithRole = await prisma.user_role.count({
+        // Check assigned users in hms_user_roles
+        const usersWithRole = await prisma.hms_user_roles.count({
             where: { role_id: roleId }
         });
 
@@ -288,7 +313,11 @@ export async function deleteRole(roleId: string) {
             return { error: `Cannot delete role. ${usersWithRole} user(s) are assigned this role.` };
         }
 
-        await prisma.role.delete({
+        // Cascade delete permissions manually if strictly needed, though schema likely handles it
+        // Or if we need to be safe:
+        await prisma.hms_role_permissions.deleteMany({ where: { role_id: roleId } });
+
+        await prisma.hms_role.delete({
             where: { id: roleId }
         });
 

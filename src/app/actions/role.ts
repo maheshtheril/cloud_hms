@@ -18,21 +18,31 @@ export async function getRoles() {
     try {
         const tenantId = session.user.tenantId;
 
-        const roles = await prisma.role.findMany({
+        const roles = await prisma.hms_role.findMany({
             where: { tenant_id: tenantId },
-            orderBy: { name: 'asc' },
+            orderBy: [{ module: 'asc' }, { name: 'asc' }],
             select: {
                 id: true,
                 name: true,
-                key: true,
-                permissions: true,
-                _count: {
-                    select: { role_permission: true }
+                module: true,
+                description: true,
+                hms_role_permissions: {
+                    select: { permission: true }
                 }
             }
         });
 
-        return { success: true, data: roles };
+        // Map to simpler structure for UI
+        const mappedRoles = roles.map(r => ({
+            id: r.id,
+            name: r.name,
+            key: r.name.toLowerCase().replace(/\s+/g, '_'), // Generate a key on fly
+            module: r.module,
+            description: r.description,
+            permissions: r.hms_role_permissions.map(p => p.permission)
+        }));
+
+        return { success: true, data: mappedRoles };
     } catch (error) {
         console.error("Failed to fetch roles:", error);
         return { error: `Failed to fetch roles: ${(error as Error).message}` };
