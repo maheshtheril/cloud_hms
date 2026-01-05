@@ -220,7 +220,7 @@ export function CreatePatientForm({
                         }
                         if (field.name === 'phone' && !noPhoneMode) {
                             const phoneRegex = /^\d{10}$/;
-                            const cleanPhone = value.toString().replace(/\D/g, '');
+                            const cleanPhone = (value || '').toString().replace(/\D/g, '');
                             if (!phoneRegex.test(cleanPhone)) {
                                 setShowPhonePrompt(true);
                                 return;
