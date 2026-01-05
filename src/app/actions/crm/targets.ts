@@ -215,9 +215,9 @@ export async function updateTarget(id: string, formData: FormData) {
     }
 }
 
-export async function syncAllTeamTargets(formData?: FormData) {
+export async function syncAllTeamTargets(formData: FormData) {
     const session = await auth()
-    if (!session?.user?.id || !session?.user?.tenantId) return { error: "Unauthorized" }
+    if (!session?.user?.id || !session?.user?.tenantId) return
 
     try {
         const users = await prisma.app_user.findMany({
@@ -232,9 +232,8 @@ export async function syncAllTeamTargets(formData?: FormData) {
         }
 
         revalidatePath('/crm/targets');
-        return { success: true };
     } catch (e: any) {
-        return { error: e.message };
+        console.error("Sync Error:", e.message);
     }
 }
 
