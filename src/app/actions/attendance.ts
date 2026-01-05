@@ -159,6 +159,45 @@ export async function getAttendanceHistory(limit = 10) {
     }
 }
 
+export async function getAllStaffAttendance(date?: Date) {
+    const session = await auth()
+    if (!session?.user?.tenantId) return []
+
+    const targetDate = date || new Date()
+    targetDate.setHours(0, 0, 0, 0)
+    const nextDay = new Date(targetDate)
+    nextDay.setDate(targetDate.getDate() + 1)
+
+    try {
+        const logs = await prisma.hms_staff_attendance.findMany({
+            where: {
+                tenant_id: session.user.tenantId,
+                check_in: {
+                    gte: targetDate,
+                    lt: nextDay
+                }
+            },
+            orderBy: { check_in: 'desc' }
+        })
+
+        // Fetch user details manually since we aren't using include due to potential relation issues
+        const userIds = [...new Set(logs.map(l => l.user_id))]
+        const users = await prisma.app_user.findMany({
+            where: { id: { in: userIds } },
+            select: { id: true, name: true, image: true, email: true }
+        })
+        const userMap = new Map(users.map(u => [u.id, u]))
+
+        return logs.map(log => ({
+            ...log,
+            user: userMap.get(log.user_id) || { name: 'Unknown User', email: '', image: null }
+        }))
+    } catch (error) {
+        console.error("Global attendance fetch failed:", error)
+        return []
+    }
+}
+
 export async function getShifts() {
     const session = await auth()
     if (!session?.user?.tenantId) return []
