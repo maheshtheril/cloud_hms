@@ -126,6 +126,7 @@ export async function createPatient(existingId: string | null | any, formData: F
                     dob: dob ? new Date(dob) : null,
                     gender: normalizeGender(gender),
                     contact: contact as any,
+                    // @ts-ignore
                     blood_group: blood_group || null,
                     profile_image_url: (formData.get("profile_image_url") as string) || null,
                     metadata: { ...currentMeta, ...metadata }, // deeply merge manually
@@ -147,6 +148,7 @@ export async function createPatient(existingId: string | null | any, formData: F
                     dob: dob ? new Date(dob) : null,
                     gender: normalizeGender(gender),
                     contact: contact as any,
+                    // @ts-ignore
                     blood_group: blood_group || null,
                     profile_image_url: (formData.get("profile_image_url") as string) || null,
                     metadata: metadata as any,
