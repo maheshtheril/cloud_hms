@@ -19,6 +19,9 @@ import {
 import { Metadata } from 'next'
 import { format } from 'date-fns'
 import { Badge } from '@/components/ui/badge'
+import { auth } from '@/auth'
+import { prisma } from '@/lib/prisma'
+import { redirect } from 'next/navigation'
 
 export const metadata: Metadata = {
     title: 'Targets Intelligence | SAAS ERP',
@@ -27,17 +30,33 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic'
 
+
 export default async function TargetsPage() {
+    const session = await auth()
+    if (!session?.user?.id) redirect('/auth/login');
+
+    const userId = session.user.id;
+
+    // AUTO-SYNC PERFORMANCE DATA on load (Full Fledged)
+    const { updateTargetProgress } = await import('@/app/actions/crm/target-compliance');
+    // @ts-ignore
+    await updateTargetProgress(userId);
+
     const targets = await getMyTargets() as any[]
 
-    // Calculate aggregate stats
+    // Permission Check
+    const userRole = await prisma.app_user.findUnique({ where: { id: userId }, select: { role: true } })
+    const role = userRole?.role || ''
+    const isManager = session.user.isAdmin || role.toLowerCase().includes('admin') || role.toLowerCase().includes('manager')
+
+    // ... stats ...
     const totalAchieved = targets.reduce((sum, t) => sum + Number(t.achieved_value || 0), 0)
     const totalGoal = targets.reduce((sum, t) => sum + Number(t.target_value || 0), 0)
     const overallProgress = totalGoal > 0 ? Math.min((totalAchieved / totalGoal) * 100, 100) : 0
     const totalIncentive = targets.reduce((sum, t) => sum + Number(t.incentive_amount || 0), 0)
 
     return (
-        <div className="min-h-screen bg-futuristic">
+        <div className="min-h-screen bg-futuristic pb-24">
             {/* Animated Background Effects */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-0 -left-4 w-72 h-72 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
@@ -48,21 +67,34 @@ export default async function TargetsPage() {
             <div className="relative container mx-auto py-8 space-y-8 max-w-7xl">
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-4">
-                    <div>
-                        <div className="flex items-center gap-3 mb-1">
-                            <div className="p-2 rounded-xl bg-indigo-500 shadow-lg shadow-indigo-500/20">
+                    <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 rounded-2xl bg-indigo-600 shadow-2xl shadow-indigo-500/40">
                                 <Rocket className="w-6 h-6 text-white" />
                             </div>
-                            <h1 className="text-4xl font-black tracking-tighter text-gradient-primary uppercase">Performance Command</h1>
+                            <h1 className="text-4xl font-black tracking-tighter text-slate-900 dark:text-white uppercase">Objective Grid</h1>
                         </div>
-                        <p className="text-slate-500 dark:text-slate-400 font-medium md:ml-12">Precision tracking for your revenue and operational milestones.</p>
+                        <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px] ml-1">Performance Intelligence Module</p>
                     </div>
-                    <Link href="/crm/targets/new">
-                        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-500/20 border-none px-6 h-14 rounded-2xl group transition-all">
-                            <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform" />
-                            <span className="font-bold uppercase tracking-widest text-[10px]">Initialize Target</span>
-                        </Button>
-                    </Link>
+
+                    <div className="flex items-center gap-4">
+                        {isManager && (
+                            <Link href="/crm/targets/management">
+                                <Button variant="outline" className="h-14 px-6 rounded-2xl border-indigo-500/30 font-black uppercase tracking-widest text-[10px] hover:bg-indigo-50">
+                                    <Target className="w-5 h-5 mr-3 text-indigo-600" />
+                                    Strategic Dashboard
+                                </Button>
+                            </Link>
+                        )}
+                        {isManager && (
+                            <Link href="/crm/targets/new">
+                                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-500/20 border-none px-6 h-14 rounded-2xl group transition-all">
+                                    <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform" />
+                                    <span className="font-bold uppercase tracking-widest text-[10px]">Initialize Target</span>
+                                </Button>
+                            </Link>
+                        )}
+                    </div>
                 </div>
 
                 {/* Intelligence Overview Row */}
@@ -137,16 +169,16 @@ export default async function TargetsPage() {
                                         {isRevenue ? <TrendingUp className="w-6 h-6" /> : <Zap className="w-6 h-6" />}
                                     </div>
                                     <div className="flex flex-col items-end gap-2">
-                                        <div className="flex items-center gap-2">
+                                        {isManager && (
                                             <Link href={`/crm/targets/${target.id}/edit`}>
                                                 <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-500">
                                                     <Pencil className="w-4 h-4" />
                                                 </Button>
                                             </Link>
-                                            <Badge variant="outline" className="border-slate-200/50 dark:border-white/10 text-[9px] font-black uppercase tracking-tighter">
-                                                {target.period_type}
-                                            </Badge>
-                                        </div>
+                                        )}
+                                        <Badge variant="outline" className="border-slate-200/50 dark:border-white/10 text-[9px] font-black uppercase tracking-tighter">
+                                            {target.period_type}
+                                        </Badge>
                                         {isCloseToDate && (
                                             <Badge variant="destructive" className="animate-pulse bg-rose-500 text-white text-[8px] font-black border-none uppercase">
                                                 Expiring Soon
@@ -262,9 +294,11 @@ export default async function TargetsPage() {
                             </div>
                             <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase mb-2">No active objectives</h3>
                             <p className="text-slate-500 font-medium max-w-sm">Your performance grid is currently offline. Synchronize with your manager to establishing new achievement benchmarks.</p>
-                            <Link href="/crm/targets/new" className="mt-8">
-                                <Button className="bg-indigo-600 text-white px-8 h-12 rounded-2xl font-bold uppercase tracking-widest text-[10px]">Initialize Calibration</Button>
-                            </Link>
+                            {isManager && (
+                                <Link href="/crm/targets/new" className="mt-8">
+                                    <Button className="bg-indigo-600 text-white px-8 h-12 rounded-2xl font-bold uppercase tracking-widest text-[10px]">Initialize Calibration</Button>
+                                </Link>
+                            )}
                         </div>
                     )}
                 </div>
@@ -272,4 +306,3 @@ export default async function TargetsPage() {
         </div>
     )
 }
-

@@ -4,33 +4,36 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 
 /**
- * Calculates the total achieved value for a user within a given period.
- * It sums the value of all 'won' deals owned by the user.
+ * Calculates achievement for a specific metric within a time range.
  */
-export async function calculateAchievedValue(userId: string, periodStart: Date, periodEnd: Date) {
-    const deals = await prisma.crm_deals.findMany({
-        where: {
-            owner_id: userId,
-            status: 'won',
-            updated_at: {
-                gte: periodStart,
-                lte: periodEnd
+async function calculateMetricAchievement(userId: string, metricType: string, startDate: Date, endDate: Date) {
+    if (metricType === 'revenue' || metricType === 'pipeline_value') {
+        const deals = await prisma.crm_deals.findMany({
+            where: {
+                owner_id: userId,
+                // Revenue = WON, Pipeline = NOT LOST (includes won)
+                status: metricType === 'revenue' ? { equals: 'won', mode: 'insensitive' } : { not: 'lost' },
+                updated_at: { gte: startDate, lte: endDate }
+            },
+            select: { value: true }
+        })
+        return deals.reduce((sum, d) => sum + Number(d.value || 0), 0)
+    }
+
+    if (metricType === 'calls' || metricType === 'activities') {
+        return await prisma.crm_activities.count({
+            where: {
+                owner_id: userId,
+                created_at: { gte: startDate, lte: endDate }
             }
-        },
-        select: {
-            value: true
-        }
-    })
+        })
+    }
 
-    const total = deals.reduce((acc, deal) => {
-        return acc + Number(deal.value || 0)
-    }, 0)
-
-    return total
+    return 0
 }
 
 /**
- * Updates the achieved_value for all active targets of a user.
+ * Updates the entire progress grid for a user (Targets + Milestones).
  */
 export async function updateTargetProgress(userId: string) {
     const targets = await prisma.crm_targets.findMany({
@@ -38,28 +41,51 @@ export async function updateTargetProgress(userId: string) {
             assignee_id: userId,
             assignee_type: 'user',
             deleted_at: null,
-        }
+        },
+        include: { milestones: true }
     })
 
+    const results = []
+
     for (const target of targets) {
-        const achieved = await calculateAchievedValue(userId, target.period_start, target.period_end)
+        // 1. Update Milestones
+        for (const m of target.milestones) {
+            const mAchieved = await calculateMetricAchievement(userId, m.metric_type, target.period_start, m.deadline)
+
+            // Check if status should update to passed or failed if deadline passed
+            let newStatus = m.status
+            if (new Date(m.deadline) < new Date()) {
+                newStatus = mAchieved >= Number(m.target_value) ? 'passed' : 'failed'
+            }
+
+            await prisma.crm_target_milestones.update({
+                where: { id: m.id },
+                data: {
+                    achieved_value: mAchieved,
+                    status: newStatus
+                }
+            })
+        }
+
+        // 2. Update Main Target Progress (usually based on target_type)
+        const totalAchieved = await calculateMetricAchievement(userId, target.target_type, target.period_start, target.period_end)
 
         await prisma.crm_targets.update({
             where: { id: target.id },
-            data: {
-                achieved_value: achieved
-            }
+            data: { achieved_value: totalAchieved }
         })
+
+        results.push({ id: target.id, achieved: totalAchieved })
     }
+
+    return results
 }
 
 /**
- * Checks if the user has failed any CLOSED targets and blocks them if so.
- * ONLY BLOCKS if user has 'Sales Man' role.
- * Returns true if user was blocked.
+ * High-performance compliance audit.
+ * Checks for blocking failures and restricts access.
  */
 export async function checkAndBlockUser(userId: string) {
-    // 1. Verify Role Safety Check
     const user = await prisma.app_user.findUnique({
         where: { id: userId },
         include: {
@@ -67,53 +93,71 @@ export async function checkAndBlockUser(userId: string) {
         }
     })
 
-    if (!user) return false
-    if (user.is_admin || user.is_platform_admin || user.is_tenant_admin) return false
+    if (!user || user.is_admin || user.is_platform_admin || user.is_tenant_admin) return false
 
-    // Check if user has sales role
-    const isSales =
-        user.role?.match(/sales/i) ||
+    // World Class: Only block Sales roles
+    const isSales = user.role?.match(/sales/i) ||
         user.hms_user_roles.some(ur => ur.hms_role.name.match(/sales/i))
 
-    if (!isSales) {
-        console.log(`User ${userId} is not a sales user, skipping block check.`)
-        return false
-    }
+    if (!isSales) return false
 
-    // 2. Proceed with Check
-    const now = new Date()
+    // Synchronize progress first
     await updateTargetProgress(userId)
 
-    const missedTargets = await prisma.crm_targets.findMany({
+    // Check for any FAILED blocking milestone or CLOSED missed target
+    const now = new Date()
+    // First, find targets that have expired OR have failed blocking milestones
+    const potentialFailures = await prisma.crm_targets.findMany({
         where: {
             assignee_id: userId,
-            assignee_type: 'user',
-            period_end: { lt: now },
             deleted_at: null,
+            OR: [
+                {
+                    milestones: {
+                        some: {
+                            status: 'failed',
+                            is_blocking: true
+                        }
+                    }
+                },
+                {
+                    period_end: { lt: now }
+                }
+            ]
+        },
+        include: {
+            milestones: {
+                where: { status: 'failed', is_blocking: true }
+            }
         }
     })
 
-    let shouldBlock = false
+    const complianceFailure = (potentialFailures as any[]).find(t => {
+        // 1. Has failed blocking milestones
+        if (t.milestones?.length > 0) return true;
 
-    for (const target of missedTargets) {
-        const targetVal = Number(target.target_value)
-        const achievedVal = Number(target.achieved_value || 0)
-
-        if (achievedVal < targetVal) {
-            shouldBlock = true
-            break
+        // 2. Is expired and achieved < goal
+        if (new Date(t.period_end) < now && Number(t.achieved_value || 0) < Number(t.target_value)) {
+            return true;
         }
-    }
 
-    if (shouldBlock) {
+        return false;
+    });
+
+    if (complianceFailure) {
+        const reason = (complianceFailure as any).milestones?.[0]
+            ? `Failed Critical Gate: ${(complianceFailure as any).milestones[0].name}`
+            : `Missed Performance Target: ${(complianceFailure as any).target_type}`
+
         await prisma.app_user.update({
             where: { id: userId },
             data: {
                 is_active: false,
                 metadata: {
                     ...(user.metadata as object || {}),
-                    blocked_reason: "Missed Target",
-                    blocked_at: new Date().toISOString()
+                    blocked_reason: reason,
+                    blocked_at: new Date().toISOString(),
+                    blocked_by: 'Automated Compliance Engine'
                 }
             }
         })
@@ -127,3 +171,4 @@ export async function adminBlockUserIfTargetMissed(userId: string) {
     const res = await checkAndBlockUser(userId)
     return { blocked: res }
 }
+
