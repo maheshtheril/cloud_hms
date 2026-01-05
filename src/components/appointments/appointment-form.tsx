@@ -322,6 +322,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                             <textarea
                                 name="notes"
                                 rows={3}
+                                defaultValue={editingAppointment?.notes || ''}
                                 className="w-full p-2.5 bg-gray-50/50 dark:bg-slate-950 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none font-medium text-sm"
                                 placeholder="Reason for visit, symptoms, or any special instructions..."
                             ></textarea>
@@ -347,6 +348,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                                     <label className="block text-sm font-semibold text-gray-900 dark:text-slate-300 mb-1.5">Visit Type</label>
                                     <select
                                         name="type"
+                                        defaultValue={editingAppointment?.type || 'consultation'}
                                         className="w-full p-2.5 bg-white dark:bg-slate-950 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none font-medium text-sm"
                                     >
                                         <option value="consultation">🩺 Initial Consultation</option>
@@ -361,17 +363,17 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                                     <label className="block text-sm font-semibold text-gray-900 dark:text-slate-300 mb-1.5">Consultation Mode</label>
                                     <div className="grid grid-cols-1 gap-2">
                                         <label className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer transition-all group">
-                                            <input type="radio" name="mode" value="in_person" defaultChecked className="text-blue-600 focus:ring-blue-500" />
+                                            <input type="radio" name="mode" value="in_person" defaultChecked={!editingAppointment || editingAppointment.mode === 'in_person'} className="text-blue-600 focus:ring-blue-500" />
                                             <MapPin className="h-4 w-4 text-gray-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
                                             <span className="text-sm font-medium text-gray-900 dark:text-slate-200">In-Person Visit</span>
                                         </label>
                                         <label className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-slate-800 hover:bg-purple-50 dark:hover:bg-purple-900/20 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer transition-all group">
-                                            <input type="radio" name="mode" value="video" className="text-purple-600 focus:ring-purple-500" />
+                                            <input type="radio" name="mode" value="video" defaultChecked={editingAppointment?.mode === 'video'} className="text-purple-600 focus:ring-purple-500" />
                                             <Video className="h-4 w-4 text-gray-600 dark:text-slate-400 group-hover:text-purple-600 dark:group-hover:text-purple-400" />
                                             <span className="text-sm font-medium text-gray-900 dark:text-slate-200">Video Call</span>
                                         </label>
                                         <label className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-slate-800 hover:bg-green-50 dark:hover:bg-green-900/20 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer transition-all group">
-                                            <input type="radio" name="mode" value="phone" className="text-green-600 focus:ring-green-500" />
+                                            <input type="radio" name="mode" value="phone" defaultChecked={editingAppointment?.mode === 'phone'} className="text-green-600 focus:ring-green-500" />
                                             <Phone className="h-4 w-4 text-gray-600 dark:text-slate-400 group-hover:text-green-600 dark:group-hover:text-green-400" />
                                             <span className="text-sm font-medium text-gray-900 dark:text-slate-200">Phone Consultation</span>
                                         </label>
@@ -393,19 +395,19 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
 
                             <div className="grid grid-cols-2 gap-2">
                                 <label className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg cursor-pointer transition-all hover:shadow-sm">
-                                    <input type="radio" name="priority" value="low" className="text-green-600 focus:ring-green-500" />
+                                    <input type="radio" name="priority" value="low" defaultChecked={editingAppointment?.priority === 'low'} className="text-green-600 focus:ring-green-500" />
                                     <span className="text-xs font-bold text-green-700 dark:text-green-400">Low</span>
                                 </label>
                                 <label className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg cursor-pointer transition-all hover:shadow-sm">
-                                    <input type="radio" name="priority" value="normal" defaultChecked className="text-blue-600 focus:ring-blue-500" />
+                                    <input type="radio" name="priority" value="normal" defaultChecked={!editingAppointment || editingAppointment.priority === 'normal'} className="text-blue-600 focus:ring-blue-500" />
                                     <span className="text-xs font-bold text-blue-700 dark:text-blue-400">Normal</span>
                                 </label>
                                 <label className="flex items-center gap-2 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg cursor-pointer transition-all hover:shadow-sm">
-                                    <input type="radio" name="priority" value="high" className="text-orange-600 focus:ring-orange-500" />
+                                    <input type="radio" name="priority" value="high" defaultChecked={editingAppointment?.priority === 'high'} className="text-orange-600 focus:ring-orange-500" />
                                     <span className="text-xs font-bold text-orange-700 dark:text-orange-400">High</span>
                                 </label>
                                 <label className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg cursor-pointer transition-all hover:shadow-sm">
-                                    <input type="radio" name="priority" value="urgent" className="text-red-600 focus:ring-red-500" />
+                                    <input type="radio" name="priority" value="urgent" defaultChecked={editingAppointment?.priority === 'urgent'} className="text-red-600 focus:ring-red-500" />
                                     <span className="text-xs font-bold text-red-700 dark:text-red-400">Urgent</span>
                                 </label>
                             </div>
