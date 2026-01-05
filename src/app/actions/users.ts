@@ -131,9 +131,8 @@ export async function inviteUser(data: InviteUserData) {
             }
         })
 
-        let inviteLink: string | undefined;
-
         // Generate invitation token and send email
+        let emailError = null;
         try {
             const token = crypto.randomBytes(32).toString('hex')
             const expiresAt = new Date()
@@ -150,7 +149,8 @@ export async function inviteUser(data: InviteUserData) {
 
             const emailResult = await sendInvitationEmail(user.email, token, user.full_name || user.name || 'User')
             if (!emailResult.success) {
-                console.error("Failed to send email via Resend:", emailResult.error)
+                console.error("Resend Error:", emailResult.error)
+                emailError = typeof emailResult.error === 'string' ? emailResult.error : 'API Key missing or Sandbox restriction';
             }
 
             // Generate link for manual copying
@@ -159,22 +159,17 @@ export async function inviteUser(data: InviteUserData) {
 
         } catch (e) {
             console.error("Error in invitation flow:", e)
+            emailError = "Internal system error during mail generation";
         }
 
-        // Assign role if provided
+        // ... (Role assignment code remains) ...
         if (data.roleId) {
             try {
                 await prisma.hms_user_roles.create({
-                    data: {
-                        user_id: user.id,
-                        role_id: data.roleId,
-                    }
+                    data: { user_id: user.id, role_id: data.roleId }
                 })
             } catch (roleError) {
                 console.error("Error assigning role:", roleError);
-                // Continue, as user is created. Or delete user and fail? 
-                // Better to succeed with warning, or fail hard. 
-                // For now, let's log it. User creation is primary.
             }
         }
 
@@ -182,9 +177,10 @@ export async function inviteUser(data: InviteUserData) {
 
         return {
             success: true,
-            message: 'User invited successfully.',
+            message: emailError ? `User created but EMAIL FAILED: ${emailError}` : 'User invited successfully.',
             user,
-            inviteLink
+            inviteLink,
+            emailStatus: emailError ? 'failed' : 'sent'
         }
 
     } catch (error: any) {

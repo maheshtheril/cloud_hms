@@ -84,33 +84,33 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
             setFormData({ email: '', fullName: '', systemRole: 'user', roleId: 'no-role' })
             router.refresh()
 
-            if (result.inviteLink) {
-                toast({
-                    title: 'User Invited',
-                    description: (
-                        <div className="flex flex-col gap-2 mt-1">
-                            <p>User created successfully.</p>
+            const isEmailFailed = result.emailStatus === 'failed'
+
+            toast({
+                title: isEmailFailed ? 'User Created (Email Failed)' : 'User Invited',
+                variant: isEmailFailed ? 'default' : 'default',
+                className: isEmailFailed ? 'bg-amber-50 border-amber-200 text-amber-900 shadow-xl' : '',
+                description: (
+                    <div className="flex flex-col gap-2 mt-1">
+                        <p className={isEmailFailed ? "font-bold text-amber-700" : ""}>
+                            {result.message}
+                        </p>
+                        {result.inviteLink && (
                             <button
                                 onClick={() => {
                                     navigator.clipboard.writeText(result.inviteLink!)
-                                    // Alert or secondary toast
-                                    alert("Link copied to clipboard!")
+                                    alert("Magic Link copied to clipboard! You can send this manually to the user.")
                                 }}
-                                className="text-blue-600 hover:underline text-left font-medium text-xs flex items-center gap-1"
+                                className="bg-white/50 border border-slate-200 p-2 rounded-lg text-blue-600 hover:bg-white text-left font-medium text-xs flex items-center gap-1 transition-all"
                             >
                                 <Check className="h-3 w-3" />
-                                Click here to copy Invite Link
+                                Copy Magic Link Manual Fallback
                             </button>
-                        </div>
-                    ),
-                    duration: 10000,
-                })
-            } else {
-                toast({
-                    title: 'Success',
-                    description: result.message || 'User invited successfully'
-                })
-            }
+                        )}
+                    </div>
+                ),
+                duration: 15000,
+            })
         }
     }
 
