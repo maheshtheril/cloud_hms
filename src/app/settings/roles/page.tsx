@@ -7,6 +7,7 @@ import Link from "next/link";
 import { SeedRolesButton } from "@/components/settings/seed-roles-button";
 import { CreateRoleDialog } from "@/components/settings/create-role-dialog";
 import { RoleActions } from "@/components/settings/role-actions";
+import { RolesList } from "@/components/settings/roles-list";
 
 export default async function RolesPage() {
     const result = await getRoles();
