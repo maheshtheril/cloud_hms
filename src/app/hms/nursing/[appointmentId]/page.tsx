@@ -38,7 +38,10 @@ export default async function NursingPatientPage({ params }: { params: { appoint
                 <div>
                     <h1 className="text-xl font-bold text-slate-900">Patient Assessment</h1>
                     <p className="text-sm text-slate-500">
-                        {appointment.hms_patient?.first_name} {appointment.hms_patient?.last_name} • {appointment.hms_patient?.gender} • {appointment.hms_patient?.age} Y
+                        {appointment.hms_patient?.first_name} {appointment.hms_patient?.last_name} • {appointment.hms_patient?.gender}
+                        {appointment.hms_patient?.dob && (
+                            <> • {new Date().getFullYear() - new Date(appointment.hms_patient.dob).getFullYear()} Y</>
+                        )}
                     </p>
                 </div>
             </div>
