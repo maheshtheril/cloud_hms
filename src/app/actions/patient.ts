@@ -193,8 +193,8 @@ export async function createPatient(existingId: string | null | any, formData: F
 
                 // Determine Invoice Status based on Billing Mode (Default to Paid/Spot Pay)
                 const billingMode = formData.get('billing_mode') as string;
-                let invoiceStatus = 'paid';
-                if (billingMode === 'bill_later') invoiceStatus = 'posted';
+                let invoiceStatus = 'posted'; // Default to 'posted' (Bill Later) so user sees payment options
+                if (billingMode === 'paid') invoiceStatus = 'paid';
                 else if (billingMode === 'hold') invoiceStatus = 'draft';
 
                 console.log("Auto-creating registration invoice for patient:", patient.id);

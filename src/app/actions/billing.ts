@@ -506,6 +506,75 @@ export async function updateInvoiceStatus(invoiceId: string, status: 'draft' | '
     }
 }
 
+export async function recordPayment(invoiceId: string, payment: { amount: number, method: string, reference?: string }, newStatus: 'paid' | 'posted' = 'paid') {
+    const session = await auth();
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    if (!companyId) return { error: "Unauthorized" };
+
+    try {
+        const invoice = await prisma.hms_invoice.findUnique({
+            where: { id: invoiceId },
+            include: { hms_invoice_payments: true }
+        });
+        if (!invoice) return { error: "Invoice not found" };
+
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Create Payment Record
+            await tx.hms_invoice_payments.create({
+                data: {
+                    tenant_id: session.user.tenantId,
+                    company_id: companyId,
+                    invoice_id: invoiceId,
+                    amount: payment.amount,
+                    method: payment.method,
+                    payment_reference: payment.reference,
+                    paid_at: new Date()
+                }
+            });
+
+            // 2. Recalculate Totals
+            const totalPaid = Number(invoice.total_paid || 0) + Number(payment.amount);
+            const outstanding = Math.max(0, Number(invoice.total) - totalPaid);
+            const finalStatus = outstanding === 0 ? 'paid' : newStatus; // Auto-paid if fully settled
+
+            // 3. Update Invoice
+            const updated = await tx.hms_invoice.update({
+                where: { id: invoiceId },
+                data: {
+                    total_paid: totalPaid,
+                    outstanding_amount: outstanding,
+                    status: finalStatus,
+                    updated_at: new Date()
+                }
+            });
+
+            // If paid, close appointment
+            if (finalStatus === 'paid' && updated.appointment_id) {
+                await tx.hms_appointments.update({
+                    where: { id: updated.appointment_id },
+                    data: { status: 'completed' }
+                });
+            }
+
+            return updated;
+        });
+
+        // Trigger Accounting & Notification
+        if (result.status === 'paid') {
+            await AccountingService.postSalesInvoice(invoiceId, session.user.id);
+            NotificationService.sendInvoiceWhatsapp(invoiceId, session.user.tenantId!).catch(console.error);
+        }
+
+        revalidatePath(`/hms/billing/${invoiceId}`);
+        revalidatePath('/hms/billing');
+        return { success: true, data: result };
+
+    } catch (error: any) {
+        console.error("Failed to record payment:", error);
+        return { error: `Failed to record payment: ${error.message}` };
+    }
+}
+
 export async function shareInvoiceWhatsapp(invoiceId: string, pdfBase64?: string) {
     const session = await auth();
     if (!session?.user?.tenantId) return { error: "Unauthorized" };

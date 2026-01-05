@@ -23,7 +23,7 @@ import {
     DialogTitle,
     DialogTrigger
 } from '@/components/ui/dialog';
-import { updateInvoiceStatus, shareInvoiceWhatsapp } from '@/app/actions/billing';
+import { recordPayment, updateInvoiceStatus, shareInvoiceWhatsapp } from '@/app/actions/billing';
 import { useToast } from '@/components/ui/use-toast';
 import { generateInvoicePDFBase64 } from '@/lib/utils/pdf-generator';
 
@@ -44,8 +44,20 @@ export function InvoiceControlPanel({
 }: InvoiceControlPanelProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+    // Payment State
+    const [paymentMethod, setPaymentMethod] = useState('cash');
+    const [paymentReference, setPaymentReference] = useState('');
+
     const router = useRouter();
     const { toast } = useToast();
+
+    // Reset payment form when modal opens
+    const openPaymentModal = () => {
+        setPaymentMethod('cash');
+        setPaymentReference('');
+        setIsPaymentModalOpen(true);
+    };
 
     async function handleStatusChange(newStatus: 'posted' | 'paid') {
         setIsLoading(true);
@@ -55,10 +67,9 @@ export function InvoiceControlPanel({
                 toast({
                     title: "Status Updated",
                     description: `Invoice marked as ${newStatus}`,
-                    variant: "default" // success
+                    variant: "default"
                 });
                 router.refresh();
-                setIsPaymentModalOpen(false);
             } else {
                 toast({
                     title: "Action Failed",
@@ -68,11 +79,39 @@ export function InvoiceControlPanel({
             }
         } catch (error) {
             console.error(error);
-            toast({
-                title: "Error",
-                description: "Something went wrong.",
-                variant: "destructive"
+            toast({ title: "Error", description: "Something went wrong.", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    async function handlePaymentConfirm() {
+        setIsLoading(true);
+        try {
+            const res = await recordPayment(invoiceId, {
+                amount: outstandingAmount, // Full payment for now
+                method: paymentMethod,
+                reference: paymentReference
             });
+
+            if (res.success) {
+                toast({
+                    title: "Payment Recorded",
+                    description: `Received ₹${outstandingAmount} via ${paymentMethod.toUpperCase()}`,
+                    variant: "default"
+                });
+                router.refresh();
+                setIsPaymentModalOpen(false);
+            } else {
+                toast({
+                    title: "Payment Failed",
+                    description: res.error || "Could not record payment",
+                    variant: "destructive"
+                });
+            }
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Error", description: "Transaction failed.", variant: "destructive" });
         } finally {
             setIsLoading(false);
         }
@@ -110,17 +149,12 @@ export function InvoiceControlPanel({
     async function handleWhatsappShare() {
         setIsLoading(true);
         try {
-            // Native share removed to ensure fully automatic background sending as per user request.
-
             const res = await shareInvoiceWhatsapp(invoiceId) as any;
             if (res && res.success) {
                 toast({
                     title: "WhatsApp",
-                    description: res.message || "Manual share mode active.",
+                    description: res.message || "Invoice sent to patient.",
                 });
-
-                // Removed window.open - the backend handles automatic sending.
-                // We no longer support manual share popups as per user request.
             } else {
                 toast({
                     title: "Share Failed",
@@ -158,35 +192,63 @@ export function InvoiceControlPanel({
             {currentStatus === 'posted' && (
                 <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
                     <DialogTrigger asChild>
-                        <Button className="bg-green-600 hover:bg-green-700 text-white">
+                        <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={openPaymentModal}>
                             <CreditCard className="mr-2 h-4 w-4" />
                             Collect Payment
                         </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="sm:max-w-md">
                         <DialogHeader>
                             <DialogTitle>Record Payment</DialogTitle>
                             <DialogDescription>
-                                Confirm receipt of payment for this invoice. This will close the invoice and post to cash journals.
+                                Select payment method to settle the outstanding amount.
                             </DialogDescription>
                         </DialogHeader>
 
-                        <div className="py-4">
+                        <div className="py-4 space-y-4">
                             <div className="flex justify-between items-center bg-slate-50 p-4 rounded-lg border border-slate-200">
                                 <span className="text-slate-600 font-medium">Amount Due</span>
-                                <span className="text-xl font-bold font-mono">₹{outstandingAmount.toFixed(2)}</span>
+                                <span className="text-2xl font-bold font-mono text-slate-900">₹{outstandingAmount.toFixed(2)}</span>
                             </div>
+
+                            <div className="grid grid-cols-3 gap-3">
+                                {['cash', 'card', 'upi'].map((method) => (
+                                    <button
+                                        key={method}
+                                        onClick={() => setPaymentMethod(method)}
+                                        className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${paymentMethod === method
+                                                ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                                                : 'border-slate-100 hover:border-slate-200 text-slate-500 hover:bg-slate-50'
+                                            }`}
+                                    >
+                                        <div className="font-bold uppercase text-xs tracking-wider">{method}</div>
+                                    </button>
+                                ))}
+                            </div>
+
+                            {(paymentMethod === 'card' || paymentMethod === 'upi') && (
+                                <div className="space-y-2 animate-in slide-in-from-top-2">
+                                    <label className="text-xs font-bold text-slate-500 uppercase">Transaction Ref / Last 4 Digits</label>
+                                    <input
+                                        type="text"
+                                        value={paymentReference}
+                                        onChange={(e) => setPaymentReference(e.target.value)}
+                                        placeholder={paymentMethod === 'card' ? "e.g. 1234" : "e.g. UPI Ref ID"}
+                                        className="w-full p-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
+                                    />
+                                </div>
+                            )}
                         </div>
 
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)}>Cancel</Button>
                             <Button
-                                onClick={() => handleStatusChange('paid')}
+                                onClick={handlePaymentConfirm}
                                 disabled={isLoading}
                                 className="bg-green-600 hover:bg-green-700 text-white"
                             >
                                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-                                Confirm Cash Receipt
+                                Confirm Receipt
                             </Button>
                         </DialogFooter>
                     </DialogContent>
@@ -207,11 +269,6 @@ export function InvoiceControlPanel({
             >
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageCircle className="mr-2 h-4 w-4" />}
                 WhatsApp
-            </Button>
-
-            <Button variant="outline" disabled={true} title="Email feature coming soon">
-                <Mail className="mr-2 h-4 w-4" />
-                Email
             </Button>
         </div>
     );
