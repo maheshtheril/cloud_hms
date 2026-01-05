@@ -55,9 +55,11 @@ export async function getAppointmentsProp(start: Date, end: Date) {
 
 export async function createAppointment(formData: FormData) {
     const session = await auth();
-    if (!session?.user?.id || !session.user.companyId || !session.user.tenantId) {
+    // Allow if tenantId is present. Fallback companyId to tenantId if missing.
+    if (!session?.user?.id || !session?.user?.tenantId) {
         return { error: "Unauthorized" }
     }
+    const companyId = session.user.companyId || session.user.tenantId;
 
     const patientId = formData.get("patient_id") as string
     const clinicianId = formData.get("clinician_id") as string
@@ -91,7 +93,7 @@ export async function createAppointment(formData: FormData) {
         createdApt = await prisma.hms_appointments.create({
             data: {
                 tenant_id: session.user.tenantId,
-                company_id: session.user.companyId,
+                company_id: companyId,
                 patient_id: patientId,
                 clinician_id: clinicianId,
                 starts_at: startsAt,
