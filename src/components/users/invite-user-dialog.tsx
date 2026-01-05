@@ -85,31 +85,38 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
             router.refresh()
 
             const isEmailFailed = result.emailStatus === 'failed'
+            const isSandboxError = result.message?.includes('testing emails to your own email address')
 
             toast({
-                title: isEmailFailed ? 'User Created (Email Failed)' : 'User Invited',
+                title: isEmailFailed ? 'Email Service Restricted' : 'User Invited',
                 variant: isEmailFailed ? 'default' : 'default',
-                className: isEmailFailed ? 'bg-amber-50 border-amber-200 text-amber-900 shadow-xl' : '',
+                className: isEmailFailed ? 'glass-card border-amber-500/50 bg-amber-500/10 text-amber-200 shadow-2xl' : '',
                 description: (
-                    <div className="flex flex-col gap-2 mt-1">
-                        <p className={isEmailFailed ? "font-bold text-amber-700" : ""}>
-                            {result.message}
+                    <div className="flex flex-col gap-4 mt-2">
+                        <p className="text-sm">
+                            {isSandboxError
+                                ? "Resend is in Sandbox mode. Automated email was blocked."
+                                : result.message}
                         </p>
                         {result.inviteLink && (
-                            <button
-                                onClick={() => {
-                                    navigator.clipboard.writeText(result.inviteLink!)
-                                    alert("Magic Link copied to clipboard! You can send this manually to the user.")
-                                }}
-                                className="bg-white/50 border border-slate-200 p-2 rounded-lg text-blue-600 hover:bg-white text-left font-medium text-xs flex items-center gap-1 transition-all"
-                            >
-                                <Check className="h-3 w-3" />
-                                Copy Magic Link Manual Fallback
-                            </button>
+                            <div className="p-3 bg-white/5 rounded-xl border border-white/10 space-y-2">
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-amber-500">Manual Onboarding Path</p>
+                                <Button
+                                    size="sm"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(result.inviteLink!)
+                                        toast({ title: "Link Copied!", description: "Send this to the user manually." })
+                                    }}
+                                    className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold h-9 shadow-lg shadow-amber-500/20"
+                                >
+                                    <Copy className="h-3 w-3 mr-2" />
+                                    Copy Magic Invite Link
+                                </Button>
+                            </div>
                         )}
                     </div>
                 ),
-                duration: 15000,
+                duration: 20000,
             })
         }
     }
