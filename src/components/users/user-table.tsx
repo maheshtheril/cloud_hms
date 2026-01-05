@@ -61,7 +61,7 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
 
             toast({
                 title: isEmailFailed ? 'Email Delivery Failed' : 'Invitation Sent',
-                className: isEmailFailed ? 'bg-amber-50 border-amber-200 text-amber-900 shadow-xl' : '',
+                className: isEmailFailed ? 'border-amber-500 bg-amber-50 text-amber-900 shadow-2xl font-bold font-sans' : '',
                 description: (
                     <div className="flex flex-col gap-2 mt-1">
                         <p>{result.message}</p>

@@ -90,10 +90,10 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
             toast({
                 title: isEmailFailed ? 'Email Service Restricted' : 'User Invited',
                 variant: isEmailFailed ? 'default' : 'default',
-                className: isEmailFailed ? 'glass-card border-amber-500/50 bg-amber-500/10 text-amber-200 shadow-2xl' : '',
+                className: isEmailFailed ? 'border-amber-500 bg-amber-50 text-amber-900 shadow-2xl' : '',
                 description: (
                     <div className="flex flex-col gap-4 mt-2">
-                        <p className="text-sm">
+                        <p className="text-sm font-semibold">
                             {isSandboxError
                                 ? "Resend is in Sandbox mode. Automated email was blocked."
                                 : result.message}
