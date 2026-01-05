@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Activity, Thermometer, Heart, Wind, PersonStanding, Weight, Ruler, Save, Loader2, Calculator } from "lucide-react"
-import { saveVitals } from "@/app/actions/nursing"
+import { saveVitals } from "@/app/actions/nursing-v2"
 import { useToast } from "@/components/ui/use-toast"
 
 interface Props {
@@ -153,7 +153,7 @@ export default function NursingVitalsForm({ patientId, encounterId, tenantId, in
                                     </div>
                                 </div>
                                 <div className={`px-4 py-1.5 rounded-lg text-sm font-bold ${bmiStatus === 'Normal' ? 'bg-green-100 text-green-700' :
-                                        bmiStatus === 'Overweight' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
+                                    bmiStatus === 'Overweight' ? 'bg-orange-100 text-orange-700' : 'bg-red-100 text-red-700'
                                     }`}>
                                     {bmiStatus}
                                 </div>
