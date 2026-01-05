@@ -171,3 +171,66 @@ export async function updateAppointmentStatus(id: string, status: string) {
         return { success: false, error: "Failed to update status" };
     }
 }
+
+export async function updateAppointmentDetails(formData: FormData) {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
+
+    const id = formData.get("id") as string
+    const patientId = formData.get("patient_id") as string
+    const clinicianId = formData.get("clinician_id") as string
+    const dateStr = formData.get("date") as string
+    const timeStr = formData.get("time") as string
+    const type = formData.get("type") as string
+    const mode = formData.get("mode") as string
+    const priority = formData.get("priority") as string
+    const notes = formData.get("notes") as string
+
+    if (!id || !clinicianId || !dateStr || !timeStr) {
+        return { error: "Missing required fields" }
+    }
+
+    // Combine date and time
+    const startsAt = new Date(`${dateStr}T${timeStr}:00`)
+
+    // Fetch doctor's slot duration to recalculate end time
+    const clinician = await prisma.hms_clinicians.findUnique({
+        where: { id: clinicianId },
+        select: { consultation_slot_duration: true }
+    })
+
+    const durationMinutes = clinician?.consultation_slot_duration || 30
+    const endsAt = new Date(startsAt.getTime() + durationMinutes * 60000)
+
+    try {
+        await prisma.hms_appointments.update({
+            where: {
+                id,
+                tenant_id: session.user.tenantId
+            },
+            data: {
+                patient_id: patientId, // Usually doesn't change, but allowed
+                clinician_id: clinicianId,
+                starts_at: startsAt,
+                ends_at: endsAt,
+                type,
+                mode,
+                priority,
+                notes,
+                updated_by: session.user.id,
+                updated_at: new Date()
+            }
+        });
+
+    } catch (error) {
+        console.error("Failed to update details:", error);
+        return { error: "Failed to update appointment details" }
+    }
+
+    // Handle redirection outside try/catch
+    const source = formData.get("source") as string
+    if (source === 'dashboard') {
+        redirect("/hms/reception/dashboard")
+    }
+    redirect("/hms/appointments")
+}
