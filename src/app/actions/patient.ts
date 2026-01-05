@@ -99,17 +99,23 @@ export async function createPatient(existingId: string | null | any, formData: F
 
             const currentMeta = currentPatient.metadata as any || {};
 
-            // Merge metadata: Keep existing reg date if present, unless explicitly changing?
-            // For simple edit, we usually don't want to reset registration expiry unless it's a renewal.
-            // But the form submits new calculation. 
-            // Let's keep original registration dates if they exist, to prevent accidental renewal on profile edit.
-            if (currentMeta.registration_date) {
+            // Merge metadata:
+            // RENEWAL LOGIC: If chargeRegistration is ON, we are renewing. Update dates.
+            // Otherwise, preserve existing dates.
+            const chargeRegistration = formData.get('charge_registration') === 'on';
+
+            if (chargeRegistration) {
+                // Renewal / First Time Charge on Update
+                metadata.registration_date = registrationDate.toISOString();
+                metadata.registration_expiry = expiryDate.toISOString();
+            } else if (currentMeta.registration_date) {
+                // Preserve existing valid registration
                 metadata.registration_date = currentMeta.registration_date;
                 metadata.registration_expiry = currentMeta.registration_expiry;
             } else {
-                // Fallback for old records
-                metadata.registration_date = registrationDate.toISOString();
-                metadata.registration_expiry = expiryDate.toISOString();
+                // Fallback for old records that never had a date (optional, maybe don't set if not charging?)
+                // For data integrity, let's leave them null until they pay?
+                // Or set them to created_at logic? Let's leave them alone to avoid free renewals.
             }
 
             patient = await prisma.hms_patient.update({
@@ -150,6 +156,31 @@ export async function createPatient(existingId: string | null | any, formData: F
         // WORLD-CLASS AUTOMATION: Auto-bill Registration Fee
         const chargeRegistration = formData.get('charge_registration') === 'on';
         if (chargeRegistration) {
+            const waiveFee = formData.get('waive_fee') === 'on';
+            const waiveReason = formData.get('waive_reason') as string;
+
+            if (waiveFee) {
+                // WAIVED LOGIC:
+                // We already updated the registration dates (Metadata was prepared above).
+                // We just need to log this waiver in metadata or just skip billing.
+                // Let's explicitly save the waiver note to metadata for audit.
+                const currentMeta = (patient.metadata as any) || {};
+                await prisma.hms_patient.update({
+                    where: { id: patient.id },
+                    data: {
+                        metadata: {
+                            ...currentMeta,
+                            waived_registration: {
+                                date: new Date().toISOString(),
+                                reason: waiveReason || 'Administrative Waiver',
+                                by: userId
+                            }
+                        }
+                    }
+                });
+                return patient; // Exit early, no invoice.
+            }
+
             try {
                 const fee = Number(formData.get('registration_fee')) || (hmsSettings as any).settings?.registrationFee || 100;
                 const { createInvoice } = await import('./billing'); // Dynamic import to safely handle circular refs if any

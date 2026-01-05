@@ -83,7 +83,23 @@ export function CreatePatientForm({
     const [gender, setGender] = useState(initialData?.gender || 'male');
 
     // Billing Options State
-    const [chargeRegistration, setChargeRegistration] = useState(!initialData);
+    // Billing Options State
+    const checkRegistrationStatus = () => {
+        if (!initialData) return { shouldCharge: true, status: 'new' };
+
+        const expiry = initialData.metadata?.registration_expiry;
+        if (!expiry) return { shouldCharge: true, status: 'expired' }; // Treat missing as expired/never paid
+
+        const expiryDate = new Date(expiry);
+        const today = new Date();
+
+        if (expiryDate < today) return { shouldCharge: true, status: 'expired' };
+        return { shouldCharge: false, status: 'valid', expiryDate };
+    };
+
+    const regStatus = checkRegistrationStatus();
+    const [chargeRegistration, setChargeRegistration] = useState(regStatus.shouldCharge);
+    const [waiveFee, setWaiveFee] = useState(false);
 
     // Prompt for missing phone
     const [phone, setPhone] = useState(initialData?.contact?.phone || '');
@@ -467,10 +483,53 @@ export function CreatePatientForm({
                                     <div className="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500 shadow-inner"></div>
                                 </div>
                                 <div>
-                                    <span className="block text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider group-hover:text-emerald-600 transition-colors">Immediate Billing</span>
-                                    <span className="block text-[10px] font-bold text-slate-400">Registration Fee: <span className="text-emerald-500">₹{registrationFee.toFixed(2)}</span></span>
+                                    <span className="block text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider group-hover:text-emerald-600 transition-colors">
+                                        {chargeRegistration ? (initialData ? 'Renew Registration' : 'Initial Registration') : 'Skip Billing'}
+                                    </span>
+                                    <div className="flex flex-col">
+                                        <span className="block text-[10px] font-bold text-slate-400">
+                                            Fee: <span className={chargeRegistration && !waiveFee ? "text-emerald-500" : "text-slate-300 decoration-slate-400 line-through"}>₹{registrationFee.toFixed(2)}</span>
+                                            {waiveFee && <span className="text-amber-500 ml-1 font-black uppercase text-[9px]">(Waived)</span>}
+                                        </span>
+                                        {regStatus.status === 'valid' && !chargeRegistration && (
+                                            <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5">
+                                                <Shield className="h-3 w-3" /> Valid till {regStatus.expiryDate?.toLocaleDateString()}
+                                            </span>
+                                        )}
+                                        {regStatus.status === 'expired' && chargeRegistration && initialData && (
+                                            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5">
+                                                Previous reg. expired
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </label>
+
+                            {/* Waive Fee Toggle & Remarks */}
+                            {chargeRegistration && (
+                                <div className="flex flex-col gap-2 animate-in slide-in-from-left-2 fade-in duration-300 border-l pl-4 border-slate-200 dark:border-slate-700">
+                                    <label className="flex items-center gap-2 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={waiveFee}
+                                            onChange={(e) => setWaiveFee(e.target.checked)}
+                                            name="waive_fee"
+                                            className="w-3 h-3 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Waive Fee</span>
+                                    </label>
+
+                                    {waiveFee && (
+                                        <input
+                                            type="text"
+                                            name="waive_reason"
+                                            placeholder="Reason for waiver (Required)"
+                                            required={waiveFee}
+                                            className="h-7 w-48 bg-slate-50 dark:bg-slate-800 border-0 border-b border-slate-300 dark:border-slate-600 text-xs focus:ring-0 focus:border-indigo-500 px-1 bg-transparent transition-all placeholder:text-slate-400"
+                                        />
+                                    )}
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex items-center gap-4">
@@ -493,57 +552,59 @@ export function CreatePatientForm({
                             </button>
                         </div>
                     </div>
-                </form>
-            </div>
+                </form >
+            </div >
 
             {/* Global Phone Prompt Overlay (Placed here to ensure visibility over tabs) */}
-            {showPhonePrompt && (
-                <div className="absolute inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-sm p-8 rounded-3xl shadow-2xl border border-white/20 animate-in zoom-in-95 scale-100 ring-4 ring-indigo-500/20">
-                        <div className="flex flex-col items-center text-center mb-8">
-                            <div className="h-16 w-16 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-4 shadow-inner">
-                                <Phone className="h-8 w-8" />
+            {
+                showPhonePrompt && (
+                    <div className="absolute inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+                        <div className="bg-white dark:bg-slate-900 w-full max-w-sm p-8 rounded-3xl shadow-2xl border border-white/20 animate-in zoom-in-95 scale-100 ring-4 ring-indigo-500/20">
+                            <div className="flex flex-col items-center text-center mb-8">
+                                <div className="h-16 w-16 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-4 shadow-inner">
+                                    <Phone className="h-8 w-8" />
+                                </div>
+                                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Mobile Required</h3>
+                                <p className="text-slate-500 font-medium text-sm">Please enter the patient's WhatsApp-enabled mobile number to proceed.</p>
                             </div>
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Mobile Required</h3>
-                            <p className="text-slate-500 font-medium text-sm">Please enter the patient's WhatsApp-enabled mobile number to proceed.</p>
-                        </div>
-                        <div className="space-y-6">
-                            <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">+91</span>
-                                <input
-                                    autoFocus
-                                    value={phone}
-                                    onChange={(e) => {
-                                        const val = e.target.value.replace(/\D/g, '');
-                                        if (val.length <= 10) setPhone(val);
+                            <div className="space-y-6">
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">+91</span>
+                                    <input
+                                        autoFocus
+                                        value={phone}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/\D/g, '');
+                                            if (val.length <= 10) setPhone(val);
+                                        }}
+                                        placeholder="Mobile Number"
+                                        className="w-full h-16 pl-14 pr-6 text-2xl bg-slate-50 border-2 border-indigo-100 focus:border-indigo-500 rounded-2xl font-black text-slate-800 outline-none tracking-widest text-center transition-all shadow-sm focus:shadow-md"
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (phone && phone.length === 10) {
+                                            setShowPhonePrompt(false);
+                                            const form = document.querySelector('form#patient-master-form') as HTMLFormElement;
+                                            if (form) form.requestSubmit();
+                                        } else {
+                                            setMessage({ type: 'error', text: 'Please enter a valid 10-digit number' });
+                                        }
                                     }}
-                                    placeholder="Mobile Number"
-                                    className="w-full h-16 pl-14 pr-6 text-2xl bg-slate-50 border-2 border-indigo-100 focus:border-indigo-500 rounded-2xl font-black text-slate-800 outline-none tracking-widest text-center transition-all shadow-sm focus:shadow-md"
-                                />
+                                    className="w-full h-16 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:scale-[1.02] shadow-xl shadow-indigo-500/30 flex items-center justify-center gap-2"
+                                >
+                                    <CheckCircle2 className="h-5 w-5" />
+                                    Save & Continue
+                                </button>
                             </div>
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    if (phone && phone.length === 10) {
-                                        setShowPhonePrompt(false);
-                                        const form = document.querySelector('form#patient-master-form') as HTMLFormElement;
-                                        if (form) form.requestSubmit();
-                                    } else {
-                                        setMessage({ type: 'error', text: 'Please enter a valid 10-digit number' });
-                                    }
-                                }}
-                                className="w-full h-16 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:scale-[1.02] shadow-xl shadow-indigo-500/30 flex items-center justify-center gap-2"
-                            >
-                                <CheckCircle2 className="h-5 w-5" />
-                                Save & Continue
-                            </button>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
 
     );
 }
