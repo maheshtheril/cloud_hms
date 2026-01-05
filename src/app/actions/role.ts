@@ -28,6 +28,9 @@ export async function getRoles() {
                 description: true,
                 hms_role_permissions: {
                     select: { permission: true }
+                },
+                _count: {
+                    select: { hms_user_roles: true }
                 }
             }
         });
@@ -39,6 +42,7 @@ export async function getRoles() {
             key: r.name.toLowerCase().replace(/\s+/g, '_'), // Generate a key on fly
             module: r.module,
             description: r.description,
+            userCount: r._count.hms_user_roles,
             permissions: r.hms_role_permissions.map(p => p.permission)
         }));
 
