@@ -55,7 +55,7 @@ export default async function NewInvoicePage({
         const appointment = await prisma.hms_appointments.findUnique({
             where: { id: appointmentId },
             include: {
-                hms_doctor: true,
+                hms_clinician: true,
                 hms_patient: true,
                 hms_lab_order: {
                     include: {
@@ -68,13 +68,13 @@ export default async function NewInvoicePage({
         });
 
         if (appointment) {
-            // 1. Add Consultation Fee if doctor has one
-            const doctorFees = (appointment.hms_doctor?.metadata as any)?.fees || 0;
-            if (doctorFees > 0) {
+            // 1. Add Consultation Fee if clinician has one
+            const consultationFee = Number(appointment.hms_clinician?.consultation_fee) || 0;
+            if (consultationFee > 0) {
                 initialItems.unshift({
-                    id: appointment.doctor_id,
-                    name: `Consultation Fee - ${appointment.hms_doctor?.name}`,
-                    price: doctorFees,
+                    id: appointment.clinician_id,
+                    name: `Consultation Fee - Dr. ${appointment.hms_clinician?.first_name} ${appointment.hms_clinician?.last_name}`,
+                    price: consultationFee,
                     quantity: 1,
                     type: 'service'
                 });

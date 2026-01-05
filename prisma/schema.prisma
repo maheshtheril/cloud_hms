@@ -972,6 +972,8 @@ model hms_appointments {
   hms_patient      hms_patient    @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   hms_invoice      hms_invoice[]
   prescription     prescription[]
+  hms_lab_order      hms_lab_order[]
+  hms_imaging_order  hms_imaging_order[]
 
   @@index([clinician_id, starts_at], map: "idx_hms_appointments_clinician_starts_at")
   @@index([patient_id], map: "idx_hms_appointments_patient")
@@ -1189,6 +1191,7 @@ model hms_imaging_order {
   status            String?             @default("requested")
   metadata          Json?               @default("{}")
   hms_patient       hms_patient?        @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hms_appointment   hms_appointments?   @relation(fields: [encounter_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_imaging_study hms_imaging_study[]
 }
 
@@ -1340,6 +1343,7 @@ model hms_lab_order {
   metadata            Json?                 @default("{}")
   created_at          DateTime?             @default(now()) @db.Timestamptz(6)
   hms_patient         hms_patient?          @relation(fields: [patient_id], references: [id], onUpdate: NoAction)
+  hms_appointment     hms_appointments?     @relation(fields: [encounter_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_lab_order_line  hms_lab_order_line[]
   hms_lab_order_lines hms_lab_order_lines[]
 
