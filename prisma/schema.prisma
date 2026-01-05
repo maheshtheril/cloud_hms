@@ -4281,3 +4281,76 @@ enum visit_status {
   cancelled
   no_show
 }
+
+model hms_staff_attendance {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id       String    @db.Uuid
+  company_id      String?   @db.Uuid
+  user_id         String    @db.Uuid
+  check_in        DateTime  @default(now()) @db.Timestamptz(6)
+  check_out       DateTime? @db.Timestamptz(6)
+  status          String    @default("present") // present, late, auto_checkout
+  location_in     Json?     // {lat, lng, ip, city}
+  location_out    Json?
+  device_info     Json?     // Browser, OS, Device
+  break_duration  Int       @default(0) // in minutes
+  metadata        Json?     @default("{}")
+  productivity_score Decimal? @db.Decimal(5, 2)
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([user_id, check_in])
+  @@index([tenant_id, company_id])
+}
+
+model hms_staff_shift {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id     String   @db.Uuid
+  company_id    String?  @db.Uuid
+  name          String
+  start_time    String   // "09:00"
+  end_time      String   // "17:00"
+  grace_period  Int      @default(15) // minutes allowed late
+  work_days     String[] // ["Monday", "..."]
+  color         String?  @default("#6366f1") // For UI calendar
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+}
+
+model hms_staff_roster {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id     String   @db.Uuid
+  company_id    String?  @db.Uuid
+  user_id       String   @db.Uuid
+  shift_id      String   @db.Uuid
+  date          DateTime @db.Date
+  status        String   @default("scheduled") // scheduled, confirmed, cancelled
+  notes         String?
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([user_id, date])
+  @@index([shift_id, date])
+}
+
+model hms_emergency_broadcast {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id     String   @db.Uuid
+  sender_id     String   @db.Uuid
+  message       String
+  priority      String   @default("high") // normal, high, critical
+  type          String   @default("general") // general, evacuation, code_blue, staffing
+  expires_at    DateTime @db.Timestamptz(6)
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([tenant_id, expires_at])
+}
+
+model hms_broadcast_ack {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  broadcast_id  String   @db.Uuid
+  user_id       String   @db.Uuid
+  acknowledged_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([broadcast_id])
+  @@index([user_id])
+}

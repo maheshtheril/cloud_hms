@@ -249,3 +249,51 @@ export async function ensureCrmMenus() {
         console.error("Failed to seed CRM menus:", e);
     }
 }
+
+export async function ensureHmsMenus() {
+    try {
+        const hmsItems = [
+            { key: 'hms-dashboard', label: 'Dashboard', url: '/hms/dashboard', icon: 'LayoutDashboard', sort: 10 },
+            { key: 'hms-patients', label: 'Patients', url: '/hms/patients', icon: 'UserCircle', sort: 20 },
+            { key: 'hms-appointments', label: 'Appointments', url: '/hms/appointments', icon: 'Calendar', sort: 30 },
+            { key: 'hms-doctors', label: 'Doctors', url: '/hms/doctors', icon: 'Stethoscope', sort: 40 },
+            { key: 'hms-attendance', label: 'Attendance', url: '/hms/attendance', icon: 'Clock', sort: 50 },
+            { key: 'hms-roster', label: 'Staff Roster', url: '/hms/attendance/roster', icon: 'Layers', sort: 51 },
+            { key: 'hms-attendance-analytics', label: 'Staff Analytics', url: '/hms/attendance/analytics', icon: 'BarChart3', sort: 52 },
+            { key: 'hms-billing', label: 'Billing', url: '/hms/billing', icon: 'Receipt', sort: 60 },
+            { key: 'hms-inventory', label: 'Pharmacy/Inventory', url: '/hms/inventory', icon: 'Package', sort: 70 },
+            { key: 'hms-wards', label: 'Clinics/Wards', url: '/hms/wards', icon: 'LayoutGrid', sort: 80 },
+        ];
+
+        for (const item of hmsItems) {
+            const existing = await prisma.menu_items.findFirst({
+                where: { key: item.key }
+            });
+
+            if (!existing) {
+                await prisma.menu_items.create({
+                    data: {
+                        label: item.label,
+                        url: item.url,
+                        key: item.key,
+                        module_key: 'hms',
+                        icon: item.icon,
+                        sort_order: item.sort,
+                        is_global: true
+                    }
+                });
+                console.log(`Auto-seeded HMS Menu: ${item.label}`);
+            } else if (existing.module_key !== 'hms' || existing.url !== item.url) {
+                await prisma.menu_items.update({
+                    where: { id: existing.id },
+                    data: {
+                        module_key: 'hms',
+                        url: item.url
+                    }
+                });
+            }
+        }
+    } catch (e) {
+        console.error("Failed to seed HMS menus:", e);
+    }
+}
