@@ -22,8 +22,9 @@ export async function getMenuItems() {
         if (isAdmin) {
             await ensureAdminMenus();
             // Ensure Journal menus are seeded for admins/finance
-            const { ensureAccountingMenu } = await import('@/lib/menu-seeder');
+            const { ensureAccountingMenu, ensureCrmMenus } = await import('@/lib/menu-seeder');
             await ensureAccountingMenu();
+            await ensureCrmMenus();
         }
 
         // Fetch Tenant Details for Industry Check
@@ -122,6 +123,16 @@ export async function getMenuItems() {
                 grouped[mod.module_key] = { module: mod, items: [] };
             }
         }
+
+        // SELF-HEAL: Ensure CRM Menus are correct if CRM is active
+        if (allowedModuleKeys.has('crm')) {
+            const { ensureCrmMenus } = await import('@/lib/menu-seeder');
+            // We run this asynchronously to not block the UI response too much, 
+            // but for the first fix we await it to ensure immediate result.
+            // check if we need to run it (maybe optimize later)
+            await ensureCrmMenus();
+        }
+
         if (!grouped['general']) { // Always ensure General exists
             grouped['general'] = { module: { name: 'General', module_key: 'general' }, items: [] };
         }

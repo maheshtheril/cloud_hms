@@ -159,10 +159,22 @@ export default async function TargetsPage() {
                                     <h3 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter mb-1">
                                         {isRevenue ? 'Capital Yield' : 'Operation Speed'}
                                     </h3>
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
-                                        <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
-                                        {isRevenue ? 'Revenue Objective' : 'Activity Quota'}
-                                    </p>
+                                    <div className="flex flex-col gap-1">
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1">
+                                            <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                                            {isRevenue ? 'Revenue Objective' : 'Activity Quota'}
+                                        </p>
+                                        {target.assignee_name && (
+                                            <div className="flex items-center gap-2 mt-2 p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg w-fit">
+                                                <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-[8px] font-bold text-white">
+                                                    {target.assignee_name.charAt(0)}
+                                                </div>
+                                                <span className="text-[10px] font-bold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
+                                                    {target.assignee_name}
+                                                </span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
 
                                 <div className="space-y-6">

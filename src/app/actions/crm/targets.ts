@@ -9,27 +9,49 @@ export async function getMyTargets() {
     const session = await auth()
     if (!session?.user?.id || !session?.user?.tenantId) return []
 
-    // Fetch targets assigned to this user
+    // Helper to check if string contains "admin" or "manager"
+    const hasManageAccess = session.user.isAdmin || session.user.role?.toLowerCase().includes('admin') || session.user.role?.toLowerCase().includes('manager');
+
+    let whereClause: any = {
+        tenant_id: session.user.tenantId,
+        deleted_at: null,
+    };
+
+    // If NOT admin/manager, strictly filter by assignee
+    if (!hasManageAccess) {
+        whereClause.assignee_id = session.user.id;
+    }
+
+    // Fetch targets
     const targets = await prisma.crm_targets.findMany({
-        where: {
-            tenant_id: session.user.tenantId,
-            assignee_id: session.user.id,
-            deleted_at: null,
-        },
+        where: whereClause,
         include: {
             milestones: {
                 orderBy: { step_order: 'asc' }
             }
         },
         orderBy: { period_end: 'desc' },
-    })
+    }) as any[] // Cast to allow injecting assignee details if needed
 
-    // Calculate status of each target based on milestones
-    return targets.map(t => {
-        // If revenue target is achieved, mark as secure even if milestones pending
-        // But strictly, we return the data as is.
-        return t
-    })
+    // If manager, we might want to fetch assignee details manually since there might not be a relation defined in schema yet
+    if (hasManageAccess) {
+        const assigneeIds = [...new Set(targets.map(t => t.assignee_id))];
+        const users = await prisma.app_user.findMany({
+            where: { id: { in: assigneeIds } },
+            select: { id: true, full_name: true, email: true }
+        });
+
+        // Map users to targets for UI display
+        return targets.map(t => {
+            const user = users.find(u => u.id === t.assignee_id);
+            return {
+                ...t,
+                assignee_name: user?.full_name || user?.email || 'Unknown Agent'
+            }
+        });
+    }
+
+    return targets;
 }
 
 export async function createTarget(formData: FormData) {

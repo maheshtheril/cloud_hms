@@ -165,7 +165,7 @@ export async function ensureAdminMenus() {
             { key: 'general-settings', label: 'Global Settings', url: '/settings/global', icon: 'Settings', sort: 99 },
             { key: 'crm-masters', label: 'CRM Masters', url: '/settings/crm', icon: 'Database', sort: 92 },
             { key: 'import-leads', label: 'Import Leads', url: '/crm/import/leads', icon: 'UploadCloud', sort: 93 },
-            { key: 'crm-targets', label: 'Targets', url: '/crm/targets', icon: 'Target', sort: 94 },
+            // Removed crm-targets from here to place it in CRM module
             { key: 'hms-config', label: 'HMS Configuration', url: '/settings/hms', icon: 'Stethoscope', sort: 96 },
             { key: 'custom-fields', label: 'Custom Fields', url: '/settings/custom-fields', icon: 'FileText', sort: 95 },
         ];
@@ -198,5 +198,54 @@ export async function ensureAdminMenus() {
         }
     } catch (e) {
         console.error("Failed to seed admin menus:", e);
+    }
+}
+
+export async function ensureCrmMenus() {
+    try {
+        const items = [
+            { key: 'crm-dashboard', label: 'Dashboard', url: '/crm/dashboard', icon: 'LayoutDashboard', sort: 10 },
+            { key: 'crm-leads', label: 'Leads', url: '/crm/leads', icon: 'Users', sort: 20 },
+            { key: 'crm-deals', label: 'Deals', url: '/crm/deals', icon: 'DollarSign', sort: 30 },
+            { key: 'crm-pipeline', label: 'Pipeline', url: '/crm/pipeline', icon: 'Trello', sort: 40 },
+            { key: 'crm-targets', label: 'Targets', url: '/crm/targets', icon: 'Target', sort: 50 },
+            { key: 'crm-activities', label: 'Activities', url: '/crm/activities', icon: 'PhoneCall', sort: 60 },
+        ];
+
+        for (const item of items) {
+            const existing = await prisma.menu_items.findFirst({
+                where: { key: item.key }
+            });
+
+            if (!existing) {
+                await prisma.menu_items.create({
+                    data: {
+                        label: item.label,
+                        url: item.url,
+                        key: item.key,
+                        module_key: 'crm',
+                        icon: item.icon,
+                        sort_order: item.sort,
+                        is_global: true
+                    }
+                });
+                console.log(`Auto-seeded CRM Menu: ${item.label}`);
+            } else {
+                // Ensure it is in CRM module and correct URL
+                if (existing.module_key !== 'crm' || existing.url !== item.url) {
+                    await prisma.menu_items.update({
+                        where: { id: existing.id },
+                        data: {
+                            module_key: 'crm',
+                            url: item.url,
+                            parent_id: null // Ensure top level
+                        }
+                    });
+                }
+            }
+        }
+
+    } catch (e) {
+        console.error("Failed to seed CRM menus:", e);
     }
 }
