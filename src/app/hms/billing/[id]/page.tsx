@@ -11,12 +11,12 @@ export default async function InvoiceDetailsPage({ params }: { params: Promise<{
     const session = await auth();
     const { id } = await params;
 
-    if (!session?.user?.companyId) return <div>Unauthorized</div>;
+    if (!session?.user?.tenantId) return <div>Unauthorized</div>;
 
     const invoice = await prisma.hms_invoice.findUnique({
         where: {
             id,
-            company_id: session.user.companyId
+            tenant_id: session.user.tenantId
         },
         include: {
             hms_patient: true,
@@ -28,7 +28,7 @@ export default async function InvoiceDetailsPage({ params }: { params: Promise<{
     if (!invoice) return notFound();
 
     const company = await prisma.company.findUnique({
-        where: { id: session.user.companyId }
+        where: { id: invoice.company_id }
     });
 
     return (
