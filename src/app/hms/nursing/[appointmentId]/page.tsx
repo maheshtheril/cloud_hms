@@ -15,7 +15,7 @@ export default async function NursingPatientPage({ params }: { params: { appoint
         where: { id: appointmentId },
         include: {
             hms_patient: true,
-            hms_doctor: true
+            hms_clinician: true
         }
     })
 
@@ -61,7 +61,7 @@ export default async function NursingPatientPage({ params }: { params: { appoint
                         </div>
                         <div>
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Doctor</p>
-                            <p className="text-lg font-bold text-slate-700 mt-1">Dr. {appointment.hms_doctor?.name?.split(' ')[0]}</p>
+                            <p className="text-lg font-bold text-slate-700 mt-1">Dr. {appointment.hms_clinician?.first_name}</p>
                         </div>
                         <div>
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Type</p>

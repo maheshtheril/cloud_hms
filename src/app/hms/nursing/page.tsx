@@ -28,7 +28,7 @@ export default async function NursingStationPage() {
         },
         include: {
             hms_patient: true,
-            hms_doctor: true
+            hms_clinician: true
         },
         orderBy: {
             starts_at: 'asc'
@@ -145,7 +145,7 @@ export default async function NursingStationPage() {
                                                     {apt.hms_patient?.first_name} {apt.hms_patient?.last_name}
                                                 </h3>
                                                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                                                    {format(new Date(apt.starts_at), 'hh:mm a')} • Dr. {apt.hms_doctor?.name?.split(' ')[0]}
+                                                    {format(new Date(apt.starts_at), 'hh:mm a')} • Dr. {apt.hms_clinician?.first_name}
                                                 </p>
                                             </div>
                                         </div>
