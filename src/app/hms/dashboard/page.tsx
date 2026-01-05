@@ -1,8 +1,10 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { DashboardClient } from "@/components/hms/dashboard-client"
+import { ensureHmsMenus } from "@/lib/menu-seeder"
 
 export default async function DashboardPage() {
+    await ensureHmsMenus()
     const session = await auth()
     const tenantId = session?.user?.tenantId
     const companyId = session?.user?.companyId
