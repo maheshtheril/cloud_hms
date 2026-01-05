@@ -133,8 +133,8 @@ export default async function NursingStationPage() {
                                     <div className="absolute top-0 left-0 w-1 h-full bg-pink-500" />
                                     <div className="flex justify-between items-start mb-4">
                                         <div className="flex items-center gap-3">
-                                            {(apt.hms_patient?.metadata as any)?.profile_image_url ? (
-                                                <img src={(apt.hms_patient?.metadata as any).profile_image_url} alt="" className="h-12 w-12 rounded-full object-cover shadow-md" />
+                                            {apt.hms_patient?.profile_image_url ? (
+                                                <img src={apt.hms_patient.profile_image_url} alt="" className="h-12 w-12 rounded-full object-cover shadow-md" />
                                             ) : (
                                                 <div className="h-12 w-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
                                                     {apt.hms_patient?.first_name?.[0]}
