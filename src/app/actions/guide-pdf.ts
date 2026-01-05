@@ -73,8 +73,8 @@ export async function generateGuidePDF() {
             }
             doc.fillColor('#6366f1').fontSize(14).font('Helvetica-Bold').text(section.title, 50, y)
             y += 25
-            doc.fillColor('#1e293b').fontSize(10).font('Helvetica').text(section.content, 50, y, { lineHeight: 15 })
-            y += (doc.heightOfString(section.content, { width: 500, lineHeight: 15 }) + 40)
+            doc.fillColor('#1e293b').fontSize(10).font('Helvetica').text(section.content, 50, y, { lineGap: 5 })
+            y += (doc.heightOfString(section.content, { width: 500, lineGap: 5 }) + 40)
         })
 
         // --- FOOTER ---
