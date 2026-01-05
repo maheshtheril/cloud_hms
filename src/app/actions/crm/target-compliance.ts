@@ -47,8 +47,7 @@ export async function updateTargetProgress(userId: string) {
         await prisma.crm_targets.update({
             where: { id: target.id },
             data: {
-                achieved_value: achieved,
-                updated_at: new Date()
+                achieved_value: achieved
             }
         })
     }
@@ -64,7 +63,7 @@ export async function checkAndBlockUser(userId: string) {
     const user = await prisma.app_user.findUnique({
         where: { id: userId },
         include: {
-            hms_user_roles: { include: { hms_roles: true } }
+            hms_user_roles: { include: { hms_role: true } }
         }
     })
 
@@ -74,7 +73,7 @@ export async function checkAndBlockUser(userId: string) {
     // Check if user has sales role
     const isSales =
         user.role?.match(/sales/i) ||
-        user.hms_user_roles.some(ur => ur.hms_roles.name.match(/sales/i))
+        user.hms_user_roles.some(ur => ur.hms_role.name.match(/sales/i))
 
     if (!isSales) {
         console.log(`User ${userId} is not a sales user, skipping block check.`)
