@@ -9,8 +9,15 @@ export async function getMyTargets() {
     const session = await auth()
     if (!session?.user?.id || !session?.user?.tenantId) return []
 
-    // Helper to check if string contains "admin" or "manager"
-    const hasManageAccess = session.user.isAdmin || session.user.role?.toLowerCase().includes('admin') || session.user.role?.toLowerCase().includes('manager');
+    // Fetch user role to determine access level
+    const user = await prisma.app_user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true }
+    });
+    const userRole = user?.role || '';
+
+    // Check if user is admin or manager
+    const hasManageAccess = session.user.isAdmin || userRole.toLowerCase().includes('admin') || userRole.toLowerCase().includes('manager');
 
     let whereClause: any = {
         tenant_id: session.user.tenantId,
