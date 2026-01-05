@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth" // Correct auth import
 import { redirect } from "next/navigation"
+import { revalidatePath } from "next/cache"
 
 export async function getAppointmentsProp(start: Date, end: Date) {
     const session = await auth();
@@ -123,7 +124,9 @@ export async function createAppointment(formData: FormData) {
     }
 
     if (source === 'dashboard') {
-        redirect("/hms/dashboard")
+        revalidatePath("/hms/reception/dashboard")
+        revalidatePath("/hms/dashboard")
+        return { success: true }
     }
 
     redirect("/hms/appointments")
@@ -232,7 +235,8 @@ export async function updateAppointmentDetails(formData: FormData) {
     // Handle redirection outside try/catch
     const source = formData.get("source") as string
     if (source === 'dashboard') {
-        redirect("/hms/reception/dashboard")
+        revalidatePath("/hms/reception/dashboard")
+        return { success: true }
     }
     redirect("/hms/appointments")
 }
