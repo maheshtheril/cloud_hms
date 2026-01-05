@@ -13,7 +13,8 @@ import {
     Rocket,
     ArrowUpRight,
     Star,
-    Crown
+    Crown,
+    Pencil
 } from 'lucide-react'
 import { Metadata } from 'next'
 import { format } from 'date-fns'
@@ -136,9 +137,16 @@ export default async function TargetsPage() {
                                         {isRevenue ? <TrendingUp className="w-6 h-6" /> : <Zap className="w-6 h-6" />}
                                     </div>
                                     <div className="flex flex-col items-end gap-2">
-                                        <Badge variant="outline" className="border-slate-200/50 dark:border-white/10 text-[9px] font-black uppercase tracking-tighter">
-                                            {target.period_type}
-                                        </Badge>
+                                        <div className="flex items-center gap-2">
+                                            <Link href={`/crm/targets/${target.id}/edit`}>
+                                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-500">
+                                                    <Pencil className="w-4 h-4" />
+                                                </Button>
+                                            </Link>
+                                            <Badge variant="outline" className="border-slate-200/50 dark:border-white/10 text-[9px] font-black uppercase tracking-tighter">
+                                                {target.period_type}
+                                            </Badge>
+                                        </div>
                                         {isCloseToDate && (
                                             <Badge variant="destructive" className="animate-pulse bg-rose-500 text-white text-[8px] font-black border-none uppercase">
                                                 Expiring Soon

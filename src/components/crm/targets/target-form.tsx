@@ -3,7 +3,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createTarget } from '@/app/actions/crm/targets'
+import { createTarget, updateTarget } from '@/app/actions/crm/targets'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -19,6 +19,7 @@ interface TargetFormProps {
         full_name: string | null
         role: string | null
     }[]
+    initialData?: any
 }
 
 export function TargetForm(props: TargetFormProps) {
@@ -26,12 +27,25 @@ export function TargetForm(props: TargetFormProps) {
     const { toast } = useToast()
     const router = useRouter()
 
+    // Helper to format date for input
+    const formatDate = (dateString: string | Date | undefined) => {
+        if (!dateString) return ''
+        const d = new Date(dateString)
+        return d.toISOString().split('T')[0]
+    }
+
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
         setLoading(true)
 
         const formData = new FormData(event.currentTarget)
-        const res = await createTarget(formData)
+
+        let res;
+        if (props.initialData) {
+            res = await updateTarget(props.initialData.id, formData)
+        } else {
+            res = await createTarget(formData)
+        }
 
         setLoading(false)
 
@@ -43,8 +57,8 @@ export function TargetForm(props: TargetFormProps) {
             })
         } else {
             toast({
-                title: "Objective Locked",
-                description: "Terminal target parameters have been successfully synchronized."
+                title: props.initialData ? "Objective Recalibrated" : "Objective Locked",
+                description: "Target parameters have been successfully synchronized."
             })
             router.push('/crm/targets')
             router.refresh()
@@ -62,16 +76,24 @@ export function TargetForm(props: TargetFormProps) {
                         <Sparkles className="w-5 h-5 animate-pulse" />
                         <span className="text-[10px] font-black uppercase tracking-[0.3em]">Module: Performance Intelligence</span>
                     </div>
-                    <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Objective Parameters</h2>
+                    <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">
+                        {props.initialData ? 'Recalibrate Objective' : 'Objective Parameters'}
+                    </h2>
                 </div>
 
                 <div className="p-8 space-y-8">
-                    {/* Assignee Section (New) */}
+                    {/* Assignee Section */}
                     {(props.assignees && props.assignees.length > 0) && (
                         <div className="space-y-4">
                             <Label htmlFor="assignee_id" className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Designated Agent</Label>
-                            <SelectNative id="assignee_id" name="assignee_id" required className="h-14 pl-4 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-slate-900 dark:text-slate-100">
-                                <option value="" disabled selected>Select Agent...</option>
+                            <SelectNative
+                                id="assignee_id"
+                                name="assignee_id"
+                                required
+                                defaultValue={props.initialData?.assignee_id || ""}
+                                className="h-14 pl-4 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-slate-900 dark:text-slate-100"
+                            >
+                                <option value="" disabled>Select Agent...</option>
                                 {props.assignees.map(user => (
                                     <option key={user.id} value={user.id} className="text-slate-900">
                                         {user.full_name || user.email} ({user.role || 'User'})
@@ -89,7 +111,13 @@ export function TargetForm(props: TargetFormProps) {
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
                                     <TrendingUp className="w-5 h-5" />
                                 </div>
-                                <SelectNative id="target_type" name="target_type" required className="h-14 pl-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-slate-900 dark:text-slate-100">
+                                <SelectNative
+                                    id="target_type"
+                                    name="target_type"
+                                    required
+                                    defaultValue={props.initialData?.target_type || "revenue"}
+                                    className="h-14 pl-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all font-bold text-slate-900 dark:text-slate-100"
+                                >
                                     <option value="revenue" className="text-slate-900 bg-white">Capital: Revenue Yield</option>
                                     <option value="activity" className="text-slate-900 bg-white">Operational: Activity Quota</option>
                                 </SelectNative>
@@ -101,7 +129,16 @@ export function TargetForm(props: TargetFormProps) {
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors">
                                     <Zap className="w-5 h-5" />
                                 </div>
-                                <Input id="target_value" name="target_value" type="number" step="0.01" required placeholder="e.g. 50000" className="h-14 pl-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl font-black text-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400" />
+                                <Input
+                                    id="target_value"
+                                    name="target_value"
+                                    type="number"
+                                    step="0.01"
+                                    required
+                                    defaultValue={props.initialData?.target_value}
+                                    placeholder="e.g. 50000"
+                                    className="h-14 pl-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl font-black text-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+                                />
                             </div>
                         </div>
                     </div>
@@ -109,14 +146,28 @@ export function TargetForm(props: TargetFormProps) {
                     {/* Incentive Section */}
                     <div className="space-y-4">
                         <Label htmlFor="incentive_amount" className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Incentive Payload (Reward)</Label>
-                        <Input id="incentive_amount" name="incentive_amount" type="number" step="0.01" placeholder="Optional bonus amount in INR" className="h-14 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl px-6 text-emerald-600 font-bold placeholder:text-slate-400" />
+                        <Input
+                            id="incentive_amount"
+                            name="incentive_amount"
+                            type="number"
+                            step="0.01"
+                            defaultValue={props.initialData?.incentive_amount}
+                            placeholder="Optional bonus amount in INR"
+                            className="h-14 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl px-6 text-emerald-600 font-bold placeholder:text-slate-400"
+                        />
                     </div>
 
                     {/* Period Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-slate-100 dark:border-white/5">
                         <div className="space-y-4">
                             <Label htmlFor="period_type" className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Temporal Cycle</Label>
-                            <SelectNative id="period_type" name="period_type" required defaultValue="month" className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-bold text-slate-900 dark:text-slate-100">
+                            <SelectNative
+                                id="period_type"
+                                name="period_type"
+                                required
+                                defaultValue={props.initialData?.period_type || "month"}
+                                className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-bold text-slate-900 dark:text-slate-100"
+                            >
                                 <option value="month" className="text-slate-900 bg-white">Monthly Cycle</option>
                                 <option value="quarter" className="text-slate-900 bg-white">Quarterly Phase</option>
                                 <option value="year" className="text-slate-900 bg-white">Fiscal Year</option>
@@ -126,13 +177,27 @@ export function TargetForm(props: TargetFormProps) {
                             <Label htmlFor="period_start" className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-2">
                                 <Calendar className="w-3 h-3" /> Activation
                             </Label>
-                            <Input id="period_start" name="period_start" type="date" required className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-medium text-slate-900 dark:text-slate-100" />
+                            <Input
+                                id="period_start"
+                                name="period_start"
+                                type="date"
+                                required
+                                defaultValue={formatDate(props.initialData?.period_start)}
+                                className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-medium text-slate-900 dark:text-slate-100"
+                            />
                         </div>
                         <div className="space-y-4">
                             <Label htmlFor="period_end" className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1 flex items-center gap-2">
                                 <Calendar className="w-3 h-3" /> Termination
                             </Label>
-                            <Input id="period_end" name="period_end" type="date" required className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-medium text-slate-900 dark:text-slate-100" />
+                            <Input
+                                id="period_end"
+                                name="period_end"
+                                type="date"
+                                required
+                                defaultValue={formatDate(props.initialData?.period_end)}
+                                className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl font-medium text-slate-900 dark:text-slate-100"
+                            />
                         </div>
                     </div>
                 </div>
@@ -149,7 +214,7 @@ export function TargetForm(props: TargetFormProps) {
                             </>
                         ) : (
                             <>
-                                Locked & Synchronize Target
+                                {props.initialData ? 'Update Parameters' : 'Locked & Synchronize Target'}
                             </>
                         )}
                     </Button>

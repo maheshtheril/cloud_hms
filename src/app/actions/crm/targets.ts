@@ -130,3 +130,63 @@ export async function getPotentialAssignees() {
 
     return users
 }
+
+export async function getTarget(id: string) {
+    const session = await auth()
+    if (!session?.user?.id || !session?.user?.tenantId) return null
+
+    const target = await prisma.crm_targets.findFirst({
+        where: {
+            id,
+            tenant_id: session.user.tenantId,
+            deleted_at: null
+        },
+        include: {
+            milestones: {
+                orderBy: { step_order: 'asc' }
+            }
+        }
+    })
+
+    return target
+}
+
+export async function updateTarget(id: string, formData: FormData) {
+    const session = await auth()
+    if (!session?.user?.id || !session?.user?.tenantId) return { error: "Unauthorized" }
+
+    const targetValue = parseFloat(formData.get('target_value') as string)
+    const incentiveAmount = parseFloat(formData.get('incentive_amount') as string) || 0
+    const periodType = formData.get('period_type') as string
+    const targetType = formData.get('target_type') as string
+    const startDate = new Date(formData.get('period_start') as string)
+    const endDate = new Date(formData.get('period_end') as string)
+
+    const assigneeId = (formData.get('assignee_id') as string) || session.user.id
+
+    try {
+        await prisma.crm_targets.update({
+            where: {
+                id,
+                tenant_id: session.user.tenantId
+            },
+            data: {
+                assignee_id: assigneeId,
+                period_type: periodType,
+                period_start: startDate,
+                period_end: endDate,
+                target_type: targetType,
+                target_value: targetValue,
+                incentive_amount: incentiveAmount,
+            }
+        })
+
+        // Note: For now, we are NOT regenerating milestones on update as that could destroy progress.
+        // In a real-world app, you might want logic to adjust milestones if dates change significantly.
+
+        revalidatePath('/crm/targets')
+        return { success: true }
+    } catch (e: any) {
+        return { error: e.message }
+    }
+}
