@@ -46,8 +46,10 @@ export function LeadForm({
     defaultCurrency?: CurrencyInfo,
     supportedCurrencies?: CurrencyInfo[],
     users?: any[],
-    targetTypes?: any[]
+    targetTypes?: any[],
+    isManager?: boolean
 }) {
+    const isAdmin = isManager || false
     const router = useRouter()
     const [localTargetTypes, setLocalTargetTypes] = useState(targetTypes || [])
     const [isAddingTargetType, setIsAddingTargetType] = useState(false)
@@ -174,44 +176,46 @@ export function LeadForm({
                         <div className="space-y-2">
                             <div className="flex items-center justify-between px-1">
                                 <Label htmlFor="target_type_id" className="text-xs font-bold uppercase tracking-widest text-slate-500">Target Type</Label>
-                                <Dialog open={isAddingTargetType} onOpenChange={setIsAddingTargetType}>
-                                    <DialogTrigger asChild>
-                                        <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-indigo-600 hover:text-indigo-700 font-bold flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
-                                            <Plus className="w-3 h-3" />
-                                            <span>Add New</span>
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent className="sm:max-w-[425px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-white/20 rounded-3xl">
-                                        <DialogHeader>
-                                            <DialogTitle className="text-2xl font-black text-gradient-primary">Define Target Type</DialogTitle>
-                                            <DialogDescription className="text-slate-500">
-                                                Establish a new categorization parameter for lead signals.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <div className="py-6">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="target_type_name" className="text-xs font-bold uppercase tracking-widest text-slate-500">Type Name</Label>
-                                                <Input
-                                                    id="target_type_name"
-                                                    value={newTargetTypeName}
-                                                    onChange={(e) => setNewTargetTypeName(e.target.value)}
-                                                    placeholder="e.g. Enterprise, Government, SME..."
-                                                    className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white"
-                                                />
-                                            </div>
-                                        </div>
-                                        <DialogFooter>
-                                            <Button
-                                                type="button"
-                                                onClick={handleAddTargetType}
-                                                disabled={isSavingTargetType || !newTargetTypeName.trim()}
-                                                className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg border-none"
-                                            >
-                                                {isSavingTargetType ? 'Initializing...' : 'Add Parameters'}
+                                {isAdmin && (
+                                    <Dialog open={isAddingTargetType} onOpenChange={setIsAddingTargetType}>
+                                        <DialogTrigger asChild>
+                                            <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-indigo-600 hover:text-indigo-700 font-bold flex items-center gap-1 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg">
+                                                <Plus className="w-3 h-3" />
+                                                <span>Add New</span>
                                             </Button>
-                                        </DialogFooter>
-                                    </DialogContent>
-                                </Dialog>
+                                        </DialogTrigger>
+                                        <DialogContent className="sm:max-w-[425px] bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-white/20 rounded-3xl">
+                                            <DialogHeader>
+                                                <DialogTitle className="text-2xl font-black text-gradient-primary">Define Target Type</DialogTitle>
+                                                <DialogDescription className="text-slate-500">
+                                                    Establish a new categorization parameter for lead signals.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <div className="py-6">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="target_type_name" className="text-xs font-bold uppercase tracking-widest text-slate-500">Type Name</Label>
+                                                    <Input
+                                                        id="target_type_name"
+                                                        value={newTargetTypeName}
+                                                        onChange={(e) => setNewTargetTypeName(e.target.value)}
+                                                        placeholder="e.g. Enterprise, Government, SME..."
+                                                        className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <DialogFooter>
+                                                <Button
+                                                    type="button"
+                                                    onClick={handleAddTargetType}
+                                                    disabled={isSavingTargetType || !newTargetTypeName.trim()}
+                                                    className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg border-none"
+                                                >
+                                                    {isSavingTargetType ? 'Initializing...' : 'Add Parameters'}
+                                                </Button>
+                                            </DialogFooter>
+                                        </DialogContent>
+                                    </Dialog>
+                                )}
                             </div>
                             <select
                                 id="target_type_id"

@@ -390,7 +390,19 @@ export async function getTargetTypes() {
 
 export async function upsertTargetType(data: { id?: string, name: string, description?: string }) {
     const session = await auth()
-    if (!session?.user?.tenantId) return { error: "Unauthorized" }
+    if (!session?.user?.id || !session?.user?.tenantId) return { error: "Unauthorized" }
+
+    // Role-based Access Control
+    const userRole = await prisma.app_user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true }
+    });
+    const role = userRole?.role || '';
+    const isManager = session.user.isAdmin || role.toLowerCase().includes('admin') || role.toLowerCase().includes('manager');
+
+    if (!isManager) {
+        return { error: "Access Denied: Only administrators can define target categories." };
+    }
 
     try {
         let result;

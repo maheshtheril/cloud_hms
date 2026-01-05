@@ -49,6 +49,13 @@ export default async function EditLeadPage(props: Props) {
     const users = await getCRMUsers()
     const targetTypes = await getTargetTypes()
 
+    const user = session?.user?.id ? await prisma.app_user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true }
+    }) : null
+    const role = user?.role || ''
+    const isManager = session?.user?.isAdmin || role.toLowerCase().includes('admin') || role.toLowerCase().includes('manager')
+
 
     return (
         <div className="min-h-screen bg-futuristic">
@@ -83,6 +90,7 @@ export default async function EditLeadPage(props: Props) {
                         companies={companies}
                         users={users}
                         targetTypes={targetTypes}
+                        isManager={isManager}
                     />
 
                 </div>

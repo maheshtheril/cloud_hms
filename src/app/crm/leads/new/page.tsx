@@ -7,6 +7,8 @@ import { BackButton } from '@/components/ui/back-button'
 import { getCustomFieldDefinitions } from '@/app/actions/crm/custom-fields'
 import { getPipelines, getSources, getCompanies, getCRMUsers, getTargetTypes } from '@/app/actions/crm/masters'
 import { getCompanyDefaultCurrency, getSupportedCurrencies } from '@/app/actions/currency'
+import { auth } from '@/auth'
+import { prisma } from '@/lib/prisma'
 
 export default async function NewLeadPage() {
     const rawDefinitions = await getCustomFieldDefinitions('lead')
@@ -24,6 +26,14 @@ export default async function NewLeadPage() {
     const supportedCurrencies = await getSupportedCurrencies()
     const users = await getCRMUsers()
     const targetTypes = await getTargetTypes()
+
+    const session = await auth()
+    const user = session?.user?.id ? await prisma.app_user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true }
+    }) : null
+    const role = user?.role || ''
+    const isManager = session?.user?.isAdmin || role.toLowerCase().includes('admin') || role.toLowerCase().includes('manager')
 
 
     return (
@@ -59,6 +69,7 @@ export default async function NewLeadPage() {
                         supportedCurrencies={supportedCurrencies}
                         users={users}
                         targetTypes={targetTypes}
+                        isManager={isManager}
                     />
 
                 </div>
