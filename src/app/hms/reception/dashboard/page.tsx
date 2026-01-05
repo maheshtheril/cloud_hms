@@ -22,17 +22,17 @@ export default async function ReceptionDashboardPage() {
         prisma.hms_appointments.findMany({
             where: {
                 tenant_id: tenantId,
-                start_time: {
+                starts_at: {
                     gte: todayStart,
                     lte: todayEnd
                 }
             },
             include: {
                 hms_patient: true,
-                hms_clinicians: true
+                hms_clinician: true
             },
             orderBy: {
-                start_time: 'asc'
+                starts_at: 'asc'
             }
         }),
 
@@ -72,10 +72,10 @@ export default async function ReceptionDashboardPage() {
     // Transform appointments to friendly format
     const formattedAppointments = appointments.map(apt => ({
         id: apt.id,
-        start_time: apt.start_time,
+        start_time: apt.starts_at,
         status: apt.status,
         patient: apt.hms_patient,
-        clinician: apt.hms_clinicians
+        clinician: apt.hms_clinician
     }));
 
     return (
