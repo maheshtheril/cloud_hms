@@ -104,6 +104,7 @@ export function CreatePatientForm({
     // Prompt for missing phone
     const [phone, setPhone] = useState(initialData?.contact?.phone || '');
     const [showPhonePrompt, setShowPhonePrompt] = useState(false);
+    const [noPhoneMode, setNoPhoneMode] = useState(false);
 
     const handleAgeChange = (value: string, unit: string) => {
         setAge(value);
@@ -199,11 +200,13 @@ export function CreatePatientForm({
 
                     for (const field of requiredFields) {
                         const value = formData.get(field.name);
-                        if (!value || value.toString().trim() === '') {
-                            if (field.name === 'phone') {
-                                setShowPhonePrompt(true);
-                                return;
-                            }
+                        // Phone is special: Check if we are in 'noPhoneMode'
+                        if (field.name === 'phone' && !value && !noPhoneMode) {
+                            setShowPhonePrompt(true);
+                            return;
+                        }
+
+                        if ((!value || value.toString().trim() === '') && field.name !== 'phone') { // Strict check for others
                             if (activeTab !== field.tab) {
                                 setActiveTab(field.tab as any);
                                 await new Promise(resolve => setTimeout(resolve, 100)); // Allow render
@@ -215,7 +218,7 @@ export function CreatePatientForm({
                             }, 150);
                             return;
                         }
-                        if (field.name === 'phone') {
+                        if (field.name === 'phone' && !noPhoneMode) {
                             const phoneRegex = /^\d{10}$/;
                             const cleanPhone = value.toString().replace(/\D/g, '');
                             if (!phoneRegex.test(cleanPhone)) {
@@ -598,6 +601,23 @@ export function CreatePatientForm({
                                 >
                                     <CheckCircle2 className="h-5 w-5" />
                                     Save & Continue
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setNoPhoneMode(true);
+                                        setShowPhonePrompt(false);
+                                        // Wait a tick for state to update, then submit
+                                        setTimeout(() => {
+                                            const form = document.querySelector('form') as HTMLFormElement; // Using generic form selector as ID might be missing or dynamic
+                                            if (form) form.requestSubmit();
+                                        }, 100);
+                                    }}
+                                    className="w-full py-2 text-slate-400 hover:text-slate-600 font-bold text-xs uppercase tracking-widest hover:underline transition-all"
+                                >
+                                    Proceed without Number
                                 </button>
                             </div>
                         </div>
