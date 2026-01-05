@@ -48,7 +48,7 @@ export default async function ReceptionDashboardPage() {
                 patient_number: true,
                 dob: true,
                 gender: true,
-                mobile: true
+                contact: true
             }
         }),
 
