@@ -54,7 +54,10 @@ export default async function ReceptionDashboardPage() {
 
         // 3. Fetch Doctors
         prisma.hms_clinicians.findMany({
-            where: { is_active: true },
+            where: {
+                is_active: true,
+                tenant_id: tenantId
+            },
             select: {
                 id: true,
                 first_name: true,
