@@ -5,10 +5,10 @@ import { motion, AnimatePresence } from "framer-motion"
 import {
     UserPlus, CalendarPlus, LogIn, CreditCard,
     PhoneIncoming, IdCard, Users, Search,
-    Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone, MoreVertical, Edit
+    Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone, MoreVertical, Edit, Activity
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
 import { AppointmentForm } from "@/components/appointments/appointment-form"
 import { Card } from "@/components/ui/card"
@@ -264,6 +264,37 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors }: 
                                                         <DropdownMenuItem onClick={() => handleEditClick(apt)}>
                                                             <Edit className="h-4 w-4 mr-2" /> Edit Details
                                                         </DropdownMenuItem>
+
+                                                        <DropdownMenuSub>
+                                                            <DropdownMenuSubTrigger>
+                                                                <Activity className="h-4 w-4 mr-2" /> Change Status
+                                                            </DropdownMenuSubTrigger>
+                                                            <DropdownMenuPortal>
+                                                                <DropdownMenuSubContent>
+                                                                    <DropdownMenuItem onClick={() => handleStatusUpdate(apt.id, 'scheduled')}>
+                                                                        Scheduled
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => handleStatusUpdate(apt.id, 'arrived')}>
+                                                                        Arrived
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => handleStatusUpdate(apt.id, 'confirmed')}>
+                                                                        Confirmed
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => handleStatusUpdate(apt.id, 'in_progress')}>
+                                                                        In Progress
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => handleStatusUpdate(apt.id, 'completed')}>
+                                                                        Completed
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => handleStatusUpdate(apt.id, 'cancelled')} className="text-red-600 focus:text-red-600">
+                                                                        Cancelled
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => handleStatusUpdate(apt.id, 'no_show')} className="text-orange-600 focus:text-orange-600">
+                                                                        No Show
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuSubContent>
+                                                            </DropdownMenuPortal>
+                                                        </DropdownMenuSub>
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             </div>
