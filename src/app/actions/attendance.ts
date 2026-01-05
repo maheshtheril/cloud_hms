@@ -184,13 +184,13 @@ export async function getAllStaffAttendance(date?: Date) {
         const userIds = [...new Set(logs.map(l => l.user_id))]
         const users = await prisma.app_user.findMany({
             where: { id: { in: userIds } },
-            select: { id: true, name: true, image: true, email: true }
+            select: { id: true, name: true, email: true }
         })
         const userMap = new Map(users.map(u => [u.id, u]))
 
         return logs.map(log => ({
             ...log,
-            user: userMap.get(log.user_id) || { name: 'Unknown User', email: '', image: null }
+            user: userMap.get(log.user_id) || { name: 'Unknown User', email: '' }
         }))
     } catch (error) {
         console.error("Global attendance fetch failed:", error)
