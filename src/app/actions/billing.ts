@@ -9,13 +9,14 @@ import { NotificationService } from "@/lib/services/notification";
 
 export async function getBillableItems() {
     const session = await auth();
-    if (!session?.user?.companyId) return { error: "Unauthorized" };
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    if (!companyId) return { error: "Unauthorized" };
 
     try {
         const items = await prisma.hms_product.findMany({
             where: {
                 tenant_id: session.user.tenantId,
-                company_id: session.user.companyId,
+                company_id: companyId,
                 is_active: true
                 // Removed is_service filter - show all products (pharmacy + services)
             },
@@ -88,13 +89,14 @@ export async function getBillableItems() {
 
 export async function getTaxConfiguration() {
     const session = await auth();
-    if (!session?.user?.companyId) return { error: "Unauthorized" };
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    if (!companyId) return { error: "Unauthorized" };
 
     try {
         // 1. Fetch Company Tax Maps
         const taxMaps = await prisma.company_tax_maps.findMany({
             where: {
-                company_id: session.user.companyId,
+                company_id: companyId,
                 is_active: true
             },
             include: {
@@ -133,7 +135,8 @@ export async function getTaxConfiguration() {
 
 export async function createInvoice(data: any) {
     const session = await auth();
-    if (!session?.user?.companyId) return { error: "Unauthorized" };
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    if (!companyId) return { error: "Unauthorized" };
 
     const { patient_id, appointment_id, date, line_items, payments, status = 'draft', total_discount = 0 } = data;
 
@@ -147,7 +150,7 @@ export async function createInvoice(data: any) {
 
         // Fetch custom prefix
         const settings = await prisma.company_settings.findUnique({
-            where: { company_id: session.user.companyId },
+            where: { company_id: companyId },
             select: { numbering_prefix: true }
         });
         const customPrefix = settings?.numbering_prefix || 'INV';
@@ -170,7 +173,7 @@ export async function createInvoice(data: any) {
         // We use created_at desc as proxy for latest, which is generally safe for sequential creation.
         const lastInvoice = await prisma.hms_invoice.findFirst({
             where: {
-                company_id: session.user.companyId,
+                company_id: companyId,
                 invoice_number: { startsWith: prefix }
             },
             orderBy: { created_at: 'desc' },
@@ -217,7 +220,7 @@ export async function createInvoice(data: any) {
 
         const invoicePayload = {
             tenant_id: session.user.tenantId!,
-            company_id: session.user.companyId!,
+            company_id: companyId,
             patient_id: (patient_id as string) || null,
             appointment_id: (appointment_id as string) || null,
             invoice_number: invoiceNo,
@@ -233,7 +236,7 @@ export async function createInvoice(data: any) {
             hms_invoice_lines: {
                 create: line_items.map((item: any, index: number) => ({
                     tenant_id: session.user.tenantId,
-                    company_id: session.user.companyId,
+                    company_id: companyId,
                     line_idx: index + 1,
                     product_id: item.product_id || null, // Convert empty string to null
                     description: item.description,
@@ -249,7 +252,7 @@ export async function createInvoice(data: any) {
             hms_invoice_payments: {
                 create: paymentList.map((p: any) => ({
                     tenant_id: session.user.tenantId,
-                    company_id: session.user.companyId,
+                    company_id: companyId,
                     amount: Number(p.amount),
                     method: p.method, // 'cash', 'card', 'upi'
                     payment_reference: p.reference || null,
@@ -315,7 +318,8 @@ export async function createInvoice(data: any) {
 
 export async function updateInvoice(invoiceId: string, data: any) {
     const session = await auth();
-    if (!session?.user?.companyId) return { error: "Unauthorized" };
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    if (!companyId) return { error: "Unauthorized" };
 
     const { patient_id, appointment_id, date, line_items, status = 'draft', total_discount = 0, payments = [] } = data;
 
@@ -374,7 +378,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
             await tx.hms_invoice_lines.createMany({
                 data: line_items.map((item: any, index: number) => ({
                     tenant_id: session.user.tenantId,
-                    company_id: session.user.companyId,
+                    company_id: companyId,
                     invoice_id: invoiceId,
                     line_idx: index + 1,
                     product_id: item.product_id || null, // Convert empty string to null
@@ -398,7 +402,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
                 await tx.hms_invoice_payments.createMany({
                     data: paymentList.map((p: any) => ({
                         tenant_id: session.user.tenantId,
-                        company_id: session.user.companyId,
+                        company_id: companyId,
                         invoice_id: invoiceId,
                         amount: Number(p.amount),
                         method: p.method,
@@ -455,7 +459,8 @@ export async function updateInvoice(invoiceId: string, data: any) {
 
 export async function updateInvoiceStatus(invoiceId: string, status: 'draft' | 'posted' | 'paid' | 'cancelled') {
     const session = await auth();
-    if (!session?.user?.companyId) return { error: "Unauthorized" };
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    if (!companyId) return { error: "Unauthorized" };
 
     try {
         const invoice = await prisma.hms_invoice.findUnique({ where: { id: invoiceId } });
