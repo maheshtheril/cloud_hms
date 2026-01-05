@@ -55,6 +55,46 @@ export function SearchableSelect({
         setHighlightedIndex(0)
     }, [search])
 
+    const optionsListRef = useRef<HTMLDivElement>(null)
+
+    // Handle keyboard navigation
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (!open) return
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault()
+                setHighlightedIndex(prev =>
+                    prev < filteredOptions.length - 1 ? prev + 1 : prev
+                )
+                break
+            case 'ArrowUp':
+                e.preventDefault()
+                setHighlightedIndex(prev => prev > 0 ? prev - 1 : prev)
+                break
+            case 'Enter':
+                e.preventDefault()
+                if (filteredOptions[highlightedIndex]) {
+                    handleSelect(filteredOptions[highlightedIndex].id)
+                }
+                break
+            case 'Escape':
+                e.preventDefault()
+                setOpen(false)
+                break
+        }
+    }
+
+    // Scroll highlighted item into view
+    useEffect(() => {
+        if (open && optionsListRef.current) {
+            const activeElement = optionsListRef.current.children[highlightedIndex] as HTMLElement
+            if (activeElement) {
+                activeElement.scrollIntoView({ block: 'nearest' })
+            }
+        }
+    }, [highlightedIndex, open])
+
     const handleSelect = (optionId: string) => {
         setSelectedValue(optionId)
         onChange(optionId)
@@ -96,6 +136,7 @@ export function SearchableSelect({
             <PopoverContent
                 className="w-[300px] p-0 bg-white dark:bg-slate-900 border-gray-200 dark:border-slate-800"
                 align="start"
+                onOpenAutoFocus={(e) => e.preventDefault()} // Prevent auto-focusing the content wrapper, let input autofocus handle it? Actually input autoFocus works.
             >
                 <div className="flex flex-col max-h-80">
                     {/* Search Input */}
@@ -106,6 +147,7 @@ export function SearchableSelect({
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
+                                onKeyDown={handleKeyDown}
                                 placeholder={`Search ${placeholder.toLowerCase()}...`}
                                 className="w-full pl-9 pr-4 py-1.5 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-gray-900 dark:text-white"
                                 autoFocus
@@ -114,7 +156,10 @@ export function SearchableSelect({
                     </div>
 
                     {/* Options List */}
-                    <div className="overflow-y-auto flex-1 p-1 custom-scrollbar">
+                    <div
+                        ref={optionsListRef}
+                        className="overflow-y-auto flex-1 p-1 custom-scrollbar"
+                    >
                         {filteredOptions.length === 0 ? (
                             <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
                                 No results found
@@ -125,9 +170,10 @@ export function SearchableSelect({
                                     key={option.id}
                                     type="button"
                                     onClick={() => handleSelect(option.id)}
+                                    onMouseEnter={() => setHighlightedIndex(index)}
                                     className={cn(
                                         "w-full px-4 py-2 text-left transition-colors rounded-md flex items-center justify-between group",
-                                        "hover:bg-blue-50 dark:hover:bg-slate-800",
+                                        index === highlightedIndex ? "bg-blue-50 dark:bg-slate-800" : "hover:bg-blue-50 dark:hover:bg-slate-800",
                                         selectedValue === option.id && "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400"
                                     )}
                                 >
