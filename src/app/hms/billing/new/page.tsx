@@ -47,8 +47,73 @@ export default async function NewInvoicePage({
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
 
-    // Standardize initial items (medicines or generic items)
-    const initialItems = items ? JSON.parse(decodeURIComponent(items)) : (medicines ? JSON.parse(decodeURIComponent(medicines)) : undefined);
+    // Standardization logic for initial items
+    let initialItems = items ? JSON.parse(decodeURIComponent(items)) : (medicines ? JSON.parse(decodeURIComponent(medicines)) : []);
+
+    // IF APPOINTMENT ID IS PRESENT, ENRICH INITIAL ITEMS
+    if (appointmentId) {
+        const appointment = await prisma.hms_appointments.findUnique({
+            where: { id: appointmentId },
+            include: {
+                hms_doctor: true,
+                hms_patient: true,
+                hms_lab_order: {
+                    include: {
+                        hms_lab_order_line: {
+                            include: { hms_lab_test: true }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (appointment) {
+            // 1. Add Consultation Fee if doctor has one
+            const doctorFees = (appointment.hms_doctor?.metadata as any)?.fees || 0;
+            if (doctorFees > 0) {
+                initialItems.unshift({
+                    id: appointment.doctor_id,
+                    name: `Consultation Fee - ${appointment.hms_doctor?.name}`,
+                    price: doctorFees,
+                    quantity: 1,
+                    type: 'service'
+                });
+            }
+
+            // 2. Add Lab Tests
+            appointment.hms_lab_order.forEach(order => {
+                order.hms_lab_order_line.forEach(line => {
+                    if (line.hms_lab_test) {
+                        initialItems.push({
+                            id: line.test_id,
+                            name: `Lab: ${line.hms_lab_test.name}`,
+                            price: Number(line.price) || 0,
+                            quantity: 1,
+                            type: 'service'
+                        });
+                    }
+                });
+            });
+
+            // 3. Add Registration Fee if not paid (Check patient metadata)
+            const registrationPaid = (appointment.hms_patient?.metadata as any)?.registration_fees_paid;
+            if (!registrationPaid) {
+                // Fetch the current registration fee from hms_patient_registration_fees if available
+                const regFeeRecord = await prisma.hms_patient_registration_fees.findFirst({
+                    where: { tenant_id: tenantId, is_active: true }
+                });
+                if (regFeeRecord) {
+                    initialItems.push({
+                        id: 'reg-fee',
+                        name: 'Registration Fee',
+                        price: Number(regFeeRecord.fee_amount),
+                        quantity: 1,
+                        type: 'service'
+                    });
+                }
+            }
+        }
+    }
 
     return (
         <CompactInvoiceEditor

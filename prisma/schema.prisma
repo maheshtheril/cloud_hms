@@ -2359,6 +2359,8 @@ model hms_vitals {
   systolic     Decimal?     @db.Decimal(5, 2)
   diastolic    Decimal?     @db.Decimal(5, 2)
   spo2         Decimal?     @db.Decimal(5, 2)
+  height       Decimal?     @db.Decimal(5, 2) // in cm
+  weight       Decimal?     @db.Decimal(5, 2) // in kg
   notes        String?
   metadata     Json?        @default("{}")
   hms_patient  hms_patient? @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)

@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json()
-        let { patientId, appointmentId, vitals, diagnosis, complaint, examination, plan, medicines } = body
+        let { patientId, appointmentId, vitals, diagnosis, complaint, examination, plan, medicines, labTests } = body
 
         // If patientId is missing but appointmentId is present, try to find patientId from appointment
         if (!patientId && appointmentId) {
@@ -142,6 +142,40 @@ export async function POST(request: NextRequest) {
                     }
                 }
             })
+
+            // 4. Handle Lab Orders
+            if (labTests && labTests.length > 0) {
+                // Clear existing REQUESTED lab orders for this appointment to avoid duplicates on update
+                if (appointmentId) {
+                    await tx.hms_lab_order.deleteMany({
+                        where: {
+                            encounter_id: appointmentId,
+                            status: 'requested',
+                            tenant_id: session.user.tenantId
+                        }
+                    })
+                }
+
+                const labOrder = await tx.hms_lab_order.create({
+                    data: {
+                        tenant_id: session.user.tenantId,
+                        company_id: userCompanyId || (await tx.company.findFirst({ where: { tenant_id: session.user.tenantId } }))?.id || '',
+                        patient_id: patientId,
+                        encounter_id: appointmentId || null,
+                        status: 'requested',
+                        order_number: `LAB-${Date.now()}`,
+                        hms_lab_order_line: {
+                            create: labTests.map((test: any) => ({
+                                tenant_id: session.user.tenantId,
+                                company_id: userCompanyId || '',
+                                test_id: test.id,
+                                status: 'pending',
+                                price: test.price || 0
+                            }))
+                        }
+                    }
+                })
+            }
 
             return pr
         })

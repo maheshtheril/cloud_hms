@@ -62,6 +62,11 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
         plan: ''
     })
     const [showConverted, setShowConverted] = useState(false)
+    const [selectedLabs, setSelectedLabs] = useState<any[]>([])
+    const [labSearch, setLabSearch] = useState('')
+    const [filteredLabs, setFilteredLabs] = useState<any[]>([])
+    const [showLabDropdown, setShowLabDropdown] = useState(false)
+    const [isSearchingLabs, setIsSearchingLabs] = useState(false)
 
     // Dynamic Masters from Database
     const [dbTemplates, setDbTemplates] = useState<any[]>([])
@@ -118,40 +123,54 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             .catch(err => console.error('Error fetching appointment for patient info:', err));
     }, [appointmentId, patientId]);
 
-    // Fetch existing prescription if appointmentId is present
+    // Fetch existing prescription and nurse vitals if appointmentId is present
     useEffect(() => {
         if (!appointmentId) return;
 
         fetch(`/api/prescriptions/by-appointment/${appointmentId}`)
             .then(res => res.json())
             .then(data => {
-                if (data.success && data.prescription) {
+                if (data.success) {
                     const pr = data.prescription;
-                    setConvertedText({
-                        vitals: pr.vitals || '',
-                        diagnosis: pr.diagnosis || '',
-                        complaint: pr.complaint || '',
-                        examination: pr.examination || '',
-                        plan: pr.plan || ''
-                    });
-                    setSelectedMedicines(pr.medicines || []);
-                    setShowConverted(true);
+                    const vt = data.vitals;
 
-                    // If we don't have patientId from URL, get it from prescription/appointment
-                    if (!patientId && pr.patient_id) {
-                        setResolvedPatientId(pr.patient_id);
-                        fetch(`/api/patients/${pr.patient_id}`)
-                            .then(res => res.json())
-                            .then(pData => {
-                                if (pData.patient) setPatientInfo(pData.patient)
-                            });
+                    let vitalsText = '';
+                    if (vt) {
+                        vitalsText = `T: ${vt.temperature || '-'}°F, P: ${vt.pulse || '-'}bpm, S/D: ${vt.systolic || '-'}/${vt.diastolic || '-'}mmHg, SpO2: ${vt.spo2 || '-'}%, W: ${vt.weight || '-'}kg, H: ${vt.height || '-'}cm. ${vt.notes || ''}`.trim();
+                    }
+
+                    if (pr) {
+                        setConvertedText({
+                            vitals: pr.vitals || vitalsText,
+                            diagnosis: pr.diagnosis || '',
+                            complaint: pr.complaint || '',
+                            examination: pr.examination || '',
+                            plan: pr.plan || ''
+                        });
+                        setSelectedMedicines(pr.medicines || []);
+                        setShowConverted(true);
+
+                        if (!patientId && pr.patient_id) {
+                            setResolvedPatientId(pr.patient_id);
+                            fetch(`/api/patients/${pr.patient_id}`)
+                                .then(res => res.json())
+                                .then(pData => {
+                                    if (pData.patient) setPatientInfo(pData.patient)
+                                });
+                        }
+                    } else if (vt) {
+                        // Only vitals found (Nurse done, Doctor starting)
+                        setConvertedText(prev => ({
+                            ...prev,
+                            vitals: vitalsText
+                        }));
+                        setShowConverted(true);
                     }
                 }
             })
-            .catch(err => console.error('Error fetching existing prescription:', err));
+            .catch(err => console.error('Error fetching existing data:', err));
     }, [appointmentId, patientId]);
 
-    // Fetch medicines
     useEffect(() => {
         fetch('/api/medicines')
             .then(res => res.json())
@@ -160,6 +179,40 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             })
             .catch(err => console.error(err))
     }, [])
+
+    // Fetch lab tests
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (labSearch.trim()) {
+                setIsSearchingLabs(true)
+                fetch(`/api/hms/lab-tests?q=${encodeURIComponent(labSearch)}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            setFilteredLabs(data.tests)
+                            setShowLabDropdown(true)
+                        }
+                    })
+                    .finally(() => setIsSearchingLabs(false))
+            } else {
+                setFilteredLabs([])
+                setShowLabDropdown(false)
+            }
+        }, 300)
+        return () => clearTimeout(timer)
+    }, [labSearch])
+
+    const addLabTest = (test: any) => {
+        if (!selectedLabs.find(l => l.id === test.id)) {
+            setSelectedLabs([...selectedLabs, test])
+        }
+        setLabSearch('')
+        setShowLabDropdown(false)
+    }
+
+    const removeLabTest = (id: string) => {
+        setSelectedLabs(selectedLabs.filter(l => l.id !== id))
+    }
 
     // Filter medicines as user types
     useEffect(() => {
@@ -458,7 +511,8 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                     complaint: finalTexts.complaint || '',
                     examination: finalTexts.examination || '',
                     plan: finalTexts.plan || '',
-                    medicines: selectedMedicines
+                    medicines: selectedMedicines,
+                    labTests: selectedLabs
                 })
             })
 
@@ -762,6 +816,65 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                                 ))}
                             </div>
 
+                            {/* Lab Order Section */}
+                            <div className="pt-8 border-t border-slate-100 space-y-4">
+                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">LAB & RADIOLOGY ORDERS</h3>
+
+                                <div className="relative print:hidden group">
+                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                                        {isSearchingLabs ? <Loader2 className="h-5 w-5 animate-spin" /> : <ActivityIcon className="h-5 w-5" />}
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={labSearch}
+                                        onChange={(e) => setLabSearch(e.target.value)}
+                                        placeholder="Search for Lab Tests / X-Rays / Scans..."
+                                        className="w-full pl-12 pr-6 py-4 text-base font-medium border-2 border-slate-100 rounded-2xl focus:border-pink-500 focus:ring-4 focus:ring-pink-50 outline-none transition-all"
+                                    />
+
+                                    {showLabDropdown && filteredLabs.length > 0 && (
+                                        <div className="absolute z-[60] w-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto p-2">
+                                            {filteredLabs.map((test, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    onClick={() => addLabTest(test)}
+                                                    className="p-3 hover:bg-pink-50 cursor-pointer rounded-xl flex items-center justify-between group/item"
+                                                >
+                                                    <div className="flex flex-col text-left">
+                                                        <span className="font-bold text-slate-700 group-hover/item:text-pink-600">{test.name}</span>
+                                                        <span className="text-[10px] text-slate-400 uppercase tracking-tighter">{test.method || 'Standard'} • {test.code || 'NO-CODE'}</span>
+                                                    </div>
+                                                    <div className="h-8 w-8 bg-pink-100 rounded-lg flex items-center justify-center text-pink-600 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                                        <Plus className="h-4 w-4" />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Selected Labs List */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-4">
+                                    {selectedLabs.map((test, idx) => (
+                                        <div key={idx} className="flex items-center gap-3 bg-pink-50/50 p-3 rounded-2xl border border-pink-100 border-dashed group">
+                                            <div className="h-8 w-8 bg-pink-200 rounded-lg flex items-center justify-center text-pink-700 font-bold text-xs ring-4 ring-pink-50">
+                                                {idx + 1}
+                                            </div>
+                                            <div className="flex-1 text-left">
+                                                <p className="font-bold text-slate-800 text-sm">{test.name}</p>
+                                                <p className="text-[10px] text-pink-600 font-black uppercase tracking-widest leading-none">Ordered</p>
+                                            </div>
+                                            <button
+                                                onClick={() => removeLabTest(test.id)}
+                                                className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
                             <div className="flex gap-3 pt-4 border-t border-slate-50">
                                 <Button
                                     type="button"
@@ -786,7 +899,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                         className="bg-slate-900 hover:bg-black text-white px-8 py-6 rounded-2xl shadow-xl shadow-slate-200"
                     >
                         {isSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
-                        Save Prescription
+                        Finalize Prescription
                     </Button>
                     <Button
                         onClick={() => savePrescription(true)}
@@ -794,7 +907,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                         className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 rounded-2xl shadow-xl shadow-blue-200"
                     >
                         <Receipt className="mr-2 h-5 w-5" />
-                        Save & Create Bill
+                        Checkout & Collect Payment
                     </Button>
                     <Button
                         variant="outline"

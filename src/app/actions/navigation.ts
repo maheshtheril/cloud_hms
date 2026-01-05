@@ -272,6 +272,7 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
                 url: '#',
                 other_menu_items: [
                     { key: 'prescriptions', label: 'Prescriptions', icon: 'FileText', url: '/hms/prescriptions' },
+                    { key: 'nursing-station', label: 'Nursing Station', icon: 'Activity', url: '/hms/nursing' },
                     { key: 'doctors', label: 'Medical Staff', icon: 'UserCheck', url: '/hms/doctors' },
                 ]
             }

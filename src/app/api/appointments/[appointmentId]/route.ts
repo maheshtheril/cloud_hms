@@ -101,14 +101,28 @@ export async function GET(
             }
         })
 
-        if (encounter) {
-            // Better: Find lab orders by encounter_id
+        if (encounter || appointmentId) {
+            // Better: Find lab orders by encounter_id or direct appointmentId
             labOrders = await prisma.hms_lab_order.findMany({
                 where: {
                     tenant_id: session.user.tenantId,
-                    encounter_id: encounter.id
+                    OR: [
+                        { encounter_id: appointmentId },
+                        encounter ? { encounter_id: encounter.id } : {}
+                    ].filter(cond => Object.keys(cond).length > 0)
                 },
                 include: {
+                    hms_lab_order_line: {
+                        include: {
+                            hms_lab_test: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    code: true
+                                }
+                            }
+                        }
+                    },
                     hms_lab_order_lines: {
                         include: {
                             hms_lab_test: {
@@ -150,15 +164,16 @@ export async function GET(
             })
         }
 
-        // Flatten lab tests from all orders
-        const lab_tests = labOrders.flatMap(order =>
-            order.hms_lab_order_lines.map(line => ({
+        // Flatten lab tests from all orders (check both possible relation names)
+        const lab_tests = labOrders.flatMap(order => {
+            const lines = [...((order as any).hms_lab_order_line || []), ...((order as any).hms_lab_order_lines || [])];
+            return lines.map(line => ({
                 id: line.id,
-                test_name: line.requested_name || line.hms_lab_test?.name || 'Unknown Test',
-                test_code: line.requested_code || line.hms_lab_test?.code,
-                test_fee: line.price || 0
-            }))
-        )
+                test_name: (line as any).requested_name || (line as any).hms_lab_test?.name || 'Unknown Test',
+                test_code: (line as any).requested_code || (line as any).hms_lab_test?.code,
+                test_fee: (line as any).price || 0
+            }));
+        })
 
         // Fetch prescriptions linked to this appointment
         const prescription = await (prisma.prescription as any).findFirst({
