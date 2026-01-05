@@ -13,7 +13,7 @@ export function DownloadGuidePDF() {
         setLoading(true)
         try {
             const buffer = await generateGuidePDF() as Buffer
-            const blob = new Blob([buffer], { type: 'application/pdf' })
+            const blob = new Blob([buffer as any], { type: 'application/pdf' })
             const url = window.URL.createObjectURL(blob)
             const a = document.createElement('a')
             a.href = url
