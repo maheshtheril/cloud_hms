@@ -163,7 +163,7 @@ export async function inviteUser(data: InviteUserData) {
             emailError = "Internal system error during mail generation";
         }
 
-        if (data.roleId) {
+        if (data.roleId && data.roleId !== 'no-role') {
             try {
                 await prisma.hms_user_roles.create({
                     data: { user_id: user.id, role_id: data.roleId }
