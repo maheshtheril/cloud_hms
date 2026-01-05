@@ -4,66 +4,64 @@ const fs = require('fs');
 const path = require('path');
 
 const doc = new PDFDocument({ margin: 50 });
-const filename = 'CRM_Gated_Compliance_Audit_Guide.pdf';
+const filename = 'CRM_Intelligence_Enforcement_Guide.pdf';
 const outputPath = path.join(process.cwd(), filename);
 
 doc.pipe(fs.createWriteStream(outputPath));
 
 // Header
-doc.fillColor('#4F46E5').fontSize(24).font('Helvetica-Bold').text('CRM Gated Compliance', { align: 'center' });
-doc.fontSize(16).fillColor('#1E293B').text('Technical Audit & Verification Guide', { align: 'center' });
+doc.fillColor('#4F46E5').fontSize(26).font('Helvetica-Bold').text('CRM Gated Intelligence', { align: 'center' });
+doc.fontSize(14).fillColor('#64748B').text('Performance Enforcement & Compliance Guide v2.0', { align: 'center' });
 doc.moveDown(2);
 
-// Section 1: Core Logic
-doc.fillColor('#1E293B').fontSize(18).font('Helvetica-Bold').text('1. Core Intelligence Logic');
-doc.fontSize(12).font('Helvetica').text('The compliance engine operates on a Gated Logic principle. In the file src/app/actions/crm/target-compliance.ts, the system performs a multi-phase check:', { align: 'justify' });
+// Section 1: Terminology Alignment
+doc.fillColor('#1E293B').fontSize(18).font('Helvetica-Bold').text('1. World-Standard Terminology');
+doc.fontSize(11).font('Helvetica').fillColor('#334155').text('To prevent confusion between client categories and sales quotas, the system adopts international standards:', { align: 'justify' });
 doc.moveDown(0.5);
 doc.list([
-    'Phase 1: Real-time Metric Analysis - Aggregates lead and deal data for the assignee.',
-    'Phase 2: Milestone Validation - Compares current achievement against milestone gates.',
-    'Phase 3: Blocking Enforcement - If a milestone is marked "is_blocking" and the deadline is passed without reaching the goal, the entire mission is terminated (Failed).'
+    'Account Type: Identifies the NATURE of the client (e.g., Enterprise, Govt, SME). Found in Lead Forms.',
+    'Targets: Identifies the sales GOALS and performance quotas for the Salesman. Managed in the Targets Hub.'
 ], { bulletRadius: 3 });
 doc.moveDown(1.5);
 
-// Section 2: How to Verify (Stress Test)
-doc.fillColor('#1E293B').fontSize(18).font('Helvetica-Bold').text('2. Step-by-Step Verification Protocol');
-doc.fontSize(12).font('Helvetica').text('To verify that blocking is functioning correctly, follow this stress test:', { align: 'justify' });
+// Section 2: The Gated Lockout System
+doc.fillColor('#1E293B').fontSize(18).font('Helvetica-Bold').text('2. Automated Gated Enforcement');
+doc.fontSize(11).font('Helvetica').text('The system uses a "Block-and-Review" protocol instead of traditional account deactivation.', { align: 'justify' });
 doc.moveDown(0.5);
-
-doc.font('Helvetica-Bold').text('Step A: Create a "Fail" Scenario');
-doc.font('Helvetica').text('1. Navigate to CRM > Targets > Initialize Target.');
-doc.text('2. Set the Period End to a date in the future.');
-doc.text('3. Create a Milestone with Metric: "Deals Created", Target: 5.');
-doc.text('4. Set the Milestone Deadline to YESTERDAY.');
-doc.text('5. Toggle "is_blocking" to YES (Blue Switch).');
-doc.text('6. Click Synchronize Mission.');
+doc.font('Helvetica-Bold').text('How the Lock Works:');
+doc.font('Helvetica').text('If a salesman fails a "Blocking Milestone", the CRM triggers a high-fidelity suspension overlay. This lock covers the entire application, preventing access to Leads and Deals.');
 doc.moveDown(0.5);
-
-doc.font('Helvetica-Bold').text('Step B: Trigger Intelligence Sync');
-doc.font('Helvetica').text('1. Go to Targets > Strategic Dashboard (Management).');
-doc.text('2. Click "Synchronize Team Data".');
-doc.text('3. The system will process the expired gate.');
-doc.moveDown(0.5);
-
-doc.font('Helvetica-Bold').text('Step C: Verify Observation');
-doc.font('Helvetica').text('1. Back in the Targets main list, the status should now be RED ("FAILED").');
-doc.text('2. The Progress Bar will indicate non-compliance.');
+doc.font('Helvetica-Bold').text('The Recovery Path:');
+doc.font('Helvetica').text('The only unlocked page during a suspension is the Performance Dashboard (/crm/targets). The salesman must visit this page to understand their failure and contact their manager for an appeal.');
 doc.moveDown(1.5);
 
-// Section 3: Strategic Impact
-doc.fillColor('#1E293B').fontSize(18).font('Helvetica-Bold').text('3. Strategic Impact for Salesmen');
-doc.fontSize(12).font('Helvetica').text('When a Salesman fails a blocking milestone:', { align: 'justify' });
+// Section 3: Strategic Setup (Admin)
+doc.fillColor('#1E293B').fontSize(18).font('Helvetica-Bold').text('3. Strategic Target Initialization');
+doc.fontSize(11).font('Helvetica').text('When creating a mission, follow these strategic steps:', { align: 'justify' });
+doc.moveDown(0.5);
+doc.font('Helvetica-Bold').text('1. Select Agent(s):');
+doc.font('Helvetica').text('Designate which salesman or team is responsible for the quota.');
+doc.font('Helvetica-Bold').text('2. Set Blocking Gates:');
+doc.font('Helvetica').text('Crucial! Set milestone deadlines. If a salesman must create 10 leads by the 15th, set it as a BLOCKING milestone. If they miss it, the app locks automatically.');
+doc.font('Helvetica-Bold').text('3. Monitor Revenue Pulse:');
+doc.font('Helvetica').text('Use the /crm/targets/management hub to see real-time team achievement vs strategy.');
+doc.moveDown(1.5);
+
+// Section 4: Audit Steps
+doc.fillColor('#1E293B').fontSize(18).font('Helvetica-Bold').text('4. Technical Audit (How to test)');
+doc.fontSize(11).font('Helvetica').text('Verify the enforcement engine with these steps:', { align: 'justify' });
 doc.moveDown(0.5);
 doc.list([
-    'They are flagged on the Admin Management Roster as an "At-Risk Asset".',
-    'Total team revenue synthesis is adjusted to exclude their failed forecast.',
-    'The mission cannot be resurrected without manager intervention (Edit/Update).'
+    'CREATE: New target with a "Blocking" milestone and deadline set to YESTERDAY.',
+    'SYNC: Go to Strategic Dashboard and click "Synchronize Team Data".',
+    'VERIFY: Log in as that salesman. They should be immediately blocked by the Rose-Red Lockout screen.',
+    'RESOLVE: As Admin, update or delete the milestone to lift the lock.'
 ], { bulletRadius: 3 });
 
 // Footer
-doc.moveDown(4);
-doc.fontSize(10).fillColor('#94A3B8').text('Generated by Antigravity AI Engine | System Version 2035-HMS-SAAS-ERP', { align: 'center' });
+doc.moveDown(3);
+doc.fontSize(9).fillColor('#94A3B8').text('Generated by Antigravity Intelligence Engine | System Version 2035-HMS-SAAS-ERP', { align: 'center' });
 
 doc.end();
 
-console.log(`PDF generated successfully at: ${outputPath}`);
+console.log(`Updated PDF generated successfully at: ${outputPath}`);

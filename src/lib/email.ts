@@ -20,20 +20,42 @@ export async function sendInvitationEmail(email: string, token: string, name: st
         const { data, error } = await resend.emails.send({
             from: `Cloud HMS <${fromEmail}>`,
             to: email,
-            subject: 'You have been invited to Cloud HMS',
+            subject: 'Invitation to join Cloud HMS Operations',
             html: `
-                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
-                    <h2 style="color: #111827;">Welcome to Cloud HMS</h2>
-                    <p style="color: #4b5563;">Hello <strong>${name}</strong>,</p>
-                    <p style="color: #4b5563;">You have been invited to join the Cloud HMS workspace. To get started, please accept this invitation and set up your secure password.</p>
-                    
-                    <div style="margin: 32px 0;">
-                        <a href="${inviteUrl}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500; display: inline-block;">Accept Invitation</a>
+                <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
+                    <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 48px 40px; text-align: center;">
+                        <div style="display: inline-block; background-color: rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 12px; border-radius: 16px; margin-bottom: 24px;">
+                            <img src="https://cloud-hms.onrender.com/logo.png" alt="Cloud HMS" style="width: 48px; height: 48px;" />
+                        </div>
+                        <h1 style="color: #ffffff; font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.02em;">Welcome to the Mission</h1>
+                        <p style="color: rgba(255,255,255,0.8); font-size: 16px; margin-top: 8px; font-weight: 500;">Cloud HMS Enterprise Portal</p>
                     </div>
                     
-                    <p style="color: #6b7280; font-size: 14px;">This invitation link will expire in 48 hours.</p>
-                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-                    <p style="color: #9ca3af; font-size: 12px;">If you were not expecting this invitation, you can safely ignore this email.</p>
+                    <div style="padding: 40px;">
+                        <p style="color: #1e293b; font-size: 18px; font-weight: 600; margin-bottom: 16px;">Hello ${name},</p>
+                        <p style="color: #64748b; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">
+                            You have been invited to join the <strong>Cloud HMS</strong> ecosystem. Your professional profile has been initialized and is awaiting activation.
+                        </p>
+                        
+                        <div style="background-color: #f8fafc; border-radius: 20px; padding: 32px; text-align: center; border: 1px dashed #e2e8f0; margin-bottom: 40px;">
+                            <p style="color: #475569; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 24px;">Action Required</p>
+                            <a href="${inviteUrl}" style="background-color: #4f46e5; color: #ffffff; padding: 18px 36px; text-decoration: none; border-radius: 14px; font-weight: 700; font-size: 16px; display: inline-block; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);">
+                                Initialize Profile Access
+                            </a>
+                            <p style="color: #94a3b8; font-size: 12px; margin-top: 24px;">This secure invitation link is valid for 48 hours.</p>
+                        </div>
+                        
+                        <div style="border-top: 1px solid #f1f5f9; padding-top: 32px;">
+                            <h4 style="color: #1e293b; font-size: 14px; font-weight: 700; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Security Protocol</h4>
+                            <p style="color: #94a3b8; font-size: 13px; line-height: 1.5;">
+                                If you did not expect this invitation, please ignore this communication. Your account will remain dormant until activated via the secure token provided.
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div style="background-color: #f1f5f9; padding: 24px 40px; text-align: center;">
+                        <p style="color: #94a3b8; font-size: 12px; margin: 0;">© 2035 Cloud HMS • Hospital Management Intelligence</p>
+                    </div>
                 </div>
             `
         });

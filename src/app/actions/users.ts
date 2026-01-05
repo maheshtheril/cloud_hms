@@ -117,7 +117,7 @@ export async function inviteUser(data: InviteUserData) {
             return { error: 'User with this email already exists' }
         }
 
-        // Create user
+        // Create user with PENDING state (is_active: false)
         const user = await prisma.app_user.create({
             data: {
                 tenant_id: session.user.tenantId,
@@ -125,7 +125,7 @@ export async function inviteUser(data: InviteUserData) {
                 full_name: data.fullName || data.email.split('@')[0],
                 name: data.email.split('@')[0],
                 role: data.systemRole,
-                is_active: true,
+                is_active: false, // Must set password to activate
                 is_tenant_admin: data.systemRole === 'admin',
                 is_admin: data.systemRole === 'admin',
             }

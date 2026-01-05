@@ -23,6 +23,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, password, metadata
                         FROM app_user
                         WHERE LOWER(email) = ${email}
+                          AND is_active = true
                           AND password = crypt(${credentials.password}, password)
                     ` as any[];
 
