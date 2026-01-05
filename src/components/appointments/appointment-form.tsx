@@ -6,6 +6,8 @@ import Link from "next/link"
 import { PatientDoctorSelectors } from "@/components/appointments/patient-doctor-selectors"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
 import { useState } from "react"
+import { useToast } from "@/components/ui/use-toast"
+import { useRouter } from "next/navigation"
 
 interface AppointmentFormProps {
     patients: any[]
@@ -85,13 +87,87 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
         setShowNewPatientModal(false)
     }
 
+    const { toast } = useToast()
+    const [isPending, setIsPending] = useState(false)
+    const router = useRouter()
+
+    async function handleSubmit(formData: FormData) {
+        setIsPending(true)
+        try {
+            let res;
+            if (editingAppointment) {
+                res = await updateAppointmentDetails(formData);
+            } else {
+                res = await createAppointment(formData);
+            }
+
+            if (res?.error) {
+                toast({
+                    title: "Action Failed",
+                    description: res.error,
+                    variant: "destructive"
+                });
+            } else {
+                // Success
+                toast({
+                    title: "Success",
+                    description: editingAppointment ? "Appointment updated successfully." : "Appointment booked successfully.",
+                    className: "bg-green-600 text-white border-none"
+                });
+
+                // Handle Navigation / Closing
+                // Note: Server actions might have already thrown redirect() which catches flow here.
+                // If we are here, it means no redirect happened (or we caught it? No, redirect throws).
+                // If the server action returns, it means it didn't redirect (e.g. error or just success).
+
+                // If we are in a modal (onClose exists)
+                if (onClose) {
+                    router.refresh();
+                    onClose();
+                } else {
+                    // Standard page
+                    // The server action handles redirect for non-modal cases usually, 
+                    // but if we preventDefault, we need to handle it.
+                    // Actually, let's look at the server actions. They use `redirect()`.
+                    // If `redirect()` is called, this client code might stop executing or throw.
+                }
+            }
+        } catch (e) {
+            // Ignore redirect errors
+        } finally {
+            setIsPending(false)
+        }
+    }
+
+    // Changing form action to onSubmit to intercept and show loading/toast
+    // BUT `redirect()` in server action is tricky with try/catch.
+    // The previous implementation was `action={async (formData) ...}`. 
+    // This is valid. If it didn't redirect, maybe it hit an error path that returned `{ error: ... }`.
+    // The previous code did await `createAppointment`, but didn't check the result for errors!
+    // It just let it run. If it returned `{error: 'Unauthorized'}`, nothing happened on UI.
+
+    // NEW STRATEGY: 
+    // Use `handleSubmit` that calls the action.
+    // We must handle the case where the server action returns an error object.
+
     return (
         <div className="h-full">
             <form action={async (formData) => {
-                if (editingAppointment) {
-                    await updateAppointmentDetails(formData)
+                const res = editingAppointment ? await updateAppointmentDetails(formData) : await createAppointment(formData);
+                if (res?.error) {
+                    // Show error toast
+                    toast({ title: "Error", description: res.error, variant: "destructive" });
                 } else {
-                    await createAppointment(formData)
+                    // Success path
+                    // If the action redirects, we might not reach here, which is fine.
+                    // If it returns success (e.g. updateAppointmentDetails might just return success), show toast.
+                    toast({ title: "Success", description: "Appointment Saved", className: "bg-green-600 text-white" });
+                    if (onClose) {
+                        // Wait a bit for toast then close
+                        // But we need to refresh data
+                        // The server action should ideally revalidatePath.
+                        onClose();
+                    }
                 }
             }} className="space-y-4 h-full flex flex-col">
                 {editingAppointment && <input type="hidden" name="id" value={editingAppointment.id} />}
