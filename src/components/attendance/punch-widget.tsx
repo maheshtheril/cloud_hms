@@ -102,7 +102,6 @@ export default function PunchWidget() {
     const isActive = attendance && !attendance.check_out
 
     return (
-    return (
         <Card className="glass-card bg-card/50 dark:bg-slate-900/60 border-border backdrop-blur-2xl rounded-[2.5rem] overflow-hidden shadow-2xl relative group">
             {/* Animated Glow Overlay */}
             <div className={`absolute inset-0 bg-gradient-to-br transition-opacity duration-1000 ${isActive ? 'from-emerald-500/10 to-transparent opacity-100' : 'from-indigo-500/10 to-transparent opacity-50'}`} />
