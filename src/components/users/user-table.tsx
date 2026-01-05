@@ -2,10 +2,10 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Search, UserPlus, Filter, Edit, Power, Trash2, Mail, Shield, CheckCircle, XCircle } from 'lucide-react'
+import { Search, UserPlus, Filter, Edit, Power, Trash2, Mail, Shield, CheckCircle, XCircle, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { updateUserStatus, deleteUser } from '@/app/actions/users'
+import { updateUserStatus, deleteUser, resendInvitation } from '@/app/actions/users'
 import { useToast } from '@/components/ui/use-toast'
 
 interface User {
