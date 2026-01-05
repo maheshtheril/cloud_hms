@@ -49,8 +49,8 @@ export default async function NursingPatientPage({ params }: { params: { appoint
             <div className="flex-1 max-w-4xl mx-auto w-full p-6 md:p-8 space-y-8">
                 {/* Patient Summary Card */}
                 <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col md:flex-row gap-6 items-center md:items-start">
-                    {appointment.hms_patient?.profile_image_url ? (
-                        <img src={appointment.hms_patient.profile_image_url} className="h-24 w-24 rounded-2xl object-cover shadow-lg" alt="Profile" />
+                    {(appointment.hms_patient?.metadata as any)?.profile_image_url ? (
+                        <img src={(appointment.hms_patient?.metadata as any).profile_image_url} className="h-24 w-24 rounded-2xl object-cover shadow-lg" alt="Profile" />
                     ) : (
                         <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white text-3xl font-black shadow-lg">
                             {appointment.hms_patient?.first_name?.[0]}
