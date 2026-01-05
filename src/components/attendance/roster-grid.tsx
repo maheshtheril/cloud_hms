@@ -91,8 +91,8 @@ export default function RosterGrid({
                                             <div
                                                 className="p-3 rounded-2xl border transition-all duration-300 transform group-hover:translate-z-10 shadow-lg relative overflow-hidden group/shift"
                                                 style={{
-                                                    backgroundColor: `${shift.color}20`,
-                                                    borderColor: `${shift.color}50`,
+                                                    backgroundColor: `${shift.color || '#6366f1'}20`,
+                                                    borderColor: `${shift.color || '#6366f1'}50`,
                                                     color: shift.color || '#fff'
                                                 }}
                                             >

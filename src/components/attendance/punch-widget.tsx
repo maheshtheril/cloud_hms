@@ -158,7 +158,10 @@ export default function PunchWidget() {
                 {roster?.shift && (
                     <div className="mb-8 p-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${roster.shift.color}20`, color: roster.shift.color }}>
+                            <div className="h-8 w-8 rounded-lg flex items-center justify-center" style={{
+                                backgroundColor: `${roster.shift.color || '#6366f1'}20`,
+                                color: roster.shift.color || '#6366f1'
+                            }}>
                                 <Target className="h-4 w-4" />
                             </div>
                             <div>
