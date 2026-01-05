@@ -74,7 +74,7 @@ export default async function NursingPatientPage({ params }: { params: { appoint
                         </div>
                         <div>
                             <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Blood Group</p>
-                            <p className="text-lg font-bold text-rose-600 mt-1">{appointment.hms_patient?.blood_group || '-'}</p>
+                            <p className="text-lg font-bold text-rose-600 mt-1">{(appointment.hms_patient as any)?.blood_group || '-'}</p>
                         </div>
                     </div>
                 </div>
