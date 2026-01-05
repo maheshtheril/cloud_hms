@@ -526,7 +526,7 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
                     company_id: companyId,
                     invoice_id: invoiceId,
                     amount: payment.amount,
-                    method: payment.method,
+                    method: payment.method as any,
                     payment_reference: payment.reference,
                     paid_at: new Date()
                 }
