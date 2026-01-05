@@ -3463,6 +3463,26 @@ model crm_targets {
   deleted_at       DateTime? @db.Timestamptz(6)
   created_at       DateTime  @default(now()) @db.Timestamptz(6)
   incentive_amount Decimal?  @default(0) @db.Decimal(18, 2)
+  milestones       crm_target_milestones[]
+}
+
+model crm_target_milestones {
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  target_id      String      @db.Uuid
+  step_order     Int
+  name           String
+  /// calls, deals_created, pipeline_value, revenue, activities
+  metric_type    String
+  target_value   Decimal     @db.Decimal(18, 2)
+  achieved_value Decimal     @default(0) @db.Decimal(18, 2)
+  deadline       DateTime    @db.Date
+  /// pending, passed, failed
+  status         String      @default("pending")
+  is_blocking    Boolean     @default(true)
+  created_at     DateTime    @default(now()) @db.Timestamptz(6)
+  target         crm_targets @relation(fields: [target_id], references: [id], onDelete: Cascade)
+
+  @@index([target_id])
 }
 
 model crm_commission_rules {

@@ -168,7 +168,7 @@ export default async function TargetsPage() {
                                         <div className="relative h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                             <div
                                                 className={`absolute inset-y-0 left-0 transition-all duration-1000 ease-out rounded-full ${percent >= 100 ? 'bg-gradient-to-r from-indigo-500 to-purple-600' :
-                                                        percent > 50 ? 'bg-indigo-400' : 'bg-slate-400'
+                                                    percent > 50 ? 'bg-indigo-400' : 'bg-slate-400'
                                                     }`}
                                                 style={{ width: `${percent}%` }}
                                             />
@@ -178,6 +178,40 @@ export default async function TargetsPage() {
                                             <span>Threshold: {isRevenue ? '₹' : ''}{goal.toLocaleString()}</span>
                                         </div>
                                     </div>
+
+                                    {/* Milestones Gating Visualization */}
+                                    {target.milestones && target.milestones.length > 0 && (
+                                        <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-white/10">
+                                            <p className="text-[8px] font-black uppercase tracking-widest text-slate-400">Progression Gates</p>
+                                            <div className="space-y-2">
+                                                {target.milestones.map((milestone: any) => {
+                                                    const mAchieved = Number(milestone.achieved_value || 0)
+                                                    const mTarget = Number(milestone.target_value || 0)
+                                                    const mPercent = mTarget > 0 ? Math.min((mAchieved / mTarget) * 100, 100) : 0
+                                                    const isPassed = milestone.status === 'passed'
+                                                    const isFailed = milestone.status === 'failed'
+
+                                                    return (
+                                                        <div key={milestone.id} className="flex items-center gap-3">
+                                                            <div className={`w-2 h-2 rounded-full ${isPassed ? 'bg-emerald-500' : isFailed ? 'bg-rose-500' : 'bg-slate-300'}`} />
+                                                            <div className="flex-1">
+                                                                <div className="flex justify-between text-[9px] font-medium mb-1">
+                                                                    <span className={isFailed ? 'text-rose-600' : 'text-slate-600 dark:text-slate-300'}>{milestone.name}</span>
+                                                                    <span className="text-slate-400">{format(new Date(milestone.deadline), 'MMM d')}</span>
+                                                                </div>
+                                                                <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                                                    <div
+                                                                        className={`h-full rounded-full transition-all duration-500 ${isPassed ? 'bg-emerald-500' : isFailed ? 'bg-rose-500' : 'bg-indigo-400'}`}
+                                                                        style={{ width: `${mPercent}%` }}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="p-3 rounded-2xl bg-white/40 dark:bg-slate-800/40 border border-white/10">
