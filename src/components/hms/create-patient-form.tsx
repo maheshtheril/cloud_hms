@@ -337,7 +337,7 @@ export function CreatePatientForm({
                                                     <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wide">Blood Group</label>
                                                     <div className="relative">
                                                         <Activity className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-rose-400" />
-                                                        <select defaultValue={initialData?.metadata?.blood_group} name="blood_group" className="w-full h-10 pl-9 pr-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 transition-all appearance-none">
+                                                        <select defaultValue={initialData?.blood_group || initialData?.metadata?.blood_group} name="blood_group" className="w-full h-10 pl-9 pr-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 transition-all appearance-none">
                                                             <option value="">Select Group</option>
                                                             {['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map(bg => <option key={bg} value={bg}>{bg}</option>)}
                                                         </select>

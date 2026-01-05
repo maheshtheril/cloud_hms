@@ -64,8 +64,8 @@ export async function createPatient(existingId: string | null | any, formData: F
     // Combine metadata (Merge if update, Create new if create)
     let metadata: any = {
         title: formData.get("title") as string,
-        blood_group: blood_group,
-        profile_image_url: formData.get("profile_image_url") as string,
+        // blood_group moved to column
+        // profile_image_url moved to column
         id_card_url: formData.get("id_card_url") as string,
         insurance,
         // Only set these on create or if forced?
@@ -126,6 +126,8 @@ export async function createPatient(existingId: string | null | any, formData: F
                     dob: dob ? new Date(dob) : null,
                     gender: normalizeGender(gender),
                     contact: contact as any,
+                    blood_group: blood_group || null,
+                    profile_image_url: (formData.get("profile_image_url") as string) || null,
                     metadata: { ...currentMeta, ...metadata }, // deeply merge manually
                     updated_by: userId
                 }
@@ -145,6 +147,8 @@ export async function createPatient(existingId: string | null | any, formData: F
                     dob: dob ? new Date(dob) : null,
                     gender: normalizeGender(gender),
                     contact: contact as any,
+                    blood_group: blood_group || null,
+                    profile_image_url: (formData.get("profile_image_url") as string) || null,
                     metadata: metadata as any,
                     patient_number: `PAT-${Date.now()}`,
                     created_by: userId,
