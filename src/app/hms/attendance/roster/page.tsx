@@ -44,7 +44,7 @@ export default async function RosterPage() {
     ])
 
     return (
-        <div className="min-h-screen bg-[#020617] p-8 pb-20">
+        <div className="min-h-screen bg-background p-8 pb-20">
             {/* Elegant Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
                 <div>
@@ -54,12 +54,12 @@ export default async function RosterPage() {
                         </div>
                         <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Resource Allocation</span>
                     </div>
-                    <h1 className="text-4xl font-black text-white tracking-tight">Shift Roster</h1>
-                    <p className="text-slate-400 mt-1 text-sm">Orchestrate your medical team with precision.</p>
+                    <h1 className="text-4xl font-black text-foreground tracking-tight">Shift Roster</h1>
+                    <p className="text-muted-foreground mt-1 text-sm">Orchestrate your medical team with precision.</p>
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <Button className="bg-white/5 hover:bg-white/10 text-white border-white/10 rounded-2xl h-12 px-6 font-bold text-xs tracking-wider">
+                    <Button className="bg-muted/50 hover:bg-muted text-foreground border-border rounded-2xl h-12 px-6 font-bold text-xs tracking-wider">
                         <Search className="h-4 w-4 mr-2" />
                         SEARCH ROSTER
                     </Button>
@@ -76,37 +76,37 @@ export default async function RosterPage() {
                     { label: 'Coverage Delta', value: 'Optimized', icon: ShieldCheck, color: 'text-amber-400' },
                     { label: 'Total Personnel', value: staff.length, icon: UserCircle, color: 'text-blue-400' },
                 ].map((stat, i) => (
-                    <Card key={i} className="glass-card bg-white/5 border-white/10 p-6 rounded-3xl overflow-hidden relative group">
+                    <Card key={i} className="glass-card bg-card border-border p-6 rounded-3xl overflow-hidden relative group">
                         <div className="flex items-center gap-4 relative z-10">
-                            <div className="p-3 rounded-2xl bg-white/5">
+                            <div className="p-3 rounded-2xl bg-muted/50">
                                 <stat.icon className={`h-5 w-5 ${stat.color}`} />
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{stat.label}</p>
-                                <p className="text-2xl font-black text-white mt-1">{stat.value}</p>
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{stat.label}</p>
+                                <p className="text-2xl font-black text-foreground mt-1">{stat.value}</p>
                             </div>
                         </div>
                         <div className="absolute -bottom-4 -right-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-500">
-                            <stat.icon className="h-20 w-20 text-white" />
+                            <stat.icon className="h-20 w-20 text-foreground" />
                         </div>
                     </Card>
                 ))}
             </div>
 
             {/* Main Roster Grid */}
-            <Card className="glass-card bg-white/5 border-white/10 rounded-[3rem] overflow-hidden border backdrop-blur-3xl">
-                <div className="p-8 border-b border-white/5 bg-white/5 flex justify-between items-center">
+            <Card className="glass-card bg-card/50 border-border rounded-[3rem] overflow-hidden border backdrop-blur-3xl">
+                <div className="p-8 border-b border-border bg-muted/20 flex justify-between items-center">
                     <div className="flex items-center gap-4">
-                        <Button size="icon" variant="ghost" className="text-white hover:bg-white/10 rounded-xl"><ChevronLeft className="h-4 w-4" /></Button>
-                        <h2 className="text-white font-black tracking-tight flex items-center gap-3">
-                            <CalendarIcon className="h-5 w-5 text-indigo-400" />
+                        <Button size="icon" variant="ghost" className="text-foreground hover:bg-muted rounded-xl"><ChevronLeft className="h-4 w-4" /></Button>
+                        <h2 className="text-foreground font-black tracking-tight flex items-center gap-3">
+                            <CalendarIcon className="h-5 w-5 text-indigo-500" />
                             {format(startOfCurrentWeek, 'MMMM yyyy')}
                         </h2>
-                        <Button size="icon" variant="ghost" className="text-white hover:bg-white/10 rounded-xl"><ChevronRight className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" className="text-foreground hover:bg-muted rounded-xl"><ChevronRight className="h-4 w-4" /></Button>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="bg-indigo-500/10 border-indigo-500/30 text-indigo-400 font-bold px-3 py-1">WEEK VIEW</Badge>
-                        <Button size="icon" variant="ghost" className="text-slate-500 hover:text-white"><Settings2 className="h-4 w-4" /></Button>
+                        <Badge variant="outline" className="bg-indigo-500/10 border-indigo-500/30 text-indigo-500 font-bold px-3 py-1">WEEK VIEW</Badge>
+                        <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-foreground"><Settings2 className="h-4 w-4" /></Button>
                     </div>
                 </div>
 
@@ -122,34 +122,34 @@ export default async function RosterPage() {
             <div className="mt-12">
                 <div className="flex items-center gap-3 mb-8">
                     <div className="h-8 w-1 bg-indigo-500 rounded-full" />
-                    <h3 className="text-xl font-black text-white tracking-tight text-indigo-100">Operation Protocols</h3>
+                    <h3 className="text-xl font-black text-foreground tracking-tight">Operation Protocols</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                     {shifts.length === 0 ? (
-                        <div className="col-span-4 p-12 rounded-[2rem] border border-dashed border-white/10 text-center">
-                            <p className="text-slate-500 italic">No operational protocols (shifts) defined. Initialize system parameters.</p>
+                        <div className="col-span-4 p-12 rounded-[2rem] border border-dashed border-border text-center">
+                            <p className="text-muted-foreground italic">No operational protocols (shifts) defined. Initialize system parameters.</p>
                         </div>
                     ) : (
                         shifts.map(shift => (
-                            <Card key={shift.id} className="glass-card bg-white/5 border-white/10 p-6 rounded-3xl group relative overflow-hidden">
+                            <Card key={shift.id} className="glass-card bg-card border-border p-6 rounded-3xl group relative overflow-hidden">
                                 <div className="absolute top-0 right-0 p-3 opacity-10">
-                                    <Clock className="h-12 w-12 text-white" />
+                                    <Clock className="h-12 w-12 text-foreground" />
                                 </div>
                                 <div className="flex justify-between items-start mb-4">
                                     <div className="h-10 w-10 rounded-2xl flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: shift.color || '#6366f1' }}>
                                         <Clock className="h-5 w-5" />
                                     </div>
-                                    <Badge variant="outline" className="border-white/10 text-[9px] font-black text-slate-400">{shift.work_days.length} DAYS / WEEK</Badge>
+                                    <Badge variant="outline" className="border-border text-[9px] font-black text-muted-foreground">{shift.work_days.length} DAYS / WEEK</Badge>
                                 </div>
-                                <h4 className="text-white font-black text-lg mb-1">{shift.name}</h4>
-                                <p className="text-indigo-400 text-xs font-bold mb-4">{shift.start_time} — {shift.end_time}</p>
+                                <h4 className="text-foreground font-black text-lg mb-1">{shift.name}</h4>
+                                <p className="text-indigo-500 text-xs font-bold mb-4">{shift.start_time} — {shift.end_time}</p>
                                 <div className="flex gap-1 flex-wrap mb-6">
                                     {shift.work_days.map(d => (
-                                        <span key={d} className="text-[8px] font-black px-2 py-0.5 rounded bg-white/5 text-slate-500">{d.slice(0, 3)}</span>
+                                        <span key={d} className="text-[8px] font-black px-2 py-0.5 rounded bg-muted text-muted-foreground">{d.slice(0, 3)}</span>
                                     ))}
                                 </div>
-                                <Button className="w-full bg-white/5 hover:bg-white/10 text-white rounded-xl h-10 text-[10px] font-black uppercase tracking-widest border border-white/5">
+                                <Button className="w-full bg-muted hover:bg-muted/80 text-foreground rounded-xl h-10 text-[10px] font-black uppercase tracking-widest border border-border">
                                     OPTIMIZE
                                 </Button>
                             </Card>
