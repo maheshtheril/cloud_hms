@@ -148,3 +148,26 @@ export async function updateAppointmentDate(id: string, start: Date, end: Date) 
         return { success: false, error: "Failed to update appointment" };
     }
 }
+export async function updateAppointmentStatus(id: string, status: string) {
+    const session = await auth();
+    if (!session?.user?.id) return { success: false, error: "Unauthorized" };
+
+    try {
+        await prisma.hms_appointments.update({
+            where: {
+                id,
+                tenant_id: session.user.tenantId // Security: Ensure specific tenant
+            },
+            data: {
+                status,
+                updated_by: session.user.id,
+                updated_at: new Date()
+            }
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update status:", error);
+        return { success: false, error: "Failed to update status" };
+    }
+}

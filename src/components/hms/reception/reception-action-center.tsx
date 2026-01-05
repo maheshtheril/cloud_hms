@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import {
     UserPlus, CalendarPlus, LogIn, CreditCard,
     PhoneIncoming, IdCard, Users, Search,
-    Clock, Stethoscope, ChevronRight
+    Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
@@ -14,7 +14,10 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { updateAppointmentStatus } from "@/app/actions/appointment"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/components/ui/use-toast"
 
 interface ReceptionActionCenterProps {
     todayAppointments: any[]
@@ -23,8 +26,35 @@ interface ReceptionActionCenterProps {
 }
 
 export function ReceptionActionCenter({ todayAppointments, patients, doctors }: ReceptionActionCenterProps) {
+    const router = useRouter()
+    const { toast } = useToast()
     const [activeModal, setActiveModal] = useState<null | 'register' | 'appointment' | 'billing' | 'checkin' | 'visitor'>(null)
+    const [selectedDoctor, setSelectedDoctor] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
+    const [statusLoading, setStatusLoading] = useState<string | null>(null)
+
+    // Filter Logic
+    const filteredAppointments = todayAppointments.filter(apt => {
+        const matchesDoctor = selectedDoctor === 'all' || apt.clinician?.id === selectedDoctor
+        const matchesSearch = searchQuery === '' ||
+            `${apt.patient?.first_name} ${apt.patient?.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            apt.patient?.patient_number?.toLowerCase().includes(searchQuery.toLowerCase())
+
+        return matchesDoctor && matchesSearch
+    })
+
+    const handleStatusUpdate = async (id: string, newStatus: string) => {
+        setStatusLoading(id)
+        const result = await updateAppointmentStatus(id, newStatus)
+        setStatusLoading(null)
+
+        if (result.success) {
+            toast({ title: "Status Updated", description: `Appointment marked as ${newStatus}` })
+            router.refresh()
+        } else {
+            toast({ title: "Error", description: "Failed to update status", variant: "destructive" })
+        }
+    }
 
     const actions = [
         {
@@ -84,111 +114,197 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors }: 
     ]
 
     return (
-        <div className="space-y-8">
-            {/* Quick Actions Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {actions.map((action) => (
-                    <motion.button
-                        key={action.id}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setActiveModal(action.id as any)}
-                        className={`text-left p-6 rounded-2xl border ${action.border} ${action.bg} backdrop-blur-sm shadow-sm hover:shadow-md transition-all group`}
-                    >
-                        <div className="flex items-start justify-between mb-4">
-                            <div className={`p-3 rounded-xl bg-white dark:bg-slate-900 shadow-sm group-hover:shadow-md transition-shadow ${action.color}`}>
-                                <action.icon className="h-6 w-6" />
-                            </div>
-                            <ChevronRight className={`h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity ${action.color}`} />
-                        </div>
-                        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">
-                            {action.title}
-                        </h3>
-                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                            {action.desc}
-                        </p>
-                    </motion.button>
-                ))}
-            </div>
+        <div className="flex flex-col lg:flex-row gap-8 min-h-[calc(100vh-6rem)]">
 
-            {/* Dashboard Widgets */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Upcoming Appointments Widget */}
-                <div className="lg:col-span-2 space-y-4">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
-                            <Clock className="h-5 w-5 text-indigo-500" />
+            {/* Main Focus: Today's Schedule (Left Column) */}
+            <div className="flex-1 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-2xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+                            <Clock className="h-6 w-6 text-indigo-500" />
                             Today's Schedule
                         </h2>
-                        <Badge variant="outline" className="px-3 py-1">
-                            {todayAppointments.length} Appointments
-                        </Badge>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                            Manage patient flow and arrivals
+                        </p>
                     </div>
+                    <div className="flex items-center gap-3">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
+                            <Input
+                                placeholder="Search patient..."
+                                className="pl-9 w-[200px] h-10"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                        <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
+                            <SelectTrigger className="w-[180px] h-10">
+                                <Filter className="h-4 w-4 mr-2 text-slate-400" />
+                                <SelectValue placeholder="Filter by Doctor" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Doctors</SelectItem>
+                                {doctors.map(doc => (
+                                    <SelectItem key={doc.id} value={doc.id}>
+                                        Dr. {doc.first_name} {doc.last_name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
 
-                    <Card className="border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm overflow-hidden">
-                        <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {todayAppointments.length === 0 ? (
-                                <div className="text-center py-12 text-slate-500">
-                                    No appointments scheduled for today
+                <Card className="border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden flex-1 h-full min-h-[500px]">
+                    <div className="p-0 h-full flex flex-col">
+                        <div className="grid grid-cols-12 gap-4 p-4 bg-slate-50/80 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold uppercase text-slate-500 tracking-wider">
+                            <div className="col-span-2">Time</div>
+                            <div className="col-span-4">Patient Details</div>
+                            <div className="col-span-3">Doctor</div>
+                            <div className="col-span-3 text-right">Status / Action</div>
+                        </div>
+
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800 overflow-y-auto custom-scrollbar flex-1">
+                            {filteredAppointments.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                                    <Clock className="h-12 w-12 mb-4 text-slate-200 dark:text-slate-800" />
+                                    <p className="text-lg font-medium">No appointments found</p>
+                                    <p className="text-sm">Try adjusting your filters</p>
                                 </div>
                             ) : (
-                                todayAppointments.map((apt) => (
-                                    <div key={apt.id} className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                                        <div className="flex items-center gap-4">
-                                            <div className="text-center min-w-[3.5rem]">
-                                                <div className="text-sm font-bold text-slate-900 dark:text-white">
-                                                    {new Date(apt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </div>
-                                                <div className={`text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-full mt-1 ${apt.status === 'confirmed' ? 'bg-green-100 text-green-700' :
-                                                        apt.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
-                                                            'bg-slate-100 text-slate-600'
-                                                    }`}>
-                                                    {apt.status}
-                                                </div>
+                                filteredAppointments.map((apt) => (
+                                    <div key={apt.id} className="grid grid-cols-12 gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors items-center group">
+                                        {/* Time */}
+                                        <div className="col-span-2">
+                                            <div className="text-sm font-bold text-slate-900 dark:text-white font-mono">
+                                                {new Date(apt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </div>
-                                            <div>
-                                                <h4 className="font-bold text-slate-900 dark:text-white">
-                                                    {apt.patient?.first_name} {apt.patient?.last_name}
-                                                </h4>
-                                                <div className="flex items-center gap-2 text-xs text-slate-500">
-                                                    <Stethoscope className="h-3 w-3" />
-                                                    Dr. {apt.clinician?.first_name} {apt.clinician?.last_name}
+                                            <div className="text-xs text-slate-500">
+                                                {apt.type || 'Consultation'}
+                                            </div>
+                                        </div>
+
+                                        {/* Patient */}
+                                        <div className="col-span-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-violet-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">
+                                                    {apt.patient?.first_name?.[0]}{apt.patient?.last_name?.[0]}
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-slate-900 dark:text-white text-sm">
+                                                        {apt.patient?.first_name} {apt.patient?.last_name}
+                                                    </h4>
+                                                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                                                        <span>{apt.patient?.patient_number}</span>
+                                                        {apt.patient?.contact?.mobile && (
+                                                            <>
+                                                                <span>•</span>
+                                                                <span className="flex items-center gap-0.5">
+                                                                    <Smartphone className="h-3 w-3" /> {apt.patient.contact.mobile}
+                                                                </span>
+                                                            </>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <Button size="sm" variant={apt.status === 'arrived' ? 'secondary' : 'default'} disabled={apt.status === 'arrived'}>
-                                            {apt.status === 'arrived' ? 'Arrived' : 'Mark Arrival'}
-                                        </Button>
+
+                                        {/* Doctor */}
+                                        <div className="col-span-3">
+                                            <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                                                <Stethoscope className="h-3.5 w-3.5 text-slate-400" />
+                                                Dr. {apt.clinician?.first_name} {apt.clinician?.last_name}
+                                            </div>
+                                        </div>
+
+                                        {/* Action */}
+                                        <div className="col-span-3 flex items-center justify-end gap-2">
+                                            <Badge variant="outline" className={`
+                                                ${apt.status === 'confirmed' ? 'bg-green-50 text-green-700 border-green-200' :
+                                                    apt.status === 'arrived' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                                                        apt.status === 'scheduled' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                                            'bg-slate-100 text-slate-600'} 
+                                                capitalize px-2 py-0.5
+                                            `}>
+                                                {apt.status}
+                                            </Badge>
+
+                                            {apt.status === 'scheduled' || apt.status === 'confirmed' ? (
+                                                <Button
+                                                    size="sm"
+                                                    className="h-8 bg-indigo-600 hover:bg-indigo-700 text-white"
+                                                    disabled={statusLoading === apt.id}
+                                                    onClick={() => handleStatusUpdate(apt.id, 'arrived')}
+                                                >
+                                                    {statusLoading === apt.id ? 'Saving...' : 'Mark Arrived'}
+                                                </Button>
+                                            ) : apt.status === 'arrived' ? (
+                                                <Button size="sm" variant="outline" className="h-8 text-green-600 border-green-200 bg-green-50" disabled>
+                                                    <CheckCircle className="h-3.5 w-3.5 mr-1" /> Checked-In
+                                                </Button>
+                                            ) : null}
+                                        </div>
                                     </div>
                                 ))
                             )}
                         </div>
-                    </Card>
+                    </div>
+                </Card>
+            </div>
+
+
+            {/* Right Column: Actions & Stats */}
+            <div className="w-full lg:w-80 xl:w-96 space-y-6 flex-shrink-0">
+
+                {/* Quick Actions */}
+                <div className="grid grid-cols-2 gap-3">
+                    {actions.map((action) => (
+                        <motion.button
+                            key={action.id}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setActiveModal(action.id as any)}
+                            className={`text-left p-4 rounded-xl border ${action.border} ${action.bg} shadow-sm hover:shadow-md transition-all flex flex-col justify-between h-32`}
+                        >
+                            <div className={`p-2 w-fit rounded-lg bg-white dark:bg-slate-900 shadow-sm ${action.color}`}>
+                                <action.icon className="h-5 w-5" />
+                            </div>
+                            <div>
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                                    {action.title}
+                                </h3>
+                            </div>
+                        </motion.button>
+                    ))}
                 </div>
 
                 {/* Queue Summary / Stats */}
-                <div className="space-y-4">
-                    <h2 className="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
-                        <Users className="h-5 w-5 text-indigo-500" />
-                        Queue Status
+                <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                    <h2 className="text-lg font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+                        <Users className="h-5 w-5 text-slate-500" />
+                        Queue Snapshot
                     </h2>
-                    <div className="grid gap-3">
-                        <div className="p-4 rounded-xl bg-indigo-600 text-white shadow-lg shadow-indigo-500/20">
-                            <div className="text-indigo-100 text-sm font-medium mb-1">Total Checked In</div>
-                            <div className="text-3xl font-black">12</div>
-                            <div className="mt-2 text-xs bg-indigo-500/50 px-2 py-1 rounded w-fit">+4 from last hour</div>
+                    <div className="space-y-3">
+                        <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 text-white shadow-lg shadow-indigo-500/20">
+                            <div className="text-indigo-100 text-xs font-medium uppercase tracking-wider mb-1">Total Checked In</div>
+                            <div className="flex items-end justify-between">
+                                <div className="text-3xl font-black">{todayAppointments.filter(a => a.status === 'arrived').length}</div>
+                                <div className="text-xs bg-white/20 px-2 py-1 rounded">Patients</div>
+                            </div>
                         </div>
-                        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                            <div className="text-slate-500 text-sm font-medium mb-1">Waiting Area</div>
-                            <div className="text-3xl font-black text-slate-900 dark:text-white">5</div>
-                            <div className="mt-2 text-xs text-slate-400">Avg wait: 14 mins</div>
-                        </div>
-                        <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                            <div className="text-slate-500 text-sm font-medium mb-1">Doctors Active</div>
-                            <div className="text-3xl font-black text-slate-900 dark:text-white">{doctors.filter(d => d.role === 'Doctor').length}</div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                                <div className="text-slate-500 text-xs font-medium mb-1">Scheduled</div>
+                                <div className="text-xl font-black text-slate-900 dark:text-white">{todayAppointments.filter(a => a.status === 'scheduled').length}</div>
+                            </div>
+                            <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                                <div className="text-slate-500 text-xs font-medium mb-1">Active Doctors</div>
+                                <div className="text-xl font-black text-slate-900 dark:text-white">{doctors.filter(d => d.role === 'Doctor').length}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
             </div>
 
             {/* MODALS */}
@@ -215,30 +331,42 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors }: 
             <Dialog open={activeModal === 'checkin'} onOpenChange={() => setActiveModal(null)}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Patient Arrival Check-In</DialogTitle>
+                        <DialogTitle>Quick Check-In</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                            <Input placeholder="Search appointment or patient name..." className="pl-10" />
-                        </div>
-                        <div className="text-sm text-slate-500 text-center py-8">
-                            (This would connect to a dedicated check-in logic)
-                        </div>
+                    {/* Reusing a simplified appointment list for check-in */}
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                        <Input placeholder="Search patient name..." className="mb-4" />
+                        {todayAppointments.filter(a => a.status === 'scheduled').map(apt => (
+                            <div key={apt.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-slate-50 cursor-pointer" onClick={() => handleStatusUpdate(apt.id, 'arrived')}>
+                                <div>
+                                    <div className="font-bold">{apt.patient?.first_name} {apt.patient?.last_name}</div>
+                                    <div className="text-xs text-slate-500">{new Date(apt.start_time).toLocaleTimeString()} with Dr. {apt.clinician?.last_name}</div>
+                                </div>
+                                <Button size="sm" variant="ghost">Check In</Button>
+                            </div>
+                        ))}
+                        {todayAppointments.filter(a => a.status === 'scheduled').length === 0 && (
+                            <div className="text-center text-slate-500 py-4">No scheduled patients found</div>
+                        )}
                     </div>
                 </DialogContent>
             </Dialog>
 
-            {/* 4. Billing Placeholder */}
+            {/* 4. Billing Placeholder -> Redirects */}
             <Dialog open={activeModal === 'billing'} onOpenChange={() => setActiveModal(null)}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle>Quick POS / Billing</DialogTitle>
+                        <DialogTitle>Billing Options</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <div className="p-4 border border-dashed border-slate-200 rounded-lg text-center text-slate-500">
-                            Cash Register / POS Module Integration
-                        </div>
+                    <div className="grid grid-cols-2 gap-4 py-4">
+                        <Button variant="outline" className="h-24 flex-col gap-2" onClick={() => router.push('/hms/billing/new')}>
+                            <CreditCard className="h-6 w-6" />
+                            New Invoice
+                        </Button>
+                        <Button variant="outline" className="h-24 flex-col gap-2" onClick={() => router.push('/hms/billing')}>
+                            <Search className="h-6 w-6" />
+                            Search Invoices
+                        </Button>
                     </div>
                 </DialogContent>
             </Dialog>
