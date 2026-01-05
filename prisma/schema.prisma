@@ -2351,7 +2351,7 @@ model hms_vitals {
   tenant_id    String?      @db.Uuid
   company_id   String?      @db.Uuid
   patient_id   String?      @db.Uuid
-  encounter_id String?      @db.Uuid
+  encounter_id String?      @unique @db.Uuid
   recorded_at  DateTime?    @default(now()) @db.Timestamptz(6)
   temperature  Decimal?     @db.Decimal(5, 2)
   pulse        Decimal?     @db.Decimal(5, 2)

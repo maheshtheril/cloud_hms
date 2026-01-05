@@ -42,7 +42,7 @@ export async function saveVitals(data: {
         // Upsert vitals
         await prisma.hms_vitals.upsert({
             where: {
-                appointment_id: encounterId
+                encounter_id: encounterId
             },
             update: {
                 height: height ? parseFloat(height) : null,
@@ -53,13 +53,12 @@ export async function saveVitals(data: {
                 diastolic: diastolic ? parseInt(diastolic) : null,
                 spo2: spo2 ? parseInt(spo2) : null,
                 respiration: respiration ? parseInt(respiration) : null,
-                notes: notes || null,
-                updated_at: new Date()
+                notes: notes || null
             },
             create: {
                 tenant_id: tenantId,
                 patient_id: patientId,
-                appointment_id: encounterId,
+                encounter_id: encounterId,
                 height: height ? parseFloat(height) : null,
                 weight: weight ? parseFloat(weight) : null,
                 temperature: temperature ? parseFloat(temperature) : null,
