@@ -3,7 +3,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { acceptInvitation } from '@/app/actions/users'
-import { Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react'
+import { Shield, Key, Lock, Eye, EyeOff } from 'lucide-react'
+import { Card } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 
 export default function AcceptInviteForm({ token, email }: { token: string, email: string }) {
     const [password, setPassword] = useState('')
@@ -29,89 +32,118 @@ export default function AcceptInviteForm({ token, email }: { token: string, emai
 
         setLoading(true)
         const result = await acceptInvitation(token, password)
-        // Don't set loading false immediately to prevent flicker on redirect
 
         if (result.error) {
             setError(result.error)
             setLoading(false)
         } else {
-            router.push('/login?message=Account set up successfully')
+            router.push('/login?message=Account set up successfully. Please log in.')
         }
     }
 
     return (
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
-            <div className="bg-blue-600 p-8 text-center">
-                <div className="h-16 w-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-                    <CheckCircle2 className="h-8 w-8 text-white" />
-                </div>
-                <h1 className="text-2xl font-bold text-white mb-2">Welcome to Cloud HMS</h1>
-                <p className="text-blue-100">Set up your account for {email}</p>
-            </div>
+        <div className="min-h-screen bg-[#020617] flex items-center justify-center p-4 relative overflow-hidden">
+            {/* Animated Background Blobs */}
+            <div className="absolute top-0 -left-20 w-96 h-96 bg-indigo-600/20 rounded-full blur-[120px] animate-pulse" />
+            <div className="absolute bottom-0 -right-20 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px] animate-pulse delay-700" />
 
-            <div className="p-8">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    {error && (
-                        <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 flex items-center gap-2">
-                            <span>•</span> {error}
-                        </div>
-                    )}
-
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Create Password
-                            </label>
-                            <div className="relative">
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                                    placeholder="Enter your password"
-                                    required
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                                >
-                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                </button>
-                            </div>
-                            <p className="text-xs text-gray-400 mt-1">Must be at least 8 characters long</p>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Confirm Password
-                            </label>
-                            <input
-                                type={showPassword ? "text" : "password"}
-                                value={confirm}
-                                onChange={(e) => setConfirm(e.target.value)}
-                                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                                placeholder="Confirm your password"
-                                required
-                            />
-                        </div>
+            <div className="w-full max-w-md relative">
+                {/* Logo/Brand Area */}
+                <div className="text-center mb-8">
+                    <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-2xl shadow-indigo-500/20 mb-4">
+                        <Shield className="h-8 w-8 text-white" />
                     </div>
+                    <h1 className="text-3xl font-black text-white tracking-tight">Identity Activation</h1>
+                    <p className="text-slate-400 mt-2">Set credentials for <span className="text-indigo-400 font-medium">{email}</span></p>
+                </div>
 
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                        {loading ? (
-                            <>
-                                <Loader2 className="animate-spin h-5 w-5" />
-                                Setting up...
-                            </>
-                        ) : (
-                            'Set Password & Login'
+                <Card className="glass-card bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl rounded-3xl overflow-hidden border">
+                    <div className="p-8">
+                        {error && (
+                            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-400 text-sm font-medium flex items-center gap-2">
+                                <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
+                                {error}
+                            </div>
                         )}
-                    </button>
-                </form>
+
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-300 ml-1">Secure Password</label>
+                                <div className="relative group">
+                                    <Key className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                                    <Input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="Min 8 characters..."
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        className="pl-10 h-12 bg-slate-900/50 border-white/10 text-white rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-bold text-slate-300 ml-1">Confirm Identity</label>
+                                <div className="relative group">
+                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-indigo-400 transition-colors" />
+                                    <Input
+                                        type={showPassword ? "text" : "password"}
+                                        placeholder="Repeat password..."
+                                        value={confirm}
+                                        onChange={(e) => setConfirm(e.target.value)}
+                                        className="pl-10 h-12 bg-slate-900/50 border-white/10 text-white rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Password Strength Indicator */}
+                            {password && (
+                                <div className="p-3 bg-slate-900/40 rounded-xl border border-white/5 space-y-2">
+                                    <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                        <span>Security Level</span>
+                                        <span className={password.length >= 12 ? "text-emerald-400" : password.length >= 8 ? "text-indigo-400" : "text-amber-400"}>
+                                            {password.length >= 12 ? 'Excellent' : password.length >= 8 ? 'Good' : 'Weak'}
+                                        </span>
+                                    </div>
+                                    <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full transition-all duration-500 ${password.length >= 12 ? 'w-full bg-emerald-500' :
+                                                    password.length >= 8 ? 'w-2/3 bg-indigo-500' : 'w-1/3 bg-amber-500'
+                                                }`}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            <Button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full h-12 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-50"
+                            >
+                                {loading ? (
+                                    <span className="flex items-center gap-2">
+                                        <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        Activating Account...
+                                    </span>
+                                ) : (
+                                    "Initialize Access"
+                                )}
+                            </Button>
+                        </form>
+                    </div>
+                </Card>
+
+                <p className="text-center text-slate-500 text-[10px] mt-8 uppercase tracking-[0.2em] font-medium">
+                    Secure Enterprise Channel • Cloud HMS Operations
+                </p>
             </div>
         </div>
     )
