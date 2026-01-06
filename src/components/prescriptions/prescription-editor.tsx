@@ -252,9 +252,12 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
         if (!ctx) return
         setIsDrawing(true)
         const rect = canvas.getBoundingClientRect()
+        const scaleX = canvas.width / rect.width
+        const scaleY = canvas.height / rect.height
+
         ctx.beginPath()
-        ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top)
-        ctx.lineWidth = 3
+        ctx.moveTo((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY)
+        ctx.lineWidth = 4
         ctx.lineCap = 'round'
         ctx.strokeStyle = '#000'
     }
@@ -264,7 +267,10 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
         const ctx = scribbleCanvasRef.current.getContext('2d')
         if (!ctx) return
         const rect = scribbleCanvasRef.current.getBoundingClientRect()
-        ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top)
+        const scaleX = scribbleCanvasRef.current.width / rect.width
+        const scaleY = scribbleCanvasRef.current.height / rect.height
+
+        ctx.lineTo((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY)
         ctx.stroke()
     }
 
@@ -279,10 +285,13 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
         if (!ctx) return
         setIsDrawing(true)
         const rect = canvas.getBoundingClientRect()
+        const scaleX = canvas.width / rect.width
+        const scaleY = canvas.height / rect.height
+
         const touch = e.touches[0]
         ctx.beginPath()
-        ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top)
-        ctx.lineWidth = 3
+        ctx.moveTo((touch.clientX - rect.left) * scaleX, (touch.clientY - rect.top) * scaleY)
+        ctx.lineWidth = 4
         ctx.lineCap = 'round'
         ctx.strokeStyle = '#000'
     }
@@ -292,8 +301,11 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
         const ctx = scribbleCanvasRef.current.getContext('2d')
         if (!ctx) return
         const rect = scribbleCanvasRef.current.getBoundingClientRect()
+        const scaleX = scribbleCanvasRef.current.width / rect.width
+        const scaleY = scribbleCanvasRef.current.height / rect.height
+
         const touch = e.touches[0]
-        ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top)
+        ctx.lineTo((touch.clientX - rect.left) * scaleX, (touch.clientY - rect.top) * scaleY)
         ctx.stroke()
     }
 
@@ -727,21 +739,25 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                                         </div>
                                         <button
                                             onClick={() => openScribbleModal(section.key)}
-                                            className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 p-1.5 rounded-lg text-xs font-bold flex items-center gap-1"
-                                            title="Click to Scribble, then convert to text"
+                                            className="bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 p-1.5 rounded-lg text-xs font-bold flex items-center gap-1"
+                                            title="Click to Scribble"
                                         >
                                             <PenTool className="h-3 w-3" /> Scribble
                                         </button>
                                     </div>
 
-                                    <textarea
-                                        value={convertedText[section.key] || ''}
-                                        onChange={(e) => setConvertedText({ ...convertedText, [section.key]: e.target.value })}
-                                        onDoubleClick={() => openScribbleModal(section.key)}
-                                        className="w-full min-h-[80px] p-4 bg-transparent border-none rounded-b-2xl text-slate-700 text-sm leading-relaxed font-medium focus:ring-0 resize-y"
-                                        placeholder={`Type ${section.title.toLowerCase()} or double-click to scribble...`}
+                                    {/* Read-only div that acts as trigger */}
+                                    <div
+                                        onClick={() => openScribbleModal(section.key)}
+                                        className="w-full min-h-[80px] p-4 bg-transparent cursor-pointer text-slate-700 text-sm leading-relaxed font-medium hover:bg-slate-50/50 transition-colors rounded-b-2xl"
                                         style={{ minHeight: section.height }}
-                                    />
+                                    >
+                                        {convertedText[section.key] ? (
+                                            convertedText[section.key]
+                                        ) : (
+                                            <span className="text-slate-400 italic">Tap to write {section.title.toLowerCase()}...</span>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
