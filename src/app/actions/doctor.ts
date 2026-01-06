@@ -155,7 +155,7 @@ export async function updateDoctor(formData: FormData) {
     }
 }
 
-export async function initializeDoctorProfile() {
+export async function initializeDoctorProfile(_formData: FormData) {
     const session = await auth()
     if (!session?.user?.email || !session?.user?.tenantId) {
         return { error: "Unauthorized" }
