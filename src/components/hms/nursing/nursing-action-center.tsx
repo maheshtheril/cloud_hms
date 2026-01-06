@@ -229,9 +229,9 @@ export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSa
 
             {/* Modal for Vitals */}
             <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
-                <DialogContent className="max-w-[95vw] h-[95vh] overflow-y-auto bg-slate-50/95 backdrop-blur-xl border-slate-200 p-0">
+                <DialogContent className="max-w-[95vw] h-[95vh] flex flex-col p-0 overflow-hidden bg-slate-50/95 backdrop-blur-xl border-slate-200 focus:outline-none">
                     {/* Sticky Header inside Modal */}
-                    <div className="flex items-center gap-4 px-6 py-4 sticky top-0 bg-white/50 backdrop-blur-md z-50 border-b border-slate-100">
+                    <div className="flex items-center gap-4 px-6 py-4 bg-white/50 backdrop-blur-md border-b border-slate-100 flex-none z-10">
                         <div className={`h-12 w-12 rounded-full flex items-center justify-center text-lg font-bold ${selectedTask?.patient_gender?.toLowerCase() === 'female' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
                             {selectedTask?.patient_name?.charAt(0)}
                         </div>
@@ -251,7 +251,8 @@ export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSa
                         </div>
                     </div>
 
-                    <div className="p-6 pt-2">
+                    {/* Scrollable Form Content */}
+                    <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
                         {selectedTask && (
                             <NursingVitalsForm
                                 patientId={selectedTask.patient_uuid}
@@ -261,6 +262,23 @@ export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSa
                                 onCancel={() => setSelectedTask(null)}
                             />
                         )}
+                    </div>
+
+                    {/* Fixed Footer */}
+                    <div className="p-4 border-t border-slate-200 bg-white/80 backdrop-blur-md flex justify-end gap-3 flex-none z-10">
+                        <button
+                            onClick={() => setSelectedTask(null)}
+                            className="px-6 py-3 rounded-full text-slate-500 font-bold hover:bg-slate-100 transition-colors text-sm"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            form="nursing-vitals-form"
+                            className="bg-slate-900 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-slate-900/20 flex items-center gap-2 hover:bg-black transition-colors"
+                        >
+                            Save Assessment
+                        </button>
                     </div>
                 </DialogContent>
             </Dialog>
