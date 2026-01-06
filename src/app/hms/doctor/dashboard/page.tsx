@@ -110,6 +110,35 @@ export default async function DoctorDashboardPage() {
     })
     const vitalsSet = new Set(vitals.map(v => v.encounter_id))
 
+    // 4. Check Lab Results Status
+    const labs = await prisma.hms_lab_order.findMany({
+        where: {
+            encounter_id: { in: appointmentIds }
+        },
+        select: {
+            encounter_id: true,
+            status: true,
+            report_url: true
+        }
+    })
+
+    // Create a map for easy lookup: appointmentId -> { hasLab: true, isReady: true, url: ... }
+    const labMap = new Map()
+    labs.forEach(lab => {
+        if (!lab.encounter_id) return
+        // If there are multiple orders, we prioritize completed ones with reports
+        const existing = labMap.get(lab.encounter_id)
+        const isCompleted = lab.status === 'completed' && !!lab.report_url
+
+        if (!existing || (isCompleted && !existing.isReady)) {
+            labMap.set(lab.encounter_id, {
+                hasLab: true,
+                isReady: isCompleted,
+                reportUrl: lab.report_url
+            })
+        }
+    })
+
     // 4. Transform Data
     const formattedAppointments = appointments.map(apt => {
         const isVitalsDone = vitalsSet.has(apt.id)
@@ -127,7 +156,8 @@ export default async function DoctorDashboardPage() {
                 : 0,
             blood_group: (apt.hms_patient as any).blood_group, // Cast as any if simple typing misses it
             reason: apt.notes || apt.type,
-            vitals_done: isVitalsDone
+            vitals_done: isVitalsDone,
+            lab_status: labMap.get(apt.id) || null
         }
     })
 

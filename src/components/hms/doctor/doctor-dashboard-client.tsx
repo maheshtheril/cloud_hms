@@ -211,6 +211,16 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                                                             <Clock className="h-3 w-3" /> Waiting for Vitals
                                                         </span>
                                                     )}
+
+                                                    {apt.lab_status && apt.lab_status.hasLab && (
+                                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1 uppercase tracking-wider ${apt.lab_status.isReady
+                                                            ? 'bg-violet-100 text-violet-700 border-violet-200 animate-pulse'
+                                                            : 'bg-amber-100 text-amber-700 border-amber-200'
+                                                            }`}>
+                                                            <FileText className="h-3 w-3" />
+                                                            {apt.lab_status.isReady ? 'Lab Result Ready' : 'Lab In Progress'}
+                                                        </span>
+                                                    )}
                                                 </div>
 
                                                 <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-slate-500">
@@ -233,14 +243,26 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                                             </div>
 
                                             {/* Action Button */}
-                                            <div className="flex items-center gap-3 mt-4 lg:mt-0 lg:ml-auto">
+                                            <div className="flex flex-col gap-2 mt-4 lg:mt-0 lg:ml-auto w-full lg:w-auto">
                                                 <button
                                                     onClick={() => router.push(`/hms/prescriptions/new?appointmentId=${apt.id}&patientId=${apt.patient_uuid}`)}
-                                                    className="h-12 px-8 rounded-2xl bg-slate-900 hover:bg-black text-white font-bold text-sm shadow-xl shadow-slate-900/10 hover:shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 w-full lg:w-auto justify-center"
+                                                    className="h-10 px-6 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs shadow-lg shadow-slate-900/10 hover:shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
                                                 >
                                                     <Stethoscope className="h-4 w-4" />
                                                     START CONSULTATION
                                                 </button>
+
+                                                {apt.lab_status && apt.lab_status.isReady && (
+                                                    <a
+                                                        href={apt.lab_status.reportUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="h-10 px-6 rounded-xl bg-violet-50 text-violet-700 font-bold text-xs border border-violet-100 hover:bg-violet-100 hover:border-violet-200 transition-all flex items-center justify-center gap-2"
+                                                    >
+                                                        <FileText className="h-4 w-4" />
+                                                        VIEW LAB REPORT
+                                                    </a>
+                                                )}
                                             </div>
                                         </div>
                                     </motion.div>

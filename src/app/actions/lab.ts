@@ -47,3 +47,40 @@ export async function updateLabOrderStatus(input: z.infer<typeof updateStatusSch
         return { success: false, message: "Failed to update status" }
     }
 }
+
+const updateReportSchema = z.object({
+    orderId: z.string().uuid(),
+    reportUrl: z.string().url()
+})
+
+export async function updateLabOrderReport(input: z.infer<typeof updateReportSchema>) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { success: false, message: "Unauthorized" }
+    }
+
+    const { orderId, reportUrl } = input
+
+    try {
+        const order = await prisma.hms_lab_order.update({
+            where: { id: orderId },
+            data: {
+                report_url: reportUrl,
+                status: 'completed' // Auto-complete when report is uploaded? usually yes.
+            }
+        })
+
+        // Also update all lines to completed
+        await prisma.hms_lab_order_line.updateMany({
+            where: { order_id: orderId },
+            data: { status: 'completed' }
+        })
+
+        revalidatePath('/hms/lab/dashboard')
+        revalidatePath('/hms/doctor/dashboard') // Ensure doctor sees it
+        return { success: true, message: "Report uploaded successfully", data: order }
+    } catch (error) {
+        console.error("Failed to upload lab report:", error)
+        return { success: false, message: "Failed to upload report" }
+    }
+}
