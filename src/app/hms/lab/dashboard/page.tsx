@@ -83,7 +83,8 @@ export default async function LabDashboardPage() {
             patient_name: patientName,
             patient_id: order.hms_patient?.patient_number,
             doctor_name: doctorName,
-            tests: tests
+            tests: tests,
+            report_url: order.report_url
         }
     })
 

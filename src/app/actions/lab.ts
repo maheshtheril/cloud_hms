@@ -50,7 +50,7 @@ export async function updateLabOrderStatus(input: z.infer<typeof updateStatusSch
 
 const updateReportSchema = z.object({
     orderId: z.string().uuid(),
-    reportUrl: z.string().url()
+    reportUrl: z.string() // Removed .url() to allow Data URIs which might be long
 })
 
 export async function updateLabOrderReport(input: z.infer<typeof updateReportSchema>) {
@@ -104,5 +104,68 @@ export async function getLabReportForAppointment(appointmentId: string) {
         return { success: false }
     } catch (error) {
         return { success: false }
+    }
+}
+
+export async function uploadAndAttachLabReport(formData: FormData) {
+    const session = await auth();
+    if (!session?.user?.id) {
+        return { success: false, message: "Unauthorized" };
+    }
+
+    const file = formData.get('file') as File;
+    const orderId = formData.get('orderId') as string;
+
+    if (!file || !orderId) {
+        return { success: false, message: "Missing file or order ID" };
+    }
+
+    try {
+        // Validate file type
+        const validTypes = [
+            'application/pdf',
+            'image/jpeg',
+            'image/png',
+            'image/webp'
+        ];
+        if (!validTypes.includes(file.type)) {
+            return { success: false, message: "Invalid file type. Allowed: PDF, Images." };
+        }
+
+        // Validate size (e.g. 15MB)
+        if (file.size > 15 * 1024 * 1024) {
+            return { success: false, message: "File size must be less than 15MB" };
+        }
+
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        const base64String = buffer.toString('base64');
+        const mimeType = file.type;
+        const dataUri = `data:${mimeType};base64,${base64String}`;
+
+        // Save to DB
+        const order = await prisma.hms_lab_order.update({
+            where: { id: orderId },
+            data: {
+                report_url: dataUri,
+                status: 'completed'
+            }
+        })
+
+        // Also update all lines to completed
+        await prisma.hms_lab_order_line.updateMany({
+            where: { order_id: orderId },
+            data: { status: 'completed' }
+        })
+
+        revalidatePath('/hms/lab/dashboard');
+        revalidatePath('/hms/doctor/dashboard');
+
+        return { success: true, message: "Report uploaded successfully" };
+
+    } catch (error: any) {
+        console.error("Fatal Upload Error:", error);
+        return { success: false, message: "Upload failed: " + error.message };
     }
 }

@@ -9,8 +9,7 @@ import {
     ArrowRight, Check, Loader2
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { updateLabOrderStatus, updateLabOrderReport } from "@/app/actions/lab"
-import { uploadFile } from "@/app/actions/upload-file"
+import { updateLabOrderStatus, uploadAndAttachLabReport } from "@/app/actions/lab"
 
 interface LabDashboardProps {
     labStaffName: string
@@ -455,29 +454,13 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                     ) : (
                                         <div className="space-y-3">
                                             <p className="text-xs text-slate-500">
-                                                Attach the final lab report.
+                                                Attach the final lab report (PDF or Image, max 15MB).
                                             </p>
                                             <form action={async (formData) => {
-                                                const file = formData.get('file') as File
-                                                if (!file) return
-
                                                 setIsUploading(true)
                                                 try {
-                                                    // 1. Upload File
-                                                    const uploadRes = await uploadFile(formData, 'lab-reports')
-                                                    if (uploadRes.error) {
-                                                        alert(uploadRes.error)
-                                                        setIsUploading(false)
-                                                        return
-                                                    }
-                                                    if (!uploadRes.url) {
-                                                        alert("Upload failed: No data returned")
-                                                        setIsUploading(false)
-                                                        return
-                                                    }
+                                                    const res = await uploadAndAttachLabReport(formData)
 
-                                                    // 2. Update Order
-                                                    const res = await updateLabOrderReport({ orderId: selectedOrder.id, reportUrl: uploadRes.url })
                                                     if (res.success) {
                                                         const btn = document.getElementById('upload-btn-text')
                                                         if (btn) btn.innerText = "Saved!"
@@ -487,7 +470,7 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                                         setSelectedOrder(null)
                                                         router.refresh()
                                                     } else {
-                                                        alert("Failed to link report")
+                                                        alert(res.message || "Failed to upload report")
                                                     }
                                                 } catch (e: any) {
                                                     console.error(e)
@@ -496,6 +479,7 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                                     setIsUploading(false)
                                                 }
                                             }} className="flex gap-2 items-center">
+                                                <input type="hidden" name="orderId" value={selectedOrder.id} />
                                                 <input
                                                     type="file"
                                                     name="file"
