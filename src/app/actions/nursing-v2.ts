@@ -39,37 +39,44 @@ export async function saveVitals(data: {
             notes
         } = data
 
-        // Upsert vitals
-        await prisma.hms_vitals.upsert({
-            where: {
-                encounter_id: encounterId
-            },
-            update: {
-                height: height ? parseFloat(height) : null,
-                weight: weight ? parseFloat(weight) : null,
-                temperature: temperature ? parseFloat(temperature) : null,
-                pulse: pulse ? parseInt(pulse) : null,
-                systolic: systolic ? parseInt(systolic) : null,
-                diastolic: diastolic ? parseInt(diastolic) : null,
-                spo2: spo2 ? parseInt(spo2) : null,
-                respiration: respiration ? parseInt(respiration) : null,
-                notes: notes || null
-            },
-            create: {
-                tenant_id: tenantId,
-                patient_id: patientId,
-                encounter_id: encounterId,
-                height: height ? parseFloat(height) : null,
-                weight: weight ? parseFloat(weight) : null,
-                temperature: temperature ? parseFloat(temperature) : null,
-                pulse: pulse ? parseInt(pulse) : null,
-                systolic: systolic ? parseInt(systolic) : null,
-                diastolic: diastolic ? parseInt(diastolic) : null,
-                spo2: spo2 ? parseInt(spo2) : null,
-                respiration: respiration ? parseInt(respiration) : null,
-                notes: notes || null
-            }
+        // Manual Upsert to genericize nullable unique constraint handling
+        const existing = await prisma.hms_vitals.findFirst({
+            where: { encounter_id: encounterId }
         })
+
+        if (existing) {
+            await prisma.hms_vitals.update({
+                where: { id: existing.id },
+                data: {
+                    height: height ? parseFloat(height) : null,
+                    weight: weight ? parseFloat(weight) : null,
+                    temperature: temperature ? parseFloat(temperature) : null,
+                    pulse: pulse ? parseInt(pulse) : null,
+                    systolic: systolic ? parseInt(systolic) : null,
+                    diastolic: diastolic ? parseInt(diastolic) : null,
+                    spo2: spo2 ? parseInt(spo2) : null,
+                    respiration: respiration ? parseInt(respiration) : null,
+                    notes: notes || null
+                }
+            })
+        } else {
+            await prisma.hms_vitals.create({
+                data: {
+                    tenant_id: tenantId,
+                    patient_id: patientId,
+                    encounter_id: encounterId,
+                    height: height ? parseFloat(height) : null,
+                    weight: weight ? parseFloat(weight) : null,
+                    temperature: temperature ? parseFloat(temperature) : null,
+                    pulse: pulse ? parseInt(pulse) : null,
+                    systolic: systolic ? parseInt(systolic) : null,
+                    diastolic: diastolic ? parseInt(diastolic) : null,
+                    spo2: spo2 ? parseInt(spo2) : null,
+                    respiration: respiration ? parseInt(respiration) : null,
+                    notes: notes || null
+                }
+            })
+        }
 
         revalidatePath('/hms/nursing')
         revalidatePath(`/hms/nursing/` + encounterId)

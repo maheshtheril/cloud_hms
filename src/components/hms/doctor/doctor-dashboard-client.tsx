@@ -192,9 +192,13 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                                                 <div className="flex-1">
                                                     <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                                         {apt.patient_name}
-                                                        {apt.vitals_done && (
+                                                        {apt.vitals_done ? (
                                                             <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-700 font-bold border border-emerald-200 flex items-center gap-1">
                                                                 <Activity className="h-3 w-3" /> Vitals Ready
+                                                            </span>
+                                                        ) : (
+                                                            <span className="px-2 py-0.5 rounded text-[10px] bg-amber-50 text-amber-600 font-bold border border-amber-100 flex items-center gap-1 opacity-70">
+                                                                <Clock className="h-3 w-3" /> Vitals Pending
                                                             </span>
                                                         )}
                                                     </h3>
