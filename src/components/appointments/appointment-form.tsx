@@ -38,6 +38,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     const [suggestedTime, setSuggestedTime] = useState(defaultTime)
 
     // Sync state when editingAppointment changes (fix for reused component / stale state)
+    // Sync state when editingAppointment changes or initialData changes
     useEffect(() => {
         if (editingAppointment) {
             setSelectedPatientId(editingAppointment.patient?.id || editingAppointment.patient_id || '')
@@ -61,13 +62,18 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                 })
             }
         } else {
-            // Reset to defaults if switching to "New Appointment" mode within same instance (rare but possible)
-            setSelectedPatientId(initialData.patient_id || '')
-            setSelectedClinicianId('')
-            // Time usually stays or defaults, but let's leave time logic to the user interaction or initialData
-            setSuggestedTime(initialData.time || '')
+            // Reset to defaults if switching to "New Appointment" mode within same instance (rare but possible) or if initialData changes
+            // Only update if current state differs from intention? 
+            // Actually, if we just rely on deps, we are safe if deps are stable.
+            // Using primitives avoids the "new object every render" issue.
+            if (initialPatientId) setSelectedPatientId(initialPatientId)
+            if (initialTime) setSuggestedTime(initialTime)
+            // if initialData is empty, we DON'T want to aggressively clear user selection on every random re-render.
+            // But if we are mounting, we want to set it.
+            // Since we use primitives in dependency array, this effect runs only when they change.
+            // If they are undefined -> undefined (no change), effect doesn't run. Safe.
         }
-    }, [editingAppointment, initialData])
+    }, [editingAppointment, initialPatientId, initialDate, initialTime])
 
     // ... (Smart slot logic remains, but we might want to skip it on initial load if editing)
 
