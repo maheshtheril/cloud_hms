@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { updateLabOrderStatus, updateLabOrderReport } from "@/app/actions/lab"
+import { uploadFile } from "@/app/actions/upload-file"
 
 interface LabDashboardProps {
     labStaffName: string
@@ -47,6 +48,7 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
 
     const [selectedOrder, setSelectedOrder] = useState<any>(null)
     const [isUpdating, setIsUpdating] = useState(false)
+    const [isUploading, setIsUploading] = useState(false)
 
     const handleStatusUpdate = async () => {
         if (!selectedOrder) return
@@ -456,35 +458,47 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                                 Attach the final lab report.
                                             </p>
                                             <form action={async (formData) => {
-                                                const url = formData.get('reportUrl') as string
-                                                if (!url) return
+                                                const file = formData.get('file') as File
+                                                if (!file) return
 
-                                                // Basic validation
+                                                setIsUploading(true)
                                                 try {
-                                                    new URL(url)
-                                                } catch {
-                                                    alert("Please enter a valid URL")
-                                                    return
-                                                }
+                                                    // 1. Upload File
+                                                    const uploadRes = await uploadFile(formData, 'lab-reports')
+                                                    if (uploadRes.error || !uploadRes.url) {
+                                                        alert(uploadRes.error || "Upload failed")
+                                                        return
+                                                    }
 
-                                                // Calls the server action
-                                                const res = await updateLabOrderReport({ orderId: selectedOrder.id, reportUrl: url })
-                                                if (res.success) {
-                                                    setSelectedOrder(null)
-                                                    router.refresh()
-                                                } else {
-                                                    alert("Failed to upload report")
+                                                    // 2. Update Order
+                                                    const res = await updateLabOrderReport({ orderId: selectedOrder.id, reportUrl: uploadRes.url })
+                                                    if (res.success) {
+                                                        setSelectedOrder(null)
+                                                        router.refresh()
+                                                    } else {
+                                                        alert("Failed to link report")
+                                                    }
+                                                } catch (e) {
+                                                    console.error(e)
+                                                    alert("An error occurred")
+                                                } finally {
+                                                    setIsUploading(false)
                                                 }
-                                            }} className="flex gap-2">
+                                            }} className="flex gap-2 items-center">
                                                 <input
-                                                    type="url"
-                                                    name="reportUrl"
-                                                    placeholder="Paste report URL (e.g. Google Drive link)..."
+                                                    type="file"
+                                                    name="file"
+                                                    accept="image/*,.pdf"
                                                     required
-                                                    className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 outline-none w-full"
+                                                    className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-violet-500 outline-none w-full file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-violet-50 file:text-violet-700 hover:file:bg-violet-100 dark:text-gray-300"
                                                 />
-                                                <button type="submit" className="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors shrink-0">
-                                                    Attach Link
+                                                <button
+                                                    type="submit"
+                                                    disabled={isUploading}
+                                                    className="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors shrink-0 disabled:opacity-50 flex items-center gap-2"
+                                                >
+                                                    {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                                                    {isUploading ? 'Uploading...' : 'Upload'}
                                                 </button>
                                             </form>
                                         </div>
