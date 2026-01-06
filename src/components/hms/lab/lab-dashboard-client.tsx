@@ -444,7 +444,7 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                             </div>
                                             <div className="flex items-center gap-3">
                                                 <a
-                                                    href={selectedOrder.report_url}
+                                                    href={`/api/lab/report/${selectedOrder.id}`}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className="text-xs font-bold text-violet-600 hover:underline"
