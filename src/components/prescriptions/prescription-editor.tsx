@@ -857,7 +857,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                         {/* Labs Card */}
                         <div className="bg-white/70 backdrop-blur-md rounded-3xl p-5 border border-white/60 shadow-lg shadow-violet-100/20">
                             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <Activity className="h-3 w-3" /> Lab Orders
+                                <ActivityIcon className="h-3 w-3" /> Lab Orders
                             </h3>
 
                             {/* Search */}
