@@ -1,19 +1,45 @@
 'use client'
 
-import { useState } from "react"
-import { motion } from "framer-motion"
-import {
-    Activity, HeartPulse, UserCheck, Syringe,
-    ClipboardList, BedDouble, TestTube2, AlertCircle,
-    Clock, Search, Filter, ChevronRight
-} from "lucide-react"
-import { useRouter } from "next/navigation"
-import { differenceInYears } from "date-fns"
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
+import NursingVitalsForm from "@/components/nursing/vitals-form"
 
-interface NursingActionCenterProps {
-    pendingTriage: any[]
-    activeAdmissions: any[]
-    pendingSamples: any[]
+// ... inside component ...
+const [selectedTask, setSelectedTask] = useState<any>(null)
+
+// ... inside render loop ...
+onClick = {() => setSelectedTask(task)}
+
+// ... at the end ...
+<Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
+    <DialogContent className="max-w-[95vw] h-[95vh] overflow-y-auto bg-slate-50/95 backdrop-blur-xl border-slate-200">
+        <div className="flex items-center gap-4 mb-6 sticky top-0 bg-slate-50/50 backdrop-blur pb-4 pt-2 z-50 border-b border-slate-100">
+            <div className={`h-12 w-12 rounded-full flex items-center justify-center text-lg font-bold ${selectedTask?.patient_gender === 'female' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
+                {selectedTask?.patient_name?.charAt(0)}
+            </div>
+            <div>
+                <h2 className="text-xl font-bold text-slate-900">{selectedTask?.patient_name}</h2>
+                <p className="text-sm text-slate-500">
+                    {selectedTask?.patient_gender} • {selectedTask?.patient_dob && new Date().getFullYear() - new Date(selectedTask.patient_dob).getFullYear()}Y
+                    <span className="mx-2">•</span>
+                    <span className="text-indigo-600 font-medium">#{selectedTask?.patient_id}</span>
+                </p>
+            </div>
+        </div>
+
+        {selectedTask && (
+            <NursingVitalsForm
+                patientId={selectedTask.patient_uuid}
+                encounterId={selectedTask.id}
+                tenantId={selectedTask.tenant_id}
+                isModal={true}
+                onCancel={() => setSelectedTask(null)}
+            />
+        )}
+    </DialogContent>
+</Dialog>
+pendingTriage: any[]
+activeAdmissions: any[]
+pendingSamples: any[]
 }
 
 export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSamples }: NursingActionCenterProps) {

@@ -83,3 +83,18 @@ export async function saveVitals(data: {
         }
     }
 }
+
+export async function getVitals(encounterId: string) {
+    try {
+        const session = await auth()
+        if (!session?.user) return null
+
+        const vitals = await prisma.hms_vitals.findFirst({
+            where: { encounter_id: encounterId }
+        })
+        return vitals
+    } catch (error) {
+        console.error('Fetch Vitals Error:', error)
+        return null
+    }
+}

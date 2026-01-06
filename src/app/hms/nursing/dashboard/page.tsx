@@ -80,13 +80,15 @@ export default async function NursingDashboardPage() {
         id: apt.id,
         patient_name: `${apt.hms_patient?.first_name} ${apt.hms_patient?.last_name || ''}`.trim(),
         patient_id: apt.hms_patient?.patient_number,
+        patient_uuid: apt.patient_id, // Vital for linking
         patient_gender: apt.hms_patient?.gender,
         patient_dob: apt.hms_patient?.dob,
         doctor_name: `Dr. ${apt.hms_clinician?.first_name} ${apt.hms_clinician?.last_name || ''}`,
         time: apt.starts_at,
         status: apt.status,
         priority: apt.priority,
-        reason: apt.notes || apt.type
+        reason: apt.notes || apt.type,
+        tenant_id: apt.tenant_id
     }))
 
     const formattedAdmissions = (admittedPatients as any[]).map(adm => ({
