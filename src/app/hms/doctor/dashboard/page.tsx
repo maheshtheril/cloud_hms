@@ -7,6 +7,8 @@ import { ensureHmsMenus } from "@/lib/menu-seeder"
 import { initializeDoctorProfile } from "@/app/actions/doctor"
 import { Stethoscope, CheckCircle2 } from "lucide-react"
 
+export const dynamic = 'force-dynamic'
+
 export default async function DoctorDashboardPage() {
     await ensureHmsMenus()
     const session = await auth()

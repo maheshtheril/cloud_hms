@@ -73,6 +73,7 @@ export async function saveVitals(data: {
 
         revalidatePath('/hms/nursing')
         revalidatePath(`/hms/nursing/` + encounterId)
+        revalidatePath('/hms/doctor/dashboard') // Ensure doctor sees vitals immediately
 
         return { success: true }
     } catch (error) {
