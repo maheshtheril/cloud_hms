@@ -1,0 +1,104 @@
+import { auth } from "@/auth"
+import { prisma } from "@/lib/prisma"
+import { redirect } from "next/navigation"
+import { LabDashboardClient } from "@/components/hms/lab/lab-dashboard-client"
+import { ensureHmsMenus } from "@/lib/menu-seeder"
+import { FlaskConical } from "lucide-react"
+
+export const dynamic = 'force-dynamic'
+
+export default async function LabDashboardPage() {
+    await ensureHmsMenus()
+    const session = await auth()
+
+    if (!session?.user?.email) {
+        redirect("/auth/signin")
+    }
+
+    const tenantId = session.user.tenantId
+    // For now assuming any user with access to this route is authorized (RBAC handles route protection usually)
+    // We can just use the user's name as "Lab Staff"
+
+    // Fetch Lab Orders
+    // We want today's orders OR pending orders regardless of date?
+    // Usually a dashboard shows active work. So all 'requested', 'pending', 'in_progress'.
+    // And 'completed' from today.
+
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+
+    const orders = await prisma.hms_lab_order.findMany({
+        where: {
+            tenant_id: tenantId,
+            OR: [
+                { status: { in: ['requested', 'pending', 'in_progress', 'collected'] } },
+                {
+                    status: 'completed',
+                    created_at: { gte: todayStart }
+                }
+            ]
+        },
+        include: {
+            hms_patient: true,
+            hms_appointment: {
+                include: {
+                    hms_clinicians: true
+                }
+            },
+            hms_lab_order_line: {
+                include: {
+                    hms_lab_test: true
+                }
+            }
+        },
+        orderBy: {
+            created_at: 'desc'
+        }
+    })
+
+    // Transform Data
+    const formattedOrders = orders.map(order => {
+        const tests = order.hms_lab_order_line.map(line => ({
+            id: line.id,
+            test_name: line.hms_lab_test?.name || 'Unknown Test',
+            status: line.status
+        }))
+
+        // Patient Name
+        const patientName = order.hms_patient
+            ? `${order.hms_patient.first_name} ${order.hms_patient.last_name || ''}`.trim()
+            : 'Unknown Patient'
+
+        // Doctor Name
+        const doctorName = order.hms_appointment?.hms_clinicians
+            ? `${order.hms_appointment.hms_clinicians.first_name} ${order.hms_appointment.hms_clinicians.last_name}`.trim()
+            : 'Unknown'
+
+        return {
+            id: order.id,
+            order_number: order.order_number,
+            time: order.created_at || new Date(),
+            status: order.status,
+            priority: order.priority,
+            patient_name: patientName,
+            patient_id: order.hms_patient?.patient_number,
+            doctor_name: doctorName,
+            tests: tests
+        }
+    })
+
+    // Calculate Stats
+    const stats = {
+        total: formattedOrders.length,
+        pending: formattedOrders.filter(o => ['requested', 'pending', 'in_progress', 'collected'].includes(o.status || '')).length,
+        completed: formattedOrders.filter(o => o.status === 'completed').length
+    }
+
+    return (
+        <LabDashboardClient
+            labStaffName={session.user.name || 'Lab Staff'}
+            orders={formattedOrders}
+            stats={stats}
+        />
+    )
+}
