@@ -6,7 +6,8 @@ import Link from "next/link"
 import NursingVitalsForm from "@/components/nursing/vitals-form"
 
 // We'll separate the client form for better interactivity
-export default async function NursingPatientPage({ params }: { params: { appointmentId: string } }) {
+export default async function NursingPatientPage(props: { params: Promise<{ appointmentId: string }> }) {
+    const params = await props.params
     const session = await auth()
     const tenantId = session?.user?.tenantId
     const { appointmentId } = params
