@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Printer, Plus, Trash2, Copy, Eraser, Clock, Zap, X, Save, Thermometer, Brain, Heart, Activity as ActivityIcon, MessageCircle, FileText, Share2 } from 'lucide-react'
+import { Printer, Plus, Trash2, Copy, Eraser, Clock, Zap, X, Save, Thermometer, Brain, Heart, Activity as ActivityIcon, MessageCircle, FileText, Share2, Loader2, User, Pill, CheckCircle2, Search, AlertCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
@@ -585,445 +585,428 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     }
 
     const content = (
-        <div className={`flex flex-col h-full bg-slate-50 relative overflow-hidden ${isModal ? 'rounded-2xl shadow-2xl border border-slate-200' : 'h-[92vh] max-w-[98vw] mx-auto border border-slate-200 rounded-xl shadow-xl'}`}>
+        <div className={`flex flex-col h-full bg-slate-50/50 relative overflow-hidden ${isModal ? 'rounded-3xl shadow-2xl border border-white/20' : 'h-[92vh] max-w-[98vw] mx-auto border border-slate-200/60 rounded-2xl shadow-xl'}`}>
+
+            {/* Background Ambient Glow */}
+            <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none" />
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+
             {/* Header */}
-            <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-100 p-6 flex justify-between items-center shrink-0">
+            <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 p-4 lg:p-6 flex justify-between items-center shrink-0 supports-[backdrop-filter]:bg-white/60">
                 <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                    <div className="h-12 w-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
                         <Stethoscope className="h-6 w-6" />
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold text-slate-900">New Prescription</h1>
-                        <p className="text-sm text-slate-500 font-medium">Create and manage patient prescription</p>
+                        <h1 className="text-xl font-black text-slate-900 tracking-tight">New Prescription</h1>
+                        <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Clinical Workspace</p>
                     </div>
                 </div>
-                {isModal && (
-                    <button
-                        onClick={onClose || (() => router.back())}
-                        className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-                    >
-                        <X className="h-6 w-6 text-slate-400" />
-                    </button>
-                )}
+
+                <div className="flex items-center gap-3">
+                    {!isModal && (
+                        <div className="hidden lg:flex items-center gap-2 text-sm text-slate-500 bg-slate-100/50 px-3 py-1.5 rounded-full border border-slate-200/50">
+                            <Clock className="h-3.5 w-3.5" />
+                            {new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                        </div>
+                    )}
+                    {isModal && (
+                        <button
+                            onClick={onClose || (() => router.back())}
+                            className="h-10 w-10 flex items-center justify-center hover:bg-slate-100 rounded-full transition-all text-slate-400 hover:text-slate-600 hover:rotate-90"
+                        >
+                            <X className="h-6 w-6" />
+                        </button>
+                    )}
+                </div>
             </header>
 
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-3 scroll-smooth">
-                <div className="w-full space-y-4">
-                    {/* Patient Card */}
-                    <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 shadow-sm">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-sm">
-                            <div className="space-y-1">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Patient Name</p>
-                                <p className="text-base font-bold text-slate-900 truncate">
-                                    {patientInfo ? `${patientInfo.first_name} ${patientInfo.last_name}`.toUpperCase() : 'Loading...'}
-                                </p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Age / Gender</p>
-                                <p className="text-base font-bold text-slate-700">
-                                    {patientInfo?.age || 'N/A'} Years / {patientInfo?.gender || 'N/A'}
-                                </p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">UHID</p>
-                                <p className="text-base font-mono font-bold text-slate-700">
-                                    {patientId?.substring(0, 12) || 'N/A'}
-                                </p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Date</p>
-                                <p className="text-base font-bold text-slate-700">
-                                    {new Date().toLocaleDateString('en-IN')}
-                                </p>
+            {/* Scrollable Content - 3 Column Grid */}
+            <div className="flex-1 overflow-y-auto p-4 lg:p-6 scroll-smooth custom-scrollbar">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-[1600px] mx-auto pb-24">
+
+                    {/* LEFT COLUMN: Patient Info & Templates (Col Span 3) */}
+                    <div className="lg:col-span-3 space-y-6">
+                        {/* Patient Card */}
+                        <div className="bg-white/70 backdrop-blur-md rounded-3xl p-5 border border-white/60 shadow-lg shadow-slate-200/50 relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <div className="relative z-10">
+                                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                    <User className="h-3 w-3" /> Patient Details
+                                </h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <p className="text-xl font-black text-slate-900 leading-tight">
+                                            {patientInfo ? `${patientInfo.first_name} ${patientInfo.last_name || ''}` : 'Loading...'}
+                                        </p>
+                                        <p className="text-sm font-medium text-slate-500 mt-1">
+                                            {patientInfo?.age ? `${patientInfo.age} Y` : '--'} • {patientInfo?.gender || '--'}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                                        <span className="px-2 py-1 bg-slate-100 rounded-lg text-[10px] font-bold text-slate-500 font-mono">
+                                            {patientId?.substring(0, 8) || '####'}...
+                                        </span>
+                                        <span className="px-2 py-1 bg-green-50 text-green-700 rounded-lg text-[10px] font-bold border border-green-100">
+                                            Active Visit
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Quick Tools */}
-                    <div className="flex flex-wrap gap-2 print:hidden backdrop-blur-sm bg-white/50 p-4 rounded-2xl border border-slate-100 shadow-sm overflow-x-auto whitespace-nowrap scrollbar-hide">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={loadLastPrescription}
-                            disabled={loadingPrevious}
-                            className="bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 font-bold px-4 h-10 rounded-xl"
-                        >
-                            <Clock className="mr-2 h-4 w-4" />
-                            {loadingPrevious ? 'Loading...' : 'Copy Last Rx'}
-                        </Button>
-                        <div className="h-10 w-px bg-slate-100 mx-2" />
-                        {dbTemplates.map((template, idx) => (
-                            <motion.div
-                                key={template.id || idx}
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
+                        {/* Quick Tools / Templates */}
+                        <div className="bg-white/70 backdrop-blur-md rounded-3xl p-5 border border-white/60 shadow-lg shadow-slate-200/50">
+                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <Zap className="h-3 w-3" /> Quick Protocols
+                            </h3>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={loadLastPrescription}
+                                disabled={loadingPrevious}
+                                className="w-full justify-start mb-3 bg-orange-50/50 text-orange-700 border-orange-200/50 hover:bg-orange-100 font-bold h-11 rounded-xl"
                             >
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => applyTemplate(template)}
-                                    className="bg-indigo-50 text-indigo-700 border-indigo-100 hover:bg-indigo-100 font-bold px-4 h-10 rounded-xl hover:border-indigo-300 transition-all flex items-center gap-2"
-                                >
-                                    {getTemplateIcon(template.name)}
-                                    {template.name}
-                                </Button>
-                            </motion.div>
-                        ))}
-                        {dbTemplates.length === 0 && !loadingTemplates && (
-                            <span className="text-slate-400 text-sm font-medium italic py-2">No master protocols yet. Create one below.</span>
-                        )}
-                    </div>
+                                <Clock className="mr-2 h-4 w-4" />
+                                {loadingPrevious ? 'Loading...' : 'Copy Last Rx'}
+                            </Button>
 
-                    {/* Handwriting Sections */}
-                    <div className="space-y-8 bg-white rounded-2xl p-8 border border-slate-100 shadow-sm relative">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-lg font-black text-slate-800 tracking-tight">Clinical Findings</h2>
-                            <div className="flex gap-2">
-                                {!showConverted ? (
+                            <div className="flex flex-col gap-2 max-h-[40vh] overflow-y-auto pr-1">
+                                {dbTemplates.map((template, idx) => (
                                     <Button
-                                        onClick={runTranscription}
-                                        disabled={isConverting}
-                                        className="bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-lg shadow-purple-100 px-6"
-                                    >
-                                        {isConverting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-                                        Spells Transcribe
-                                    </Button>
-                                ) : (
-                                    <Button
+                                        key={template.id || idx}
                                         variant="outline"
-                                        onClick={() => setShowConverted(false)}
-                                        className="text-slate-500 hover:bg-slate-50 font-bold rounded-xl border-slate-200"
+                                        size="sm"
+                                        onClick={() => applyTemplate(template)}
+                                        className="w-full justify-start bg-indigo-50/50 text-indigo-700 border-indigo-100/50 hover:bg-indigo-100 font-bold h-10 rounded-xl transition-all"
                                     >
-                                        <Eraser className="mr-2 h-4 w-4" /> Back to Drawing
+                                        {getTemplateIcon(template.name)}
+                                        <span className="ml-2 truncate">{template.name}</span>
                                     </Button>
-                                )}
-                            </div>
-                        </div>
-
-                        {[
-                            { title: 'VITALS', ref: vitalsCanvasRef, height: 80, key: 'vitals' },
-                            { title: 'DIAGNOSIS', ref: diagnosisCanvasRef, height: 80, key: 'diagnosis' },
-                            { title: 'PRESENTING COMPLAINT', ref: complaintCanvasRef, height: 100, key: 'complaint' },
-                            { title: 'GENERAL EXAMINATION', ref: examinationCanvasRef, height: 120, key: 'examination' },
-                            { title: 'PLAN', ref: planCanvasRef, height: 80, key: 'plan' }
-                        ].map((section, idx) => (
-                            <div key={idx} className="space-y-2">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{section.title}</h3>
-                                {showConverted ? (
-                                    <textarea
-                                        value={convertedText[section.key as keyof typeof convertedText] || ''}
-                                        onChange={(e) => setConvertedText({ ...convertedText, [section.key]: e.target.value })}
-                                        className="w-full min-h-[80px] p-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 leading-relaxed font-medium focus:ring-2 focus:ring-purple-100 outline-none transition-all"
-                                        placeholder={`No ${section.title.toLowerCase()} recorded...`}
-                                    />
-                                ) : (
-                                    <div className="group relative">
-                                        <canvas
-                                            ref={section.ref}
-                                            width={900}
-                                            height={section.height}
-                                            className="border-2 border-slate-100 rounded-xl cursor-crosshair w-full bg-white group-hover:border-blue-200 transition-all duration-300 touch-none"
-                                            onMouseDown={(e) => startDrawing(e, section.ref.current!)}
-                                            onMouseMove={draw}
-                                            onMouseUp={stopDrawing}
-                                            onMouseLeave={stopDrawing}
-                                            onTouchStart={(e) => startDrawingTouch(e, section.ref.current!)}
-                                            onTouchMove={drawTouch}
-                                            onTouchEnd={stopDrawing}
-                                            style={{ touchAction: 'none' }}
-                                        />
-                                        <button
-                                            onClick={() => clearCanvas(section.ref.current)}
-                                            className="absolute top-2 right-2 p-1.5 bg-slate-100 hover:bg-red-50 hover:text-red-500 rounded-lg text-slate-400 shadow-sm transition-all"
-                                            title="Clear"
-                                        >
-                                            <Eraser className="h-4 w-4" />
-                                        </button>
+                                ))}
+                                {dbTemplates.length === 0 && !loadingTemplates && (
+                                    <div className="text-center py-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                        <p className="text-xs text-slate-400 font-medium">No master protocols.</p>
                                     </div>
                                 )}
                             </div>
-                        ))}
+                            <button onClick={saveCurrentAsTemplate} className="w-full mt-3 py-2 text-xs font-bold text-slate-400 hover:text-blue-600 transition-colors flex items-center justify-center gap-1">
+                                <Plus className="h-3 w-3" /> Save findings as Protocol
+                            </button>
+                        </div>
+                    </div>
 
-                        {/* MEDICINE Section */}
-                        <div className="space-y-4 pt-4 border-t border-slate-100">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">PRESCRIPTION / MEDICINES</h3>
+                    {/* CENTER COLUMN: Clinical Canvas (Col Span 5) */}
+                    <div className="lg:col-span-6 space-y-6">
+                        {/* Control Bar */}
+                        <div className="flex justify-between items-center bg-white/70 backdrop-blur-md rounded-2xl p-2 border border-white/60 shadow-sm sticky top-0 z-30">
+                            <h2 className="text-sm font-black text-slate-800 tracking-tight px-3">Clinical Findings</h2>
+                            <div className="flex gap-2">
+                                {!showConverted ? (
+                                    <Button
+                                        size="sm"
+                                        onClick={runTranscription}
+                                        disabled={isConverting}
+                                        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-purple-200/50 text-xs px-4 h-9"
+                                    >
+                                        {isConverting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Zap className="mr-2 h-3 w-3" />}
+                                        Transcribe
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setShowConverted(false)}
+                                        className="text-slate-500 hover:bg-slate-50 font-bold rounded-xl border-slate-200 h-9 text-xs"
+                                    >
+                                        <Eraser className="mr-2 h-3 w-3" /> Draw
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Canvases */}
+                        <div className="space-y-4">
+                            {[
+                                { title: 'VITALS', ref: vitalsCanvasRef, height: 80, key: 'vitals', icon: ActivityIcon },
+                                { title: 'DIAGNOSIS', ref: diagnosisCanvasRef, height: 80, key: 'diagnosis', icon: Brain },
+                                { title: 'PRESENTING COMPLAINT', ref: complaintCanvasRef, height: 100, key: 'complaint', icon: AlertCircle },
+                                { title: 'GENERAL EXAMINATION', ref: examinationCanvasRef, height: 120, key: 'examination', icon: Search },
+                                { title: 'PLAN', ref: planCanvasRef, height: 80, key: 'plan', icon: FileText }
+                            ].map((section, idx) => (
+                                <div key={idx} className="bg-white rounded-3xl p-1 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+                                    <div className="px-4 py-2 flex items-center gap-2 border-b border-slate-50 mb-1">
+                                        <section.icon className="h-3 w-3 text-slate-400" />
+                                        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{section.title}</h3>
+                                    </div>
+
+                                    {showConverted ? (
+                                        <textarea
+                                            value={convertedText[section.key as keyof typeof convertedText] || ''}
+                                            onChange={(e) => setConvertedText({ ...convertedText, [section.key]: e.target.value })}
+                                            className="w-full min-h-[80px] p-4 bg-transparent border-none rounded-b-2xl text-slate-700 text-sm leading-relaxed font-medium focus:ring-0 resize-y"
+                                            placeholder={`No ${section.title.toLowerCase()} recorded...`}
+                                        />
+                                    ) : (
+                                        <div className="relative group">
+                                            <canvas
+                                                ref={section.ref}
+                                                width={900}
+                                                height={section.height}
+                                                className="w-full bg-slate-50/30 rounded-b-2xl cursor-crosshair touch-none mix-blend-multiply"
+                                                onMouseDown={(e) => startDrawing(e, section.ref.current!)}
+                                                onMouseMove={draw}
+                                                onMouseUp={stopDrawing}
+                                                onMouseLeave={stopDrawing}
+                                                onTouchStart={(e) => startDrawingTouch(e, section.ref.current!)}
+                                                onTouchMove={drawTouch}
+                                                onTouchEnd={stopDrawing}
+                                                style={{ touchAction: 'none' }}
+                                            />
+                                            <button
+                                                onClick={() => clearCanvas(section.ref.current)}
+                                                className="absolute top-2 right-2 p-1.5 bg-white/80 backdrop-blur rounded-lg text-slate-300 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                                                title="Clear"
+                                            >
+                                                <Eraser className="h-3 w-3" />
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* RIGHT COLUMN: Medicines & Labs (Col Span 3) */}
+                    <div className="lg:col-span-3 space-y-6">
+
+                        {/* Medicines Card */}
+                        <div className="bg-white/70 backdrop-blur-md rounded-3xl p-5 border border-white/60 shadow-lg shadow-blue-100/20">
+                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <Pill className="h-3 w-3" /> Prescription
+                            </h3>
 
                             {/* Search */}
-                            <div className="relative print:hidden group">
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-500 transition-colors">
-                                    <Zap className="h-5 w-5" />
+                            <div className="relative print:hidden group mb-4">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                    <Search className="h-4 w-4" />
                                 </div>
                                 <input
                                     type="text"
                                     value={medicineSearch}
                                     onChange={(e) => setMedicineSearch(e.target.value)}
-                                    placeholder="Search medicine or type custom name..."
-                                    className="w-full pl-12 pr-6 py-4 text-base font-medium border-2 border-slate-100 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-50 outline-none transition-all"
+                                    placeholder="Add Medicine..."
+                                    className="w-full pl-9 pr-3 py-3 text-sm font-bold border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all shadow-sm"
                                 />
-
                                 {showMedicineDropdown && (
-                                    <div className="absolute z-[60] w-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-80 overflow-y-auto animate-in fade-in slide-in-from-top-2 duration-200 p-2">
+                                    <div className="absolute z-[60] w-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto p-2">
                                         {filteredMedicines.map((med, idx) => (
                                             <div
                                                 key={idx}
                                                 onClick={() => openMedicineModal(med)}
-                                                className="p-3 hover:bg-blue-50 cursor-pointer rounded-xl flex items-center justify-between group/item"
+                                                className="p-2.5 hover:bg-blue-50 cursor-pointer rounded-xl flex items-center justify-between text-sm"
                                             >
-                                                <span className="font-bold text-slate-700 group-hover/item:text-blue-600">{med.name}</span>
-                                                <Plus className="h-4 w-4 text-slate-300" />
+                                                <span className="font-bold text-slate-700">{med.name}</span>
+                                                <Plus className="h-3 w-3 text-slate-300" />
                                             </div>
                                         ))}
                                         {medicineSearch.trim() && (
                                             <div
                                                 onClick={() => openMedicineModal({ name: medicineSearch.trim() })}
-                                                className="p-3 bg-blue-50 hover:bg-blue-100 cursor-pointer rounded-xl flex items-center gap-3 mt-1"
+                                                className="p-2.5 bg-blue-50/50 hover:bg-blue-100 cursor-pointer rounded-xl flex items-center gap-2 mt-1"
                                             >
-                                                <div className="h-8 w-8 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
-                                                    <Plus className="h-5 w-5" />
-                                                </div>
-                                                <span className="font-bold text-blue-700 uppercase text-xs tracking-wider">Add Custom: {medicineSearch}</span>
+                                                <Plus className="h-3 w-3 text-blue-600" />
+                                                <span className="font-bold text-blue-700 text-xs">Custom: {medicineSearch}</span>
                                             </div>
                                         )}
                                     </div>
                                 )}
                             </div>
 
-                            {/* List */}
-                            <div className="space-y-3">
-                                {selectedMedicines.map((med, idx) => (
-                                    <div key={idx} className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100 group transition-all hover:border-blue-200">
-                                        <div className="h-8 w-8 bg-white border border-slate-200 rounded-lg flex items-center justify-center font-bold text-slate-400">
-                                            {idx + 1}
-                                        </div>
-                                        <div className="flex-1">
-                                            <p className="font-bold text-slate-900">{med.name}</p>
-                                            <div className="flex gap-4 mt-1 text-xs font-bold text-slate-500 uppercase tracking-widest">
-                                                <span className="bg-white px-2 py-0.5 rounded border border-slate-200">{med.dosage}</span>
-                                                <span className="bg-white px-2 py-0.5 rounded border border-slate-200">{med.days} Days</span>
-                                                <span className="text-blue-600">{med.timing}</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button variant="ghost" size="icon" onClick={() => openMedicineModal(med, idx)}>
-                                                <Copy className="h-4 w-4 text-slate-400" />
-                                            </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => removeMedicine(idx)} className="hover:text-red-600 hover:bg-red-50">
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
+                            {/* Rx List */}
+                            <div className="space-y-3 min-h-[200px]">
+                                {selectedMedicines.length === 0 ? (
+                                    <div className="text-center py-8 opacity-50">
+                                        <Pill className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+                                        <p className="text-xs text-slate-400 font-bold">No medicines added</p>
                                     </div>
-                                ))}
-                            </div>
-
-                            {/* Lab Order Section */}
-                            <div className="pt-8 border-t border-slate-100 space-y-4">
-                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest">LAB & RADIOLOGY ORDERS</h3>
-
-                                <div className="relative print:hidden group">
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
-                                        {isSearchingLabs ? <Loader2 className="h-5 w-5 animate-spin" /> : <ActivityIcon className="h-5 w-5" />}
-                                    </div>
-                                    <input
-                                        type="text"
-                                        value={labSearch}
-                                        onChange={(e) => setLabSearch(e.target.value)}
-                                        placeholder="Search for Lab Tests / X-Rays / Scans..."
-                                        className="w-full pl-12 pr-6 py-4 text-base font-medium border-2 border-slate-100 rounded-2xl focus:border-pink-500 focus:ring-4 focus:ring-pink-50 outline-none transition-all"
-                                    />
-
-                                    {showLabDropdown && filteredLabs.length > 0 && (
-                                        <div className="absolute z-[60] w-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto p-2">
-                                            {filteredLabs.map((test, idx) => (
-                                                <div
-                                                    key={idx}
-                                                    onClick={() => addLabTest(test)}
-                                                    className="p-3 hover:bg-pink-50 cursor-pointer rounded-xl flex items-center justify-between group/item"
-                                                >
-                                                    <div className="flex flex-col text-left">
-                                                        <span className="font-bold text-slate-700 group-hover/item:text-pink-600">{test.name}</span>
-                                                        <span className="text-[10px] text-slate-400 uppercase tracking-tighter">{test.method || 'Standard'} • {test.code || 'NO-CODE'}</span>
-                                                    </div>
-                                                    <div className="h-8 w-8 bg-pink-100 rounded-lg flex items-center justify-center text-pink-600 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                                                        <Plus className="h-4 w-4" />
-                                                    </div>
+                                ) : (
+                                    selectedMedicines.map((med, idx) => (
+                                        <div key={idx} className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm hover:border-blue-200 transition-colors group relative">
+                                            <div onClick={() => openMedicineModal(med, idx)} className="cursor-pointer">
+                                                <p className="font-black text-slate-800 text-sm">{med.name}</p>
+                                                <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 font-medium">
+                                                    <span className="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded-md">{med.dosage}</span>
+                                                    <span>• {med.days} days</span>
+                                                    <span>• {med.timing}</span>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Selected Labs List */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pb-4">
-                                    {selectedLabs.map((test, idx) => (
-                                        <div key={idx} className="flex items-center gap-3 bg-pink-50/50 p-3 rounded-2xl border border-pink-100 border-dashed group">
-                                            <div className="h-8 w-8 bg-pink-200 rounded-lg flex items-center justify-center text-pink-700 font-bold text-xs ring-4 ring-pink-50">
-                                                {idx + 1}
-                                            </div>
-                                            <div className="flex-1 text-left">
-                                                <p className="font-bold text-slate-800 text-sm">{test.name}</p>
-                                                <p className="text-[10px] text-pink-600 font-black uppercase tracking-widest leading-none">Ordered</p>
                                             </div>
                                             <button
-                                                onClick={() => removeLabTest(test.id)}
-                                                className="p-2 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
+                                                onClick={() => removeMedicine(idx)}
+                                                className="absolute top-3 right-3 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                                             >
-                                                <X className="h-4 w-4" />
+                                                <X className="h-3.5 w-3.5" />
                                             </button>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="flex gap-3 pt-4 border-t border-slate-50">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={saveCurrentAsTemplate}
-                                    className="flex-1 border-indigo-100 text-indigo-600 hover:bg-indigo-50 font-bold rounded-xl shadow-sm h-12"
-                                >
-                                    <Save className="mr-2 h-4 w-4" /> Save as Master Protocol
-                                </Button>
+                                    ))
+                                )}
                             </div>
                         </div>
+
+                        {/* Labs Card */}
+                        <div className="bg-white/70 backdrop-blur-md rounded-3xl p-5 border border-white/60 shadow-lg shadow-violet-100/20">
+                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                <Activity className="h-3 w-3" /> Lab Orders
+                            </h3>
+
+                            {/* Search */}
+                            <div className="relative group mb-4">
+                                <input
+                                    type="text"
+                                    value={labSearch}
+                                    onChange={(e) => setLabSearch(e.target.value)}
+                                    placeholder="Add Lab Test..."
+                                    className="w-full pl-4 pr-3 py-3 text-sm font-bold border border-slate-200 rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition-all shadow-sm"
+                                />
+                                {isSearchingLabs && <Loader2 className="absolute right-3 top-3.5 h-4 w-4 animate-spin text-slate-400" />}
+                                {showLabDropdown && (
+                                    <div className="absolute z-[60] w-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto p-2">
+                                        {filteredLabs.map((test, idx) => (
+                                            <div
+                                                key={idx}
+                                                onClick={() => addLabTest(test)}
+                                                className="p-2.5 hover:bg-violet-50 cursor-pointer rounded-xl flex items-center justify-between text-sm"
+                                            >
+                                                <span className="font-bold text-slate-700">{test.name}</span>
+                                                <Plus className="h-3 w-3 text-slate-300" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Lab List */}
+                            <div className="flex flex-wrap gap-2">
+                                {selectedLabs.map((lab, idx) => (
+                                    <div key={idx} className="bg-violet-50 border border-violet-100 pl-3 pr-2 py-1.5 rounded-xl flex items-center gap-2">
+                                        <span className="text-xs font-bold text-violet-700">{lab.name}</span>
+                                        <button onClick={() => removeLabTest(lab.id)} className="hover:bg-violet-200/50 rounded-full p-0.5 text-violet-400 hover:text-violet-700 transition-colors">
+                                            <X className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                ))}
+                                {selectedLabs.length === 0 && (
+                                    <p className="text-xs text-slate-400 text-center w-full font-medium italic py-2">No labs ordered</p>
+                                )}
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </div>
 
-            {/* Sticky Footer */}
-            <footer className="sticky bottom-0 z-40 bg-white/80 backdrop-blur-md border-t border-slate-100 p-6 shrink-0">
-                <div className="max-w-4xl mx-auto flex flex-wrap justify-center gap-4">
+            {/* Bottom Actions Bar */}
+            <div className="sticky bottom-0 z-40 bg-white/80 backdrop-blur-md border-t border-slate-200/50 p-4 flex justify-between items-center">
+                <Button
+                    variant="ghost"
+                    onClick={onClose || (() => router.back())}
+                    className="text-slate-500 font-bold hover:bg-slate-100 rounded-xl"
+                >
+                    Cancel
+                </Button>
+
+                <div className="flex gap-3">
+                    <Button
+                        onClick={handleWhatsappShare}
+                        disabled={isSharing}
+                        variant="outline"
+                        className="border-green-200 bg-green-50 text-green-700 hover:bg-green-100 font-bold rounded-xl shadow-sm"
+                    >
+                        {isSharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4 mr-2" />}
+                        WhatsApp
+                    </Button>
                     <Button
                         onClick={() => savePrescription(false)}
                         disabled={isSaving}
-                        className="bg-slate-900 hover:bg-black text-white px-8 py-6 rounded-2xl shadow-xl shadow-slate-200"
+                        className="bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-xl shadow-lg shadow-slate-900/20 px-8"
                     >
-                        {isSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
-                        Finalize Prescription
+                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                        Save Prescription
                     </Button>
-                    <Button
-                        onClick={() => savePrescription(true)}
-                        disabled={isSaving}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-6 rounded-2xl shadow-xl shadow-blue-200"
-                    >
-                        <Receipt className="mr-2 h-5 w-5" />
-                        Checkout & Collect Payment
-                    </Button>
-                    <Button
-                        variant="outline"
-                        onClick={async () => {
-                            if (isConverting) return;
-                            setIsConverting(true);
-                            try {
-                                // Always save latest changes first
-                                const pId = await savePrescription(false);
-
-                                if (pId) {
-                                    // Navigate to the Print Preview Page for proper PDF printing
-                                    window.open(`/hms/billing/${pId}/print?type=prescription`, '_blank');
-                                }
-                            } finally {
-                                setIsConverting(false);
-                            }
-                        }}
-                        disabled={isConverting}
-                        className="px-8 py-6 rounded-2xl border-slate-200 hover:bg-slate-50"
-                    >
-                        {isConverting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Printer className="mr-2 h-5 w-5" />}
-                        Print PDF
-                    </Button>
-                    <Button
-                        variant="outline"
-                        onClick={handleWhatsappShare}
-                        disabled={isSharing || isSaving}
-                        className="px-8 py-6 rounded-2xl border-green-200 hover:bg-green-50 text-green-700 font-bold"
-                    >
-                        {isSharing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <MessageCircle className="mr-2 h-5 w-5" />}
-                        Share WhatsApp
-                    </Button>
-                    {!isModal && (
-                        <Button variant="ghost" onClick={() => router.back()} className="px-8 py-6 rounded-2xl">
-                            Cancel
-                        </Button>
-                    )}
                 </div>
-            </footer>
+            </div>
 
-            {/* Medicine Config Modal */}
-            {showMedicineModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowMedicineModal(false)} />
-                    <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="p-8 space-y-6">
-                            <div className="flex justify-between items-start">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Configuring Medicine</p>
-                                    <h2 className="text-2xl font-black text-slate-900 line-clamp-2">{currentMedicine?.name}</h2>
-                                </div>
-                                <button onClick={() => setShowMedicineModal(false)} className="p-2 hover:bg-slate-100 rounded-xl">
-                                    <X className="h-6 w-6 text-slate-400" />
-                                </button>
-                            </div>
+            {/* Medicine Modal */}
+            <AnimatePresence>
+                {showMedicineModal && (
+                    <div className="absolute inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl border border-slate-100"
+                        >
+                            <h3 className="text-xl font-black text-slate-900 mb-1">{currentMedicine?.name || 'Add Medicine'}</h3>
+                            <p className="text-sm text-slate-500 font-bold mb-6">Configure dosage and duration</p>
 
                             <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Dosage Schedule</label>
-                                    <select
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Frequency (M-A-E-N)</label>
+                                    <div className="flex gap-2 flex-wrap">
+                                        {['1-0-0-1', '1-0-1-0', '1-1-1-0', '1-0-1', '0-0-1', '1-0-0'].map(d => (
+                                            <button
+                                                key={d}
+                                                onClick={() => setModalDosage(d)}
+                                                className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${modalDosage === d ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'}`}
+                                            >
+                                                {d}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <input
                                         value={modalDosage}
-                                        onChange={(e) => setModalDosage(e.target.value)}
-                                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-900 font-bold focus:ring-4 focus:ring-blue-50 transition-all outline-none appearance-none"
-                                    >
-                                        <option value="1-0-1">Morning & Evening (1-0-1)</option>
-                                        <option value="1-1-1">Three times daily (1-1-1)</option>
-                                        <option value="1-1-1-1">Four times daily (1-1-1-1)</option>
-                                        <option value="0-0-1">At Night (0-0-1)</option>
-                                        <option value="1-0-0">Morning Only (1-0-0)</option>
-                                        <option value="1-1-0">Morning & Noon (1-1-0)</option>
-                                        <option value="SOS">When Required (SOS)</option>
-                                    </select>
+                                        onChange={e => setModalDosage(e.target.value)}
+                                        className="w-full mt-3 p-4 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 text-center tracking-widest outline-none focus:ring-2 focus:ring-blue-100 transition-all text-lg"
+                                        placeholder="1-0-1"
+                                    />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Duration (Days)</label>
-                                        <select
+                                    <div>
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Duration (Days)</label>
+                                        <input
+                                            type="number"
                                             value={modalDays}
-                                            onChange={(e) => setModalDays(e.target.value)}
-                                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-900 font-bold focus:ring-4 focus:ring-blue-50 transition-all outline-none appearance-none"
-                                        >
-                                            {[3, 5, 7, 10, 14, 21, 30].map(d => (
-                                                <option key={d} value={d.toString()}>{d} Days</option>
-                                            ))}
-                                        </select>
+                                            onChange={e => setModalDays(e.target.value)}
+                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                                        />
                                     </div>
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold text-slate-400 uppercase tracking-widest">Timing</label>
+                                    <div>
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Timing</label>
                                         <select
                                             value={modalTiming}
-                                            onChange={(e) => setModalTiming(e.target.value)}
-                                            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-slate-900 font-bold focus:ring-4 focus:ring-blue-50 transition-all outline-none appearance-none"
+                                            onChange={e => setModalTiming(e.target.value)}
+                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-100 transition-all appearance-none"
                                         >
                                             <option value="After Food">After Food</option>
                                             <option value="Before Food">Before Food</option>
-                                            <option value="Empty Stomach">Empty Stomach</option>
                                             <option value="With Food">With Food</option>
                                         </select>
                                     </div>
                                 </div>
-
-                                <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-xl shadow-blue-100">
-                                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Result Confirmation</p>
-                                    <p className="text-xl font-black mt-1">Take {modalDosage} for {modalDays} days {modalTiming.toLowerCase()}.</p>
-                                </div>
                             </div>
 
-                            <Button onClick={saveMedicineFromModal} className="w-full bg-slate-900 hover:bg-black text-white py-8 rounded-2xl font-bold text-lg">
-                                Add to Prescription
-                            </Button>
-                        </div>
+                            <div className="flex gap-3 mt-8">
+                                <Button onClick={() => setShowMedicineModal(false)} variant="ghost" className="flex-1 rounded-xl font-bold text-slate-500 hover:bg-slate-100">Cancel</Button>
+                                <Button onClick={saveMedicineFromModal} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200">
+                                    <CheckCircle2 className="mr-2 h-4 w-4" /> Save
+                                </Button>
+                            </div>
+                        </motion.div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
         </div>
     )
 
