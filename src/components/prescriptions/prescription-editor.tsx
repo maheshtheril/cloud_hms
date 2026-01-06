@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Printer, Plus, Trash2, Copy, Eraser, Clock, Zap, X, Save, Thermometer, Brain, Heart, Activity as ActivityIcon, MessageCircle, FileText, Share2, Loader2, User, Pill, CheckCircle2, Search, AlertCircle } from 'lucide-react'
+import { Printer, Plus, Trash2, Copy, Eraser, Clock, Zap, X, Save, Thermometer, Brain, Heart, Activity as ActivityIcon, MessageCircle, FileText, Share2, Loader2, User, Pill, CheckCircle2, Search, AlertCircle, PenTool, Edit3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
@@ -18,7 +18,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     const { toast } = useToast()
     const searchParams = useSearchParams()
     const patientId = searchParams.get('patientId')
-    const appointmentId = searchParams.get('appointmentId') // For billing integration
+    const appointmentId = searchParams.get('appointmentId')
 
     const [patientInfo, setPatientInfo] = useState<any>(null)
     const [resolvedPatientId, setResolvedPatientId] = useState<string | null>(patientId)
@@ -38,30 +38,30 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     const [modalDays, setModalDays] = useState('5')
     const [modalTiming, setModalTiming] = useState('After Food')
 
-    // Handwriting canvases
-    const vitalsCanvasRef = useRef<HTMLCanvasElement>(null)
-    const diagnosisCanvasRef = useRef<HTMLCanvasElement>(null)
-    const complaintCanvasRef = useRef<HTMLCanvasElement>(null)
-    const examinationCanvasRef = useRef<HTMLCanvasElement>(null)
-    const planCanvasRef = useRef<HTMLCanvasElement>(null)
-
+    // SCRIBBLE / HANDWRITING MODAL STATE
+    const [scribbleModalOpen, setScribbleModalOpen] = useState(false)
+    const [scribbleTarget, setScribbleTarget] = useState<keyof typeof convertedText | null>(null)
+    const [isConvertingScribble, setIsConvertingScribble] = useState(false)
+    const scribbleCanvasRef = useRef<HTMLCanvasElement>(null)
     const [isDrawing, setIsDrawing] = useState(false)
-    const [currentCanvas, setCurrentCanvas] = useState<HTMLCanvasElement | null>(null)
-    const [isConverting, setIsConverting] = useState(false)
-    const [loadingPrevious, setLoadingPrevious] = useState(false)
+
     const [isSaving, setIsSaving] = useState(false)
     const [isSharing, setIsSharing] = useState(false)
     const [lastSavedId, setLastSavedId] = useState<string | null>(null)
 
-    // Converted text
+    // Clinical Text Fields
     const [convertedText, setConvertedText] = useState({
+        // Vitals are separate now, stored for legacy/save compatibility if needed, but display is changing
         vitals: '',
         diagnosis: '',
         complaint: '',
         examination: '',
         plan: ''
     })
-    const [showConverted, setShowConverted] = useState(false)
+
+    // Structured Vitals State
+    const [vitalsData, setVitalsData] = useState<any>(null)
+
     const [selectedLabs, setSelectedLabs] = useState<any[]>([])
     const [labSearch, setLabSearch] = useState('')
     const [filteredLabs, setFilteredLabs] = useState<any[]>([])
@@ -71,6 +71,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     // Dynamic Masters from Database
     const [dbTemplates, setDbTemplates] = useState<any[]>([])
     const [loadingTemplates, setLoadingTemplates] = useState(true)
+    const [loadingPrevious, setLoadingPrevious] = useState(false)
 
     // Helper to get icon for a template
     const getTemplateIcon = (name: string) => {
@@ -134,21 +135,22 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                     const pr = data.prescription;
                     const vt = data.vitals;
 
-                    let vitalsText = '';
                     if (vt) {
-                        vitalsText = `T: ${vt.temperature || '-'}°F, P: ${vt.pulse || '-'}bpm, S/D: ${vt.systolic || '-'}/${vt.diastolic || '-'}mmHg, SpO2: ${vt.spo2 || '-'}%, W: ${vt.weight || '-'}kg, H: ${vt.height || '-'}cm. ${vt.notes || ''}`.trim();
+                        setVitalsData(vt);
+                        // Also populate text version for legacy save if needed, or if doctor wants to edit raw text
+                        const vitalsStr = `T: ${vt.temperature || '-'}°F, P: ${vt.pulse || '-'}bpm, BP: ${vt.systolic || '-'}/${vt.diastolic || '-'}mmHg, SpO2: ${vt.spo2 || '-'}%, Wt: ${vt.weight || '-'}kg`.trim();
+                        setConvertedText(prev => ({ ...prev, vitals: vitalsStr }));
                     }
 
                     if (pr) {
                         setConvertedText({
-                            vitals: pr.vitals || vitalsText,
+                            vitals: pr.vitals || (vt ? `T: ${vt.temperature || '-'}°F, P: ${vt.pulse || '-'}bpm, BP: ${vt.systolic || '-'}/${vt.diastolic || '-'}mmHg, SpO2: ${vt.spo2 || '-'}%, Wt: ${vt.weight || '-'}kg` : ''),
                             diagnosis: pr.diagnosis || '',
                             complaint: pr.complaint || '',
                             examination: pr.examination || '',
                             plan: pr.plan || ''
                         });
                         setSelectedMedicines(pr.medicines || []);
-                        setShowConverted(true);
 
                         if (!patientId && pr.patient_id) {
                             setResolvedPatientId(pr.patient_id);
@@ -158,13 +160,6 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                                     if (pData.patient) setPatientInfo(pData.patient)
                                 });
                         }
-                    } else if (vt) {
-                        // Only vitals found (Nurse done, Doctor starting)
-                        setConvertedText(prev => ({
-                            ...prev,
-                            vitals: vitalsText
-                        }));
-                        setShowConverted(true);
                     }
                 }
             })
@@ -227,80 +222,128 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
         }
     }, [medicineSearch, medicines])
 
-    // Initialize canvases
-    useEffect(() => {
-        const canvases = [vitalsCanvasRef, diagnosisCanvasRef, complaintCanvasRef, examinationCanvasRef, planCanvasRef]
-        canvases.forEach(ref => {
-            if (ref.current) {
-                const ctx = ref.current.getContext('2d')
-                if (ctx) {
-                    ctx.fillStyle = '#ffffff'
-                    ctx.fillRect(0, 0, ref.current.width, ref.current.height)
-                }
-            }
-        })
-    }, [])
 
-    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
+    // ------------------------------------------------------------------------
+    // SCRIBBLE / DRAWING LOGIC (Now in a modal context)
+    // ------------------------------------------------------------------------
+
+    const openScribbleModal = (target: keyof typeof convertedText) => {
+        setScribbleTarget(target)
+        setScribbleModalOpen(true)
+        // Reset canvas after modal opens (need a small delay or effect, handled in useEffect typically, 
+        // but here we'll just ensure it's clear when we access it)
+    }
+
+    useEffect(() => {
+        if (scribbleModalOpen && scribbleCanvasRef.current) {
+            const canvas = scribbleCanvasRef.current
+            const ctx = canvas.getContext('2d')
+            if (ctx) {
+                ctx.fillStyle = '#ffffff'
+                ctx.fillRect(0, 0, canvas.width, canvas.height)
+            }
+        }
+    }, [scribbleModalOpen])
+
+    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        const canvas = scribbleCanvasRef.current
+        if (!canvas) return
         const ctx = canvas.getContext('2d')
         if (!ctx) return
         setIsDrawing(true)
-        setCurrentCanvas(canvas)
         const rect = canvas.getBoundingClientRect()
         ctx.beginPath()
         ctx.moveTo(e.clientX - rect.left, e.clientY - rect.top)
-        ctx.lineWidth = 2
+        ctx.lineWidth = 3
         ctx.lineCap = 'round'
         ctx.strokeStyle = '#000'
     }
 
     const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-        if (!isDrawing || !currentCanvas) return
-        const ctx = currentCanvas.getContext('2d')
+        if (!isDrawing || !scribbleCanvasRef.current) return
+        const ctx = scribbleCanvasRef.current.getContext('2d')
         if (!ctx) return
-        const rect = currentCanvas.getBoundingClientRect()
+        const rect = scribbleCanvasRef.current.getBoundingClientRect()
         ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top)
         ctx.stroke()
     }
 
     const stopDrawing = () => {
         setIsDrawing(false)
-        setCurrentCanvas(null)
     }
 
-    const startDrawingTouch = (e: React.TouchEvent<HTMLCanvasElement>, canvas: HTMLCanvasElement) => {
-        // e.preventDefault() // Explicitly handling preventing default in canvas props if needed, but it's tricky in React
+    const startDrawingTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
+        const canvas = scribbleCanvasRef.current
+        if (!canvas) return
         const ctx = canvas.getContext('2d')
         if (!ctx) return
         setIsDrawing(true)
-        setCurrentCanvas(canvas)
         const rect = canvas.getBoundingClientRect()
         const touch = e.touches[0]
         ctx.beginPath()
         ctx.moveTo(touch.clientX - rect.left, touch.clientY - rect.top)
-        ctx.lineWidth = 2
+        ctx.lineWidth = 3
         ctx.lineCap = 'round'
         ctx.strokeStyle = '#000'
     }
 
     const drawTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
-        if (!isDrawing || !currentCanvas) return
-        // e.preventDefault() 
-        const ctx = currentCanvas.getContext('2d')
+        if (!isDrawing || !scribbleCanvasRef.current) return
+        const ctx = scribbleCanvasRef.current.getContext('2d')
         if (!ctx) return
-        const rect = currentCanvas.getBoundingClientRect()
+        const rect = scribbleCanvasRef.current.getBoundingClientRect()
         const touch = e.touches[0]
         ctx.lineTo(touch.clientX - rect.left, touch.clientY - rect.top)
         ctx.stroke()
     }
 
-    const clearCanvas = (canvas: HTMLCanvasElement | null) => {
+    const clearScribbleCanvas = () => {
+        const canvas = scribbleCanvasRef.current
         if (!canvas) return
         const ctx = canvas.getContext('2d')
         if (!ctx) return
         ctx.fillStyle = '#ffffff'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
     }
+
+    const saveScribble = async () => {
+        if (!scribbleCanvasRef.current || !scribbleTarget) return
+
+        setIsConvertingScribble(true)
+        try {
+            await new Promise((resolve) => {
+                scribbleCanvasRef.current!.toBlob(async (blob) => {
+                    if (!blob) { resolve(null); return; }
+
+                    const formData = new FormData()
+                    formData.append('image', blob, 'scribble.jpg')
+                    try {
+                        const res = await fetch('/api/recognize-handwriting', {
+                            method: 'POST',
+                            body: formData
+                        })
+                        const data = await res.json()
+                        if (data.text) {
+                            setConvertedText(prev => ({
+                                ...prev,
+                                [scribbleTarget]: (prev[scribbleTarget] ? prev[scribbleTarget] + ' ' : '') + data.text
+                            }))
+                            setScribbleModalOpen(false)
+                        } else {
+                            alert("Could not recognize text. Please try writing more clearly.");
+                        }
+                    } catch (err) {
+                        console.error("Transcription failed", err)
+                        alert("Error converting handwriting.");
+                    }
+                    resolve(null)
+                }, 'image/jpeg', 0.9)
+            })
+        } finally {
+            setIsConvertingScribble(false)
+        }
+    }
+
 
     const loadLastPrescription = async () => {
         if (!patientId) return
@@ -346,13 +389,12 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
         if (template.diagnosis || template.plan || template.complaint || template.examination || template.vitals) {
             setConvertedText(prev => ({
                 ...prev,
-                vitals: template.vitals || prev.vitals,
+                // vitals: template.vitals || prev.vitals, // Don't overwrite nurse vitals with template vitals usually
                 diagnosis: template.diagnosis || prev.diagnosis,
                 complaint: template.complaint || prev.complaint,
                 examination: template.examination || prev.examination,
                 plan: template.plan || prev.plan
             }))
-            setShowConverted(true)
         }
     }
 
@@ -431,86 +473,20 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
         setSelectedMedicines(selectedMedicines.filter((_, i) => i !== index))
     }
 
-    const runTranscription = async () => {
-        setIsConverting(true)
-        try {
-            const canvases = [
-                { ref: vitalsCanvasRef, field: 'vitals' },
-                { ref: diagnosisCanvasRef, field: 'diagnosis' },
-                { ref: complaintCanvasRef, field: 'complaint' },
-                { ref: examinationCanvasRef, field: 'examination' },
-                { ref: planCanvasRef, field: 'plan' }
-            ]
-
-            const converted: any = { ...convertedText }
-            let hasAnyContent = false
-
-            for (const { ref, field } of canvases) {
-                if (!ref.current) continue
-
-                // Check if canvas is empty (simplified check)
-                const ctx = ref.current.getContext('2d')
-                if (!ctx) continue
-
-                // Check if any pixels are drawn (rough check by looking at data)
-                // If it's empty, we might skip it to save API calls
-
-                await new Promise((resolve) => {
-                    ref.current!.toBlob(async (blob) => {
-                        if (!blob || blob.size < 1000) { // Very small blobs are likely empty
-                            resolve(null)
-                            return
-                        }
-
-                        hasAnyContent = true
-                        const formData = new FormData()
-                        formData.append('image', blob, `${field}.jpg`)
-                        try {
-                            const res = await fetch('/api/recognize-handwriting', {
-                                method: 'POST',
-                                body: formData
-                            })
-                            const data = await res.json()
-                            if (data.text) converted[field] = data.text
-                        } catch (err) {
-                            console.error(`Failed to transcribe ${field}`, err)
-                        }
-                        resolve(null)
-                    }, 'image/jpeg', 0.8)
-                })
-            }
-
-            setConvertedText(converted)
-            if (hasAnyContent) setShowConverted(true)
-            return converted
-        } catch (error) {
-            console.error('Transcription Error:', error)
-            return convertedText
-        } finally {
-            setIsConverting(false)
-        }
-    }
-
     const savePrescription = async (redirectToBill = false) => {
         setIsSaving(true)
         try {
-            // 1. Perform transcription first if not already done or if we want to ensure latest
-            let finalTexts = convertedText
-            if (!showConverted) {
-                finalTexts = await runTranscription()
-            }
-
             const response = await fetch('/api/prescriptions/save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     patientId: resolvedPatientId,
                     appointmentId,
-                    vitals: finalTexts.vitals || '',
-                    diagnosis: finalTexts.diagnosis || '',
-                    complaint: finalTexts.complaint || '',
-                    examination: finalTexts.examination || '',
-                    plan: finalTexts.plan || '',
+                    vitals: convertedText.vitals || '',
+                    diagnosis: convertedText.diagnosis || '',
+                    complaint: convertedText.complaint || '',
+                    examination: convertedText.examination || '',
+                    plan: convertedText.plan || '',
                     medicines: selectedMedicines,
                     labTests: selectedLabs
                 })
@@ -529,7 +505,6 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                         title: "Prescription Saved",
                         description: "Your changes have been saved successfully.",
                     })
-                    // Don't close so they can keep editing
                 }
                 return data.prescriptionId;
             } else {
@@ -563,8 +538,6 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                     title: "WhatsApp",
                     description: String(res.message || "Sent successfully."),
                 });
-                // Frontend no longer opens popups. Backend handles automatic sending.
-                // res.whatsappUrl is ignored to prevent manual share mode from interrupting workflow.
             } else {
                 toast({
                     title: "Share Failed",
@@ -592,7 +565,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             <div className="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
             {/* Header */}
-            <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 p-4 lg:p-6 flex justify-between items-center shrink-0 supports-[backdrop-filter]:bg-white/60">
+            <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/50 p-4 lg:p-6 flex justify-between items-center shrink-0 supports-[backdrop-filter]:bg-white/60 print:hidden">
                 <div className="flex items-center gap-4">
                     <div className="h-12 w-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-500/30">
                         <Stethoscope className="h-6 w-6" />
@@ -635,7 +608,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 max-w-[1600px] mx-auto pb-24">
 
                     {/* LEFT COLUMN: Patient Info & Templates (Col Span 3) */}
-                    <div className="lg:col-span-3 space-y-6">
+                    <div className="lg:col-span-3 space-y-6 print:hidden">
                         {/* Patient Card */}
                         <div className="bg-white/70 backdrop-blur-md rounded-3xl p-5 border border-white/60 shadow-lg shadow-slate-200/50 relative overflow-hidden group">
                             <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -708,80 +681,67 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
 
                     {/* CENTER COLUMN: Clinical Canvas (Col Span 5) */}
                     <div className="lg:col-span-6 space-y-6">
-                        {/* Control Bar */}
-                        <div className="flex justify-between items-center bg-white/70 backdrop-blur-md rounded-2xl p-2 border border-white/60 shadow-sm sticky top-0 z-30">
-                            <h2 className="text-sm font-black text-slate-800 tracking-tight px-3">Clinical Findings</h2>
-                            <div className="flex gap-2">
-                                {!showConverted ? (
-                                    <Button
-                                        size="sm"
-                                        onClick={runTranscription}
-                                        disabled={isConverting}
-                                        className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-purple-200/50 text-xs px-4 h-9"
-                                    >
-                                        {isConverting ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Zap className="mr-2 h-3 w-3" />}
-                                        Transcribe
-                                    </Button>
-                                ) : (
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        onClick={() => setShowConverted(false)}
-                                        className="text-slate-500 hover:bg-slate-50 font-bold rounded-xl border-slate-200 h-9 text-xs"
-                                    >
-                                        <Eraser className="mr-2 h-3 w-3" /> Draw
-                                    </Button>
-                                )}
+
+                        {/* VITALS DISPLAY (ReadOnly / Nurse Entered) */}
+                        <div className="bg-white/70 backdrop-blur-md rounded-3xl p-4 border border-white/60 shadow-sm relative overflow-hidden">
+                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                <ActivityIcon className="h-3 w-3" /> Latest Vitals (By Nurse)
+                            </h3>
+                            <div className="flex flex-wrap gap-3">
+                                <div className="bg-red-50 text-red-700 px-3 py-2 rounded-xl border border-red-100 shadow-sm min-w-[80px]">
+                                    <span className="text-[10px] uppercase font-bold text-red-400 block">Pulse</span>
+                                    <span className="text-lg font-black">{vitalsData?.pulse || '--'} <span className="text-xs font-medium opacity-70">bpm</span></span>
+                                </div>
+                                <div className="bg-blue-50 text-blue-700 px-3 py-2 rounded-xl border border-blue-100 shadow-sm min-w-[80px]">
+                                    <span className="text-[10px] uppercase font-bold text-blue-400 block">BP</span>
+                                    <span className="text-lg font-black">{vitalsData?.systolic || '--'}/{vitalsData?.diastolic || '--'}</span>
+                                </div>
+                                <div className="bg-orange-50 text-orange-700 px-3 py-2 rounded-xl border border-orange-100 shadow-sm min-w-[80px]">
+                                    <span className="text-[10px] uppercase font-bold text-orange-400 block">Temp</span>
+                                    <span className="text-lg font-black">{vitalsData?.temperature || '--'} <span className="text-xs font-medium opacity-70">°F</span></span>
+                                </div>
+                                <div className="bg-teal-50 text-teal-700 px-3 py-2 rounded-xl border border-teal-100 shadow-sm min-w-[80px]">
+                                    <span className="text-[10px] uppercase font-bold text-teal-400 block">SpO2</span>
+                                    <span className="text-lg font-black">{vitalsData?.spo2 || '--'} <span className="text-xs font-medium opacity-70">%</span></span>
+                                </div>
+                                <div className="bg-slate-50 text-slate-700 px-3 py-2 rounded-xl border border-slate-200 shadow-sm min-w-[80px]">
+                                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Weight</span>
+                                    <span className="text-lg font-black">{vitalsData?.weight || '--'} <span className="text-xs font-medium opacity-70">kg</span></span>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Canvases */}
+                        {/* CLINICAL SECTIONS (Text + Scribble Popup) */}
                         <div className="space-y-4">
                             {[
-                                { title: 'VITALS', ref: vitalsCanvasRef, height: 80, key: 'vitals', icon: ActivityIcon },
-                                { title: 'DIAGNOSIS', ref: diagnosisCanvasRef, height: 80, key: 'diagnosis', icon: Brain },
-                                { title: 'PRESENTING COMPLAINT', ref: complaintCanvasRef, height: 100, key: 'complaint', icon: AlertCircle },
-                                { title: 'GENERAL EXAMINATION', ref: examinationCanvasRef, height: 120, key: 'examination', icon: Search },
-                                { title: 'PLAN', ref: planCanvasRef, height: 80, key: 'plan', icon: FileText }
+                                { title: 'DIAGNOSIS', height: 80, key: 'diagnosis' as keyof typeof convertedText, icon: Brain },
+                                { title: 'PRESENTING COMPLAINT', height: 100, key: 'complaint' as keyof typeof convertedText, icon: AlertCircle },
+                                { title: 'GENERAL EXAMINATION', height: 120, key: 'examination' as keyof typeof convertedText, icon: Search },
+                                { title: 'PLAN', height: 80, key: 'plan' as keyof typeof convertedText, icon: FileText }
                             ].map((section, idx) => (
-                                <div key={idx} className="bg-white rounded-3xl p-1 border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                                    <div className="px-4 py-2 flex items-center gap-2 border-b border-slate-50 mb-1">
-                                        <section.icon className="h-3 w-3 text-slate-400" />
-                                        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{section.title}</h3>
+                                <div key={idx} className="bg-white rounded-3xl p-1 border border-slate-100 shadow-sm hover:shadow-md transition-shadow group relative">
+                                    <div className="px-4 py-2 flex items-center justify-between border-b border-slate-50 mb-1">
+                                        <div className="flex items-center gap-2">
+                                            <section.icon className="h-3 w-3 text-slate-400" />
+                                            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{section.title}</h3>
+                                        </div>
+                                        <button
+                                            onClick={() => openScribbleModal(section.key)}
+                                            className="opacity-0 group-hover:opacity-100 transition-opacity bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 p-1.5 rounded-lg text-xs font-bold flex items-center gap-1"
+                                            title="Click to Scribble, then convert to text"
+                                        >
+                                            <PenTool className="h-3 w-3" /> Scribble
+                                        </button>
                                     </div>
 
-                                    {showConverted ? (
-                                        <textarea
-                                            value={convertedText[section.key as keyof typeof convertedText] || ''}
-                                            onChange={(e) => setConvertedText({ ...convertedText, [section.key]: e.target.value })}
-                                            className="w-full min-h-[80px] p-4 bg-transparent border-none rounded-b-2xl text-slate-700 text-sm leading-relaxed font-medium focus:ring-0 resize-y"
-                                            placeholder={`No ${section.title.toLowerCase()} recorded...`}
-                                        />
-                                    ) : (
-                                        <div className="relative group">
-                                            <canvas
-                                                ref={section.ref}
-                                                width={900}
-                                                height={section.height}
-                                                className="w-full bg-slate-50/30 rounded-b-2xl cursor-crosshair touch-none mix-blend-multiply"
-                                                onMouseDown={(e) => startDrawing(e, section.ref.current!)}
-                                                onMouseMove={draw}
-                                                onMouseUp={stopDrawing}
-                                                onMouseLeave={stopDrawing}
-                                                onTouchStart={(e) => startDrawingTouch(e, section.ref.current!)}
-                                                onTouchMove={drawTouch}
-                                                onTouchEnd={stopDrawing}
-                                                style={{ touchAction: 'none' }}
-                                            />
-                                            <button
-                                                onClick={() => clearCanvas(section.ref.current)}
-                                                className="absolute top-2 right-2 p-1.5 bg-white/80 backdrop-blur rounded-lg text-slate-300 hover:text-red-500 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                                                title="Clear"
-                                            >
-                                                <Eraser className="h-3 w-3" />
-                                            </button>
-                                        </div>
-                                    )}
+                                    <textarea
+                                        value={convertedText[section.key] || ''}
+                                        onChange={(e) => setConvertedText({ ...convertedText, [section.key]: e.target.value })}
+                                        onDoubleClick={() => openScribbleModal(section.key)}
+                                        className="w-full min-h-[80px] p-4 bg-transparent border-none rounded-b-2xl text-slate-700 text-sm leading-relaxed font-medium focus:ring-0 resize-y"
+                                        placeholder={`Type ${section.title.toLowerCase()} or double-click to scribble...`}
+                                        style={{ minHeight: section.height }}
+                                    />
                                 </div>
                             ))}
                         </div>
@@ -853,7 +813,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                                             </div>
                                             <button
                                                 onClick={() => removeMedicine(idx)}
-                                                className="absolute top-3 right-3 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                className="absolute top-3 right-3 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity print:hidden"
                                             >
                                                 <X className="h-3.5 w-3.5" />
                                             </button>
@@ -870,7 +830,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                             </h3>
 
                             {/* Search */}
-                            <div className="relative group mb-4">
+                            <div className="relative group mb-4 print:hidden">
                                 <input
                                     type="text"
                                     value={labSearch}
@@ -900,7 +860,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                                 {selectedLabs.map((lab, idx) => (
                                     <div key={idx} className="bg-violet-50 border border-violet-100 pl-3 pr-2 py-1.5 rounded-xl flex items-center gap-2">
                                         <span className="text-xs font-bold text-violet-700">{lab.name}</span>
-                                        <button onClick={() => removeLabTest(lab.id)} className="hover:bg-violet-200/50 rounded-full p-0.5 text-violet-400 hover:text-violet-700 transition-colors">
+                                        <button onClick={() => removeLabTest(lab.id)} className="hover:bg-violet-200/50 rounded-full p-0.5 text-violet-400 hover:text-violet-700 transition-colors print:hidden">
                                             <X className="h-3 w-3" />
                                         </button>
                                     </div>
@@ -916,7 +876,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             </div>
 
             {/* Bottom Actions Bar */}
-            <div className="sticky bottom-0 z-40 bg-white/80 backdrop-blur-md border-t border-slate-200/50 p-4 flex justify-between items-center">
+            <div className="sticky bottom-0 z-40 bg-white/80 backdrop-blur-md border-t border-slate-200/50 p-4 flex justify-between items-center print:hidden">
                 <Button
                     variant="ghost"
                     onClick={onClose || (() => router.back())}
@@ -946,10 +906,93 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                 </div>
             </div>
 
+            {/* SCRIBBLE MODAL */}
+            <AnimatePresence>
+                {scribbleModalOpen && (
+                    <div className="absolute inset-0 z-[70] bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="bg-white rounded-3xl w-full max-w-4xl h-[70vh] flex flex-col shadow-2xl border border-white/40 overflow-hidden"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                                <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                                    <PenTool className="h-5 w-5 text-indigo-600" />
+                                    Scribble Notes
+                                    <span className="text-xs font-bold text-slate-400 uppercase bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
+                                        {scribbleTarget?.toUpperCase()}
+                                    </span>
+                                </h3>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={clearScribbleCanvas}
+                                        className="text-slate-500 hover:text-red-500 border-slate-200"
+                                    >
+                                        <Eraser className="h-4 w-4 mr-1" /> Clear
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setScribbleModalOpen(false)}
+                                    >
+                                        <X className="h-5 w-5" />
+                                    </Button>
+                                </div>
+                            </div>
+
+                            <div className="flex-1 bg-white relative cursor-crosshair overflow-hidden group touch-none">
+                                {/* Grid Pattern */}
+                                <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
+                                    style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+                                </div>
+                                <canvas
+                                    ref={scribbleCanvasRef}
+                                    width={1000}
+                                    height={600}
+                                    className="w-full h-full touch-none"
+                                    onMouseDown={(e) => startDrawing(e)}
+                                    onMouseMove={draw}
+                                    onMouseUp={stopDrawing}
+                                    onMouseLeave={stopDrawing}
+                                    onTouchStart={startDrawingTouch}
+                                    onTouchMove={drawTouch}
+                                    onTouchEnd={stopDrawing}
+                                />
+                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none opacity-50 text-xs font-medium text-slate-400 bg-white/80 px-3 py-1 rounded-full border border-slate-100 shadow-sm">
+                                    Draw your thoughts freely
+                                </div>
+                            </div>
+
+                            <div className="p-4 border-t border-slate-100 bg-white flex justify-end gap-3">
+                                <Button
+                                    onClick={() => setScribbleModalOpen(false)}
+                                    variant="ghost"
+                                    className="font-bold text-slate-500"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
+                                    onClick={saveScribble}
+                                    disabled={isConvertingScribble}
+                                    className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-200 font-bold px-8"
+                                >
+                                    {isConvertingScribble ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Edit3 className="h-4 w-4 mr-2" />}
+                                    Convert to Text
+                                </Button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
             {/* Medicine Modal */}
             <AnimatePresence>
                 {showMedicineModal && (
-                    <div className="absolute inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="absolute inset-0 z-[60] bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
@@ -1072,8 +1115,6 @@ function Stethoscope(props: any) {
         </svg>
     )
 }
-
-
 
 function Receipt(props: any) {
     return (
