@@ -1,50 +1,27 @@
 'use client'
 
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
+import { useState } from "react"
+import { motion } from "framer-motion"
+import {
+    Activity, HeartPulse, UserCheck, Syringe,
+    ClipboardList, BedDouble, TestTube2, AlertCircle,
+    Clock, Search, Filter, ChevronRight
+} from "lucide-react"
+import { useRouter } from "next/navigation"
+import { differenceInYears } from "date-fns"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 import NursingVitalsForm from "@/components/nursing/vitals-form"
 
-// ... inside component ...
-const [selectedTask, setSelectedTask] = useState<any>(null)
-
-// ... inside render loop ...
-onClick = {() => setSelectedTask(task)}
-
-// ... at the end ...
-<Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
-    <DialogContent className="max-w-[95vw] h-[95vh] overflow-y-auto bg-slate-50/95 backdrop-blur-xl border-slate-200">
-        <div className="flex items-center gap-4 mb-6 sticky top-0 bg-slate-50/50 backdrop-blur pb-4 pt-2 z-50 border-b border-slate-100">
-            <div className={`h-12 w-12 rounded-full flex items-center justify-center text-lg font-bold ${selectedTask?.patient_gender === 'female' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
-                {selectedTask?.patient_name?.charAt(0)}
-            </div>
-            <div>
-                <h2 className="text-xl font-bold text-slate-900">{selectedTask?.patient_name}</h2>
-                <p className="text-sm text-slate-500">
-                    {selectedTask?.patient_gender} • {selectedTask?.patient_dob && new Date().getFullYear() - new Date(selectedTask.patient_dob).getFullYear()}Y
-                    <span className="mx-2">•</span>
-                    <span className="text-indigo-600 font-medium">#{selectedTask?.patient_id}</span>
-                </p>
-            </div>
-        </div>
-
-        {selectedTask && (
-            <NursingVitalsForm
-                patientId={selectedTask.patient_uuid}
-                encounterId={selectedTask.id}
-                tenantId={selectedTask.tenant_id}
-                isModal={true}
-                onCancel={() => setSelectedTask(null)}
-            />
-        )}
-    </DialogContent>
-</Dialog>
-pendingTriage: any[]
-activeAdmissions: any[]
-pendingSamples: any[]
+interface NursingActionCenterProps {
+    pendingTriage: any[]
+    activeAdmissions: any[]
+    pendingSamples: any[]
 }
 
 export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSamples }: NursingActionCenterProps) {
     const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
+    const [selectedTask, setSelectedTask] = useState<any>(null)
 
     const quickActions = [
         {
@@ -54,7 +31,7 @@ export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSa
             bg: 'bg-pink-50 dark:bg-pink-900/20',
             border: 'border-pink-100 dark:border-pink-800',
             desc: 'Record patient vitals',
-            link: '/hms/nursing/vitals' // or specific page
+            link: '/hms/nursing/vitals'
         },
         {
             title: 'Medication',
@@ -86,7 +63,7 @@ export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSa
     ]
 
     return (
-        <div className="flex flex-col lg:flex-row gap-8 min-h-[calc(100vh-6rem)]">
+        <div className="flex flex-col lg:flex-row gap-8 min-h-[calc(100vh-6rem)] relative">
 
             {/* Left Column: Tasks & Queue */}
             <div className="flex-1 space-y-6">
@@ -159,7 +136,11 @@ export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSa
                             pendingTriage.map((task) => {
                                 const isHighPriority = ['high', 'urgent', 'emergency'].includes(task.priority?.toLowerCase());
                                 return (
-                                    <div key={task.id} className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center justify-between cursor-pointer border-l-4 ${isHighPriority ? 'border-red-500 bg-red-50/10' : 'border-transparent'}`} onClick={() => router.push(`/hms/nursing/vitals/${task.id}`)}>
+                                    <div
+                                        key={task.id}
+                                        className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center justify-between cursor-pointer border-l-4 ${isHighPriority ? 'border-red-500 bg-red-50/10' : 'border-transparent'}`}
+                                        onClick={() => setSelectedTask(task)}
+                                    >
                                         <div className="flex items-center gap-4">
                                             <div className={`h-12 w-12 rounded-full flex items-center justify-center text-lg font-bold shadow-sm ${task.patient_gender?.toLowerCase() === 'female' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
                                                 {task.patient_name.charAt(0)}
@@ -244,8 +225,45 @@ export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSa
                         </div>
                     </div>
                 </div>
-
             </div>
+
+            {/* Modal for Vitals */}
+            <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
+                <DialogContent className="max-w-[95vw] h-[95vh] overflow-y-auto bg-slate-50/95 backdrop-blur-xl border-slate-200 p-0">
+                    {/* Sticky Header inside Modal */}
+                    <div className="flex items-center gap-4 px-6 py-4 sticky top-0 bg-white/50 backdrop-blur-md z-50 border-b border-slate-100">
+                        <div className={`h-12 w-12 rounded-full flex items-center justify-center text-lg font-bold ${selectedTask?.patient_gender?.toLowerCase() === 'female' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
+                            {selectedTask?.patient_name?.charAt(0)}
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900">{selectedTask?.patient_name}</h2>
+                            <p className="text-sm text-slate-500 flex items-center gap-2">
+                                <span className="capitalize">{selectedTask?.patient_gender}</span>
+                                {selectedTask?.patient_dob && (
+                                    <>
+                                        <span className="h-1 w-1 bg-slate-300 rounded-full" />
+                                        <span>{differenceInYears(new Date(), new Date(selectedTask.patient_dob))}Y</span>
+                                    </>
+                                )}
+                                <span className="h-1 w-1 bg-slate-300 rounded-full" />
+                                <span className="text-indigo-600 font-medium">#{selectedTask?.patient_id}</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="p-6 pt-2">
+                        {selectedTask && (
+                            <NursingVitalsForm
+                                patientId={selectedTask.patient_uuid}
+                                encounterId={selectedTask.id}
+                                tenantId={selectedTask.tenant_id}
+                                isModal={true}
+                                onCancel={() => setSelectedTask(null)}
+                            />
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
 
         </div>
     )
