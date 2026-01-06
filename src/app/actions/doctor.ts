@@ -161,12 +161,28 @@ export async function initializeDoctorProfile(_formData: FormData) {
         return { error: "Unauthorized" }
     }
 
-    const { email, name, tenantId, companyId } = session.user
+    const { email, name, tenantId, companyId, id: userId } = session.user
 
-    // Safety check
-    const existing = await prisma.hms_clinicians.findFirst({
-        where: { email: { equals: email, mode: 'insensitive' }, tenant_id: tenantId }
+    // Safety check: Logic Updated for World Class Linkage
+    // 1. Try finding by user_id first (Immutable Link)
+    let existing = await prisma.hms_clinicians.findFirst({
+        where: { user_id: userId, tenant_id: tenantId }
     })
+
+    // 2. If not linked, try finding by Email (Legacy/First-time Link)
+    if (!existing) {
+        existing = await prisma.hms_clinicians.findFirst({
+            where: { email: { equals: email, mode: 'insensitive' }, tenant_id: tenantId }
+        })
+
+        // If found by email but not linked, LINK IT NOW (Lazy Migration)
+        if (existing && !existing.user_id) {
+            await prisma.hms_clinicians.update({
+                where: { id: existing.id },
+                data: { user_id: userId }
+            })
+        }
+    }
 
     if (existing) {
         return { success: true, clinicianId: existing.id }
@@ -189,6 +205,7 @@ export async function initializeDoctorProfile(_formData: FormData) {
                 first_name: firstName,
                 last_name: lastName,
                 email: email,
+                user_id: userId, // Explicitly linking Identity to Profile
                 is_active: true,
                 role_id: defaultRole?.id, // Can be null
                 consultation_fee: 500, // Default generic fee

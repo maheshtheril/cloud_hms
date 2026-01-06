@@ -1038,6 +1038,7 @@ model hms_clinicians {
   created_at                 DateTime?            @default(now()) @db.Timestamptz(6)
   updated_at                 DateTime?            @default(now()) @db.Timestamptz(6)
   role_id                    String?              @db.Uuid
+  user_id                    String?              @db.Uuid
   specialization_id          String?              @db.Uuid
   consultation_end_time      String?              @default("17:00")
   consultation_slot_duration Int?                 @default(30)

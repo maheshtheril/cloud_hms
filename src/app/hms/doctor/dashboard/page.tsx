@@ -18,13 +18,24 @@ export default async function DoctorDashboardPage() {
     const tenantId = session.user.tenantId
     const userEmail = session.user.email
 
-    // 1. Identify the Clinician
-    const clinician = await prisma.hms_clinicians.findFirst({
+    // 1. Identify the Clinician (World-Class Profile Linking)
+    // Preference: user_id > email
+    let clinician = await prisma.hms_clinicians.findFirst({
         where: {
-            email: { equals: userEmail, mode: 'insensitive' }, // Robust match
+            user_id: session.user.id,
             tenant_id: tenantId
         }
     })
+
+    if (!clinician) {
+        // Fallback: Check by email (for legacy/unlinked accounts)
+        clinician = await prisma.hms_clinicians.findFirst({
+            where: {
+                email: { equals: userEmail, mode: 'insensitive' },
+                tenant_id: tenantId
+            }
+        })
+    }
 
     if (!clinician) {
         return (
