@@ -96,11 +96,19 @@ export function SearchableSelect({
     }, [highlightedIndex, open])
 
     const handleSelect = (optionId: string) => {
+        console.log("SearchableSelect: handleSelect called", optionId)
         setSelectedValue(optionId)
         onChange(optionId)
         setOpen(false)
         setSearch('')
     }
+
+    // debug log
+    useEffect(() => {
+        console.log("SearchableSelect: value prop changed", initialValue)
+        console.log("SearchableSelect: selectedValue state", selectedValue)
+        console.log("SearchableSelect: selectedOption found?", !!selectedOption)
+    }, [initialValue, selectedValue, selectedOption])
 
     const handleClear = (e: React.MouseEvent) => {
         e.stopPropagation()
