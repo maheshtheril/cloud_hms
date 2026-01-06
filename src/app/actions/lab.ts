@@ -162,7 +162,7 @@ export async function uploadAndAttachLabReport(formData: FormData) {
         revalidatePath('/hms/lab/dashboard');
         revalidatePath('/hms/doctor/dashboard');
 
-        return { success: true, message: "Report uploaded successfully" };
+        return { success: true, message: "Report uploaded successfully", url: dataUri };
 
     } catch (error: any) {
         console.error("Fatal Upload Error:", error);

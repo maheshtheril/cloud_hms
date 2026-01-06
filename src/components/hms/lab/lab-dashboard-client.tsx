@@ -461,13 +461,20 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                                 try {
                                                     const res = await uploadAndAttachLabReport(formData)
 
-                                                    if (res.success) {
+                                                    if (res.success && res.url) {
                                                         const btn = document.getElementById('upload-btn-text')
                                                         if (btn) btn.innerText = "Saved!"
 
-                                                        await new Promise(r => setTimeout(r, 1500))
+                                                        await new Promise(r => setTimeout(r, 1000))
 
-                                                        setSelectedOrder(null)
+                                                        // Update local state to show the report immediately
+                                                        setSelectedOrder((prev: any) => ({
+                                                            ...prev,
+                                                            status: 'completed',
+                                                            report_url: res.url
+                                                        }))
+
+                                                        // Refresh background data
                                                         router.refresh()
                                                     } else {
                                                         alert(res.message || "Failed to upload report")
