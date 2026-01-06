@@ -9,10 +9,10 @@ export async function uploadFile(formData: FormData, folder: string = 'documents
     try {
         console.log("Upload Action Started");
         const session = await auth();
-        console.log("Upload Auth Session:", session?.user?.id);
+        console.log("Upload Auth Session (v2):", session?.user?.id);
 
-        if (!session?.user?.companyId) {
-            console.error("Upload Unauthorized: No companyId");
+        if (!session?.user?.id) {
+            console.error("Upload Unauthorized: No user ID");
             return { error: "Unauthorized" };
         }
 
