@@ -41,29 +41,26 @@ export default async function NursingDashboardPage() {
         prisma.hms_admission?.findMany({
             where: {
                 tenant_id: tenantId,
-                discharge_date: null
+                discharged_at: null
             },
             include: {
-                hms_patient: true,
-                hms_clinician: true, // Primary doctor
-                hms_bed: true // if beds are linked
+                hms_patient: true
             },
             orderBy: {
-                admission_date: 'desc'
+                admitted_at: 'desc'
             }
         }).catch(() => []) || [], // Fallback if table doesn't exist/error
 
-        // 3. Fetch Pending Lab Samples
-        prisma.hms_lab_sample?.findMany({
+        // 3. Fetch Pending Lab Orders
+        prisma.hms_lab_order.findMany({
             where: {
                 tenant_id: tenantId,
-                status: 'pending'
+                status: 'requested'
             },
             include: {
-                hms_patient: true,
-                hms_lab_test: true
+                hms_patient: true
             }
-        }).catch(() => []) || []
+        }).catch(() => [])
     ])
 
     // Fetch Vitals Status for Appointments
@@ -90,16 +87,16 @@ export default async function NursingDashboardPage() {
     const formattedAdmissions = (admittedPatients as any[]).map(adm => ({
         id: adm.id,
         patient_name: `${adm.hms_patient?.first_name} ${adm.hms_patient?.last_name || ''}`.trim(),
-        bed: adm.hms_bed?.code || 'Unassigned',
-        doctor: `Dr. ${adm.hms_clinician?.first_name || ''}`,
-        admission_date: adm.admission_date
+        bed: adm.bed || 'Unassigned',
+        doctor: 'Assigned Doctor',
+        admission_date: adm.admitted_at
     }))
 
-    const formattedSamples = (pendingSamples as any[]).map(sample => ({
-        id: sample.id,
-        patient_name: `${sample.hms_patient?.first_name} ${sample.hms_patient?.last_name || ''}`.trim(),
-        test_name: sample.hms_lab_test?.name || 'Unknown Test',
-        collected_at: sample.collected_at
+    const formattedSamples = (pendingSamples as any[]).map(order => ({
+        id: order.id,
+        patient_name: `${order.hms_patient?.first_name} ${order.hms_patient?.last_name || ''}`.trim(),
+        test_name: 'Lab Order',
+        collected_at: order.ordered_at
     }))
 
     return (
