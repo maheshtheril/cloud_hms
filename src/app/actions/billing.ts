@@ -520,6 +520,24 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
 
         const result = await prisma.$transaction(async (tx) => {
             // 1. Create Payment Record
+            // Handle empty strings as null to prevent unique constraint violation on ""
+            const reference = payment.reference ? payment.reference.trim() : null;
+            const finalReference = reference === "" ? null : reference;
+
+            // Check for duplicate reference if provided
+            if (finalReference) {
+                const existing = await tx.hms_invoice_payments.findFirst({
+                    where: {
+                        tenant_id: session.user.tenantId,
+                        company_id: companyId,
+                        payment_reference: finalReference
+                    }
+                });
+                if (existing) {
+                    throw new Error(`Payment reference '${finalReference}' already exists.`);
+                }
+            }
+
             await tx.hms_invoice_payments.create({
                 data: {
                     tenant_id: session.user.tenantId,
@@ -527,7 +545,7 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
                     invoice_id: invoiceId,
                     amount: payment.amount,
                     method: payment.method as any,
-                    payment_reference: payment.reference,
+                    payment_reference: finalReference,
                     paid_at: new Date()
                 }
             });
@@ -571,7 +589,11 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
 
     } catch (error: any) {
         console.error("Failed to record payment:", error);
-        return { error: `Failed to record payment: ${error.message}` };
+        // Return a cleaner error message
+        if (error.message.includes("Unique constraint failed") || error.message.includes("already exists")) {
+            return { error: `Payment Reference '${payment.reference}' is duplicate. Please use a unique reference.` };
+        }
+        return { error: error.message || "Failed to record payment" };
     }
 }
 
