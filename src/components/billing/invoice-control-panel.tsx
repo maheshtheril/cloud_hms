@@ -94,7 +94,7 @@ export function InvoiceControlPanel({
                 amount: Number(paymentAmount),
                 method: paymentMethod,
                 reference: paymentReference
-            });
+            }, 'posted');
 
             if (res.success) {
                 toast({
