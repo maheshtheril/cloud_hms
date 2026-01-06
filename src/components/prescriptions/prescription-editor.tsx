@@ -203,10 +203,21 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
 
     const addLabTest = (test: any) => {
         if (!selectedLabs.find(l => l.id === test.id)) {
-            setSelectedLabs([...selectedLabs, test])
+            setSelectedLabs(prev => [...prev, test])
         }
         setLabSearch('')
-        setShowLabDropdown(false)
+        // setFilteredLabs([]) // Don't clear immediately if we want to add more? 
+        // Actually best is to clear search but maybe keep dropdown open if it was a list? 
+        // For custom input/search, clearing is standard.
+        // Let's add a focus restore maybe?
+        const input = document.getElementById('lab-search-input');
+        if (input) input.focus();
+    }
+
+    const handleLabKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && labSearch.trim()) {
+            addLabTest({ name: labSearch.trim(), id: crypto.randomUUID() });
+        }
     }
 
     const removeLabTest = (id: string) => {
@@ -881,10 +892,12 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                             {/* Search */}
                             <div className="relative group mb-4 print:hidden">
                                 <input
+                                    id="lab-search-input"
                                     type="text"
                                     value={labSearch}
                                     onChange={(e) => setLabSearch(e.target.value)}
-                                    placeholder="Add Lab Test..."
+                                    onKeyDown={handleLabKeyDown}
+                                    placeholder="Add Lab Tests (Type & Enter)..."
                                     className="w-full pl-4 pr-3 py-3 text-sm font-bold border border-slate-200 rounded-xl focus:border-violet-500 focus:ring-2 focus:ring-violet-100 outline-none transition-all shadow-sm"
                                 />
                                 {isSearchingLabs && <Loader2 className="absolute right-3 top-3.5 h-4 w-4 animate-spin text-slate-400" />}
@@ -893,13 +906,31 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                                         {filteredLabs.map((test, idx) => (
                                             <div
                                                 key={idx}
-                                                onClick={() => addLabTest(test)}
+                                                onClick={() => {
+                                                    addLabTest(test); // Keeps focus via logic update or just keeps it open if we change logic
+                                                    // For now, let's just add it. The input is effectively cleared.
+                                                    // To allow rapid entry, we should probably refucs the input.
+                                                    // But standard behavior is to close.
+                                                    // Let's rely on the input ref to keep it speedy?
+                                                    // No, let's just make it easy to click multiple if we change UI, 
+                                                    // but here the dropdown sits on top.
+                                                    // actually, the user wants "easy input multiple".
+                                                }}
                                                 className="p-2.5 hover:bg-violet-50 cursor-pointer rounded-xl flex items-center justify-between text-sm"
                                             >
                                                 <span className="font-bold text-slate-700">{test.name}</span>
                                                 <Plus className="h-3 w-3 text-slate-300" />
                                             </div>
                                         ))}
+                                        {labSearch.trim() && (
+                                            <div
+                                                onClick={() => addLabTest({ name: labSearch.trim(), id: crypto.randomUUID() })}
+                                                className="p-2.5 bg-violet-50/50 hover:bg-violet-100 cursor-pointer rounded-xl flex items-center gap-2 mt-1"
+                                            >
+                                                <Plus className="h-3 w-3 text-violet-600" />
+                                                <span className="font-bold text-violet-700 text-xs">Add Custom: {labSearch}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>
