@@ -6,7 +6,7 @@ import {
     Activity, FlaskConical, Users, Clock, Calendar,
     ChevronRight, Search, Bell, FileText, CheckCircle2,
     AlertCircle, TrendingUp, TestTube2, Microscope,
-    ArrowRight, Check, Loader2
+    ArrowRight, Check, Loader2, X
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { updateLabOrderStatus, uploadAndAttachLabReport, deleteLabReport } from "@/app/actions/lab"
@@ -315,8 +315,11 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                         {new Date(selectedOrder.time).toLocaleString()}
                                     </p>
                                 </div>
-                                <button onClick={() => setSelectedOrder(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors">
-                                    <AlertCircle className="h-6 w-6 rotate-45 text-slate-400" />
+                                <button
+                                    onClick={() => setSelectedOrder(null)}
+                                    className="h-10 w-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-slate-700 transition-all duration-200"
+                                >
+                                    <X className="h-5 w-5" />
                                 </button>
                             </div>
 
