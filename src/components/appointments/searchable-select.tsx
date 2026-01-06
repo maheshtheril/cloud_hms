@@ -169,7 +169,10 @@ export function SearchableSelect({
                                 <button
                                     key={option.id}
                                     type="button"
-                                    onClick={() => handleSelect(option.id)}
+                                    onMouseDown={(e) => {
+                                        e.preventDefault()
+                                        handleSelect(option.id)
+                                    }}
                                     onMouseEnter={() => setHighlightedIndex(index)}
                                     className={cn(
                                         "w-full px-4 py-2 text-left transition-colors rounded-md flex items-center justify-between group",
