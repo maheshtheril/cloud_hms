@@ -46,7 +46,7 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
     const { toast } = useToast()
     const [loading, setLoading] = useState(false)
 
-    const form = useForm<z.infer<typeof expenseSchema>>({
+    const form = useForm({
         resolver: zodResolver(expenseSchema),
         defaultValues: {
             amount: 0,
@@ -112,7 +112,7 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                                     <FormControl>
                                         <div className="relative">
                                             <DollarSign className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                                            <Input type="number" {...field} className="pl-8 text-lg font-bold" />
+                                            <Input type="number" {...field} value={field.value as number} className="pl-8 text-lg font-bold" />
                                         </div>
                                     </FormControl>
                                     <FormMessage />
