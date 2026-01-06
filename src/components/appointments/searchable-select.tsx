@@ -121,7 +121,7 @@ export function SearchableSelect({
                         {selectedOption ? selectedOption.label : placeholder}
                     </span>
                     <div className="flex items-center gap-2">
-                        {selectedValue && (
+                        {currentId && (
                             <X
                                 className="h-4 w-4 text-gray-400 hover:text-gray-600 z-10"
                                 onClick={handleClear}
