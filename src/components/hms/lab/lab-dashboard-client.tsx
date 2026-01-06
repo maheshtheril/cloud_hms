@@ -44,6 +44,8 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
         show: { opacity: 1, y: 0 }
     }
 
+    const [selectedOrder, setSelectedOrder] = useState<any>(null)
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 lg:p-10 font-sans">
             <div className="max-w-7xl mx-auto space-y-8">
@@ -173,7 +175,7 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                         className="bg-white dark:bg-slate-900 rounded-3xl p-4 md:p-6 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-violet-200 transition-all group relative overflow-hidden"
                                     >
                                         <div className={`absolute left-0 top-0 bottom-0 w-2 ${order.status === 'completed' ? 'bg-emerald-500' :
-                                                order.status === 'in_progress' ? 'bg-amber-500' : 'bg-slate-200'
+                                            order.status === 'in_progress' ? 'bg-amber-500' : 'bg-slate-200'
                                             }`} />
 
                                         <div className="flex flex-col lg:flex-row lg:items-center gap-6 pl-4">
@@ -228,7 +230,7 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                             {/* Actions */}
                                             <div className="flex items-center gap-3 mt-4 lg:mt-0 lg:ml-auto">
                                                 <button
-                                                    onClick={() => router.push(`/hms/lab/orders/${order.id}`)} // We'll need a dynamic route for details later
+                                                    onClick={() => setSelectedOrder(order)}
                                                     className="h-12 px-8 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm shadow-xl shadow-violet-600/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 w-full lg:w-auto justify-center"
                                                 >
                                                     {order.status === 'requested' ? 'Collect Sample' : 'Enter Results'}
@@ -243,6 +245,71 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                     </div>
                 </div>
             </div>
+
+            {/* Modal for Lab Order Details */}
+            <AnimatePresence>
+                {selectedOrder && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 px-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                            onClick={() => setSelectedOrder(null)}
+                        />
+                        <motion.div
+                            initial={{ scale: 0.95, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.95, opacity: 0 }}
+                            className="relative bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl border border-gray-100 dark:border-slate-800"
+                        >
+                            <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
+                                <h3 className="text-xl font-bold">Lab Order Details</h3>
+                                <button onClick={() => setSelectedOrder(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full">
+                                    <AlertCircle className="h-5 w-5 rotate-45" /> {/* Close icon substitute */}
+                                </button>
+                            </div>
+                            <div className="p-6 overflow-y-auto max-h-[60vh] space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Patient</label>
+                                        <p className="text-lg font-bold">{selectedOrder.patient_name}</p>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase">Doctor</label>
+                                        <p className="text-lg font-bold">{selectedOrder.doctor_name}</p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <h4 className="font-bold mb-3 flex items-center gap-2">
+                                        <TestTube2 className="h-4 w-4" /> Tests Requested
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {selectedOrder.tests.map((test: any, idx: number) => (
+                                            <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                                                <span className="font-medium">{test.test_name}</span>
+                                                <span className="text-xs font-bold bg-white dark:bg-slate-700 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600">
+                                                    {test.status}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3">
+                                    <button className="flex-1 py-3 bg-violet-600 text-white font-bold rounded-xl hover:bg-violet-700 transition-colors">
+                                        Update Status
+                                    </button>
+                                    <button className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                                        Print Label
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     )
 }
