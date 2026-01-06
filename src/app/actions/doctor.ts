@@ -154,3 +154,55 @@ export async function updateDoctor(formData: FormData) {
         return { error: error.message || "Failed to update clinician" }
     }
 }
+
+export async function initializeDoctorProfile() {
+    const session = await auth()
+    if (!session?.user?.email || !session?.user?.tenantId) {
+        return { error: "Unauthorized" }
+    }
+
+    const { email, name, tenantId, companyId } = session.user
+
+    // Safety check
+    const existing = await prisma.hms_clinicians.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' }, tenant_id: tenantId }
+    })
+
+    if (existing) {
+        return { success: true, clinicianId: existing.id }
+    }
+
+    // Attempt to get a default role
+    const defaultRole = await prisma.hms_roles.findFirst({
+        where: { tenant_id: tenantId, name: { contains: 'Doctor', mode: 'insensitive' } }
+    })
+
+    const [firstName, ...rest] = (name || 'New Doctor').split(' ')
+    const lastName = rest.join(' ') || ''
+
+    try {
+        const newClinician = await prisma.hms_clinicians.create({
+            data: {
+                id: randomUUID(),
+                tenant_id: tenantId,
+                company_id: companyId || tenantId, // Fallback if companyId missing
+                first_name: firstName,
+                last_name: lastName,
+                email: email,
+                is_active: true,
+                role_id: defaultRole?.id, // Can be null
+                consultation_fee: 500, // Default generic fee
+                consultation_slot_duration: 30, // Default 20 mins
+                consultation_start_time: "09:00",
+                consultation_end_time: "17:00",
+                working_days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+            } as any
+        })
+
+        revalidatePath('/hms/doctor/dashboard')
+        return { success: true, clinicianId: newClinician.id }
+    } catch (error: any) {
+        console.error("Failed to auto-init doctor:", error)
+        return { error: "Failed to initialize profile. " + error.message }
+    }
+}

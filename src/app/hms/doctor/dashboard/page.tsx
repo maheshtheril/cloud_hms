@@ -15,21 +15,44 @@ export default async function DoctorDashboardPage() {
     const tenantId = session.user.tenantId
     const userEmail = session.user.email
 
+    import { initializeDoctorProfile } from "@/app/actions/doctor"
+    import { Stethoscope, CheckCircle2 } from "lucide-react"
+
     // 1. Identify the Clinician
     const clinician = await prisma.hms_clinicians.findFirst({
         where: {
-            email: userEmail,
+            email: { equals: userEmail, mode: 'insensitive' }, // Robust match
             tenant_id: tenantId
         }
     })
 
     if (!clinician) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">
-                <div className="text-center p-8">
-                    <h2 className="text-xl font-bold text-slate-900 mb-2">Access Restricted</h2>
-                    <p>Your user profile is not linked to a Clinician record.</p>
-                    <p className="text-xs mt-4 opacity-50">Email: {userEmail}</p>
+            <div className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
+                <div className="max-w-md w-full bg-white rounded-2xl shadow-xl overflow-hidden text-center">
+                    <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-8 text-white">
+                        <div className="h-16 w-16 bg-white/20 backdrop-blur rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <Stethoscope className="h-8 w-8 text-white" />
+                        </div>
+                        <h2 className="text-2xl font-black">Welcome, Doctor!</h2>
+                        <p className="text-blue-100 mt-2">Let's set up your clinical workspace.</p>
+                    </div>
+                    <div className="p-8 space-y-6">
+                        <div className="text-slate-500 text-sm">
+                            <p>We found your account <strong>{userEmail}</strong> but it's not linked to a clinical profile yet.</p>
+                            <p className="mt-2">Click below to automatically create your profile and access the dashboard.</p>
+                        </div>
+
+                        <form action={initializeDoctorProfile}>
+                            <button
+                                type="submit"
+                                className="w-full py-3 bg-slate-900 text-white font-bold rounded-xl shadow-lg hover:bg-black transition-all flex items-center justify-center gap-2"
+                            >
+                                <CheckCircle2 className="h-5 w-5" />
+                                Initialize Profile
+                            </button>
+                        </form>
+                    </div>
                 </div>
             </div>
         )
