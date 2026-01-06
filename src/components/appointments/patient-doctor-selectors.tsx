@@ -24,6 +24,7 @@ export function PatientDoctorSelectors({
     patients,
     doctors,
     selectedPatientId,
+    selectedClinicianId,
     onClinicianSelect,
     onPatientSelect,
     onNewPatientClick
