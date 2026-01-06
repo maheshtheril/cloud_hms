@@ -14,14 +14,16 @@ import NursingVitalsForm from "@/components/nursing/vitals-form"
 
 interface NursingActionCenterProps {
     pendingTriage: any[]
+    completedTriage?: any[]
     activeAdmissions: any[]
     pendingSamples: any[]
 }
 
-export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSamples }: NursingActionCenterProps) {
+export function NursingActionCenter({ pendingTriage, completedTriage = [], activeAdmissions, pendingSamples }: NursingActionCenterProps) {
     const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedTask, setSelectedTask] = useState<any>(null)
+    const [activeTab, setActiveTab] = useState<'queue' | 'history'>('queue')
 
     const quickActions = [
         {
@@ -62,6 +64,8 @@ export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSa
         }
     ]
 
+    const displayedTasks = activeTab === 'queue' ? pendingTriage : completedTriage
+
     return (
         <div className="flex flex-col lg:flex-row gap-8 min-h-[calc(100vh-6rem)] relative">
 
@@ -81,26 +85,26 @@ export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSa
 
                 {/* Queue Summary Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:border-pink-300 transition-colors" onClick={() => setActiveTab('queue')}>
                         <div className="flex justify-between items-start mb-2">
                             <div className="h-10 w-10 bg-pink-100 rounded-lg flex items-center justify-center text-pink-600">
                                 <HeartPulse className="h-6 w-6" />
                             </div>
                             <span className="bg-pink-100 text-pink-700 text-xs font-bold px-2 py-1 rounded-full">{pendingTriage.length}</span>
                         </div>
-                        <div className="text-slate-500 text-xs font-medium uppercase tracking-wider">Pending Vitals</div>
+                        <div className={`text-xs font-medium uppercase tracking-wider ${activeTab === 'queue' ? 'text-pink-600 font-bold' : 'text-slate-500'}`}>Pending Vitals</div>
                         <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{pendingTriage.length}</div>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:border-indigo-300 transition-colors" onClick={() => setActiveTab('history')}>
                         <div className="flex justify-between items-start mb-2">
                             <div className="h-10 w-10 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600">
-                                <BedDouble className="h-6 w-6" />
+                                <UserCheck className="h-6 w-6" />
                             </div>
-                            <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full">{activeAdmissions.length}</span>
+                            <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full">{completedTriage.length}</span>
                         </div>
-                        <div className="text-slate-500 text-xs font-medium uppercase tracking-wider">Active Inpatients</div>
-                        <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{activeAdmissions.length}</div>
+                        <div className={`text-xs font-medium uppercase tracking-wider ${activeTab === 'history' ? 'text-emerald-600 font-bold' : 'text-slate-500'}`}>Completed Today</div>
+                        <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{completedTriage.length}</div>
                     </div>
 
                     <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -116,29 +120,52 @@ export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSa
                 </div>
 
                 {/* Priority Queue (Triage) */}
-                <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                    <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                        <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                            <Clock className="h-5 w-5 text-slate-400" />
-                            Awaiting Vitals / Triage
-                        </h3>
+                <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden min-h-[500px]">
+                    <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50/50">
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setActiveTab('queue')}
+                                className={`text-sm font-bold flex items-center gap-2 pb-2 border-b-2 transition-all ${activeTab === 'queue' ? 'text-pink-600 border-pink-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
+                            >
+                                <Clock className="h-4 w-4" />
+                                Awaiting Vitals
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('history')}
+                                className={`text-sm font-bold flex items-center gap-2 pb-2 border-b-2 transition-all ${activeTab === 'history' ? 'text-emerald-600 border-emerald-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
+                            >
+                                <UserCheck className="h-4 w-4" />
+                                Completed
+                            </button>
+                        </div>
                         <div className="text-xs text-slate-500 font-medium bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
-                            Today's Queue
+                            {displayedTasks.length} Patients
                         </div>
                     </div>
-                    <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[400px] overflow-y-auto">
-                        {pendingTriage.length === 0 ? (
-                            <div className="p-8 text-center text-slate-500">
-                                <UserCheck className="h-12 w-12 mx-auto text-slate-300 mb-2" />
-                                <p>No patients waiting for vitals assessment</p>
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[600px] overflow-y-auto">
+                        {displayedTasks.length === 0 ? (
+                            <div className="p-12 text-center text-slate-500">
+                                {activeTab === 'queue' ? (
+                                    <>
+                                        <UserCheck className="h-12 w-12 mx-auto text-slate-300 mb-2" />
+                                        <p>No patients waiting for vitals assessment</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <ClipboardList className="h-12 w-12 mx-auto text-slate-300 mb-2" />
+                                        <p>No vitals recorded yet today</p>
+                                    </>
+                                )}
                             </div>
                         ) : (
-                            pendingTriage.map((task) => {
+                            displayedTasks.map((task) => {
                                 const isHighPriority = ['high', 'urgent', 'emergency'].includes(task.priority?.toLowerCase());
                                 return (
                                     <div
                                         key={task.id}
-                                        className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center justify-between cursor-pointer border-l-4 ${isHighPriority ? 'border-red-500 bg-red-50/10' : 'border-transparent'}`}
+                                        className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center justify-between cursor-pointer border-l-4 ${activeTab === 'history' ? 'border-emerald-500 bg-emerald-50/5' :
+                                                isHighPriority ? 'border-red-500 bg-red-50/10' : 'border-transparent'
+                                            }`}
                                         onClick={() => setSelectedTask(task)}
                                     >
                                         <div className="flex items-center gap-4">
@@ -148,7 +175,8 @@ export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSa
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <h4 className="font-bold text-sm text-slate-900 dark:text-white">{task.patient_name}</h4>
-                                                    {isHighPriority && <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded uppercase flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Urgent</span>}
+                                                    {isHighPriority && activeTab === 'queue' && <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded uppercase flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Urgent</span>}
+                                                    {activeTab === 'history' && <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded uppercase flex items-center gap-1">Done</span>}
                                                 </div>
                                                 <p className="text-xs text-slate-500 mt-0.5 font-medium flex items-center gap-2">
                                                     <span className="capitalize">{task.patient_gender || 'Unknown'}</span>
@@ -167,8 +195,9 @@ export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSa
                                                 <Clock className="h-3 w-3" />
                                                 {new Date(task.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </div>
-                                            <div className="flex items-center gap-1 text-pink-600 font-bold text-xs bg-pink-50 px-3 py-1.5 rounded-full hover:bg-pink-600 hover:text-white transition-all shadow-sm">
-                                                Assess <ChevronRight className="h-3 w-3" />
+                                            <div className={`flex items-center gap-1 font-bold text-xs px-3 py-1.5 rounded-full transition-all shadow-sm ${activeTab === 'history' ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-pink-50 text-pink-600 hover:bg-pink-600 hover:text-white'
+                                                }`}>
+                                                {activeTab === 'history' ? 'Edit' : 'Assess'} <ChevronRight className="h-3 w-3" />
                                             </div>
                                         </div>
                                     </div>

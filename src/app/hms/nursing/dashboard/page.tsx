@@ -73,10 +73,10 @@ export default async function NursingDashboardPage() {
 
     // Categorize Appointments
     const pendingTriage = appointments.filter(a => !vitalsDoneSet.has(a.id))
+    const completedTriage = appointments.filter(a => vitalsDoneSet.has(a.id))
 
     // Transform data for the component
-    // Transform data for the component
-    const formattedPendingTriage = pendingTriage.map(apt => ({
+    const formatAppointment = (apt: any) => ({
         id: apt.id,
         patient_name: `${apt.hms_patient?.first_name} ${apt.hms_patient?.last_name || ''}`.trim(),
         patient_id: apt.hms_patient?.patient_number,
@@ -89,14 +89,21 @@ export default async function NursingDashboardPage() {
         priority: apt.priority,
         reason: apt.notes || apt.type,
         tenant_id: apt.tenant_id
-    }))
+    })
+
+    const formattedPendingTriage = pendingTriage.map(formatAppointment)
+    const formattedCompletedTriage = completedTriage.map(formatAppointment)
 
     const formattedAdmissions = (admittedPatients as any[]).map(adm => ({
         id: adm.id,
         patient_name: `${adm.hms_patient?.first_name} ${adm.hms_patient?.last_name || ''}`.trim(),
+        patient_uuid: adm.patient_id,
+        tenant_id: adm.tenant_id,
         bed: adm.bed || 'Unassigned',
         doctor: 'Assigned Doctor',
-        admission_date: adm.admitted_at
+        admission_date: adm.admitted_at,
+        patient_gender: adm.hms_patient?.gender, // Helpful for modal
+        patient_dob: adm.hms_patient?.dob
     }))
 
     const formattedSamples = (pendingSamples as any[]).map(order => ({
@@ -110,6 +117,7 @@ export default async function NursingDashboardPage() {
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6">
             <NursingActionCenter
                 pendingTriage={formattedPendingTriage}
+                completedTriage={formattedCompletedTriage}
                 activeAdmissions={formattedAdmissions}
                 pendingSamples={formattedSamples}
             />
