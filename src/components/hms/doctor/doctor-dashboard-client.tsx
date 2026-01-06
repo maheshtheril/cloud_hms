@@ -119,15 +119,22 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                 </motion.div>
 
                 {/* MAIN CONTENT AREA */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <Stethoscope className="h-5 w-5 text-blue-500" />
+                            Patient Queue
+                        </h2>
 
-                    {/* LEFT COLUMN: Patient Queue */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                <Stethoscope className="h-5 w-5 text-blue-500" />
-                                Patient Queue
-                            </h2>
+                        <div className="flex items-center gap-3">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search patient..."
+                                    className="pl-9 pr-4 py-2 text-sm font-medium rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-100 outline-none w-full sm:w-64"
+                                />
+                            </div>
                             <div className="bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex">
                                 <button
                                     onClick={() => setSelectedTab('queue')}
@@ -143,131 +150,104 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                                 </button>
                             </div>
                         </div>
+                    </div>
 
-                        <div className="space-y-4">
-                            <AnimatePresence mode="popLayout">
-                                {displayedAppointments.length === 0 ? (
+                    <div className="space-y-4">
+                        <AnimatePresence mode="popLayout">
+                            {displayedAppointments.length === 0 ? (
+                                <motion.div
+                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                    className="bg-white/40 dark:bg-slate-900/40 rounded-3xl p-12 text-center border-2 border-dashed border-slate-200"
+                                >
+                                    <div className="mx-auto w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                                        <Users className="h-8 w-8 text-slate-300" />
+                                    </div>
+                                    <p className="text-slate-500 font-medium">No appointments found in this list.</p>
+                                </motion.div>
+                            ) : (
+                                displayedAppointments.map((apt, index) => (
                                     <motion.div
-                                        initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                        className="bg-white/40 dark:bg-slate-900/40 rounded-3xl p-12 text-center border-2 border-dashed border-slate-200"
+                                        key={apt.id}
+                                        layout
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        transition={{ delay: index * 0.05 }}
+                                        className="bg-white dark:bg-slate-900 rounded-3xl p-4 md:p-6 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-blue-200 transition-all group relative overflow-hidden"
                                     >
-                                        <div className="mx-auto w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                                            <Users className="h-8 w-8 text-slate-300" />
-                                        </div>
-                                        <p className="text-slate-500 font-medium">No appointments found in this list.</p>
-                                    </motion.div>
-                                ) : (
-                                    displayedAppointments.map((apt, index) => (
-                                        <motion.div
-                                            key={apt.id}
-                                            layout
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, scale: 0.95 }}
-                                            transition={{ delay: index * 0.05 }}
-                                            className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-lg hover:border-blue-100 transition-all group relative overflow-hidden"
-                                        >
-                                            {/* Status indicator bar */}
-                                            <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${apt.status === 'in_progress' ? 'bg-blue-500' :
-                                                apt.vitals_done ? 'bg-emerald-500' : 'bg-slate-200'
-                                                }`} />
+                                        {/* Status indicator bar */}
+                                        <div className={`absolute left-0 top-0 bottom-0 w-2 ${apt.status === 'in_progress' ? 'bg-blue-500' :
+                                            apt.vitals_done ? 'bg-emerald-500' : 'bg-slate-200'
+                                            }`} />
 
-                                            <div className="flex flex-col md:flex-row md:items-center gap-6 pl-4">
+                                        <div className="flex flex-col lg:flex-row lg:items-center gap-6 pl-4">
 
-                                                {/* Time & Avatar */}
-                                                <div className="flex items-center gap-4 min-w-[180px]">
-                                                    <div className="text-right">
-                                                        <p className="text-lg font-black text-slate-900 dark:text-white">
-                                                            {new Date(apt.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </p>
-                                                        <p className="text-xs font-bold text-slate-400 capitalize">{apt.status === 'confirmed' ? 'Scheduled' : apt.status.replace('_', ' ')}</p>
-                                                    </div>
-                                                    <div className={`h-14 w-14 rounded-2xl flex items-center justify-center text-xl font-bold ${apt.patient_gender === 'Female' ? 'bg-pink-50 text-pink-600' : 'bg-indigo-50 text-indigo-600'
-                                                        }`}>
-                                                        {apt.patient_name.charAt(0)}
-                                                    </div>
-                                                </div>
-
-                                                {/* Patient Details */}
-                                                <div className="flex-1">
-                                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                                                        {apt.patient_name}
-                                                        {apt.vitals_done ? (
-                                                            <span className="px-2 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-700 font-bold border border-emerald-200 flex items-center gap-1">
-                                                                <Activity className="h-3 w-3" /> Vitals Ready
-                                                            </span>
-                                                        ) : (
-                                                            <span className="px-2 py-0.5 rounded text-[10px] bg-amber-50 text-amber-600 font-bold border border-amber-100 flex items-center gap-1 opacity-70">
-                                                                <Clock className="h-3 w-3" /> Vitals Pending
-                                                            </span>
-                                                        )}
-                                                    </h3>
-                                                    <p className="text-sm text-slate-500 mt-1 flex items-center gap-3">
-                                                        <span>{apt.patient_gender}, {apt.patient_age}Y</span>
-                                                        <span className="h-1 w-1 bg-slate-300 rounded-full" />
-                                                        <span className="text-slate-400">ID: #{apt.patient_id}</span>
-                                                        {apt.blood_group && (
-                                                            <>
-                                                                <span className="h-1 w-1 bg-slate-300 rounded-full" />
-                                                                <span className="text-red-500 font-bold bg-red-50 px-1 rounded">{apt.blood_group}</span>
-                                                            </>
-                                                        )}
+                                            {/* Time & Avatar */}
+                                            <div className="flex items-center gap-6 min-w-[200px]">
+                                                <div className="text-center min-w-[60px]">
+                                                    <p className="text-2xl font-black text-slate-900 dark:text-white">
+                                                        {new Date(apt.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).split(' ')[0]}
                                                     </p>
-                                                    {apt.reason && (
-                                                        <div className="mt-2 text-xs font-medium text-slate-600 bg-slate-50 inline-block px-2 py-1 rounded border border-slate-100">
-                                                            Reason: {apt.reason}
-                                                        </div>
+                                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{new Date(apt.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).split(' ')[1]}</p>
+                                                </div>
+                                                <div className={`h-16 w-16 rounded-2xl flex items-center justify-center text-2xl font-black shadow-inner ${apt.patient_gender === 'Female' ? 'bg-pink-50 text-pink-500' : 'bg-indigo-50 text-indigo-500'
+                                                    }`}>
+                                                    {apt.patient_name.charAt(0)}
+                                                </div>
+                                            </div>
+
+                                            {/* Patient Details */}
+                                            <div className="flex-1 space-y-2">
+                                                <div className="flex flex-wrap items-center gap-3">
+                                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                                                        {apt.patient_name}
+                                                    </h3>
+                                                    {apt.vitals_done ? (
+                                                        <span className="px-2.5 py-1 rounded-full text-[10px] bg-emerald-100 text-emerald-700 font-bold border border-emerald-200 flex items-center gap-1 uppercase tracking-wider">
+                                                            <Activity className="h-3 w-3" /> Vitals Ready
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-2.5 py-1 rounded-full text-[10px] bg-slate-100 text-slate-500 font-bold border border-slate-200 flex items-center gap-1 uppercase tracking-wider opacity-70">
+                                                            <Clock className="h-3 w-3" /> Waiting for Vitals
+                                                        </span>
                                                     )}
                                                 </div>
 
-                                                <div className="flex items-center gap-3">
-                                                    <button
-                                                        onClick={() => router.push(`/hms/prescriptions/new?appointmentId=${apt.id}&patientId=${apt.patient_uuid}`)}
-                                                        className="h-10 px-6 rounded-xl bg-slate-900 text-white font-bold text-sm shadow-lg shadow-slate-900/10 hover:shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-                                                    >
-                                                        <Stethoscope className="h-4 w-4" />
-                                                        Consult
-                                                    </button>
+                                                <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-slate-500">
+                                                    <span className="flex items-center gap-1.5"><User className="h-4 w-4 text-slate-400" /> {apt.patient_gender}, {apt.patient_age} Years</span>
+                                                    <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                                                    <span className="text-slate-400">ID: <span className="text-slate-600 font-mono">#{apt.patient_id || 'N/A'}</span></span>
+                                                    {apt.blood_group && (
+                                                        <>
+                                                            <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                                                            <span className="text-red-500 font-black bg-red-50 px-2 py-0.5 rounded-lg text-xs">{apt.blood_group}</span>
+                                                        </>
+                                                    )}
                                                 </div>
+
+                                                {apt.reason && (
+                                                    <div className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-100/50 px-3 py-1.5 rounded-lg border border-slate-200/50 mt-1">
+                                                        <span className="text-slate-400 uppercase tracking-wider text-[10px]">Reason:</span> {apt.reason}
+                                                    </div>
+                                                )}
                                             </div>
-                                        </motion.div>
-                                    ))
-                                )}
-                            </AnimatePresence>
-                        </div>
+
+                                            {/* Action Button */}
+                                            <div className="flex items-center gap-3 mt-4 lg:mt-0 lg:ml-auto">
+                                                <button
+                                                    onClick={() => router.push(`/hms/prescriptions/new?appointmentId=${apt.id}&patientId=${apt.patient_uuid}`)}
+                                                    className="h-12 px-8 rounded-2xl bg-slate-900 hover:bg-black text-white font-bold text-sm shadow-xl shadow-slate-900/10 hover:shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 w-full lg:w-auto justify-center"
+                                                >
+                                                    <Stethoscope className="h-4 w-4" />
+                                                    START CONSULTATION
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))
+                            )}
+                        </AnimatePresence>
                     </div>
-
-                    {/* RIGHT COLUMN: Quick Info */}
-                    <div className="space-y-6">
-                        <div className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-3xl border border-white/50 shadow-sm">
-                            <h3 className="font-bold text-lg text-slate-900 mb-4 flex items-center gap-2">
-                                <TrendingUp className="h-5 w-5 text-indigo-500" />
-                                Daily Insights
-                            </h3>
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between p-3 rounded-2xl bg-white border border-slate-100">
-                                    <span className="text-sm font-medium text-slate-500">Avg. Consult Time</span>
-                                    <span className="font-black text-slate-900">12m</span>
-                                </div>
-                                <div className="flex items-center justify-between p-3 rounded-2xl bg-white border border-slate-100">
-                                    <span className="text-sm font-medium text-slate-500">Patient Satisfaction</span>
-                                    <span className="font-black text-slate-900 text-emerald-600">4.9/5</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-6 rounded-3xl text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 p-8 opacity-10">
-                                <Pill className="h-32 w-32 rotate-12" />
-                            </div>
-                            <h3 className="font-bold text-lg mb-2 relative z-10">Drug Database</h3>
-                            <p className="text-indigo-100 text-sm mb-6 relative z-10">Search interactions and dosages.</p>
-                            <button className="w-full py-3 bg-white/10 backdrop-blur border border-white/20 rounded-xl font-bold hover:bg-white hover:text-indigo-600 transition-colors relative z-10 flex items-center justify-center gap-2">
-                                <Search className="h-4 w-4" /> Search Formulary
-                            </button>
-                        </div>
-                    </div>
-
                 </div>
             </div>
         </div>
