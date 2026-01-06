@@ -5,8 +5,10 @@ import { motion, AnimatePresence } from "framer-motion"
 import {
     UserPlus, CalendarPlus, LogIn, CreditCard,
     PhoneIncoming, IdCard, Users, Search,
-    Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone, MoreVertical, Edit, Activity, IndianRupee
+    Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone, MoreVertical, Edit, Activity, IndianRupee,
+    Wallet
 } from "lucide-react"
+import { ExpenseDialog } from "./expense-dialog"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
@@ -27,9 +29,11 @@ interface ReceptionActionCenterProps {
     dailyCollection: number
     collectionBreakdown: Record<string, number>
     todayPayments?: any[]
+    todayExpenses?: any[]
+    totalExpenses?: number
 }
 
-export function ReceptionActionCenter({ todayAppointments, patients, doctors, dailyCollection = 0, collectionBreakdown = {}, todayPayments = [] }: ReceptionActionCenterProps) {
+export function ReceptionActionCenter({ todayAppointments, patients, doctors, dailyCollection = 0, collectionBreakdown = {}, todayPayments = [], todayExpenses = [], totalExpenses = 0 }: ReceptionActionCenterProps) {
     const router = useRouter()
     const { toast } = useToast()
     const [activeModal, setActiveModal] = useState<string | null>(null)
@@ -128,6 +132,15 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
             bg: 'bg-rose-50 dark:bg-rose-900/20',
             border: 'border-rose-100 dark:border-rose-800',
             desc: 'Issue visitor passes for IPD'
+        },
+        {
+            id: 'expense',
+            title: 'Petty Cash',
+            icon: Wallet,
+            color: 'text-rose-600',
+            bg: 'bg-rose-50 dark:bg-rose-900/20',
+            border: 'border-rose-100 dark:border-rose-800',
+            desc: 'Record cash payouts / expenses'
         }
     ]
 
@@ -375,13 +388,40 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                                     <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-slate-500">View</span>
                                 </div>
                             </div>
+                            <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                                <div className="text-slate-500 text-xs font-medium mb-1">Expenses</div>
+                                <div className="text-xl font-black text-rose-600 dark:text-rose-400">
+                                    ₹{totalExpenses.toLocaleString('en-IN')}
+                                </div>
+                                <div className="text-xs text-slate-400 mt-1 font-medium">
+                                    {todayExpenses.length} payouts today
+                                </div>
+                            </div>
+                        </div>
+                        <div className="p-4 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                            <div className="flex flex-col">
+                                <span className="text-xs font-bold uppercase text-slate-500 tracking-wider">Net Cash Position</span>
+                                <span className="text-2xl font-black text-slate-900 dark:text-white">
+                                    ₹{(dailyCollection - totalExpenses).toLocaleString('en-IN')}
+                                </span>
+                            </div>
+                            <div className="h-10 w-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                                <Wallet className="h-5 w-5 text-slate-500" />
+                            </div>
                         </div>
                     </div>
                 </div>
 
             </div>
 
+
             {/* MODALS */}
+
+            <Dialog open={activeModal === 'expense'} onOpenChange={() => setActiveModal(null)}>
+                <DialogContent className="max-w-lg">
+                    <ExpenseDialog onClose={() => setActiveModal(null)} onSuccess={() => router.refresh()} />
+                </DialogContent>
+            </Dialog>
 
             {/* 1. Register Patient Modal */}
             <Dialog open={activeModal === 'register'} onOpenChange={() => setActiveModal(null)}>
@@ -515,6 +555,6 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                 </DialogContent>
             </Dialog>
 
-        </div>
+        </div >
     )
 }

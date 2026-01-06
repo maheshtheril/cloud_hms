@@ -17,7 +17,7 @@ export default async function ReceptionDashboardPage() {
     todayEnd.setHours(23, 59, 59, 999)
 
     // Parallel Data Fetching
-    const [appointments, patients, doctors, todayPayments] = await Promise.all([
+    const [appointments, patients, doctors, todayPayments, todayExpenses] = await Promise.all([
         // 1. Fetch Today's Appointments
         prisma.hms_appointments.findMany({
             where: {
@@ -71,7 +71,7 @@ export default async function ReceptionDashboardPage() {
             orderBy: { first_name: 'asc' }
         }),
 
-        // 4. Fetch Today's Payments
+        // 4. Fetch Today's Payments (Inbound)
         prisma.hms_invoice_payments.findMany({
             where: {
                 tenant_id: tenantId,
@@ -96,6 +96,22 @@ export default async function ReceptionDashboardPage() {
             orderBy: {
                 paid_at: 'desc'
             }
+        }),
+
+        // 5. Fetch Today's Expenses (Petty Cash/Outbound)
+        prisma.payments.findMany({
+            where: {
+                tenant_id: tenantId,
+                metadata: {
+                    path: ['type'],
+                    equals: 'outbound'
+                },
+                created_at: {
+                    gte: todayStart,
+                    lte: todayEnd
+                }
+            },
+            orderBy: { created_at: 'desc' }
         })
     ]);
 
@@ -118,6 +134,8 @@ export default async function ReceptionDashboardPage() {
         clinician: apt.hms_clinician
     }));
 
+    const totalExpenses = todayExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6">
             <ReceptionActionCenter
@@ -127,6 +145,8 @@ export default async function ReceptionDashboardPage() {
                 dailyCollection={totalCollection}
                 collectionBreakdown={collectionByMethod}
                 todayPayments={todayPayments}
+                todayExpenses={todayExpenses}
+                totalExpenses={totalExpenses}
             />
         </div>
     )
