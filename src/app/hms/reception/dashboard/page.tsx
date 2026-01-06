@@ -17,7 +17,7 @@ export default async function ReceptionDashboardPage() {
     todayEnd.setHours(23, 59, 59, 999)
 
     // Parallel Data Fetching
-    const [appointments, patients, doctors] = await Promise.all([
+    const [appointments, patients, doctors, todayPayments] = await Promise.all([
         // 1. Fetch Today's Appointments
         prisma.hms_appointments.findMany({
             where: {
@@ -69,12 +69,37 @@ export default async function ReceptionDashboardPage() {
                 consultation_slot_duration: true
             },
             orderBy: { first_name: 'asc' }
+        }),
+
+        // 4. Fetch Today's Payments
+        prisma.hms_invoice_payments.findMany({
+            where: {
+                tenant_id: tenantId,
+                paid_at: {
+                    gte: todayStart,
+                    lte: todayEnd
+                }
+            },
+            select: {
+                amount: true,
+                method: true
+            }
         })
     ]);
+
+    // Calculate Total Collection
+    const totalCollection = todayPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const collectionByMethod = todayPayments.reduce((acc, p) => {
+        const method = p.method || 'Other';
+        acc[method] = (acc[method] || 0) + Number(p.amount);
+        return acc;
+    }, {} as Record<string, number>);
 
     // Transform appointments to friendly format
     const formattedAppointments = appointments.map(apt => ({
         id: apt.id,
+        patient_id: apt.patient_id, // Include raw ID
+        clinician_id: apt.clinician_id, // Include raw ID
         start_time: apt.starts_at,
         status: apt.status,
         patient: apt.hms_patient,
@@ -87,6 +112,8 @@ export default async function ReceptionDashboardPage() {
                 todayAppointments={formattedAppointments}
                 patients={patients}
                 doctors={doctors}
+                dailyCollection={totalCollection}
+                collectionBreakdown={collectionByMethod}
             />
         </div>
     )

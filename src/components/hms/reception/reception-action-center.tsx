@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import {
     UserPlus, CalendarPlus, LogIn, CreditCard,
     PhoneIncoming, IdCard, Users, Search,
-    Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone, MoreVertical, Edit, Activity
+    Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone, MoreVertical, Edit, Activity, IndianRupee
 } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu"
@@ -24,9 +24,11 @@ interface ReceptionActionCenterProps {
     todayAppointments: any[]
     patients: any[]
     doctors: any[]
+    dailyCollection: number
+    collectionBreakdown: Record<string, number>
 }
 
-export function ReceptionActionCenter({ todayAppointments, patients, doctors }: ReceptionActionCenterProps) {
+export function ReceptionActionCenter({ todayAppointments, patients, doctors, dailyCollection = 0, collectionBreakdown = {} }: ReceptionActionCenterProps) {
     const router = useRouter()
     const { toast } = useToast()
     const [activeModal, setActiveModal] = useState<null | 'register' | 'appointment' | 'billing' | 'checkin' | 'visitor' | 'edit-appointment'>(null)
@@ -347,7 +349,7 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors }: 
                                 <div className="text-xs bg-white/20 px-2 py-1 rounded">Patients</div>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                                 <div className="text-slate-500 text-xs font-medium mb-1">Scheduled</div>
                                 <div className="text-xl font-black text-slate-900 dark:text-white">{todayAppointments.filter(a => a.status === 'scheduled').length}</div>
@@ -355,6 +357,18 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors }: 
                             <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                                 <div className="text-slate-500 text-xs font-medium mb-1">Active Doctors</div>
                                 <div className="text-xl font-black text-slate-900 dark:text-white">{doctors.filter(d => d.role === 'Doctor').length}</div>
+                            </div>
+                            <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
+                                    <IndianRupee className="h-8 w-8 text-green-600" />
+                                </div>
+                                <div className="text-slate-500 text-xs font-medium mb-1">Total Collection</div>
+                                <div className="text-xl font-black text-green-600 dark:text-green-400">
+                                    ₹{dailyCollection.toLocaleString('en-IN')}
+                                </div>
+                                <div className="text-[10px] text-slate-400 mt-1 font-medium">
+                                    Cash: ₹{(collectionBreakdown['cash'] || 0).toLocaleString('en-IN')}
+                                </div>
                             </div>
                         </div>
                     </div>
