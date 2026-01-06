@@ -48,6 +48,7 @@ export function InvoiceControlPanel({
     // Payment State
     const [paymentMethod, setPaymentMethod] = useState('cash');
     const [paymentReference, setPaymentReference] = useState('');
+    const [paymentAmount, setPaymentAmount] = useState(outstandingAmount);
 
     const router = useRouter();
     const { toast } = useToast();
@@ -56,6 +57,7 @@ export function InvoiceControlPanel({
     const openPaymentModal = () => {
         setPaymentMethod('cash');
         setPaymentReference('');
+        setPaymentAmount(outstandingAmount);
         setIsPaymentModalOpen(true);
     };
 
@@ -89,7 +91,7 @@ export function InvoiceControlPanel({
         setIsLoading(true);
         try {
             const res = await recordPayment(invoiceId, {
-                amount: outstandingAmount, // Full payment for now
+                amount: Number(paymentAmount),
                 method: paymentMethod,
                 reference: paymentReference
             });
@@ -97,7 +99,7 @@ export function InvoiceControlPanel({
             if (res.success) {
                 toast({
                     title: "Payment Recorded",
-                    description: `Received ₹${outstandingAmount} via ${paymentMethod.toUpperCase()}`,
+                    description: `Received ₹${paymentAmount} via ${paymentMethod.toUpperCase()}`,
                     variant: "default"
                 });
                 router.refresh();
@@ -205,41 +207,51 @@ export function InvoiceControlPanel({
                             </DialogDescription>
                         </DialogHeader>
 
-                        <div className="py-4 space-y-4">
-                            <div className="flex justify-between items-center bg-slate-50 p-4 rounded-lg border border-slate-200">
-                                <span className="text-slate-600 font-medium">Amount Due</span>
-                                <span className="text-2xl font-bold font-mono text-slate-900">₹{outstandingAmount.toFixed(2)}</span>
+                        <div className="flex flex-col gap-2 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <label className="text-xs font-bold text-slate-500 uppercase">Amount to Pay</label>
+                            <div className="flex items-center gap-2">
+                                <span className="text-2xl font-bold font-mono text-slate-400">₹</span>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max={outstandingAmount}
+                                    value={paymentAmount}
+                                    onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                                    className="text-2xl font-bold font-mono text-slate-900 bg-transparent outline-none w-full"
+                                />
                             </div>
-
-                            <div className="grid grid-cols-3 gap-3">
-                                {['cash', 'card', 'upi'].map((method) => (
-                                    <button
-                                        key={method}
-                                        onClick={() => setPaymentMethod(method)}
-                                        className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${paymentMethod === method
-                                                ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
-                                                : 'border-slate-100 hover:border-slate-200 text-slate-500 hover:bg-slate-50'
-                                            }`}
-                                    >
-                                        <div className="font-bold uppercase text-xs tracking-wider">{method}</div>
-                                    </button>
-                                ))}
+                            <div className="text-xs text-slate-500 text-right">
+                                Total Outstanding: ₹{outstandingAmount.toFixed(2)}
                             </div>
-
-                            {(paymentMethod === 'card' || paymentMethod === 'upi') && (
-                                <div className="space-y-2 animate-in slide-in-from-top-2">
-                                    <label className="text-xs font-bold text-slate-500 uppercase">Transaction Ref / Last 4 Digits</label>
-                                    <input
-                                        type="text"
-                                        value={paymentReference}
-                                        onChange={(e) => setPaymentReference(e.target.value)}
-                                        placeholder={paymentMethod === 'card' ? "e.g. 1234" : "e.g. UPI Ref ID"}
-                                        className="w-full p-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
-                                    />
-                                </div>
-                            )}
                         </div>
 
+                        <div className="grid grid-cols-3 gap-3">
+                            {['cash', 'card', 'upi'].map((method) => (
+                                <button
+                                    key={method}
+                                    onClick={() => setPaymentMethod(method)}
+                                    className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all ${paymentMethod === method
+                                        ? 'border-indigo-600 bg-indigo-50 text-indigo-700'
+                                        : 'border-slate-100 hover:border-slate-200 text-slate-500 hover:bg-slate-50'
+                                        }`}
+                                >
+                                    <div className="font-bold uppercase text-xs tracking-wider">{method}</div>
+                                </button>
+                            ))}
+                        </div>
+
+                        {(paymentMethod === 'card' || paymentMethod === 'upi') && (
+                            <div className="space-y-2 animate-in slide-in-from-top-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase">Transaction Ref / Last 4 Digits</label>
+                                <input
+                                    type="text"
+                                    value={paymentReference}
+                                    onChange={(e) => setPaymentReference(e.target.value)}
+                                    placeholder={paymentMethod === 'card' ? "e.g. 1234" : "e.g. UPI Ref ID"}
+                                    className="w-full p-2 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-indigo-500"
+                                />
+                            </div>
+                        )}
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)}>Cancel</Button>
                             <Button
@@ -253,7 +265,8 @@ export function InvoiceControlPanel({
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
-            )}
+            )
+            }
 
             {/* PRINT & SHARE ACTIONS - Always Available */}
             <Button variant="outline" onClick={handlePrintPdf} disabled={isLoading}>
@@ -270,6 +283,6 @@ export function InvoiceControlPanel({
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageCircle className="mr-2 h-4 w-4" />}
                 WhatsApp
             </Button>
-        </div>
+        </div >
     );
 }
