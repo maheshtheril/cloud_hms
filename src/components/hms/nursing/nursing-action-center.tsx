@@ -164,7 +164,7 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                                     <div
                                         key={task.id}
                                         className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center justify-between cursor-pointer border-l-4 ${activeTab === 'history' ? 'border-emerald-500 bg-emerald-50/5' :
-                                                isHighPriority ? 'border-red-500 bg-red-50/10' : 'border-transparent'
+                                            isHighPriority ? 'border-red-500 bg-red-50/10' : 'border-transparent'
                                             }`}
                                         onClick={() => setSelectedTask(task)}
                                     >
@@ -264,9 +264,9 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                         <div className={`h-12 w-12 rounded-full flex items-center justify-center text-lg font-bold ${selectedTask?.patient_gender?.toLowerCase() === 'female' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
                             {selectedTask?.patient_name?.charAt(0)}
                         </div>
-                        <div>
+                        <div className="flex-1">
                             <h2 className="text-xl font-bold text-slate-900">{selectedTask?.patient_name}</h2>
-                            <p className="text-sm text-slate-500 flex items-center gap-2">
+                            <p className="text-sm text-slate-500 flex items-center gap-2 flex-wrap">
                                 <span className="capitalize">{selectedTask?.patient_gender}</span>
                                 {selectedTask?.patient_dob && (
                                     <>
@@ -274,10 +274,22 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                                         <span>{differenceInYears(new Date(), new Date(selectedTask.patient_dob))}Y</span>
                                     </>
                                 )}
+                                {selectedTask?.patient_blood_group && (
+                                    <>
+                                        <span className="h-1 w-1 bg-slate-300 rounded-full" />
+                                        <span className="bg-red-50 text-red-600 px-1.5 py-0.5 rounded textxs font-bold ring-1 ring-red-100">{selectedTask.patient_blood_group}</span>
+                                    </>
+                                )}
                                 <span className="h-1 w-1 bg-slate-300 rounded-full" />
                                 <span className="text-indigo-600 font-medium">#{selectedTask?.patient_id}</span>
                             </p>
                         </div>
+                        {selectedTask?.reason && (
+                            <div className="hidden sm:block text-right">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Chief Complaint</span>
+                                <span className="text-sm font-bold text-slate-700">{selectedTask.reason}</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Scrollable Form Content */}

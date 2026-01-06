@@ -83,6 +83,7 @@ export default async function NursingDashboardPage() {
         patient_uuid: apt.patient_id, // Vital for linking
         patient_gender: apt.hms_patient?.gender,
         patient_dob: apt.hms_patient?.dob,
+        patient_blood_group: apt.hms_patient?.blood_group,
         doctor_name: `Dr. ${apt.hms_clinician?.first_name} ${apt.hms_clinician?.last_name || ''}`,
         time: apt.starts_at,
         status: apt.status,
@@ -103,7 +104,8 @@ export default async function NursingDashboardPage() {
         doctor: 'Assigned Doctor',
         admission_date: adm.admitted_at,
         patient_gender: adm.hms_patient?.gender, // Helpful for modal
-        patient_dob: adm.hms_patient?.dob
+        patient_dob: adm.hms_patient?.dob,
+        patient_blood_group: adm.hms_patient?.blood_group
     }))
 
     const formattedSamples = (pendingSamples as any[]).map(order => ({
