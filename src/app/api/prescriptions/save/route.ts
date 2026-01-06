@@ -145,6 +145,55 @@ export async function POST(request: NextRequest) {
 
             // 4. Handle Lab Orders
             if (labTests && labTests.length > 0) {
+                // 4a. Resolve Lab Test IDs (Handle custom labs)
+                const resolvedLabTests = [];
+                for (const test of labTests) {
+                    let tId = test.id;
+                    let testName = test.name || test.testName;
+
+                    if (!testName) continue; // Skip invalid
+
+                    // Check if this ID actually exists? Or just search by name?
+                    // Simplest strategy: try to find by ID if it looks valid, then name.
+                    // Since frontend generates random UUIDs for custom tests, we can treat them as "unknown" if they don't match db.
+
+                    let existingTest = null;
+
+                    // If ID is potentially valid (not checking format strictly here, but assuming db lookup handles it)
+                    if (tId) {
+                        existingTest = await tx.hms_lab_test.findUnique({ where: { id: tId } }).catch(() => null);
+                    }
+
+                    if (!existingTest) {
+                        // Try finding by name
+                        existingTest = await tx.hms_lab_test.findFirst({
+                            where: {
+                                name: { equals: testName, mode: 'insensitive' },
+                                tenant_id: session.user.tenantId
+                            }
+                        });
+                    }
+
+                    if (existingTest) {
+                        tId = existingTest.id;
+                    } else {
+                        // Create new Lab Test
+                        const newTest = await tx.hms_lab_test.create({
+                            data: {
+                                tenant_id: session.user.tenantId,
+                                company_id: userCompanyId || (await tx.company.findFirst({ where: { tenant_id: session.user.tenantId } }))?.id || null, // Allow null if really no company found, though schema might reject it (usually doesn't for strict uuid? need valid uuid or null)
+                                name: testName,
+                                code: `LAB-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+                                is_active: true,
+                                price: 0 // Default price
+                            }
+                        });
+                        tId = newTest.id;
+                    }
+
+                    resolvedLabTests.push({ ...test, resolvedId: tId });
+                }
+
                 // Clear existing REQUESTED lab orders for this appointment to avoid duplicates on update
                 if (appointmentId) {
                     await tx.hms_lab_order.deleteMany({
@@ -156,25 +205,34 @@ export async function POST(request: NextRequest) {
                     })
                 }
 
-                const labOrder = await tx.hms_lab_order.create({
-                    data: {
-                        tenant_id: session.user.tenantId,
-                        company_id: userCompanyId || (await tx.company.findFirst({ where: { tenant_id: session.user.tenantId } }))?.id || '',
-                        patient_id: patientId,
-                        encounter_id: appointmentId || null,
-                        status: 'requested',
-                        order_number: `LAB-${Date.now()}`,
-                        hms_lab_order_line: {
-                            create: labTests.map((test: any) => ({
-                                tenant_id: session.user.tenantId,
-                                company_id: userCompanyId || '',
-                                test_id: test.id,
-                                status: 'pending',
-                                price: test.price || 0
-                            }))
+                // Ensure we have a valid company_id (UUID or null, NOT empty string)
+                let finalCompanyId = userCompanyId;
+                if (!finalCompanyId) {
+                    const c = await tx.company.findFirst({ where: { tenant_id: session.user.tenantId } });
+                    finalCompanyId = c?.id || null;
+                }
+
+                if (resolvedLabTests.length > 0) {
+                    const labOrder = await tx.hms_lab_order.create({
+                        data: {
+                            tenant_id: session.user.tenantId,
+                            company_id: finalCompanyId,
+                            patient_id: patientId,
+                            encounter_id: appointmentId || null,
+                            status: 'requested',
+                            order_number: `LAB-${Date.now()}`,
+                            hms_lab_order_line: {
+                                create: resolvedLabTests.map((test: any) => ({
+                                    tenant_id: session.user.tenantId,
+                                    company_id: finalCompanyId, // use validated companyId
+                                    test_id: test.resolvedId,
+                                    status: 'pending',
+                                    price: test.price || 0
+                                }))
+                            }
                         }
-                    }
-                })
+                    })
+                }
             }
 
             return pr
