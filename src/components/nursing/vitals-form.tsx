@@ -2,9 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Activity, Thermometer, Heart, Wind, PersonStanding, Weight, Ruler, Save, Loader2, Calculator } from "lucide-react"
+import {
+    Activity, Thermometer, Heart, Wind, PersonStanding,
+    Weight, Ruler, Save, Loader2, Calculator, Info
+} from "lucide-react"
 import { saveVitals } from "@/app/actions/nursing-v2"
 import { useToast } from "@/components/ui/use-toast"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface Props {
     patientId: string
@@ -28,6 +32,7 @@ export default function NursingVitalsForm({ patientId, encounterId, tenantId, in
     const [pulse, setPulse] = useState(initialData?.pulse || '')
     const [bpSys, setBpSys] = useState(initialData?.systolic || '')
     const [bpDia, setBpDia] = useState(initialData?.diastolic || '')
+    const [map, setMap] = useState('') // Mean Arterial Pressure
     const [spo2, setSpo2] = useState(initialData?.spo2 || '')
     const [resp, setResp] = useState(initialData?.respiration || '')
 
