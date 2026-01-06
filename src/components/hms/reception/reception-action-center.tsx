@@ -26,12 +26,13 @@ interface ReceptionActionCenterProps {
     doctors: any[]
     dailyCollection: number
     collectionBreakdown: Record<string, number>
+    todayPayments?: any[]
 }
 
-export function ReceptionActionCenter({ todayAppointments, patients, doctors, dailyCollection = 0, collectionBreakdown = {} }: ReceptionActionCenterProps) {
+export function ReceptionActionCenter({ todayAppointments, patients, doctors, dailyCollection = 0, collectionBreakdown = {}, todayPayments = [] }: ReceptionActionCenterProps) {
     const router = useRouter()
     const { toast } = useToast()
-    const [activeModal, setActiveModal] = useState<null | 'register' | 'appointment' | 'billing' | 'checkin' | 'visitor' | 'edit-appointment'>(null)
+    const [activeModal, setActiveModal] = useState<string | null>(null)
     const [editingAppointment, setEditingAppointment] = useState<any>(null)
     const [selectedDoctor, setSelectedDoctor] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
@@ -358,7 +359,10 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                                 <div className="text-slate-500 text-xs font-medium mb-1">Active Doctors</div>
                                 <div className="text-xl font-black text-slate-900 dark:text-white">{doctors.filter(d => d.role === 'Doctor').length}</div>
                             </div>
-                            <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 relative overflow-hidden group">
+                            <div
+                                onClick={() => setActiveModal('collection-report')}
+                                className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 relative overflow-hidden group cursor-pointer hover:shadow-md transition-all active:scale-95"
+                            >
                                 <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity">
                                     <IndianRupee className="h-8 w-8 text-green-600" />
                                 </div>
@@ -366,8 +370,9 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                                 <div className="text-xl font-black text-green-600 dark:text-green-400">
                                     ₹{dailyCollection.toLocaleString('en-IN')}
                                 </div>
-                                <div className="text-[10px] text-slate-400 mt-1 font-medium">
-                                    Cash: ₹{(collectionBreakdown['cash'] || 0).toLocaleString('en-IN')}
+                                <div className="text-xs text-slate-400 mt-1 font-medium flex items-center justify-between">
+                                    <span>Cash: ₹{(collectionBreakdown['cash'] || 0).toLocaleString('en-IN')}</span>
+                                    <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-slate-500">View</span>
                                 </div>
                             </div>
                         </div>
@@ -448,6 +453,64 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                             <Search className="h-6 w-6" />
                             Search Invoices
                         </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* 5. Daily Collection Report Modal */}
+            <Dialog open={activeModal === 'collection-report'} onOpenChange={() => setActiveModal(null)}>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-white dark:bg-slate-900">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                            <IndianRupee className="h-5 w-5 text-green-600" />
+                            Daily Collection Report
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden mt-4">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-medium border-b border-slate-200 dark:border-slate-800">
+                                <tr>
+                                    <th className="p-3 font-semibold">Time</th>
+                                    <th className="p-3 font-semibold">Ref / Invoice</th>
+                                    <th className="p-3 font-semibold">Patient</th>
+                                    <th className="p-3 font-semibold">Method</th>
+                                    <th className="p-3 font-semibold text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {todayPayments?.map((payment: any, i: number) => (
+                                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                        <td className="p-3 text-slate-500">
+                                            {new Date(payment.paid_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </td>
+                                        <td className="p-3 font-medium text-slate-900 dark:text-white">
+                                            {payment.hms_invoice?.invoice_number || '-'}
+                                            {payment.payment_reference && <span className="text-xs text-slate-400 block break-all">{payment.payment_reference}</span>}
+                                        </td>
+                                        <td className="p-3 text-slate-700 dark:text-slate-300">
+                                            {payment.hms_invoice?.hms_patient?.first_name} {payment.hms_invoice?.hms_patient?.last_name || ''}
+                                        </td>
+                                        <td className="p-3 capitalize">
+                                            <Badge variant="outline" className={`capitalize ${payment.method === 'cash' ? 'bg-green-50 text-green-700 border-green-200' : ''}`}>
+                                                {payment.method}
+                                            </Badge>
+                                        </td>
+                                        <td className="p-3 text-right font-bold text-slate-900 dark:text-white">
+                                            ₹{Number(payment.amount).toLocaleString('en-IN')}
+                                        </td>
+                                    </tr>
+                                ))}
+                                {!todayPayments?.length && (
+                                    <tr><td colSpan={5} className="p-8 text-center text-slate-400">No payments recorded today</td></tr>
+                                )}
+                            </tbody>
+                            <tfoot className="bg-slate-50 dark:bg-slate-800 font-bold border-t border-slate-200 dark:border-slate-800">
+                                <tr>
+                                    <td colSpan={4} className="p-3 text-right text-slate-600 dark:text-slate-400">Total Collection</td>
+                                    <td className="p-3 text-right text-green-600 dark:text-green-400 text-lg">₹{dailyCollection.toLocaleString('en-IN')}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
                 </DialogContent>
             </Dialog>

@@ -80,9 +80,21 @@ export default async function ReceptionDashboardPage() {
                     lte: todayEnd
                 }
             },
-            select: {
-                amount: true,
-                method: true
+            include: {
+                hms_invoice: {
+                    select: {
+                        invoice_number: true,
+                        hms_patient: {
+                            select: {
+                                first_name: true,
+                                last_name: true
+                            }
+                        }
+                    }
+                }
+            },
+            orderBy: {
+                paid_at: 'desc'
             }
         })
     ]);
@@ -90,7 +102,7 @@ export default async function ReceptionDashboardPage() {
     // Calculate Total Collection
     const totalCollection = todayPayments.reduce((sum, p) => sum + Number(p.amount), 0);
     const collectionByMethod = todayPayments.reduce((acc, p) => {
-        const method = p.method || 'Other';
+        const method = p.method as string || 'Other';
         acc[method] = (acc[method] || 0) + Number(p.amount);
         return acc;
     }, {} as Record<string, number>);
@@ -114,6 +126,7 @@ export default async function ReceptionDashboardPage() {
                 doctors={doctors}
                 dailyCollection={totalCollection}
                 collectionBreakdown={collectionByMethod}
+                todayPayments={todayPayments}
             />
         </div>
     )
