@@ -9,7 +9,7 @@ import {
     ArrowRight, Check, Loader2
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { updateLabOrderStatus, uploadAndAttachLabReport } from "@/app/actions/lab"
+import { updateLabOrderStatus, uploadAndAttachLabReport, deleteLabReport } from "@/app/actions/lab"
 
 interface LabDashboardProps {
     labStaffName: string
@@ -442,14 +442,46 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                                 <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                                                 Report Attached
                                             </div>
-                                            <a
-                                                href={selectedOrder.report_url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-xs font-bold text-violet-600 hover:underline"
-                                            >
-                                                View Report
-                                            </a>
+                                            <div className="flex items-center gap-3">
+                                                <a
+                                                    href={selectedOrder.report_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="text-xs font-bold text-violet-600 hover:underline"
+                                                >
+                                                    View Report
+                                                </a>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (!confirm("Are you sure you want to remove this report?")) return
+                                                        setIsUpdating(true)
+                                                        try {
+                                                            const res = await deleteLabReport(selectedOrder.id)
+                                                            if (res.success) {
+                                                                setSelectedOrder((prev: any) => ({
+                                                                    ...prev,
+                                                                    status: 'in_progress', // Revert status
+                                                                    report_url: null
+                                                                }))
+                                                                router.refresh()
+                                                            } else {
+                                                                alert(res.message)
+                                                            }
+                                                        } catch (e) {
+                                                            console.error(e)
+                                                        } finally {
+                                                            setIsUpdating(false)
+                                                        }
+                                                    }}
+                                                    disabled={isUpdating}
+                                                    className="p-1 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded transition-colors"
+                                                    title="Remove Report"
+                                                >
+                                                    {isUpdating ? <Loader2 className="h-3 w-3 animate-spin" /> : <Users className="h-3 w-3 rotate-45" />} {/* Using Users as X icon substitute or Trash if available, actually let's use Trash logic fromlucide if imported, but Users rotate is hacky. Let's use 'X' or Trash properly. I dont have Trash imported. I'll use text X for safety or import Trash.*/}
+                                                    <span className="sr-only">Remove</span>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                                                </button>
+                                            </div>
                                         </div>
                                     ) : (
                                         <div className="space-y-3">

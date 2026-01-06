@@ -169,3 +169,31 @@ export async function uploadAndAttachLabReport(formData: FormData) {
         return { success: false, message: "Upload failed: " + error.message };
     }
 }
+
+export async function deleteLabReport(orderId: string) {
+    const session = await auth()
+    if (!session?.user?.id) {
+        return { success: false, message: "Unauthorized" }
+    }
+
+    try {
+        await prisma.hms_lab_order.update({
+            where: { id: orderId },
+            data: {
+                report_url: null,
+                status: 'in_progress'
+            }
+        })
+
+        await prisma.hms_lab_order_line.updateMany({
+            where: { order_id: orderId },
+            data: { status: 'processing' }
+        })
+
+        revalidatePath('/hms/lab/dashboard')
+        revalidatePath('/hms/doctor/dashboard')
+        return { success: true, message: "Report removed" }
+    } catch (error: any) {
+        return { success: false, message: error.message }
+    }
+}
