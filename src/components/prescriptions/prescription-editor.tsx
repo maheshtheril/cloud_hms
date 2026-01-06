@@ -604,6 +604,15 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => window.print()}
+                        className="rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800 print:hidden"
+                        title="Print Prescription"
+                    >
+                        <Printer className="h-5 w-5" />
+                    </Button>
                     {!isModal && (
                         <div className="hidden lg:flex items-center gap-2 text-sm text-slate-500 bg-slate-100/50 px-3 py-1.5 rounded-full border border-slate-200/50">
                             <Clock className="h-3.5 w-3.5" />
@@ -1025,7 +1034,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                         animate={{ scale: 1, y: 0, opacity: 1 }}
                         exit={{ scale: 0.9, y: 20, opacity: 0 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className="w-full max-w-5xl h-[90vh] shadow-2xl overflow-hidden"
+                        className="w-[98vw] h-[95vh] rounded-3xl shadow-2xl overflow-hidden bg-white"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {content}
