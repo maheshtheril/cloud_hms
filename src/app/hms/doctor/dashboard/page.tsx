@@ -2,8 +2,10 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { DoctorDashboardClient } from "@/components/hms/doctor/doctor-dashboard-client"
+import { ensureHmsMenus } from "@/lib/menu-seeder"
 
 export default async function DoctorDashboardPage() {
+    await ensureHmsMenus()
     const session = await auth()
 
     if (!session?.user?.email) {
