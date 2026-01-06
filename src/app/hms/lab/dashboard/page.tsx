@@ -42,7 +42,7 @@ export default async function LabDashboardPage() {
             hms_patient: true,
             hms_appointment: {
                 include: {
-                    hms_clinicians: true
+                    hms_clinician: true
                 }
             },
             hms_lab_order_line: {
@@ -70,8 +70,8 @@ export default async function LabDashboardPage() {
             : 'Unknown Patient'
 
         // Doctor Name
-        const doctorName = order.hms_appointment?.hms_clinicians
-            ? `${order.hms_appointment.hms_clinicians.first_name} ${order.hms_appointment.hms_clinicians.last_name}`.trim()
+        const doctorName = order.hms_appointment?.hms_clinician
+            ? `${order.hms_appointment.hms_clinician.first_name} ${order.hms_appointment.hms_clinician.last_name}`.trim()
             : 'Unknown'
 
         return {
