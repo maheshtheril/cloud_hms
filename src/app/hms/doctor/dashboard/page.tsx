@@ -116,6 +116,7 @@ export default async function DoctorDashboardPage() {
             encounter_id: { in: appointmentIds }
         },
         select: {
+            id: true,
             encounter_id: true,
             status: true,
             report_url: true
@@ -134,7 +135,8 @@ export default async function DoctorDashboardPage() {
             labMap.set(lab.encounter_id, {
                 hasLab: true,
                 isReady: isCompleted,
-                reportUrl: lab.report_url
+                reportUrl: lab.report_url,
+                orderId: lab.id
             })
         }
     })

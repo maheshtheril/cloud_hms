@@ -254,7 +254,7 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
 
                                                 {apt.lab_status && apt.lab_status.isReady && (
                                                     <a
-                                                        href={apt.lab_status.reportUrl}
+                                                        href={`/api/lab/report/${apt.lab_status.orderId}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="h-10 px-6 rounded-xl bg-violet-50 text-violet-700 font-bold text-xs border border-violet-100 hover:bg-violet-100 hover:border-violet-200 transition-all flex items-center justify-center gap-2"
