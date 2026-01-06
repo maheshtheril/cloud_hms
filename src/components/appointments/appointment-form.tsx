@@ -258,6 +258,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                             patients={localPatients}
                             doctors={doctors}
                             selectedPatientId={selectedPatientId}
+                            selectedClinicianId={selectedClinicianId}
                             onClinicianSelect={handleClinicianChange}
                             onPatientSelect={setSelectedPatientId}
                             onNewPatientClick={() => setShowNewPatientModal(true)}
@@ -285,7 +286,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                                         type="date"
                                         name="date"
                                         required
-                                        defaultValue={initialDate || new Date().toISOString().split('T')[0]}
+                                        defaultValue={defaultDate}
                                         className="w-full p-2.5 bg-white dark:bg-slate-950 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium"
                                     />
                                 </div>

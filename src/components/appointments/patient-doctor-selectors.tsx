@@ -31,6 +31,7 @@ export function PatientDoctorSelectors({
     patients: Patient[]
     doctors: Doctor[]
     selectedPatientId: string
+    selectedClinicianId?: string
     onClinicianSelect?: (id: string) => void
     onPatientSelect?: (id: string) => void
     onNewPatientClick?: () => void
@@ -110,6 +111,7 @@ export function PatientDoctorSelectors({
 
                     <SearchableSelect
                         options={doctorOptions}
+                        value={selectedClinicianId}
                         onChange={(e) => onClinicianSelect?.(e)}
                         placeholder="Search doctor..."
                         name="clinician_id"
