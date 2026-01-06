@@ -34,21 +34,21 @@ export function SearchableSelect({
 }: SearchableSelectProps) {
     const [open, setOpen] = useState(false)
     const [search, setSearch] = useState('')
-    const [selectedValue, setSelectedValue] = useState(initialValue || '')
+    // Fully Controlled Component logic
+    // We trust the parent (AppointmentForm) to handle state updates via onChange.
+    // We strictly use `props.value` (aliased as initialValue here, but it's the current value) for rendering.
+
+    const currentId = initialValue || '';
+    const selectedOption = options.find(opt => opt.id === currentId);
+
+    // State for navigation
     const [highlightedIndex, setHighlightedIndex] = useState(0)
     const buttonRef = useRef<HTMLButtonElement>(null)
-
-    const selectedOption = options.find(opt => opt.id === selectedValue)
 
     const filteredOptions = options.filter(opt =>
         opt.label.toLowerCase().includes(search.toLowerCase()) ||
         opt.subtitle?.toLowerCase().includes(search.toLowerCase())
     )
-
-    // Sync internal state with value prop
-    useEffect(() => {
-        setSelectedValue(initialValue || '')
-    }, [initialValue])
 
     // Reset highlighted index when filtered options change
     useEffect(() => {
@@ -96,23 +96,13 @@ export function SearchableSelect({
     }, [highlightedIndex, open])
 
     const handleSelect = (optionId: string) => {
-        console.log("SearchableSelect: handleSelect called", optionId)
-        setSelectedValue(optionId)
         onChange(optionId)
         setOpen(false)
         setSearch('')
     }
 
-    // debug log
-    useEffect(() => {
-        console.log("SearchableSelect: value prop changed", initialValue)
-        console.log("SearchableSelect: selectedValue state", selectedValue)
-        console.log("SearchableSelect: selectedOption found?", !!selectedOption)
-    }, [initialValue, selectedValue, selectedOption])
-
     const handleClear = (e: React.MouseEvent) => {
         e.stopPropagation()
-        setSelectedValue('')
         onChange('')
         setSearch('')
     }
@@ -198,7 +188,7 @@ export function SearchableSelect({
                                             </div>
                                         )}
                                     </div>
-                                    {selectedValue === option.id && (
+                                    {currentId === option.id && (
                                         <Check className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                                     )}
                                 </button>
@@ -209,7 +199,7 @@ export function SearchableSelect({
             </PopoverContent>
 
             {/* Hidden Input for Form Submission */}
-            <input type="hidden" name={name} value={selectedValue} required={required} />
+            <input type="hidden" name={name} value={currentId} required={required} />
         </Popover>
     )
 }
