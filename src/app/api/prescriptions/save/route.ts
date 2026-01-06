@@ -181,11 +181,9 @@ export async function POST(request: NextRequest) {
                         const newTest = await tx.hms_lab_test.create({
                             data: {
                                 tenant_id: session.user.tenantId,
-                                company_id: userCompanyId || (await tx.company.findFirst({ where: { tenant_id: session.user.tenantId } }))?.id || null, // Allow null if really no company found, though schema might reject it (usually doesn't for strict uuid? need valid uuid or null)
+                                company_id: userCompanyId || (await tx.company.findFirst({ where: { tenant_id: session.user.tenantId } }))?.id || null,
                                 name: testName,
                                 code: `LAB-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-                                is_active: true,
-                                price: 0 // Default price
                             }
                         });
                         tId = newTest.id;
