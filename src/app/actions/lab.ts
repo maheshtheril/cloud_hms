@@ -81,7 +81,7 @@ export async function updateLabOrderReport(input: z.infer<typeof updateReportSch
         return { success: true, message: "Report uploaded successfully", data: order }
     } catch (error) {
         console.error("Failed to upload lab report:", error)
-        return { success: false, message: "Failed to upload report" }
+        return { success: false, message: "Failed to upload report: " + (error as Error).message }
     }
 }
 

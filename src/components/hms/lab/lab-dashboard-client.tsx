@@ -465,22 +465,33 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                                 try {
                                                     // 1. Upload File
                                                     const uploadRes = await uploadFile(formData, 'lab-reports')
-                                                    if (uploadRes.error || !uploadRes.url) {
-                                                        alert(uploadRes.error || "Upload failed")
+                                                    if (uploadRes.error) {
+                                                        alert(uploadRes.error)
+                                                        setIsUploading(false)
+                                                        return
+                                                    }
+                                                    if (!uploadRes.url) {
+                                                        alert("Upload failed: No data returned")
+                                                        setIsUploading(false)
                                                         return
                                                     }
 
                                                     // 2. Update Order
                                                     const res = await updateLabOrderReport({ orderId: selectedOrder.id, reportUrl: uploadRes.url })
                                                     if (res.success) {
+                                                        const btn = document.getElementById('upload-btn-text')
+                                                        if (btn) btn.innerText = "Saved!"
+
+                                                        await new Promise(r => setTimeout(r, 1500))
+
                                                         setSelectedOrder(null)
                                                         router.refresh()
                                                     } else {
                                                         alert("Failed to link report")
                                                     }
-                                                } catch (e) {
+                                                } catch (e: any) {
                                                     console.error(e)
-                                                    alert("An error occurred")
+                                                    alert("An error occurred: " + e.message)
                                                 } finally {
                                                     setIsUploading(false)
                                                 }
@@ -498,7 +509,7 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                                     className="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-black transition-colors shrink-0 disabled:opacity-50 flex items-center gap-2"
                                                 >
                                                     {isUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-                                                    {isUploading ? 'Uploading...' : 'Upload'}
+                                                    <span id="upload-btn-text">{isUploading ? 'Uploading...' : 'Upload'}</span>
                                                 </button>
                                             </form>
                                         </div>
