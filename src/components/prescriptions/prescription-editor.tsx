@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '@/components/ui/use-toast'
 import { sharePrescriptionWhatsapp } from '@/app/actions/prescription'
+import { getLabReportForAppointment } from '@/app/actions/lab'
 
 interface PrescriptionEditorProps {
     isModal?: boolean
@@ -24,6 +25,9 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     const [resolvedPatientId, setResolvedPatientId] = useState<string | null>(patientId)
     const [medicines, setMedicines] = useState<any[]>([])
     const [selectedMedicines, setSelectedMedicines] = useState<any[]>([])
+
+    // Lab Report State
+    const [labReportUrl, setLabReportUrl] = useState<string | null>(null)
 
     // Medicine search & modal
     const [medicineSearch, setMedicineSearch] = useState('')
@@ -127,6 +131,16 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             })
             .catch(err => console.error('Error fetching appointment for patient info:', err));
     }, [appointmentId, patientId]);
+
+    useEffect(() => {
+        if (appointmentId) {
+            getLabReportForAppointment(appointmentId).then(res => {
+                if (res.success && res.reportUrl) {
+                    setLabReportUrl(res.reportUrl)
+                }
+            })
+        }
+    }, [appointmentId])
 
     // Fetch existing prescription and nurse vitals if appointmentId is present
     useEffect(() => {
@@ -626,6 +640,17 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                 </div>
 
                 <div className="flex items-center gap-3">
+                    {labReportUrl && (
+                        <a
+                            href={labReportUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hidden md:flex items-center gap-2 px-4 py-2 bg-violet-100 text-violet-700 rounded-full text-xs font-bold hover:bg-violet-200 transition-colors border border-violet-200 animate-pulse"
+                        >
+                            <FileText className="h-4 w-4" />
+                            View Lab Report
+                        </a>
+                    )}
                     <Button
                         variant="ghost"
                         size="icon"

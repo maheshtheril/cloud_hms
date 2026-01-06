@@ -84,3 +84,25 @@ export async function updateLabOrderReport(input: z.infer<typeof updateReportSch
         return { success: false, message: "Failed to upload report" }
     }
 }
+
+export async function getLabReportForAppointment(appointmentId: string) {
+    const session = await auth()
+    if (!session?.user?.id) return { success: false }
+
+    try {
+        const order = await prisma.hms_lab_order.findFirst({
+            where: {
+                encounter_id: appointmentId,
+                report_url: { not: null }
+            },
+            select: { report_url: true }
+        })
+
+        if (order?.report_url) {
+            return { success: true, reportUrl: order.report_url }
+        }
+        return { success: false }
+    } catch (error) {
+        return { success: false }
+    }
+}
