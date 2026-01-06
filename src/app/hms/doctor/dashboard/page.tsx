@@ -4,6 +4,9 @@ import { redirect } from "next/navigation"
 import { DoctorDashboardClient } from "@/components/hms/doctor/doctor-dashboard-client"
 import { ensureHmsMenus } from "@/lib/menu-seeder"
 
+import { initializeDoctorProfile } from "@/app/actions/doctor"
+import { Stethoscope, CheckCircle2 } from "lucide-react"
+
 export default async function DoctorDashboardPage() {
     await ensureHmsMenus()
     const session = await auth()
@@ -14,9 +17,6 @@ export default async function DoctorDashboardPage() {
 
     const tenantId = session.user.tenantId
     const userEmail = session.user.email
-
-    import { initializeDoctorProfile } from "@/app/actions/doctor"
-    import { Stethoscope, CheckCircle2 } from "lucide-react"
 
     // 1. Identify the Clinician
     const clinician = await prisma.hms_clinicians.findFirst({
