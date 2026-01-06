@@ -43,6 +43,23 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
             setSelectedPatientId(editingAppointment.patient_id || '')
             setSelectedClinicianId(editingAppointment.clinician?.id || '')
             setSuggestedTime(new Date(editingAppointment.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
+
+            // Ensure patient exists in list (for correct display label)
+            if (editingAppointment.patient) {
+                setLocalPatients(prev => {
+                    const exists = prev.some(p => p.id === editingAppointment.patient.id)
+                    if (!exists) {
+                        return [{
+                            id: editingAppointment.patient.id,
+                            first_name: editingAppointment.patient.first_name,
+                            last_name: editingAppointment.patient.last_name,
+                            patient_number: editingAppointment.patient.patient_number,
+                            gender: editingAppointment.patient.gender
+                        }, ...prev]
+                    }
+                    return prev
+                })
+            }
         } else {
             // Reset to defaults if switching to "New Appointment" mode within same instance (rare but possible)
             setSelectedPatientId(initialData.patient_id || '')
