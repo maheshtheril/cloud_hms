@@ -75,13 +75,18 @@ export default async function NursingDashboardPage() {
     const pendingTriage = appointments.filter(a => !vitalsDoneSet.has(a.id))
 
     // Transform data for the component
+    // Transform data for the component
     const formattedPendingTriage = pendingTriage.map(apt => ({
         id: apt.id,
         patient_name: `${apt.hms_patient?.first_name} ${apt.hms_patient?.last_name || ''}`.trim(),
         patient_id: apt.hms_patient?.patient_number,
+        patient_gender: apt.hms_patient?.gender,
+        patient_dob: apt.hms_patient?.dob,
         doctor_name: `Dr. ${apt.hms_clinician?.first_name} ${apt.hms_clinician?.last_name || ''}`,
         time: apt.starts_at,
-        status: apt.status
+        status: apt.status,
+        priority: apt.priority,
+        reason: apt.notes || apt.type
     }))
 
     const formattedAdmissions = (admittedPatients as any[]).map(adm => ({

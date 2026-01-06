@@ -8,6 +8,7 @@ import {
     Clock, Search, Filter, ChevronRight
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { differenceInYears } from "date-fns"
 
 interface NursingActionCenterProps {
     pendingTriage: any[]
@@ -129,27 +130,43 @@ export function NursingActionCenter({ pendingTriage, activeAdmissions, pendingSa
                                 <p>No patients waiting for vitals assessment</p>
                             </div>
                         ) : (
-                            pendingTriage.map((task) => (
-                                <div key={task.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center justify-between cursor-pointer" onClick={() => router.push(`/hms/nursing/vitals/${task.id}`)}>
-                                    <div className="flex items-center gap-4">
-                                        <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold">
-                                            {task.patient_name.charAt(0)}
+                            pendingTriage.map((task) => {
+                                const isHighPriority = ['high', 'urgent', 'emergency'].includes(task.priority?.toLowerCase());
+                                return (
+                                    <div key={task.id} className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center justify-between cursor-pointer border-l-4 ${isHighPriority ? 'border-red-500 bg-red-50/10' : 'border-transparent'}`} onClick={() => router.push(`/hms/nursing/vitals/${task.id}`)}>
+                                        <div className="flex items-center gap-4">
+                                            <div className={`h-12 w-12 rounded-full flex items-center justify-center text-lg font-bold shadow-sm ${task.patient_gender?.toLowerCase() === 'female' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
+                                                {task.patient_name.charAt(0)}
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="font-bold text-sm text-slate-900 dark:text-white">{task.patient_name}</h4>
+                                                    {isHighPriority && <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded uppercase flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Urgent</span>}
+                                                </div>
+                                                <p className="text-xs text-slate-500 mt-0.5 font-medium flex items-center gap-2">
+                                                    <span className="capitalize">{task.patient_gender || 'Unknown'}</span>
+                                                    <span className="h-1 w-1 bg-slate-300 rounded-full" />
+                                                    <span>{task.patient_dob ? differenceInYears(new Date(), new Date(task.patient_dob)) + 'y' : '-'}</span>
+                                                    <span className="h-1 w-1 bg-slate-300 rounded-full" />
+                                                    <span className="text-slate-400">ID: {task.patient_id || 'N/A'}</span>
+                                                </p>
+                                                <p className="text-xs text-slate-400 mt-1 truncate max-w-[200px]">
+                                                    {task.reason || 'General Visit'} • {task.doctor_name}
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h4 className="font-bold text-sm text-slate-900 dark:text-white">{task.patient_name}</h4>
-                                            <p className="text-xs text-slate-500">
-                                                {new Date(task.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {task.doctor_name}
-                                            </p>
+                                        <div className="flex flex-col items-end gap-2 text-right">
+                                            <div className="text-xs font-bold text-slate-400 flex items-center gap-1">
+                                                <Clock className="h-3 w-3" />
+                                                {new Date(task.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                            <div className="flex items-center gap-1 text-pink-600 font-bold text-xs bg-pink-50 px-3 py-1.5 rounded-full hover:bg-pink-600 hover:text-white transition-all shadow-sm">
+                                                Assess <ChevronRight className="h-3 w-3" />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <div className="text-xs font-medium bg-pink-50 text-pink-600 px-2 py-1 rounded border border-pink-100">
-                                            Assess
-                                        </div>
-                                        <ChevronRight className="h-4 w-4 text-slate-400" />
-                                    </div>
-                                </div>
-                            ))
+                                )
+                            })
                         )}
                     </div>
                 </div>
