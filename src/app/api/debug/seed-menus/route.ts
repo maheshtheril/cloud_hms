@@ -39,9 +39,11 @@ export async function GET() {
         // 2. Define Structure
         const hmsStructure = [
             { key: 'hms-dashboard', label: 'Dashboard', icon: 'LayoutDashboard', url: '/hms/dashboard', sort: 10 },
+            { key: 'hms-reception', label: 'Reception', icon: 'MonitorCheck', url: '/hms/reception/dashboard', sort: 12 },
             { key: 'hms-appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments', sort: 20 },
             { key: 'hms-patients', label: 'Patients', icon: 'Users', url: '/hms/patients', sort: 30 },
             { key: 'hms-doctors', label: 'Doctors', icon: 'Stethoscope', url: '/hms/doctors', sort: 40 },
+            { key: 'hms-nursing', label: 'Nursing Station', icon: 'Activity', url: '/hms/nursing/dashboard', sort: 45 },
 
             // Purchasing Group (Submenu)
             {

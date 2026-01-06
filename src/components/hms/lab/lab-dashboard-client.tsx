@@ -6,9 +6,10 @@ import {
     Activity, FlaskConical, Users, Clock, Calendar,
     ChevronRight, Search, Bell, FileText, CheckCircle2,
     AlertCircle, TrendingUp, TestTube2, Microscope,
-    ArrowRight
+    ArrowRight, Check, Loader2
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { updateLabOrderStatus } from "@/app/actions/lab"
 
 interface LabDashboardProps {
     labStaffName: string
@@ -45,6 +46,49 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
     }
 
     const [selectedOrder, setSelectedOrder] = useState<any>(null)
+    const [isUpdating, setIsUpdating] = useState(false)
+
+    const handleStatusUpdate = async () => {
+        if (!selectedOrder) return
+
+        const currentStatus = selectedOrder.status
+        let nextStatus = ''
+
+        if (currentStatus === 'requested') nextStatus = 'collected'
+        else if (currentStatus === 'collected') nextStatus = 'in_progress'
+        else if (currentStatus === 'in_progress') nextStatus = 'completed'
+        else return
+
+        setIsUpdating(true)
+        try {
+            const res = await updateLabOrderStatus({
+                orderId: selectedOrder.id,
+                status: nextStatus as any
+            })
+
+            if (res.success) {
+                // Determine if we should close the modal or just update local state
+                // For better UX, let's update local state so user sees the progress, then close if completed?
+                // Or just close. Let's close for now as the list will refresh.
+                setSelectedOrder(null)
+                router.refresh()
+            }
+        } catch (error) {
+            console.error(error)
+        } finally {
+            setIsUpdating(false)
+        }
+    }
+
+    // Status Steps Definition
+    const steps = [
+        { id: 'requested', label: 'Requested' },
+        { id: 'collected', label: 'Collected' },
+        { id: 'in_progress', label: 'In Progress' },
+        { id: 'completed', label: 'Completed' },
+    ]
+
+    const getCurrentStepIndex = (status: string) => steps.findIndex(s => s.id === status)
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 lg:p-10 font-sans">
@@ -261,50 +305,128 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                             initial={{ scale: 0.95, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             exit={{ scale: 0.95, opacity: 0 }}
-                            className="relative bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl border border-gray-100 dark:border-slate-800"
+                            className="relative bg-white dark:bg-slate-900 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-hidden shadow-2xl border border-gray-100 dark:border-slate-800 flex flex-col"
                         >
-                            <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
-                                <h3 className="text-xl font-bold">Lab Order Details</h3>
-                                <button onClick={() => setSelectedOrder(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full">
-                                    <AlertCircle className="h-5 w-5 rotate-45" /> {/* Close icon substitute */}
+                            <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+                                <div>
+                                    <h3 className="text-xl font-black">Order #{selectedOrder.order_number}</h3>
+                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">
+                                        {new Date(selectedOrder.time).toLocaleString()}
+                                    </p>
+                                </div>
+                                <button onClick={() => setSelectedOrder(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                                    <AlertCircle className="h-6 w-6 rotate-45 text-slate-400" />
                                 </button>
                             </div>
-                            <div className="p-6 overflow-y-auto max-h-[60vh] space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Patient</label>
-                                        <p className="text-lg font-bold">{selectedOrder.patient_name}</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase">Doctor</label>
-                                        <p className="text-lg font-bold">{selectedOrder.doctor_name}</p>
+
+                            <div className="p-6 overflow-y-auto custom-scrollbar space-y-8">
+                                {/* Status Stepper */}
+                                <div className="relative">
+                                    <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 dark:bg-slate-800 -translate-y-1/2 rounded-full" />
+                                    <div
+                                        className="absolute top-1/2 left-0 h-1 bg-violet-600 -translate-y-1/2 rounded-full transition-all duration-500"
+                                        style={{ width: `${(getCurrentStepIndex(selectedOrder.status) / (steps.length - 1)) * 100}%` }}
+                                    />
+                                    <div className="relative flex justify-between">
+                                        {steps.map((step, idx) => {
+                                            const isCompleted = idx <= getCurrentStepIndex(selectedOrder.status)
+                                            const isCurrent = idx === getCurrentStepIndex(selectedOrder.status)
+                                            return (
+                                                <div key={step.id} className="flex flex-col items-center gap-2">
+                                                    <div className={`
+                                                        w-8 h-8 rounded-full flex items-center justify-center border-4 transition-all duration-300 z-10
+                                                        ${isCompleted
+                                                            ? 'bg-violet-600 border-violet-600 text-white'
+                                                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'
+                                                        }
+                                                        ${isCurrent ? 'ring-4 ring-violet-100 dark:ring-violet-900/30 scale-110' : ''}
+                                                    `}>
+                                                        {isCompleted ? <Check className="h-4 w-4" /> : <div className="w-2 h-2 rounded-full bg-slate-300" />}
+                                                    </div>
+                                                    <span className={`text-[10px] font-bold uppercase tracking-wider ${isCurrent ? 'text-violet-600' : 'text-slate-400'}`}>
+                                                        {step.label}
+                                                    </span>
+                                                </div>
+                                            )
+                                        })}
                                     </div>
                                 </div>
 
+                                {/* Patient Bio */}
+                                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-12 w-12 rounded-xl bg-white dark:bg-slate-800 shadow-sm flex items-center justify-center text-xl font-black text-slate-900 dark:text-white border border-slate-100 dark:border-slate-700">
+                                            {selectedOrder.patient_name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Patient</p>
+                                            <p className="text-lg font-bold text-slate-900 dark:text-white">{selectedOrder.patient_name}</p>
+                                        </div>
+                                    </div>
+                                    <div className="w-px bg-slate-200 dark:bg-slate-700 hidden sm:block" />
+                                    <div>
+                                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Prescribed By</p>
+                                        <p className="text-base font-bold text-slate-900 dark:text-white">Dr. {selectedOrder.doctor_name}</p>
+                                    </div>
+                                </div>
+
+                                {/* Tests List */}
                                 <div>
-                                    <h4 className="font-bold mb-3 flex items-center gap-2">
-                                        <TestTube2 className="h-4 w-4" /> Tests Requested
+                                    <h4 className="font-bold mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
+                                        <TestTube2 className="h-5 w-5 text-violet-500" />
+                                        Requested Analysis
                                     </h4>
-                                    <div className="space-y-2">
+                                    <div className="space-y-3">
                                         {selectedOrder.tests.map((test: any, idx: number) => (
-                                            <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                                                <span className="font-medium">{test.test_name}</span>
-                                                <span className="text-xs font-bold bg-white dark:bg-slate-700 px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600">
+                                            <div key={idx} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm hover:border-violet-200 transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-2 h-2 rounded-full bg-violet-500" />
+                                                    <span className="font-semibold text-slate-700 dark:text-slate-200">{test.test_name}</span>
+                                                </div>
+                                                <span className={`
+                                                    text-[10px] font-bold px-2 py-1 rounded-lg border uppercase tracking-wider
+                                                    ${test.status === 'completed' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                        (test.status === 'in_progress' || test.status === 'processing') ? 'bg-amber-50 text-amber-600 border-amber-100' :
+                                                            'bg-slate-50 text-slate-500 border-slate-100'}
+                                                `}>
                                                     {test.status}
                                                 </span>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
+                            </div>
 
-                                <div className="flex gap-3">
-                                    <button className="flex-1 py-3 bg-violet-600 text-white font-bold rounded-xl hover:bg-violet-700 transition-colors">
-                                        Update Status
+                            <div className="p-6 border-t border-gray-100 dark:border-slate-800 bg-gray-50/50 dark:bg-slate-900/50 flex gap-3 shrink-0">
+                                {selectedOrder.status !== 'completed' ? (
+                                    <button
+                                        onClick={handleStatusUpdate}
+                                        disabled={isUpdating}
+                                        className="flex-1 py-3.5 bg-violet-600 text-white font-bold rounded-xl hover:bg-violet-700 disabled:opacity-70 disabled:cursor-not-allowed transition-all shadow-lg shadow-violet-600/20 active:scale-95 flex items-center justify-center gap-2"
+                                    >
+                                        {isUpdating ? (
+                                            <>
+                                                <Loader2 className="h-5 w-5 animate-spin" />
+                                                Updating...
+                                            </>
+                                        ) : (
+                                            <>
+                                                {selectedOrder.status === 'requested' && 'Mark Sample Collected'}
+                                                {selectedOrder.status === 'collected' && 'Start Processing'}
+                                                {selectedOrder.status === 'in_progress' && 'Release Results'}
+                                            </>
+                                        )}
                                     </button>
-                                    <button className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-                                        Print Label
+                                ) : (
+                                    <button disabled className="flex-1 py-3.5 bg-emerald-600/10 text-emerald-600 border border-emerald-200 rounded-xl font-bold cursor-default flex items-center justify-center gap-2">
+                                        <CheckCircle2 className="h-5 w-5" />
+                                        Order Completed
                                     </button>
-                                </div>
+                                )}
+
+                                <button className="px-6 py-3.5 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors">
+                                    Print Label
+                                </button>
                             </div>
                         </motion.div>
                     </div>
