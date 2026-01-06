@@ -491,11 +491,11 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                     )}
                                 </div>
                             )}
-                    </div>
+
                         </motion.div>
-        </div>
-    )
-}
+                    </div>
+                )
+                }
             </AnimatePresence >
         </div >
     )
