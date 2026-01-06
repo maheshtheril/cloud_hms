@@ -5,7 +5,7 @@ import { ArrowLeft, Calendar, Clock, FileText, CheckCircle, MapPin, Video, Phone
 import Link from "next/link"
 import { PatientDoctorSelectors } from "@/components/appointments/patient-doctor-selectors"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 
@@ -36,6 +36,21 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     const [showNewPatientModal, setShowNewPatientModal] = useState(false)
     const [selectedClinicianId, setSelectedClinicianId] = useState(defaultClinicianId)
     const [suggestedTime, setSuggestedTime] = useState(defaultTime)
+
+    // Sync state when editingAppointment changes (fix for reused component / stale state)
+    useEffect(() => {
+        if (editingAppointment) {
+            setSelectedPatientId(editingAppointment.patient_id || '')
+            setSelectedClinicianId(editingAppointment.clinician?.id || '')
+            setSuggestedTime(new Date(editingAppointment.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
+        } else {
+            // Reset to defaults if switching to "New Appointment" mode within same instance (rare but possible)
+            setSelectedPatientId(initialData.patient_id || '')
+            setSelectedClinicianId('')
+            // Time usually stays or defaults, but let's leave time logic to the user interaction or initialData
+            setSuggestedTime(initialData.time || '')
+        }
+    }, [editingAppointment, initialData])
 
     // ... (Smart slot logic remains, but we might want to skip it on initial load if editing)
 
