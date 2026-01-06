@@ -26,10 +26,10 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     const { patient_id: initialPatientId, date: initialDate, time: initialTime } = initialData
 
     // Derived state for editing
-    const defaultPatientId = editingAppointment?.patient_id || initialPatientId || ''
+    const defaultPatientId = editingAppointment?.patient?.id || editingAppointment?.patient_id || initialPatientId || ''
     const defaultDate = editingAppointment ? new Date(editingAppointment.start_time).toISOString().split('T')[0] : (initialDate || new Date().toISOString().split('T')[0])
     const defaultTime = editingAppointment ? new Date(editingAppointment.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : (initialTime || '')
-    const defaultClinicianId = editingAppointment?.clinician?.id || ''
+    const defaultClinicianId = editingAppointment?.clinician?.id || editingAppointment?.clinician_id || ''
 
     const [localPatients, setLocalPatients] = useState(patients)
     const [selectedPatientId, setSelectedPatientId] = useState(defaultPatientId)
@@ -40,8 +40,8 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     // Sync state when editingAppointment changes (fix for reused component / stale state)
     useEffect(() => {
         if (editingAppointment) {
-            setSelectedPatientId(editingAppointment.patient_id || '')
-            setSelectedClinicianId(editingAppointment.clinician?.id || '')
+            setSelectedPatientId(editingAppointment.patient?.id || editingAppointment.patient_id || '')
+            setSelectedClinicianId(editingAppointment.clinician?.id || editingAppointment.clinician_id || '')
             setSuggestedTime(new Date(editingAppointment.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
 
             // Ensure patient exists in list (for correct display label)
