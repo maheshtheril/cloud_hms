@@ -100,41 +100,50 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* 1. TOP PREMIUM STATS STRIP */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <Card className="p-4 bg-white dark:bg-slate-900 border-none shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
                     <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expected Today</p>
-                        <h3 className="text-2xl font-black text-slate-900 dark:text-white">{todayAppointments.length}</h3>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expected</p>
+                        <h3 className="text-xl font-black text-slate-900 dark:text-white">{todayAppointments.length}</h3>
                     </div>
                     <div className="h-10 w-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center">
                         <Users className="h-5 w-5 text-indigo-500" />
                     </div>
                 </Card>
                 <Card className="p-4 bg-white dark:bg-slate-900 border-none shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
-                    <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Daily Revenue</p>
-                        <h3 className="text-2xl font-black text-green-600">₹{dailyCollection.toLocaleString()}</h3>
+                    <div className="space-y-1 cursor-pointer" onClick={() => setActiveModal('collection-report')}>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Revenue</p>
+                        <h3 className="text-xl font-black text-green-600">₹{dailyCollection.toLocaleString()}</h3>
                     </div>
-                    <div className="h-10 w-10 rounded-xl bg-green-50 dark:bg-green-900/20 flex items-center justify-center cursor-pointer" onClick={() => setActiveModal('collection-report')}>
+                    <div className="h-10 w-10 rounded-xl bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
                         <IndianRupee className="h-5 w-5 text-green-500" />
+                    </div>
+                </Card>
+                <Card className="p-4 bg-white dark:bg-slate-900 border-none shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+                    <div className="space-y-1 cursor-pointer" onClick={() => setActiveModal('expense-report')}>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expenses</p>
+                        <h3 className="text-xl font-black text-rose-600">₹{totalExpenses.toLocaleString()}</h3>
+                    </div>
+                    <div className="h-10 w-10 rounded-xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center">
+                        <Wallet className="h-5 w-5 text-rose-500" />
+                    </div>
+                </Card>
+                <Card className="p-4 bg-slate-900 text-white border-none shadow-lg flex items-center justify-between group transition-all">
+                    <div className="space-y-1">
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Net Cash</p>
+                        <h3 className="text-xl font-black text-emerald-400">₹{(dailyCollection - totalExpenses).toLocaleString()}</h3>
+                    </div>
+                    <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
+                        <Activity className="h-5 w-5 text-white" />
                     </div>
                 </Card>
                 <Card className="p-4 bg-white dark:bg-slate-900 border-none shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
                     <div className="space-y-1">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">In Waiting</p>
-                        <h3 className="text-2xl font-black text-blue-600">{todayAppointments.filter(a => a.status === 'arrived').length}</h3>
+                        <h3 className="text-xl font-black text-blue-600">{todayAppointments.filter(a => a.status === 'arrived').length}</h3>
                     </div>
                     <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                        <Activity className="h-5 w-5 text-blue-500" />
-                    </div>
-                </Card>
-                <Card className="p-4 bg-slate-900 text-white border-none shadow-lg flex items-center justify-between group transition-all">
-                    <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Net Position</p>
-                        <h3 className="text-xl font-black text-emerald-400">₹{(dailyCollection - totalExpenses).toLocaleString()}</h3>
-                    </div>
-                    <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center">
-                        <Wallet className="h-5 w-5 text-white" />
+                        <Clock className="h-5 w-5 text-blue-500" />
                     </div>
                 </Card>
             </div>
@@ -347,24 +356,56 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                         </Card>
                     </div>
 
-                    {/* RECENT PAYMENTS MINI LIST */}
-                    <div className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <IndianRupee className="h-4 w-4 text-slate-400" />
-                            <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Live Collection Feed</h3>
-                        </div>
-                        <div className="space-y-2">
-                            {todayPayments.slice(0, 3).map((pmt, i) => (
-                                <div key={i} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <div className="p-1.5 rounded-lg bg-green-100 text-green-700"><CheckCircle className="h-3 w-3" /></div>
-                                        <div className="text-[10px] font-bold text-slate-600 dark:text-slate-300 truncate max-w-[120px]">
-                                            {pmt.hms_invoice?.hms_patient?.first_name || 'Counter Sale'}
+                    {/* LIVE FEEDS */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-1 gap-6">
+                        {/* LIVE COLLECTION FEED */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                                <IndianRupee className="h-4 w-4 text-emerald-500" />
+                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Live Revenue</h3>
+                            </div>
+                            <div className="space-y-2">
+                                {todayPayments.length === 0 ? (
+                                    <div className="p-4 text-[10px] text-slate-400 text-center border border-dashed rounded-xl">No revenue recorded yet</div>
+                                ) : (
+                                    todayPayments.slice(0, 3).map((pmt, i) => (
+                                        <div key={i} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border border-slate-100 dark:border-slate-800">
+                                            <div className="flex items-center gap-2">
+                                                <div className="p-1 px-2 rounded-lg bg-green-100 text-green-700 text-[10px] font-bold">IN</div>
+                                                <div className="text-[10px] font-bold text-slate-600 dark:text-slate-300 truncate max-w-[120px]">
+                                                    {pmt.hms_invoice?.hms_patient?.first_name || 'Counter Sale'}
+                                                </div>
+                                            </div>
+                                            <div className="text-xs font-black text-slate-900 dark:text-white">₹{Number(pmt.amount).toLocaleString()}</div>
                                         </div>
-                                    </div>
-                                    <div className="text-xs font-black text-slate-900 dark:text-white">₹{Number(pmt.amount).toLocaleString()}</div>
-                                </div>
-                            ))}
+                                    ))
+                                )}
+                            </div>
+                        </div>
+
+                        {/* LIVE EXPENSE FEED */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                                <Wallet className="h-4 w-4 text-rose-500" />
+                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Live Expenses</h3>
+                            </div>
+                            <div className="space-y-2">
+                                {todayExpenses.length === 0 ? (
+                                    <div className="p-4 text-[10px] text-slate-400 text-center border border-dashed rounded-xl">No expenses recorded yet</div>
+                                ) : (
+                                    todayExpenses.slice(0, 3).map((exp, i) => (
+                                        <div key={i} className="p-3 rounded-xl bg-rose-50/30 dark:bg-rose-900/10 flex items-center justify-between border border-rose-100/50 dark:border-rose-900/20">
+                                            <div className="flex items-center gap-2">
+                                                <div className="p-1 px-2 rounded-lg bg-rose-100 text-rose-700 text-[10px] font-bold">OUT</div>
+                                                <div className="text-[10px] font-bold text-slate-600 dark:text-slate-300 truncate max-w-[120px]">
+                                                    {exp.payee_name || 'General'}
+                                                </div>
+                                            </div>
+                                            <div className="text-xs font-black text-rose-600 dark:text-rose-400">₹{Number(exp.amount).toLocaleString()}</div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
