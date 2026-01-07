@@ -58,6 +58,11 @@ export default function PurchaseReceiptsPage() {
                     <p className="text-muted-foreground text-sm">Review stock inward records. (Goods Received Notes)</p>
                 </div>
                 <div className="flex items-center gap-4">
+                    <Link href="/hms/purchasing/returns">
+                        <button className="bg-white border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest shadow-sm flex items-center gap-2">
+                            Debit Notes
+                        </button>
+                    </Link>
                     <div className="relative group">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-indigo-500 transition-colors" />
                         <input

@@ -70,10 +70,15 @@ export default async function BillingPage({
                     <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Billing & Finance</h1>
                     <p className="text-gray-500 mt-1">Overview of financial health and invoices</p>
                 </div>
-                <Link href="/hms/billing/new" className="bg-black text-white px-5 py-2.5 rounded-lg flex items-center gap-2 hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 font-medium">
-                    <Plus className="h-4 w-4" />
-                    Create Invoice
-                </Link>
+                <div className="flex gap-3">
+                    <Link href="/hms/billing/returns" className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-5 py-2.5 rounded-lg flex items-center gap-2 transition-all shadow-sm font-medium hover:text-emerald-700 hover:border-emerald-200">
+                        Credit Notes
+                    </Link>
+                    <Link href="/hms/billing/new" className="bg-black text-white px-5 py-2.5 rounded-lg flex items-center gap-2 hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 font-medium">
+                        <Plus className="h-4 w-4" />
+                        Create Invoice
+                    </Link>
+                </div>
             </div>
 
             {/* KPI Cards */}

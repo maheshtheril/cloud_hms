@@ -329,3 +329,65 @@ export async function createStockAdjustment(data: StockAdjustmentData) {
         return { error: error.message || "Failed to process adjustment" }
     }
 }
+
+export async function getPurchaseReturns() {
+    const session = await auth();
+    if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
+
+    try {
+        const returns = await prisma.hms_purchase_return.findMany({
+            where: { company_id: session.user.companyId },
+            include: {
+                hms_supplier: { select: { name: true } },
+                _count: { select: { lines: true } }
+            },
+            orderBy: { created_at: 'desc' }
+        });
+
+        return {
+            success: true, data: returns.map(r => ({
+                id: r.id,
+                returnNumber: r.return_number,
+                date: r.return_date,
+                supplierName: r.hms_supplier?.name || 'Unknown',
+                itemCount: r._count.lines,
+                totalAmount: Number(r.total_amount),
+                status: r.status,
+                reason: r.reason
+            }))
+        };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getSalesReturns() {
+    const session = await auth();
+    if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
+
+    try {
+        const returns = await prisma.hms_sales_return.findMany({
+            where: { company_id: session.user.companyId },
+            include: {
+                hms_patient: { select: { first_name: true, last_name: true } },
+                _count: { select: { lines: true } }
+            },
+            orderBy: { created_at: 'desc' }
+        });
+
+        return {
+            success: true, data: returns.map(r => ({
+                id: r.id,
+                returnNumber: r.return_number,
+                date: r.return_date,
+                patientName: `${r.hms_patient?.first_name || ''} ${r.hms_patient?.last_name || ''}`.trim() || 'Guest',
+                itemCount: r._count.lines,
+                totalAmount: Number(r.total_amount),
+                status: r.status,
+                reason: r.reason
+            }))
+        };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}

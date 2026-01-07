@@ -447,7 +447,17 @@ export async function getAllPermissions() {
             { code: 'purchasing:edit', name: 'Edit Purchase Orders', module: 'Purchasing' },
             { code: 'suppliers:view', name: 'View Suppliers', module: 'Purchasing' },
             { code: 'suppliers:create', name: 'Create Suppliers', module: 'Purchasing' },
-            { code: 'suppliers:edit', name: 'Edit Suppliers', module: 'Purchasing' }
+            { code: 'suppliers:edit', name: 'Edit Suppliers', module: 'Purchasing' },
+            { code: 'purchasing:returns:view', name: 'View Purchase Returns', module: 'Purchasing' },
+            { code: 'purchasing:returns:create', name: 'Create Purchase Returns', module: 'Purchasing' },
+
+            // Billing Returns
+            { code: 'billing:returns:view', name: 'View Sales Returns', module: 'HMS' },
+            { code: 'billing:returns:create', name: 'Create Sales Returns', module: 'HMS' },
+
+            // Inventory Adjustments
+            { code: 'inventory:adjustments:view', name: 'View Stock Adjustments', module: 'Inventory' },
+            { code: 'inventory:adjustments:create', name: 'Create Stock Adjustments', module: 'Inventory' }
         ];
 
         // 3. Map DB permissions to UI format
