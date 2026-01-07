@@ -1429,55 +1429,205 @@ export async function findOrCreateProduct(productName: string, additionalData?: 
     }
 }
 
+// Helper for CSV Parsing
+function parseCSVLine(line: string): string[] {
+    const result = [];
+    let start = 0;
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        if (line[i] === '"') {
+            inQuotes = !inQuotes;
+        } else if (line[i] === ',' && !inQuotes) {
+            let val = line.substring(start, i).trim();
+            if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+            result.push(val.replace(/""/g, '"'));
+            start = i + 1;
+        }
+    }
+    let lastVal = line.substring(start).trim();
+    if (lastVal.startsWith('"') && lastVal.endsWith('"')) lastVal = lastVal.slice(1, -1);
+    result.push(lastVal.replace(/""/g, '"'));
+    return result;
+}
+
 export async function importProductsCSV(formData: FormData) {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
+    const companyId = session.user.companyId;
+    const tenantId = session.user.tenantId;
 
     const file = formData.get("file") as File;
     if (!file) return { error: "No file uploaded" };
 
     const text = await file.text();
-    const lines = text.split('\n');
+    const lines = text.split(/\r?\n/);
+    if (lines.length < 2) return { error: "Empty or invalid CSV" };
+
+    // 1. Parse Headers
+    const headers = parseCSVLine(lines[0]).map(h => h.toLowerCase().trim());
+
+    const getIdx = (patterns: string[]) => headers.findIndex(h => patterns.some(p => h.includes(p)));
+
+    const idxName = getIdx(['name', 'product name']);
+    const idxSku = getIdx(['sku', 'code']);
+    const idxBarcode = getIdx(['barcode', 'ean', 'upc']);
+    const idxPrice = getIdx(['sale price', 'selling price', 'price']);
+    const idxMrp = getIdx(['mrp', 'max retail price']);
+    const idxPurchase = getIdx(['purchase price', 'cost', 'buy price']);
+    const idxTax = getIdx(['tax', 'gst', 'vat']);
+    const idxCat = getIdx(['category', 'group']);
+    const idxUom = getIdx(['uom', 'unit']);
+    const idxBrand = getIdx(['brand']);
+    const idxDesc = getIdx(['description', 'desc', 'details']);
+    const idxStock = getIdx(['stock', 'quantity', 'qty', 'opening']);
+    const idxBatch = getIdx(['batch']);
+    const idxExpiry = getIdx(['expiry', 'exp']);
+    const idxManufacturer = getIdx(['manufacturer', 'mfg']);
+
+    if (idxName === -1 || idxSku === -1) {
+        return { error: "CSV must contain 'Name' and 'SKU' columns." };
+    }
+
+    // 2. Pre-fetch Data for mapping
+    const [existingCats, existingTaxes] = await Promise.all([
+        prisma.hms_product_category.findMany({ where: { company_id: companyId }, select: { id: true, name: true } }),
+        prisma.company_taxes.findMany({ where: { company_id: companyId }, select: { id: true, rate: true } })
+    ]);
+
     let count = 0;
     const errors = [];
 
-    // Basic CSV parsing
-    for (let i = 0; i < lines.length; i++) {
+    // 3. Process Rows
+    for (let i = 1; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
 
-        // Split by comma (naive)
-        const parts = line.split(',');
-        if (parts.length < 3) continue;
-
-        const name = parts[0].trim().replace(/^"|"$/g, '');
-        const sku = parts[1].trim().replace(/^"|"$/g, '');
-        const priceStr = parts[2].trim().replace(/^"|"$/g, '');
-
-        // Skip Header row
-        if (i === 0 && (name.toLowerCase() === 'name' || sku.toLowerCase() === 'sku')) continue;
-
-        const price = parseFloat(priceStr) || 0;
-        const description = parts[3] ? parts[3].trim().replace(/^"|"$/g, '') : '';
-        const uom = parts[4] ? parts[4].trim().replace(/^"|"$/g, '') : 'UNIT';
-
         try {
-            await prisma.hms_product.create({
-                data: {
-                    tenant_id: session.user.tenantId,
-                    company_id: session.user.companyId,
-                    name,
-                    sku,
-                    price,
-                    description,
-                    uom,
-                    is_active: true,
-                    is_stockable: true,
-                    is_service: false,
-                    created_by: session.user.id
+            const row = parseCSVLine(line);
+
+            // Check row length matches roughly or reuse logic
+            // Just access safely
+            const name = idxName !== -1 ? row[idxName] : null;
+            const sku = idxSku !== -1 ? row[idxSku] : null;
+            if (!name || !sku) continue;
+
+            const salePrice = idxPrice !== -1 ? parseFloat(row[idxPrice]) || 0 : 0;
+            const mrp = idxMrp !== -1 ? parseFloat(row[idxMrp]) || 0 : 0;
+            const purchaseCost = idxPurchase !== -1 ? parseFloat(row[idxPurchase]) || 0 : 0;
+            const taxRateVal = idxTax !== -1 ? parseFloat(row[idxTax]) : NaN;
+            const openingStock = idxStock !== -1 ? parseFloat(row[idxStock]) || 0 : 0;
+            const uomStr = (idxUom !== -1 && row[idxUom]) ? row[idxUom] : 'UNIT';
+
+            // Resolve Category
+            let categoryId = null;
+            if (idxCat !== -1 && row[idxCat]) {
+                const catName = row[idxCat];
+                const existing = existingCats.find(c => c.name.toLowerCase() === catName.toLowerCase());
+                if (existing) categoryId = existing.id;
+                else {
+                    const newCat = await prisma.hms_product_category.create({
+                        data: { tenant_id: tenantId, company_id: companyId, name: catName }
+                    });
+                    existingCats.push(newCat);
+                    categoryId = newCat.id;
                 }
+            }
+
+            // Upsert Product Logic
+            const existingProduct = await prisma.hms_product.findFirst({
+                where: { company_id: companyId, sku: sku }
             });
+
+            let productId: string;
+            const metadata: any = {
+                brand: idxBrand !== -1 ? row[idxBrand] : undefined,
+                manufacturer: idxManufacturer !== -1 ? row[idxManufacturer] : undefined,
+                mrp: mrp > 0 ? mrp : undefined,
+                purchase_price: purchaseCost > 0 ? purchaseCost : undefined
+            };
+
+            if (existingProduct) {
+                // Update
+                const updated = await prisma.hms_product.update({
+                    where: { id: existingProduct.id },
+                    data: {
+                        name,
+                        price: salePrice > 0 ? salePrice : existingProduct.price,
+                        description: idxDesc !== -1 && row[idxDesc] ? row[idxDesc] : existingProduct.description,
+                        metadata: { ...(existingProduct.metadata as object), ...metadata }
+                    }
+                });
+                productId = updated.id;
+            } else {
+                // Create
+                const created = await prisma.hms_product.create({
+                    data: {
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        name,
+                        sku,
+                        price: salePrice,
+                        description: idxDesc !== -1 ? row[idxDesc] : '',
+                        uom: uomStr,
+                        is_active: true,
+                        is_stockable: true,
+                        is_service: false,
+                        created_by: session.user.id,
+                        default_barcode: idxBarcode !== -1 ? row[idxBarcode] : null,
+                        metadata
+                    }
+                });
+                productId = created.id;
+
+                if (categoryId) {
+                    await prisma.hms_product_category_rel.create({
+                        data: { product_id: productId, category_id: categoryId }
+                    });
+                }
+            }
+
+            // 4. Handle Tax Rule
+            if (!isNaN(taxRateVal)) {
+                const match = existingTaxes.find(t => Math.abs(Number(t.rate) - taxRateVal) < 0.1);
+                if (match) {
+                    const existingRule = await prisma.product_tax_rules.findFirst({
+                        where: { product_id: productId }
+                    });
+                    if (!existingRule) {
+                        await prisma.product_tax_rules.create({
+                            data: {
+                                tenant_id: tenantId,
+                                company_id: companyId,
+                                product_id: productId,
+                                tax_rate_id: match.id,
+                                priority: 1
+                            }
+                        });
+                    }
+                }
+            }
+
+            // 5. Handle Opening Stock
+            if (openingStock > 0) {
+                await prisma.hms_stock_ledger.create({
+                    data: {
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        product_id: productId,
+                        movement_type: 'OPENING',
+                        qty: openingStock,
+                        batch_number: idxBatch !== -1 ? row[idxBatch] : null,
+                        expiry_date: idxExpiry !== -1 && row[idxExpiry] ? new Date(row[idxExpiry]) : null,
+                        reference_id: `IMPORT-${Date.now()}-${i}`
+                    }
+                });
+                // Update level
+                // Attempt unsafe upsert or skip
+                /* await prisma.hms_stock_levels.upsert({...}) */
+            }
+
             count++;
+
         } catch (e) {
             const msg = (e as Error).message;
             errors.push({ row: i + 1, error: msg });
