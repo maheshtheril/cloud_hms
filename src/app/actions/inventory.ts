@@ -130,10 +130,18 @@ export async function getTaxRates() {
     if (!session?.user?.companyId) return [];
 
     try {
-        // Fetch active tax rates enabled for this company via company_tax_maps
+        const companyId = session.user.companyId;
+
+        // 1. Fetch Company Specific Taxes (Custom Definition)
+        const customTaxes = await prisma.company_taxes.findMany({
+            where: { company_id: companyId, is_active: true },
+            select: { id: true, name: true, rate: true }
+        });
+
+        // 2. Fetch Global Mapped Taxes (Map Table)
         const taxMaps = await prisma.company_tax_maps.findMany({
             where: {
-                company_id: session.user.companyId,
+                company_id: companyId,
                 is_active: true
             },
             include: {
@@ -142,40 +150,50 @@ export async function getTaxRates() {
                 }
             }
         });
+        const mappedTaxes = taxMaps.map(tm => ({
+            id: tm.tax_rates.id,
+            name: tm.tax_rates.name,
+            rate: Number(tm.tax_rates.rate)
+        }));
 
-        if (taxMaps.length > 0) {
-            return taxMaps.map(tm => ({
-                id: tm.tax_rates.id,
-                name: tm.tax_rates.name,
-                rate: Number(tm.tax_rates.rate)
-            }));
-        }
-
-        // Fallback: Fetch all active tax rates for the tenant
-        let allTaxRates = await prisma.tax_rates.findMany({
-            where: { is_active: true }, // Add tenant_id check if schema supports it, assuming global or checking later
-            select: { id: true, name: true, rate: true }
+        // 3. Fetch Accounting Settings Defaults (Company Settings)
+        const settings = await prisma.company_accounting_settings.findFirst({
+            where: { company_id: companyId },
+            include: {
+                tax_rates_company_accounting_settings_default_sale_tax_idTotax_rates: true,
+                tax_rates_company_accounting_settings_default_purchase_tax_idTotax_rates: true
+            }
         });
 
-        // Seed if absolutely no tax rates found (System Init)
-        if (allTaxRates.length === 0 && session.user.tenantId) {
-            // 1. Ensure Tax Type exists
-            let taxType = await prisma.tax_types.findFirst({ where: { name: 'Sales Tax' } });
-            if (!taxType) {
-                taxType = await prisma.tax_types.create({
-                    data: { name: 'Sales Tax', description: 'Standard Sales Tax' }
-                });
-            }
+        const settingTaxes = [];
+        if (settings?.tax_rates_company_accounting_settings_default_sale_tax_idTotax_rates) {
+            const t = settings.tax_rates_company_accounting_settings_default_sale_tax_idTotax_rates;
+            settingTaxes.push({ id: t.id, name: t.name, rate: Number(t.rate) });
+        }
+        if (settings?.tax_rates_company_accounting_settings_default_purchase_tax_idTotax_rates) {
+            const t = settings.tax_rates_company_accounting_settings_default_purchase_tax_idTotax_rates;
+            settingTaxes.push({ id: t.id, name: t.name, rate: Number(t.rate) });
+        }
 
+        // Combine and Deduplicate
+        const allTaxesMap = new Map();
+        [...customTaxes.map(t => ({ ...t, rate: Number(t.rate) })), ...mappedTaxes, ...settingTaxes].forEach(t => {
+            allTaxesMap.set(t.id, t);
+        });
+        let allTaxes = Array.from(allTaxesMap.values());
+
+        // Seeding if Empty
+        if (allTaxes.length === 0) {
             const defaultRates = [
                 { name: 'Tax Exempt', rate: 0 },
                 { name: 'Standard Tax', rate: 10 }
             ];
 
+            // Seed into company_taxes for simplicity and isolation
             for (const dr of defaultRates) {
-                await prisma.tax_rates.create({
+                await prisma.company_taxes.create({
                     data: {
-                        tax_type_id: taxType.id,
+                        company_id: companyId,
                         name: dr.name,
                         rate: dr.rate,
                         is_active: true
@@ -183,18 +201,15 @@ export async function getTaxRates() {
                 });
             }
 
-            // Refetch
-            allTaxRates = await prisma.tax_rates.findMany({
-                where: { is_active: true },
+            // Return the newly created taxes
+            const newTaxes = await prisma.company_taxes.findMany({
+                where: { company_id: companyId, is_active: true },
                 select: { id: true, name: true, rate: true }
             });
+            return newTaxes.map(t => ({ ...t, rate: Number(t.rate) }));
         }
 
-        return allTaxRates.map(tr => ({
-            id: tr.id,
-            name: tr.name,
-            rate: Number(tr.rate)
-        }));
+        return allTaxes;
 
     } catch (error) {
         console.error("Failed to fetch tax rates:", error);
