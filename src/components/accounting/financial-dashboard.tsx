@@ -56,7 +56,7 @@ export function FinancialDashboard() {
             if (daily.success) setDailyData(daily.data)
             if (pl.success) setPlData(pl.data)
             if (bs.success) setBsData(bs.data)
-            if (trendRes.success) setTrends(trendRes.data)
+            if (trendRes.success) setTrends(trendRes.data || [])
         } catch (error) {
             console.error("Failed to load dashboard data", error)
         }
