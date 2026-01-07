@@ -261,8 +261,9 @@ export async function getUOMs() {
             select: { id: true, name: true, category_id: true, ratio: true, uom_type: true }
         });
 
-        if (uoms.length === 0) {
-            logDebug('getUOMs: Seeding comprehensive defaults');
+        // Enrich if we have very few UOMs (e.g. only 'Each')
+        if (uoms.length < 10) {
+            logDebug('getUOMs: Count is low (<10), ensuring comprehensive defaults exist');
 
             const standardCategories = [
                 {
