@@ -28,14 +28,14 @@ export async function GET() {
         for (const company of companies) {
             for (const test of labTests) {
                 const exists = await prisma.hms_product.findFirst({
-                    where: { company_id: company.company_id, sku: test.sku }
+                    where: { company_id: company.id, sku: test.sku }
                 });
 
                 if (!exists) {
                     await prisma.hms_product.create({
                         data: {
                             tenant_id: company.tenant_id,
-                            company_id: company.company_id,
+                            company_id: company.id,
                             sku: test.sku,
                             name: test.name,
                             description: test.description,
@@ -56,6 +56,6 @@ export async function GET() {
         return NextResponse.json({ success: true, seeded: createdCount });
     } catch (error) {
         console.error(error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: (error as Error).message }, { status: 500 });
     }
 }
