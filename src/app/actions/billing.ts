@@ -620,7 +620,7 @@ export async function getPatientBalance(patientId: string) {
             where: {
                 partner_id: patientId,
                 company_id: companyId,
-                journal_entry: {
+                journal_entries: {
                     posted: true
                 }
             },
