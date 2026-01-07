@@ -44,6 +44,7 @@ interface SearchableSelectProps {
     variant?: 'default' | 'ghost';
     isDark?: boolean;
     inputId?: string;
+    usePortal?: boolean;
 }
 
 export function SearchableSelect({
@@ -60,6 +61,7 @@ export function SearchableSelect({
     variant = 'default',
     isDark = false,
     inputId,
+    usePortal = true,
 }: SearchableSelectProps) {
     const [open, setOpen] = React.useState(false);
     const [query, setQuery] = React.useState("");
@@ -123,7 +125,7 @@ export function SearchableSelect({
 
     // Calculate position for portal
     React.useEffect(() => {
-        if (open && containerRef.current) {
+        if (usePortal && open && containerRef.current) {
             const updatePosition = () => {
                 const rect = containerRef.current?.getBoundingClientRect();
                 if (rect) {
@@ -144,7 +146,7 @@ export function SearchableSelect({
                 window.removeEventListener('scroll', updatePosition, true);
             };
         }
-    }, [open]);
+    }, [open, usePortal]);
 
     // Handle clicks outside - modified for Portal
     React.useEffect(() => {
@@ -262,11 +264,16 @@ export function SearchableSelect({
 
     const dropdownContent = (
         <div
-            className={`fixed z-[99999] mt-1 overflow-hidden rounded-xl py-1 text-base shadow-2xl ring-1 ring-black/5 focus:outline-none sm:text-sm ${isDark ? 'bg-neutral-900 border border-white/10 text-white shadow-black' : 'bg-white border border-gray-100 text-gray-900 shadow-lg'}`}
+            className={`
+                ${usePortal ? 'fixed' : 'absolute'} 
+                z-[99999] mt-1 overflow-hidden rounded-xl py-1 text-base shadow-2xl ring-1 ring-black/5 focus:outline-none sm:text-sm 
+                ${isDark ? 'bg-neutral-900 border border-white/10 text-white shadow-black' : 'bg-white border border-gray-100 text-gray-900 shadow-lg'}
+                ${usePortal ? '' : 'w-full top-full left-0'}
+            `}
             style={{
-                top: position.top,
-                left: position.left,
-                width: position.width,
+                top: usePortal ? position.top : undefined,
+                left: usePortal ? position.left : undefined,
+                width: usePortal ? position.width : undefined,
                 maxHeight: '240px'
             }}
         >
@@ -405,9 +412,11 @@ export function SearchableSelect({
                 </div>
             </div>
 
-            {/* Render Dropdown via Portal */}
+            {/* Render Dropdown via Portal or Inline */}
             {open && !disabled && (
-                typeof document !== 'undefined' ? createPortal(dropdownContent, document.body) : null
+                usePortal && typeof document !== 'undefined'
+                    ? createPortal(dropdownContent, document.body)
+                    : dropdownContent
             )}
         </>
     );
