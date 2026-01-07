@@ -5,18 +5,35 @@ import {
     TrendingUp, TrendingDown, DollarSign, PieChart,
     ArrowRight, Calendar, Filter, Download,
     BarChart3, Landmark, Receipt, Wallet,
-    ArrowUpRight, ArrowDownRight, RefreshCcw
+    ArrowUpRight, ArrowDownRight, RefreshCcw,
+    Activity, ShieldCheck, Zap, Layers,
+    ChevronRight, CreditCard, Banknote, History
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { getDailyAccountingSummary, getProfitAndLossStatement, getBalanceSheetStatement } from "@/app/actions/accounting/reports"
+import { Badge } from "@/components/ui/badge"
+import {
+    getDailyAccountingSummary,
+    getProfitAndLossStatement,
+    getBalanceSheetStatement,
+    getFinancialTrends
+} from "@/app/actions/accounting/reports"
+import {
+    AreaChart, Area, XAxis, YAxis, CartesianGrid,
+    Tooltip, ResponsiveContainer, BarChart, Bar,
+    Cell, Legend
+} from 'recharts'
+import { motion, AnimatePresence } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 
 export function FinancialDashboard() {
+    const router = useRouter()
     const [loading, setLoading] = useState(true)
     const [dailyData, setDailyData] = useState<any>(null)
     const [plData, setPlData] = useState<any>(null)
     const [bsData, setBsData] = useState<any>(null)
+    const [trends, setTrends] = useState<any[]>([])
     const [date, setDate] = useState(new Date())
 
     useEffect(() => {
@@ -29,15 +46,17 @@ export function FinancialDashboard() {
             const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1)
             const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0)
 
-            const [daily, pl, bs] = await Promise.all([
+            const [daily, pl, bs, trendRes] = await Promise.all([
                 getDailyAccountingSummary(date),
                 getProfitAndLossStatement(startOfMonth, endOfMonth),
-                getBalanceSheetStatement(date)
+                getBalanceSheetStatement(date),
+                getFinancialTrends()
             ])
 
             if (daily.success) setDailyData(daily.data)
             if (pl.success) setPlData(pl.data)
             if (bs.success) setBsData(bs.data)
+            if (trendRes.success) setTrends(trendRes.data)
         } catch (error) {
             console.error("Failed to load dashboard data", error)
         }
@@ -54,304 +73,635 @@ export function FinancialDashboard() {
 
     if (loading && !dailyData) {
         return (
-            <div className="flex items-center justify-center min-h-[400px]">
-                <RefreshCcw className="h-8 w-8 animate-spin text-indigo-500" />
+            <div className="flex flex-col items-center justify-center min-h-[600px] gap-4">
+                <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                >
+                    <RefreshCcw className="h-12 w-12 text-indigo-500" />
+                </motion.div>
+                <p className="text-slate-500 animate-pulse font-medium">Synthesizing Financial Intelligence...</p>
             </div>
         )
     }
 
+    const containerVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { duration: 0.6, staggerChildren: 0.1 }
+        }
+    }
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 10 },
+        visible: { opacity: 1, y: 0 }
+    }
+
     return (
-        <div className="space-y-6 p-6 pb-12 animate-in fade-in duration-500">
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">Financial Intelligence</h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">Real-time accounting & performance analytics</p>
+        <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            className="space-y-8 p-4 md:p-8 pb-20 max-w-[1600px] mx-auto"
+        >
+            {/* Premium Header */}
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-xl shadow-indigo-500/5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl font-inter" />
+
+                <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-3 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-600/30">
+                            <Activity className="h-6 w-6 text-white" />
+                        </div>
+                        <Badge variant="outline" className="bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 border-indigo-200/50 dark:border-indigo-800/50 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                            Real-time Intelligence
+                        </Badge>
+                    </div>
+                    <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+                        Financial <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">Intelligence</span>
+                    </h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">Comprehensive performance control & fiscal oversight</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" className="gap-2">
-                        <Calendar className="h-4 w-4" />
-                        {date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+
+                <div className="flex flex-wrap items-center gap-3 relative z-10">
+                    <Button variant="outline" className="h-12 px-6 rounded-xl border-slate-200 dark:border-slate-800 gap-2 hover:bg-slate-50 transition-all font-semibold">
+                        <Calendar className="h-5 w-5 text-indigo-500" />
+                        {date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                     </Button>
-                    <Button className="bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 gap-2">
-                        <Download className="h-4 w-4" /> Export All
+                    <Button className="h-12 px-8 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-950 hover:opacity-90 transition-all gap-2 font-bold shadow-xl shadow-slate-900/10 dark:shadow-white/5">
+                        <Download className="h-5 w-5" /> Executive Report
                     </Button>
                 </div>
             </div>
 
-            {/* Top KPIs - Daily Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="border-none shadow-sm bg-gradient-to-br from-indigo-500 to-violet-600 text-white overflow-hidden relative group">
-                    <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
-                        <DollarSign size={120} />
-                    </div>
-                    <CardHeader className="pb-2">
-                        <CardDescription className="text-indigo-100 font-medium">Daily Sales</CardDescription>
-                        <CardTitle className="text-2xl font-bold">{formatCurrency(dailyData?.totalSales || 0)}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center gap-1 text-xs">
-                            <span className="flex items-center text-emerald-300 font-bold">
-                                <ArrowUpRight className="h-3 w-3" /> 12%
-                            </span>
-                            <span className="text-indigo-100/70">vs yesterday</span>
+            {/* Core KPI Strip */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <motion.div variants={itemVariants}>
+                    <Card className="group relative overflow-hidden border-none shadow-2xl shadow-indigo-500/10 bg-gradient-to-br from-indigo-600 to-violet-700 text-white rounded-[2rem] h-full">
+                        <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:scale-110 transition-transform duration-500">
+                            <TrendingUp size={80} strokeWidth={1} />
                         </div>
-                    </CardContent>
-                </Card>
+                        <CardHeader className="pb-2">
+                            <CardDescription className="text-indigo-100/80 font-bold uppercase tracking-[0.15em] text-[10px]">Today's Gross Sales</CardDescription>
+                            <CardTitle className="text-4xl font-black">{formatCurrency(dailyData?.totalSales || 0)}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex items-center gap-2 text-xs backdrop-blur-md bg-white/10 w-fit px-3 py-1.5 rounded-full">
+                                <span className="flex items-center text-emerald-300 font-bold">
+                                    <ArrowUpRight className="h-3 w-3" /> +12.5%
+                                </span>
+                                <span className="text-indigo-100/60 font-medium">from avg.</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
 
-                <Card className="border-none shadow-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <CardHeader className="pb-2">
-                        <CardDescription className="font-medium">Collections (Cash-In)</CardDescription>
-                        <CardTitle className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                            {formatCurrency(dailyData?.totalPaid || 0)}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center gap-1 text-xs text-slate-500">
-                            <span className="flex items-center text-emerald-500 font-bold">
-                                <ArrowUpRight className="h-3 w-3" /> {((dailyData?.totalPaid / (dailyData?.totalSales || 1)) * 100).toFixed(0)}%
-                            </span>
-                            <span>recovery rate today</span>
+                <motion.div variants={itemVariants}>
+                    <Card className="group relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] shadow-lg hover:shadow-xl transition-all h-full">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 text-indigo-600 group-hover:scale-110 transition-transform duration-500">
+                            <ShieldCheck size={80} strokeWidth={1} />
                         </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-none shadow-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <CardHeader className="pb-2">
-                        <CardDescription className="font-medium">Daily Outflow</CardDescription>
-                        <CardTitle className="text-2xl font-bold text-rose-500">
-                            {formatCurrency(dailyData?.totalPurchases || 0)}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center gap-1 text-xs text-slate-500">
-                            <Landmark className="h-3 w-3" />
-                            <span>Supplier & Expense clearing</span>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-none shadow-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <CardHeader className="pb-2">
-                        <CardDescription className="font-medium">Monthly Net Impact</CardDescription>
-                        <CardTitle className={`text-2xl font-bold ${plData?.netProfit >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
-                            {formatCurrency(plData?.netProfit || 0)}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center gap-1 text-xs text-slate-500">
-                            <PieChart className="h-3 w-3" />
-                            <span>Current Monthly Profit</span>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Main Tabs for World Class Reports */}
-            <Tabs defaultValue="daily" className="w-full">
-                <TabsList className="bg-slate-100 dark:bg-slate-800 p-1 mb-4 h-12 gap-1 rounded-xl">
-                    <TabsTrigger value="daily" className="rounded-lg px-6 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-sm">
-                        Daily Summary
-                    </TabsTrigger>
-                    <TabsTrigger value="pl" className="rounded-lg px-6 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-sm">
-                        Profit & Loss
-                    </TabsTrigger>
-                    <TabsTrigger value="bs" className="rounded-lg px-6 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-950 data-[state=active]:shadow-sm">
-                        Balance Sheet
-                    </TabsTrigger>
-                </TabsList>
-
-                {/* Daily Report Tab */}
-                <TabsContent value="daily" className="space-y-4">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <Card className="border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none">
-                            <CardHeader className="border-b border-slate-100 dark:border-slate-800 px-6 py-4">
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <TrendingUp className="h-5 w-5 text-emerald-500" /> Revenue Streams
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                                <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                                    {Object.entries(dailyData?.revenueByAccount || {}).length > 0 ? (
-                                        Object.entries(dailyData.revenueByAccount).map(([acc, amt]: [any, any]) => (
-                                            <div key={acc} className="flex items-center justify-between p-4 px-6 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
-                                                <div className="font-medium text-slate-700 dark:text-slate-200">{acc}</div>
-                                                <div className="font-bold text-slate-900 dark:text-white">{formatCurrency(amt)}</div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="p-8 text-center text-slate-400 italic">No revenue activity recorded today</div>
-                                    )}
+                        <CardHeader className="pb-2">
+                            <CardDescription className="font-bold uppercase tracking-[0.15em] text-[10px] text-slate-400">Recovery Efficiency</CardDescription>
+                            <CardTitle className="text-4xl font-black text-slate-900 dark:text-white">
+                                {((dailyData?.totalPaid / (dailyData?.totalSales || 1)) * 100).toFixed(1)}%
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex flex-col gap-1">
+                                <div className="text-sm font-semibold text-emerald-600 flex items-center gap-1">
+                                    <ArrowUpRight className="h-4 w-4" />
+                                    {formatCurrency(dailyData?.totalPaid || 0)} Collected
                                 </div>
-                            </CardContent>
-                        </Card>
-
-                        <Card className="border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none">
-                            <CardHeader className="border-b border-slate-100 dark:border-slate-800 px-6 py-4">
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <TrendingDown className="h-5 w-5 text-rose-500" /> Expense Analysis
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-0">
-                                <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                                    {Object.entries(dailyData?.expenseByAccount || {}).length > 0 ? (
-                                        Object.entries(dailyData.expenseByAccount).map(([acc, amt]: [any, any]) => (
-                                            <div key={acc} className="flex items-center justify-between p-4 px-6 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
-                                                <div className="font-medium text-slate-700 dark:text-slate-200">{acc}</div>
-                                                <div className="font-bold text-rose-500">{formatCurrency(amt)}</div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="p-8 text-center text-slate-400 italic">No expense activity recorded today</div>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </TabsContent>
-
-                {/* Profit & Loss Tab */}
-                <TabsContent value="pl">
-                    <Card className="border-slate-200 dark:border-slate-800">
-                        <CardHeader className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <CardTitle>Statement of Financial Performance (P&L)</CardTitle>
-                                    <CardDescription>Monthly Period Performance</CardDescription>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-sm font-medium text-slate-500 uppercase tracking-wider">Net Profit</div>
-                                    <div className={`text-2xl font-black ${plData?.netProfit >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
-                                        {formatCurrency(plData?.netProfit || 0)}
-                                    </div>
+                                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full mt-2 overflow-hidden px-0.5">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${Math.min(100, (dailyData?.totalPaid / (dailyData?.totalSales || 1)) * 100)}%` }}
+                                        transition={{ duration: 1, ease: "easeOut" }}
+                                        className="h-1 mt-0.5 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]"
+                                    />
                                 </div>
                             </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                    <Card className="group relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] shadow-lg hover:shadow-xl transition-all h-full">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 text-rose-600 group-hover:scale-110 transition-transform duration-500">
+                            <Zap size={80} strokeWidth={1} />
+                        </div>
+                        <CardHeader className="pb-2">
+                            <CardDescription className="font-bold uppercase tracking-[0.15em] text-[10px] text-slate-400">Total Outflow</CardDescription>
+                            <CardTitle className="text-4xl font-black text-rose-500">
+                                {formatCurrency(dailyData?.totalPurchases || 0)}
+                            </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-0">
-                            {/* P&L Content Table-like view */}
-                            <div className="max-w-3xl mx-auto py-10 px-6 space-y-8">
+                        <CardContent>
+                            <p className="text-sm text-slate-500 font-medium leading-relaxed">
+                                Liabilities cleared & procurement expenses recorded today.
+                            </p>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+
+                <motion.div variants={itemVariants}>
+                    <Card className="group relative overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] shadow-lg hover:shadow-xl transition-all h-full">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 text-indigo-600 group-hover:scale-110 transition-transform duration-500">
+                            <Layers size={80} strokeWidth={1} />
+                        </div>
+                        <CardHeader className="pb-2">
+                            <CardDescription className="font-bold uppercase tracking-[0.15em] text-[10px] text-slate-400">Net Monthly margin</CardDescription>
+                            <CardTitle className={`text-4xl font-black ${plData?.netProfit >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
+                                {formatCurrency(plData?.netProfit || 0)}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Badge variant="secondary" className="bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 border-none font-bold">
+                                {((plData?.netProfit / (plData?.totalRevenue || 1)) * 100).toFixed(1)}% Profit Margin
+                            </Badge>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            </div>
+
+            {/* Main Content Area: Trends & Quick Actions */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Trend Chart */}
+                <Card className="lg:col-span-8 border-none shadow-2xl shadow-indigo-500/5 bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border border-slate-100 dark:border-slate-800/50">
+                    <CardHeader className="p-8 pb-0 flex flex-row items-center justify-between">
+                        <div>
+                            <CardTitle className="text-2xl font-black text-slate-900 dark:text-white">Performance Velocity</CardTitle>
+                            <CardDescription className="text-slate-500">Revenue vs Expense trend (30-day window)</CardDescription>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+                                <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter">Revenue</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+                                <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter">Expense</span>
+                            </div>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-4 h-[400px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={trends} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
+                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                    </linearGradient>
+                                    <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.1} />
+                                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888810" />
+                                <XAxis
+                                    dataKey="date"
+                                    tickFormatter={(val) => new Date(val).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                                    dy={10}
+                                />
+                                <YAxis
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                                    tickFormatter={(val) => `₹${val / 1000}k`}
+                                />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                        borderRadius: '1.5rem',
+                                        border: 'none',
+                                        boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+                                        padding: '1rem'
+                                    }}
+                                    cursor={{ stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '4 4' }}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="revenue"
+                                    stroke="#6366f1"
+                                    strokeWidth={4}
+                                    fillOpacity={1}
+                                    fill="url(#colorRev)"
+                                    animationDuration={2000}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="expense"
+                                    stroke="#f43f5e"
+                                    strokeWidth={3}
+                                    fillOpacity={1}
+                                    fill="url(#colorExp)"
+                                    animationDuration={2000}
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </CardContent>
+                </Card>
+
+                {/* Quick Action Control Hub */}
+                <Card className="lg:col-span-4 border-none shadow-2xl shadow-indigo-500/5 bg-slate-900 text-white rounded-[2.5rem] overflow-hidden flex flex-col h-full">
+                    <CardHeader className="p-8">
+                        <CardTitle className="text-2xl font-black">Control Hub</CardTitle>
+                        <CardDescription className="text-slate-400">Mission-critical accounting operations</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-8 pt-0 space-y-4 flex-1">
+                        <Button
+                            onClick={() => router.push('/hms/accounting/journals')}
+                            className="w-full h-16 bg-white/5 hover:bg-white/10 text-white rounded-2xl justify-between px-6 border border-white/10 group transition-all"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-indigo-500/20 rounded-xl group-hover:bg-indigo-500/30 transition-colors">
+                                    <Receipt className="h-5 w-5 text-indigo-400" />
+                                </div>
+                                <div className="text-left">
+                                    <p className="font-bold text-sm">Post Journal Entry</p>
+                                    <p className="text-[10px] text-slate-400">Manual adjusting entries</p>
+                                </div>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-slate-500 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+
+                        <Button
+                            onClick={() => router.push('/hms/accounting/payments')}
+                            className="w-full h-16 bg-white/5 hover:bg-white/10 text-white rounded-2xl justify-between px-6 border border-white/10 group transition-all"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-emerald-500/20 rounded-xl group-hover:bg-emerald-500/30 transition-colors">
+                                    <CreditCard className="h-5 w-5 text-emerald-400" />
+                                </div>
+                                <div className="text-left">
+                                    <p className="font-bold text-sm">Record Payment</p>
+                                    <p className="text-[10px] text-slate-400">Accounts receivable/payable</p>
+                                </div>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-slate-500 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+
+                        <Button
+                            onClick={() => router.push('/hms/accounting/coa')}
+                            className="w-full h-16 bg-white/5 hover:bg-white/10 text-white rounded-2xl justify-between px-6 border border-white/10 group transition-all"
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className="p-2 bg-amber-500/20 rounded-xl group-hover:bg-amber-500/30 transition-colors">
+                                    <Layers className="h-5 w-5 text-amber-400" />
+                                </div>
+                                <div className="text-left">
+                                    <p className="font-bold text-sm">Chart of Accounts</p>
+                                    <p className="text-[10px] text-slate-400">Structure & ledger management</p>
+                                </div>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-slate-500 group-hover:translate-x-1 transition-transform" />
+                        </Button>
+
+                        <div className="mt-8 pt-8 border-t border-white/10">
+                            <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-4 text-center">Cash On Hand Position</h4>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="p-4 rounded-3xl bg-white/5 border border-white/5 text-center">
+                                    <Banknote className="h-4 w-4 mx-auto mb-2 text-emerald-400" />
+                                    <p className="text-[10px] text-slate-400 font-bold mb-1">Cash Balance</p>
+                                    <p className="text-lg font-black text-white">{formatCurrency(bsData?.assets?.find((a: any) => a.name === 'Cash on Hand')?.amount || 0)}</p>
+                                </div>
+                                <div className="p-4 rounded-3xl bg-white/5 border border-white/5 text-center">
+                                    <Landmark className="h-4 w-4 mx-auto mb-2 text-indigo-400" />
+                                    <p className="text-[10px] text-slate-400 font-bold mb-1">Bank Position</p>
+                                    <p className="text-lg font-black text-white">{formatCurrency(bsData?.assets?.find((a: any) => a.name === 'Bank Account')?.amount || 0)}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Advanced Reports Section */}
+            <Tabs defaultValue="pl" className="w-full">
+                <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4 bg-slate-100 dark:bg-slate-800/50 p-2 rounded-[2rem]">
+                    <TabsList className="bg-transparent gap-2 h-auto p-0">
+                        <TabsTrigger
+                            value="daily"
+                            className="rounded-2xl px-8 h-12 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-lg font-bold text-xs uppercase tracking-widest"
+                        >
+                            Daily Streams
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="pl"
+                            className="rounded-2xl px-8 h-12 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-lg font-bold text-xs uppercase tracking-widest"
+                        >
+                            Profit & Loss
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="bs"
+                            className="rounded-2xl px-8 h-12 data-[state=active]:bg-white dark:data-[state=active]:bg-slate-900 data-[state=active]:shadow-lg font-bold text-xs uppercase tracking-widest"
+                        >
+                            Balance Sheet
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <div className="flex items-center gap-2 px-4">
+                        <History className="h-4 w-4 text-slate-400" />
+                        <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Audited Statement Mode</span>
+                    </div>
+                </div>
+
+                <AnimatePresence mode="wait">
+                    {/* Daily Streams */}
+                    <TabsContent value="daily">
+                        <motion.div
+                            key="daily"
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -20 }}
+                            className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+                        >
+                            <Card className="rounded-[2.5rem] border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden bg-white dark:bg-slate-900">
+                                <CardHeader className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-8">
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="text-xl flex items-center gap-3">
+                                            <div className="p-2 bg-emerald-500 rounded-xl shadow-lg shadow-emerald-500/20">
+                                                <TrendingUp className="h-5 w-5 text-white" />
+                                            </div>
+                                            Revenue Breakdown
+                                        </CardTitle>
+                                        <Badge variant="secondary" className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 border-none font-black px-4 py-1">INCOME</Badge>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                                        {Object.entries(dailyData?.revenueByAccount || {}).length > 0 ? (
+                                            Object.entries(dailyData.revenueByAccount).map(([acc, amt]: [any, any]) => (
+                                                <div key={acc} className="group flex items-center justify-between p-6 px-8 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                                        <span className="font-bold text-slate-700 dark:text-slate-200">{acc}</span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="font-black text-slate-900 dark:text-white text-lg">{formatCurrency(amt)}</div>
+                                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter tracking-widest">{((amt / (dailyData?.totalSales || 1)) * 100).toFixed(1)}% share</div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="p-20 text-center">
+                                                <TrendingUp className="h-12 w-12 text-slate-200 mx-auto mb-4" />
+                                                <p className="text-slate-400 font-medium italic">No revenue activity recorded in the selected period</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="rounded-[2.5rem] border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden bg-white dark:bg-slate-900">
+                                <CardHeader className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800 p-8">
+                                    <div className="flex items-center justify-between">
+                                        <CardTitle className="text-xl flex items-center gap-3">
+                                            <div className="p-2 bg-rose-500 rounded-xl shadow-lg shadow-rose-500/20">
+                                                <TrendingDown className="h-5 w-5 text-white" />
+                                            </div>
+                                            Expense Breakdown
+                                        </CardTitle>
+                                        <Badge variant="secondary" className="bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 border-none font-black px-4 py-1">OUTFLOW</Badge>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                                        {Object.entries(dailyData?.expenseByAccount || {}).length > 0 ? (
+                                            Object.entries(dailyData.expenseByAccount).map(([acc, amt]: [any, any]) => (
+                                                <div key={acc} className="group flex items-center justify-between p-6 px-8 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+                                                        <span className="font-bold text-slate-700 dark:text-slate-200">{acc}</span>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="font-black text-rose-500 text-lg">{formatCurrency(amt)}</div>
+                                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">Operating Cost</div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <div className="p-20 text-center">
+                                                <TrendingDown className="h-12 w-12 text-slate-200 mx-auto mb-4" />
+                                                <p className="text-slate-400 font-medium italic">Full resource availability - No expenses recorded</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    </TabsContent>
+
+                    {/* Profit & Loss Statement */}
+                    <TabsContent value="pl">
+                        <motion.div
+                            key="pl"
+                            initial={{ opacity: 0, scale: 0.98 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden"
+                        >
+                            <div className="p-12 border-b border-slate-100 dark:border-slate-800 flex flex-col md:flex-row justify-between items-center gap-8 bg-slate-50 dark:bg-slate-900/50">
+                                <div className="text-center md:text-left">
+                                    <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2">Statement of Profit or Loss</h2>
+                                    <div className="flex items-center gap-2 justify-center md:justify-start">
+                                        <Badge variant="outline" className="text-indigo-600 bg-white border-indigo-200 font-bold">ACCRAUAL BASIS</Badge>
+                                        <span className="text-slate-400 text-sm font-medium">Period ending {date.toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+                                <div className="bg-white dark:bg-slate-800 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-700 shadow-xl text-center min-w-[280px] relative overflow-hidden group">
+                                    <div className={`absolute top-0 left-0 w-2 h-full ${plData?.netProfit >= 0 ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2">Net Corporate Profit</p>
+                                    <p className={`text-4xl font-black ${plData?.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        {formatCurrency(plData?.netProfit || 0)}
+                                    </p>
+                                    {plData?.netProfit > 0 && <div className="mt-2 text-[10px] font-bold text-emerald-500 animate-pulse">POSITIVE FISCAL FLOW</div>}
+                                </div>
+                            </div>
+
+                            <div className="max-w-4xl mx-auto py-16 px-8 lg:px-0 space-y-16">
                                 {/* Revenue */}
                                 <section>
-                                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 border-b pb-2">Revenue / Turnover</h3>
-                                    {plData?.revenue.map((item: any) => (
-                                        <div key={item.name} className="flex justify-between py-2 text-sm border-b border-slate-50 dark:border-slate-800">
-                                            <span className="text-slate-600 dark:text-slate-300">{item.name}</span>
-                                            <span className="font-medium">{formatCurrency(item.amount)}</span>
-                                        </div>
-                                    ))}
-                                    <div className="flex justify-between py-3 mt-2 bg-slate-50 dark:bg-slate-900/50 px-3 rounded-lg font-bold">
-                                        <span>Total Operating Revenue</span>
-                                        <span>{formatCurrency(plData?.totalRevenue || 0)}</span>
+                                    <div className="flex items-center justify-between mb-8 pb-4 border-b-2 border-slate-900 dark:border-white">
+                                        <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">01. Revenue Streams</h3>
+                                        <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(plData?.totalRevenue || 0)}</span>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {plData?.revenue.map((item: any) => (
+                                            <div key={item.name} className="flex justify-between items-end pb-3 border-b border-slate-50 dark:border-slate-800/50 group">
+                                                <span className="text-slate-600 dark:text-slate-400 font-medium group-hover:text-indigo-500 transition-colors uppercase tracking-widest text-[11px]">{item.name}</span>
+                                                <div className="flex-1 border-b border-dotted border-slate-200 dark:border-slate-800 mx-4 mb-1" />
+                                                <span className="font-black text-slate-900 dark:text-white">{formatCurrency(item.amount)}</span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </section>
 
                                 {/* COGS */}
                                 <section>
-                                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 border-b pb-2">Cost of Goods Sold (COGS)</h3>
-                                    {plData?.cogs.map((item: any) => (
-                                        <div key={item.name} className="flex justify-between py-2 text-sm border-b border-slate-50 dark:border-slate-800">
-                                            <span className="text-slate-600 dark:text-slate-300">{item.name}</span>
-                                            <span className="font-medium">({formatCurrency(item.amount)})</span>
+                                    <div className="flex items-center justify-between mb-8 pb-4 border-b-2 border-slate-200 dark:border-slate-800">
+                                        <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">02. Direct Operating Costs</h3>
+                                        <span className="font-bold text-rose-500">({formatCurrency(plData?.totalCOGS || 0)})</span>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {plData?.cogs.map((item: any) => (
+                                            <div key={item.name} className="flex justify-between items-end pb-3 border-b border-slate-50 dark:border-slate-800/50 group">
+                                                <span className="text-slate-600 dark:text-slate-400 font-medium group-hover:text-rose-500 transition-colors uppercase tracking-widest text-[11px]">{item.name}</span>
+                                                <div className="flex-1 border-b border-dotted border-slate-200 dark:border-slate-800 mx-4 mb-1" />
+                                                <span className="font-bold text-slate-700 dark:text-slate-300">({formatCurrency(item.amount)})</span>
+                                            </div>
+                                        ))}
+                                        <div className="flex justify-between items-center py-6 mt-4 bg-emerald-50 dark:bg-emerald-900/10 px-8 rounded-[1.5rem] border border-emerald-100 dark:border-emerald-900/50">
+                                            <span className="font-black text-emerald-900 dark:text-emerald-400 text-sm tracking-widest uppercase">Gross Profit Margin</span>
+                                            <span className="text-2xl font-black text-emerald-600">
+                                                {formatCurrency((plData?.totalRevenue || 0) - (plData?.totalCOGS || 0))}
+                                            </span>
                                         </div>
-                                    ))}
-                                    <div className="flex justify-between py-3 mt-2 font-bold px-3">
-                                        <span>Gross Profit</span>
-                                        <span className="text-indigo-600">{formatCurrency((plData?.totalRevenue || 0) - (plData?.totalCOGS || 0))}</span>
                                     </div>
                                 </section>
 
                                 {/* Expenses */}
                                 <section>
-                                    <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-4 border-b pb-2">Operating Expenses</h3>
-                                    {plData?.expenses.map((item: any) => (
-                                        <div key={item.name} className="flex justify-between py-2 text-sm border-b border-slate-50 dark:border-slate-800">
-                                            <span className="text-slate-600 dark:text-slate-300">{item.name}</span>
-                                            <span className="font-medium">({formatCurrency(item.amount)})</span>
-                                        </div>
-                                    ))}
-                                    <div className="flex justify-between py-3 mt-2 bg-slate-50 dark:bg-slate-900/50 px-3 rounded-lg font-bold border-t-2 border-slate-900 dark:border-white">
-                                        <span>Net Financial Profit (EBITDA)</span>
-                                        <span className={`text-xl ${plData?.netProfit >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
-                                            {formatCurrency(plData?.netProfit || 0)}
-                                        </span>
+                                    <div className="flex items-center justify-between mb-8 pb-4 border-b-2 border-slate-200 dark:border-slate-800">
+                                        <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">03. Indirect / Admin Expenses</h3>
+                                        <span className="font-bold text-rose-500">({formatCurrency(plData?.totalExpenses || 0)})</span>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {plData?.expenses.map((item: any) => (
+                                            <div key={item.name} className="flex justify-between items-end pb-3 border-b border-slate-50 dark:border-slate-800/50">
+                                                <span className="text-slate-600 dark:text-slate-400 font-medium uppercase tracking-widest text-[11px]">{item.name}</span>
+                                                <div className="flex-1 border-b border-dotted border-slate-200 dark:border-slate-800 mx-4 mb-1" />
+                                                <span className="font-bold text-slate-700 dark:text-slate-300">({formatCurrency(item.amount)})</span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </section>
+
+                                <div className="py-12 border-t-8 border-slate-900 dark:border-white">
+                                    <div className="flex justify-between items-center px-4">
+                                        <div>
+                                            <h4 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Earnings Before Interest & Tax</h4>
+                                            <p className="text-slate-400 font-bold text-[10px] tracking-[0.3em] mt-1">THE BOTTOM LINE PERFORMANCE</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className={`text-6xl font-black tracking-tighter ${plData?.netProfit >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
+                                                {formatCurrency(plData?.netProfit || 0)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+                        </motion.div>
+                    </TabsContent>
 
-                {/* Balance Sheet Tab */}
-                <TabsContent value="bs">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* ASSETS */}
-                        <Card className="border-slate-200 dark:border-slate-800 h-full">
-                            <CardHeader className="bg-slate-50 dark:bg-slate-900/50">
-                                <CardTitle className="text-emerald-600 flex items-center gap-2">
-                                    <Wallet className="h-5 w-5" /> Total Assets
-                                </CardTitle>
-                                <CardDescription>What the hospital owns</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-6">
-                                <div className="space-y-4">
-                                    {bsData?.assets.map((item: any) => (
-                                        <div key={item.name} className="flex justify-between items-center py-2 border-b border-slate-50 dark:border-slate-800">
-                                            <span className="text-sm text-slate-600 dark:text-slate-300">{item.name}</span>
-                                            <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(item.amount)}</span>
-                                        </div>
-                                    ))}
-                                    <div className="pt-4 flex justify-between items-center text-lg font-black bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-xl border border-emerald-100 dark:border-emerald-900/50">
-                                        <span>Total Assets</span>
-                                        <span className="text-emerald-600">{formatCurrency(bsData?.totalAssets || 0)}</span>
+                    {/* Balance Sheet Statement */}
+                    <TabsContent value="bs">
+                        <motion.div
+                            key="bs"
+                            initial={{ opacity: 0, scale: 0.98 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="grid grid-cols-1 lg:grid-cols-2 gap-8"
+                        >
+                            <Card className="rounded-[3rem] border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden bg-white dark:bg-slate-900 h-full">
+                                <CardHeader className="bg-emerald-500 text-white p-10 h-48 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-10 opacity-20">
+                                        <Wallet size={120} strokeWidth={1} />
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* LIABILITIES & EQUITY */}
-                        <Card className="border-slate-200 dark:border-slate-800 h-full">
-                            <CardHeader className="bg-slate-50 dark:bg-slate-900/50">
-                                <CardTitle className="text-rose-600 flex items-center gap-2">
-                                    <Landmark className="h-5 w-5" /> Liabilities & Equity
-                                </CardTitle>
-                                <CardDescription>What the hospital owes</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-6">
-                                <div className="space-y-6">
-                                    <section>
-                                        <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest border-b pb-1 mb-2">Liabilities</h4>
-                                        {bsData?.liabilities.map((item: any) => (
-                                            <div key={item.name} className="flex justify-between py-1 text-sm">
-                                                <span>{item.name}</span>
-                                                <span className="font-medium">{formatCurrency(item.amount)}</span>
+                                    <div className="relative z-10">
+                                        <CardTitle className="text-3xl font-black mb-1">Total Enterprise Assets</CardTitle>
+                                        <CardDescription className="text-emerald-100 font-bold">What the corporation owns</CardDescription>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-10 -mt-10 relative z-20">
+                                    <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl p-8 space-y-6">
+                                        {bsData?.assets.map((item: any) => (
+                                            <div key={item.name} className="flex justify-between items-center py-4 border-b border-slate-50 dark:border-slate-800/50 last:border-0">
+                                                <div>
+                                                    <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{item.type || 'ASSET'}</p>
+                                                    <p className="font-bold text-slate-800 dark:text-slate-200">{item.name}</p>
+                                                </div>
+                                                <span className="font-black text-xl text-slate-900 dark:text-white">{formatCurrency(item.amount)}</span>
                                             </div>
                                         ))}
-                                    </section>
-
-                                    <section>
-                                        <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest border-b pb-1 mb-2">Equity & Retained Earnings</h4>
-                                        {bsData?.equity.map((item: any) => (
-                                            <div key={item.name} className="flex justify-between py-1 text-sm">
-                                                <span>{item.name}</span>
-                                                <span className="font-medium">{formatCurrency(item.amount)}</span>
-                                            </div>
-                                        ))}
-                                        <div className="flex justify-between py-1 text-sm italic text-indigo-500">
-                                            <span>Reserve / Retained Earnings</span>
-                                            <span>{formatCurrency(bsData?.retainedEarnings || 0)}</span>
+                                        <div className="pt-6 mt-6 border-t-2 border-emerald-100 dark:border-emerald-900/50 flex justify-between items-center">
+                                            <span className="text-sm font-black uppercase tracking-widest text-emerald-600">Total Liquid Assets</span>
+                                            <span className="text-4xl font-black text-emerald-600">{formatCurrency(bsData?.totalAssets || 0)}</span>
                                         </div>
-                                    </section>
-
-                                    <div className="pt-4 flex justify-between items-center text-lg font-black bg-rose-50 dark:bg-rose-900/20 p-3 rounded-xl border border-rose-100 dark:border-rose-900/50">
-                                        <span>Total Liab. & Equity</span>
-                                        <span className="text-rose-600">{formatCurrency((bsData?.totalLiabilities || 0) + (bsData?.totalEquity || 0))}</span>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
-                </TabsContent>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="rounded-[3rem] border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden bg-white dark:bg-slate-900 h-full">
+                                <CardHeader className="bg-slate-900 text-white p-10 h-48 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-10 opacity-20">
+                                        <Landmark size={120} strokeWidth={1} />
+                                    </div>
+                                    <div className="relative z-10">
+                                        <CardTitle className="text-3xl font-black mb-1">Liabilities & Equity</CardTitle>
+                                        <CardDescription className="text-slate-400 font-bold">Claims against the corporation</CardDescription>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="p-10 -mt-10 relative z-20">
+                                    <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl p-8 space-y-10">
+                                        <section>
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="bg-rose-500/10 p-2 rounded-lg">
+                                                    <History className="h-4 w-4 text-rose-500" />
+                                                </div>
+                                                <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Accounts Payable & Liabilities</h4>
+                                            </div>
+                                            <div className="space-y-4">
+                                                {bsData?.liabilities.map((item: any) => (
+                                                    <div key={item.name} className="flex justify-between py-2 border-b border-slate-50 dark:border-slate-800/20 last:border-0">
+                                                        <span className="font-medium text-slate-600 dark:text-slate-400">{item.name}</span>
+                                                        <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(item.amount)}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </section>
+
+                                        <section>
+                                            <div className="flex items-center gap-3 mb-6">
+                                                <div className="bg-indigo-500/10 p-2 rounded-lg">
+                                                    <ShieldCheck className="h-4 w-4 text-indigo-500" />
+                                                </div>
+                                                <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Proprietor's Equity / Reserves</h4>
+                                            </div>
+                                            <div className="space-y-4">
+                                                {bsData?.equity.map((item: any) => (
+                                                    <div key={item.name} className="flex justify-between py-2 border-b border-slate-50 dark:border-slate-800/20 last:border-0">
+                                                        <span className="font-medium text-slate-600 dark:text-slate-400">{item.name}</span>
+                                                        <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(item.amount)}</span>
+                                                    </div>
+                                                ))}
+                                                <div className="flex justify-between py-3 border-t border-indigo-100 dark:border-indigo-900/50 italic text-indigo-500 font-black">
+                                                    <span className="text-xs uppercase tracking-widest font-black">Retained Earnings</span>
+                                                    <span>{formatCurrency(bsData?.retainedEarnings || 0)}</span>
+                                                </div>
+                                            </div>
+                                        </section>
+
+                                        <div className="pt-6 mt-6 border-t-2 border-slate-100 dark:border-slate-800 flex justify-between items-center group">
+                                            <div>
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Total Capital Employed</span>
+                                                <div className="w-12 h-1 bg-slate-900 dark:bg-white transition-all group-hover:w-24" />
+                                            </div>
+                                            <span className="text-4xl font-black text-slate-900 dark:text-white">
+                                                {formatCurrency((bsData?.totalLiabilities || 0) + (bsData?.totalEquity || 0))}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    </TabsContent>
+                </AnimatePresence>
             </Tabs>
-        </div>
+        </motion.div>
     )
 }

@@ -1176,4 +1176,62 @@ export class AccountingService {
             return { success: false, error: error.message };
         }
     }
+
+    /**
+     * Gets daily revenue and expense trends for the last 30 days.
+     */
+    static async getFinancialTrends(companyId: string) {
+        try {
+            const endDate = new Date();
+            const startDate = new Date();
+            startDate.setDate(startDate.getDate() - 30);
+
+            const journalLines = await prisma.journal_entry_lines.findMany({
+                where: {
+                    company_id: companyId,
+                    journal_entries: {
+                        date: { gte: startDate, lte: endDate },
+                        posted: true
+                    },
+                    accounts: {
+                        type: { in: ['Revenue', 'Income', 'Expense', 'COGS'] }
+                    }
+                },
+                include: {
+                    journal_entries: { select: { date: true } },
+                    accounts: { select: { type: true } }
+                }
+            });
+
+            const dailyMap = new Map<string, { date: string, revenue: number, expense: number }>();
+
+            // Initialize last 30 days
+            for (let i = 0; i <= 30; i++) {
+                const d = new Date(startDate);
+                d.setDate(d.getDate() + i);
+                const dateStr = d.toISOString().split('T')[0];
+                dailyMap.set(dateStr, { date: dateStr, revenue: 0, expense: 0 });
+            }
+
+            journalLines.forEach(line => {
+                const dateStr = line.journal_entries.date.toISOString().split('T')[0];
+                const dayData = dailyMap.get(dateStr);
+                if (dayData) {
+                    const type = line.accounts.type.toLowerCase();
+                    const amount = Number(line.debit || 0) - Number(line.credit || 0);
+
+                    if (type === 'revenue' || type === 'income') {
+                        dayData.revenue += Math.abs(amount);
+                    } else {
+                        dayData.expense += Math.abs(amount);
+                    }
+                }
+            });
+
+            return { success: true, data: Array.from(dailyMap.values()) };
+        } catch (error: any) {
+            console.error("Trends Error:", error);
+            return { success: false, error: error.message };
+        }
+    }
 }

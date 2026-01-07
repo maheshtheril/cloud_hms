@@ -23,3 +23,10 @@ export async function getBalanceSheetStatement(date?: Date) {
 
     return await AccountingService.getBalanceSheet(session.user.companyId, date || new Date())
 }
+
+export async function getFinancialTrends() {
+    const session = await auth()
+    if (!session?.user?.companyId) return { success: false, error: "Unauthorized" }
+
+    return await AccountingService.getFinancialTrends(session.user.companyId)
+}

@@ -321,6 +321,64 @@ export async function signup(prevState: any, formData: FormData) {
                 });
 
                 console.log('[Signup] Seeded 8 standard departments');
+
+                // Seed Standard Lab Tests
+                const labTests = [
+                    { sku: 'LAB001', name: 'Complete Blood Count (CBC)', price: 450, description: 'Hemogram, TLC, DLC, Platelets' },
+                    { sku: 'LAB002', name: 'Lipid Profile', price: 900, description: 'Cholesterol, Triglycerides, HDL, LDL' },
+                    { sku: 'LAB003', name: 'Liver Function Test (LFT)', price: 850, description: 'Bilirubin, SGOT, SGPT, ALP' },
+                    { sku: 'LAB004', name: 'Kidney Function Test (KFT)', price: 950, description: 'Urea, Creatinine, Uric Acid' },
+                    { sku: 'LAB005', name: 'Thyroid Profile (T3, T4, TSH)', price: 1200, description: 'Thyroid Function Test' },
+                    { sku: 'LAB006', name: 'HbA1c', price: 600, description: '3 Month Average Blood Sugar' },
+                    { sku: 'LAB007', name: 'Blood Sugar (Fasting)', price: 150, description: 'Glucose - Fasting' },
+                    { sku: 'LAB008', name: 'Blood Sugar (PP)', price: 150, description: 'Glucose - Post Prandial' },
+                    { sku: 'LAB009', name: 'Urine Routine', price: 200, description: 'Urine R/M' },
+                    { sku: 'LAB010', name: 'Vitamin D Total', price: 1800, description: '25-Hydroxy Vitamin D' },
+                ];
+
+                await tx.hms_product.createMany({
+                    data: labTests.map(test => ({
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        sku: test.sku,
+                        name: test.name,
+                        description: test.description,
+                        is_service: true,
+                        is_stockable: false,
+                        uom: 'TEST',
+                        price: test.price,
+                        currency: 'INR',
+                        is_active: true,
+                        metadata: { type: 'lab_test', tax_exempt: true }
+                    })),
+                    skipDuplicates: true
+                });
+                console.log('[Signup] Seeded 10 standard lab tests');
+
+                // Seed Standard Fees (Registration, Consultation)
+                const stdFees = [
+                    { sku: 'REG001', name: 'Registration Fee', price: 100, description: 'One-time patient registration fee', uom: 'UNIT' },
+                    { sku: 'CON001', name: 'Consultation Fee', price: 500, description: 'General Doctor Consultation', uom: 'VISIT' },
+                ];
+
+                await tx.hms_product.createMany({
+                    data: stdFees.map(item => ({
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        sku: item.sku,
+                        name: item.name,
+                        description: item.description,
+                        is_service: true,
+                        is_stockable: false,
+                        uom: item.uom,
+                        price: item.price,
+                        currency: 'INR',
+                        is_active: true,
+                        metadata: { type: 'fee', tax_exempt: true }
+                    })),
+                    skipDuplicates: true
+                });
+                console.log('[Signup] Seeded Registration and Consultation fees');
             }
 
             return { success: true };
