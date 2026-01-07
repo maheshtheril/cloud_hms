@@ -1,16 +1,34 @@
-
 import { getCategories, getTaxRates, deleteCategory } from "@/app/actions/inventory"
 import { Trash2, Tag, X } from "lucide-react"
 import Link from "next/link"
 import { redirect } from "next/navigation"
 import { CreateCategoryForm } from "@/components/inventory/create-category-form"
+import { auth } from "@/auth"
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function CategoryMasterPage() {
+    const session = await auth();
     const categories = await getCategories();
     const taxRates = await getTaxRates();
 
+    const debugInfo = {
+        companyId: session?.user?.companyId,
+        tenantId: session?.user?.tenantId,
+        taxRatesCount: taxRates.length,
+        categoriesCount: categories.length,
+        taxes: taxRates // Show actual taxes to verify content
+    };
+
     return (
         <div className="max-w-5xl mx-auto pb-12 p-6">
+            {/* Debug Banner - Remove after fixing */}
+            <div className="mb-4 p-4 bg-yellow-50 text-yellow-900 text-xs rounded-lg border border-yellow-200 font-mono whitespace-pre-wrap overflow-auto max-h-40">
+                <strong>DEBUG DIAGNOSTICS:</strong>
+                {JSON.stringify(debugInfo, null, 2)}
+            </div>
+
             <div className="flex items-center justify-between mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
