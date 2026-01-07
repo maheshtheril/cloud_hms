@@ -250,7 +250,10 @@ export async function getTaxRates() {
 
 export async function getUOMs() {
     const session = await auth();
+    logDebug(`getUOMs: companyId=${session?.user?.companyId}`);
+
     if (!session?.user?.companyId || !session?.user?.tenantId) return [];
+
     try {
         let uoms = await prisma.hms_uom.findMany({
             where: { company_id: session.user.companyId, is_active: true },
@@ -259,42 +262,93 @@ export async function getUOMs() {
         });
 
         if (uoms.length === 0) {
-            // Seed 'Unit' category and 'Each' uom
-            let unitCat = await prisma.hms_uom_category.findFirst({
-                where: { company_id: session.user.companyId, name: 'Unit' }
+            logDebug('getUOMs: Seeding comprehensive defaults');
+
+            const standardCategories = [
+                {
+                    name: 'Unit',
+                    uoms: [
+                        { name: 'Each', type: 'reference', ratio: 1 },
+                        { name: 'Dozen', type: 'bigger', ratio: 12 },
+                        { name: 'Box', type: 'bigger', ratio: 10 }
+                    ]
+                },
+                {
+                    name: 'Weight',
+                    uoms: [
+                        { name: 'kg', type: 'reference', ratio: 1 },
+                        { name: 'g', type: 'smaller', ratio: 0.001 },
+                        { name: 'mg', type: 'smaller', ratio: 0.000001 },
+                        { name: 'lb', type: 'smaller', ratio: 0.453592 }
+                    ]
+                },
+                {
+                    name: 'Volume',
+                    uoms: [
+                        { name: 'L', type: 'reference', ratio: 1 },
+                        { name: 'ml', type: 'smaller', ratio: 0.001 }
+                    ]
+                },
+                {
+                    name: 'Length',
+                    uoms: [
+                        { name: 'm', type: 'reference', ratio: 1 },
+                        { name: 'cm', type: 'smaller', ratio: 0.01 },
+                        { name: 'mm', type: 'smaller', ratio: 0.001 }
+                    ]
+                }
+            ];
+
+            for (const catDef of standardCategories) {
+                // Find or Create Category
+                let category = await prisma.hms_uom_category.findFirst({
+                    where: { company_id: session.user.companyId, name: catDef.name }
+                });
+
+                if (!category) {
+                    category = await prisma.hms_uom_category.create({
+                        data: {
+                            tenant_id: session.user.tenantId,
+                            company_id: session.user.companyId,
+                            name: catDef.name
+                        }
+                    });
+                }
+
+                // Create UOMs
+                if (category) {
+                    for (const u of catDef.uoms) {
+                        // Check if UOM exists
+                        const existing = await prisma.hms_uom.findFirst({
+                            where: { company_id: session.user.companyId, category_id: category.id, name: u.name }
+                        });
+
+                        if (!existing) {
+                            await prisma.hms_uom.create({
+                                data: {
+                                    tenant_id: session.user.tenantId,
+                                    company_id: session.user.companyId,
+                                    category_id: category.id,
+                                    name: u.name,
+                                    uom_type: u.type,
+                                    ratio: u.ratio
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+
+            // Re-fetch
+            uoms = await prisma.hms_uom.findMany({
+                where: { company_id: session.user.companyId, is_active: true },
+                orderBy: { name: 'asc' },
+                select: { id: true, name: true, category_id: true, ratio: true, uom_type: true }
             });
-
-            if (!unitCat) {
-                unitCat = await prisma.hms_uom_category.create({
-                    data: {
-                        tenant_id: session.user.tenantId,
-                        company_id: session.user.companyId,
-                        name: 'Unit'
-                    }
-                });
-            }
-
-            if (unitCat) {
-                await prisma.hms_uom.create({
-                    data: {
-                        tenant_id: session.user.tenantId,
-                        company_id: session.user.companyId,
-                        category_id: unitCat.id,
-                        name: 'Each',
-                        uom_type: 'reference',
-                        ratio: 1
-                    }
-                });
-
-                uoms = await prisma.hms_uom.findMany({
-                    where: { company_id: session.user.companyId, is_active: true },
-                    orderBy: { name: 'asc' },
-                    select: { id: true, name: true, category_id: true, ratio: true, uom_type: true }
-                });
-            }
         }
         return uoms;
     } catch (error) {
+        logDebug(`getUOMs Error: ${error}`);
         console.error("Failed to fetch UOMs:", error);
         return [];
     }
