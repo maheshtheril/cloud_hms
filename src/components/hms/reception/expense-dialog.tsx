@@ -213,7 +213,6 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                                         }}
                                         defaultOptions={accountOptions}
                                         placeholder="Search Expense Category..."
-                                        usePortal={false}
                                     />
                                 </FormControl>
                                 <FormMessage />

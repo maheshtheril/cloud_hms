@@ -274,7 +274,8 @@ export function SearchableSelect({
                 top: usePortal ? position.top : undefined,
                 left: usePortal ? position.left : undefined,
                 width: usePortal ? position.width : undefined,
-                maxHeight: '240px'
+                maxHeight: '240px',
+                pointerEvents: 'auto'
             }}
         >
             {loading && (
