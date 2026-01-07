@@ -6,7 +6,7 @@ import {
     Activity, FlaskConical, Users, Clock, Calendar,
     ChevronRight, Search, Bell, FileText, CheckCircle2,
     AlertCircle, TrendingUp, TestTube2, Microscope,
-    ArrowRight, Check, Loader2, X
+    ArrowRight, Check, Loader2, X, IndianRupee
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { updateLabOrderStatus, uploadAndAttachLabReport, deleteLabReport } from "@/app/actions/lab"
@@ -249,6 +249,10 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                                     <span className="px-2.5 py-1 rounded-full text-[10px] bg-slate-100 text-slate-500 font-bold border border-slate-200 uppercase tracking-wider">
                                                         #{order.order_number || 'N/A'}
                                                     </span>
+                                                    <span className="flex items-center gap-0.5 px-2.5 py-1 rounded-full text-[10px] bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 uppercase tracking-wider">
+                                                        <IndianRupee className="h-3 w-3" />
+                                                        {order.totalPrice?.toFixed(2) || '0.00'}
+                                                    </span>
                                                     {order.priority === 'urgent' && (
                                                         <span className="px-2.5 py-1 rounded-full text-[10px] bg-red-100 text-red-700 font-bold border border-red-200 uppercase tracking-wider animate-pulse">
                                                             URGENT
@@ -385,7 +389,12 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                             <div key={idx} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm hover:border-violet-200 transition-colors">
                                                 <div className="flex items-center gap-3">
                                                     <div className="w-2 h-2 rounded-full bg-violet-500" />
-                                                    <span className="font-semibold text-slate-700 dark:text-slate-200">{test.test_name}</span>
+                                                    <div className="flex flex-col">
+                                                        <span className="font-semibold text-slate-700 dark:text-slate-200">{test.test_name}</span>
+                                                        <span className="text-xs text-slate-400 flex items-center gap-0.5">
+                                                            <IndianRupee className="h-2.5 w-2.5" /> {test.price?.toFixed(2) || '0.00'}
+                                                        </span>
+                                                    </div>
                                                 </div>
                                                 <span className={`
                                                     text-[10px] font-bold px-2 py-1 rounded-lg border uppercase tracking-wider

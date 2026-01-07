@@ -61,8 +61,12 @@ export default async function LabDashboardPage() {
         const tests = order.hms_lab_order_line.map(line => ({
             id: line.id,
             test_name: line.hms_lab_test?.name || 'Unknown Test',
-            status: line.status
+            status: line.status,
+            price: Number(line.price) || 0
         }))
+
+        // Calculate Total Price
+        const totalPrice = tests.reduce((sum, test) => sum + test.price, 0)
 
         // Patient Name
         const patientName = order.hms_patient
@@ -84,7 +88,8 @@ export default async function LabDashboardPage() {
             patient_id: order.hms_patient?.patient_number,
             doctor_name: doctorName,
             tests: tests,
-            report_url: order.report_url
+            report_url: order.report_url,
+            totalPrice: totalPrice
         }
     })
 
