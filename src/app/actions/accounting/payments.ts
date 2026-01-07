@@ -83,7 +83,7 @@ export async function getExpenseAccounts() {
     }
 
     try {
-        const accounts = await prisma.accounts.findMany({
+        let accounts = await prisma.accounts.findMany({
             where: {
                 company_id: companyId,
                 type: 'Expense',
@@ -92,8 +92,54 @@ export async function getExpenseAccounts() {
             select: { id: true, name: true, code: true },
             orderBy: { name: 'asc' }
         });
+
+        // Auto-seed if empty or very few accounts
+        if (accounts.length < 3) {
+            const defaultExpenses = [
+                { name: 'Tea & Snacks', code: 'EXP-TEA' },
+                { name: 'Travel & Conveyance', code: 'EXP-TRAV' },
+                { name: 'Stationery & Printing', code: 'EXP-STAT' },
+                { name: 'Cleaning & Housekeeping', code: 'EXP-CLEAN' },
+                { name: 'Repair & Maintenance', code: 'EXP-REPAIR' },
+                { name: 'Fuel & Electricity', code: 'EXP-UTIL' },
+                { name: 'General / Other Expenses', code: 'EXP-GEN' }
+            ];
+
+            for (const item of defaultExpenses) {
+                await prisma.accounts.upsert({
+                    where: {
+                        company_id_code: {
+                            company_id: companyId,
+                            code: item.code
+                        }
+                    },
+                    update: { name: item.name, is_active: true },
+                    create: {
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        name: item.name,
+                        code: item.code,
+                        type: 'Expense',
+                        is_active: true
+                    }
+                });
+            }
+
+            // Re-fetch after seeding
+            accounts = await prisma.accounts.findMany({
+                where: {
+                    company_id: companyId,
+                    type: 'Expense',
+                    is_active: true
+                },
+                select: { id: true, name: true, code: true },
+                orderBy: { name: 'asc' }
+            });
+        }
+
         return { success: true, data: accounts };
     } catch (e: any) {
+        console.error("Error in getExpenseAccounts:", e);
         return { error: e.message };
     }
 }
@@ -127,6 +173,16 @@ export async function upsertPayment(data: {
     }
 
     try {
+        const lines = data.lines || [];
+        let categoryName = "General Expense";
+        if (lines.length > 0 && lines[0].accountId) {
+            const acc = await prisma.accounts.findUnique({
+                where: { id: lines[0].accountId },
+                select: { name: true }
+            });
+            if (acc) categoryName = acc.name;
+        }
+
         const payload = {
             tenant_id: tenantId,
             company_id: companyId,
@@ -139,7 +195,8 @@ export async function upsertPayment(data: {
                 date: data.date.toISOString(),
                 memo: data.memo,
                 allocations: data.allocations, // Store original intent in metadata too
-                payee_name: data.payeeName // Store payee name if partner_id is null
+                payee_name: data.payeeName, // Store payee name if partner_id is null
+                category_name: categoryName
             },
             created_at: data.date
         };
@@ -245,6 +302,11 @@ export async function upsertPayment(data: {
                     const lineAmount = Number(line.amount);
                     if (lineAmount <= 0) continue;
 
+                    const account = await tx.accounts.findUnique({
+                        where: { id: line.accountId },
+                        select: { name: true }
+                    });
+
                     await tx.payment_lines.create({
                         data: {
                             tenant_id: (tenantId || payment.tenant_id || '') as string,
@@ -253,6 +315,7 @@ export async function upsertPayment(data: {
                             amount: lineAmount,
                             metadata: {
                                 account_id: line.accountId,
+                                account_name: account?.name || 'Expense',
                                 description: line.description
                             }
                         }
@@ -263,12 +326,15 @@ export async function upsertPayment(data: {
             return payment;
         });
 
+        if (!result) return { error: "Failed to create payment" };
+
         // Post to Accounting if marked as posted
         if (result.posted) {
             await AccountingService.postPaymentEntry(result.id, session.user.id);
         }
 
         revalidatePath(data.type === 'inbound' ? '/hms/accounting/receipts' : '/hms/accounting/payments');
+        revalidatePath('/hms/reception/dashboard');
         return { success: true, data: result };
 
     } catch (error: any) {

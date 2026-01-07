@@ -58,10 +58,12 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
             const res = await getExpenseAccounts();
             if (res.success && res.data) {
                 setAccounts(res.data);
+            } else if (res.error) {
+                toast({ title: "Load Error", description: res.error, variant: "destructive" });
             }
         };
         fetchAccounts();
-    }, []);
+    }, [toast]);
 
     const form = useForm({
         resolver: zodResolver(expenseSchema),

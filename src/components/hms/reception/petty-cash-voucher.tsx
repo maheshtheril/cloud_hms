@@ -102,9 +102,9 @@ export function PettyCashVoucher({ payment, onClose }: PettyCashVoucherProps) {
 
                     <div className="grid grid-cols-2 gap-8 mt-4">
                         <div className="border border-slate-300 rounded p-4 bg-slate-50">
-                            <p className="text-xs font-bold text-slate-500 uppercase mb-1">Payment Method</p>
+                            <p className="text-xs font-bold text-slate-500 uppercase mb-1">Expense Category</p>
                             <p className="font-medium text-slate-900 capitalize">
-                                {payment.method || 'Cash'}
+                                {(payment.metadata as any)?.category_name || 'General Expense'}
                             </p>
                         </div>
                         <div className="flex items-center justify-end gap-3 p-4 bg-slate-100 rounded border border-slate-200">
