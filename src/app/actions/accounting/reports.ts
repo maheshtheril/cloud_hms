@@ -30,3 +30,10 @@ export async function getFinancialTrends() {
 
     return await AccountingService.getFinancialTrends(session.user.companyId)
 }
+
+export async function getExecutiveInsights() {
+    const session = await auth()
+    if (!session?.user?.companyId) return { success: false, error: "Unauthorized" }
+
+    return await AccountingService.getExecutiveInsights(session.user.companyId)
+}

@@ -17,7 +17,8 @@ import {
     getDailyAccountingSummary,
     getProfitAndLossStatement,
     getBalanceSheetStatement,
-    getFinancialTrends
+    getFinancialTrends,
+    getExecutiveInsights
 } from "@/app/actions/accounting/reports"
 import dynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -32,6 +33,17 @@ const YAxis = dynamic(() => import('recharts').then(mod => mod.YAxis), { ssr: fa
 const CartesianGrid = dynamic(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false })
 const Tooltip = dynamic(() => import('recharts').then(mod => mod.Tooltip), { ssr: false })
 
+function CountUp({ value, prefix = "", suffix = "" }: { value: number, prefix?: string, suffix?: string }) {
+    return (
+        <motion.span
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+        >
+            {prefix}{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(value)}{suffix}
+        </motion.span>
+    )
+}
+
 export function FinancialDashboard() {
     const router = useRouter()
     const [loading, setLoading] = useState(true)
@@ -39,6 +51,7 @@ export function FinancialDashboard() {
     const [plData, setPlData] = useState<any>(null)
     const [bsData, setBsData] = useState<any>(null)
     const [trends, setTrends] = useState<any[]>([])
+    const [insights, setInsights] = useState<string[]>([])
     const [date, setDate] = useState(new Date())
 
     useEffect(() => {
@@ -51,17 +64,19 @@ export function FinancialDashboard() {
             const startOfMonth = new Date(date.getFullYear(), date.getMonth(), 1)
             const endOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0)
 
-            const [daily, pl, bs, trendRes] = await Promise.all([
+            const [daily, pl, bs, trendRes, insightRes] = await Promise.all([
                 getDailyAccountingSummary(date),
                 getProfitAndLossStatement(startOfMonth, endOfMonth),
                 getBalanceSheetStatement(date),
-                getFinancialTrends()
+                getFinancialTrends(),
+                getExecutiveInsights()
             ])
 
             if (daily.success) setDailyData(daily.data)
             if (pl.success) setPlData(pl.data)
             if (bs.success) setBsData(bs.data)
             if (trendRes.success) setTrends(trendRes.data || [])
+            if (insightRes.success) setInsights((insightRes as any).data || [])
         } catch (error) {
             console.error("Failed to load dashboard data", error)
         }
@@ -150,14 +165,17 @@ export function FinancialDashboard() {
                         </div>
                         <CardHeader className="pb-2">
                             <CardDescription className="text-indigo-100/80 font-bold uppercase tracking-[0.15em] text-[10px]">Today's Gross Sales</CardDescription>
-                            <CardTitle className="text-4xl font-black">{formatCurrency(dailyData?.totalSales || 0)}</CardTitle>
+                            <CardTitle className="text-4xl font-black">
+                                <CountUp value={dailyData?.totalSales || 0} prefix="₹" />
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="flex items-center gap-2 text-xs backdrop-blur-md bg-white/10 w-fit px-3 py-1.5 rounded-full">
-                                <span className="flex items-center text-emerald-300 font-bold">
-                                    <ArrowUpRight className="h-3 w-3" /> +12.5%
+                                <span className={`flex items-center font-bold ${dailyData?.deltas?.sales >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
+                                    {dailyData?.deltas?.sales >= 0 ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                                    {Math.abs(dailyData?.deltas?.sales || 0).toFixed(1)}%
                                 </span>
-                                <span className="text-indigo-100/60 font-medium">from avg.</span>
+                                <span className="text-indigo-100/60 font-medium">vs yesterday</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -171,20 +189,20 @@ export function FinancialDashboard() {
                         <CardHeader className="pb-2">
                             <CardDescription className="font-bold uppercase tracking-[0.15em] text-[10px] text-slate-400">Recovery Efficiency</CardDescription>
                             <CardTitle className="text-4xl font-black text-slate-900 dark:text-white">
-                                {((dailyData?.totalPaid / (dailyData?.totalSales || 1)) * 100).toFixed(1)}%
+                                <CountUp value={Math.round((dailyData?.totalPaid / (dailyData?.totalSales || 1)) * 100)} suffix="%" />
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="flex flex-col gap-1">
                                 <div className="text-sm font-semibold text-emerald-600 flex items-center gap-1">
                                     <ArrowUpRight className="h-4 w-4" />
-                                    {formatCurrency(dailyData?.totalPaid || 0)} Collected
+                                    <CountUp value={dailyData?.totalPaid || 0} prefix="₹" /> Collected
                                 </div>
                                 <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full mt-2 overflow-hidden px-0.5">
                                     <motion.div
                                         initial={{ width: 0 }}
                                         animate={{ width: `${Math.min(100, (dailyData?.totalPaid / (dailyData?.totalSales || 1)) * 100)}%` }}
-                                        transition={{ duration: 1, ease: "easeOut" }}
+                                        transition={{ duration: 1.5, ease: "circOut" }}
                                         className="h-1 mt-0.5 bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.5)]"
                                     />
                                 </div>
@@ -201,7 +219,7 @@ export function FinancialDashboard() {
                         <CardHeader className="pb-2">
                             <CardDescription className="font-bold uppercase tracking-[0.15em] text-[10px] text-slate-400">Total Outflow</CardDescription>
                             <CardTitle className="text-4xl font-black text-rose-500">
-                                {formatCurrency(dailyData?.totalPurchases || 0)}
+                                <CountUp value={dailyData?.totalPurchases || 0} prefix="₹" />
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -220,7 +238,7 @@ export function FinancialDashboard() {
                         <CardHeader className="pb-2">
                             <CardDescription className="font-bold uppercase tracking-[0.15em] text-[10px] text-slate-400">Net Monthly margin</CardDescription>
                             <CardTitle className={`text-4xl font-black ${plData?.netProfit >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
-                                {formatCurrency(plData?.netProfit || 0)}
+                                <CountUp value={plData?.netProfit || 0} prefix="₹" />
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -236,80 +254,102 @@ export function FinancialDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Trend Chart */}
                 <Card className="lg:col-span-8 border-none shadow-2xl shadow-indigo-500/5 bg-white dark:bg-slate-900 rounded-[2.5rem] overflow-hidden border border-slate-100 dark:border-slate-800/50">
-                    <CardHeader className="p-8 pb-0 flex flex-row items-center justify-between">
-                        <div>
-                            <CardTitle className="text-2xl font-black text-slate-900 dark:text-white">Performance Velocity</CardTitle>
-                            <CardDescription className="text-slate-500">Revenue vs Expense trend (30-day window)</CardDescription>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
-                                <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter">Revenue</span>
+                    <CardHeader className="p-8 pb-0">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            <div>
+                                <CardTitle className="text-2xl font-black text-slate-900 dark:text-white">Performance Velocity</CardTitle>
+                                <CardDescription className="text-slate-500">Revenue vs Expense trend (30-day window)</CardDescription>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
-                                <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter">Expense</span>
+                            <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.5)]" />
+                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter">Revenue</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
+                                    <span className="text-xs font-bold text-slate-500 uppercase tracking-tighter">Expense</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Intelligence Summary Layer */}
+                        <div className="mt-6 p-4 bg-indigo-50/50 dark:bg-indigo-950/20 rounded-2xl border border-indigo-100 dark:border-indigo-900/50">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Zap className="h-4 w-4 text-indigo-600" />
+                                <span className="font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest text-[10px]">Neural Executive Summary</span>
+                            </div>
+                            <div className="space-y-2">
+                                {insights.length > 0 ? insights.map((insight, idx) => (
+                                    <div key={idx} className="flex gap-2 text-xs font-medium text-slate-600 dark:text-slate-400 leading-relaxed group">
+                                        <div className="w-1 h-1 rounded-full bg-indigo-400 mt-1.5 shrink-0 group-hover:scale-150 transition-transform" />
+                                        <p>{insight}</p>
+                                    </div>
+                                )) : (
+                                    <p className="text-xs text-slate-500 animate-pulse">Scanning financial neural patterns...</p>
+                                )}
                             </div>
                         </div>
                     </CardHeader>
-                    <CardContent className="p-4 h-[400px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={trends} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
-                                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                                    </linearGradient>
-                                    <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.1} />
-                                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888810" />
-                                <XAxis
-                                    dataKey="date"
-                                    tickFormatter={(val) => new Date(val).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                                    dy={10}
-                                />
-                                <YAxis
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                                    tickFormatter={(val) => `₹${val / 1000}k`}
-                                />
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                        borderRadius: '1.5rem',
-                                        border: 'none',
-                                        boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
-                                        padding: '1rem'
-                                    }}
-                                    cursor={{ stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '4 4' }}
-                                />
-                                <Area
-                                    type="monotone"
-                                    dataKey="revenue"
-                                    stroke="#6366f1"
-                                    strokeWidth={4}
-                                    fillOpacity={1}
-                                    fill="url(#colorRev)"
-                                    animationDuration={2000}
-                                />
-                                <Area
-                                    type="monotone"
-                                    dataKey="expense"
-                                    stroke="#f43f5e"
-                                    strokeWidth={3}
-                                    fillOpacity={1}
-                                    fill="url(#colorExp)"
-                                    animationDuration={2000}
-                                />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                    <CardContent className="p-4 h-[350px]">
+                        {trends.length > 0 && (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={trends} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2} />
+                                            <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.1} />
+                                            <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#88888810" />
+                                    <XAxis
+                                        dataKey="date"
+                                        tickFormatter={(val) => new Date(val).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                                        dy={10}
+                                    />
+                                    <YAxis
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
+                                        tickFormatter={(val) => `₹${val / 1000}k`}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{
+                                            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                                            borderRadius: '1.5rem',
+                                            border: 'none',
+                                            boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)',
+                                            padding: '1rem'
+                                        }}
+                                        cursor={{ stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '4 4' }}
+                                    />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="revenue"
+                                        stroke="#6366f1"
+                                        strokeWidth={4}
+                                        fillOpacity={1}
+                                        fill="url(#colorRev)"
+                                        animationDuration={2000}
+                                    />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="expense"
+                                        stroke="#f43f5e"
+                                        strokeWidth={3}
+                                        fillOpacity={1}
+                                        fill="url(#colorExp)"
+                                        animationDuration={2000}
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        )}
                     </CardContent>
                 </Card>
 

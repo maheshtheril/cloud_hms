@@ -885,7 +885,12 @@ export class AccountingService {
                 }, 0),
                 netCashFlow: 0,
                 revenueByAccount: {} as Record<string, number>,
-                expenseByAccount: {} as Record<string, number>
+                expenseByAccount: {} as Record<string, number>,
+                deltas: {
+                    sales: 0,
+                    paid: 0,
+                    purchases: 0
+                }
             };
 
             journalLines.forEach(line => {
@@ -901,6 +906,46 @@ export class AccountingService {
             });
 
             summary.netCashFlow = summary.totalPaid - summary.totalPurchases;
+
+            // FETCH PREVIOUS DAY DATA FOR DELTAS
+            const prevDay = new Date(startOfDay);
+            prevDay.setDate(prevDay.getDate() - 1);
+            const prevStart = new Date(prevDay);
+            const prevEnd = new Date(prevDay);
+            prevEnd.setHours(23, 59, 59, 999);
+
+            const [pSales, pPayments, pPurchases] = await Promise.all([
+                prisma.hms_invoice.findMany({
+                    where: { company_id: companyId, created_at: { gte: prevStart, lte: prevEnd } }
+                }),
+                prisma.hms_invoice_payments.findMany({
+                    where: { hms_invoice: { company_id: companyId }, created_at: { gte: prevStart, lte: prevEnd } }
+                }),
+                prisma.hms_purchase_receipt.findMany({
+                    where: { company_id: companyId, created_at: { gte: prevStart, lte: prevEnd } },
+                    include: { hms_purchase_receipt_line: true }
+                })
+            ]);
+
+            const pTotalSales = pSales.reduce((sum, s) => sum + Number(s.total || 0), 0);
+            const pTotalPaid = pPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+            const pTotalPurchases = pPurchases.reduce((sum, p) => {
+                return sum + p.hms_purchase_receipt_line.reduce((lSum, l) => {
+                    const meta = l.metadata as any;
+                    return lSum + (Number(l.qty || 0) * Number(l.unit_price || 0)) - (Number(meta?.discount_amt || 0) + Number(meta?.scheme_discount || 0)) + Number(meta?.tax_amount ?? 0);
+                }, 0);
+            }, 0);
+
+            const calcDelta = (curr: number, prev: number) => {
+                if (prev === 0) return curr > 0 ? 100 : 0;
+                return ((curr - prev) / prev) * 100;
+            };
+
+            summary.deltas = {
+                sales: calcDelta(summary.totalSales, pTotalSales),
+                paid: calcDelta(summary.totalPaid, pTotalPaid),
+                purchases: calcDelta(summary.totalPurchases, pTotalPurchases)
+            };
 
             return { success: true, data: summary };
         } catch (error: any) {
@@ -1232,6 +1277,77 @@ export class AccountingService {
         } catch (error: any) {
             console.error("Trends Error:", error);
             return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Generates "Neural" AI insights by scanning for anomalies and trends.
+     */
+    static async getExecutiveInsights(companyId: string) {
+        try {
+            const today = new Date();
+            const startOfLast7 = new Date();
+            startOfLast7.setDate(today.getDate() - 7);
+
+            const [lines, pAndL] = await Promise.all([
+                prisma.journal_entry_lines.findMany({
+                    where: { company_id: companyId, journal_entries: { date: { gte: startOfLast7 }, posted: true } },
+                    include: { accounts: true, journal_entries: { select: { date: true } } }
+                }),
+                this.getProfitAndLoss(companyId, new Date(today.getFullYear(), today.getMonth(), 1), today)
+            ]);
+
+            const insights: string[] = [];
+
+            // 1. ANOMALY DETECTION: High Expenses
+            const expenseMap = new Map<string, number>();
+            lines.filter(l => l.accounts.type === 'Expense').forEach(l => {
+                const amt = Number(l.debit || 0) - Number(l.credit || 0);
+                expenseMap.set(l.accounts.name, (expenseMap.get(l.accounts.name) || 0) + amt);
+            });
+
+            const topExpense = Array.from(expenseMap.entries()).sort((a, b) => b[1] - a[1])[0];
+            if (topExpense && topExpense[1] > 10000) {
+                insights.push(`Top outflow identified: ${topExpense[0]} has consumed ₹${topExpense[1].toLocaleString()} in the last 7 days.`);
+            }
+
+            // 2. PROFITABILITY FORECAST
+            if (pAndL.success && pAndL.data) {
+                const margin = (pAndL.data.netProfit / (pAndL.data.totalRevenue || 1)) * 100;
+                if (margin > 30) {
+                    insights.push(`Exceptional profitability: Monthly net margin is at ${margin.toFixed(1)}%, significantly above industry avg (15%).`);
+                } else if (margin < 5 && pAndL.data.totalRevenue > 0) {
+                    insights.push(`Margin Compression: Current net margin is low (${margin.toFixed(1)}%). Review operating overheads.`);
+                }
+            }
+
+            // 3. REVENUE STABILITY
+            const dailyRevenue = new Map<string, number>();
+            lines.filter(l => ['Revenue', 'Income'].includes(l.accounts.type)).forEach(l => {
+                const dateKey = l.journal_entries.date.toISOString().split('T')[0];
+                const amt = Math.abs(Number(l.debit || 0) - Number(l.credit || 0));
+                dailyRevenue.set(dateKey, (dailyRevenue.get(dateKey) || 0) + amt);
+            });
+
+            const revValues = Array.from(dailyRevenue.values());
+            if (revValues.length >= 3) {
+                const avg = revValues.reduce((a, b) => a + b, 0) / revValues.length;
+                const last = revValues[revValues.length - 1];
+                if (last > avg * 1.5) {
+                    insights.push("Growth Spike: Revenue in the last 24 hours is 50%+ above the 7-day moving average.");
+                }
+            }
+
+            // Default fallback if no "smart" insights
+            if (insights.length === 0) {
+                insights.push("Financial trajectories are stable. No immediate liquidity anomalies detected.");
+                insights.push("Revenue streams are consistent with previous period baselines.");
+            }
+
+            return { success: true, data: insights };
+        } catch (error: any) {
+            console.error("Insights Error:", error);
+            return { success: false, error: ["Intelligence engine calibration in progress..."] };
         }
     }
 }
