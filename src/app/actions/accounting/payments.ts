@@ -219,8 +219,33 @@ export async function upsertPayment(data: {
                     data: payload
                 });
             } else {
-                const prefix = data.type === 'inbound' ? 'RCP' : 'PAY';
-                const num = `${prefix}-${Date.now().toString().slice(-6)}`;
+                const prefix = data.type === 'inbound' ? 'RCP' : 'PV'; // Changed PAY to PV (Petty/Payment Voucher) or keep PAY. User said "petty cash voucher", usually PV or PCV. Let's stick to 'PAY' or 'PV' based on standard? The code had 'PAY'. Let's switch outbound to 'PV' for Voucher? Or keep 'PAY'. The user complained about "random serial number".
+                // Let's keep strict prefix 'PAY' for outbound, 'RCP' for inbound like before to avoid breaking searches, but make it sequential.
+                // Actually, for Petty Cash specifically, maybe they want 'PCV'?
+                // The current type is 'outbound'.
+
+                const prefixToUse = data.type === 'inbound' ? 'RCP' : 'PAY';
+
+                // Find last payment number to increment
+                const lastPayment = await tx.payments.findFirst({
+                    where: {
+                        tenant_id: tenantId,
+                        payment_number: { startsWith: prefixToUse }
+                    },
+                    orderBy: { created_at: 'desc' },
+                    select: { payment_number: true }
+                });
+
+                let nextSeq = 1;
+                if (lastPayment && lastPayment.payment_number) {
+                    const parts = lastPayment.payment_number.split('-');
+                    const lastNumVal = parts[parts.length - 1]; // Get last part
+                    if (!isNaN(Number(lastNumVal))) {
+                        nextSeq = Number(lastNumVal) + 1;
+                    }
+                }
+
+                const num = `${prefixToUse}-${nextSeq.toString().padStart(5, '0')}`;
 
                 payment = await tx.payments.create({
                     data: {
