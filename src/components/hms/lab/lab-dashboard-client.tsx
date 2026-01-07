@@ -440,6 +440,13 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                 <button className="flex-1 py-3 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                                     Print Label
                                 </button>
+                                <button
+                                    onClick={() => router.push(`/hms/billing/new?labOrderId=${selectedOrder.id}`)}
+                                    className="flex-1 py-3 bg-violet-100 text-violet-700 font-bold rounded-xl hover:bg-violet-200 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <FileText className="h-4 w-4" />
+                                    Bill Patient
+                                </button>
                             </div>
 
                             {/* Report Upload Section */}

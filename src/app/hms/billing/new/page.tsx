@@ -13,12 +13,13 @@ export default async function NewInvoicePage({
         medicines?: string
         items?: string
         appointmentId?: string
+        labOrderId?: string
     }>
 }) {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return <div>Unauthorized</div>;
 
-    const { patientId, medicines, items, appointmentId } = await searchParams;
+    const { patientId, medicines, items, appointmentId, labOrderId } = await searchParams;
     const tenantId = session.user.tenantId;
 
     // Parallel data fetching
@@ -115,12 +116,50 @@ export default async function NewInvoicePage({
         }
     }
 
+    let effectivePatientId = patientId;
+
+    // IF LAB ORDER ID IS PRESENT (Direct billing from Lab)
+    if (labOrderId) {
+        const labOrder = await prisma.hms_lab_order.findUnique({
+            where: { id: labOrderId },
+            include: {
+                hms_patient: true,
+                hms_lab_order_line: {
+                    include: { hms_lab_test: true }
+                }
+            }
+        });
+
+        if (labOrder) {
+            // Pre-select patient if not already passed
+            if (!effectivePatientId && labOrder.patient_id) {
+                effectivePatientId = labOrder.patient_id;
+            }
+
+            labOrder.hms_lab_order_line.forEach(line => {
+                if (line.hms_lab_test) {
+                    // Check if item already exists to avoid dupes if both appointmentId and labOrderId passed
+                    const exists = initialItems.some((i: any) => i.name === `Lab: ${line.hms_lab_test!.name}`);
+                    if (!exists) {
+                        initialItems.push({
+                            id: '',
+                            name: `Lab: ${line.hms_lab_test.name}`,
+                            price: Number(line.price) || 0,
+                            quantity: 1,
+                            type: 'service'
+                        });
+                    }
+                }
+            });
+        }
+    }
+
     return (
         <CompactInvoiceEditor
             patients={JSON.parse(JSON.stringify(patients))}
             billableItems={JSON.parse(JSON.stringify(billableItems))}
             taxConfig={JSON.parse(JSON.stringify(taxConfig))}
-            initialPatientId={patientId}
+            initialPatientId={effectivePatientId}
             initialMedicines={initialItems}
             appointmentId={appointmentId}
         />
