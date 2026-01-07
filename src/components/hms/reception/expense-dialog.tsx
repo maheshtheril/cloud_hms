@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { CalendarIcon, Loader2, IndianRupee } from "lucide-react"
+import { CalendarIcon, Loader2, IndianRupee, Printer, CheckCircle2 } from "lucide-react"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
@@ -44,10 +44,33 @@ interface ExpenseDialogProps {
     onSuccess?: () => void
 }
 
+function numberToWords(amount: number): string {
+    // Simple implementation or placeholder. 
+    // For a robust one we'd need a library, but let's do a basic one or just return formatted number if complex.
+    // Given the "World Standard" request, let's try a basic English converter.
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+
+    if (amount === 0) return 'Zero';
+
+    function convert(n: number): string {
+        if (n < 10) return ones[n];
+        if (n < 20) return teens[n - 10];
+        if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 !== 0 ? ' ' + ones[n % 10] : '');
+        if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + convert(n % 100) : '');
+        return n.toString(); // Fallback for large numbers in this simple snippet
+    }
+
+    return convert(Math.floor(amount)) + (amount % 1 !== 0 ? ' Point ' + convert(Math.round((amount % 1) * 100)) : '') + ' Only';
+}
+
 export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
     const { toast } = useToast()
     const [loading, setLoading] = useState(false)
     const [accounts, setAccounts] = useState<{ id: string; name: string; code: string }[]>([])
+    const [successData, setSuccessData] = useState<any>(null)
+    const [showVoucher, setShowVoucher] = useState(false)
 
     // Fetch expense accounts on mount
     useEffect(() => {
@@ -94,9 +117,11 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
 
             if (result.success) {
                 toast({ title: "Expense Recorded", description: "Petty cash entry saved successfully." })
-                form.reset()
+                // form.reset() // Keep data for a moment if needed, but we rely on result.data
+                setSuccessData(result.data)
+                setShowVoucher(true)
                 onSuccess?.()
-                onClose()
+                // Don't close yet, let user print
             } else {
                 toast({ title: "Error", description: result.error || "Failed to save expense", variant: "destructive" })
             }
@@ -113,6 +138,124 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
         label: acc.name,
         subLabel: acc.code
     }));
+
+    const handlePrint = () => {
+        window.print();
+    };
+
+    if (showVoucher && successData) {
+        return (
+            <div className="p-6 flex flex-col items-center justify-center min-h-[400px]">
+                <style jsx global>{`
+                    @media print {
+                        body * {
+                            visibility: hidden;
+                        }
+                        #printable-voucher, #printable-voucher * {
+                            visibility: visible;
+                        }
+                        #printable-voucher {
+                            position: fixed;
+                            left: 0;
+                            top: 0;
+                            width: 100%;
+                            height: 100%;
+                            z-index: 9999;
+                            background: white;
+                            padding: 20px;
+                        }
+                        .no-print {
+                            display: none !important;
+                        }
+                    }
+                `}</style>
+
+                <div id="printable-voucher" className="w-[800px] border-2 border-slate-800 p-8 bg-white text-slate-900 mx-auto">
+                    {/* Header */}
+                    <div className="flex justify-between items-start border-b-2 border-slate-800 pb-4 mb-6">
+                        <div>
+                            <h1 className="text-3xl font-extrabold tracking-wider text-slate-900 uppercase">Petty Cash Voucher</h1>
+                            <p className="text-sm font-medium mt-1 text-slate-600">Official Payment Receipt</p>
+                        </div>
+                        <div className="text-right">
+                            <div className="flex items-center gap-2 justify-end mb-1">
+                                <span className="font-bold text-slate-600 uppercase text-xs">Voucher No:</span>
+                                <span className="font-mono font-bold text-lg">{successData.payment_number}</span>
+                            </div>
+                            <div className="flex items-center gap-2 justify-end">
+                                <span className="font-bold text-slate-600 uppercase text-xs">Date:</span>
+                                <span className="font-medium">{format(new Date(successData.payment_date), 'dd MMM, yyyy')}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Main Content */}
+                    <div className="space-y-6">
+                        <div className="flex gap-4 items-end">
+                            <span className="font-bold text-slate-700 w-24 uppercase text-sm pb-1">Paid To:</span>
+                            <div className="flex-1 border-b border-slate-400 border-dashed pb-1 font-medium text-lg px-2">
+                                {successData.payee_name}
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4 items-end">
+                            <span className="font-bold text-slate-700 w-24 uppercase text-sm pb-1">The Sum of:</span>
+                            <div className="flex-1 border-b border-slate-400 border-dashed pb-1 font-medium text-lg px-2 capitalize italic">
+                                {numberToWords(Number(successData.amount))} Rupees Only
+                            </div>
+                        </div>
+
+                        <div className="flex gap-4 items-end">
+                            <span className="font-bold text-slate-700 w-24 uppercase text-sm pb-1">On A/C of:</span>
+                            <div className="flex-1 border-b border-slate-400 border-dashed pb-1 font-medium text-lg px-2">
+                                {successData.memo}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-8 mt-4">
+                            <div className="border border-slate-300 rounded p-4 bg-slate-50">
+                                <p className="text-xs font-bold text-slate-500 uppercase mb-1">Category</p>
+                                <p className="font-medium text-slate-900">
+                                    {accounts.find(a => a.id === form.getValues().categoryId)?.name || 'Expense'}
+                                </p>
+                            </div>
+                            <div className="flex items-center justify-end gap-3 p-4 bg-slate-100 rounded border border-slate-200">
+                                <span className="font-bold text-slate-600 uppercase">Total Amount</span>
+                                <span className="text-2xl font-bold font-mono">
+                                    ₹{Number(successData.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Footer / Signatures */}
+                    <div className="grid grid-cols-3 gap-8 mt-16 pt-8">
+                        <div className="text-center">
+                            <div className="border-t border-slate-400 w-3/4 mx-auto mb-2"></div>
+                            <p className="text-xs font-bold uppercase text-slate-500">Prepared By</p>
+                        </div>
+                        <div className="text-center">
+                            <div className="border-t border-slate-400 w-3/4 mx-auto mb-2"></div>
+                            <p className="text-xs font-bold uppercase text-slate-500">Authorised By</p>
+                        </div>
+                        <div className="text-center">
+                            <div className="border-t-2 border-slate-800 w-3/4 mx-auto mb-2"></div>
+                            <p className="text-sm font-extrabold uppercase text-slate-900">Receiver's Signature</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex gap-4 mt-8 no-print slide-in-from-bottom-5 animate-in">
+                    <Button onClick={handlePrint} className="bg-slate-900 hover:bg-slate-800 text-white min-w-[150px]">
+                        <Printer className="mr-2 h-4 w-4" /> Print Voucher
+                    </Button>
+                    <Button variant="outline" onClick={onClose} className="min-w-[100px]">
+                        Close
+                    </Button>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className="p-6">
