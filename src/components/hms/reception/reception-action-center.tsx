@@ -555,6 +555,77 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                 </DialogContent>
             </Dialog>
 
+            {/* 6. Expense Report Modal */}
+            <Dialog open={activeModal === 'expense-report'} onOpenChange={() => setActiveModal(null)}>
+                <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-white dark:bg-slate-900">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                            <Wallet className="h-5 w-5 text-rose-600" />
+                            Petty Cash / Expenses Report
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden mt-4">
+                        <table className="w-full text-sm text-left">
+                            <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 font-medium border-b border-slate-200 dark:border-slate-800">
+                                <tr>
+                                    <th className="p-3 font-semibold">Time</th>
+                                    <th className="p-3 font-semibold">Voucher #</th>
+                                    <th className="p-3 font-semibold">Payee</th>
+                                    <th className="p-3 font-semibold">Category</th>
+                                    <th className="p-3 font-semibold">Description</th>
+                                    <th className="p-3 font-semibold text-right">Amount</th>
+                                    <th className="p-3 font-semibold text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                {todayExpenses?.map((expense: any, i: number) => (
+                                    <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                                        <td className="p-3 text-slate-500">
+                                            {new Date(expense.created_at || expense.payment_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </td>
+                                        <td className="p-3 font-mono text-xs text-slate-500">
+                                            {expense.payment_number}
+                                        </td>
+                                        <td className="p-3 font-medium text-slate-900 dark:text-white">
+                                            {expense.payee_name || '-'}
+                                        </td>
+                                        <td className="p-3 text-slate-600">
+                                            {expense.payment_lines?.[0]?.account_chart?.name || 'General'}
+                                        </td>
+                                        <td className="p-3 text-slate-500 max-w-[150px] truncate" title={expense.memo}>
+                                            {expense.memo}
+                                        </td>
+                                        <td className="p-3 text-right font-bold text-rose-600 dark:text-rose-400">
+                                            ₹{Number(expense.amount).toLocaleString('en-IN')}
+                                        </td>
+                                        <td className="p-3 text-center">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="h-8 text-xs"
+                                                onClick={() => setViewingPayment(expense)}
+                                            >
+                                                View Voucher
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {!todayExpenses?.length && (
+                                    <tr><td colSpan={7} className="p-8 text-center text-slate-400">No expenses recorded today</td></tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* 7. View Voucher Modal */}
+            <Dialog open={!!viewingPayment} onOpenChange={() => setViewingPayment(null)}>
+                <DialogContent className="max-w-[850px] p-0 overflow-hidden bg-white">
+                    {viewingPayment && <PettyCashVoucher payment={viewingPayment} onClose={() => setViewingPayment(null)} />}
+                </DialogContent>
+            </Dialog>
+
         </div >
     )
 }
