@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, X, Loader2, CreditCard, Banknote, Smartphone, Landmark, MessageCircle } from 'lucide-react'
-import { createInvoice, updateInvoice } from '@/app/actions/billing'
+import { createInvoice, updateInvoice, getPatientBalance } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { useToast } from '@/components/ui/use-toast'
 
@@ -37,6 +37,23 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     // State
     const [selectedPatientId, setSelectedPatientId] = useState(initialInvoice?.patient_id || initialPatientId || urlPatientId || '')
     const [date, setDate] = useState(initialInvoice?.invoice_date ? new Date(initialInvoice.invoice_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+    const [patientBalance, setPatientBalance] = useState<{ amount: number, type: 'due' | 'advance' } | null>(null)
+
+    // Fetch Patient Balance
+    useEffect(() => {
+        if (!selectedPatientId) {
+            setPatientBalance(null)
+            return
+        }
+
+        const fetchBalance = async () => {
+            const res = await getPatientBalance(selectedPatientId)
+            if (res.success) {
+                setPatientBalance({ amount: res.balance, type: res.type as any })
+            }
+        }
+        fetchBalance()
+    }, [selectedPatientId])
 
     // Use configured default or empty (force user to select)
     const getDefaultTaxId = () => {
@@ -786,18 +803,49 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                     <div className="flex flex-col sm:flex-row h-full">
                         {/* Left Side: Payment Details */}
                         <div className="flex-1 p-4 border-b sm:border-b-0 sm:border-r border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                    <CreditCard className="h-3 w-3" /> Payment Breakdown
+                            <div className="flex flex-col gap-2 mb-3">
+                                <div className="flex items-center justify-between">
+                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                        <CreditCard className="h-3 w-3" /> Payment Breakdown
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xs text-slate-500">
+                                            {balanceDue < 0 ? 'Advance / Change:' : 'Balance Due:'}
+                                        </span>
+                                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${balanceDue > 1 ? "bg-red-100 text-red-600 dark:text-red-400 dark:bg-red-500/10" : balanceDue < 0 ? "bg-blue-100 text-blue-600 dark:text-blue-400 dark:bg-blue-500/10" : "bg-emerald-100 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-500/10"}`}>
+                                            {balanceDue > 1 ? `₹${balanceDue.toFixed(2)}` : balanceDue < 0 ? `₹${Math.abs(balanceDue).toFixed(2)}` : 'PAID'}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-xs text-slate-500">
-                                        {balanceDue < 0 ? 'Advance / Change:' : 'Balance Due:'}
-                                    </span>
-                                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${balanceDue > 1 ? "bg-red-100 text-red-600 dark:text-red-400 dark:bg-red-500/10" : balanceDue < 0 ? "bg-blue-100 text-blue-600 dark:text-blue-400 dark:bg-blue-500/10" : "bg-emerald-100 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-500/10"}`}>
-                                        {balanceDue > 1 ? `₹${balanceDue.toFixed(2)}` : balanceDue < 0 ? `₹${Math.abs(balanceDue).toFixed(2)}` : 'PAID'}
-                                    </span>
-                                </div>
+
+                                {patientBalance && patientBalance.type === 'advance' && patientBalance.amount > 0 && (
+                                    <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/10 p-2 rounded-md border border-blue-100 dark:border-blue-800">
+                                        <div className="flex items-center gap-1.5">
+                                            <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+                                            <span className="text-[10px] font-medium text-blue-700 dark:text-blue-300">
+                                                Available Credit: <span className="font-bold">₹{patientBalance.amount.toFixed(2)}</span>
+                                            </span>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                const amountToUse = Math.min(Math.max(0, balanceDue), patientBalance.amount);
+                                                if (amountToUse <= 0) return;
+
+                                                // Check if advance row exists
+                                                const hasAdvance = payments.some(p => p.method === 'advance');
+                                                if (!hasAdvance) {
+                                                    setPayments([...payments, { method: 'advance', amount: amountToUse, reference: 'Advance Adjustment' }]);
+                                                } else {
+                                                    // Update existing
+                                                    setPayments(payments.map(p => p.method === 'advance' ? { ...p, amount: amountToUse } : p));
+                                                }
+                                            }}
+                                            className="text-[10px] bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-800 dark:text-blue-200 px-2 py-1 rounded font-bold transition-colors"
+                                        >
+                                            Apply Credit
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-2 max-h-32 overflow-y-auto pr-1">

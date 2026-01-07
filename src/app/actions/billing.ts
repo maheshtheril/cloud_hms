@@ -609,3 +609,39 @@ export async function shareInvoiceWhatsapp(invoiceId: string, pdfBase64?: string
         return { error: error.message };
     }
 }
+
+export async function getPatientBalance(patientId: string) {
+    const session = await auth();
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    if (!companyId) return { error: "Unauthorized" };
+
+    try {
+        const result = await prisma.journal_entry_lines.aggregate({
+            where: {
+                partner_id: patientId,
+                company_id: companyId,
+                journal_entry: {
+                    posted: true
+                }
+            },
+            _sum: {
+                debit: true,
+                credit: true
+            }
+        });
+
+        const totalDebit = Number(result._sum.debit || 0);
+        const totalCredit = Number(result._sum.credit || 0);
+        const balance = totalDebit - totalCredit;
+
+        return {
+            success: true,
+            balance: Math.abs(balance),
+            type: balance > 0 ? 'due' : 'advance',
+            rawBalance: balance
+        };
+    } catch (error: any) {
+        console.error("Failed to fetch patient balance:", error);
+        return { error: "Failed to fetch balance" };
+    }
+}
