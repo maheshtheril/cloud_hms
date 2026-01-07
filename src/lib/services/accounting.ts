@@ -1393,7 +1393,7 @@ export class AccountingService {
                                 account_id: salesAccount,
                                 debit: sReturn.total_amount,
                                 credit: 0,
-                                description: `Sales Return ${sReturn.return_number} - ${sReturn.hms_patient?.name || ''}`
+                                description: `Sales Return ${sReturn.return_number} - ${sReturn.hms_patient?.first_name || ''} ${sReturn.hms_patient?.last_name || ''}`
                             },
                             {
                                 tenant_id: sReturn.tenant_id,
