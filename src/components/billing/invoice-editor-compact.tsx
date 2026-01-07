@@ -545,7 +545,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             onClick={() => onClose ? onClose() : router.back()}
         >
             <div
-                className="relative w-full max-w-5xl h-[95vh] sm:h-[90vh] flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 ring-1 ring-slate-900/10"
+                className="relative w-full max-w-[96vw] h-[95vh] sm:h-[90vh] flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 ring-1 ring-slate-900/10"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* 1. Header (Dense) */}
@@ -791,9 +791,11 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                     <CreditCard className="h-3 w-3" /> Payment Breakdown
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className="text-xs text-slate-500">Balance Due:</span>
-                                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${balanceDue > 1 ? "bg-red-100 text-red-600 dark:text-red-400 dark:bg-red-500/10" : "bg-emerald-100 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-500/10"}`}>
-                                        {balanceDue > 1 ? `₹${balanceDue.toFixed(2)}` : 'PAID'}
+                                    <span className="text-xs text-slate-500">
+                                        {balanceDue < 0 ? 'Advance / Change:' : 'Balance Due:'}
+                                    </span>
+                                    <span className={`text-xs font-bold px-2 py-0.5 rounded ${balanceDue > 1 ? "bg-red-100 text-red-600 dark:text-red-400 dark:bg-red-500/10" : balanceDue < 0 ? "bg-blue-100 text-blue-600 dark:text-blue-400 dark:bg-blue-500/10" : "bg-emerald-100 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-500/10"}`}>
+                                        {balanceDue > 1 ? `₹${balanceDue.toFixed(2)}` : balanceDue < 0 ? `₹${Math.abs(balanceDue).toFixed(2)}` : 'PAID'}
                                     </span>
                                 </div>
                             </div>
