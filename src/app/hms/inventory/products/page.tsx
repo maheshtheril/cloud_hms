@@ -9,6 +9,7 @@ import {
     AlertCircle
 } from "lucide-react"
 import { CreateProductModal } from "@/components/inventory/create-product-modal"
+import { ImportProductModal } from "@/components/inventory/import-product-modal"
 
 export default async function ProductListPage({
     searchParams
@@ -45,6 +46,7 @@ export default async function ProductListPage({
                     <p className="text-sm text-gray-500">Manage your catalog, stock levels, and pricing.</p>
                 </div>
                 <div className="flex gap-3">
+                    <ImportProductModal />
                     <CreateProductModal
                         suppliers={suppliers}
                         taxRates={taxRates}

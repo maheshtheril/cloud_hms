@@ -1428,3 +1428,62 @@ export async function findOrCreateProduct(productName: string, additionalData?: 
         return { error: "Failed to process product" };
     }
 }
+
+export async function importProductsCSV(formData: FormData) {
+    const session = await auth();
+    if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
+
+    const file = formData.get("file") as File;
+    if (!file) return { error: "No file uploaded" };
+
+    const text = await file.text();
+    const lines = text.split('\n');
+    let count = 0;
+    const errors = [];
+
+    // Basic CSV parsing
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        // Split by comma (naive)
+        const parts = line.split(',');
+        if (parts.length < 3) continue;
+
+        const name = parts[0].trim().replace(/^"|"$/g, '');
+        const sku = parts[1].trim().replace(/^"|"$/g, '');
+        const priceStr = parts[2].trim().replace(/^"|"$/g, '');
+
+        // Skip Header row
+        if (i === 0 && (name.toLowerCase() === 'name' || sku.toLowerCase() === 'sku')) continue;
+
+        const price = parseFloat(priceStr) || 0;
+        const description = parts[3] ? parts[3].trim().replace(/^"|"$/g, '') : '';
+        const uom = parts[4] ? parts[4].trim().replace(/^"|"$/g, '') : 'UNIT';
+
+        try {
+            await prisma.hms_product.create({
+                data: {
+                    tenant_id: session.user.tenantId,
+                    company_id: session.user.companyId,
+                    name,
+                    sku,
+                    price,
+                    description,
+                    uom,
+                    is_active: true,
+                    is_stockable: true,
+                    is_service: false,
+                    created_by: session.user.id
+                }
+            });
+            count++;
+        } catch (e) {
+            const msg = (e as Error).message;
+            errors.push({ row: i + 1, error: msg });
+        }
+    }
+
+    revalidatePath('/hms/inventory/products');
+    return { success: true, count, errors };
+}
