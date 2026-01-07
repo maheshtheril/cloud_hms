@@ -159,7 +159,13 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                             lineItem.unit_price = dbProduct.price;
                         }
                         lineItem.description = dbProduct.description || dbProduct.label;
-                        if (dbProduct.categoryTaxId) {
+
+                        // Tax Logic
+                        if (dbProduct.metadata?.tax_exempt) {
+                            // Look for a 0% tax rate
+                            const zeroTax = taxConfig.taxRates.find(t => t.rate === 0);
+                            lineItem.tax_rate_id = zeroTax ? zeroTax.id : ''; // Use 0% rate or no rate
+                        } else if (dbProduct.categoryTaxId) {
                             lineItem.tax_rate_id = dbProduct.categoryTaxId;
                         } else if (dbProduct.metadata?.purchase_tax_rate) {
                             const matchingTax = taxConfig.taxRates.find(t => t.rate === Number(dbProduct.metadata.purchase_tax_rate));
