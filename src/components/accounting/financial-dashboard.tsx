@@ -19,13 +19,18 @@ import {
     getBalanceSheetStatement,
     getFinancialTrends
 } from "@/app/actions/accounting/reports"
-import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid,
-    Tooltip, ResponsiveContainer, BarChart, Bar,
-    Cell, Legend
-} from 'recharts'
+import dynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useRouter } from 'next/navigation'
+
+// Dynamically import Recharts to avoid hydration errors (SSR: False)
+const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false })
+const AreaChart = dynamic(() => import('recharts').then(mod => mod.AreaChart), { ssr: false })
+const Area = dynamic(() => import('recharts').then(mod => mod.Area), { ssr: false })
+const XAxis = dynamic(() => import('recharts').then(mod => mod.XAxis), { ssr: false })
+const YAxis = dynamic(() => import('recharts').then(mod => mod.YAxis), { ssr: false })
+const CartesianGrid = dynamic(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false })
+const Tooltip = dynamic(() => import('recharts').then(mod => mod.Tooltip), { ssr: false })
 
 export function FinancialDashboard() {
     const router = useRouter()
@@ -437,7 +442,7 @@ export function FinancialDashboard() {
                                 <CardContent className="p-0">
                                     <div className="divide-y divide-slate-100 dark:divide-slate-800">
                                         {Object.entries(dailyData?.revenueByAccount || {}).length > 0 ? (
-                                            Object.entries(dailyData.revenueByAccount).map(([acc, amt]: [any, any]) => (
+                                            Object.entries(dailyData?.revenueByAccount || {}).map(([acc, amt]: [any, any]) => (
                                                 <div key={acc} className="group flex items-center justify-between p-6 px-8 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
@@ -445,7 +450,7 @@ export function FinancialDashboard() {
                                                     </div>
                                                     <div className="text-right">
                                                         <div className="font-black text-slate-900 dark:text-white text-lg">{formatCurrency(amt)}</div>
-                                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter tracking-widest">{((amt / (dailyData?.totalSales || 1)) * 100).toFixed(1)}% share</div>
+                                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{((amt / (dailyData?.totalSales || 1)) * 100).toFixed(1)}% share</div>
                                                     </div>
                                                 </div>
                                             ))
@@ -474,7 +479,7 @@ export function FinancialDashboard() {
                                 <CardContent className="p-0">
                                     <div className="divide-y divide-slate-100 dark:divide-slate-800">
                                         {Object.entries(dailyData?.expenseByAccount || {}).length > 0 ? (
-                                            Object.entries(dailyData.expenseByAccount).map(([acc, amt]: [any, any]) => (
+                                            Object.entries(dailyData?.expenseByAccount || {}).map(([acc, amt]: [any, any]) => (
                                                 <div key={acc} className="group flex items-center justify-between p-6 px-8 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all">
                                                     <div className="flex items-center gap-4">
                                                         <div className="w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]" />
@@ -532,7 +537,7 @@ export function FinancialDashboard() {
                                         <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(plData?.totalRevenue || 0)}</span>
                                     </div>
                                     <div className="space-y-4">
-                                        {plData?.revenue.map((item: any) => (
+                                        {plData?.revenue?.map((item: any) => (
                                             <div key={item.name} className="flex justify-between items-end pb-3 border-b border-slate-50 dark:border-slate-800/50 group">
                                                 <span className="text-slate-600 dark:text-slate-400 font-medium group-hover:text-indigo-500 transition-colors uppercase tracking-widest text-[11px]">{item.name}</span>
                                                 <div className="flex-1 border-b border-dotted border-slate-200 dark:border-slate-800 mx-4 mb-1" />
@@ -549,7 +554,7 @@ export function FinancialDashboard() {
                                         <span className="font-bold text-rose-500">({formatCurrency(plData?.totalCOGS || 0)})</span>
                                     </div>
                                     <div className="space-y-4">
-                                        {plData?.cogs.map((item: any) => (
+                                        {plData?.cogs?.map((item: any) => (
                                             <div key={item.name} className="flex justify-between items-end pb-3 border-b border-slate-50 dark:border-slate-800/50 group">
                                                 <span className="text-slate-600 dark:text-slate-400 font-medium group-hover:text-rose-500 transition-colors uppercase tracking-widest text-[11px]">{item.name}</span>
                                                 <div className="flex-1 border-b border-dotted border-slate-200 dark:border-slate-800 mx-4 mb-1" />
@@ -572,7 +577,7 @@ export function FinancialDashboard() {
                                         <span className="font-bold text-rose-500">({formatCurrency(plData?.totalExpenses || 0)})</span>
                                     </div>
                                     <div className="space-y-4">
-                                        {plData?.expenses.map((item: any) => (
+                                        {plData?.expenses?.map((item: any) => (
                                             <div key={item.name} className="flex justify-between items-end pb-3 border-b border-slate-50 dark:border-slate-800/50">
                                                 <span className="text-slate-600 dark:text-slate-400 font-medium uppercase tracking-widest text-[11px]">{item.name}</span>
                                                 <div className="flex-1 border-b border-dotted border-slate-200 dark:border-slate-800 mx-4 mb-1" />
@@ -619,7 +624,7 @@ export function FinancialDashboard() {
                                 </CardHeader>
                                 <CardContent className="p-10 -mt-10 relative z-20">
                                     <div className="bg-white dark:bg-slate-800 rounded-[2rem] shadow-2xl p-8 space-y-6">
-                                        {bsData?.assets.map((item: any) => (
+                                        {bsData?.assets?.map((item: any) => (
                                             <div key={item.name} className="flex justify-between items-center py-4 border-b border-slate-50 dark:border-slate-800/50 last:border-0">
                                                 <div>
                                                     <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{item.type || 'ASSET'}</p>
@@ -656,7 +661,7 @@ export function FinancialDashboard() {
                                                 <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Accounts Payable & Liabilities</h4>
                                             </div>
                                             <div className="space-y-4">
-                                                {bsData?.liabilities.map((item: any) => (
+                                                {bsData?.liabilities?.map((item: any) => (
                                                     <div key={item.name} className="flex justify-between py-2 border-b border-slate-50 dark:border-slate-800/20 last:border-0">
                                                         <span className="font-medium text-slate-600 dark:text-slate-400">{item.name}</span>
                                                         <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(item.amount)}</span>
@@ -673,7 +678,7 @@ export function FinancialDashboard() {
                                                 <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Proprietor's Equity / Reserves</h4>
                                             </div>
                                             <div className="space-y-4">
-                                                {bsData?.equity.map((item: any) => (
+                                                {bsData?.equity?.map((item: any) => (
                                                     <div key={item.name} className="flex justify-between py-2 border-b border-slate-50 dark:border-slate-800/20 last:border-0">
                                                         <span className="font-medium text-slate-600 dark:text-slate-400">{item.name}</span>
                                                         <span className="font-bold text-slate-900 dark:text-white">{formatCurrency(item.amount)}</span>

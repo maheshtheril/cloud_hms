@@ -283,7 +283,7 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
     items.push({
         module: { name: 'Accounting & Finance', module_key: 'accounting' },
         items: [
-            { key: 'acc-dashboard', label: 'Financial Overview', icon: 'LayoutDashboard', url: '/accounting/dashboard' },
+            { key: 'acc-dashboard', label: 'Financial Overview', icon: 'LayoutDashboard', url: '/hms/accounting' },
             {
                 key: 'acc-receivables',
                 label: 'Income & Sales',

@@ -44,6 +44,29 @@ export async function ensureAccountingMenu() {
             console.log("Auto-seeded Accounting Menu (HMS Module)");
         }
 
+        // 2.5 Ensure 'Dashboard' exists in Accounting Module
+        const dashKey = 'acc-dashboard';
+        const existingDash = await prisma.menu_items.findFirst({ where: { key: dashKey } });
+        if (!existingDash) {
+            await prisma.menu_items.create({
+                data: {
+                    label: 'Financial Dashboard',
+                    url: '/hms/accounting',
+                    key: dashKey,
+                    module_key: 'accounting',
+                    icon: 'LayoutDashboard',
+                    sort_order: 1, // First item
+                    is_global: true
+                }
+            });
+            console.log("Seeded Accounting Dashboard menu item.");
+        } else if (existingDash.url !== '/hms/accounting') {
+            await prisma.menu_items.update({
+                where: { id: existingDash.id },
+                data: { url: '/hms/accounting', module_key: 'accounting' }
+            });
+        }
+
         // 3. SEED JOURNALS MENU (Enterprise Feature)
         await ensureJournalMenu();
 
