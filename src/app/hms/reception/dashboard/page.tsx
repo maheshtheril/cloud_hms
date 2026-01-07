@@ -111,10 +111,7 @@ export default async function ReceptionDashboardPage() {
                     lte: todayEnd
                 }
             },
-            orderBy: { created_at: 'desc' },
-            include: {
-                payment_lines: true
-            }
+            orderBy: { created_at: 'desc' }
         })
     ]);
 
