@@ -9,6 +9,7 @@ import {
     Wallet
 } from "lucide-react"
 import { ExpenseDialog } from "./expense-dialog"
+import { PettyCashVoucher } from "./petty-cash-voucher"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
