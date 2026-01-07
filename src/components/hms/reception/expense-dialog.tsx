@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { CalendarIcon, Loader2, DollarSign } from "lucide-react"
+import { CalendarIcon, Loader2, IndianRupee } from "lucide-react"
 import { format } from "date-fns"
 
 import { Button } from "@/components/ui/button"
@@ -111,7 +111,7 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                                     <FormLabel>Amount</FormLabel>
                                     <FormControl>
                                         <div className="relative">
-                                            <DollarSign className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <IndianRupee className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                             <Input type="number" {...field} value={field.value as number} className="pl-8 text-lg font-bold" />
                                         </div>
                                     </FormControl>
