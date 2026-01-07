@@ -41,6 +41,7 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
     const [selectedDoctor, setSelectedDoctor] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
     const [statusLoading, setStatusLoading] = useState<string | null>(null)
+    const [viewingPayment, setViewingPayment] = useState<any>(null)
 
     const handleAction = (actionId: string) => {
         if (actionId === 'register') {
