@@ -828,17 +828,30 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                         </div>
                                         <button
                                             onClick={() => {
-                                                const amountToUse = Math.min(Math.max(0, balanceDue), patientBalance.amount);
-                                                if (amountToUse <= 0) return;
+                                                // 1. Determine how much we CAN pay with credit
+                                                // Use grandTotal because balanceDue might be 0 if there's a default 'cash' entry
+                                                const amountToUse = Math.min(grandTotal, patientBalance.amount);
 
-                                                // Check if advance row exists
-                                                const hasAdvance = payments.some(p => p.method === 'advance');
-                                                if (!hasAdvance) {
-                                                    setPayments([...payments, { method: 'advance', amount: amountToUse, reference: 'Advance Adjustment' }]);
-                                                } else {
-                                                    // Update existing
-                                                    setPayments(payments.map(p => p.method === 'advance' ? { ...p, amount: amountToUse } : p));
+                                                if (amountToUse <= 0) {
+                                                    toast({ title: "Nothing to apply", description: "Invoice total is 0 or uncalculated." });
+                                                    return;
                                                 }
+
+                                                // 2. "Magic": Replace existing payments with this Advance entry
+                                                // This ensures the user sees something change immediately.
+                                                // If there's a remainder, the user will see a "Balance Due" and can add another payment (Cash/Card).
+                                                setPayments([
+                                                    {
+                                                        method: 'advance',
+                                                        amount: amountToUse,
+                                                        reference: 'Advance Adjustment'
+                                                    }
+                                                ]);
+
+                                                toast({
+                                                    title: "Credit Applied",
+                                                    description: `Applied ₹${amountToUse.toFixed(2)} from patient advance.`
+                                                });
                                             }}
                                             className="text-[10px] bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-800 dark:text-blue-200 px-2 py-1 rounded font-bold transition-colors"
                                         >
