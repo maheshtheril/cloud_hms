@@ -325,3 +325,74 @@ export async function ensureHmsMenus() {
         console.error("Failed to seed HMS menus:", e);
     }
 }
+
+export async function ensurePurchasingMenus() {
+    try {
+        // 1. Ensure 'Procurement' Parent Exists
+        let procParent = await prisma.menu_items.findFirst({ where: { key: 'inv-procurement' } });
+
+        if (!procParent) {
+            const inventoryModule = await prisma.menu_items.findFirst({ where: { key: 'hms-inventory' } });
+            // Fallback to separate group if no inventory parent found easily, or create top level
+            procParent = await prisma.menu_items.create({
+                data: { label: 'Procurement', url: '#', key: 'inv-procurement', module_key: 'inventory', icon: 'ShoppingCart', sort_order: 15, is_global: true }
+            });
+        }
+
+        const items = [
+            { key: 'inv-suppliers', label: 'Suppliers', url: '/hms/purchasing/suppliers', icon: 'Truck', sort: 10 },
+            { key: 'inv-po', label: 'Purchase Orders', url: '/hms/purchasing/orders', icon: 'FileText', sort: 20 },
+            { key: 'inv-receipts', label: 'Goods Receipts', url: '/hms/purchasing/receipts', icon: 'ClipboardList', sort: 30 },
+            { key: 'inv-returns', label: 'Purchase Returns', url: '/hms/purchasing/returns', icon: 'Undo2', sort: 40 },
+        ];
+
+        for (const item of items) {
+            const existing = await prisma.menu_items.findFirst({ where: { key: item.key } });
+            if (!existing) {
+                await prisma.menu_items.create({
+                    data: {
+                        label: item.label,
+                        url: item.url,
+                        key: item.key,
+                        module_key: 'inventory',
+                        icon: item.icon,
+                        parent_id: procParent.id,
+                        sort_order: item.sort,
+                        is_global: true
+                    }
+                });
+                console.log(`Auto-seeded Purchasing Menu: ${item.label}`);
+            }
+        }
+
+        // Also ensure Sales Returns in Billing
+        // Try to find the 'Billing' group or similar
+        const billingMenu = await prisma.menu_items.findFirst({ where: { key: 'hms-billing' } });
+        // hms-billing is usually a top level item or child. In fallback it was child of Income.
+        // In HMS seeder, it's a top level item sort 60.
+
+        // If billing is top level, we might want to make it a parent or add a sibling.
+        // Let's add 'Credit Notes' as a top level item after Billing if Billing is top level.
+        if (billingMenu) {
+            const existingSR = await prisma.menu_items.findFirst({ where: { key: 'hms-sales-returns' } });
+            if (!existingSR) {
+                await prisma.menu_items.create({
+                    data: {
+                        label: 'Credit Notes',
+                        url: '/hms/billing/returns',
+                        key: 'hms-sales-returns',
+                        module_key: 'hms',
+                        icon: 'RotateCcw',
+                        parent_id: billingMenu.parent_id, // Same level
+                        sort_order: (billingMenu.sort_order || 60) + 1,
+                        is_global: true
+                    }
+                });
+                console.log("Auto-seeded Sales Returns Menu");
+            }
+        }
+
+    } catch (e) {
+        console.error("Failed to seed Purchasing menus:", e);
+    }
+}

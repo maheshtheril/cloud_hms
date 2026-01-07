@@ -22,9 +22,10 @@ export async function getMenuItems() {
         if (isAdmin) {
             await ensureAdminMenus();
             // Ensure Journal menus are seeded for admins/finance
-            const { ensureAccountingMenu, ensureCrmMenus } = await import('@/lib/menu-seeder');
+            const { ensureAccountingMenu, ensureCrmMenus, ensurePurchasingMenus } = await import('@/lib/menu-seeder');
             await ensureAccountingMenu();
             await ensureCrmMenus();
+            await ensurePurchasingMenus();
         }
 
         // Fetch Tenant Details for Industry Check
@@ -291,6 +292,7 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
                 url: '#',
                 other_menu_items: [
                     { key: 'hms-billing', label: 'Patient Invoices', icon: 'Receipt', url: '/hms/billing' },
+                    { key: 'hms-sales-returns', label: 'Credit Notes', icon: 'RotateCcw', url: '/hms/billing/returns' },
                     { key: 'acc-payments', label: 'Payments Received', icon: 'CreditCard', url: '/hms/accounting/receipts' },
                 ]
             },
@@ -331,6 +333,7 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
                     { key: 'inv-suppliers', label: 'Suppliers', icon: 'Truck', url: '/hms/purchasing/suppliers' },
                     { key: 'inv-po', label: 'Purchase Orders', icon: 'FileText', url: '/hms/purchasing/orders' },
                     { key: 'inv-receipts', label: 'Goods Receipts', icon: 'ClipboardList', url: '/hms/purchasing/receipts' },
+                    { key: 'inv-returns', label: 'Purchase Returns', icon: 'Undo2', url: '/hms/purchasing/returns' },
                 ]
             }
         ]
