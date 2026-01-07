@@ -159,18 +159,25 @@ export async function getTaxRates() {
 
         // Seed if absolutely no tax rates found (System Init)
         if (allTaxRates.length === 0 && session.user.tenantId) {
+            // 1. Ensure Tax Type exists
+            let taxType = await prisma.tax_types.findFirst({ where: { name: 'Sales Tax' } });
+            if (!taxType) {
+                taxType = await prisma.tax_types.create({
+                    data: { name: 'Sales Tax', description: 'Standard Sales Tax' }
+                });
+            }
+
             const defaultRates = [
-                { name: 'Tax Exempt', rate: 0, code: 'EXEMPT' },
-                { name: 'Standard Tax', rate: 10, code: 'STD' }
+                { name: 'Tax Exempt', rate: 0 },
+                { name: 'Standard Tax', rate: 10 }
             ];
 
             for (const dr of defaultRates) {
                 await prisma.tax_rates.create({
                     data: {
-                        tenant_id: session.user.tenantId,
+                        tax_type_id: taxType.id,
                         name: dr.name,
                         rate: dr.rate,
-                        code: dr.code,
                         is_active: true
                     }
                 });
