@@ -1609,21 +1609,61 @@ export async function importProductsCSV(formData: FormData) {
 
             // 5. Handle Opening Stock
             if (openingStock > 0) {
-                await prisma.hms_stock_ledger.create({
+                // Handle Batch
+                let batchId: string | null = null;
+                if (idxBatch !== -1 && row[idxBatch]) {
+                    const batchNo = row[idxBatch];
+                    const expiry = idxExpiry !== -1 && row[idxExpiry] ? new Date(row[idxExpiry]) : null;
+
+                    // Upsert Batch
+                    const batch = await prisma.hms_product_batch.upsert({
+                        where: {
+                            tenant_id_company_id_product_id_batch_no: {
+                                tenant_id: tenantId,
+                                company_id: companyId,
+                                product_id: productId,
+                                batch_no: batchNo
+                            }
+                        },
+                        create: {
+                            tenant_id: tenantId,
+                            company_id: companyId,
+                            product_id: productId,
+                            batch_no: batchNo,
+                            expiry_date: expiry,
+                            qty_on_hand: openingStock
+                        },
+                        update: {
+                            qty_on_hand: { increment: openingStock }
+                        }
+                    });
+                    batchId = batch.id;
+                }
+
+                // Get Last Balance
+                let currentBalance = 0;
+                const lastLedger = await prisma.hms_product_stock_ledger.findFirst({
+                    where: { product_id: productId },
+                    orderBy: { created_at: 'desc' }
+                });
+                if (lastLedger) currentBalance = Number(lastLedger.balance_qty);
+
+                const newBalance = currentBalance + openingStock;
+
+                // Create Ledger Entry
+                await prisma.hms_product_stock_ledger.create({
                     data: {
                         tenant_id: tenantId,
                         company_id: companyId,
                         product_id: productId,
-                        movement_type: 'OPENING',
-                        qty: openingStock,
-                        batch_number: idxBatch !== -1 ? row[idxBatch] : null,
-                        expiry_date: idxExpiry !== -1 && row[idxExpiry] ? new Date(row[idxExpiry]) : null,
-                        reference_id: `IMPORT-${Date.now()}-${i}`
+                        movement_type: 'OPENING', // ensure enum or string matches
+                        change_qty: openingStock,
+                        balance_qty: newBalance,
+                        batch_id: batchId,
+                        reference: `IMPORT-${Date.now()}-${i}`,
+                        cost: purchaseCost > 0 ? purchaseCost : undefined
                     }
                 });
-                // Update level
-                // Attempt unsafe upsert or skip
-                /* await prisma.hms_stock_levels.upsert({...}) */
             }
 
             count++;
