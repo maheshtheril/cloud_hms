@@ -8,14 +8,15 @@ import { createInvoice, updateInvoice } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { useToast } from '@/components/ui/use-toast'
 
-export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice }: {
+export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice, onClose }: {
     patients: any[],
     billableItems: any[],
     taxConfig: { defaultTax: any, taxRates: any[] },
     initialPatientId?: string,
     initialMedicines?: any[],
     appointmentId?: string,
-    initialInvoice?: any
+    initialInvoice?: any,
+    onClose?: () => void
 }) {
 
     interface Payment {
@@ -525,8 +526,12 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
         }
 
         if (res.success) {
-            router.push('/hms/billing')
             router.refresh()
+            if (onClose) {
+                onClose()
+            } else {
+                router.push('/hms/billing')
+            }
         } else {
             alert(res.error || 'Failed to save')
         }
@@ -537,7 +542,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 animate-in fade-in duration-200"
-            onClick={() => router.back()}
+            onClick={() => onClose ? onClose() : router.back()}
         >
             <div
                 className="relative w-full max-w-5xl h-[95vh] sm:h-[90vh] flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 ring-1 ring-slate-900/10"
@@ -613,7 +618,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
 
                         {/* Close Button */}
                         <button
-                            onClick={() => router.back()}
+                            onClick={() => onClose ? onClose() : router.back()}
                             className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 hover:text-red-500 transition-all duration-200 hover:rotate-90"
                         >
                             <X className="h-5 w-5" />

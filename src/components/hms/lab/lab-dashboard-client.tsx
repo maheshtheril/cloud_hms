@@ -10,6 +10,7 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { updateLabOrderStatus, uploadAndAttachLabReport, deleteLabReport } from "@/app/actions/lab"
+import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 
 interface LabDashboardProps {
     labStaffName: string
@@ -19,9 +20,12 @@ interface LabDashboardProps {
         pending: number
         completed: number
     }
+    patients: any[]
+    billableItems: any[]
+    taxConfig: any
 }
 
-export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboardProps) {
+export function LabDashboardClient({ labStaffName, orders, stats, patients, billableItems, taxConfig }: LabDashboardProps) {
     const router = useRouter()
     const [selectedTab, setSelectedTab] = useState<'pending' | 'completed'>('pending')
     const [searchQuery, setSearchQuery] = useState('')
@@ -46,6 +50,7 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
     }
 
     const [selectedOrder, setSelectedOrder] = useState<any>(null)
+    const [billingOrder, setBillingOrder] = useState<any>(null)
     const [isUpdating, setIsUpdating] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
 
@@ -441,7 +446,10 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                                     Print Label
                                 </button>
                                 <button
-                                    onClick={() => router.push(`/hms/billing/new?labOrderId=${selectedOrder.id}`)}
+                                    onClick={() => {
+                                        setBillingOrder(selectedOrder);
+                                        setSelectedOrder(null);
+                                    }}
                                     className="flex-1 py-3 bg-violet-100 text-violet-700 font-bold rounded-xl hover:bg-violet-200 transition-colors flex items-center justify-center gap-2"
                                 >
                                     <FileText className="h-4 w-4" />
@@ -564,6 +572,26 @@ export function LabDashboardClient({ labStaffName, orders, stats }: LabDashboard
                 )
                 }
             </AnimatePresence >
+
+            {/* Billing Modal */}
+            {billingOrder && (
+                <div className="relative z-[100]">
+                    <CompactInvoiceEditor
+                        patients={patients}
+                        billableItems={billableItems}
+                        taxConfig={taxConfig}
+                        initialPatientId={patients.find(p => p.patient_number === billingOrder.patient_id)?.id}
+                        initialMedicines={billingOrder.tests.map((t: any) => ({
+                            id: '',
+                            name: `Lab: ${t.test_name}`,
+                            price: Number(t.price) || 0,
+                            quantity: 1,
+                            type: 'service'
+                        }))}
+                        onClose={() => setBillingOrder(null)}
+                    />
+                </div>
+            )}
         </div >
     )
 }

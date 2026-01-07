@@ -17,7 +17,7 @@ export default async function NewInvoicePage({
     }>
 }) {
     const session = await auth();
-    if (!session?.user?.companyId || !session?.user?.tenantId) return <div>Unauthorized</div>;
+    if (!session?.user?.tenantId) return <div>Unauthorized</div>;
 
     const { patientId, medicines, items, appointmentId, labOrderId } = await searchParams;
     const tenantId = session.user.tenantId;

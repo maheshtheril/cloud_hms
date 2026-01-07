@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { LabDashboardClient } from "@/components/hms/lab/lab-dashboard-client"
 import { ensureHmsMenus } from "@/lib/menu-seeder"
 import { FlaskConical } from "lucide-react"
+import { getBillableItems, getTaxConfiguration } from "@/app/actions/billing"
 
 export const dynamic = 'force-dynamic'
 
@@ -27,34 +28,51 @@ export default async function LabDashboardPage() {
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
 
-    const orders = await prisma.hms_lab_order.findMany({
-        where: {
-            tenant_id: tenantId,
-            OR: [
-                { status: { in: ['requested', 'pending', 'in_progress', 'collected'] } },
-                {
-                    status: 'completed',
-                    created_at: { gte: todayStart }
-                }
-            ]
-        },
-        include: {
-            hms_patient: true,
-            hms_appointment: {
-                include: {
-                    hms_clinician: true
+    const [orders, patientsRes, itemsRes, taxRes] = await Promise.all([
+        prisma.hms_lab_order.findMany({
+            where: {
+                tenant_id: tenantId,
+                OR: [
+                    { status: { in: ['requested', 'pending', 'in_progress', 'collected'] } },
+                    {
+                        status: 'completed',
+                        created_at: { gte: todayStart }
+                    }
+                ]
+            },
+            include: {
+                hms_patient: true,
+                hms_appointment: {
+                    include: {
+                        hms_clinician: true
+                    }
+                },
+                hms_lab_order_line: {
+                    include: {
+                        hms_lab_test: true
+                    }
                 }
             },
-            hms_lab_order_line: {
-                include: {
-                    hms_lab_test: true
-                }
+            orderBy: {
+                created_at: 'desc'
             }
-        },
-        orderBy: {
-            created_at: 'desc'
-        }
-    })
+        }),
+        prisma.hms_patient.findMany({
+            where: { tenant_id: tenantId },
+            select: {
+                id: true, first_name: true, last_name: true, contact: true,
+                patient_number: true, dob: true, gender: true, metadata: true
+            },
+            orderBy: { updated_at: 'desc' },
+            take: 50
+        }),
+        getBillableItems(),
+        getTaxConfiguration()
+    ])
+
+    const patients = patientsRes;
+    const billableItems = itemsRes.success ? itemsRes.data : [];
+    const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
 
     // Transform Data
     const formattedOrders = orders.map(order => {
@@ -105,6 +123,9 @@ export default async function LabDashboardPage() {
             labStaffName={session.user.name || 'Lab Staff'}
             orders={formattedOrders}
             stats={stats}
+            patients={patients}
+            billableItems={billableItems as any[]}
+            taxConfig={taxConfig}
         />
     )
 }
