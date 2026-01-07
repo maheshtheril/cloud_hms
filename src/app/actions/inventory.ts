@@ -738,7 +738,7 @@ export async function getProductsPremium(query?: string, page: number = 1) {
             ];
         }
 
-        const [products, total] = await prisma.$transaction([
+        const [products, total, companySettings] = await prisma.$transaction([
             prisma.hms_product.findMany({
                 where,
                 skip,
@@ -753,7 +753,11 @@ export async function getProductsPremium(query?: string, page: number = 1) {
                     }
                 }
             }),
-            prisma.hms_product.count({ where })
+            prisma.hms_product.count({ where }),
+            prisma.company_settings.findUnique({
+                where: { company_id: session.user.companyId },
+                select: { currencies: { select: { symbol: true } } }
+            })
         ]);
 
         const processed = products.map(p => {
@@ -777,13 +781,17 @@ export async function getProductsPremium(query?: string, page: number = 1) {
             };
         });
 
+        // Default to ₹ if not set, as user context implies India
+        const currencySymbol = companySettings?.currencies?.symbol || '$';
+
         return {
             success: true,
             data: processed,
             meta: {
                 total,
                 page,
-                totalPages: Math.ceil(total / pageSize)
+                totalPages: Math.ceil(total / pageSize),
+                currencySymbol
             }
         };
 
