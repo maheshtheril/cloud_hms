@@ -1,4 +1,4 @@
-import { getProductsPremium } from "@/app/actions/inventory"
+import { getProductsPremium, getSuppliers, getTaxRates, getUOMs, getCategories, getManufacturers, getUOMCategories } from "@/app/actions/inventory"
 import Link from "next/link"
 import {
     Plus,
@@ -8,6 +8,7 @@ import {
     Package,
     AlertCircle
 } from "lucide-react"
+import { CreateProductModal } from "@/components/inventory/create-product-modal"
 
 export default async function ProductListPage({
     searchParams
@@ -16,7 +17,24 @@ export default async function ProductListPage({
 }) {
     const { query, page } = await searchParams;
     const currentPage = Number(page) || 1;
-    const { success, data: products, meta } = await getProductsPremium(query, currentPage);
+
+    const [
+        { success, data: products, meta },
+        suppliers,
+        taxRates,
+        uoms,
+        categories,
+        manufacturers,
+        uomCategories
+    ] = await Promise.all([
+        getProductsPremium(query, currentPage),
+        getSuppliers(),
+        getTaxRates(),
+        getUOMs(),
+        getCategories(),
+        getManufacturers(),
+        getUOMCategories()
+    ]);
 
     return (
         <div className="space-y-6 pb-12">
@@ -27,13 +45,14 @@ export default async function ProductListPage({
                     <p className="text-sm text-gray-500">Manage your catalog, stock levels, and pricing.</p>
                 </div>
                 <div className="flex gap-3">
-                    <Link
-                        href="/hms/inventory/products/new"
-                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-md shadow-blue-900/10 transition-colors flex items-center gap-2"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Create Product
-                    </Link>
+                    <CreateProductModal
+                        suppliers={suppliers}
+                        taxRates={taxRates}
+                        uoms={uoms}
+                        categories={categories}
+                        manufacturers={manufacturers}
+                        uomCategories={uomCategories}
+                    />
                 </div>
             </div>
 
