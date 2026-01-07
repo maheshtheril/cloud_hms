@@ -390,12 +390,15 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                                     <span className="text-[10px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-slate-500">View</span>
                                 </div>
                             </div>
-                            <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                            <div
+                                onClick={() => setActiveModal('expense-report')}
+                                className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 cursor-pointer hover:shadow-md transition-all active:scale-95 group"
+                            >
                                 <div className="text-slate-500 text-xs font-medium mb-1">Expenses</div>
                                 <div className="text-xl font-black text-rose-600 dark:text-rose-400">
                                     ₹{totalExpenses.toLocaleString('en-IN')}
                                 </div>
-                                <div className="text-xs text-slate-400 mt-1 font-medium">
+                                <div className="text-xs text-slate-400 mt-1 font-medium group-hover:text-rose-600 transition-colors">
                                     {todayExpenses.length} payouts today
                                 </div>
                             </div>
