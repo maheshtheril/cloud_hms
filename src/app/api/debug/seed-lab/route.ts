@@ -6,8 +6,8 @@ export async function GET() {
     console.log('Seeding Lab Test Products via API...')
 
     try {
-        const companies = await prisma.company_profiles.findMany({
-            where: { is_active: true }
+        const companies = await prisma.company.findMany({
+            where: { enabled: true }
         });
 
         const labTests = [
