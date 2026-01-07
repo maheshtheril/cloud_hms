@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { ReceptionActionCenter } from "@/components/hms/reception/reception-action-center"
 import { redirect } from "next/navigation"
+import { ShiftManager } from "@/components/hms/reception/shift-manager"
 
 export default async function ReceptionDashboardPage() {
     const session = await auth()
@@ -137,7 +138,8 @@ export default async function ReceptionDashboardPage() {
     const totalExpenses = todayExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 max-w-7xl mx-auto space-y-6">
+            <ShiftManager />
             <ReceptionActionCenter
                 todayAppointments={formattedAppointments}
                 patients={patients}

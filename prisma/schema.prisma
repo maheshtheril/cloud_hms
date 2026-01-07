@@ -4378,3 +4378,28 @@ model hms_broadcast_ack {
   @@index([broadcast_id])
   @@index([user_id])
 }
+
+model hms_cash_shift {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id       String    @db.Uuid
+  company_id      String    @db.Uuid
+  user_id         String    @db.Uuid
+  start_time      DateTime  @default(now()) @db.Timestamptz(6)
+  end_time        DateTime? @db.Timestamptz(6)
+  
+  opening_balance Decimal   @default(0) @db.Decimal(18, 2)
+  closing_balance Decimal?  @db.Decimal(18, 2)
+  system_balance  Decimal?  @db.Decimal(18, 2)
+  
+  difference      Decimal?  @db.Decimal(18, 2)
+  status          String    @default("open")
+  
+  notes           String?
+  denominations   Json?     @default("{}")
+  
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([user_id, status])
+  @@index([tenant_id])
+}
