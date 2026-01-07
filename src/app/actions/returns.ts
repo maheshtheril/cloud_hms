@@ -1,0 +1,331 @@
+'use server'
+
+import { auth } from '@/auth'
+import { prisma } from '@/lib/prisma'
+import { revalidatePath } from 'next/cache'
+import { AccountingService } from '@/lib/services/accounting'
+
+export type PurchaseReturnData = {
+    receiptId: string
+    supplierId: string
+    reason?: string
+    items: {
+        receiptLineId: string
+        productId: string
+        qtyToReturn: number
+        unitPrice: number
+        batchId?: string
+        batchNo?: string
+    }[]
+}
+
+export async function createPurchaseReturn(data: PurchaseReturnData) {
+    const session = await auth()
+    if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" }
+    const companyId = session.user.companyId;
+
+    if (!data.items || data.items.length === 0) return { error: "Return must have items" }
+
+    try {
+        const result = await prisma.$transaction(async (tx: any) => {
+            // 1. Generate Return Number
+            const count = await tx.hms_purchase_return.count({ where: { company_id: companyId } })
+            const returnNumber = `PRT-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`
+
+            // 2. Calculate Totals
+            let totalAmount = 0;
+            for (const item of data.items) {
+                totalAmount += (item.qtyToReturn * item.unitPrice);
+            }
+
+            // 3. Create Return Header
+            const pReturn = await tx.hms_purchase_return.create({
+                data: {
+                    tenant_id: session.user.tenantId!,
+                    company_id: companyId,
+                    receipt_id: data.receiptId,
+                    supplier_id: data.supplierId,
+                    return_number: returnNumber,
+                    reason: data.reason,
+                    total_amount: totalAmount,
+                    status: 'draft',
+                    created_by: session.user.id
+                }
+            })
+
+            // 4. Create Lines & Update Stock
+            for (const item of data.items) {
+                await tx.hms_purchase_return_line.create({
+                    data: {
+                        tenant_id: session.user.tenantId!,
+                        company_id: companyId,
+                        return_id: pReturn.id,
+                        receipt_line_id: item.receiptLineId,
+                        product_id: item.productId,
+                        qty: item.qtyToReturn,
+                        unit_price: item.unitPrice,
+                        line_total: item.qtyToReturn * item.unitPrice,
+                        batch_id: item.batchId,
+                        batch_no: item.batchNo
+                    }
+                })
+
+                // STOCK LEDGER (Outward)
+                await tx.hms_product_stock_ledger.create({
+                    data: {
+                        tenant_id: session.user.tenantId!,
+                        company_id: companyId,
+                        product_id: item.productId,
+                        movement_type: 'return',
+                        change_qty: -item.qtyToReturn, // Negative for return
+                        balance_qty: 0, // Simplified
+                        reference: returnNumber,
+                        cost: item.unitPrice,
+                        batch_id: item.batchId,
+                        metadata: {
+                            related_type: 'purchase_return',
+                            related_id: pReturn.id
+                        }
+                    }
+                })
+
+                // UPDATE STOCK LEVELS
+                const receiptLine = await tx.hms_purchase_receipt_line.findUnique({
+                    where: { id: item.receiptLineId }
+                });
+
+                if (receiptLine?.location_id) {
+                    const existingStock = await tx.hms_stock_levels.findFirst({
+                        where: {
+                            company_id: companyId,
+                            product_id: item.productId,
+                            location_id: receiptLine.location_id
+                        }
+                    });
+
+                    if (existingStock) {
+                        await tx.hms_stock_levels.update({
+                            where: { id: existingStock.id },
+                            data: {
+                                quantity: { decrement: item.qtyToReturn }
+                            }
+                        });
+                    }
+                }
+
+                // Update batch stock if exists
+                if (item.batchId) {
+                    await tx.hms_product_batch.update({
+                        where: { id: item.batchId },
+                        data: { qty_on_hand: { decrement: item.qtyToReturn } }
+                    })
+                }
+            }
+
+            return pReturn;
+        })
+
+        // 5. Post to Accounting
+        const accResult = await AccountingService.postPurchaseReturn(result.id, session.user.id);
+
+        if (!accResult.success) {
+            return { success: true, data: result, warning: `Return created but accounting failed: ${accResult.error}` };
+        }
+
+        revalidatePath('/hms/purchasing/receipts');
+        revalidatePath(`/hms/purchasing/receipts/${data.receiptId}`);
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("Purchase Return Error:", error);
+        return { error: error.message || "Failed to process return" }
+    }
+}
+
+export type SalesReturnData = {
+    invoiceId: string
+    patientId: string
+    reason?: string
+    items: {
+        invoiceLineId: string
+        productId: string
+        qtyToReturn: number
+        unitPrice: number
+    }[]
+}
+
+export async function createSalesReturn(data: SalesReturnData) {
+    const session = await auth()
+    if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" }
+    const companyId = session.user.companyId;
+
+    try {
+        const result = await prisma.$transaction(async (tx: any) => {
+            const count = await tx.hms_sales_return.count({ where: { company_id: companyId } })
+            const returnNumber = `SRT-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`
+
+            let totalAmt = 0;
+            data.items.forEach(i => totalAmt += (i.qtyToReturn * i.unitPrice));
+
+            const sReturn = await tx.hms_sales_return.create({
+                data: {
+                    tenant_id: session.user.tenantId!,
+                    company_id: companyId,
+                    invoice_id: data.invoiceId,
+                    patient_id: data.patientId,
+                    return_number: returnNumber,
+                    reason: data.reason,
+                    total_amount: totalAmt,
+                    status: 'draft',
+                    created_by: session.user.id
+                }
+            })
+
+            for (const item of data.items) {
+                await tx.hms_sales_return_line.create({
+                    data: {
+                        tenant_id: session.user.tenantId!,
+                        company_id: companyId,
+                        return_id: sReturn.id,
+                        invoice_line_id: item.invoiceLineId,
+                        product_id: item.productId,
+                        qty: item.qtyToReturn,
+                        unit_price: item.unitPrice,
+                        line_total: item.qtyToReturn * item.unitPrice
+                    }
+                })
+
+                // Stock Increase (Inward)
+                await tx.hms_product_stock_ledger.create({
+                    data: {
+                        tenant_id: session.user.tenantId!,
+                        company_id: companyId,
+                        product_id: item.productId,
+                        movement_type: 'sale_return',
+                        change_qty: item.qtyToReturn,
+                        balance_qty: 0,
+                        reference: returnNumber,
+                        cost: 0,
+                        metadata: { invoice_id: data.invoiceId }
+                    }
+                })
+
+                let level = await tx.hms_stock_levels.findFirst({
+                    where: { company_id: companyId, product_id: item.productId }
+                })
+                if (level) {
+                    await tx.hms_stock_levels.update({
+                        where: { id: level.id },
+                        data: { quantity: { increment: item.qtyToReturn } }
+                    })
+                }
+            }
+            return sReturn;
+        })
+
+        await AccountingService.postSalesReturn(result.id, session.user.id);
+        revalidatePath('/hms/billing/invoices');
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("Sales Return Error:", error);
+        return { error: error.message || "Failed to process sales return" }
+    }
+}
+
+export type StockAdjustmentData = {
+    reason: string
+    reasonCode: string // wastage, expiry, audit, damage
+    items: {
+        productId: string
+        locationId: string
+        batchId?: string
+        currentQty: number
+        newQty: number
+        unitCost: number
+    }[]
+}
+
+export async function createStockAdjustment(data: StockAdjustmentData) {
+    const session = await auth()
+    if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" }
+    const companyId = session.user.companyId;
+
+    try {
+        const result = await prisma.$transaction(async (tx: any) => {
+            const count = await tx.hms_stock_adjustment.count({ where: { company_id: companyId } })
+            const adjNumber = `ADJ-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`
+
+            const adj = await tx.hms_stock_adjustment.create({
+                data: {
+                    tenant_id: session.user.tenantId!,
+                    company_id: companyId,
+                    adj_number: adjNumber,
+                    adj_date: new Date(),
+                    status: 'draft',
+                    reason_code: data.reasonCode,
+                    notes: data.reason,
+                    created_by: session.user.id
+                }
+            })
+
+            for (const item of data.items) {
+                const diff = item.newQty - item.currentQty;
+                if (diff === 0) continue;
+
+                await tx.hms_stock_adjustment_line.create({
+                    data: {
+                        tenant_id: session.user.tenantId!,
+                        company_id: companyId,
+                        adj_id: adj.id,
+                        product_id: item.productId,
+                        location_id: item.locationId,
+                        batch_id: item.batchId,
+                        old_qty: item.currentQty,
+                        new_qty: item.newQty,
+                        diff_qty: diff,
+                        unit_cost: item.unitCost
+                    }
+                })
+
+                const existing = await tx.hms_stock_levels.findFirst({
+                    where: { company_id: companyId, product_id: item.productId, location_id: item.locationId }
+                })
+                if (existing) {
+                    await tx.hms_stock_levels.update({
+                        where: { id: existing.id },
+                        data: { quantity: { increment: diff } }
+                    })
+                }
+
+                if (item.batchId) {
+                    await tx.hms_product_batch.update({
+                        where: { id: item.batchId },
+                        data: { qty_on_hand: { increment: diff } }
+                    })
+                }
+
+                await tx.hms_product_stock_ledger.create({
+                    data: {
+                        tenant_id: session.user.tenantId!,
+                        company_id: companyId,
+                        product_id: item.productId,
+                        movement_type: 'adjustment',
+                        change_qty: diff,
+                        balance_qty: item.newQty,
+                        reference: adjNumber,
+                        cost: item.unitCost,
+                        batch_id: item.batchId,
+                        metadata: { reason_code: data.reasonCode }
+                    }
+                })
+            }
+            return adj;
+        })
+
+        await AccountingService.postStockAdjustment(result.id, session.user.id);
+        revalidatePath('/hms/inventory');
+        return { success: true, data: result };
+    } catch (error: any) {
+        console.error("Stock Adjustment Error:", error);
+        return { error: error.message || "Failed to process adjustment" }
+    }
+}

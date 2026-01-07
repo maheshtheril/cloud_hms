@@ -939,7 +939,8 @@ export async function getProduct(id: string) {
                     take: 1,
                     orderBy: { created_at: 'desc' }
                 },
-                hms_product_category_rel: true
+                hms_product_category_rel: true,
+                hms_stock_levels: true
             }
         });
 
@@ -961,7 +962,8 @@ export async function getProduct(id: string) {
             imageUrl: product.hms_product_image[0]?.url || '',
             default_cost: Number(product.default_cost || 0),
             categoryId: product.hms_product_category_rel[0]?.category_id || '',
-            manufacturerId: product.manufacturer_id || ''
+            manufacturerId: product.manufacturer_id || '',
+            stock_levels: product.hms_stock_levels
         };
     } catch (error) {
         console.error("Failed to fetch product:", error);

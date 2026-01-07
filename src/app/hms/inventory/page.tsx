@@ -12,6 +12,7 @@ import {
     DollarSign,
     RefreshCw
 } from "lucide-react"
+import { StockAdjustmentButton } from "./stock-adjustment-button"
 
 export default async function InventoryDashboard() {
     const statsRes = await getInventoryDashboardStats();
@@ -134,12 +135,7 @@ export default async function InventoryDashboard() {
                                 </div>
                                 <span className="text-sm font-semibold text-gray-700 group-hover:text-blue-700">Product Lookup</span>
                             </Link>
-                            <Link href="#" className="p-4 rounded-xl bg-gray-50 hover:bg-purple-50 border border-gray-100 hover:border-purple-100 transition-all group text-center flex flex-col items-center gap-3 cursor-not-allowed opacity-60">
-                                <div className="p-3 bg-white rounded-full shadow-sm text-gray-600 group-hover:text-purple-600 group-hover:scale-110 transition-all">
-                                    <RefreshCw className="h-5 w-5" />
-                                </div>
-                                <span className="text-sm font-semibold text-gray-700 group-hover:text-purple-700">Stock Adjustment</span>
-                            </Link>
+                            <StockAdjustmentButton />
                             {/* Add more quick links */}
                         </div>
                     </div>

@@ -1256,6 +1256,7 @@ model hms_invoice {
   hms_invoice_payments    hms_invoice_payments[]
   hms_payment_allocations hms_payment_allocations[]
   journal_entries         journal_entries[]
+  hms_sales_return        hms_sales_return[]
 
   @@unique([tenant_id, company_id, invoice_number], map: "ux_hms_invoice_company_number")
   @@index([tenant_id, company_id, issued_at(sort: Desc)], map: "ix_hms_invoice_tenant_company_issued_desc")
@@ -1296,9 +1297,9 @@ model hms_invoice_lines {
   hms_invoice     hms_invoice @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   tax_rates       tax_rates?  @relation(fields: [tax_rate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@index([tenant_id, company_id, invoice_id], map: "ix_hms_invoice_lines_invoice")
   @@index([tenant_id, product_id], map: "ix_hms_invoice_lines_product")
   @@index([tenant_id, product_id], map: "ix_hms_invoice_lines_tenant_product")
+  hms_sales_return_line hms_sales_return_line[]
 }
 
 model hms_invoice_payments {
@@ -1585,6 +1586,7 @@ model hms_patient {
   hms_lab_order     hms_lab_order[]
   hms_vitals        hms_vitals[]
   prescription      prescription[]
+  hms_sales_return  hms_sales_return[]
 
   @@index([contact], map: "hms_patient_contact_gin_idx", type: Gin)
   @@index([identifiers], map: "hms_patient_identifiers_gin_idx", type: Gin)
@@ -1722,6 +1724,9 @@ model hms_product {
   hms_stock_levels           hms_stock_levels[]
   prescription_items         prescription_items[]
   product_tax_rules          product_tax_rules[]
+  hms_purchase_return_line   hms_purchase_return_line[]
+  hms_sales_return_line      hms_sales_return_line[]
+  hms_stock_adjustment_line  hms_stock_adjustment_line[]
 
   @@unique([tenant_id, sku], map: "ux_hms_product_tenant_sku")
   @@index([company_id], map: "ix_hms_product_company")
@@ -1756,6 +1761,7 @@ model hms_product_batch {
   hms_product              hms_product                @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   hms_uom                  hms_uom?                   @relation(fields: [uom_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_product_stock_ledger hms_product_stock_ledger[]
+  hms_stock_adjustment_line hms_stock_adjustment_line[]
 
   @@unique([tenant_id, company_id, product_id, batch_no], map: "ux_hms_product_batch")
   @@index([expiry_date], map: "ix_hms_product_batch_expiry")
@@ -2058,6 +2064,7 @@ model hms_purchase_receipt {
   hms_purchase_order        hms_purchase_order?         @relation(fields: [purchase_order_id], references: [id], onUpdate: NoAction, map: "hms_purchase_receipt_po_fkey")
   hms_supplier              hms_supplier?               @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "hms_purchase_receipt_supplier_fkey")
   hms_purchase_receipt_line hms_purchase_receipt_line[]
+  hms_purchase_return       hms_purchase_return[]
 
   @@index([company_id, status], map: "ix_hms_purchase_receipt_company_status")
   @@index([purchase_order_id], map: "ix_hms_purchase_receipt_po")
@@ -2084,6 +2091,139 @@ model hms_purchase_receipt_line {
 
   @@index([product_id], map: "ix_hms_purchase_receipt_line_product")
   @@index([receipt_id], map: "ix_hms_purchase_receipt_line_receipt")
+  hms_purchase_return_line hms_purchase_return_line[]
+}
+
+model hms_purchase_return {
+  id                String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id         String                     @db.Uuid
+  company_id        String                     @db.Uuid
+  receipt_id        String?                    @db.Uuid
+  supplier_id       String?                    @db.Uuid
+  return_number     String                     @unique
+  return_date       DateTime                   @default(now()) @db.Timestamptz(6)
+  status            String                     @default("draft") // draft, posted, cancelled
+  reason            String?
+  subtotal          Decimal                    @default(0) @db.Decimal(18, 6)
+  total_tax         Decimal                    @default(0) @db.Decimal(18, 6)
+  total_amount      Decimal                    @default(0) @db.Decimal(22, 6)
+  metadata          Json?                      @default("{}")
+  created_at        DateTime                   @default(now()) @db.Timestamptz(6)
+  created_by        String?                    @db.Uuid
+  hms_purchase_receipt hms_purchase_receipt? @relation(fields: [receipt_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hms_supplier       hms_supplier?         @relation(fields: [supplier_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lines             hms_purchase_return_line[]
+  journal_entries   journal_entries[]
+
+  @@index([company_id, status])
+  @@index([receipt_id])
+}
+
+model hms_purchase_return_line {
+  id                String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id         String                     @db.Uuid
+  company_id        String                     @db.Uuid
+  return_id         String                     @db.Uuid
+  receipt_line_id   String?                    @db.Uuid
+  product_id        String                     @db.Uuid
+  qty               Decimal                    @default(0) @db.Decimal(20, 6)
+  unit_price        Decimal?                   @default(0) @db.Decimal(18, 6)
+  tax_amount        Decimal?                   @default(0) @db.Decimal(18, 6)
+  line_total        Decimal?                   @default(0) @db.Decimal(22, 6)
+  batch_no          String?
+  batch_id          String?                    @db.Uuid
+  metadata          Json?                      @default("{}")
+  created_at        DateTime                   @default(now()) @db.Timestamptz(6)
+  hms_purchase_return hms_purchase_return     @relation(fields: [return_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hms_product       hms_product                @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hms_purchase_receipt_line hms_purchase_receipt_line? @relation(fields: [receipt_line_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([return_id])
+  @@index([product_id])
+}
+
+model hms_sales_return {
+  id                String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id         String                     @db.Uuid
+  company_id        String                     @db.Uuid
+  invoice_id        String?                    @db.Uuid
+  patient_id        String?                    @db.Uuid
+  return_number     String                     @unique
+  return_date       DateTime                   @default(now()) @db.Timestamptz(6)
+  status            String                     @default("draft") // draft, posted, cancelled
+  reason            String?
+  total_amount      Decimal                    @default(0) @db.Decimal(18, 2)
+  metadata          Json?                      @default("{}")
+  created_at        DateTime                   @default(now()) @db.Timestamptz(6)
+  created_by        String?                    @db.Uuid
+  hms_invoice       hms_invoice?              @relation(fields: [invoice_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hms_patient       hms_patient?              @relation(fields: [patient_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lines             hms_sales_return_line[]
+  journal_entries   journal_entries[]
+
+  @@index([company_id, status])
+  @@index([invoice_id])
+}
+
+model hms_sales_return_line {
+  id                String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id         String                     @db.Uuid
+  company_id        String                     @db.Uuid
+  return_id         String                     @db.Uuid
+  invoice_line_id   String?                    @db.Uuid
+  product_id        String                     @db.Uuid
+  qty               Decimal                    @default(0) @db.Decimal(20, 6)
+  unit_price        Decimal                    @default(0) @db.Decimal(18, 2)
+  line_total        Decimal                    @default(0) @db.Decimal(18, 2)
+  metadata          Json?                      @default("{}")
+  created_at        DateTime                   @default(now()) @db.Timestamptz(6)
+  hms_sales_return  hms_sales_return          @relation(fields: [return_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hms_product       hms_product               @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hms_invoice_line  hms_invoice_lines?        @relation(fields: [invoice_line_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([return_id])
+  @@index([product_id])
+}
+
+model hms_stock_adjustment {
+  id                String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id         String                     @db.Uuid
+  company_id        String                     @db.Uuid
+  adj_number        String                     @unique
+  adj_date          DateTime                   @default(now()) @db.Timestamptz(6)
+  reason_code       String?                    // EXPIRY, DAMAGE, THEFT, CORRECTION
+  status            String                     @default("draft") // draft, posted, cancelled
+  notes             String?
+  metadata          Json?                      @default("{}")
+  created_at        DateTime                   @default(now()) @db.Timestamptz(6)
+  created_by        String?                    @db.Uuid
+  lines             hms_stock_adjustment_line[]
+  journal_entries   journal_entries[]
+
+  @@index([company_id, status])
+}
+
+model hms_stock_adjustment_line {
+  id                String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id         String                     @db.Uuid
+  company_id        String                     @db.Uuid
+  adjustment_id     String                     @db.Uuid
+  product_id        String                     @db.Uuid
+  location_id       String                     @db.Uuid
+  batch_id          String?                    @db.Uuid
+  system_qty        Decimal                    @default(0) @db.Decimal(20, 6)
+  physical_qty      Decimal                    @default(0) @db.Decimal(20, 6)
+  diff_qty          Decimal                    @default(0) @db.Decimal(20, 6)
+  unit_cost         Decimal?                   @default(0) @db.Decimal(18, 4)
+  metadata          Json?                      @default("{}")
+  created_at        DateTime                   @default(now()) @db.Timestamptz(6)
+  hms_stock_adjustment hms_stock_adjustment    @relation(fields: [adjustment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  hms_product       hms_product                @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  location          hms_stock_location         @relation(fields: [location_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  batch             hms_product_batch?         @relation(fields: [batch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([adjustment_id])
+  @@index([product_id])
 }
 
 model hms_role {
@@ -2226,6 +2366,7 @@ model hms_stock_location {
   hms_stock_move_hms_stock_move_location_fromTohms_stock_location hms_stock_move[]        @relation("hms_stock_move_location_fromTohms_stock_location")
   hms_stock_move_hms_stock_move_location_toTohms_stock_location   hms_stock_move[]        @relation("hms_stock_move_location_toTohms_stock_location")
   hms_stock_reservation                                           hms_stock_reservation[]
+  hms_stock_adjustment_line                                       hms_stock_adjustment_line[]
 
   @@unique([tenant_id, company_id, code], map: "ux_hms_stock_location_company_code")
   @@index([tenant_id, company_id], map: "ix_hms_stock_location_company")
@@ -2335,6 +2476,7 @@ model hms_supplier {
   hms_purchase_invoice hms_purchase_invoice[]
   hms_purchase_order   hms_purchase_order[]
   hms_purchase_receipt hms_purchase_receipt[]
+  hms_purchase_return  hms_purchase_return[]
 }
 
 model hms_tax_rule {
@@ -2444,10 +2586,16 @@ model journal_entries {
   amount_in_company_currency Decimal?              @db.Decimal(18, 6)
   fx_rate                    Decimal?              @db.Decimal(18, 6)
   purchase_invoice_id        String?               @db.Uuid
+  purchase_return_id         String?               @db.Uuid
+  sales_return_id            String?               @db.Uuid
+  stock_adjustment_id        String?               @db.Uuid
   currencies                 currencies?           @relation(fields: [currency_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_invoice                hms_invoice?          @relation(fields: [invoice_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journals                   journals?             @relation(fields: [journal_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_purchase_invoice       hms_purchase_invoice? @relation(fields: [purchase_invoice_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hms_purchase_return        hms_purchase_return?  @relation(fields: [purchase_return_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hms_sales_return           hms_sales_return?     @relation(fields: [sales_return_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hms_stock_adjustment       hms_stock_adjustment? @relation(fields: [stock_adjustment_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   journal_entry_lines        journal_entry_lines[]
   journal_lines              journal_lines[]
 

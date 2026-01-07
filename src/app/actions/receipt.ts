@@ -668,6 +668,7 @@ export async function getPurchaseReceipt(id: string) {
                     qty: safeNum(line.qty),
                     unitPrice: safeNum(line.unit_price),
                     batch: meta.batch || '',
+                    batchId: line.batch_id,
                     expiry: meta.expiry || '',
                     mrp: safeNum(meta.mrp),
                     salePrice: safeNum(meta.sale_price),

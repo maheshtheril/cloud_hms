@@ -1281,6 +1281,223 @@ export class AccountingService {
     }
 
     /**
+     * Posts a Purchase Return (Debit Note) to the General Ledger.
+     */
+    static async postPurchaseReturn(returnId: string, userId?: string) {
+        try {
+            const pReturn = await prisma.hms_purchase_return.findUnique({
+                where: { id: returnId },
+                include: { lines: true, hms_supplier: true }
+            });
+
+            if (!pReturn) throw new Error("Purchase Return not found");
+            const existingJournal = await prisma.journal_entries.findFirst({
+                where: { purchase_return_id: returnId }
+            });
+            if (existingJournal) return { success: true, message: "Already posted" };
+
+            const settings = await prisma.company_accounting_settings.findUnique({
+                where: { company_id: pReturn.company_id }
+            });
+            if (!settings) throw new Error("Accounting settings not configured.");
+
+            const apAccount = settings.ap_account_id;
+            const inventoryAccount = settings.inventory_asset_account_id || settings.purchase_account_id;
+            if (!apAccount || !inventoryAccount) throw new Error("Accounts not configured.");
+
+            const journal = await prisma.journal_entries.create({
+                data: {
+                    tenant_id: pReturn.tenant_id,
+                    company_id: pReturn.company_id,
+                    purchase_return_id: returnId,
+                    ref: pReturn.return_number,
+                    date: pReturn.return_date,
+                    posted: true,
+                    posted_at: new Date(),
+                    created_by: userId,
+                    journal_entry_lines: {
+                        create: [
+                            {
+                                tenant_id: pReturn.tenant_id,
+                                company_id: pReturn.company_id,
+                                account_id: apAccount,
+                                debit: pReturn.total_amount,
+                                credit: 0,
+                                description: `Purchase Return ${pReturn.return_number} - ${pReturn.hms_supplier?.name || ''}`
+                            },
+                            {
+                                tenant_id: pReturn.tenant_id,
+                                company_id: pReturn.company_id,
+                                account_id: inventoryAccount,
+                                debit: 0,
+                                credit: pReturn.total_amount,
+                                description: `Purchase Return ${pReturn.return_number}`
+                            }
+                        ]
+                    }
+                }
+            });
+
+            await prisma.hms_purchase_return.update({
+                where: { id: returnId },
+                data: { status: 'posted' }
+            });
+
+            return { success: true, journalId: journal.id };
+        } catch (error: any) {
+            console.error("Failed to post purchase return:", error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Posts a Sales Return (Credit Note) to the General Ledger.
+     */
+    static async postSalesReturn(returnId: string, userId?: string) {
+        try {
+            const sReturn = await prisma.hms_sales_return.findUnique({
+                where: { id: returnId },
+                include: { lines: true, hms_patient: true }
+            });
+
+            if (!sReturn) throw new Error("Sales Return not found");
+            const existingJournal = await prisma.journal_entries.findFirst({
+                where: { sales_return_id: returnId }
+            });
+            if (existingJournal) return { success: true, message: "Already posted" };
+
+            const settings = await prisma.company_accounting_settings.findUnique({
+                where: { company_id: sReturn.company_id }
+            });
+            if (!settings) throw new Error("Accounting settings not configured.");
+
+            const arAccount = settings.ar_account_id;
+            const salesAccount = settings.sales_account_id;
+            if (!arAccount || !salesAccount) throw new Error("Accounts not configured.");
+
+            const journal = await prisma.journal_entries.create({
+                data: {
+                    tenant_id: sReturn.tenant_id,
+                    company_id: sReturn.company_id,
+                    sales_return_id: returnId,
+                    ref: sReturn.return_number,
+                    date: sReturn.return_date,
+                    posted: true,
+                    posted_at: new Date(),
+                    created_by: userId,
+                    journal_entry_lines: {
+                        create: [
+                            {
+                                tenant_id: sReturn.tenant_id,
+                                company_id: sReturn.company_id,
+                                account_id: salesAccount,
+                                debit: sReturn.total_amount,
+                                credit: 0,
+                                description: `Sales Return ${sReturn.return_number} - ${sReturn.hms_patient?.name || ''}`
+                            },
+                            {
+                                tenant_id: sReturn.tenant_id,
+                                company_id: sReturn.company_id,
+                                account_id: arAccount,
+                                debit: 0,
+                                credit: sReturn.total_amount,
+                                description: `Sales Return ${sReturn.return_number}`
+                            }
+                        ]
+                    }
+                }
+            });
+
+            await prisma.hms_sales_return.update({
+                where: { id: returnId },
+                data: { status: 'posted' }
+            });
+
+            return { success: true, journalId: journal.id };
+        } catch (error: any) {
+            console.error("Failed to post sales return:", error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Posts a Stock Adjustment (Wastage/Expiry/Audit) to the General Ledger.
+     */
+    static async postStockAdjustment(adjustmentId: string, userId?: string) {
+        try {
+            const adj = await prisma.hms_stock_adjustment.findUnique({
+                where: { id: adjustmentId },
+                include: { lines: true }
+            });
+            if (!adj) throw new Error("Stock Adjustment not found");
+
+            const settings = await prisma.company_accounting_settings.findUnique({
+                where: { company_id: adj.company_id }
+            });
+            if (!settings) throw new Error("Accounting settings not configured.");
+
+            const inventoryAccount = settings.inventory_asset_account_id;
+            const expenseAccount = settings.purchase_account_id; // Usually Stock Loss/Adjustment expense, default to Purchase/COGS
+            if (!inventoryAccount || !expenseAccount) throw new Error("Accounts not configured.");
+
+            let totalValue = 0;
+            for (const line of adj.lines) {
+                totalValue += Number(line.diff_qty) * Number(line.unit_cost || 0);
+            }
+
+            if (totalValue === 0) return { success: true, message: "No value adjustment needed" };
+
+            // Positive totalValue = Stock Increase (Debit Inventory, Credit Adjustment)
+            // Negative totalValue = Stock Decrease (Debit Adjustment, Credit Inventory)
+            const isIncrease = totalValue > 0;
+            const absValue = Math.abs(totalValue);
+
+            const journal = await prisma.journal_entries.create({
+                data: {
+                    tenant_id: adj.tenant_id,
+                    company_id: adj.company_id,
+                    stock_adjustment_id: adjustmentId,
+                    ref: adj.adj_number,
+                    date: adj.adj_date,
+                    posted: true,
+                    posted_at: new Date(),
+                    created_by: userId,
+                    journal_entry_lines: {
+                        create: [
+                            {
+                                tenant_id: adj.tenant_id,
+                                company_id: adj.company_id,
+                                account_id: isIncrease ? inventoryAccount : expenseAccount,
+                                debit: absValue,
+                                credit: 0,
+                                description: `Stock Adjustment ${adj.adj_number} (${adj.reason_code})`
+                            },
+                            {
+                                tenant_id: adj.tenant_id,
+                                company_id: adj.company_id,
+                                account_id: isIncrease ? expenseAccount : inventoryAccount,
+                                debit: 0,
+                                credit: absValue,
+                                description: `Stock Adjustment ${adj.adj_number} (${adj.reason_code})`
+                            }
+                        ]
+                    }
+                }
+            });
+
+            await prisma.hms_stock_adjustment.update({
+                where: { id: adjustmentId },
+                data: { status: 'posted' }
+            });
+
+            return { success: true, journalId: journal.id };
+        } catch (error: any) {
+            console.error("Failed to post stock adjustment:", error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
      * Generates "Neural" AI insights by scanning for anomalies and trends.
      */
     static async getExecutiveInsights(companyId: string) {

@@ -13,6 +13,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { SupplierDialog } from '@/components/hms/purchasing/supplier-dialog';
 import { SupplierPricingDefaults } from '@/components/hms/purchasing/supplier-pricing-defaults';
+import { PurchaseReturnDialog } from '@/components/hms/purchasing/purchase-return-dialog';
+import { Undo2 } from 'lucide-react';
 
 const PACKING_OPTIONS = ['1 Strip', '1 Box', '1 Bottle', '10x10', '1x10', '1x15', '1 Unit', '1 kg', '1 L'];
 const TAX_OPTIONS = ['0', '5', '12', '18', '28'];
@@ -38,6 +40,7 @@ type ReceiptItem = {
     taxAmount?: number;
     hsn?: string;
     packing?: string;
+    batchId?: string;
 };
 
 export default function EditPurchaseReceiptPage() {
@@ -47,6 +50,7 @@ export default function EditPurchaseReceiptPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [supplierDialogOpen, setSupplierDialogOpen] = useState(false);
     const [pricingDefaultsOpen, setPricingDefaultsOpen] = useState(false);
+    const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
 
     // Mode: 'po' (Linked to PO) | 'direct' (Ad-hoc)
     const [mode, setMode] = useState<'po' | 'direct'>('po');
@@ -180,6 +184,7 @@ export default function EditPurchaseReceiptPage() {
                             receivedQty: i.qty,
                             unitPrice: i.unitPrice,
                             batch: i.batch,
+                            batchId: i.batchId,
                             expiry: i.expiry,
                             mrp: i.mrp,
                             salePrice: i.salePrice,
@@ -552,6 +557,17 @@ export default function EditPurchaseReceiptPage() {
                         </button>
                         <div className="h-6 w-px bg-border mx-2"></div>
                         <h1 className="text-sm font-bold tracking-wide text-foreground uppercase">Edit Purchase Entry <span className="text-muted-foreground font-mono ml-2">#{params.id.split('-').pop()}</span></h1>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        <button
+                            type="button"
+                            onClick={() => setIsReturnDialogOpen(true)}
+                            className="bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-sm active:scale-95"
+                        >
+                            <Undo2 className="h-4 w-4" />
+                            Record Return
+                        </button>
                     </div>
                 </div>
             </nav>

@@ -6,6 +6,7 @@ import { notFound } from "next/navigation"
 import { ArrowLeft, Printer, Download, CreditCard, Calendar, User, Building2, Pencil, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { InvoiceControlPanel } from "@/components/billing/invoice-control-panel";
+import { InvoiceReturnClient } from "./invoice-return-client";
 
 export default async function InvoiceDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const session = await auth();
@@ -52,6 +53,12 @@ export default async function InvoiceDetailsPage({ params }: { params: Promise<{
                             </Button>
                         </Link>
                     )}
+                    <InvoiceReturnClient
+                        invoiceId={invoice.id}
+                        patientId={invoice.hms_patient?.id || ''}
+                        patientName={`${invoice.hms_patient?.first_name || 'Guest'} ${invoice.hms_patient?.last_name || ''}`}
+                        items={invoice.hms_invoice_lines}
+                    />
                     <Link href={invoice.hms_patient?.id ? `/hms/billing/new?patientId=${invoice.hms_patient.id}` : '/hms/billing/new'}>
                         <Button variant="outline" size="sm">
                             <Plus className="h-4 w-4 mr-2" /> New Bill
