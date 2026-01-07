@@ -24,17 +24,11 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { useToast } from "@/components/ui/use-toast"
 import { upsertPayment, getExpenseAccounts } from "@/app/actions/accounting/payments"
 import { cn } from "@/lib/utils"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 
 const expenseSchema = z.object({
     amount: z.coerce.number().min(1, "Amount must be greater than 0"),
@@ -114,6 +108,12 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
         }
     }
 
+    const accountOptions = accounts.map(acc => ({
+        id: acc.id,
+        label: acc.name,
+        subLabel: acc.code
+    }));
+
     return (
         <div className="p-6">
             <div className="mb-6">
@@ -190,21 +190,20 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Expense Category</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={accounts.length === 0}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder={accounts.length > 0 ? "Select Category" : "Loading Categories..."} />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {accounts.map((acc) => (
-                                            <SelectItem key={acc.id} value={acc.id}>
-                                                {acc.code} - {acc.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                {accounts.length === 0 && <p className="text-xs text-amber-600">No expense accounts found. Ask admin to configure Chart of Accounts.</p>}
+                                <FormControl>
+                                    <SearchableSelect
+                                        value={field.value}
+                                        onChange={(val) => field.onChange(val || "")}
+                                        onSearch={async (q) => {
+                                            return accountOptions.filter(opt =>
+                                                opt.label.toLowerCase().includes(q.toLowerCase()) ||
+                                                opt.subLabel.toLowerCase().includes(q.toLowerCase())
+                                            );
+                                        }}
+                                        defaultOptions={accountOptions}
+                                        placeholder="Search Expense Category..."
+                                    />
+                                </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
