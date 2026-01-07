@@ -157,7 +157,7 @@ export default async function ProductListPage({
                                             </div>
                                         </td>
                                         <td className="p-4">
-                                            <span className="font-medium text-gray-900">${product.price.toFixed(2)}</span>
+                                            <span className="font-medium text-gray-900">{product.currency || '₹'} {product.price.toFixed(2)}</span>
                                         </td>
                                         <td className="p-4 text-right">
                                             <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
