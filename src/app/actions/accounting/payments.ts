@@ -11,7 +11,7 @@ export type PaymentType = 'inbound' | 'outbound';
 
 // Fetch Payments (Receipts or Vendor Payments)
 // Fetch Payments (Receipts or Vendor Payments)
-export async function getPayments(type: PaymentType, search?: string) {
+export async function getPayments(type: PaymentType, search?: string, dateFilter?: string) {
     const session = await auth();
     let companyId = session?.user?.companyId;
     const tenantId = session?.user?.tenantId;
@@ -27,15 +27,28 @@ export async function getPayments(type: PaymentType, search?: string) {
     }
 
     try {
+        const whereClause: any = {
+            company_id: companyId,
+            metadata: {
+                path: ['type'],
+                equals: type
+            }
+        };
+
+        if (dateFilter) {
+            const startOfDay = new Date(dateFilter);
+            startOfDay.setHours(0, 0, 0, 0);
+            const endOfDay = new Date(dateFilter);
+            endOfDay.setHours(23, 59, 59, 999);
+
+            whereClause.created_at = {
+                gte: startOfDay,
+                lte: endOfDay
+            };
+        }
+
         const payments = await prisma.payments.findMany({
-            where: {
-                company_id: companyId,
-                // Using metadata filter for type since schema migration failed
-                metadata: {
-                    path: ['type'],
-                    equals: type
-                }
-            },
+            where: whereClause,
             orderBy: { created_at: 'desc' },
             take: 100
         });

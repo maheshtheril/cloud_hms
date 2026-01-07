@@ -15,14 +15,15 @@ export default function PaymentsPage() {
     const [payments, setPayments] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState('');
+    const [dateFilter, setDateFilter] = useState<string>(''); // YYYY-MM-DD
 
     useEffect(() => {
         loadData();
-    }, []);
+    }, [dateFilter]);
 
     async function loadData() {
         setIsLoading(true);
-        const res = await getPayments('outbound');
+        const res = await getPayments('outbound', undefined, dateFilter || undefined);
         if (res?.success) {
             setPayments(res.data || []);
         }
@@ -74,6 +75,16 @@ export default function PaymentsPage() {
                                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
                                 <span>₹{totalPaid.toLocaleString('en-IN', { maximumFractionDigits: 0 })} Disbursed</span>
                             </div>
+                        </div>
+
+                        {/* Date Filter */}
+                        <div className="relative group">
+                            <input
+                                type="date"
+                                className="h-10 px-3 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-neutral-200 focus:outline-none focus:border-rose-500 w-auto shadow-sm"
+                                value={dateFilter}
+                                onChange={(e) => setDateFilter(e.target.value)}
+                            />
                         </div>
 
                         <div className="relative group">
