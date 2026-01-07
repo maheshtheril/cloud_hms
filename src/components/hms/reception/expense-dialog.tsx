@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -24,13 +24,21 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 import { Calendar } from "@/components/ui/calendar"
 import { useToast } from "@/components/ui/use-toast"
-import { upsertPayment } from "@/app/actions/accounting/payments"
+import { upsertPayment, getExpenseAccounts } from "@/app/actions/accounting/payments"
 import { cn } from "@/lib/utils"
 
 const expenseSchema = z.object({
     amount: z.coerce.number().min(1, "Amount must be greater than 0"),
+    categoryId: z.string().min(1, "Category is required"),
     payeeName: z.string().min(2, "Payee name is required"),
     memo: z.string().optional(),
     date: z.date(),
@@ -45,11 +53,24 @@ interface ExpenseDialogProps {
 export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
     const { toast } = useToast()
     const [loading, setLoading] = useState(false)
+    const [accounts, setAccounts] = useState<{ id: string; name: string; code: string }[]>([])
+
+    // Fetch expense accounts on mount
+    useEffect(() => {
+        const fetchAccounts = async () => {
+            const res = await getExpenseAccounts();
+            if (res.success && res.data) {
+                setAccounts(res.data);
+            }
+        };
+        fetchAccounts();
+    }, []);
 
     const form = useForm({
         resolver: zodResolver(expenseSchema),
         defaultValues: {
             amount: 0,
+            categoryId: "",
             payeeName: "",
             memo: "",
             date: new Date(),
@@ -70,7 +91,7 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                 reference: values.reference || `EXP-${Date.now().toString().slice(-6)}`,
                 lines: [
                     {
-                        accountId: 'EXPENSE_GEN', // Placeholder, in real world user selects account
+                        accountId: values.categoryId, // User selected value
                         amount: values.amount,
                         description: values.memo
                     }
@@ -162,6 +183,32 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                             )}
                         />
                     </div>
+
+                    <FormField
+                        control={form.control}
+                        name="categoryId"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Expense Category</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value} disabled={accounts.length === 0}>
+                                    <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder={accounts.length > 0 ? "Select Category" : "Loading Categories..."} />
+                                        </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        {accounts.map((acc) => (
+                                            <SelectItem key={acc.id} value={acc.id}>
+                                                {acc.code} - {acc.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {accounts.length === 0 && <p className="text-xs text-amber-600">No expense accounts found. Ask admin to configure Chart of Accounts.</p>}
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
 
                     <FormField
                         control={form.control}

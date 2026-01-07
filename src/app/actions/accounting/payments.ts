@@ -10,14 +10,26 @@ import { AccountingService } from "@/lib/services/accounting"
 export type PaymentType = 'inbound' | 'outbound';
 
 // Fetch Payments (Receipts or Vendor Payments)
+// Fetch Payments (Receipts or Vendor Payments)
 export async function getPayments(type: PaymentType, search?: string) {
     const session = await auth();
-    if (!session?.user?.companyId) return { error: "Unauthorized" };
+    let companyId = session?.user?.companyId;
+    const tenantId = session?.user?.tenantId;
+
+    if (!tenantId) return { error: "Unauthorized: No Tenant" };
+
+    if (!companyId) {
+        const defaultCompany = await prisma.company.findFirst({
+            where: { tenant_id: tenantId }
+        });
+        if (defaultCompany) companyId = defaultCompany.id;
+        else return { error: "Unauthorized: No Company Found" };
+    }
 
     try {
         const payments = await prisma.payments.findMany({
             where: {
-                company_id: session.user.companyId,
+                company_id: companyId,
                 // Using metadata filter for type since schema migration failed
                 metadata: {
                     path: ['type'],
@@ -27,11 +39,6 @@ export async function getPayments(type: PaymentType, search?: string) {
             orderBy: { created_at: 'desc' },
             take: 100
         });
-
-        // Enrich with Partner Name manually (Poly relation workaround)
-        // In real HMS, we'd query hms_patient or hms_supplier based on type.
-        // For efficiency, we might just return IDs and let Client fetch, or do Promise.all here.
-        // Let's do a quick lookup if list is small. 
 
         const enriched = await Promise.all(payments.map(async (p) => {
             let partnerName = 'Unknown';
@@ -60,6 +67,37 @@ export async function getPayments(type: PaymentType, search?: string) {
     }
 }
 
+export async function getExpenseAccounts() {
+    const session = await auth();
+    let companyId = session?.user?.companyId;
+    const tenantId = session?.user?.tenantId;
+
+    if (!tenantId) return { error: "Unauthorized: No Tenant" };
+
+    if (!companyId) {
+        const defaultCompany = await prisma.company.findFirst({
+            where: { tenant_id: tenantId }
+        });
+        if (defaultCompany) companyId = defaultCompany.id;
+        else return { error: "Unauthorized: No Company Found" };
+    }
+
+    try {
+        const accounts = await prisma.accounts.findMany({
+            where: {
+                company_id: companyId,
+                type: 'Expense',
+                is_active: true
+            },
+            select: { id: true, name: true, code: true },
+            orderBy: { name: 'asc' }
+        });
+        return { success: true, data: accounts };
+    } catch (e: any) {
+        return { error: e.message };
+    }
+}
+
 export async function upsertPayment(data: {
     id?: string;
     type: PaymentType;
@@ -75,12 +113,23 @@ export async function upsertPayment(data: {
     payeeName?: string; // For direct payments
 }) {
     const session = await auth();
-    if (!session?.user?.companyId) return { error: "Unauthorized" };
+    let companyId = session?.user?.companyId;
+    const tenantId = session?.user?.tenantId;
+
+    if (!tenantId) return { error: "Unauthorized: No Tenant" };
+
+    if (!companyId) {
+        const defaultCompany = await prisma.company.findFirst({
+            where: { tenant_id: tenantId }
+        });
+        if (defaultCompany) companyId = defaultCompany.id;
+        else return { error: "Unauthorized: No Company Found" };
+    }
 
     try {
         const payload = {
-            tenant_id: session.user.tenantId,
-            company_id: session.user.companyId,
+            tenant_id: tenantId,
+            company_id: companyId,
             partner_id: data.partner_id || null, // Allow null
             amount: data.amount,
             method: data.method,
@@ -125,8 +174,8 @@ export async function upsertPayment(data: {
                     // 1. Create Payment Line
                     await tx.payment_lines.create({
                         data: {
-                            tenant_id: (session.user.tenantId || payment.tenant_id || '') as string,
-                            company_id: (session.user.companyId || payment.company_id || '') as string,
+                            tenant_id: (tenantId || payment.tenant_id || '') as string,
+                            company_id: (companyId || payment.company_id || '') as string,
                             payment_id: payment.id,
                             invoice_id: alloc.invoiceId,
                             amount: allocAmount,
@@ -137,8 +186,8 @@ export async function upsertPayment(data: {
                         // RECEIPT: Update hms_invoice
                         await tx.hms_invoice_payments.create({
                             data: {
-                                tenant_id: (session.user.tenantId || payment.tenant_id || '') as string,
-                                company_id: (session.user.companyId || payment.company_id || '') as string,
+                                tenant_id: (tenantId || payment.tenant_id || '') as string,
+                                company_id: (companyId || payment.company_id || '') as string,
                                 invoice_id: alloc.invoiceId,
                                 amount: allocAmount,
                                 method: data.method as any,
@@ -198,8 +247,8 @@ export async function upsertPayment(data: {
 
                     await tx.payment_lines.create({
                         data: {
-                            tenant_id: (session.user.tenantId || payment.tenant_id || '') as string,
-                            company_id: (session.user.companyId || payment.company_id || '') as string,
+                            tenant_id: (tenantId || payment.tenant_id || '') as string,
+                            company_id: (companyId || payment.company_id || '') as string,
                             payment_id: payment.id,
                             amount: lineAmount,
                             metadata: {
@@ -234,7 +283,19 @@ export async function postPayment(id: string) {
     // This is complex. We need settings to know WHICH Bank account.
     // For now, we just mark as Posted.
     const session = await auth();
-    if (!session?.user?.companyId) return { error: "Unauthorized" };
+    let companyId = session?.user?.companyId;
+    const tenantId = session?.user?.tenantId;
+
+    if (!tenantId) return { error: "Unauthorized: No Tenant" };
+
+    // We might not need companyId for posting if ID is enough, but auth check is good.
+    if (!companyId) {
+        const defaultCompany = await prisma.company.findFirst({
+            where: { tenant_id: tenantId }
+        });
+        if (defaultCompany) companyId = defaultCompany.id;
+        else return { error: "Unauthorized" };
+    }
 
     try {
         const result = await AccountingService.postPaymentEntry(id, session.user.id);
