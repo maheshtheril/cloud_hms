@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { ensureDefaultAccounts } from "@/lib/account-seeder";
 
 export class AccountingService {
 
@@ -46,7 +47,6 @@ export class AccountingService {
                 console.warn("Accounting Settings missing. Attempting auto-configuration...");
                 try {
                     // A. Ensure Accounts Exist
-                    const { ensureDefaultAccounts } = await import('@/lib/account-seeder');
                     await ensureDefaultAccounts(invoice.company_id, invoice.tenant_id);
 
                     // B. Find Standard Accounts
@@ -351,7 +351,6 @@ export class AccountingService {
             // SELF-HEALING: Auto-configure defaults if missing
             if (!settings) {
                 try {
-                    const { ensureDefaultAccounts } = await import('@/lib/account-seeder');
                     await ensureDefaultAccounts(payment.company_id, payment.tenant_id!);
 
                     const accounts = await prisma.accounts.findMany({
@@ -682,7 +681,6 @@ export class AccountingService {
             if (!settings) {
                 console.warn("Accounting Settings missing. Attempting auto-configuration...");
                 try {
-                    const { ensureDefaultAccounts } = await import('@/lib/account-seeder');
                     await ensureDefaultAccounts(receipt.company_id, receipt.tenant_id);
 
                     const accounts = await prisma.accounts.findMany({

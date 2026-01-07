@@ -105,36 +105,33 @@ export async function getExpenseAccounts() {
                 { name: 'General / Other Expenses', code: 'EXP-GEN' }
             ];
 
-            for (const item of defaultExpenses) {
-                await prisma.accounts.upsert({
-                    where: {
-                        company_id_code: {
-                            company_id: companyId,
-                            code: item.code
-                        }
-                    },
-                    update: { name: item.name, is_active: true },
-                    create: {
+            const existingCodes = new Set(accounts.map(a => a.code));
+            const missing = defaultExpenses.filter(d => !existingCodes.has(d.code));
+
+            if (missing.length > 0) {
+                await prisma.accounts.createMany({
+                    data: missing.map(m => ({
                         tenant_id: tenantId,
                         company_id: companyId,
-                        name: item.name,
-                        code: item.code,
+                        name: m.name,
+                        code: m.code,
                         type: 'Expense',
                         is_active: true
-                    }
+                    })),
+                    skipDuplicates: true
+                });
+
+                // Re-fetch after seeding
+                accounts = await prisma.accounts.findMany({
+                    where: {
+                        company_id: companyId,
+                        type: 'Expense',
+                        is_active: true
+                    },
+                    select: { id: true, name: true, code: true },
+                    orderBy: { name: 'asc' }
                 });
             }
-
-            // Re-fetch after seeding
-            accounts = await prisma.accounts.findMany({
-                where: {
-                    company_id: companyId,
-                    type: 'Expense',
-                    is_active: true
-                },
-                select: { id: true, name: true, code: true },
-                orderBy: { name: 'asc' }
-            });
         }
 
         return { success: true, data: accounts };
