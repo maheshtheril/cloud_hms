@@ -28,7 +28,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { getCurrentShift, startShift, getShiftSummary, closeShift } from "@/app/actions/shift";
+import { getCurrentShift, startShift, getShiftSummary, closeShift, getShiftHistory } from "@/app/actions/shift";
 import { format } from "date-fns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
