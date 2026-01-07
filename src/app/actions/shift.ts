@@ -26,6 +26,13 @@ export async function startShift(openingBalance: number) {
     const session = await auth();
     if (!session?.user?.id) return { error: "Unauthorized" };
 
+    const tenantId = session.user.tenantId;
+    const companyId = session.user.companyId;
+
+    if (!tenantId || !companyId) {
+        return { error: "Tenant or Company information missing from session." };
+    }
+
     try {
         const existing = await prisma.hms_cash_shift.findFirst({
             where: { user_id: session.user.id, status: 'open' }
@@ -34,8 +41,8 @@ export async function startShift(openingBalance: number) {
 
         await prisma.hms_cash_shift.create({
             data: {
-                tenant_id: session.user.tenantId,
-                company_id: session.user.companyId,
+                tenant_id: tenantId,
+                company_id: companyId,
                 user_id: session.user.id,
                 start_time: new Date(),
                 opening_balance: openingBalance,
