@@ -20,7 +20,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
 }) {
 
     interface Payment {
-        method: 'cash' | 'card' | 'upi' | 'bank_transfer';
+        method: 'cash' | 'card' | 'upi' | 'bank_transfer' | 'advance';
         amount: number;
         reference?: string;
     }
@@ -809,6 +809,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                                 {p.method === 'card' && <CreditCard className="h-3.5 w-3.5" />}
                                                 {p.method === 'upi' && <Smartphone className="h-3.5 w-3.5" />}
                                                 {p.method === 'bank_transfer' && <Landmark className="h-3.5 w-3.5" />}
+                                                {p.method === 'advance' && <User className="h-3.5 w-3.5" />}
                                             </div>
                                             <select
                                                 className="text-xs bg-transparent border-none outline-none w-full py-2 font-medium text-slate-700 dark:text-slate-200 h-8"
@@ -823,6 +824,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                                 <option value="card">Card</option>
                                                 <option value="upi">UPI</option>
                                                 <option value="bank_transfer">Transfer</option>
+                                                <option value="advance">Advance</option>
                                             </select>
                                         </div>
 
