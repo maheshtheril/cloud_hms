@@ -888,10 +888,10 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                 <button
                                     onClick={() => handleSave('paid' as any)}
                                     disabled={loading}
-                                    className="px-3 py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-500/20 flex items-center justify-center gap-1.5 transition-all border-b-2 border-indigo-800 active:translate-y-0.5 active:border-b-0"
+                                    className={`px-3 py-2.5 text-white text-xs font-bold rounded-xl hover:shadow-lg flex items-center justify-center gap-1.5 transition-all border-b-2 active:translate-y-0.5 active:border-b-0 ${balanceDue < 0 ? "bg-blue-600 hover:bg-blue-700 hover:shadow-blue-500/20 border-blue-800" : "bg-indigo-600 hover:bg-indigo-700 hover:shadow-indigo-500/20 border-indigo-800"}`}
                                 >
                                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
-                                    Collect
+                                    {balanceDue < 0 ? 'Advance Receipt' : 'Collect'}
                                 </button>
                                 <button
                                     onClick={() => handleSave('paid' as any)}
