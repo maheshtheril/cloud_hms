@@ -89,18 +89,35 @@ export async function getInventoryDashboardStats() {
 
 // -- Helpers for Dropdowns --
 
+// -- Helpers for Dropdowns --
+
 export async function getSuppliers() {
     const session = await auth();
-    if (!session?.user?.companyId) return [];
+    if (!session?.user?.companyId || !session?.user?.tenantId) return [];
 
     try {
-        const suppliers = await prisma.hms_supplier.findMany({
+        let suppliers = await prisma.hms_supplier.findMany({
             where: {
                 company_id: session.user.companyId,
                 is_active: true
             },
             select: { id: true, name: true }
         });
+
+        if (suppliers.length === 0) {
+            await prisma.hms_supplier.create({
+                data: {
+                    tenant_id: session.user.tenantId,
+                    company_id: session.user.companyId,
+                    name: 'General Vendor',
+                    is_active: true
+                }
+            });
+            suppliers = await prisma.hms_supplier.findMany({
+                where: { company_id: session.user.companyId, is_active: true },
+                select: { id: true, name: true }
+            });
+        }
         return suppliers;
     } catch (error) {
         console.error("Failed to fetch suppliers:", error);
@@ -134,12 +151,37 @@ export async function getTaxRates() {
             }));
         }
 
-        // Fallback: Fetch all active tax rates for the tenant (or system wide if appropriate, assuming tenant isolation)
-        // Check if there are any tax rates at all
-        const allTaxRates = await prisma.tax_rates.findMany({
-            where: { is_active: true },
+        // Fallback: Fetch all active tax rates for the tenant
+        let allTaxRates = await prisma.tax_rates.findMany({
+            where: { is_active: true }, // Add tenant_id check if schema supports it, assuming global or checking later
             select: { id: true, name: true, rate: true }
         });
+
+        // Seed if absolutely no tax rates found (System Init)
+        if (allTaxRates.length === 0 && session.user.tenantId) {
+            const defaultRates = [
+                { name: 'Tax Exempt', rate: 0, code: 'EXEMPT' },
+                { name: 'Standard Tax', rate: 10, code: 'STD' }
+            ];
+
+            for (const dr of defaultRates) {
+                await prisma.tax_rates.create({
+                    data: {
+                        tenant_id: session.user.tenantId,
+                        name: dr.name,
+                        rate: dr.rate,
+                        code: dr.code,
+                        is_active: true
+                    }
+                });
+            }
+
+            // Refetch
+            allTaxRates = await prisma.tax_rates.findMany({
+                where: { is_active: true },
+                select: { id: true, name: true, rate: true }
+            });
+        }
 
         return allTaxRates.map(tr => ({
             id: tr.id,
@@ -156,13 +198,50 @@ export async function getTaxRates() {
 
 export async function getUOMs() {
     const session = await auth();
-    if (!session?.user?.companyId) return [];
+    if (!session?.user?.companyId || !session?.user?.tenantId) return [];
     try {
-        return await prisma.hms_uom.findMany({
+        let uoms = await prisma.hms_uom.findMany({
             where: { company_id: session.user.companyId, is_active: true },
             orderBy: { name: 'asc' },
             select: { id: true, name: true, category_id: true, ratio: true, uom_type: true }
         });
+
+        if (uoms.length === 0) {
+            // Seed 'Unit' category and 'Each' uom
+            let unitCat = await prisma.hms_uom_category.findFirst({
+                where: { company_id: session.user.companyId, name: 'Unit' }
+            });
+
+            if (!unitCat) {
+                unitCat = await prisma.hms_uom_category.create({
+                    data: {
+                        tenant_id: session.user.tenantId,
+                        company_id: session.user.companyId,
+                        name: 'Unit'
+                    }
+                });
+            }
+
+            if (unitCat) {
+                await prisma.hms_uom.create({
+                    data: {
+                        tenant_id: session.user.tenantId,
+                        company_id: session.user.companyId,
+                        category_id: unitCat.id,
+                        name: 'Each',
+                        uom_type: 'reference',
+                        ratio: 1
+                    }
+                });
+
+                uoms = await prisma.hms_uom.findMany({
+                    where: { company_id: session.user.companyId, is_active: true },
+                    orderBy: { name: 'asc' },
+                    select: { id: true, name: true, category_id: true, ratio: true, uom_type: true }
+                });
+            }
+        }
+        return uoms;
     } catch (error) {
         console.error("Failed to fetch UOMs:", error);
         return [];
@@ -178,7 +257,7 @@ export async function getUOMCategories() {
             include: { hms_uom: true }
         });
 
-        if (categories.length === 0) {
+        if (categories.length === 0 && session.user.tenantId) {
             // Seed defaults
             const defaults = ['Unit', 'Weight', 'Working Time', 'Volume', 'Length'];
             await prisma.hms_uom_category.createMany({
@@ -258,12 +337,27 @@ export async function createUOM(prevState: any, formData: FormData): Promise<{ e
 
 export async function getCategories() {
     const session = await auth();
-    if (!session?.user?.companyId) return [];
+    if (!session?.user?.companyId || !session?.user?.tenantId) return [];
     try {
-        return await prisma.hms_product_category.findMany({
+        let categories = await prisma.hms_product_category.findMany({
             where: { company_id: session.user.companyId },
             select: { id: true, name: true, default_tax_rate_id: true }
         });
+
+        if (categories.length === 0) {
+            await prisma.hms_product_category.create({
+                data: {
+                    tenant_id: session.user.tenantId,
+                    company_id: session.user.companyId,
+                    name: "General"
+                }
+            });
+            categories = await prisma.hms_product_category.findMany({
+                where: { company_id: session.user.companyId },
+                select: { id: true, name: true, default_tax_rate_id: true }
+            });
+        }
+        return categories;
     } catch (error) {
         console.error("Failed to fetch categories:", error);
         return [];
