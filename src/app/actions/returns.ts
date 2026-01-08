@@ -147,7 +147,7 @@ export type SalesReturnData = {
     reason?: string
     items: {
         invoiceLineId: string
-        productId: string
+        productId?: string | null
         qtyToReturn: number
         unitPrice: number
     }[]
@@ -194,29 +194,31 @@ export async function createSalesReturn(data: SalesReturnData) {
                     }
                 })
 
-                // Stock Increase (Inward)
-                await tx.hms_product_stock_ledger.create({
-                    data: {
-                        tenant_id: session.user.tenantId!,
-                        company_id: companyId,
-                        product_id: item.productId,
-                        movement_type: 'sale_return',
-                        change_qty: item.qtyToReturn,
-                        balance_qty: 0,
-                        reference: returnNumber,
-                        cost: 0,
-                        metadata: { invoice_id: data.invoiceId }
-                    }
-                })
-
-                let level = await tx.hms_stock_levels.findFirst({
-                    where: { company_id: companyId, product_id: item.productId }
-                })
-                if (level) {
-                    await tx.hms_stock_levels.update({
-                        where: { id: level.id },
-                        data: { quantity: { increment: item.qtyToReturn } }
+                if (item.productId) {
+                    // Stock Increase (Inward)
+                    await tx.hms_product_stock_ledger.create({
+                        data: {
+                            tenant_id: session.user.tenantId!,
+                            company_id: companyId,
+                            product_id: item.productId,
+                            movement_type: 'sale_return',
+                            change_qty: item.qtyToReturn,
+                            balance_qty: 0,
+                            reference: returnNumber,
+                            cost: 0,
+                            metadata: { invoice_id: data.invoiceId }
+                        }
                     })
+
+                    let level = await tx.hms_stock_levels.findFirst({
+                        where: { company_id: companyId, product_id: item.productId }
+                    })
+                    if (level) {
+                        await tx.hms_stock_levels.update({
+                            where: { id: level.id },
+                            data: { quantity: { increment: item.qtyToReturn } }
+                        })
+                    }
                 }
             }
             return sReturn;

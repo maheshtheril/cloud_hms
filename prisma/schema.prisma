@@ -2173,14 +2173,14 @@ model hms_sales_return_line {
   company_id        String                     @db.Uuid
   return_id         String                     @db.Uuid
   invoice_line_id   String?                    @db.Uuid
-  product_id        String                     @db.Uuid
+  product_id        String?                    @db.Uuid
   qty               Decimal                    @default(0) @db.Decimal(20, 6)
   unit_price        Decimal                    @default(0) @db.Decimal(18, 2)
   line_total        Decimal                    @default(0) @db.Decimal(18, 2)
   metadata          Json?                      @default("{}")
   created_at        DateTime                   @default(now()) @db.Timestamptz(6)
   hms_sales_return  hms_sales_return          @relation(fields: [return_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  hms_product       hms_product               @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hms_product       hms_product?               @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_invoice_line  hms_invoice_lines?        @relation(fields: [invoice_line_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([return_id])
