@@ -316,6 +316,8 @@ export async function getMenuItems() {
             return (a.module?.name || '').localeCompare(b.module?.name || '');
         });
 
+
+
         return result;
 
     } catch (error) {
