@@ -37,7 +37,7 @@ export function InvoiceReturnClient({ invoiceId, patientId, patientName, items }
                 initialItems={items.map(i => ({
                     invoiceLineId: i.id,
                     productId: i.product_id,
-                    description: i.description || 'Item',
+                    description: (i as any).hms_product?.name || i.description || 'Item',
                     soldQty: Number(i.quantity),
                     returnQty: 0,
                     unitPrice: Number(i.unit_price)
