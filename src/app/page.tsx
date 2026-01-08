@@ -8,6 +8,39 @@ export default async function Home() {
     redirect('/login?reauth=1');
   }
 
+  // MIGRATION FIX (Auto-run on root load)
+  try {
+    console.log("Running Auto-Migration for Menus...");
+    await prisma.menu_items.updateMany({
+      where: { key: 'hms-accounting' },
+      data: { module_key: 'accounting', sort_order: 10 }
+    });
+    const hmsAcc = await prisma.menu_items.findFirst({ where: { key: 'hms-accounting' } });
+    if (hmsAcc) {
+      await prisma.menu_items.updateMany({ where: { parent_id: hmsAcc.id }, data: { module_key: 'accounting' } });
+    }
+
+    await prisma.menu_items.updateMany({
+      where: { key: 'hms-inventory' },
+      data: { module_key: 'inventory', sort_order: 50, label: 'Pharmacy Store' }
+    });
+    const hmsInv = await prisma.menu_items.findFirst({ where: { key: 'hms-inventory' } });
+    if (hmsInv) {
+      await prisma.menu_items.updateMany({ where: { parent_id: hmsInv.id }, data: { module_key: 'inventory' } });
+    }
+
+    await prisma.menu_items.updateMany({
+      where: { key: 'hms-purchasing' },
+      data: { module_key: 'inventory', sort_order: 60, label: 'Central Purchasing' }
+    });
+    const hmsPurch = await prisma.menu_items.findFirst({ where: { key: 'hms-purchasing' } });
+    if (hmsPurch) {
+      await prisma.menu_items.updateMany({ where: { parent_id: hmsPurch.id }, data: { module_key: 'inventory' } });
+    }
+    console.log("Auto-Migration Complete.");
+  } catch (e) { console.error("Auto-fix migration error:", e); }
+  // END MIGRATION FIX
+
   console.log('[DEBUG] Root Router:', {
     user: session.user.email,
     tenant: session.user.tenantId,
