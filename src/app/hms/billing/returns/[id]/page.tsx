@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { getSalesReturn, deleteSalesReturn } from '@/app/actions/returns';
 import { ArrowLeft, Loader2, RotateCcw, Trash2, Printer, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
@@ -19,8 +19,9 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-export default function SalesReturnDetailsPage({ params }: { params: { id: string } }) {
+export default function SalesReturnDetailsPage() {
     const router = useRouter();
+    const params = useParams<{ id: string }>();
     const { toast } = useToast();
     const [returnIdx, setReturnIdx] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
