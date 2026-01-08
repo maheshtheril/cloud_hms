@@ -289,7 +289,7 @@ export async function ensureHmsMenus() {
             { key: 'hms-attendance-logs', label: 'Daily Logs', url: '/hms/attendance/logs', icon: 'ListChecks', sort: 52 },
             { key: 'hms-attendance-analytics', label: 'Staff Analytics', url: '/hms/attendance/analytics', icon: 'BarChart3', sort: 53 },
             { key: 'hms-billing', label: 'Billing', url: '/hms/billing', icon: 'Receipt', sort: 60 },
-            { key: 'hms-inventory', label: 'Pharmacy/Inventory', url: '/hms/inventory', icon: 'Package', sort: 70 },
+            // { key: 'hms-inventory', label: 'Pharmacy/Inventory', url: '/hms/inventory', icon: 'Package', sort: 70 }, // Removed to allow migration to Inventory Module
             { key: 'hms-wards', label: 'Clinics/Wards', url: '/hms/wards', icon: 'LayoutGrid', sort: 80 },
         ];
 
@@ -311,11 +311,12 @@ export async function ensureHmsMenus() {
                     }
                 });
                 console.log(`Auto-seeded HMS Menu: ${item.label}`);
-            } else if (existing.module_key !== 'hms' || existing.url !== item.url) {
+            } else if (existing.url !== item.url) {
+                // Only update URL/Metadata, DO NOT FORCE module_key back to 'hms' if it has been migrated!
                 await prisma.menu_items.update({
                     where: { id: existing.id },
                     data: {
-                        module_key: 'hms',
+                        // module_key: 'hms', // DISABLED TO ALLOW MIGRATION
                         url: item.url
                     }
                 });
