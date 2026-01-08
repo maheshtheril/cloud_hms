@@ -106,9 +106,19 @@ async function ensurePaymentMenus() {
     const paymentMenu = await prisma.menu_items.findFirst({ where: { key: 'acc-payments' } });
     if (!paymentMenu) {
         await prisma.menu_items.create({
-            data: { label: 'Payments', url: '/accounting/vendor/payments', key: 'acc-payments', module_key: 'accounting', icon: 'ArrowUpRight', parent_id: vendParent.id, sort_order: 20, is_global: true }
+            data: { label: 'Payments', url: '/accounting/vendor/payments', key: 'acc-payments', module_key: 'accounting', icon: 'ArrowUpRight', parent_id: vendParent.id, sort_order: 20, permission_code: 'billing:view', is_global: true }
         });
     }
+
+    // BULK SAFETY: Lock ALL Accounting Menus if they don't have permissions
+    // This catches 'acc-vendors' (created above) and any others missed.
+    await prisma.menu_items.updateMany({
+        where: {
+            module_key: 'accounting',
+            permission_code: null
+        },
+        data: { permission_code: 'billing:view' }
+    });
 }
 
 

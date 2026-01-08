@@ -82,9 +82,10 @@ export async function getMenuItems() {
             globalActiveModules.forEach(m => allowedModuleKeys.add(m.module_key));
         }
 
-        // Always allow General and Configuration
+        // Always allow General, Configuration, and HMS (Core)
         allowedModuleKeys.add('general');
         allowedModuleKeys.add('configuration');
+        allowedModuleKeys.add('hms'); // FORCE ENABLE HMS (Core App Function)
 
         // -------------------------
         // AUTO-MIGRATION: Fix Module Assignments (World Standard)
