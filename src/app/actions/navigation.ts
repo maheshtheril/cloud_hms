@@ -18,12 +18,6 @@ export async function getMenuItems() {
     // FAILSAFE: Grant Full Access to Admins
     if (isAdmin) {
         userPerms.add('*');
-    } else if (session?.user?.id) {
-        // Double Check Role in DB
-        const userRole = await prisma.app_user.findUnique({ where: { id: session.user.id }, select: { hms_role: { select: { name: true } } } });
-        if (['Hospital Admin', 'Super Admin'].includes(userRole?.hms_role?.name || '')) {
-            userPerms.add('*');
-        }
     }
 
     try {
