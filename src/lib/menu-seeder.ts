@@ -423,6 +423,10 @@ export async function ensurePurchasingMenus() {
             }
         });
 
+        // 3b. ADDITIONAL CLEANUP: Rogue Keys
+        const rogueKeys = ['inventory-root', 'inv-receive', 'inventory.products', 'hms.inventory', 'inv-moves'];
+        await prisma.menu_items.deleteMany({ where: { key: { in: rogueKeys } } });
+
         // 4. STANDARDIZE: Update Sort Orders and Labels
         await prisma.menu_items.updateMany({ where: { key: 'inv-dashboard' }, data: { sort_order: 10, label: 'Dashboard' } });
         await prisma.menu_items.updateMany({ where: { key: 'inv-products' }, data: { sort_order: 20, label: 'Product Master' } });
