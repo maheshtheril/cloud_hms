@@ -450,27 +450,45 @@ export async function ensurePurchasingMenus() {
         await prisma.menu_items.updateMany({ where: { key: 'inv-products' }, data: { sort_order: 20, label: 'Product Master' } });
         await prisma.menu_items.updateMany({ where: { key: 'inv-procurement' }, data: { sort_order: 30 } });
 
-        // 5. GENERIC CLEANUP: Remove Empty Parents (Folders with no children)
-        // Find potential empty parents (Label 'Inventory' or URL '#') in Inventory Module
-        const potentialEmpty = await prisma.menu_items.findMany({
-            where: {
-                module_key: 'inventory',
-                OR: [
-                    { label: 'Inventory' },
-                    { url: '#' }
-                ]
-            }
+        // 5. MIGRATION: Move HMS Menus to Proper Modules (World Class Standard)
+        // Move 'hms-accounting' to 'accounting' module
+        await prisma.menu_items.updateMany({
+            where: { key: 'hms-accounting' },
+            data: { module_key: 'accounting', sort_order: 10 }
         });
-
-        for (const item of potentialEmpty) {
-            const childCount = await prisma.menu_items.count({
-                where: { parent_id: item.id }
+        // Ensure children follow (module_key is usually denormalized on parent, but good to be safe)
+        const hmsAcc = await prisma.menu_items.findFirst({ where: { key: 'hms-accounting' } });
+        if (hmsAcc) {
+            await prisma.menu_items.updateMany({
+                where: { parent_id: hmsAcc.id },
+                data: { module_key: 'accounting' }
             });
+        }
 
-            if (childCount === 0) {
-                console.log(`Deleting empty parent menu: ${item.label} (${item.key})`);
-                await prisma.menu_items.delete({ where: { id: item.id } });
-            }
+        // Move 'hms-inventory' to 'inventory' module
+        await prisma.menu_items.updateMany({
+            where: { key: 'hms-inventory' },
+            data: { module_key: 'inventory', sort_order: 50, label: 'Pharmacy Store' } // Rename to distinguish
+        });
+        const hmsInv = await prisma.menu_items.findFirst({ where: { key: 'hms-inventory' } });
+        if (hmsInv) {
+            await prisma.menu_items.updateMany({
+                where: { parent_id: hmsInv.id },
+                data: { module_key: 'inventory' }
+            });
+        }
+
+        // Move 'hms-purchasing' to 'inventory' module (Procurement)
+        await prisma.menu_items.updateMany({
+            where: { key: 'hms-purchasing' },
+            data: { module_key: 'inventory', sort_order: 60, label: 'Central Purchasing' }
+        });
+        const hmsPurch = await prisma.menu_items.findFirst({ where: { key: 'hms-purchasing' } });
+        if (hmsPurch) {
+            await prisma.menu_items.updateMany({
+                where: { parent_id: hmsPurch.id },
+                data: { module_key: 'inventory' }
+            });
         }
 
     } catch (e) {
