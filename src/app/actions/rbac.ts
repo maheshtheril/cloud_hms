@@ -397,10 +397,7 @@ export async function getAllPermissions() {
     if (!session?.user?.id) return { error: "Unauthorized" };
 
     try {
-        // 1. Fetch from Database
-        const dbPermissions = await prisma.permission.findMany();
-
-        // 2. Define Standard Hardcoded Permissions (The "Truth" for Code reliability)
+        // Define Standard Hardcoded Permissions (The "Truth" for Code reliability)
         const standardPermissions = [
             // User Management
             { code: 'users:view', name: 'View Users', module: 'User Management' },
@@ -416,12 +413,14 @@ export async function getAllPermissions() {
             { code: 'settings:view', name: 'View Settings', module: 'Settings' },
             { code: 'settings:edit', name: 'Edit Settings', module: 'Settings' },
 
-            // HMS
+            // HMS - General
             { code: 'hms:view', name: 'View HMS', module: 'HMS' },
             { code: 'hms:admin', name: 'HMS Administrator', module: 'HMS' },
             { code: 'hms:create', name: 'Create HMS Records', module: 'HMS' },
             { code: 'hms:edit', name: 'Edit HMS Records', module: 'HMS' },
             { code: 'hms:delete', name: 'Delete HMS Records', module: 'HMS' },
+
+            // HMS - Clinical & Patient
             { code: 'patients:view', name: 'View Patients', module: 'HMS' },
             { code: 'patients:create', name: 'Create Patients', module: 'HMS' },
             { code: 'patients:edit', name: 'Edit Patients', module: 'HMS' },
@@ -434,8 +433,12 @@ export async function getAllPermissions() {
             { code: 'vitals:view', name: 'View Vitals', module: 'HMS' },
             { code: 'vitals:create', name: 'Create Vitals', module: 'HMS' },
             { code: 'vitals:edit', name: 'Edit Vitals', module: 'HMS' },
+
+            // Billing
             { code: 'billing:view', name: 'View Billing', module: 'HMS' },
             { code: 'billing:create', name: 'Create Bills', module: 'HMS' },
+            { code: 'billing:returns:view', name: 'View Sales Returns', module: 'HMS' },
+            { code: 'billing:returns:create', name: 'Create Sales Returns', module: 'HMS' },
 
             // Pharmacy
             { code: 'pharmacy:view', name: 'View Pharmacy', module: 'Pharmacy' },
@@ -467,6 +470,8 @@ export async function getAllPermissions() {
             { code: 'inventory:edit', name: 'Edit Inventory', module: 'Inventory' },
             { code: 'inventory:delete', name: 'Delete Inventory', module: 'Inventory' },
             { code: 'inventory:admin', name: 'Inventory Administrator', module: 'Inventory' },
+            { code: 'inventory:adjustments:view', name: 'View Stock Adjustments', module: 'Inventory' },
+            { code: 'inventory:adjustments:create', name: 'Create Stock Adjustments', module: 'Inventory' },
 
             // Purchasing
             { code: 'purchasing:view', name: 'View Purchase Orders', module: 'Purchasing' },
@@ -477,55 +482,9 @@ export async function getAllPermissions() {
             { code: 'suppliers:edit', name: 'Edit Suppliers', module: 'Purchasing' },
             { code: 'purchasing:returns:view', name: 'View Purchase Returns', module: 'Purchasing' },
             { code: 'purchasing:returns:create', name: 'Create Purchase Returns', module: 'Purchasing' },
-
-            // Billing Returns
-            { code: 'billing:returns:view', name: 'View Sales Returns', module: 'HMS' },
-            { code: 'billing:returns:create', name: 'Create Sales Returns', module: 'HMS' },
-
-            // Inventory Adjustments
-            { code: 'inventory:adjustments:view', name: 'View Stock Adjustments', module: 'Inventory' },
-            { code: 'inventory:adjustments:create', name: 'Create Stock Adjustments', module: 'Inventory' }
         ];
 
-        // 3. Map DB permissions to UI format
-        const formattedDbPermissions = dbPermissions.map(p => ({
-            code: p.code,
-            name: p.name,
-            module: p.category || 'Custom'
-        }));
-
-        // 4. Merge (DB Overrides Hardcoded if duplicates exist, though code is unique key)
-        const combined = [...formattedDbPermissions];
-
-        // Add standard ones if not already in DB list
-        standardPermissions.forEach(sp => {
-            if (!combined.find(p => p.code === sp.code)) {
-                combined.push(sp);
-            }
-        });
-
-        // 5. AUTO-SEED DB with standard permissions (Background Effect) - ensures consistency
-        // Note: In production, do this via migration/seed script, but for now we do lazy-sync
-        const missingInDb = standardPermissions.filter(sp => !dbPermissions.find(dp => dp.code === sp.code));
-        if (missingInDb.length > 0) {
-            // We won't await this to keep UI fast, but it will populate for next time
-            // Actually, we must create them one by one or createMany. createMany not supported in SQLite/some Postgres modes?
-            // It is supported in Postgres.
-            try {
-                // Fire and forget catch
-                prisma.permission.createMany({
-                    data: missingInDb.map(p => ({
-                        code: p.code,
-                        name: p.name,
-                        category: p.module,
-                        description: 'System Default'
-                    })),
-                    skipDuplicates: true
-                }).catch(e => console.error("Auto-seed perm error", e));
-            } catch (e) { }
-        }
-
-        return { success: true, data: combined };
+        return { success: true, data: standardPermissions };
     } catch (error) {
         console.error("Failed to fetch permissions:", error);
         return { error: "Failed to fetch permissions" };
