@@ -16,7 +16,8 @@ const ROLES_DEFINITION = [
         module: 'hms',
         description: 'Manage hospital operations, users, and administrative settings',
         permissions: [
-            'dashboard.view', 'user.manage', 'settings.manage', 'hms.admin'
+            'dashboard.view', 'user.manage', 'settings.manage', 'hms.admin',
+            'hms.reception.view', 'hms.patient.view', 'hms.appointment.view', 'hms.clinical.view', 'hms.hr.view', 'hms.billing.view', 'hms.ward.view'
         ]
     },
     {
@@ -33,6 +34,14 @@ const ROLES_DEFINITION = [
         description: 'Nursing staff for triage, vitals, and patient care',
         permissions: [
             'hms.triage.view', 'hms.triage.create', 'hms.vitals.create'
+        ]
+    },
+    {
+        name: 'Receptionist',
+        module: 'hms',
+        description: 'Front desk staff for patient check-in and appointments',
+        permissions: [
+            'hms.reception.view', 'hms.appointment.view', 'hms.patient.view', 'hms.patient.create'
         ]
     },
 

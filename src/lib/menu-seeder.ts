@@ -276,21 +276,21 @@ export async function ensureCrmMenus() {
 export async function ensureHmsMenus() {
     try {
         const hmsItems = [
-            { key: 'hms-dashboard', label: 'Dashboard', url: '/hms/dashboard', icon: 'LayoutDashboard', sort: 10 },
-            { key: 'hms-reception', label: 'Reception', url: '/hms/reception/dashboard', icon: 'MonitorCheck', sort: 12 },
-            { key: 'hms-patients', label: 'Patients', url: '/hms/patients', icon: 'UserCircle', sort: 20 },
-            { key: 'hms-appointments', label: 'Appointments', url: '/hms/appointments', icon: 'Calendar', sort: 30 },
-            { key: 'hms-doctors', label: 'Doctors', url: '/hms/doctors', icon: 'Stethoscope', sort: 40 },
-            { key: 'hms-doctor-dash', label: 'Doctor Dashboard', url: '/hms/doctor/dashboard', icon: 'AppWindow', sort: 41 },
-            { key: 'hms-nursing', label: 'Nursing Station', url: '/hms/nursing/dashboard', icon: 'Activity', sort: 45 },
-            { key: 'hms-lab', label: 'Laboratory', url: '/hms/lab/dashboard', icon: 'FlaskConical', sort: 46 },
-            { key: 'hms-attendance', label: 'Attendance', url: '/hms/attendance', icon: 'Clock', sort: 50 },
-            { key: 'hms-roster', label: 'Staff Roster', url: '/hms/attendance/roster', icon: 'Layers', sort: 51 },
-            { key: 'hms-attendance-logs', label: 'Daily Logs', url: '/hms/attendance/logs', icon: 'ListChecks', sort: 52 },
-            { key: 'hms-attendance-analytics', label: 'Staff Analytics', url: '/hms/attendance/analytics', icon: 'BarChart3', sort: 53 },
-            { key: 'hms-billing', label: 'Billing', url: '/hms/billing', icon: 'Receipt', sort: 60 },
+            { key: 'hms-dashboard', label: 'Dashboard', url: '/hms/dashboard', icon: 'LayoutDashboard', sort: 10, permission: 'dashboard.view' },
+            { key: 'hms-reception', label: 'Reception', url: '/hms/reception/dashboard', icon: 'MonitorCheck', sort: 12, permission: 'hms.reception.view' },
+            { key: 'hms-patients', label: 'Patients', url: '/hms/patients', icon: 'UserCircle', sort: 20, permission: 'hms.patient.view' },
+            { key: 'hms-appointments', label: 'Appointments', url: '/hms/appointments', icon: 'Calendar', sort: 30, permission: 'hms.appointment.view' },
+            { key: 'hms-doctors', label: 'Doctors', url: '/hms/doctors', icon: 'Stethoscope', sort: 40, permission: 'hms.clinical.view' },
+            { key: 'hms-doctor-dash', label: 'Doctor Dashboard', url: '/hms/doctor/dashboard', icon: 'AppWindow', sort: 41, permission: 'hms.clinical.view' },
+            { key: 'hms-nursing', label: 'Nursing Station', url: '/hms/nursing/dashboard', icon: 'Activity', sort: 45, permission: 'hms.clinical.view' },
+            { key: 'hms-lab', label: 'Laboratory', url: '/hms/lab/dashboard', icon: 'FlaskConical', sort: 46, permission: 'hms.clinical.view' },
+            { key: 'hms-attendance', label: 'Attendance', url: '/hms/attendance', icon: 'Clock', sort: 50, permission: 'hms.hr.view' },
+            { key: 'hms-roster', label: 'Staff Roster', url: '/hms/attendance/roster', icon: 'Layers', sort: 51, permission: 'hms.hr.view' },
+            { key: 'hms-attendance-logs', label: 'Daily Logs', url: '/hms/attendance/logs', icon: 'ListChecks', sort: 52, permission: 'hms.hr.view' },
+            { key: 'hms-attendance-analytics', label: 'Staff Analytics', url: '/hms/attendance/analytics', icon: 'BarChart3', sort: 53, permission: 'hms.hr.view' },
+            { key: 'hms-billing', label: 'Billing', url: '/hms/billing', icon: 'Receipt', sort: 60, permission: 'hms.billing.view' },
             // { key: 'hms-inventory', label: 'Pharmacy/Inventory', url: '/hms/inventory', icon: 'Package', sort: 70 }, // Removed to allow migration to Inventory Module
-            { key: 'hms-wards', label: 'Clinics/Wards', url: '/hms/wards', icon: 'LayoutGrid', sort: 80 },
+            { key: 'hms-wards', label: 'Clinics/Wards', url: '/hms/wards', icon: 'LayoutGrid', sort: 80, permission: 'hms.ward.view' },
         ];
 
         for (const item of hmsItems) {
@@ -307,19 +307,22 @@ export async function ensureHmsMenus() {
                         module_key: 'hms',
                         icon: item.icon,
                         sort_order: item.sort,
+                        permission_code: item.permission,
                         is_global: true
                     }
                 });
                 console.log(`Auto-seeded HMS Menu: ${item.label}`);
-            } else if (existing.url !== item.url) {
-                // Only update URL/Metadata, DO NOT FORCE module_key back to 'hms' if it has been migrated!
-                await prisma.menu_items.update({
-                    where: { id: existing.id },
-                    data: {
-                        // module_key: 'hms', // DISABLED TO ALLOW MIGRATION
-                        url: item.url
-                    }
-                });
+            } else {
+                // Always update permission_code to ensure security
+                if (existing.permission_code !== item.permission || existing.url !== item.url) {
+                    await prisma.menu_items.update({
+                        where: { id: existing.id },
+                        data: {
+                            url: item.url,
+                            permission_code: item.permission
+                        }
+                    });
+                }
             }
         }
     } catch (e) {
