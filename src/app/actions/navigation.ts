@@ -59,21 +59,19 @@ export async function getMenuItems() {
             });
             tenantModules.forEach(tm => allowedModuleKeys.add(tm.module_key));
 
-            // 2. APPLY INDUSTRY DEFAULTS (Add if missing)
-            if (isHealthcare) {
-                allowedModuleKeys.add('hms');
-                allowedModuleKeys.add('accounting');
-                allowedModuleKeys.add('inventory');
-            } else {
-                // FORCE CRM for non-healthcare
-                allowedModuleKeys.add('crm');
-                // FORCE ACCOUNTING for verifying functionality
-                allowedModuleKeys.add('accounting');
-                allowedModuleKeys.add('inventory');
-
-                // If the user has NO subscriptions and is NOT healthcare, 
-                // we strictly default to CRM. 
-                // We do NOT add global active modules here to avoid leaking HMS.
+            // 2. APPLY INDUSTRY DEFAULTS (Only if NO explicit subscriptions found)
+            if (tenantModules.length === 0) {
+                if (isHealthcare) {
+                    allowedModuleKeys.add('hms');
+                    allowedModuleKeys.add('accounting');
+                    allowedModuleKeys.add('inventory');
+                } else {
+                    // FORCE CRM for non-healthcare
+                    allowedModuleKeys.add('crm');
+                    // FORCE ACCOUNTING for verifying functionality
+                    allowedModuleKeys.add('accounting');
+                    allowedModuleKeys.add('inventory');
+                }
             }
 
         } else {
