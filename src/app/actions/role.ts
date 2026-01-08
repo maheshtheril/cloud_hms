@@ -18,33 +18,35 @@ export async function getRoles() {
     try {
         const tenantId = session.user.tenantId;
 
-        const roles = await prisma.hms_role.findMany({
+        const roles = await prisma.role.findMany({
             where: { tenant_id: tenantId },
-            orderBy: [{ module: 'asc' }, { name: 'asc' }],
-            select: {
-                id: true,
-                name: true,
-                module: true,
-                description: true,
-                hms_role_permissions: {
-                    select: { permission: true }
+            orderBy: [{ name: 'asc' }],
+            include: {
+                role_permissions: {
+                    select: { permission_code: true }
                 },
                 _count: {
-                    select: { hms_user_roles: true }
+                    select: { user_roles: true }
                 }
             }
         });
 
         // Map to simpler structure for UI
-        const mappedRoles = roles.map(r => ({
-            id: r.id,
-            name: r.name,
-            key: r.name.toLowerCase().replace(/\s+/g, '_'), // Generate a key on fly
-            module: r.module,
-            description: r.description,
-            userCount: r._count.hms_user_roles,
-            permissions: r.hms_role_permissions.map(p => p.permission)
-        }));
+        const mappedRoles = roles.map(r => {
+            const explicitPerms = r.role_permissions.map(p => p.permission_code);
+            const arrayPerms = Array.isArray(r.permissions) ? r.permissions as string[] : [];
+            const uniquePerms = Array.from(new Set([...explicitPerms, ...arrayPerms]));
+
+            return {
+                id: r.id,
+                name: r.name,
+                key: r.key,
+                module: 'System', // Generic roles don't strictly have module, infer or default
+                description: r.description,
+                userCount: r._count.user_roles,
+                permissions: uniquePerms
+            };
+        });
 
         return { success: true, data: mappedRoles };
     } catch (error) {
