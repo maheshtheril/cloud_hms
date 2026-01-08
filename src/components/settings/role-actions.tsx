@@ -234,98 +234,23 @@ export function RoleActions({ role }: RoleActionsProps) {
                             <div className="space-y-4">
                                 <Label>Permissions Configuration</Label>
 
-                                {/* Search & Stats Bar */}
-                                <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-900/50 p-3 rounded-lg border border-slate-200 dark:border-slate-800">
-                                    <div className="relative flex-1">
-                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
-                                        <Input
-                                            placeholder="Search permissions..."
-                                            className="pl-9 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800"
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                        />
-                                    </div>
-                                    <Badge variant="outline" className="h-9 px-3 flex items-center justify-center border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-                                        {selectedPermissions.length} selected
-                                    </Badge>
-                                </div>
-
+                                {/* DEBUG MODE: Simplified Rendering */}
                                 {loadingPermissions ? (
-                                    <div className="flex items-center justify-center py-12">
-                                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                    </div>
+                                    <div className="flex items-center justify-center p-4">Loading...</div>
                                 ) : (
-                                    <ScrollArea className="h-[500px] border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/50 p-4">
-                                        <div className="space-y-6">
-                                            {Object.entries(permissionsByModule).map(([module, perms]) => {
-                                                // Filter logic
-                                                const visiblePerms = perms.filter(p =>
-                                                    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                                    p.code.toLowerCase().includes(searchQuery.toLowerCase())
-                                                );
-
-                                                if (visiblePerms.length === 0) return null;
-
-                                                const modulePerms = visiblePerms.map(p => p.code);
-                                                const allSelected = modulePerms.every(p => selectedPermissions.includes(p));
-                                                const someSelected = modulePerms.some(p => selectedPermissions.includes(p));
-
-                                                return (
-                                                    <div key={module} className="bg-white dark:bg-slate-950 rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm">
-                                                        <div className="flex items-center justify-between p-3 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
-                                                            <div className="flex items-center gap-3">
-                                                                <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100">
-                                                                    {module}
-                                                                </h4>
-                                                                <Badge variant="secondary" className="px-1.5 py-0 h-5 text-[10px]">
-                                                                    {visiblePerms.length}
-                                                                </Badge>
-                                                            </div>
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-7 text-xs hover:bg-slate-200 dark:hover:bg-slate-800"
-                                                                onClick={() => selectAllInModule(module)}
-                                                            >
-                                                                {allSelected ? 'Deselect All' : 'Select All'}
-                                                            </Button>
-                                                        </div>
-                                                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 p-4">
-                                                            {visiblePerms.map((perm) => (
-                                                                <div
-                                                                    key={perm.code}
-                                                                    className="flex items-start space-x-3 p-2 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors cursor-pointer group"
-                                                                    onClick={() => togglePermission(perm.code)}
-                                                                >
-                                                                    <Checkbox
-                                                                        id={`edit-${perm.code}`}
-                                                                        checked={selectedPermissions.includes(perm.code)}
-                                                                        onCheckedChange={() => togglePermission(perm.code)}
-                                                                        className="mt-0.5"
-                                                                    />
-                                                                    <div className="space-y-1 leading-none">
-                                                                        <label
-                                                                            htmlFor={`edit-${perm.code}`}
-                                                                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white"
-                                                                        >
-                                                                            {perm.name}
-                                                                        </label>
-                                                                        {/* Optional description if available */}
-                                                                    </div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )
-                                            })}
-                                            {permissions.length > 0 && Object.keys(permissionsByModule).length === 0 && (
-                                                <div className="text-center py-10 text-slate-500">
-                                                    No permissions found matching "{searchQuery}"
-                                                </div>
-                                            )}
-                                        </div>
-                                    </ScrollArea>
+                                    <div className="h-[300px] overflow-y-auto border p-2">
+                                        <p className="text-sm font-bold pb-2">Total Permissions: {permissions.length}</p>
+                                        {permissions.map(p => (
+                                            <div key={p.code} className="flex items-center gap-2 py-1">
+                                                <Checkbox
+                                                    checked={selectedPermissions.includes(p.code)}
+                                                    onCheckedChange={() => togglePermission(p.code)}
+                                                />
+                                                <span className="text-sm">{p.name} ({p.module})</span>
+                                            </div>
+                                        ))}
+                                        {permissions.length === 0 && <p className="text-red-500">No permissions loaded.</p>}
+                                    </div>
                                 )}
                             </div>
                         </div>
