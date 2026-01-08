@@ -100,9 +100,10 @@ export default function PurchaseReturnsPage() {
                         </div>
 
                         {filteredReturns.map((ret) => (
-                            <div
+                            <Link
                                 key={ret.id}
-                                className="grid grid-cols-12 gap-4 px-6 py-4 bg-card hover:bg-red-50/50 transition-all border-b border-border items-center group cursor-default"
+                                href={`/hms/purchasing/returns/${ret.id}`}
+                                className="grid grid-cols-12 gap-4 px-6 py-4 bg-card hover:bg-red-50/50 transition-all border-b border-border items-center group cursor-pointer"
                             >
                                 <div className="col-span-2 font-mono text-sm text-red-600 font-bold">
                                     {ret.returnNumber}
@@ -122,13 +123,13 @@ export default function PurchaseReturnsPage() {
                                 </div>
                                 <div className="col-span-1 text-right">
                                     <span className={`inline-flex items-center px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider ${ret.status === 'posted'
-                                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                                            : 'bg-gray-100 text-gray-500 border border-gray-200'
+                                        ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                        : 'bg-gray-100 text-gray-500 border border-gray-200'
                                         }`}>
                                         {ret.status}
                                     </span>
                                 </div>
-                            </div>
+                            </Link>
                         ))}
                     </div>
                 )}
