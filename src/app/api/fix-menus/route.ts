@@ -4,6 +4,8 @@ import { ensureHmsMenus } from '@/lib/menu-seeder';
 import { fixAdminRoles } from '@/lib/fix-admin-role';
 import { seedRolesAndPermissions } from '@/app/actions/rbac';
 
+import { nuclearMenuFix } from '@/lib/nuclear-menu-fix';
+
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
@@ -15,6 +17,9 @@ export async function GET() {
 
         // 0b. Force Run Menu Seeder (Apply Permissions)
         await ensureHmsMenus();
+
+        // 0b+ NUCLEAR FIX (Override potentially broken seeding)
+        await nuclearMenuFix();
 
         // 0c. Re-Seed Standard Roles (Populate role_permission table)
         await seedRolesAndPermissions();
