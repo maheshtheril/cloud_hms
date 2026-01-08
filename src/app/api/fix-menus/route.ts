@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { ensureHmsMenus } from '@/lib/menu-seeder'; // Import the seeder
+import { fixAdminRoles } from '@/lib/fix-admin-role';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,10 +9,13 @@ export async function GET() {
     try {
         console.log("Starting Manual Menu Fix & Seeding...");
 
-        // 0. Force Run Menu Seeder (Apply Permissions)
+        // 0a. Fix Admin Roles (Emergency Restore)
+        await fixAdminRoles();
+
+        // 0b. Force Run Menu Seeder (Apply Permissions)
         await ensureHmsMenus();
 
-        const results: Record<string, any> = { seeded: true };
+        const results: Record<string, any> = { seeded: true, roles_fixed: true };
 
         // 0. Ensure Target Modules Exist (Fixes FK Constraint Failures)
         const targetModules = ['accounting', 'inventory'];
