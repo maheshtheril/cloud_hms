@@ -1228,6 +1228,16 @@ export default function EditPurchaseReceiptPage() {
                         <span className="w-1.5 h-1.5 rounded-full bg-border"></span>
                         <span className="text-foreground">{mode === 'po' ? 'PO Tracking' : 'Direct Entry'}</span>
                     </div>
+                    {/* Return Button */}
+                    <button
+                        type="button"
+                        onClick={() => setIsReturnDialogOpen(true)}
+                        disabled={isSubmitting}
+                        className="bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-6 py-4 rounded-full text-xs font-black uppercase tracking-[0.2em] flex items-center gap-3 transition-all hover:scale-[1.05] active:scale-[0.95] mr-4 shadow-xl shadow-red-500/10"
+                    >
+                        <Undo2 className="h-4 w-4" /> Record Return
+                    </button>
+
                     <button
                         onClick={handleSubmit}
                         disabled={isSubmitting || items.length === 0}
@@ -1238,6 +1248,27 @@ export default function EditPurchaseReceiptPage() {
                 </div>
             </div>
 
+            {/* Return Dialog */}
+            <PurchaseReturnDialog
+                isOpen={isReturnDialogOpen}
+                onClose={() => setIsReturnDialogOpen(false)}
+                receiptId={params.id}
+                supplierId={supplierId || ''}
+                items={items.filter(i => !!i.id).map(i => ({
+                    receiptLineId: i.id!,
+                    productId: i.productId,
+                    productName: i.productName,
+                    qtyReceived: Number(i.receivedQty),
+                    unitPrice: Number(i.unitPrice),
+                    batchId: i.batchId
+                }))}
+                onSuccess={() => {
+                    toast({ title: "Return Created", description: "Debit Note generated successfully." });
+                    setIsReturnDialogOpen(false);
+                    // Force refresh key data
+                    window.location.reload();
+                }}
+            />
         </div>
     );
 }
