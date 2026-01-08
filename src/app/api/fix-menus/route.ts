@@ -25,6 +25,41 @@ export async function GET() {
             }
         }
 
+        // 0.5. AUTO-SUBSCRIBE Tenants to Core Modules (Prevent Disappearing Menus)
+        // If a tenant has HMS, they MUST have Accounting + Inventory for this new structure to work.
+        const hmsTenants = await prisma.tenant_module.findMany({
+            where: { module_key: 'hms', enabled: true },
+            select: { tenant_id: true }
+        });
+
+        const accModule = await prisma.modules.findUnique({ where: { module_key: 'accounting' } });
+        const invModule = await prisma.modules.findUnique({ where: { module_key: 'inventory' } });
+
+        const tenantIds = hmsTenants.map(t => t.tenant_id);
+        if (tenantIds.length > 0 && accModule && invModule) {
+            // Subscribe to Accounting
+            await prisma.tenant_module.createMany({
+                data: tenantIds.map(tid => ({
+                    tenant_id: tid,
+                    module_key: 'accounting',
+                    enabled: true,
+                    module_id: accModule.id
+                })),
+                skipDuplicates: true
+            });
+            // Subscribe to Inventory
+            await prisma.tenant_module.createMany({
+                data: tenantIds.map(tid => ({
+                    tenant_id: tid,
+                    module_key: 'inventory',
+                    enabled: true,
+                    module_id: invModule.id
+                })),
+                skipDuplicates: true
+            });
+            results[`updated_tenants_rec_count`] = tenantIds.length;
+        }
+
         // 1. Move HMS Accounting -> Accounting
         const r1 = await prisma.menu_items.updateMany({
             where: { key: 'hms-accounting' },
