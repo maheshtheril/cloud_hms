@@ -357,6 +357,15 @@ export async function ensurePurchasingMenus() {
             await prisma.menu_items.update({ where: { id: existingDash.id }, data: { parent_id: null } });
         }
 
+        // Ensure Product Master Exists
+        const prodKey = 'inv-products';
+        const existingProd = await prisma.menu_items.findFirst({ where: { key: prodKey } });
+        if (!existingProd) {
+            await prisma.menu_items.create({
+                data: { label: 'Product Master', url: '/hms/inventory/products', key: prodKey, module_key: 'inventory', icon: 'Package', sort_order: 6, is_global: true }
+            });
+        }
+
         for (const item of items) {
             const existing = await prisma.menu_items.findFirst({ where: { key: item.key } });
             if (!existing) {
