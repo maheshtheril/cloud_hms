@@ -154,7 +154,7 @@ export default async function BillingPage({
                             invoices.map((inv) => (
                                 <tr key={inv.id} className="hover:bg-gray-50/80 transition-colors group">
                                     <td className="p-4 text-gray-900 font-medium font-mono text-sm">
-                                        <Link href={`/hms/billing/${inv.id}`} className="hover:text-blue-600 hover:underline transition-colors">
+                                        <Link href={`/hms/billing/${inv.id}`} className="text-blue-600 hover:text-blue-800 font-bold hover:underline transition-colors">
                                             {inv.invoice_number}
                                         </Link>
                                     </td>
