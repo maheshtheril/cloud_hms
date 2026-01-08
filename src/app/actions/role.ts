@@ -24,12 +24,22 @@ export async function getRoles() {
             include: {
                 role_permissions: {
                     select: { permission_code: true }
-                },
-                _count: {
-                    select: { user_roles: true }
                 }
             }
         });
+
+        // Fetch User Counts via GroupBy (Safe method independent of relation names on Role)
+        const userCounts = await prisma.user_role.groupBy({
+            by: ['role_id'],
+            _count: {
+                role_id: true
+            },
+            where: {
+                role_id: { in: roles.map(r => r.id) }
+            }
+        });
+
+        const countMap = new Map(userCounts.map(c => [c.role_id, c._count.role_id]));
 
         // Map to simpler structure for UI
         const mappedRoles = roles.map(r => {
@@ -43,7 +53,7 @@ export async function getRoles() {
                 key: r.key,
                 module: 'System', // Generic roles don't strictly have module, infer or default
                 description: r.description,
-                userCount: r._count.user_roles,
+                userCount: countMap.get(r.id) || 0,
                 permissions: uniquePerms
             };
         });
