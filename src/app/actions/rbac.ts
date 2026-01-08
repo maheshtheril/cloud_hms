@@ -142,6 +142,18 @@ export async function seedRolesAndPermissions() {
                         permissions: roleData.permissions
                     }
                 });
+
+                // Also seed role_permission table
+                if (roleData.permissions.length > 0) {
+                    await prisma.role_permission.createMany({
+                        data: roleData.permissions.map(p => ({
+                            role_id: newRole.id,
+                            permission_code: p,
+                            is_granted: true
+                        }))
+                    });
+                }
+
                 results.push({ action: 'created', role: newRole.name, key: newRole.key });
             } else {
                 // Update permissions if role exists
@@ -149,6 +161,17 @@ export async function seedRolesAndPermissions() {
                     where: { id: existing.id },
                     data: { permissions: roleData.permissions }
                 });
+
+                // Sync role_permission table
+                await prisma.role_permission.deleteMany({ where: { role_id: existing.id } });
+                await prisma.role_permission.createMany({
+                    data: roleData.permissions.map(p => ({
+                        role_id: existing.id,
+                        permission_code: p,
+                        is_granted: true
+                    }))
+                });
+
                 results.push({ action: 'updated', role: existing.name, key: existing.key });
             }
         }
