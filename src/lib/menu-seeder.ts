@@ -450,6 +450,29 @@ export async function ensurePurchasingMenus() {
         await prisma.menu_items.updateMany({ where: { key: 'inv-products' }, data: { sort_order: 20, label: 'Product Master' } });
         await prisma.menu_items.updateMany({ where: { key: 'inv-procurement' }, data: { sort_order: 30 } });
 
+        // 5. GENERIC CLEANUP: Remove Empty Parents (Folders with no children)
+        // Find potential empty parents (Label 'Inventory' or URL '#') in Inventory Module
+        const potentialEmpty = await prisma.menu_items.findMany({
+            where: {
+                module_key: 'inventory',
+                OR: [
+                    { label: 'Inventory' },
+                    { url: '#' }
+                ]
+            }
+        });
+
+        for (const item of potentialEmpty) {
+            const childCount = await prisma.menu_items.count({
+                where: { parent_id: item.id }
+            });
+
+            if (childCount === 0) {
+                console.log(`Deleting empty parent menu: ${item.label} (${item.key})`);
+                await prisma.menu_items.delete({ where: { id: item.id } });
+            }
+        }
+
     } catch (e) {
         console.error("Failed to seed Purchasing menus:", e);
     }
