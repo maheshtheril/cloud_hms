@@ -289,8 +289,10 @@ export async function getMenuItems() {
             // ... (rest validation)
         }
 
-        // 7. INJECT MISSING CORE MODULES (Hybrid Mode)
-        // STRICT CHECK: Only inject if the user is ALLOWED to see this module!
+        // 7. INJECT MISSING CORE MODULES (Hybrid Mode) - DISABLED
+        // This was causing a security leak: if RBAC filtered out all items for a module, 
+        // this logic was re-injecting the full unrestricted fallback menu!
+        /*
         const fallback = getFallbackMenuItems(isAdmin);
         const coreKeys = ['accounting', 'inventory', 'crm', 'hms'];
 
@@ -306,6 +308,7 @@ export async function getMenuItems() {
                 }
             }
         });
+        */
 
 
 

@@ -129,9 +129,12 @@ async function ensureJournalMenu() {
                     module_key: 'accounting',
                     icon: 'Book',
                     sort_order: 30, // Positioned after Sales/Purchases
+                    permission_code: 'billing:view',
                     is_global: true
                 }
             });
+        } else if (!ledgerParent.permission_code) {
+            await prisma.menu_items.update({ where: { id: ledgerParent.id }, data: { permission_code: 'billing:view' } });
         }
 
         // B. Ensure 'Journal Entries' Child Exists
@@ -150,9 +153,12 @@ async function ensureJournalMenu() {
                     icon: 'BookOpen',
                     parent_id: ledgerParent.id,
                     sort_order: 10,
+                    permission_code: 'billing:view',
                     is_global: true
                 }
             });
+        } else if (!journalsMenu.permission_code) {
+            await prisma.menu_items.update({ where: { id: journalsMenu.id }, data: { permission_code: 'billing:view' } });
         }
 
         // C. Ensure 'Chart of Accounts' Child Exists
@@ -171,9 +177,12 @@ async function ensureJournalMenu() {
                     icon: 'ListTree',
                     parent_id: ledgerParent.id,
                     sort_order: 5, // Before Journals
+                    permission_code: 'billing:view',
                     is_global: true
                 }
             });
+        } else if (!coaMenu.permission_code) {
+            await prisma.menu_items.update({ where: { id: coaMenu.id }, data: { permission_code: 'billing:view' } });
         }
     } catch (error) {
         console.error("Failed to seed journal menus:", error);
@@ -183,14 +192,13 @@ async function ensureJournalMenu() {
 export async function ensureAdminMenus() {
     try {
         const adminItems = [
-            { key: 'users', label: 'Users', url: '/settings/users', icon: 'Users', sort: 90 },
-            { key: 'roles', label: 'Roles & Permissions', url: '/settings/roles', icon: 'Shield', sort: 91 },
-            { key: 'general-settings', label: 'Global Settings', url: '/settings/global', icon: 'Settings', sort: 99 },
-            { key: 'crm-masters', label: 'CRM Masters', url: '/settings/crm', icon: 'Database', sort: 92 },
-            { key: 'import-leads', label: 'Import Leads', url: '/crm/import/leads', icon: 'UploadCloud', sort: 93 },
-            // Removed crm-targets from here to place it in CRM module
-            { key: 'hms-config', label: 'HMS Configuration', url: '/settings/hms', icon: 'Stethoscope', sort: 96 },
-            { key: 'custom-fields', label: 'Custom Fields', url: '/settings/custom-fields', icon: 'FileText', sort: 95 },
+            { key: 'users', label: 'Users', url: '/settings/users', icon: 'Users', sort: 90, permission: 'users:view' },
+            { key: 'roles', label: 'Roles & Permissions', url: '/settings/roles', icon: 'Shield', sort: 91, permission: 'roles:view' },
+            { key: 'general-settings', label: 'Global Settings', url: '/settings/global', icon: 'Settings', sort: 99, permission: 'settings:view' },
+            { key: 'crm-masters', label: 'CRM Masters', url: '/settings/crm', icon: 'Database', sort: 92, permission: 'settings:view' },
+            { key: 'import-leads', label: 'Import Leads', url: '/crm/import/leads', icon: 'UploadCloud', sort: 93, permission: 'crm:create_leads' },
+            { key: 'hms-config', label: 'HMS Configuration', url: '/settings/hms', icon: 'Stethoscope', sort: 96, permission: 'hms:admin' },
+            { key: 'custom-fields', label: 'Custom Fields', url: '/settings/custom-fields', icon: 'FileText', sort: 95, permission: 'settings:view' },
         ];
 
         for (const item of adminItems) {
@@ -207,16 +215,22 @@ export async function ensureAdminMenus() {
                         module_key: 'configuration',
                         icon: item.icon,
                         sort_order: item.sort,
+                        permission_code: item.permission,
                         is_global: true
                     }
                 });
                 console.log(`Auto-seeded Admin Menu: ${item.label}`);
-            } else if (existing.module_key !== 'configuration') {
-                // Fix module key if wrong
-                await prisma.menu_items.update({
-                    where: { id: existing.id },
-                    data: { module_key: 'configuration' }
-                });
+            } else {
+                // Update permission if missing
+                if (!existing.permission_code || existing.module_key !== 'configuration') {
+                    await prisma.menu_items.update({
+                        where: { id: existing.id },
+                        data: {
+                            module_key: 'configuration',
+                            permission_code: item.permission
+                        }
+                    });
+                }
             }
         }
     } catch (e) {
@@ -339,15 +353,17 @@ export async function ensurePurchasingMenus() {
             const inventoryModule = await prisma.menu_items.findFirst({ where: { key: 'hms-inventory' } });
             // Fallback to separate group if no inventory parent found easily, or create top level
             procParent = await prisma.menu_items.create({
-                data: { label: 'Procurement', url: '#', key: 'inv-procurement', module_key: 'inventory', icon: 'ShoppingCart', sort_order: 15, is_global: true }
+                data: { label: 'Procurement', url: '#', key: 'inv-procurement', module_key: 'inventory', icon: 'ShoppingCart', sort_order: 15, permission_code: 'purchasing:view', is_global: true }
             });
+        } else if (!procParent.permission_code) {
+            await prisma.menu_items.update({ where: { id: procParent.id }, data: { permission_code: 'purchasing:view' } });
         }
 
         const items = [
-            { key: 'inv-suppliers', label: 'Suppliers', url: '/hms/purchasing/suppliers', icon: 'Truck', sort: 10 },
-            { key: 'inv-po', label: 'Purchase Orders', url: '/hms/purchasing/orders', icon: 'FileText', sort: 20 },
-            { key: 'inv-receipts', label: 'Goods Receipts', url: '/hms/purchasing/receipts', icon: 'ClipboardList', sort: 30 },
-            { key: 'inv-returns', label: 'Purchase Returns', url: '/hms/purchasing/returns', icon: 'Undo2', sort: 40 },
+            { key: 'inv-suppliers', label: 'Suppliers', url: '/hms/purchasing/suppliers', icon: 'Truck', sort: 10, permission: 'suppliers:view' },
+            { key: 'inv-po', label: 'Purchase Orders', url: '/hms/purchasing/orders', icon: 'FileText', sort: 20, permission: 'purchasing:view' },
+            { key: 'inv-receipts', label: 'Goods Receipts', url: '/hms/purchasing/receipts', icon: 'ClipboardList', sort: 30, permission: 'purchasing:view' },
+            { key: 'inv-returns', label: 'Purchase Returns', url: '/hms/purchasing/returns', icon: 'Undo2', sort: 40, permission: 'purchasing:returns:view' },
         ];
 
         // Ensure Dashboard is Top Level
@@ -355,10 +371,10 @@ export async function ensurePurchasingMenus() {
         const existingDash = await prisma.menu_items.findFirst({ where: { key: dashKey } });
         if (!existingDash) {
             await prisma.menu_items.create({
-                data: { label: 'Command Center', url: '/hms/inventory', key: dashKey, module_key: 'inventory', icon: 'LayoutDashboard', sort_order: 5, is_global: true }
+                data: { label: 'Command Center', url: '/hms/inventory', key: dashKey, module_key: 'inventory', icon: 'LayoutDashboard', sort_order: 5, permission_code: 'inventory:view', is_global: true }
             });
-        } else if (existingDash.parent_id) {
-            await prisma.menu_items.update({ where: { id: existingDash.id }, data: { parent_id: null } });
+        } else if (!existingDash.permission_code || existingDash.parent_id) {
+            await prisma.menu_items.update({ where: { id: existingDash.id }, data: { parent_id: null, permission_code: 'inventory:view' } });
         }
 
         // Ensure Product Master Exists
@@ -366,8 +382,10 @@ export async function ensurePurchasingMenus() {
         const existingProd = await prisma.menu_items.findFirst({ where: { key: prodKey } });
         if (!existingProd) {
             await prisma.menu_items.create({
-                data: { label: 'Product Master', url: '/hms/inventory/products', key: prodKey, module_key: 'inventory', icon: 'Package', sort_order: 6, is_global: true }
+                data: { label: 'Product Master', url: '/hms/inventory/products', key: prodKey, module_key: 'inventory', icon: 'Package', sort_order: 6, permission_code: 'inventory:view', is_global: true }
             });
+        } else if (!existingProd.permission_code) {
+            await prisma.menu_items.update({ where: { id: existingProd.id }, data: { permission_code: 'inventory:view' } });
         }
 
         for (const item of items) {
@@ -382,10 +400,13 @@ export async function ensurePurchasingMenus() {
                         icon: item.icon,
                         parent_id: procParent.id,
                         sort_order: item.sort,
+                        permission_code: item.permission,
                         is_global: true
                     }
                 });
                 console.log(`Auto-seeded Purchasing Menu: ${item.label}`);
+            } else if (!existing.permission_code) {
+                await prisma.menu_items.update({ where: { id: existing.id }, data: { permission_code: item.permission } });
             }
         }
 
