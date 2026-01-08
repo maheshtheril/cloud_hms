@@ -69,6 +69,7 @@ export async function getMenuItems() {
                 allowedModuleKeys.add('crm');
                 // FORCE ACCOUNTING for verifying functionality
                 allowedModuleKeys.add('accounting');
+                allowedModuleKeys.add('inventory');
 
                 // If the user has NO subscriptions and is NOT healthcare, 
                 // we strictly default to CRM. 
@@ -219,6 +220,8 @@ export async function getMenuItems() {
                 }
             }
         });
+
+
 
         // Re-sort after injection
         result.sort((a, b) => {

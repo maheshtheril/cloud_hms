@@ -346,6 +346,17 @@ export async function ensurePurchasingMenus() {
             { key: 'inv-returns', label: 'Purchase Returns', url: '/hms/purchasing/returns', icon: 'Undo2', sort: 40 },
         ];
 
+        // Ensure Dashboard is Top Level
+        const dashKey = 'inv-dashboard';
+        const existingDash = await prisma.menu_items.findFirst({ where: { key: dashKey } });
+        if (!existingDash) {
+            await prisma.menu_items.create({
+                data: { label: 'Command Center', url: '/hms/inventory', key: dashKey, module_key: 'inventory', icon: 'LayoutDashboard', sort_order: 5, is_global: true }
+            });
+        } else if (existingDash.parent_id) {
+            await prisma.menu_items.update({ where: { id: existingDash.id }, data: { parent_id: null } });
+        }
+
         for (const item of items) {
             const existing = await prisma.menu_items.findFirst({ where: { key: item.key } });
             if (!existing) {
