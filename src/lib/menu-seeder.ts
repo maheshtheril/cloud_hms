@@ -417,15 +417,17 @@ export async function ensurePurchasingMenus() {
         }
 
         // 3. CLEANUP: Delete any other items in 'inventory' module
-        const allowedKeys = ['inv-dashboard', 'inv-products', 'inv-procurement', 'inv-suppliers', 'inv-po', 'inv-receipts', 'inv-returns'];
+        // const allowedKeys = ['inv-dashboard', 'inv-products', 'inv-procurement', 'inv-suppliers', 'inv-po', 'inv-receipts', 'inv-returns'];
         // Also keep 'hms-inventory' if it was somehow mapped to inventory, but we want to be strict.
 
+        /* DISABLE CLEANUP TO PREVENT FK ERRORS
         await prisma.menu_items.deleteMany({
             where: {
                 module_key: 'inventory',
                 key: { notIn: allowedKeys }
             }
         });
+        */
 
         // 3b. ADDITIONAL CLEANUP: Rogue Keys (True Bulletproof 2.0)
         // 1. Explicitly handle 'inventory-root' which acts as a parent
@@ -437,17 +439,19 @@ export async function ensurePurchasingMenus() {
                 data: { parent_id: null }
             });
             // Delete the root
-            await prisma.menu_items.delete({ where: { id: rogueRoot.id } });
+            // await prisma.menu_items.delete({ where: { id: rogueRoot.id } }); // FK Error risk
         }
 
-        const rogueKeys = ['inv-receive', 'inventory.products', 'inv-moves']; // Removed hms.inventory
+        // const rogueKeys = ['inv-receive', 'inventory.products', 'inv-moves']; // Removed hms.inventory
         // Unlink these specific keys if they have parents (nesting cleanup)
+        /*
         await prisma.menu_items.updateMany({
             where: { key: { in: rogueKeys } },
             data: { parent_id: null }
         });
         // Delete them
         await prisma.menu_items.deleteMany({ where: { key: { in: rogueKeys } } });
+        */
 
         // 4. STANDARDIZE: Update Sort Orders and Labels
         await prisma.menu_items.updateMany({ where: { key: 'inv-dashboard' }, data: { sort_order: 10, label: 'Inventory' } }); // Renamed to Inventory
