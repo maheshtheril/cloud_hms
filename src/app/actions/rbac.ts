@@ -517,36 +517,60 @@ export async function getUserPermissions(userId: string): Promise<Set<string>> {
 
         if (!tenantId) return new Set();
 
-        // 1. Get User's Roles
+        const permissionSet = new Set<string>();
+
+        // 1. Get User's Generic Roles (Previous Logic)
         const userRoles = await prisma.user_role.findMany({
             where: { user_id: userId, tenant_id: tenantId }
         });
-
         const roleIds = userRoles.map(ur => ur.role_id);
 
-        if (roleIds.length === 0) return new Set();
+        if (roleIds.length > 0) {
+            // 2. Fetch Roles (for array-based permissions)
+            const roles = await prisma.role.findMany({
+                where: { id: { in: roleIds } }
+            });
+            roles.forEach(r => {
+                if (Array.isArray(r.permissions)) {
+                    r.permissions.forEach((p: string) => permissionSet.add(p));
+                }
+            });
+            // 3. Fetch Role-Permission Mappings (for table-based permissions)
+            const rolePermissions = await prisma.role_permission.findMany({
+                where: { role_id: { in: roleIds }, is_granted: true }
+            });
+            rolePermissions.forEach(rp => permissionSet.add(rp.permission_code));
+        }
 
-        // 2. Fetch Roles (for array-based permissions)
-        const roles = await prisma.role.findMany({
-            where: { id: { in: roleIds } }
+        // ----------------------------------------------------
+        // FIX: FETCH HMS SPECIFIC ROLES (hms_role)
+        // ----------------------------------------------------
+        const hmsUserRoles = await prisma.hms_user_roles.findMany({
+            where: { user_id: userId, tenant_id: tenantId }
         });
+        const hmsRoleIds = hmsUserRoles.map(ur => ur.role_id);
 
-        // 3. Fetch Role-Permission Mappings (for table-based permissions)
-        const rolePermissions = await prisma.role_permission.findMany({
-            where: { role_id: { in: roleIds }, is_granted: true }
-        });
+        if (hmsRoleIds.length > 0) {
+            const hmsRoles = await prisma.hms_role.findMany({
+                where: { id: { in: hmsRoleIds } },
+                include: { hms_role_permissions: true }
+            });
 
-        const permissionSet = new Set<string>();
+            for (const role of hmsRoles) {
+                // Determine implied permissions based on role name/module if needed
+                // But primarily use hms_role_permissions
+                if (role.hms_role_permissions) {
+                    role.hms_role_permissions.forEach(p => permissionSet.add(p.permission));
+                }
 
-        // Add array-based permissions
-        roles.forEach(r => {
-            if (Array.isArray(r.permissions)) {
-                r.permissions.forEach((p: string) => permissionSet.add(p));
+                // Fallback: If Hospital Admin, force * if permissions missing?
+                if (role.name === 'Hospital Admin' || role.name === 'Super Admin') {
+                    permissionSet.add('*');
+                }
             }
-        });
+        }
 
-        // Add table-based permissions
-        rolePermissions.forEach(rp => permissionSet.add(rp.permission_code));
+        // ----------------------------------------------------
 
         // 4. Check for User-Specific Permissions override
         const userPermissions = await prisma.user_permission.findMany({
