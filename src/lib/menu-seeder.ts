@@ -412,6 +412,22 @@ export async function ensurePurchasingMenus() {
             }
         }
 
+        // 3. CLEANUP: Delete any other items in 'inventory' module
+        const allowedKeys = ['inv-dashboard', 'inv-products', 'inv-procurement', 'inv-suppliers', 'inv-po', 'inv-receipts', 'inv-returns'];
+        // Also keep 'hms-inventory' if it was somehow mapped to inventory, but we want to be strict.
+
+        await prisma.menu_items.deleteMany({
+            where: {
+                module_key: 'inventory',
+                key: { notIn: allowedKeys }
+            }
+        });
+
+        // 4. STANDARDIZE: Update Sort Orders and Labels
+        await prisma.menu_items.updateMany({ where: { key: 'inv-dashboard' }, data: { sort_order: 10, label: 'Dashboard' } });
+        await prisma.menu_items.updateMany({ where: { key: 'inv-products' }, data: { sort_order: 20, label: 'Product Master' } });
+        await prisma.menu_items.updateMany({ where: { key: 'inv-procurement' }, data: { sort_order: 30 } });
+
     } catch (e) {
         console.error("Failed to seed Purchasing menus:", e);
     }
