@@ -1254,13 +1254,16 @@ export default function EditPurchaseReceiptPage() {
                 onClose={() => setIsReturnDialogOpen(false)}
                 receiptId={params.id}
                 supplierId={supplierId || ''}
-                items={items.filter(i => !!i.id).map(i => ({
+                supplierName={supplierName}
+                initialItems={items.filter(i => !!i.id).map(i => ({
                     receiptLineId: i.id!,
                     productId: i.productId,
                     productName: i.productName,
-                    qtyReceived: Number(i.receivedQty),
+                    availableQty: Number(i.receivedQty),
+                    returnQty: 0,
                     unitPrice: Number(i.unitPrice),
-                    batchId: i.batchId
+                    batchId: i.batchId,
+                    batchNo: i.batch
                 }))}
                 onSuccess={() => {
                     toast({ title: "Return Created", description: "Debit Note generated successfully." });
