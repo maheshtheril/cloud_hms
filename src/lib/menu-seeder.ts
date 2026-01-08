@@ -423,8 +423,16 @@ export async function ensurePurchasingMenus() {
             }
         });
 
-        // 3b. ADDITIONAL CLEANUP: Rogue Keys
+        // 3b. ADDITIONAL CLEANUP: Rogue Keys (Bulletproof)
         const rogueKeys = ['inventory-root', 'inv-receive', 'inventory.products', 'hms.inventory', 'inv-moves'];
+
+        // Unlink parents to prevent FK Constraint failures during delete
+        await prisma.menu_items.updateMany({
+            where: { key: { in: rogueKeys } },
+            data: { parent_id: null }
+        });
+
+        // Delete them
         await prisma.menu_items.deleteMany({ where: { key: { in: rogueKeys } } });
 
         // 4. STANDARDIZE: Update Sort Orders and Labels
