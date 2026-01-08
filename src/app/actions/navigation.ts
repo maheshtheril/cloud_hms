@@ -83,6 +83,53 @@ export async function getMenuItems() {
         allowedModuleKeys.add('general');
         allowedModuleKeys.add('configuration');
 
+        // -------------------------
+        // AUTO-MIGRATION: Fix Module Assignments (World Standard)
+        // -------------------------
+        try {
+            // 1. Move HMS Accounting -> Accounting
+            await prisma.menu_items.updateMany({
+                where: { key: 'hms-accounting', module_key: { not: 'accounting' } },
+                data: { module_key: 'accounting', sort_order: 10 }
+            });
+            // Children follow parent
+            const hmsAcc = await prisma.menu_items.findFirst({ where: { key: 'hms-accounting' } });
+            if (hmsAcc) {
+                await prisma.menu_items.updateMany({
+                    where: { parent_id: hmsAcc.id, module_key: { not: 'accounting' } },
+                    data: { module_key: 'accounting' }
+                });
+            }
+
+            // 2. Move HMS Inventory -> Inventory
+            await prisma.menu_items.updateMany({
+                where: { key: 'hms-inventory', module_key: { not: 'inventory' } },
+                data: { module_key: 'inventory', sort_order: 50, label: 'Pharmacy Store' }
+            });
+            const hmsInv = await prisma.menu_items.findFirst({ where: { key: 'hms-inventory' } });
+            if (hmsInv) {
+                await prisma.menu_items.updateMany({
+                    where: { parent_id: hmsInv.id, module_key: { not: 'inventory' } },
+                    data: { module_key: 'inventory' }
+                });
+            }
+
+            // 3. Move HMS Purchasing -> Inventory (Procurement)
+            await prisma.menu_items.updateMany({
+                where: { key: 'hms-purchasing', module_key: { not: 'inventory' } },
+                data: { module_key: 'inventory', sort_order: 60, label: 'Central Purchasing' }
+            });
+            const hmsPurch = await prisma.menu_items.findFirst({ where: { key: 'hms-purchasing' } });
+            if (hmsPurch) {
+                await prisma.menu_items.updateMany({
+                    where: { parent_id: hmsPurch.id, module_key: { not: 'inventory' } },
+                    data: { module_key: 'inventory' }
+                });
+            }
+        } catch (e) {
+            console.error("Auto-Migration Failed:", e);
+        }
+
         // 1. FETCH ALL ITEMS
         const allMenuItems = await prisma.menu_items.findMany({
             orderBy: { sort_order: 'asc' },
