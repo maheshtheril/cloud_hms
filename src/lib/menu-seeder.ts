@@ -436,7 +436,7 @@ export async function ensurePurchasingMenus() {
             await prisma.menu_items.delete({ where: { id: rogueRoot.id } });
         }
 
-        const rogueKeys = ['inv-receive', 'inventory.products', 'hms.inventory', 'inv-moves'];
+        const rogueKeys = ['inv-receive', 'inventory.products', 'inv-moves']; // Removed hms.inventory
         // Unlink these specific keys if they have parents (nesting cleanup)
         await prisma.menu_items.updateMany({
             where: { key: { in: rogueKeys } },
@@ -446,7 +446,7 @@ export async function ensurePurchasingMenus() {
         await prisma.menu_items.deleteMany({ where: { key: { in: rogueKeys } } });
 
         // 4. STANDARDIZE: Update Sort Orders and Labels
-        await prisma.menu_items.updateMany({ where: { key: 'inv-dashboard' }, data: { sort_order: 10, label: 'Dashboard' } });
+        await prisma.menu_items.updateMany({ where: { key: 'inv-dashboard' }, data: { sort_order: 10, label: 'Inventory' } }); // Renamed to Inventory
         await prisma.menu_items.updateMany({ where: { key: 'inv-products' }, data: { sort_order: 20, label: 'Product Master' } });
         await prisma.menu_items.updateMany({ where: { key: 'inv-procurement' }, data: { sort_order: 30 } });
 
