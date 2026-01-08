@@ -423,15 +423,25 @@ export async function ensurePurchasingMenus() {
             }
         });
 
-        // 3b. ADDITIONAL CLEANUP: Rogue Keys (Bulletproof)
-        const rogueKeys = ['inventory-root', 'inv-receive', 'inventory.products', 'hms.inventory', 'inv-moves'];
+        // 3b. ADDITIONAL CLEANUP: Rogue Keys (True Bulletproof 2.0)
+        // 1. Explicitly handle 'inventory-root' which acts as a parent
+        const rogueRoot = await prisma.menu_items.findFirst({ where: { key: 'inventory-root' } });
+        if (rogueRoot) {
+            // Unlink any children pointing to this root
+            await prisma.menu_items.updateMany({
+                where: { parent_id: rogueRoot.id },
+                data: { parent_id: null }
+            });
+            // Delete the root
+            await prisma.menu_items.delete({ where: { id: rogueRoot.id } });
+        }
 
-        // Unlink parents to prevent FK Constraint failures during delete
+        const rogueKeys = ['inv-receive', 'inventory.products', 'hms.inventory', 'inv-moves'];
+        // Unlink these specific keys if they have parents (nesting cleanup)
         await prisma.menu_items.updateMany({
             where: { key: { in: rogueKeys } },
             data: { parent_id: null }
         });
-
         // Delete them
         await prisma.menu_items.deleteMany({ where: { key: { in: rogueKeys } } });
 
