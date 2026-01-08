@@ -1296,6 +1296,7 @@ model hms_invoice_lines {
   tax_rate_id     String?     @db.Uuid
   hms_invoice     hms_invoice @relation(fields: [invoice_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   tax_rates       tax_rates?  @relation(fields: [tax_rate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hms_product     hms_product? @relation(fields: [product_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([tenant_id, product_id], map: "ix_hms_invoice_lines_product")
   @@index([tenant_id, product_id], map: "ix_hms_invoice_lines_tenant_product")
@@ -1726,6 +1727,7 @@ model hms_product {
   product_tax_rules          product_tax_rules[]
   hms_purchase_return_line   hms_purchase_return_line[]
   hms_sales_return_line      hms_sales_return_line[]
+  hms_invoice_lines          hms_invoice_lines[]
   hms_stock_adjustment_line  hms_stock_adjustment_line[]
 
   @@unique([tenant_id, sku], map: "ux_hms_product_tenant_sku")
