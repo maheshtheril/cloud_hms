@@ -393,3 +393,73 @@ export async function getSalesReturns() {
         return { success: false, error: error.message };
     }
 }
+
+export async function getSalesReturn(id: string) {
+    const session = await auth();
+    if (!session?.user?.companyId) return { success: false, error: "Unauthorized" };
+
+    try {
+        const ret = await prisma.hms_sales_return.findUnique({
+            where: { id },
+            include: {
+                lines: { include: { hms_product: true, hms_invoice_line: true } },
+                hms_patient: true
+            }
+        });
+
+        if (!ret) return { success: false, error: "Not found" };
+        return { success: true, data: ret };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+}
+
+export async function deleteSalesReturn(id: string) {
+    const session = await auth();
+    if (!session?.user?.companyId) return { error: "Unauthorized" };
+
+    try {
+        await prisma.$transaction(async (tx: any) => {
+            const ret = await tx.hms_sales_return.findUnique({
+                where: { id },
+                include: { lines: true }
+            });
+
+            if (!ret) throw new Error("Return not found");
+            if (ret.status !== 'draft') throw new Error("Only draft returns can be deleted");
+
+            for (const line of ret.lines) {
+                if (line.product_id) {
+                    await tx.hms_product_stock_ledger.create({
+                        data: {
+                            tenant_id: ret.tenant_id,
+                            company_id: ret.company_id,
+                            product_id: line.product_id,
+                            movement_type: 'void_return',
+                            change_qty: -Number(line.qty),
+                            balance_qty: 0,
+                            reference: `VOID-${ret.return_number}`,
+                            cost: 0
+                        }
+                    });
+
+                    const level = await tx.hms_stock_levels.findFirst({
+                        where: { company_id: ret.company_id, product_id: line.product_id }
+                    });
+                    if (level) {
+                        await tx.hms_stock_levels.update({
+                            where: { id: level.id },
+                            data: { quantity: { decrement: Number(line.qty) } }
+                        });
+                    }
+                }
+            }
+            await tx.hms_sales_return.delete({ where: { id } });
+        });
+
+        revalidatePath('/hms/billing/returns');
+        return { success: true };
+    } catch (error: any) {
+        return { error: error.message };
+    }
+}
