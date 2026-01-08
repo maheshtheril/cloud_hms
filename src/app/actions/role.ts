@@ -52,7 +52,7 @@ export async function getRoles() {
                 name: r.name,
                 key: r.key,
                 module: 'System', // Generic roles don't strictly have module, infer or default
-                description: r.description,
+                description: '', // description field does not exist in Generic Role model
                 userCount: countMap.get(r.id) || 0,
                 permissions: uniquePerms
             };
