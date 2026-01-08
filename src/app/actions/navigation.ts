@@ -22,10 +22,11 @@ export async function getMenuItems() {
         if (isAdmin) {
             await ensureAdminMenus();
             // Ensure Journal menus are seeded for admins/finance
-            const { ensureAccountingMenu, ensureCrmMenus, ensurePurchasingMenus } = await import('@/lib/menu-seeder');
+            const { ensureAccountingMenu, ensureCrmMenus, ensurePurchasingMenus, ensureHmsMenus } = await import('@/lib/menu-seeder');
             await ensureAccountingMenu();
             await ensureCrmMenus();
             await ensurePurchasingMenus();
+            await ensureHmsMenus();
         }
 
         // Fetch Tenant Details for Industry Check
@@ -323,6 +324,7 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
     items.push({
         module: { name: 'Pharmacy & Inventory', module_key: 'inventory' },
         items: [
+            { key: 'inv-dashboard', label: 'Command Center', icon: 'LayoutDashboard', url: '/hms/inventory' },
             { key: 'inv-products', label: 'Product Master', icon: 'Package', url: '/hms/inventory/products' },
             {
                 key: 'inv-procurement',
