@@ -21,7 +21,11 @@ export default async function InvoiceDetailsPage({ params }: { params: Promise<{
         },
         include: {
             hms_patient: true,
-            hms_invoice_lines: true,
+            hms_invoice_lines: {
+                include: {
+                    hms_product: true
+                }
+            },
             hms_invoice_payments: true
         }
     });
@@ -146,7 +150,10 @@ export default async function InvoiceDetailsPage({ params }: { params: Promise<{
                         {invoice.hms_invoice_lines.map((line) => (
                             <tr key={line.id}>
                                 <td className="px-6 py-4">
-                                    <div className="font-medium text-slate-900">{line.description || 'Item'}</div>
+                                    <div className="font-medium text-slate-900">{(line as any).hms_product?.name || line.description || 'Item'}</div>
+                                    {line.description && line.description !== 'Auto-created from invoice scan' && line.description !== (line as any).hms_product?.name && (
+                                        <div className="text-xs text-slate-500">{line.description}</div>
+                                    )}
                                 </td>
                                 <td className="px-6 py-4 text-right text-slate-600">{Number(line.quantity)}</td>
                                 <td className="px-6 py-4 text-right text-slate-600">₹{Number(line.unit_price).toFixed(2)}</td>
