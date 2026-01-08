@@ -22,7 +22,7 @@ export async function getRoles() {
             where: { tenant_id: tenantId },
             orderBy: [{ name: 'asc' }],
             include: {
-                role_permissions: {
+                role_permission: {
                     select: { permission_code: true }
                 }
             }
@@ -43,7 +43,7 @@ export async function getRoles() {
 
         // Map to simpler structure for UI
         const mappedRoles = roles.map(r => {
-            const explicitPerms = r.role_permissions.map(p => p.permission_code);
+            const explicitPerms = r.role_permission.map(p => p.permission_code);
             const arrayPerms = Array.isArray(r.permissions) ? r.permissions as string[] : [];
             const uniquePerms = Array.from(new Set([...explicitPerms, ...arrayPerms]));
 
