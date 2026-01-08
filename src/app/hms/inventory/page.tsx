@@ -1,4 +1,6 @@
 import { getInventoryDashboardStats } from "@/app/actions/inventory"
+import { getCompanyDefaultCurrency } from "@/app/actions/currency"
+import { formatCurrency } from "@/lib/currency"
 import Link from "next/link"
 import {
     Package,
@@ -15,6 +17,7 @@ import {
 import { StockAdjustmentButton } from "./stock-adjustment-button"
 
 export default async function InventoryDashboard() {
+    const defaultCurrency = await getCompanyDefaultCurrency();
     const statsRes = await getInventoryDashboardStats();
     const stats = statsRes.success && statsRes.data ? statsRes.data : {
         totalProducts: 0,
@@ -99,7 +102,9 @@ export default async function InventoryDashboard() {
                         </span>
                     </div>
                     <div>
-                        <p className="text-3xl font-bold text-gray-900">${stats.totalValue.toLocaleString()}</p>
+                        <p className="text-3xl font-bold text-gray-900">
+                            {formatCurrency(stats.totalValue, defaultCurrency.code)}
+                        </p>
                         <p className="text-sm text-gray-500 font-medium mt-1">Total Valuation</p>
                     </div>
                 </div>
