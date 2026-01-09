@@ -137,14 +137,22 @@ export default function PermissionsPage() {
         });
     }, [permissions, searchQuery, selectedModule]);
 
-    // Group for stats
+    // Group for stats (including empty DB modules)
     const moduleStats = useMemo(() => {
         const stats: Record<string, number> = {};
+
+        // Initialize with usage counts
         permissions.forEach(p => {
             stats[p.module] = (stats[p.module] || 0) + 1;
         });
+
+        // Ensure DB modules exist with at least 0
+        dbModules.forEach(m => {
+            if (stats[m] === undefined) stats[m] = 0;
+        });
+
         return stats;
-    }, [permissions]);
+    }, [permissions, dbModules]);
 
     // Dynamic Module List
     const availableModules = useMemo(() => {
