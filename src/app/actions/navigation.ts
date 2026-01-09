@@ -139,10 +139,10 @@ export async function getMenuItems() {
             globalActiveModules.forEach(m => allowedModuleKeys.add(m.module_key));
         }
 
-        // Always allow General, Configuration, and HMS (Core)
+        // Always allow General and Configuration
         allowedModuleKeys.add('general');
         allowedModuleKeys.add('configuration');
-        allowedModuleKeys.add('hms'); // FORCE ENABLE HMS (Core App Function)
+        // allowedModuleKeys.add('hms'); // REMOVED: Respect Tenant Subscriptions (CRM only should not see HMS)
 
         // -------------------------
         // AUTO-MIGRATION: Fix Module Assignments (World Standard)
