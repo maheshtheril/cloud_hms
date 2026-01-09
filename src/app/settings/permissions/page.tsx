@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { getAllPermissions } from "@/app/actions/rbac"
 import { createPermission, deletePermission } from "@/app/actions/permissions"
-import { getActiveModules, syncMissingModules } from "@/app/actions/modules"
+import { getActiveModules, syncMissingModules, createModule } from "@/app/actions/modules"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -55,10 +55,12 @@ export default function PermissionsPage() {
 
     // Create/Delete States
     const [createOpen, setCreateOpen] = useState(false)
+    const [createModuleOpen, setCreateModuleOpen] = useState(false)
     const [newPermission, setNewPermission] = useState({ code: '', name: '', module: 'Custom' })
+    const [newModule, setNewModule] = useState({ key: '', name: '', description: '' })
     const [submitting, setSubmitting] = useState(false)
     const { toast } = useToast()
-    const [isCustomModule, setIsCustomModule] = useState(false);
+    // Removed isCustomModule state as we enforce strict selection
 
     const loadData = async () => {
         setLoading(true)
@@ -110,6 +112,26 @@ export default function PermissionsPage() {
             }
         } catch (error) {
             toast({ title: "Operation Failed", description: "Could not create permission", variant: "destructive" });
+        } finally {
+            setSubmitting(false);
+        }
+    }
+
+    const handleCreateModule = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setSubmitting(true);
+        try {
+            const result = await createModule(newModule);
+            if (result.error) {
+                toast({ title: "Error", description: result.error, variant: "destructive" });
+            } else {
+                toast({ title: "Success", description: "Module registered successfully" });
+                setCreateModuleOpen(false);
+                setNewModule({ key: '', name: '', description: '' });
+                loadData(); // Refresh list
+            }
+        } catch (error) {
+            toast({ title: "Error", description: "Unexpected error", variant: "destructive" });
         } finally {
             setSubmitting(false);
         }
@@ -208,6 +230,51 @@ export default function PermissionsPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        <Dialog open={createModuleOpen} onOpenChange={setCreateModuleOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="border-cyan-500/20 text-cyan-500 hover:text-cyan-400 hover:bg-cyan-500/10">
+                                    <Layers className="mr-2 h-4 w-4" />
+                                    Register Module
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+                                <DialogHeader>
+                                    <DialogTitle>Register New Module</DialogTitle>
+                                    <DialogDescription>
+                                        Define a new functional module in the database.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <form onSubmit={handleCreateModule} className="space-y-4">
+                                    <div>
+                                        <Label>Module Key</Label>
+                                        <Input
+                                            placeholder="e.g. logistics"
+                                            value={newModule.key}
+                                            onChange={e => setNewModule({ ...newModule, key: e.target.value })}
+                                            className="bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700 font-mono"
+                                            required
+                                        />
+                                        <p className="text-xs text-muted-foreground mt-1">Lowercase, no spaces.</p>
+                                    </div>
+                                    <div>
+                                        <Label>Display Name</Label>
+                                        <Input
+                                            placeholder="e.g. Logistics & Fleet"
+                                            value={newModule.name}
+                                            onChange={e => setNewModule({ ...newModule, name: e.target.value })}
+                                            className="bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700"
+                                            required
+                                        />
+                                    </div>
+                                    <DialogFooter>
+                                        <Button type="submit" disabled={submitting}>
+                                            {submitting ? <Loader2 className="animate-spin" /> : "Create Module"}
+                                        </Button>
+                                    </DialogFooter>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
+
                         <Dialog open={createOpen} onOpenChange={setCreateOpen}>
                             <DialogTrigger asChild>
                                 <Button size="lg" className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/20 md:w-auto w-full">
@@ -269,28 +336,11 @@ export default function PermissionsPage() {
                                                     {mod.name}
                                                 </div>
                                             ))}
-                                            <div
-                                                onClick={() => { setIsCustomModule(true); setNewPermission({ ...newPermission, module: '' }); }}
-                                                className={cn(
-                                                    "cursor-pointer px-3 py-1.5 rounded-full text-xs font-medium transition-all border flex items-center gap-1",
-                                                    isCustomModule
-                                                        ? "border-cyan-500 bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-400"
-                                                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-600"
-                                                )}
-                                            >
-                                                <Plus className="h-3 w-3" /> Other
-                                            </div>
+                                            {/* "Other" option REMOVED to enforce DB integrity */}
                                         </div>
-
-                                        {isCustomModule && (
-                                            <Input
-                                                placeholder="Enter Custom Module Name"
-                                                value={newPermission.module}
-                                                onChange={e => setNewPermission({ ...newPermission, module: e.target.value })}
-                                                className="bg-slate-950 border-slate-700 animate-in fade-in slide-in-from-top-1"
-                                                autoFocus
-                                            />
-                                        )}
+                                        <p className="text-xs text-slate-500">
+                                            To add a new category, use the "Register Module" button first.
+                                        </p>
                                     </div>
 
                                     <DialogFooter>

@@ -67,3 +67,40 @@ export async function syncMissingModules() {
         return { error: "Failed to sync modules" };
     }
 }
+
+export async function createModule(data: { key: string; name: string; description?: string }) {
+    try {
+        const session = await auth();
+        // Check Admin?
+
+        const key = data.key.toLowerCase().trim().replace(/[^a-z0-9]/g, ''); // alphanumeric only
+
+        if (!key || !data.name) return { error: "Key and Name are required" };
+
+        const existing = await prisma.modules.findUnique({ where: { module_key: key } });
+        if (existing) return { error: "Module with this key already exists" };
+
+        await prisma.modules.create({
+            data: {
+                module_key: key,
+                name: data.name,
+                description: data.description || 'Custom Module',
+                is_active: true
+            }
+        });
+
+        // Auto-subscribe the creator's company/tenant to this new module?
+        // Usually good practice for immediate visibility.
+        if (session?.user?.tenantId) {
+            // Check if already subscribed
+            // ...
+            // For now, let's keep it pure DB insert. Tenant subscription involves billing logic usually.
+            // But for manual "System" usage, we might want to auto-enable.
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to create module:", error);
+        return { error: "Failed to create module" };
+    }
+}
