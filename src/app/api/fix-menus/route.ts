@@ -50,7 +50,7 @@ export async function GET() {
             // 2. Unlink menus
             const repMod = await prisma.modules.findUnique({ where: { module_key: 'reports' } });
             if (repMod) {
-                await prisma.module_menu_map.deleteMany({ where: { module_id: repMod.id } });
+                // await prisma.module_menu_map.deleteMany({ where: { module_id: repMod.id } });
                 await prisma.modules.delete({ where: { id: repMod.id } });
             } else {
                 // Try deleting by key if ID fetch failed (though unlikely)
