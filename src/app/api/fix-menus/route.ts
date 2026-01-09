@@ -164,6 +164,31 @@ export async function GET() {
                 data: { sort_order: item.sort }
             });
         }
+        // 5. ENFORCE PERMISSIONS (World Class Security)
+        // Assign generic 'view' permissions to items that are currently NULL
+        const modulesToSecure = [
+            { key: 'crm', perm: 'crm:view' },
+            { key: 'sales', perm: 'crm:view' }, // Sales uses CRM view usually
+            { key: 'inventory', perm: 'inventory:view' },
+            { key: 'purchasing', perm: 'inventory:view' }, // Purchasing relies on Inventory view often
+            { key: 'hms', perm: 'hms:view' },
+            { key: 'hr', perm: 'hr:view' },
+            { key: 'finance', perm: 'accounting:view' },
+            { key: 'accounting', perm: 'accounting:view' },
+            { key: 'projects', perm: 'crm:view' } // Projects valid for CRM users
+        ];
+
+        for (const m of modulesToSecure) {
+            await prisma.menu_items.updateMany({
+                where: {
+                    module_key: m.key,
+                    permission_code: null
+                },
+                data: { permission_code: m.perm }
+            });
+        }
+        results['secured_null_permissions'] = true;
+
         results['reordered_hms'] = true;
 
         return NextResponse.json({ success: true, results });

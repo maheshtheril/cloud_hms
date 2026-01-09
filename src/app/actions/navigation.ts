@@ -12,60 +12,8 @@ export async function getMenuItems() {
     const isAdmin = session?.user?.isAdmin;
     let industry = ''; // we can fetch this if needed
 
-    // EMERGENCY OVERRIDE: Receptionist View
-    if (session?.user?.id) {
-        try {
-            // Quick check for role name to bypass complex logic if needed
-            const userRoles = await prisma.user_role.findMany({
-                where: { user_id: session.user.id }
-            });
-
-            let roleName = null;
-            if (userRoles.length > 0 && userRoles[0].role_id) {
-                const role = await prisma.role.findUnique({
-                    where: { id: userRoles[0].role_id }
-                });
-                roleName = role?.name;
-            }
-
-            if (roleName) {
-                const normalize = roleName.toLowerCase();
-                // Check Role Name OR specific email override for the user 'rece'
-                if (normalize.includes('reception') || normalize.includes('front desk') || normalize === 'receptionist' || session.user.email === 'rece@live.com') {
-                    return [
-                        {
-                            module: { name: 'Hospital Operations', module_key: 'hms' },
-                            items: [
-                                { key: 'hms-reception', label: 'Front Desk Dashboard', icon: 'Monitor', url: '/hms/reception/dashboard' },
-                                { key: 'hms-patients', label: 'Patient Registry', icon: 'Users', url: '/hms/patients' },
-                                { key: 'hms-appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
-                                { key: 'hms-billing', label: 'Billing & Invoices', icon: 'Receipt', url: '/hms/billing' },
-                                { key: 'hr-attendance', label: 'Attendance', icon: 'Clock', url: '/hr/attendance' },
-
-                            ]
-                        }
-                    ];
-                }
-            } else if (session.user.email === 'rece@live.com') {
-                // Fallback if roleName is null but email matches
-                return [
-                    {
-                        module: { name: 'Hospital Operations', module_key: 'hms' },
-                        items: [
-                            { key: 'hms-reception', label: 'Front Desk Dashboard', icon: 'Monitor', url: '/hms/reception/dashboard' },
-                            { key: 'hms-patients', label: 'Patient Registry', icon: 'Users', url: '/hms/patients' },
-                            { key: 'hms-appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
-                            { key: 'hms-billing', label: 'Billing & Invoices', icon: 'Receipt', url: '/hms/billing' },
-                            { key: 'hr-attendance', label: 'Attendance', icon: 'Clock', url: '/hr/attendance' },
-
-                        ]
-                    }
-                ];
-            }
-        } catch (e) {
-            console.error("Failed override check", e);
-        }
-    }
+    // EMERGENCY OVERRIDE REMOVED: Now fully dynamic based on RBAC permissions and Module Subscriptions.
+    // The previous hardcoded block for 'receptionist' is removed to respect the 'Roles & Permissions' configuration.
 
     // FETCH USER PERMISSIONS
     const userPermsRaw = session?.user?.id ? await getUserPermissions(session.user.id) : [];
