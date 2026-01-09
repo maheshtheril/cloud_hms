@@ -502,10 +502,19 @@ export async function getAllPermissions() {
 
         dbPermissions.forEach(p => {
             if (!codeSet.has(p.code)) {
+                let mod = p.category || 'Custom';
+
+                // Normalization Logic
+                if (mod.toLowerCase() === 'crm') mod = 'CRM';
+                else if (mod.toLowerCase() === 'hms') mod = 'HMS';
+                else if (mod.toLowerCase() === 'finance') mod = 'Finance';
+                else if (mod.toLowerCase() === 'inventory') mod = 'Inventory';
+                else if (mod.toLowerCase() === 'purchasing') mod = 'Purchasing';
+
                 combined.push({
                     code: p.code,
                     name: p.name,
-                    module: p.category || 'Custom' // Map 'category' to 'module'
+                    module: mod
                 });
             }
         });
