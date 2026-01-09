@@ -44,8 +44,12 @@ const getModuleColor = (key: string) => {
 };
 
 
+import { useSearchParams } from "next/navigation"
 
 export default function PermissionsPage() {
+    const searchParams = useSearchParams()
+    const isDeveloper = searchParams.get('dev') === 'true'
+
     const [permissions, setPermissions] = useState<Array<{ code: string; name: string; module: string }>>([])
     const [dbModules, setDbModules] = useState<Array<{ id: string, module_key: string, name: string }>>([])
     const [loading, setLoading] = useState(true)
@@ -229,130 +233,134 @@ export default function PermissionsPage() {
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                        <Dialog open={createModuleOpen} onOpenChange={setCreateModuleOpen}>
-                            <DialogTrigger asChild>
-                                <Button variant="outline" className="border-cyan-500/20 text-cyan-500 hover:text-cyan-400 hover:bg-cyan-500/10">
-                                    <Layers className="mr-2 h-4 w-4" />
-                                    Register Module
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
-                                <DialogHeader>
-                                    <DialogTitle>Register New Module</DialogTitle>
-                                    <DialogDescription>
-                                        Define a new functional module in the database.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <form onSubmit={handleCreateModule} className="space-y-4">
-                                    <div>
-                                        <Label>Module Key</Label>
-                                        <Input
-                                            placeholder="e.g. logistics"
-                                            value={newModule.key}
-                                            onChange={e => setNewModule({ ...newModule, key: e.target.value })}
-                                            className="bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700 font-mono"
-                                            required
-                                        />
-                                        <p className="text-xs text-muted-foreground mt-1">Lowercase, no spaces.</p>
-                                    </div>
-                                    <div>
-                                        <Label>Display Name</Label>
-                                        <Input
-                                            placeholder="e.g. Logistics & Fleet"
-                                            value={newModule.name}
-                                            onChange={e => setNewModule({ ...newModule, name: e.target.value })}
-                                            className="bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700"
-                                            required
-                                        />
-                                    </div>
-                                    <DialogFooter>
-                                        <Button type="submit" disabled={submitting}>
-                                            {submitting ? <Loader2 className="animate-spin" /> : "Create Module"}
-                                        </Button>
-                                    </DialogFooter>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
-
-                        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-                            <DialogTrigger asChild>
-                                <Button size="lg" className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/20 md:w-auto w-full">
-                                    <Plus className="mr-2 h-5 w-5" />
-                                    Create Permission
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
-                                <DialogHeader>
-                                    <DialogTitle className="text-2xl">Define New Capability</DialogTitle>
-                                    <DialogDescription className="text-slate-500 dark:text-slate-400">
-                                        Create a new permission code that can be used to protect Pages, Forms, or API Routes.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <form onSubmit={handleCreate} className="space-y-6 mt-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-cyan-700 dark:text-cyan-400">Permission Code</Label>
-                                        <div className="relative">
-                                            <Code className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                    {isDeveloper && (
+                        <div className="flex items-center gap-3">
+                            <Dialog open={createModuleOpen} onOpenChange={setCreateModuleOpen}>
+                                <DialogTrigger asChild>
+                                    <Button variant="outline" className="border-cyan-500/20 text-cyan-500 hover:text-cyan-400 hover:bg-cyan-500/10">
+                                        <Layers className="mr-2 h-4 w-4" />
+                                        Register Module
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+                                    <DialogHeader>
+                                        <DialogTitle>Register New Module</DialogTitle>
+                                        <DialogDescription>
+                                            Define a new functional module in the database.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <form onSubmit={handleCreateModule} className="space-y-4">
+                                        <div>
+                                            <Label>Module Key</Label>
                                             <Input
-                                                placeholder="e.g. hms:surgery:create"
-                                                value={newPermission.code}
-                                                onChange={e => setNewPermission({ ...newPermission, code: e.target.value })}
-                                                className="pl-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700 font-mono text-sm"
+                                                placeholder="e.g. logistics"
+                                                value={newModule.key}
+                                                onChange={e => setNewModule({ ...newModule, key: e.target.value })}
+                                                className="bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700 font-mono"
+                                                required
+                                            />
+                                            <p className="text-xs text-muted-foreground mt-1">Lowercase, no spaces.</p>
+                                        </div>
+                                        <div>
+                                            <Label>Display Name</Label>
+                                            <Input
+                                                placeholder="e.g. Logistics & Fleet"
+                                                value={newModule.name}
+                                                onChange={e => setNewModule({ ...newModule, name: e.target.value })}
+                                                className="bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700"
                                                 required
                                             />
                                         </div>
-                                        <p className="text-xs text-slate-500">Must be unique. Convention: module:feature:action</p>
-                                    </div>
+                                        <DialogFooter>
+                                            <Button type="submit" disabled={submitting}>
+                                                {submitting ? <Loader2 className="animate-spin" /> : "Create Module"}
+                                            </Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
 
-                                    <div className="space-y-2">
-                                        <Label>Display Name</Label>
-                                        <Input
-                                            placeholder="e.g. Create New Surgery"
-                                            value={newPermission.name}
-                                            onChange={e => setNewPermission({ ...newPermission, name: e.target.value })}
-                                            className="bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700"
-                                            required
-                                        />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <Label className="flex items-center gap-2">
-                                            Module Category
-                                            <span className="text-xs font-normal text-slate-500">(Synced from Database)</span>
-                                        </Label>
-                                        <div className="flex flex-wrap gap-2 mb-2 p-2 bg-slate-950 rounded-lg border border-slate-800 max-h-32 overflow-y-auto">
-                                            {availableModules.map(mod => (
-                                                <div
-                                                    key={mod.id}
-                                                    onClick={() => { setNewPermission({ ...newPermission, module: mod.name }); }}
-                                                    className={cn(
-                                                        "px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors border",
-                                                        newPermission.module === mod.name
-                                                            ? "bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300 border-cyan-500/50 dark:border-cyan-500 shadow-[0_0_10px_rgba(8,145,178,0.2)]"
-                                                            : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 hover:text-slate-800 dark:hover:text-slate-200"
-                                                    )}
-                                                >
-                                                    {mod.name}
-                                                </div>
-                                            ))}
-                                            {/* "Other" option REMOVED to enforce DB integrity */}
+                            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+                                <DialogTrigger asChild>
+                                    <Button size="lg" className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white shadow-lg shadow-cyan-500/20 md:w-auto w-full">
+                                        <Plus className="mr-2 h-5 w-5" />
+                                        Create Permission
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+                                    <DialogHeader>
+                                        <DialogTitle className="text-2xl">Define New Capability</DialogTitle>
+                                        <DialogDescription className="text-slate-500 dark:text-slate-400">
+                                            Create a new permission code that can be used to protect Pages, Forms, or API Routes.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <form onSubmit={handleCreate} className="space-y-6 mt-4">
+                                        <div className="space-y-2">
+                                            <Label className="text-cyan-700 dark:text-cyan-400">Permission Code</Label>
+                                            <div className="relative">
+                                                <Code className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
+                                                <Input
+                                                    placeholder="e.g. hms:surgery:create"
+                                                    value={newPermission.code}
+                                                    onChange={e => setNewPermission({ ...newPermission, code: e.target.value })}
+                                                    className="pl-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700 font-mono text-sm"
+                                                    required
+                                                />
+                                            </div>
+                                            <p className="text-xs text-slate-500">Must be unique. Convention: module:feature:action</p>
                                         </div>
-                                        <p className="text-xs text-slate-500">
-                                            To add a new category, use the "Register Module" button first.
-                                        </p>
-                                    </div>
 
-                                    <DialogFooter>
-                                        <Button type="submit" disabled={submitting} className="w-full bg-cyan-600 hover:bg-cyan-500">
-                                            {submitting ? <Loader2 className="animate-spin" /> : "Register Permission"}
-                                        </Button>
-                                    </DialogFooter>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
+                                        <div className="space-y-2">
+                                            <Label>Display Name</Label>
+                                            <Input
+                                                placeholder="e.g. Create New Surgery"
+                                                value={newPermission.name}
+                                                onChange={e => setNewPermission({ ...newPermission, name: e.target.value })}
+                                                className="bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700"
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label className="flex items-center gap-2">
+                                                Module Category
+                                                <span className="text-xs font-normal text-slate-500">(Synced from Database)</span>
+                                            </Label>
+                                            <div className="flex flex-wrap gap-2 mb-2 p-2 bg-slate-950 rounded-lg border border-slate-800 max-h-32 overflow-y-auto">
+                                                {availableModules.map(mod => (
+                                                    <div
+                                                        key={mod.id}
+                                                        onClick={() => { setNewPermission({ ...newPermission, module: mod.name }); }}
+                                                        className={cn(
+                                                            "px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors border",
+                                                            newPermission.module === mod.name
+                                                                ? "bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300 border-cyan-500/50 dark:border-cyan-500 shadow-[0_0_10px_rgba(8,145,178,0.2)]"
+                                                                : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 hover:text-slate-800 dark:hover:text-slate-200"
+                                                        )}
+                                                    >
+                                                        {mod.name}
+                                                    </div>
+                                                ))}
+                                                {/* "Other" option REMOVED to enforce DB integrity */}
+                                            </div>
+                                            <p className="text-xs text-slate-500">
+                                                To add a new category, use the "Register Module" button first.
+                                            </p>
+                                        </div>
+
+                                        <DialogFooter>
+                                            <Button type="submit" disabled={submitting} className="w-full bg-cyan-600 hover:bg-cyan-500">
+                                                {submitting ? <Loader2 className="animate-spin" /> : "Register Permission"}
+                                            </Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
+                    )}
+
                 </header>
+
 
                 {/* Controls Section */}
                 <div className="flex flex-col md:flex-row gap-4 items-center justify-between sticky top-4 z-20 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl p-4 rounded-xl border border-slate-200 dark:border-white/5 shadow-2xl">
