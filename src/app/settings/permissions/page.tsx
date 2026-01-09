@@ -185,10 +185,15 @@ export default function PermissionsPage() {
                         <p className="text-slate-400 mt-2 text-lg flex items-center gap-2">
                             Define granular capabilities for the neural system.
                             {dbModules.length > 0 && (
-                                <Badge variant="outline" className="text-xs border-cyan-800 bg-cyan-950/30 text-cyan-400 ml-2 animate-in fade-in">
-                                    <Shield className="h-3 w-3 mr-1" />
-                                    {dbModules.length} Modules Synced from DB
-                                </Badge>
+                                <div className="mt-4 flex items-center gap-3 text-emerald-400 bg-emerald-950/30 px-4 py-2 rounded-lg border border-emerald-800/50 w-fit animate-in slide-in-from-left-4">
+                                    <div className="relative">
+                                        <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+                                        <div className="relative h-2.5 w-2.5 bg-emerald-500 rounded-full"></div>
+                                    </div>
+                                    <span className="font-mono text-sm tracking-wide">
+                                        DATABASE CONNECTION ACTIVE: {dbModules.length} MODULES SYNCED
+                                    </span>
+                                </div>
                             )}
                         </p>
                     </div>
@@ -236,7 +241,10 @@ export default function PermissionsPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label>Module Category</Label>
+                                        <Label className="flex items-center gap-2">
+                                            Module Category
+                                            <span className="text-xs font-normal text-slate-500">(Synced from Database)</span>
+                                        </Label>
                                         <div className="flex flex-wrap gap-2 mb-2 p-2 bg-slate-950 rounded-lg border border-slate-800 max-h-32 overflow-y-auto">
                                             {availableModules.map(mod => (
                                                 <div
