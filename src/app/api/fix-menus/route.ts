@@ -27,7 +27,7 @@ export async function GET() {
         const results: Record<string, any> = { seeded: true, roles_fixed: true, permissions_synced: true };
 
         // 0. Ensure Target Modules Exist (Fixes FK Constraint Failures)
-        const targetModules = ['accounting', 'inventory'];
+        const targetModules = ['finance', 'inventory'];
         for (const key of targetModules) {
             const mod = await prisma.modules.findUnique({ where: { module_key: key } });
             if (!mod) {
@@ -50,12 +50,12 @@ export async function GET() {
             select: { tenant_id: true }
         });
 
-        const accModule = await prisma.modules.findUnique({ where: { module_key: 'accounting' } });
+        const accModule = await prisma.modules.findUnique({ where: { module_key: 'finance' } });
         const invModule = await prisma.modules.findUnique({ where: { module_key: 'inventory' } });
 
         const tenantIds = hmsTenants.map(t => t.tenant_id);
         if (tenantIds.length > 0 && accModule && invModule) {
-            // Subscribe to Accounting
+            // Subscribe to Finance
             await prisma.tenant_module.createMany({
                 data: tenantIds.map(tid => ({
                     tenant_id: tid,
