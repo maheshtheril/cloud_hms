@@ -22,13 +22,24 @@ interface DoctorDashboardProps {
 
 export function DoctorDashboardClient({ doctorName, appointments, stats }: DoctorDashboardProps) {
     const router = useRouter()
-    const [selectedTab, setSelectedTab] = useState<'queue' | 'history'>('queue')
+    const [searchQuery, setSearchQuery] = useState("")
 
-    // Filter appointments based on tab
-    const queue = appointments.filter(a => a.status !== 'completed' && a.status !== 'cancelled')
-    const history = appointments.filter(a => a.status === 'completed')
+    // Filter appointments based on tab and search
+    const displayedAppointments = appointments.filter(a => {
+        const inQueue = a.status !== 'completed' && a.status !== 'cancelled'
+        const inHistory = a.status === 'completed'
 
-    const displayedAppointments = selectedTab === 'queue' ? queue : history
+        const matchesTab = selectedTab === 'queue' ? inQueue : inHistory
+
+        if (!matchesTab) return false
+        if (!searchQuery) return true
+
+        const q = searchQuery.toLowerCase()
+        return (
+            a.patient_name.toLowerCase().includes(q) ||
+            (a.patient_id && a.patient_id.toString().toLowerCase().includes(q))
+        )
+    })
 
     const container = {
         hidden: { opacity: 0 },
@@ -132,6 +143,8 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                                 <input
                                     type="text"
                                     placeholder="Search patient..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
                                     className="pl-9 pr-4 py-2 text-sm font-medium rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-100 outline-none w-full sm:w-64"
                                 />
                             </div>

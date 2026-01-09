@@ -64,7 +64,14 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
         }
     ]
 
-    const displayedTasks = activeTab === 'queue' ? pendingTriage : completedTriage
+    const displayedTasks = (activeTab === 'queue' ? pendingTriage : completedTriage).filter(task => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        return (
+            task.patient_name.toLowerCase().includes(q) ||
+            (task.patient_id && task.patient_id.toString().toLowerCase().includes(q))
+        );
+    })
 
     return (
         <div className="flex flex-col lg:flex-row gap-8 min-h-[calc(100vh-6rem)] relative">
@@ -138,8 +145,20 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                                 Completed
                             </button>
                         </div>
-                        <div className="text-xs text-slate-500 font-medium bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
-                            {displayedTasks.length} Patients
+                        <div className="flex items-center gap-3">
+                            <div className="relative hidden md:block">
+                                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Search..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-8 pr-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-pink-100 outline-none w-48"
+                                />
+                            </div>
+                            <div className="text-xs text-slate-500 font-medium bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded">
+                                {displayedTasks.length} Patients
+                            </div>
                         </div>
                     </div>
                     <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-[600px] overflow-y-auto">

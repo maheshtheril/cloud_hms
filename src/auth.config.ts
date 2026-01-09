@@ -16,10 +16,17 @@ export const authConfig = {
             const isAuthPage = nextUrl.pathname.startsWith("/login");
             const isReceptionDashboard = nextUrl.pathname === "/hms/reception/dashboard";
 
-            // Strict Receptionist Redirect
-            if (isLoggedIn && auth?.user?.email === 'rece@live.com') {
-                if (isOnRoot || isAuthPage) {
+            // Strict Role Redirects
+            if (isLoggedIn && auth?.user?.email) {
+                const email = auth.user.email;
+                if (email === 'rece@live.com' && (isOnRoot || isAuthPage)) {
                     return Response.redirect(new URL("/hms/reception/dashboard", nextUrl));
+                }
+                if (email === 'nurs@live.com' && (isOnRoot || isAuthPage)) {
+                    return Response.redirect(new URL("/hms/nursing/dashboard", nextUrl));
+                }
+                if (email === 'doct@live.com' && (isOnRoot || isAuthPage)) {
+                    return Response.redirect(new URL("/hms/doctor/dashboard", nextUrl));
                 }
             }
 
