@@ -28,19 +28,22 @@ export async function getMenuItems() {
                 roleName = role?.name;
             }
 
-            if (roleName === 'Receptionist' || roleName === 'Front Desk') {
-                return [
-                    {
-                        module: { name: 'Hospital Operations', module_key: 'hms' },
-                        items: [
-                            { key: 'hms-reception', label: 'Front Desk Dashboard', icon: 'Monitor', url: '/hms/reception' },
-                            { key: 'hms-patients', label: 'Patient Registry', icon: 'Users', url: '/hms/patients' },
-                            { key: 'hms-appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
-                            // Doctor schedule is useful for reception
-                            { key: 'hms-schedule', label: 'Doctor Schedule', icon: 'CalendarClock', url: '/hms/schedule' },
-                        ]
-                    }
-                ];
+            if (roleName) {
+                const normalize = roleName.toLowerCase();
+                if (normalize.includes('reception') || normalize.includes('front desk') || normalize === 'receptionist') {
+                    return [
+                        {
+                            module: { name: 'Hospital Operations', module_key: 'hms' },
+                            items: [
+                                { key: 'hms-reception', label: 'Front Desk Dashboard', icon: 'Monitor', url: '/hms/reception' },
+                                { key: 'hms-patients', label: 'Patient Registry', icon: 'Users', url: '/hms/patients' },
+                                { key: 'hms-appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
+                                // Doctor schedule is useful for reception
+                                { key: 'hms-schedule', label: 'Doctor Schedule', icon: 'CalendarClock', url: '/hms/schedule' },
+                            ]
+                        }
+                    ];
+                }
             }
         } catch (e) {
             console.error("Failed override check", e);
