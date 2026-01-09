@@ -6,11 +6,12 @@ import {
     UserPlus, CalendarPlus, LogIn, CreditCard,
     PhoneIncoming, IdCard, Users, Search,
     Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone, MoreVertical, Edit, Activity, IndianRupee,
-    Wallet, Banknote
+    Wallet, Banknote, Fingerprint
 } from "lucide-react"
 import { ExpenseDialog } from "./expense-dialog"
 import { PettyCashVoucher } from "./petty-cash-voucher"
 import { ShiftManager } from "./shift-manager"
+import PunchWidget from "@/components/attendance/punch-widget"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
@@ -96,7 +97,8 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
         { id: 'appointment', title: 'Schedule', icon: CalendarPlus, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-100 dark:border-blue-800' },
         { id: 'billing', title: 'Billing', icon: CreditCard, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/20', border: 'border-violet-100 dark:border-violet-800' },
         { id: 'expense', title: 'Expenses', icon: Wallet, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-100 dark:border-amber-800' },
-        { id: 'shift', title: 'Cash Counter', icon: Banknote, color: 'text-slate-600', bg: 'bg-slate-50 dark:bg-slate-800/50', border: 'border-slate-200 dark:border-slate-700' }
+        { id: 'shift', title: 'Cash Counter', icon: Banknote, color: 'text-slate-600', bg: 'bg-slate-50 dark:bg-slate-800/50', border: 'border-slate-200 dark:border-slate-700' },
+        { id: 'attendance', title: 'My Attendance', icon: Fingerprint, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/20', border: 'border-indigo-100 dark:border-indigo-800' }
     ]
 
     return (
@@ -494,6 +496,12 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                     <ShiftManager />
                 </DialogContent>
             </Dialog>
+            <Dialog open={activeModal === 'attendance'} onOpenChange={() => setActiveModal(null)}>
+                <DialogContent className="max-w-md p-0 bg-transparent border-none shadow-none">
+                    <PunchWidget />
+                </DialogContent>
+            </Dialog>
+
         </div>
     )
 }
