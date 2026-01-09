@@ -27,7 +27,7 @@ export async function GET() {
         const results: Record<string, any> = { seeded: true, roles_fixed: true, permissions_synced: true };
 
         // 0. Ensure Target Modules Exist (Fixes FK Constraint Failures)
-        const targetModules = ['finance', 'inventory'];
+        const targetModules = ['finance', 'inventory', 'reports'];
         for (const key of targetModules) {
             const mod = await prisma.modules.findUnique({ where: { module_key: key } });
             if (!mod) {
@@ -36,7 +36,7 @@ export async function GET() {
                         module_key: key,
                         name: key.charAt(0).toUpperCase() + key.slice(1),
                         is_active: true,
-                        description: 'Core Module'
+                        description: key === 'reports' ? 'Comprehensive reporting and analytics suite' : 'Core Module'
                     }
                 });
                 results[`created_module_${key}`] = true;
