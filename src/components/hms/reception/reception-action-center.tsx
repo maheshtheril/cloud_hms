@@ -148,11 +148,11 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                 </Card>
             </div>
 
-            {/* 2. DUAL-PANEL FOCUS AREA - SWAPPED FOR PATIENT FOCUS */}
-            <div className="flex flex-col xl:flex-row-reverse gap-8 min-h-[700px]">
+            {/* 2. DUAL-PANEL FOCUS AREA */}
+            <div className="flex flex-col xl:flex-row gap-8 min-h-[700px]">
 
-                {/* LEFT (Now Right): TODAY'S SCHEDULE */}
-                <div className="w-full xl:w-[450px] space-y-4">
+                {/* LEFT: TODAY'S SCHEDULE */}
+                <div className="flex-1 space-y-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-full bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center shadow-lg shadow-indigo-600/20 dark:shadow-indigo-500/10 text-white">
@@ -280,8 +280,8 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                     </Card>
                 </div>
 
-                {/* RIGHT (Now Left): REGISTRY & ACTIONS */}
-                <div className="flex-1 space-y-6">
+                {/* RIGHT: REGISTRY & ACTIONS */}
+                <div className="w-full xl:w-96 space-y-6">
                     {/* QUICK ACTIONS CARD */}
                     <Card className="p-6 bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-slate-900 dark:to-indigo-950 text-white border-none shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
@@ -317,8 +317,8 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                                 onChange={(e) => setPatientSearchQuery(e.target.value)}
                             />
                         </div>
-                        <Card className="border border-slate-100 dark:border-slate-800 shadow-lg bg-white dark:bg-slate-900 overflow-hidden h-[600px] flex flex-col">
-                            <div className="flex-1 overflow-y-auto custom-scrollbar">
+                        <Card className="border border-slate-100 dark:border-slate-800 shadow-lg bg-white dark:bg-slate-900 overflow-hidden">
+                            <div className="max-h-[380px] overflow-y-auto custom-scrollbar">
                                 {filteredPatients.length === 0 ? (
                                     <div className="p-8 text-center text-xs text-slate-400 italic">Enter search to find patients...</div>
                                 ) : (
