@@ -16,17 +16,25 @@ const prisma = new PrismaClient({ adapter });
 
 async function main() {
     console.log('Fetching modules...');
-    const modules = await prisma.modules.findMany();
+    const modules = await prisma.modules.findMany({
+        orderBy: { module_key: 'asc' }
+    });
+
+    const output = modules.map(m => `[${m.is_active ? 'ACTIVE' : 'HIDDEN'}] ${m.module_key} : ${m.name}`).join('\n');
+
+    console.log("--- MODULES LIST ---");
+    console.log(output);
+    console.log("Total:", modules.length);
+
     const fs = require('fs');
-    fs.writeFileSync('modules_list.txt', modules.map(m => `${m.module_key} - ${m.name}`).join('\n'), 'utf8');
-    console.log('Written to modules_list.txt');
+    fs.writeFileSync('modules_list_fresh.txt', output);
 }
 
 main()
     .catch((e) => {
-        console.error(e);
-        process.exit(1);
+        console.error(e)
+        process.exit(1)
     })
     .finally(async () => {
-        await prisma.$disconnect();
+        await prisma.$disconnect()
     });
