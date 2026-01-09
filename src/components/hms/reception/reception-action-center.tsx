@@ -110,33 +110,7 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                         <Users className="h-5 w-5 text-indigo-500" />
                     </div>
                 </Card>
-                <Card className="p-4 bg-white dark:bg-slate-900 border-none shadow-sm flex items-center justify-between group hover:shadow-md transition-all border-l-4 border-green-500">
-                    <div className="space-y-1 cursor-pointer" onClick={() => setActiveModal('collection-report')}>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Revenue</p>
-                        <h3 className="text-xl font-black text-green-600">₹{dailyCollection.toLocaleString()}</h3>
-                    </div>
-                    <div className="h-10 w-10 rounded-xl bg-green-50 dark:bg-green-900/20 flex items-center justify-center">
-                        <IndianRupee className="h-5 w-5 text-green-500" />
-                    </div>
-                </Card>
-                <Card className="p-4 bg-white dark:bg-slate-900 border-none shadow-sm flex items-center justify-between group hover:shadow-md transition-all border-l-4 border-rose-500">
-                    <div className="space-y-1 cursor-pointer" onClick={() => setActiveModal('expense-report')}>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expenses</p>
-                        <h3 className="text-xl font-black text-rose-600">₹{totalExpenses.toLocaleString()}</h3>
-                    </div>
-                    <div className="h-10 w-10 rounded-xl bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center">
-                        <Wallet className="h-5 w-5 text-rose-500" />
-                    </div>
-                </Card>
-                <Card className="p-4 bg-indigo-600 dark:bg-indigo-950 text-white border-none shadow-lg flex items-center justify-between group transition-all">
-                    <div className="space-y-1">
-                        <p className="text-[10px] font-bold text-indigo-100 dark:text-slate-400 uppercase tracking-widest">Net Cash</p>
-                        <h3 className="text-xl font-black text-white">₹{(dailyCollection - totalExpenses).toLocaleString()}</h3>
-                    </div>
-                    <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
-                        <Activity className="h-5 w-5 text-white" />
-                    </div>
-                </Card>
+                {/* FINANCIAL CARDS REMOVED FOR CLEANER LAYOUT */}
                 <Card className="p-4 bg-white dark:bg-slate-900 border-none shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
                     <div className="space-y-1">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">In Waiting</p>
@@ -362,7 +336,10 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
                                 <IndianRupee className="h-4 w-4 text-emerald-500" />
-                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Live Revenue</h3>
+                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center justify-between w-full">
+                                    Live Revenue
+                                    <span className="text-emerald-600">₹{dailyCollection.toLocaleString()}</span>
+                                </h3>
                             </div>
                             <div className="space-y-2">
                                 {todayPayments.length === 0 ? (
@@ -387,7 +364,10 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2">
                                 <Wallet className="h-4 w-4 text-rose-500" />
-                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Live Expenses</h3>
+                                <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center justify-between w-full">
+                                    Live Expenses
+                                    <span className="text-rose-600">₹{totalExpenses.toLocaleString()}</span>
+                                </h3>
                             </div>
                             <div className="space-y-2">
                                 {todayExpenses.length === 0 ? (
