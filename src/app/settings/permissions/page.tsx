@@ -22,21 +22,27 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
-// Futuristic Module Colors
+// Futuristic Module Colors (Updated for DB Keys)
 const MODULE_COLORS: Record<string, string> = {
-    'HMS': 'text-cyan-400 bg-cyan-950/30 border-cyan-800',
-    'CRM': 'text-purple-400 bg-purple-950/30 border-purple-800',
-    'Finance': 'text-emerald-400 bg-emerald-950/30 border-emerald-800',
-    'Inventory': 'text-amber-400 bg-amber-950/30 border-amber-800',
-    'Purchasing': 'text-orange-400 bg-orange-950/30 border-orange-800',
-    'Pharmacy': 'text-teal-400 bg-teal-950/30 border-teal-800',
-    'System': 'text-slate-400 bg-slate-950/30 border-slate-800',
-    'Custom': 'text-pink-400 bg-pink-950/30 border-pink-800',
-    'HR': 'text-rose-400 bg-rose-950/30 border-rose-800',
-    'Projects': 'text-blue-400 bg-blue-950/30 border-blue-800',
-    'Reports': 'text-indigo-400 bg-indigo-950/30 border-indigo-800',
-    'Sales': 'text-yellow-400 bg-yellow-950/30 border-yellow-800',
+    'hms': 'text-cyan-400 bg-cyan-950/30 border-cyan-800 hover:border-cyan-500',
+    'crm': 'text-purple-400 bg-purple-950/30 border-purple-800 hover:border-purple-500',
+    'finance': 'text-emerald-400 bg-emerald-950/30 border-emerald-800 hover:border-emerald-500',
+    'inventory': 'text-amber-400 bg-amber-950/30 border-amber-800 hover:border-amber-500',
+    'purchasing': 'text-orange-400 bg-orange-950/30 border-orange-800 hover:border-orange-500',
+    'pharmacy': 'text-teal-400 bg-teal-950/30 border-teal-800 hover:border-teal-500',
+    'system': 'text-slate-400 bg-slate-950/30 border-slate-800 hover:border-slate-500',
+    'hr': 'text-rose-400 bg-rose-950/30 border-rose-800 hover:border-rose-500',
+    'projects': 'text-blue-400 bg-blue-950/30 border-blue-800 hover:border-blue-500',
+    'reports': 'text-indigo-400 bg-indigo-950/30 border-indigo-800 hover:border-indigo-500',
+    'sales': 'text-yellow-400 bg-yellow-950/30 border-yellow-800 hover:border-yellow-500',
+    'default': 'text-slate-400 bg-slate-950/30 border-slate-800 hover:border-slate-600',
 };
+
+const getModuleColor = (key: string) => {
+    return MODULE_COLORS[key.toLowerCase()] || MODULE_COLORS['default'];
+};
+
+
 
 export default function PermissionsPage() {
     const [permissions, setPermissions] = useState<Array<{ code: string; name: string; module: string }>>([])
@@ -308,22 +314,33 @@ export default function PermissionsPage() {
                             All
                             <span className="ml-2 text-xs bg-slate-200/20 px-1.5 py-0.5 rounded-full">{permissions.length}</span>
                         </Button>
-                        {moduleStats.map(mod => (
-                            <Button
-                                key={mod.key}
-                                variant="ghost"
-                                onClick={() => setSelectedModule(mod.name)}
-                                className={cn(
-                                    "rounded-full px-4 whitespace-nowrap",
-                                    selectedModule === mod.name
-                                        ? "bg-slate-800 text-cyan-400 border border-cyan-500/30"
-                                        : "text-slate-400 hover:text-white"
-                                )}
-                            >
-                                {mod.name}
-                                <span className="text-xs ml-2 opacity-50">{mod.count}</span>
-                            </Button>
-                        ))}
+                        {moduleStats.map(mod => {
+                            const colorStyle = getModuleColor(mod.key);
+                            const isSelected = selectedModule === mod.name;
+
+                            return (
+                                <Button
+                                    key={mod.key}
+                                    variant="outline"
+                                    onClick={() => setSelectedModule(mod.name)}
+                                    className={cn(
+                                        "rounded-full px-4 whitespace-nowrap transition-all border",
+                                        isSelected
+                                            ? colorStyle.replace('bg-', 'bg-opacity-50 bg-') + " shadow-[0_0_15px_rgba(var(--color-primary),0.3)] ring-1 ring-white/20"
+                                            : "opacity-70 hover:opacity-100 bg-transparent nav-item", // Dim unselected
+                                        // We need to override the default btn styles to apply our custom colors
+                                        colorStyle
+                                    )}
+                                >
+                                    {mod.name}
+                                    <span className={cn(
+                                        "ml-2 text-xs px-2 py-0.5 rounded-full bg-black/20"
+                                    )}>
+                                        {mod.count}
+                                    </span>
+                                </Button>
+                            );
+                        })}
                     </div>
 
                     <div className="flex items-center gap-3 w-full md:w-auto">
