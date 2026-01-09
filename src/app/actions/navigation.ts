@@ -17,10 +17,16 @@ export async function getMenuItems() {
         try {
             // Quick check for role name to bypass complex logic if needed
             const userRoles = await prisma.user_role.findMany({
-                where: { user_id: session.user.id },
-                include: { role: true }
+                where: { user_id: session.user.id }
             });
-            const roleName = userRoles?.[0]?.role?.name;
+
+            let roleName = null;
+            if (userRoles.length > 0 && userRoles[0].role_id) {
+                const role = await prisma.role.findUnique({
+                    where: { id: userRoles[0].role_id }
+                });
+                roleName = role?.name;
+            }
 
             if (roleName === 'Receptionist' || roleName === 'Front Desk') {
                 return [
