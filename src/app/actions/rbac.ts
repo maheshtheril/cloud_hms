@@ -583,6 +583,33 @@ export async function getAllPermissions() {
             }
         });
 
+        // FILTER BY TENANT SUBSCRIPTION
+        if (session.user.tenantId) {
+            const tenantModules = await prisma.tenant_module.findMany({
+                where: { tenant_id: session.user.tenantId, enabled: true },
+                select: { module_key: true }
+            });
+
+            const allowedKeys = new Set(tenantModules.map(tm => tm.module_key.toLowerCase()));
+            // Always allow System
+            allowedKeys.add('system');
+
+            // Filter combined list
+            const filtered = combined.filter(p => {
+                const modKey = p.module.toLowerCase();
+                // Special Mapping: 'HMS' permissions usually map to 'hms' key, etc.
+                // If the module is 'Custom', allow it? Or check if it matches any key.
+                if (modKey === 'system') return true;
+                if (modKey === 'custom') return true;
+
+                // Check against subscribed keys
+                // Note: STANDARD_PERMISSIONS uses 'HMS', 'CRM' (uppercase). allowedKeys has 'hms', 'crm' (lowercase).
+                return allowedKeys.has(modKey);
+            });
+
+            return { success: true, data: filtered };
+        }
+
         return { success: true, data: combined };
     } catch (error) {
         console.error("Failed to fetch permissions:", error);
