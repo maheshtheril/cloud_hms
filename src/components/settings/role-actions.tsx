@@ -238,18 +238,41 @@ export function RoleActions({ role }: RoleActionsProps) {
                                 {loadingPermissions ? (
                                     <div className="flex items-center justify-center p-4">Loading...</div>
                                 ) : (
-                                    <div className="h-[300px] overflow-y-auto border p-2">
-                                        <p className="text-sm font-bold pb-2">Total Permissions: {permissions.length}</p>
-                                        {permissions.map(p => (
-                                            <div key={p.code} className="flex items-center gap-2 py-1">
-                                                <Checkbox
-                                                    checked={selectedPermissions.includes(p.code)}
-                                                    onCheckedChange={() => togglePermission(p.code)}
-                                                />
-                                                <span className="text-sm">{p.name} ({p.module})</span>
-                                            </div>
-                                        ))}
-                                        {permissions.length === 0 && <p className="text-red-500">No permissions loaded.</p>}
+                                    <div className="space-y-4">
+                                        <div className="relative">
+                                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
+                                            <Input
+                                                placeholder="Search permissions..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="pl-8"
+                                            />
+                                        </div>
+                                        <div className="h-[300px] overflow-y-auto border p-2 rounded-md bg-slate-50 dark:bg-slate-950">
+                                            <p className="text-xs font-bold pb-2 text-slate-500 uppercase tracking-wider">
+                                                Showing {permissions.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.module.toLowerCase().includes(searchQuery.toLowerCase())).length} of {permissions.length} Permissions
+                                            </p>
+                                            {permissions
+                                                .filter(p =>
+                                                    !searchQuery ||
+                                                    p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                                    p.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                                    p.module.toLowerCase().includes(searchQuery.toLowerCase())
+                                                )
+                                                .map(p => (
+                                                    <div key={p.code} className="flex items-center gap-2 py-1.5 px-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded cursor-pointer" onClick={() => togglePermission(p.code)}>
+                                                        <Checkbox
+                                                            checked={selectedPermissions.includes(p.code)}
+                                                            onCheckedChange={() => togglePermission(p.code)}
+                                                        />
+                                                        <div>
+                                                            <span className="text-sm font-medium">{p.name}</span>
+                                                            <span className="ml-2 text-xs text-slate-400">({p.module})</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            {permissions.length === 0 && <p className="text-red-500">No permissions loaded.</p>}
+                                        </div>
                                     </div>
                                 )}
                             </div>
