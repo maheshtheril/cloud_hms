@@ -182,8 +182,14 @@ export default function PermissionsPage() {
                             <Shield className="h-10 w-10 text-cyan-400" />
                             Access Control Registry
                         </h1>
-                        <p className="text-slate-400 mt-2 text-lg">
+                        <p className="text-slate-400 mt-2 text-lg flex items-center gap-2">
                             Define granular capabilities for the neural system.
+                            {dbModules.length > 0 && (
+                                <Badge variant="outline" className="text-xs border-cyan-800 bg-cyan-950/30 text-cyan-400 ml-2 animate-in fade-in">
+                                    <Shield className="h-3 w-3 mr-1" />
+                                    {dbModules.length} Modules Synced from DB
+                                </Badge>
+                            )}
                         </p>
                     </div>
 
