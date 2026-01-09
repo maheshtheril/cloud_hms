@@ -30,7 +30,8 @@ export async function getMenuItems() {
 
             if (roleName) {
                 const normalize = roleName.toLowerCase();
-                if (normalize.includes('reception') || normalize.includes('front desk') || normalize === 'receptionist') {
+                // Check Role Name OR specific email override for the user 'rece'
+                if (normalize.includes('reception') || normalize.includes('front desk') || normalize === 'receptionist' || session.user.email === 'rece@live.com') {
                     return [
                         {
                             module: { name: 'Hospital Operations', module_key: 'hms' },
@@ -44,6 +45,19 @@ export async function getMenuItems() {
                         }
                     ];
                 }
+            } else if (session.user.email === 'rece@live.com') {
+                // Fallback if roleName is null but email matches
+                return [
+                    {
+                        module: { name: 'Hospital Operations', module_key: 'hms' },
+                        items: [
+                            { key: 'hms-reception', label: 'Front Desk Dashboard', icon: 'Monitor', url: '/hms/reception' },
+                            { key: 'hms-patients', label: 'Patient Registry', icon: 'Users', url: '/hms/patients' },
+                            { key: 'hms-appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
+                            { key: 'hms-schedule', label: 'Doctor Schedule', icon: 'CalendarClock', url: '/hms/schedule' },
+                        ]
+                    }
+                ];
             }
         } catch (e) {
             console.error("Failed override check", e);
