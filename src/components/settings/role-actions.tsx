@@ -263,7 +263,7 @@ export function RoleActions({ role }: RoleActionsProps) {
                                                     <div key={p.code} className="flex items-center gap-2 py-1.5 px-2 hover:bg-slate-100 dark:hover:bg-slate-900 rounded cursor-pointer" onClick={() => togglePermission(p.code)}>
                                                         <Checkbox
                                                             checked={selectedPermissions.includes(p.code)}
-                                                            onCheckedChange={() => togglePermission(p.code)}
+                                                            className="pointer-events-none"
                                                         />
                                                         <div>
                                                             <span className="text-sm font-medium">{p.name}</span>
