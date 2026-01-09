@@ -139,7 +139,7 @@ export default async function ReceptionDashboardPage() {
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 max-w-7xl mx-auto space-y-6">
-            <ShiftManager />
+            {/* ShiftManager moved to Action Center */}
             <ReceptionActionCenter
                 todayAppointments={formattedAppointments}
                 patients={patients}
