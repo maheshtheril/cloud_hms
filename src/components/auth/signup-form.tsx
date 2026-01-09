@@ -209,7 +209,7 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
                                 <p className="text-sm text-gray-500 mb-4">Select the modules relevant to your business.</p>
 
                                 <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-2">
-                                    {modules.map(mod => (
+                                    {modules.filter(m => !['reports', 'system'].includes(m.module_key.toLowerCase())).map(mod => (
                                         <div
                                             key={mod.module_key}
                                             onClick={() => toggleModule(mod.module_key)}

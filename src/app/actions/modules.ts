@@ -12,7 +12,10 @@ export async function getActiveModules() {
         // For settings page, usually admin.
 
         const modules = await prisma.modules.findMany({
-            where: { is_active: true },
+            where: {
+                is_active: true,
+                module_key: { notIn: ['reports', 'system'] }
+            },
             orderBy: { name: 'asc' }
         });
 
