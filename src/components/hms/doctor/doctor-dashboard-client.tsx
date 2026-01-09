@@ -22,6 +22,7 @@ interface DoctorDashboardProps {
 
 export function DoctorDashboardClient({ doctorName, appointments, stats }: DoctorDashboardProps) {
     const router = useRouter()
+    const [selectedTab, setSelectedTab] = useState<'queue' | 'history'>('queue')
     const [searchQuery, setSearchQuery] = useState("")
 
     // Filter appointments based on tab and search
