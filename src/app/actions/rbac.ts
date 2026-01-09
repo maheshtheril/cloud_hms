@@ -4,6 +4,140 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
 
+const STANDARD_PERMISSIONS = [
+    // User Management -> System
+    { code: 'users:view', name: 'View Users', module: 'System' },
+    { code: 'users:create', name: 'Create Users', module: 'System' },
+    { code: 'users:edit', name: 'Edit Users', module: 'System' },
+    { code: 'users:delete', name: 'Delete Users', module: 'System' },
+
+    // Role Management -> System
+    { code: 'roles:view', name: 'View Roles', module: 'System' },
+    { code: 'roles:manage', name: 'Manage Roles', module: 'System' },
+
+    // Settings -> System
+    { code: 'settings:view', name: 'View Settings', module: 'System' },
+    { code: 'settings:edit', name: 'Edit Settings', module: 'System' },
+
+    // HMS - General
+    { code: 'hms:view', name: 'View HMS', module: 'HMS' },
+    { code: 'hms:admin', name: 'HMS Administrator', module: 'HMS' },
+    { code: 'hms:create', name: 'Create HMS Records', module: 'HMS' },
+    { code: 'hms:edit', name: 'Edit HMS Records', module: 'HMS' },
+    { code: 'hms:delete', name: 'Delete HMS Records', module: 'HMS' },
+
+    // Dashboard Access
+    { code: 'hms:dashboard:doctor', name: 'Access Doctor Dashboard', module: 'HMS' },
+    { code: 'hms:dashboard:nurse', name: 'Access Nurse Dashboard', module: 'HMS' },
+    { code: 'hms:dashboard:reception', name: 'Access Reception Dashboard', module: 'HMS' },
+
+    // HMS - Clinical & Patient
+    { code: 'patients:view', name: 'View Patients', module: 'HMS' },
+    { code: 'patients:create', name: 'Create Patients', module: 'HMS' },
+    { code: 'patients:edit', name: 'Edit Patients', module: 'HMS' },
+    { code: 'appointments:view', name: 'View Appointments', module: 'HMS' },
+    { code: 'appointments:create', name: 'Create Appointments', module: 'HMS' },
+    { code: 'appointments:edit', name: 'Edit Appointments', module: 'HMS' },
+    { code: 'prescriptions:view', name: 'View Prescriptions', module: 'HMS' },
+    { code: 'prescriptions:create', name: 'Create Prescriptions', module: 'HMS' },
+    { code: 'prescriptions:edit', name: 'Edit Prescriptions', module: 'HMS' },
+    { code: 'vitals:view', name: 'View Vitals', module: 'HMS' },
+    { code: 'vitals:create', name: 'Create Vitals', module: 'HMS' },
+    { code: 'vitals:edit', name: 'Edit Vitals', module: 'HMS' },
+
+    // Billing
+    { code: 'billing:view', name: 'View Billing', module: 'HMS' },
+    { code: 'billing:create', name: 'Create Bills', module: 'HMS' },
+    { code: 'billing:returns:view', name: 'View Sales Returns', module: 'HMS' },
+    { code: 'billing:returns:create', name: 'Create Sales Returns', module: 'HMS' },
+
+    // Pharmacy
+    { code: 'pharmacy:view', name: 'View Pharmacy', module: 'Pharmacy' },
+    { code: 'pharmacy:create', name: 'Create Pharmacy Records', module: 'Pharmacy' },
+    { code: 'pharmacy:edit', name: 'Edit Pharmacy Records', module: 'Pharmacy' },
+
+    // CRM
+    { code: 'crm:view', name: 'View CRM', module: 'CRM' },
+    { code: 'crm:admin', name: 'CRM Administrator', module: 'CRM' },
+    { code: 'crm:view_all', name: 'View All CRM Records', module: 'CRM' },
+    { code: 'crm:view_team', name: 'View Team CRM Records', module: 'CRM' },
+    { code: 'crm:view_own', name: 'View Own CRM Records', module: 'CRM' },
+    { code: 'crm:reports', name: 'View CRM Reports', module: 'CRM' },
+    { code: 'crm:create_leads', name: 'Create Leads', module: 'CRM' },
+    { code: 'crm:manage_deals', name: 'Manage Deals', module: 'CRM' },
+    { code: 'crm:assign_leads', name: 'Assign Leads', module: 'CRM' },
+    { code: 'crm:manage_own_deals', name: 'Manage Own Deals', module: 'CRM' },
+    { code: 'leads:view', name: 'View Leads', module: 'CRM' },
+    { code: 'leads:create', name: 'Create Leads', module: 'CRM' },
+    { code: 'leads:edit', name: 'Edit Leads', module: 'CRM' },
+    { code: 'leads:delete', name: 'Delete Leads', module: 'CRM' },
+    { code: 'deals:view', name: 'View Deals', module: 'CRM' },
+    { code: 'deals:create', name: 'Create Deals', module: 'CRM' },
+    { code: 'deals:edit', name: 'Edit Deals', module: 'CRM' },
+
+    // Inventory
+    { code: 'inventory:view', name: 'View Inventory', module: 'Inventory' },
+    { code: 'inventory:create', name: 'Create Inventory', module: 'Inventory' },
+    { code: 'inventory:edit', name: 'Edit Inventory', module: 'Inventory' },
+    { code: 'inventory:delete', name: 'Delete Inventory', module: 'Inventory' },
+    { code: 'inventory:admin', name: 'Inventory Administrator', module: 'Inventory' },
+    { code: 'inventory:adjustments:view', name: 'View Stock Adjustments', module: 'Inventory' },
+    { code: 'inventory:adjustments:create', name: 'Create Stock Adjustments', module: 'Inventory' },
+
+    // Purchasing
+    { code: 'purchasing:view', name: 'View Purchase Orders', module: 'Purchasing' },
+    { code: 'purchasing:create', name: 'Create Purchase Orders', module: 'Purchasing' },
+    { code: 'purchasing:edit', name: 'Edit Purchase Orders', module: 'Purchasing' },
+    { code: 'suppliers:view', name: 'View Suppliers', module: 'Purchasing' },
+    { code: 'suppliers:create', name: 'Create Suppliers', module: 'Purchasing' },
+    { code: 'suppliers:edit', name: 'Edit Suppliers', module: 'Purchasing' },
+    { code: 'purchasing:returns:view', name: 'View Purchase Returns', module: 'Purchasing' },
+    { code: 'purchasing:returns:create', name: 'Create Purchase Returns', module: 'Purchasing' },
+
+    // HR - Attendance & Employees
+    { code: 'hr:view', name: 'View HR', module: 'HR' },
+    { code: 'hr:attendance:view', name: 'View Attendance', module: 'HR' },
+    { code: 'hr:attendance:create', name: 'Mark Attendance', module: 'HR' },
+    { code: 'hr:attendance:edit', name: 'Edit Attendance', module: 'HR' },
+    { code: 'hr:employees:view', name: 'View Employees', module: 'HR' },
+];
+
+/**
+ * Ensures that permission codes exist in the database.
+ * If they are part of the standard set, they are automatically created.
+ */
+async function ensurePermissionsExist(codes: string[]) {
+    if (!codes || codes.length === 0) return;
+
+    // Filter out the '*' permission which is a special case
+    const realCodes = codes.filter(c => c !== '*');
+    if (realCodes.length === 0) return;
+
+    // Check what exists
+    const existingPerms = await prisma.permission.findMany({
+        where: { code: { in: realCodes } },
+        select: { code: true }
+    });
+    const existingSet = new Set(existingPerms.map(p => p.code));
+    const missingCodes = realCodes.filter(c => !existingSet.has(c));
+
+    if (missingCodes.length > 0) {
+        // Find them in standard set
+        const toCreate = STANDARD_PERMISSIONS.filter(p => missingCodes.includes(p.code));
+
+        if (toCreate.length > 0) {
+            await prisma.permission.createMany({
+                data: toCreate.map(p => ({
+                    code: p.code,
+                    name: p.name,
+                    category: p.module
+                })),
+                skipDuplicates: true
+            });
+        }
+    }
+}
+
 /**
  * Seed default roles for the tenant
  * This creates standard RBAC roles with predefined permissions
@@ -274,6 +408,9 @@ export async function updateRole(roleId: string, data: { name: string; permissio
             return { error: "Role not found or access denied" };
         }
 
+        // Proactively ensure permissions exist in DB before linking
+        await ensurePermissionsExist(data.permissions);
+
         // Update name and permissions array
         await prisma.role.update({
             where: { id: roleId },
@@ -397,233 +534,134 @@ export async function getAllPermissions() {
     if (!session?.user?.id) return { error: "Unauthorized" };
 
     try {
-        // Define Standard Hardcoded Permissions (The "Truth" for Code reliability)
-        // Define Standard Hardcoded Permissions (The "Truth" for Code reliability)
-        const standardPermissions = [
-            // User Management -> System
-            { code: 'users:view', name: 'View Users', module: 'System' },
-            { code: 'users:create', name: 'Create Users', module: 'System' },
-            { code: 'users:edit', name: 'Edit Users', module: 'System' },
-            { code: 'users:delete', name: 'Delete Users', module: 'System' },
+        try {
+            // Fetch Dynamic Permissions from DB
+            const dbPermissions = await prisma.permission.findMany();
 
-            // Role Management -> System
-            { code: 'roles:view', name: 'View Roles', module: 'System' },
-            { code: 'roles:manage', name: 'Manage Roles', module: 'System' },
+            // Ensure all STANDARD_PERMISSIONS exist in DB
+            const dbCodeSet = new Set(dbPermissions.map(p => p.code));
+            const missing = STANDARD_PERMISSIONS.filter(p => !dbCodeSet.has(p.code));
 
-            // Settings -> System
-            { code: 'settings:view', name: 'View Settings', module: 'System' },
-            { code: 'settings:edit', name: 'Edit Settings', module: 'System' },
+            if (missing.length > 0) {
+                try {
+                    // Ensure they exist in DB so FK constraints are happy
+                    await prisma.permission.createMany({
+                        data: missing.map(p => ({
+                            code: p.code,
+                            name: p.name,
+                            category: p.module
+                        })),
+                        skipDuplicates: true
+                    });
+                    console.log(`Synced ${missing.length} new standard permissions to DB.`);
+                } catch (syncErr) {
+                    console.error("Critical: Failed to sync standard permissions to DB", syncErr);
+                }
+            }
 
-            // HMS - General
-            { code: 'hms:view', name: 'View HMS', module: 'HMS' },
-            { code: 'hms:admin', name: 'HMS Administrator', module: 'HMS' },
-            { code: 'hms:create', name: 'Create HMS Records', module: 'HMS' },
-            { code: 'hms:edit', name: 'Edit HMS Records', module: 'HMS' },
-            { code: 'hms:delete', name: 'Delete HMS Records', module: 'HMS' },
+            // Merge: Standard takes precedence
+            const combined = [...STANDARD_PERMISSIONS];
 
-            // Dashboard Access
-            { code: 'hms:dashboard:doctor', name: 'Access Doctor Dashboard', module: 'HMS' },
-            { code: 'hms:dashboard:nurse', name: 'Access Nurse Dashboard', module: 'HMS' },
-            { code: 'hms:dashboard:reception', name: 'Access Reception Dashboard', module: 'HMS' },
+            // Add DB perms if not already in standard
+            const codeSet = new Set(STANDARD_PERMISSIONS.map(p => p.code));
 
-            // HMS - Clinical & Patient
-            { code: 'patients:view', name: 'View Patients', module: 'HMS' },
-            { code: 'patients:create', name: 'Create Patients', module: 'HMS' },
-            { code: 'patients:edit', name: 'Edit Patients', module: 'HMS' },
-            { code: 'appointments:view', name: 'View Appointments', module: 'HMS' },
-            { code: 'appointments:create', name: 'Create Appointments', module: 'HMS' },
-            { code: 'appointments:edit', name: 'Edit Appointments', module: 'HMS' },
-            { code: 'prescriptions:view', name: 'View Prescriptions', module: 'HMS' },
-            { code: 'prescriptions:create', name: 'Create Prescriptions', module: 'HMS' },
-            { code: 'prescriptions:edit', name: 'Edit Prescriptions', module: 'HMS' },
-            { code: 'vitals:view', name: 'View Vitals', module: 'HMS' },
-            { code: 'vitals:create', name: 'Create Vitals', module: 'HMS' },
-            { code: 'vitals:edit', name: 'Edit Vitals', module: 'HMS' },
+            dbPermissions.forEach(p => {
+                if (!codeSet.has(p.code)) {
+                    let mod = p.category || 'Custom';
 
-            // Billing
-            { code: 'billing:view', name: 'View Billing', module: 'HMS' },
-            { code: 'billing:create', name: 'Create Bills', module: 'HMS' },
-            { code: 'billing:returns:view', name: 'View Sales Returns', module: 'HMS' },
-            { code: 'billing:returns:create', name: 'Create Sales Returns', module: 'HMS' },
+                    // Normalization Logic
+                    if (mod.toLowerCase() === 'crm') mod = 'CRM';
+                    else if (mod.toLowerCase() === 'hms') mod = 'HMS';
+                    else if (mod.toLowerCase() === 'finance') mod = 'Finance';
+                    else if (mod.toLowerCase() === 'inventory') mod = 'Inventory';
+                    else if (mod.toLowerCase() === 'purchasing') mod = 'Purchasing';
 
-            // Pharmacy
-            { code: 'pharmacy:view', name: 'View Pharmacy', module: 'Pharmacy' },
-            { code: 'pharmacy:create', name: 'Create Pharmacy Records', module: 'Pharmacy' },
-            { code: 'pharmacy:edit', name: 'Edit Pharmacy Records', module: 'Pharmacy' },
-
-            // CRM
-            { code: 'crm:view', name: 'View CRM', module: 'CRM' },
-            { code: 'crm:admin', name: 'CRM Administrator', module: 'CRM' },
-            { code: 'crm:view_all', name: 'View All CRM Records', module: 'CRM' },
-            { code: 'crm:view_team', name: 'View Team CRM Records', module: 'CRM' },
-            { code: 'crm:view_own', name: 'View Own CRM Records', module: 'CRM' },
-            { code: 'crm:reports', name: 'View CRM Reports', module: 'CRM' },
-            { code: 'crm:create_leads', name: 'Create Leads', module: 'CRM' },
-            { code: 'crm:manage_deals', name: 'Manage Deals', module: 'CRM' },
-            { code: 'crm:assign_leads', name: 'Assign Leads', module: 'CRM' },
-            { code: 'crm:manage_own_deals', name: 'Manage Own Deals', module: 'CRM' },
-            { code: 'leads:view', name: 'View Leads', module: 'CRM' },
-            { code: 'leads:create', name: 'Create Leads', module: 'CRM' },
-            { code: 'leads:edit', name: 'Edit Leads', module: 'CRM' },
-            { code: 'leads:delete', name: 'Delete Leads', module: 'CRM' },
-            { code: 'deals:view', name: 'View Deals', module: 'CRM' },
-            { code: 'deals:create', name: 'Create Deals', module: 'CRM' },
-            { code: 'deals:edit', name: 'Edit Deals', module: 'CRM' },
-
-            // Inventory
-            { code: 'inventory:view', name: 'View Inventory', module: 'Inventory' },
-            { code: 'inventory:create', name: 'Create Inventory', module: 'Inventory' },
-            { code: 'inventory:edit', name: 'Edit Inventory', module: 'Inventory' },
-            { code: 'inventory:delete', name: 'Delete Inventory', module: 'Inventory' },
-            { code: 'inventory:admin', name: 'Inventory Administrator', module: 'Inventory' },
-            { code: 'inventory:adjustments:view', name: 'View Stock Adjustments', module: 'Inventory' },
-            { code: 'inventory:adjustments:create', name: 'Create Stock Adjustments', module: 'Inventory' },
-
-            // Purchasing
-            { code: 'purchasing:view', name: 'View Purchase Orders', module: 'Purchasing' },
-            { code: 'purchasing:create', name: 'Create Purchase Orders', module: 'Purchasing' },
-            { code: 'purchasing:edit', name: 'Edit Purchase Orders', module: 'Purchasing' },
-            { code: 'suppliers:view', name: 'View Suppliers', module: 'Purchasing' },
-            { code: 'suppliers:create', name: 'Create Suppliers', module: 'Purchasing' },
-            { code: 'suppliers:edit', name: 'Edit Suppliers', module: 'Purchasing' },
-            { code: 'purchasing:returns:view', name: 'View Purchase Returns', module: 'Purchasing' },
-            { code: 'purchasing:returns:create', name: 'Create Purchase Returns', module: 'Purchasing' },
-
-            // HR - Attendance & Employees
-            { code: 'hr:view', name: 'View HR', module: 'HR' },
-            { code: 'hr:attendance:view', name: 'View Attendance', module: 'HR' },
-            { code: 'hr:attendance:create', name: 'Mark Attendance', module: 'HR' },
-            { code: 'hr:attendance:edit', name: 'Edit Attendance', module: 'HR' },
-            { code: 'hr:employees:view', name: 'View Employees', module: 'HR' },
-        ];
-
-        // Fetch Dynamic Permissions from DB
-        const dbPermissions = await prisma.permission.findMany();
-
-        // FETCH MISSING FROM DB & SYNC
-        const dbCodeSet = new Set(dbPermissions.map(p => p.code));
-        const missing = standardPermissions.filter(p => !dbCodeSet.has(p.code));
-
-        if (missing.length > 0) {
-            try {
-                // Ensure they exist in DB so FK constraints are happy
-                await prisma.permission.createMany({
-                    data: missing.map(p => ({
+                    combined.push({
                         code: p.code,
                         name: p.name,
-                        category: p.module
-                    })),
-                    skipDuplicates: true
-                });
-                console.log(`Synced ${missing.length} new standard permissions to DB.`);
-            } catch (syncErr) {
-                console.error("Critical: Failed to sync standard permissions to DB", syncErr);
-            }
+                        module: mod
+                    });
+                }
+            });
+
+            return { success: true, data: combined };
+        } catch (error) {
+            console.error("Failed to fetch permissions:", error);
+            return { error: "Failed to fetch permissions" };
         }
-
-        // Merge: Standard takes precedence? Or DB?
-        const combined = [...standardPermissions];
-
-        // Add DB perms if not already in standard
-        const codeSet = new Set(standardPermissions.map(p => p.code));
-
-        dbPermissions.forEach(p => {
-            if (!codeSet.has(p.code)) {
-                let mod = p.category || 'Custom';
-
-                // Normalization Logic
-                if (mod.toLowerCase() === 'crm') mod = 'CRM';
-                else if (mod.toLowerCase() === 'hms') mod = 'HMS';
-                else if (mod.toLowerCase() === 'finance') mod = 'Finance';
-                else if (mod.toLowerCase() === 'inventory') mod = 'Inventory';
-                else if (mod.toLowerCase() === 'purchasing') mod = 'Purchasing';
-
-                combined.push({
-                    code: p.code,
-                    name: p.name,
-                    module: mod
-                });
-            }
-        });
-
-        return { success: true, data: combined };
-    } catch (error) {
-        console.error("Failed to fetch permissions:", error);
-        return { error: "Failed to fetch permissions" };
     }
-}
 
 /**
  * Get ALL Permissions for a specific User (Flattened)
  * Merges: Table-based Role Permissions And Array-based Role Permissions
  */
 export async function getUserPermissions(userId: string): Promise<Set<string>> {
-    try {
-        const session = await auth();
-        // Use user's tenant from session for context isolation
-        const tenantId = session?.user?.tenantId;
+        try {
+            const session = await auth();
+            // Use user's tenant from session for context isolation
+            const tenantId = session?.user?.tenantId;
 
-        if (!tenantId) return new Set();
+            if (!tenantId) return new Set();
 
-        const permissionSet = new Set<string>();
+            const permissionSet = new Set<string>();
 
-        // 1. Get User's Generic Roles (Previous Logic)
-        const userRoles = await prisma.user_role.findMany({
-            where: { user_id: userId, tenant_id: tenantId }
-        });
-        const roleIds = userRoles.map(ur => ur.role_id);
-
-        if (roleIds.length > 0) {
-            // 2. Fetch Roles (for array-based permissions)
-            const roles = await prisma.role.findMany({
-                where: { id: { in: roleIds } }
+            // 1. Get User's Generic Roles (Previous Logic)
+            const userRoles = await prisma.user_role.findMany({
+                where: { user_id: userId, tenant_id: tenantId }
             });
-            roles.forEach(r => {
-                if (Array.isArray(r.permissions)) {
-                    r.permissions.forEach((p: string) => permissionSet.add(p));
-                }
+            const roleIds = userRoles.map(ur => ur.role_id);
+
+            if (roleIds.length > 0) {
+                // 2. Fetch Roles (for array-based permissions)
+                const roles = await prisma.role.findMany({
+                    where: { id: { in: roleIds } }
+                });
+                roles.forEach(r => {
+                    if (Array.isArray(r.permissions)) {
+                        r.permissions.forEach((p: string) => permissionSet.add(p));
+                    }
+                });
+                // 3. Fetch Role-Permission Mappings (for table-based permissions)
+                const rolePermissions = await prisma.role_permission.findMany({
+                    where: { role_id: { in: roleIds }, is_granted: true }
+                });
+                rolePermissions.forEach(rp => permissionSet.add(rp.permission_code));
+            }
+
+
+
+            // 4. Check for User-Specific Permissions override
+            const userPermissions = await prisma.user_permission.findMany({
+                where: { user_id: userId, tenant_id: tenantId, is_granted: true }
             });
-            // 3. Fetch Role-Permission Mappings (for table-based permissions)
-            const rolePermissions = await prisma.role_permission.findMany({
-                where: { role_id: { in: roleIds }, is_granted: true }
-            });
-            rolePermissions.forEach(rp => permissionSet.add(rp.permission_code));
+            userPermissions.forEach(up => permissionSet.add(up.permission_code));
+
+            // 5. Implicitly Grant Super Admin (Wildcard) if session says isAdmin
+            if (session?.user?.isAdmin) {
+                permissionSet.add('*');
+            }
+
+            return permissionSet;
+        } catch (error) {
+            console.error("Error fetching user permissions:", error);
+            return new Set();
         }
-
-
-
-        // 4. Check for User-Specific Permissions override
-        const userPermissions = await prisma.user_permission.findMany({
-            where: { user_id: userId, tenant_id: tenantId, is_granted: true }
-        });
-        userPermissions.forEach(up => permissionSet.add(up.permission_code));
-
-        // 5. Implicitly Grant Super Admin (Wildcard) if session says isAdmin
-        if (session?.user?.isAdmin) {
-            permissionSet.add('*');
-        }
-
-        return permissionSet;
-    } catch (error) {
-        console.error("Error fetching user permissions:", error);
-        return new Set();
     }
-}
 
-/**
- * Check if current user has a specific permission
- */
-export async function checkPermission(permissionCode: string): Promise<boolean> {
-    const session = await auth();
-    if (!session?.user?.id) return false;
+    /**
+     * Check if current user has a specific permission
+     */
+    export async function checkPermission(permissionCode: string): Promise<boolean> {
+        const session = await auth();
+        if (!session?.user?.id) return false;
 
-    // Super Admin Bypass (optional)
-    // if (session.user.isAdmin) return true; 
+        // Super Admin Bypass (optional)
+        // if (session.user.isAdmin) return true; 
 
-    const perms = await getUserPermissions(session.user.id);
+        const perms = await getUserPermissions(session.user.id);
 
-    if (perms.has('*')) return true;
-    if (perms.has(permissionCode)) return true;
+        if (perms.has('*')) return true;
+        if (perms.has(permissionCode)) return true;
 
-    return false;
-}
+        return false;
+    }
