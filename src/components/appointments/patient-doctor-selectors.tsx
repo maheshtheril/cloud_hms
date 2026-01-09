@@ -1,6 +1,6 @@
 'use client'
 
-import { SearchableSelect } from '@/components/appointments/searchable-select'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 import { User, Stethoscope } from 'lucide-react'
 import Link from 'next/link'
 
@@ -16,7 +16,7 @@ interface Doctor {
     id: string
     first_name: string
     last_name: string
-    hms_specializations: { name: string } | null
+    hms_specializations: { name: string }[] | any[] | null
     role: string | null
 }
 
@@ -40,13 +40,13 @@ export function PatientDoctorSelectors({
     const patientOptions = patients.map(p => ({
         id: p.id,
         label: `${p.first_name} ${p.last_name || ''}`.trim(),
-        subtitle: `${p.patient_number || 'No Number'} • ${p.gender || 'N/A'}`
+        subLabel: `${p.patient_number || 'No Number'} • ${p.gender || 'N/A'}`
     }))
 
     const doctorOptions = doctors.map(d => ({
         id: d.id,
         label: `Dr. ${d.first_name} ${d.last_name}`,
-        subtitle: d.hms_specializations?.name || d.role || 'General Practice'
+        subLabel: d.hms_specializations?.[0]?.name || d.role || 'General Practice'
     }))
 
     return (
@@ -80,15 +80,18 @@ export function PatientDoctorSelectors({
                         </div>
 
                         <SearchableSelect
-                            options={patientOptions}
+                            defaultOptions={patientOptions}
+                            onSearch={async (q) => {
+                                const lower = q.toLowerCase()
+                                return patientOptions.filter(p => p.label.toLowerCase().includes(lower) || p.subLabel.toLowerCase().includes(lower))
+                            }}
                             value={selectedPatientId}
-                            onChange={(id) => onPatientSelect?.(id)}
+                            onChange={(id) => onPatientSelect?.(id || '')}
                             placeholder="Search patient..."
-                            name="patient_id"
-                            required
+                            inputId="patient_select"
                             isDark={true}
-                            className="text-sm"
                         />
+                        <input type="hidden" name="patient_id" value={selectedPatientId} />
                     </div>
                 </div>
             </div>
@@ -111,15 +114,18 @@ export function PatientDoctorSelectors({
                     </label>
 
                     <SearchableSelect
-                        options={doctorOptions}
+                        defaultOptions={doctorOptions}
+                        onSearch={async (q) => {
+                            const lower = q.toLowerCase()
+                            return doctorOptions.filter(d => d.label.toLowerCase().includes(lower) || d.subLabel.toLowerCase().includes(lower))
+                        }}
                         value={selectedClinicianId}
-                        onChange={(e) => onClinicianSelect?.(e)}
+                        onChange={(e) => onClinicianSelect?.(e || '')}
                         placeholder="Search doctor..."
-                        name="clinician_id"
-                        required
+                        inputId="clinician_select"
                         isDark={true}
-                        className="text-sm"
                     />
+                    <input type="hidden" name="clinician_id" value={selectedClinicianId || ''} />
                 </div>
             </div>
         </div>
