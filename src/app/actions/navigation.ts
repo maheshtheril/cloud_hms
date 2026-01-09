@@ -36,7 +36,7 @@ export async function getMenuItems() {
                         {
                             module: { name: 'Hospital Operations', module_key: 'hms' },
                             items: [
-                                { key: 'hms-reception', label: 'Front Desk Dashboard', icon: 'Monitor', url: '/hms/reception' },
+                                { key: 'hms-reception', label: 'Front Desk Dashboard', icon: 'Monitor', url: '/hms/reception/dashboard' },
                                 { key: 'hms-patients', label: 'Patient Registry', icon: 'Users', url: '/hms/patients' },
                                 { key: 'hms-appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
                                 // Doctor schedule is useful for reception
@@ -51,7 +51,7 @@ export async function getMenuItems() {
                     {
                         module: { name: 'Hospital Operations', module_key: 'hms' },
                         items: [
-                            { key: 'hms-reception', label: 'Front Desk Dashboard', icon: 'Monitor', url: '/hms/reception' },
+                            { key: 'hms-reception', label: 'Front Desk Dashboard', icon: 'Monitor', url: '/hms/reception/dashboard' },
                             { key: 'hms-patients', label: 'Patient Registry', icon: 'Users', url: '/hms/patients' },
                             { key: 'hms-appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
                             { key: 'hms-schedule', label: 'Doctor Schedule', icon: 'CalendarClock', url: '/hms/schedule' },
