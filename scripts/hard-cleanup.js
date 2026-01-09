@@ -14,7 +14,10 @@ async function main() {
 
     const map = {
         'accounting': 'finance',
-        'dashboard': 'system'
+        'dashboard': 'system',
+        'settings': 'system',
+        'user management': 'system',
+        'role management': 'system'
     };
 
     // 1. Resolve IDs

@@ -398,20 +398,21 @@ export async function getAllPermissions() {
 
     try {
         // Define Standard Hardcoded Permissions (The "Truth" for Code reliability)
+        // Define Standard Hardcoded Permissions (The "Truth" for Code reliability)
         const standardPermissions = [
-            // User Management
-            { code: 'users:view', name: 'View Users', module: 'User Management' },
-            { code: 'users:create', name: 'Create Users', module: 'User Management' },
-            { code: 'users:edit', name: 'Edit Users', module: 'User Management' },
-            { code: 'users:delete', name: 'Delete Users', module: 'User Management' },
+            // User Management -> System
+            { code: 'users:view', name: 'View Users', module: 'System' },
+            { code: 'users:create', name: 'Create Users', module: 'System' },
+            { code: 'users:edit', name: 'Edit Users', module: 'System' },
+            { code: 'users:delete', name: 'Delete Users', module: 'System' },
 
-            // Role Management
-            { code: 'roles:view', name: 'View Roles', module: 'Role Management' },
-            { code: 'roles:manage', name: 'Manage Roles', module: 'Role Management' },
+            // Role Management -> System
+            { code: 'roles:view', name: 'View Roles', module: 'System' },
+            { code: 'roles:manage', name: 'Manage Roles', module: 'System' },
 
-            // Settings
-            { code: 'settings:view', name: 'View Settings', module: 'Settings' },
-            { code: 'settings:edit', name: 'Edit Settings', module: 'Settings' },
+            // Settings -> System
+            { code: 'settings:view', name: 'View Settings', module: 'System' },
+            { code: 'settings:edit', name: 'Edit Settings', module: 'System' },
 
             // HMS - General
             { code: 'hms:view', name: 'View HMS', module: 'HMS' },
