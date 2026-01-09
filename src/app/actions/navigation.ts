@@ -12,6 +12,35 @@ export async function getMenuItems() {
     const isAdmin = session?.user?.isAdmin;
     let industry = ''; // we can fetch this if needed
 
+    // EMERGENCY OVERRIDE: Receptionist View
+    if (session?.user?.id) {
+        try {
+            // Quick check for role name to bypass complex logic if needed
+            const dbUser = await prisma.app_user.findUnique({
+                where: { id: session.user.id },
+                include: { user_roles: { include: { role: true } } }
+            });
+            const roleName = dbUser?.user_roles?.[0]?.role?.name;
+
+            if (roleName === 'Receptionist' || roleName === 'Front Desk') {
+                return [
+                    {
+                        module: { name: 'Hospital Operations', module_key: 'hms' },
+                        items: [
+                            { key: 'hms-reception', label: 'Front Desk Dashboard', icon: 'Monitor', url: '/hms/reception' },
+                            { key: 'hms-patients', label: 'Patient Registry', icon: 'Users', url: '/hms/patients' },
+                            { key: 'hms-appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
+                            // Doctor schedule is useful for reception
+                            { key: 'hms-schedule', label: 'Doctor Schedule', icon: 'CalendarClock', url: '/hms/schedule' },
+                        ]
+                    }
+                ];
+            }
+        } catch (e) {
+            console.error("Failed override check", e);
+        }
+    }
+
     // FETCH USER PERMISSIONS
     const userPerms = session?.user?.id ? await getUserPermissions(session.user.id) : new Set<string>();
 
