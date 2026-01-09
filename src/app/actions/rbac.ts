@@ -500,8 +500,28 @@ export async function getAllPermissions() {
         // Fetch Dynamic Permissions from DB
         const dbPermissions = await prisma.permission.findMany();
 
+        // FETCH MISSING FROM DB & SYNC
+        const dbCodeSet = new Set(dbPermissions.map(p => p.code));
+        const missing = standardPermissions.filter(p => !dbCodeSet.has(p.code));
+
+        if (missing.length > 0) {
+            try {
+                // Ensure they exist in DB so FK constraints are happy
+                await prisma.permission.createMany({
+                    data: missing.map(p => ({
+                        code: p.code,
+                        name: p.name,
+                        category: p.module
+                    })),
+                    skipDuplicates: true
+                });
+                console.log(`Synced ${missing.length} new standard permissions to DB.`);
+            } catch (syncErr) {
+                console.error("Critical: Failed to sync standard permissions to DB", syncErr);
+            }
+        }
+
         // Merge: Standard takes precedence? Or DB?
-        // Usually, we want to show ALL.
         const combined = [...standardPermissions];
 
         // Add DB perms if not already in standard
@@ -526,7 +546,6 @@ export async function getAllPermissions() {
             }
         });
 
-        // Search/Filter could happen here, or return all
         return { success: true, data: combined };
     } catch (error) {
         console.error("Failed to fetch permissions:", error);
