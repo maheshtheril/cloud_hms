@@ -67,7 +67,7 @@ export default async function ReceptionDashboardPage() {
 
         // 2. Fetch Patients (for selection)
         prisma.hms_patient.findMany({
-            where: { company_id: companyId },
+            where: { OR: [{ company_id: companyId }, { tenant_id: tenantId }] },
             take: 100, // Limit for dropdown performance
             orderBy: { updated_at: 'desc' },
             select: {
@@ -85,7 +85,7 @@ export default async function ReceptionDashboardPage() {
         prisma.hms_clinicians.findMany({
             where: {
                 is_active: true,
-                company_id: companyId
+                OR: [{ company_id: companyId }, { tenant_id: tenantId }]
             },
             select: {
                 id: true,
