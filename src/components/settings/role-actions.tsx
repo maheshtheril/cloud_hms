@@ -69,7 +69,7 @@ export function RoleActions({ role }: RoleActionsProps) {
     }
 
     useEffect(() => {
-        if (editOpen && permissions.length === 0) {
+        if (editOpen && permissions.length === 0 && !loadingPermissions) {
             loadPermissions()
         }
     }, [editOpen])
