@@ -23,19 +23,20 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
 // Futuristic Module Colors (Updated for DB Keys)
+// Futuristic Module Colors (Updated for Theme Capability)
 const MODULE_COLORS: Record<string, string> = {
-    'hms': 'text-cyan-400 bg-cyan-950/30 border-cyan-800 hover:border-cyan-500',
-    'crm': 'text-purple-400 bg-purple-950/30 border-purple-800 hover:border-purple-500',
-    'finance': 'text-emerald-400 bg-emerald-950/30 border-emerald-800 hover:border-emerald-500',
-    'inventory': 'text-amber-400 bg-amber-950/30 border-amber-800 hover:border-amber-500',
-    'purchasing': 'text-orange-400 bg-orange-950/30 border-orange-800 hover:border-orange-500',
-    'pharmacy': 'text-teal-400 bg-teal-950/30 border-teal-800 hover:border-teal-500',
-    'system': 'text-slate-400 bg-slate-950/30 border-slate-800 hover:border-slate-500',
-    'hr': 'text-rose-400 bg-rose-950/30 border-rose-800 hover:border-rose-500',
-    'projects': 'text-blue-400 bg-blue-950/30 border-blue-800 hover:border-blue-500',
-    'reports': 'text-indigo-400 bg-indigo-950/30 border-indigo-800 hover:border-indigo-500',
-    'sales': 'text-yellow-400 bg-yellow-950/30 border-yellow-800 hover:border-yellow-500',
-    'default': 'text-slate-400 bg-slate-950/30 border-slate-800 hover:border-slate-600',
+    'hms': 'text-cyan-700 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-950/30 border-cyan-200 dark:border-cyan-800 hover:border-cyan-500',
+    'crm': 'text-purple-700 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/30 border-purple-200 dark:border-purple-800 hover:border-purple-500',
+    'finance': 'text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800 hover:border-emerald-500',
+    'inventory': 'text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 hover:border-amber-500',
+    'purchasing': 'text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30 border-orange-200 dark:border-orange-800 hover:border-orange-500',
+    'pharmacy': 'text-teal-700 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/30 border-teal-200 dark:border-teal-800 hover:border-teal-500',
+    'system': 'text-slate-700 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/30 border-slate-200 dark:border-slate-800 hover:border-slate-500',
+    'hr': 'text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800 hover:border-rose-500',
+    'projects': 'text-blue-700 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800 hover:border-blue-500',
+    'reports': 'text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-800 hover:border-indigo-500',
+    'sales': 'text-yellow-700 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950/30 border-yellow-200 dark:border-yellow-800 hover:border-yellow-500',
+    'default': 'text-slate-700 dark:text-slate-400 bg-slate-50 dark:bg-slate-950/30 border-slate-200 dark:border-slate-800 hover:border-slate-600',
 };
 
 const getModuleColor = (key: string) => {
@@ -176,7 +177,7 @@ export default function PermissionsPage() {
 
 
     return (
-        <div className="min-h-screen bg-slate-950 text-slate-100 p-8 font-sans">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 p-8 font-sans transition-colors duration-300">
             {/* Ambient Background Glow */}
             <div className="fixed top-0 left-0 w-full h-96 bg-purple-900/20 blur-[120px] rounded-full pointer-events-none -translate-y-1/2" />
             <div className="fixed bottom-0 right-0 w-full h-96 bg-cyan-900/10 blur-[120px] rounded-full pointer-events-none translate-y-1/2" />
@@ -184,16 +185,16 @@ export default function PermissionsPage() {
             <div className="max-w-7xl mx-auto relative z-10 space-y-8">
 
                 {/* Header Section */}
-                <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-white/5">
+                <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-200 dark:border-white/5">
                     <div>
-                        <h1 className="text-4xl font-bold bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent flex items-center gap-3">
-                            <Shield className="h-10 w-10 text-cyan-400" />
+                        <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400 bg-clip-text text-transparent flex items-center gap-3">
+                            <Shield className="h-10 w-10 text-cyan-600 dark:text-cyan-400" />
                             Access Control Registry
                         </h1>
-                        <p className="text-slate-400 mt-2 text-lg flex items-center gap-2">
+                        <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg flex items-center gap-2">
                             Define granular capabilities for the neural system.
                             {dbModules.length > 0 && (
-                                <div className="mt-4 flex items-center gap-3 text-emerald-400 bg-emerald-950/30 px-4 py-2 rounded-lg border border-emerald-800/50 w-fit animate-in slide-in-from-left-4">
+                                <div className="mt-4 flex items-center gap-3 text-emerald-700 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-950/30 px-4 py-2 rounded-lg border border-emerald-200 dark:border-emerald-800/50 w-fit animate-in slide-in-from-left-4">
                                     <div className="relative">
                                         <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
                                         <div className="relative h-2.5 w-2.5 bg-emerald-500 rounded-full"></div>
@@ -214,23 +215,23 @@ export default function PermissionsPage() {
                                     Create Permission
                                 </Button>
                             </DialogTrigger>
-                            <DialogContent className="bg-slate-900 border-slate-800 text-slate-100">
+                            <DialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
                                 <DialogHeader>
                                     <DialogTitle className="text-2xl">Define New Capability</DialogTitle>
-                                    <DialogDescription className="text-slate-400">
+                                    <DialogDescription className="text-slate-500 dark:text-slate-400">
                                         Create a new permission code that can be used to protect Pages, Forms, or API Routes.
                                     </DialogDescription>
                                 </DialogHeader>
                                 <form onSubmit={handleCreate} className="space-y-6 mt-4">
                                     <div className="space-y-2">
-                                        <Label className="text-cyan-400">Permission Code</Label>
+                                        <Label className="text-cyan-700 dark:text-cyan-400">Permission Code</Label>
                                         <div className="relative">
                                             <Code className="absolute left-3 top-3 h-4 w-4 text-slate-500" />
                                             <Input
                                                 placeholder="e.g. hms:surgery:create"
                                                 value={newPermission.code}
                                                 onChange={e => setNewPermission({ ...newPermission, code: e.target.value })}
-                                                className="pl-9 bg-slate-950 border-slate-700 font-mono text-sm"
+                                                className="pl-9 bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700 font-mono text-sm"
                                                 required
                                             />
                                         </div>
@@ -243,7 +244,7 @@ export default function PermissionsPage() {
                                             placeholder="e.g. Create New Surgery"
                                             value={newPermission.name}
                                             onChange={e => setNewPermission({ ...newPermission, name: e.target.value })}
-                                            className="bg-slate-950 border-slate-700"
+                                            className="bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700"
                                             required
                                         />
                                     </div>
