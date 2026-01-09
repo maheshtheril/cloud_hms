@@ -68,7 +68,9 @@ export async function getMenuItems() {
     }
 
     // FETCH USER PERMISSIONS
-    const userPerms = session?.user?.id ? await getUserPermissions(session.user.id) : new Set<string>();
+    const userPermsRaw = session?.user?.id ? await getUserPermissions(session.user.id) : [];
+    // Convert to Set for easy lookup
+    const userPerms = new Set(Array.isArray(userPermsRaw) ? userPermsRaw : []);
 
     // FAILSAFE: Grant Full Access to Admins
     if (isAdmin) {
