@@ -12,6 +12,9 @@ export default async function ReceptionDashboardPage() {
     }
 
     const tenantId = session.user.tenantId
+    if (!tenantId) {
+        return <div className="flex h-screen items-center justify-center text-red-500 font-bold">Access Denied: Missing Tenant Context</div>
+    }
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
     const todayEnd = new Date()
@@ -39,7 +42,7 @@ export default async function ReceptionDashboardPage() {
 
         // 2. Fetch Patients (for selection)
         prisma.hms_patient.findMany({
-            where: tenantId ? { tenant_id: tenantId } : undefined,
+            where: { tenant_id: tenantId },
             take: 100, // Limit for dropdown performance
             orderBy: { updated_at: 'desc' },
             select: {
