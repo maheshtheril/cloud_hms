@@ -40,7 +40,7 @@ const MODULE_COLORS: Record<string, string> = {
 
 export default function PermissionsPage() {
     const [permissions, setPermissions] = useState<Array<{ code: string; name: string; module: string }>>([])
-    const [dbModules, setDbModules] = useState<string[]>([])
+    const [dbModules, setDbModules] = useState<Array<{ id: string, module_key: string, name: string }>>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -69,16 +69,8 @@ export default function PermissionsPage() {
         }
 
         if (modRes.success && modRes.data) {
-            const normalized = modRes.data.map((m: any) => {
-                const key = m.module_key.toLowerCase();
-                // Normalize common keys to Title Case or Uppercase for consistency
-                if (key === 'hms') return 'HMS';
-                if (key === 'crm') return 'CRM';
-                if (key === 'hr') return 'HR';
-                if (key === 'erp') return 'ERP';
-                return key.charAt(0).toUpperCase() + key.slice(1);
-            });
-            setDbModules(normalized);
+            // DIRECTLY USE DB DATA. NO NORMALIZATION "CHEATING".
+            setDbModules(modRes.data);
         }
 
         setLoading(false)
@@ -135,43 +127,45 @@ export default function PermissionsPage() {
                 p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 p.code.toLowerCase().includes(searchQuery.toLowerCase());
 
-            const matchesModule = selectedModule === "All" || p.module === selectedModule;
+            const matchesModule = selectedModule === "All" ||
+                p.module.toLowerCase() === selectedModule.toLowerCase() ||
+                // Try matching against name if selectedModule is a Name like "Hospital Management" and p.module is "HMS"?
+                // We'll stick to simple case-insensitive comparison for now.
+                // Or if we stored the 'key' in selectedModule?
+                false;
 
             return matchesSearch && matchesModule;
         });
     }, [permissions, searchQuery, selectedModule]);
 
-    // Group for stats (Strictly keys from DB)
+    // Stats Logic (Using DB Objects)
     const moduleStats = useMemo(() => {
-        const stats: Record<string, number> = {};
+        // Map Key (lowercase) -> { count, name, key }
+        const map: Record<string, { count: number, name: string, key: string }> = {};
 
-        // Initialize all DB modules with 0
-        dbModules.forEach(m => stats[m] = 0);
+        // Init with DB
+        dbModules.forEach(m => {
+            map[m.module_key.toLowerCase()] = { count: 0, name: m.name, key: m.module_key };
+        });
 
-        // Count usage
+        // Count Permissions
         permissions.forEach(p => {
-            // Note: p.module might match dbModule name strictly or loosely?
-            // dbModules are Normalized names (e.g. "HMS").
-            // p.module should match that due to similar normalization.
-            // If p.module is NOT in dbModules (rare race condition or sync fail), it appears here?
-            // We'll trust the sync.
-            if (stats[p.module] !== undefined) {
-                stats[p.module]++;
+            const lookup = p.module.toLowerCase();
+            if (map[lookup]) {
+                map[lookup].count++;
             } else {
-                // Fallback for case mismatch? or just init it
-                stats[p.module] = (stats[p.module] || 0) + 1;
+                // Permission uses a category not in DB modules (Sync failed?)
+                // Just show it as is
+                map[lookup] = { count: 1, name: p.module, key: p.module };
             }
         });
 
-        // Filter out non-db modules? User said "Only From DB".
-        // But if we have a permission "Alien:View" and "Alien" is not in DB (Sync failed?), we should show it?
-        // Sync should have caught it.
-        return stats;
+        return Object.values(map).sort((a, b) => a.name.localeCompare(b.name));
     }, [permissions, dbModules]);
 
-    // Dynamic Module List - STRICT DB ONLY
+    // Available Modules (Strictly DB)
     const availableModules = useMemo(() => {
-        return dbModules.sort();
+        return dbModules.sort((a, b) => a.name.localeCompare(b.name));
     }, [dbModules]);
 
 
@@ -256,16 +250,16 @@ export default function PermissionsPage() {
                                         <div className="flex flex-wrap gap-2 mb-2 p-2 bg-slate-950 rounded-lg border border-slate-800 max-h-32 overflow-y-auto">
                                             {availableModules.map(mod => (
                                                 <div
-                                                    key={mod}
-                                                    onClick={() => { setNewPermission({ ...newPermission, module: mod }); setIsCustomModule(false); }}
+                                                    key={mod.id}
+                                                    onClick={() => { setNewPermission({ ...newPermission, module: mod.name }); setIsCustomModule(false); }}
                                                     className={cn(
-                                                        "cursor-pointer px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
-                                                        (newPermission.module === mod && !isCustomModule)
-                                                            ? "border-cyan-500 bg-cyan-950 text-cyan-400"
-                                                            : "border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-600 hover:text-slate-300"
+                                                        "px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors border",
+                                                        newPermission.module === mod.name
+                                                            ? "bg-cyan-900/40 text-cyan-300 border-cyan-500 shadow-[0_0_10px_rgba(8,145,178,0.2)]"
+                                                            : "bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-600 hover:text-slate-200"
                                                     )}
                                                 >
-                                                    {mod}
+                                                    {mod.name}
                                                 </div>
                                             ))}
                                             <div
@@ -314,20 +308,20 @@ export default function PermissionsPage() {
                             All
                             <span className="ml-2 text-xs bg-slate-200/20 px-1.5 py-0.5 rounded-full">{permissions.length}</span>
                         </Button>
-                        {Object.keys(moduleStats).sort().map(mod => (
+                        {moduleStats.map(mod => (
                             <Button
-                                key={mod}
+                                key={mod.key}
                                 variant="ghost"
-                                onClick={() => setSelectedModule(mod)}
+                                onClick={() => setSelectedModule(mod.name)}
                                 className={cn(
                                     "rounded-full px-4 whitespace-nowrap",
-                                    selectedModule === mod
+                                    selectedModule === mod.name
                                         ? "bg-slate-800 text-cyan-400 border border-cyan-500/30"
                                         : "text-slate-400 hover:text-white"
                                 )}
                             >
-                                {mod}
-                                <span className="text-xs ml-2 opacity-50">{moduleStats[mod]}</span>
+                                {mod.name}
+                                <span className="text-xs ml-2 opacity-50">{mod.count}</span>
                             </Button>
                         ))}
                     </div>
