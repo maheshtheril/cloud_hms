@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { getAllPermissions } from "@/app/actions/rbac"
 import { createPermission, deletePermission } from "@/app/actions/permissions"
+import { getActiveModules } from "@/app/actions/modules"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -30,11 +31,16 @@ const MODULE_COLORS: Record<string, string> = {
     'Purchasing': 'text-orange-400 bg-orange-950/30 border-orange-800',
     'Pharmacy': 'text-teal-400 bg-teal-950/30 border-teal-800',
     'System': 'text-slate-400 bg-slate-950/30 border-slate-800',
-    'Custom': 'text-pink-400 bg-pink-950/30 border-pink-800'
+    'Custom': 'text-pink-400 bg-pink-950/30 border-pink-800',
+    'HR': 'text-rose-400 bg-rose-950/30 border-rose-800',
+    'Projects': 'text-blue-400 bg-blue-950/30 border-blue-800',
+    'Reports': 'text-indigo-400 bg-indigo-950/30 border-indigo-800',
+    'Sales': 'text-yellow-400 bg-yellow-950/30 border-yellow-800',
 };
 
 export default function PermissionsPage() {
     const [permissions, setPermissions] = useState<Array<{ code: string; name: string; module: string }>>([])
+    const [dbModules, setDbModules] = useState<string[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -47,17 +53,35 @@ export default function PermissionsPage() {
     const { toast } = useToast()
     const [isCustomModule, setIsCustomModule] = useState(false);
 
-    const loadPermissions = async () => {
+    const loadData = async () => {
         setLoading(true)
-        const result = await getAllPermissions()
-        if (result.success && result.data) {
-            setPermissions(result.data)
+        const [permRes, modRes] = await Promise.all([
+            getAllPermissions(),
+            getActiveModules()
+        ]);
+
+        if (permRes.success && permRes.data) {
+            setPermissions(permRes.data)
         }
+
+        if (modRes.success && modRes.data) {
+            const normalized = modRes.data.map((m: any) => {
+                const key = m.module_key.toLowerCase();
+                // Normalize common keys to Title Case or Uppercase for consistency
+                if (key === 'hms') return 'HMS';
+                if (key === 'crm') return 'CRM';
+                if (key === 'hr') return 'HR';
+                if (key === 'erp') return 'ERP';
+                return key.charAt(0).toUpperCase() + key.slice(1);
+            });
+            setDbModules(normalized);
+        }
+
         setLoading(false)
     }
 
     useEffect(() => {
-        loadPermissions()
+        loadData()
     }, [])
 
     const handleCreate = async (e: React.FormEvent) => {
@@ -79,7 +103,7 @@ export default function PermissionsPage() {
                 setCreateOpen(false);
                 setNewPermission({ code: '', name: '', module: 'Custom' });
                 setIsCustomModule(false);
-                loadPermissions();
+                loadData();
             }
         } catch (error) {
             toast({ title: "Operation Failed", description: "Could not create permission", variant: "destructive" });
@@ -96,7 +120,7 @@ export default function PermissionsPage() {
             toast({ title: "Error", description: result.error, variant: "destructive" });
         } else {
             toast({ title: "Permission Deleted", description: `Permission '${code}' removed.` });
-            loadPermissions();
+            loadData();
         }
     }
 
@@ -125,10 +149,14 @@ export default function PermissionsPage() {
     // Dynamic Module List
     const availableModules = useMemo(() => {
         const mods = new Set(permissions.map(p => p.module));
+
+        // Add DB Modules
+        dbModules.forEach(m => mods.add(m));
+
         // Ensure Core Modules always exist
         ['HMS', 'CRM', 'Finance', 'Inventory', 'System'].forEach(m => mods.add(m));
         return Array.from(mods).sort();
-    }, [permissions]);
+    }, [permissions, dbModules]);
 
 
     return (
