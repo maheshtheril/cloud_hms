@@ -487,9 +487,31 @@ export async function getAllPermissions() {
             { code: 'suppliers:edit', name: 'Edit Suppliers', module: 'Purchasing' },
             { code: 'purchasing:returns:view', name: 'View Purchase Returns', module: 'Purchasing' },
             { code: 'purchasing:returns:create', name: 'Create Purchase Returns', module: 'Purchasing' },
+            { code: 'purchasing:returns:create', name: 'Create Purchase Returns', module: 'Purchasing' },
         ];
 
-        return { success: true, data: standardPermissions };
+        // Fetch Dynamic Permissions from DB
+        const dbPermissions = await prisma.permission.findMany();
+
+        // Merge: Standard takes precedence? Or DB?
+        // Usually, we want to show ALL.
+        const combined = [...standardPermissions];
+
+        // Add DB perms if not already in standard
+        const codeSet = new Set(standardPermissions.map(p => p.code));
+
+        dbPermissions.forEach(p => {
+            if (!codeSet.has(p.code)) {
+                combined.push({
+                    code: p.code,
+                    name: p.name,
+                    module: p.category || 'Custom' // Map 'category' to 'module'
+                });
+            }
+        });
+
+        // Search/Filter could happen here, or return all
+        return { success: true, data: combined };
     } catch (error) {
         console.error("Failed to fetch permissions:", error);
         return { error: "Failed to fetch permissions" };
