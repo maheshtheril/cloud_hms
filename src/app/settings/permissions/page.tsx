@@ -107,7 +107,7 @@ export default function PermissionsPage() {
                 toast({ title: "Success", description: "Permission created successfully" });
                 setCreateOpen(false);
                 setNewPermission({ code: '', name: '', module: 'Custom' });
-                setIsCustomModule(false);
+                // isCustomModule removed
                 loadData();
             }
         } catch (error) {
