@@ -534,134 +534,133 @@ export async function getAllPermissions() {
     if (!session?.user?.id) return { error: "Unauthorized" };
 
     try {
-        try {
-            // Fetch Dynamic Permissions from DB
-            const dbPermissions = await prisma.permission.findMany();
+        // Fetch Dynamic Permissions from DB
+        const dbPermissions = await prisma.permission.findMany();
 
-            // Ensure all STANDARD_PERMISSIONS exist in DB
-            const dbCodeSet = new Set(dbPermissions.map(p => p.code));
-            const missing = STANDARD_PERMISSIONS.filter(p => !dbCodeSet.has(p.code));
+        // Ensure all STANDARD_PERMISSIONS exist in DB
+        const dbCodeSet = new Set(dbPermissions.map(p => p.code));
+        const missing = STANDARD_PERMISSIONS.filter(p => !dbCodeSet.has(p.code));
 
-            if (missing.length > 0) {
-                try {
-                    // Ensure they exist in DB so FK constraints are happy
-                    await prisma.permission.createMany({
-                        data: missing.map(p => ({
-                            code: p.code,
-                            name: p.name,
-                            category: p.module
-                        })),
-                        skipDuplicates: true
-                    });
-                    console.log(`Synced ${missing.length} new standard permissions to DB.`);
-                } catch (syncErr) {
-                    console.error("Critical: Failed to sync standard permissions to DB", syncErr);
-                }
-            }
-
-            // Merge: Standard takes precedence
-            const combined = [...STANDARD_PERMISSIONS];
-
-            // Add DB perms if not already in standard
-            const codeSet = new Set(STANDARD_PERMISSIONS.map(p => p.code));
-
-            dbPermissions.forEach(p => {
-                if (!codeSet.has(p.code)) {
-                    let mod = p.category || 'Custom';
-
-                    // Normalization Logic
-                    if (mod.toLowerCase() === 'crm') mod = 'CRM';
-                    else if (mod.toLowerCase() === 'hms') mod = 'HMS';
-                    else if (mod.toLowerCase() === 'finance') mod = 'Finance';
-                    else if (mod.toLowerCase() === 'inventory') mod = 'Inventory';
-                    else if (mod.toLowerCase() === 'purchasing') mod = 'Purchasing';
-
-                    combined.push({
+        if (missing.length > 0) {
+            try {
+                // Ensure they exist in DB so FK constraints are happy
+                await prisma.permission.createMany({
+                    data: missing.map(p => ({
                         code: p.code,
                         name: p.name,
-                        module: mod
-                    });
-                }
-            });
-
-            return { success: true, data: combined };
-        } catch (error) {
-            console.error("Failed to fetch permissions:", error);
-            return { error: "Failed to fetch permissions" };
+                        category: p.module
+                    })),
+                    skipDuplicates: true
+                });
+                console.log(`Synced ${missing.length} new standard permissions to DB.`);
+            } catch (syncErr) {
+                console.error("Critical: Failed to sync standard permissions to DB", syncErr);
+            }
         }
+
+        // Merge: Standard takes precedence
+        const combined = [...STANDARD_PERMISSIONS];
+
+        // Add DB perms if not already in standard
+        const codeSet = new Set(STANDARD_PERMISSIONS.map(p => p.code));
+
+        dbPermissions.forEach(p => {
+            if (!codeSet.has(p.code)) {
+                let mod = p.category || 'Custom';
+
+                // Normalization Logic
+                if (mod.toLowerCase() === 'crm') mod = 'CRM';
+                else if (mod.toLowerCase() === 'hms') mod = 'HMS';
+                else if (mod.toLowerCase() === 'finance') mod = 'Finance';
+                else if (mod.toLowerCase() === 'inventory') mod = 'Inventory';
+                else if (mod.toLowerCase() === 'purchasing') mod = 'Purchasing';
+
+                combined.push({
+                    code: p.code,
+                    name: p.name,
+                    module: mod
+                });
+            }
+        });
+
+        return { success: true, data: combined };
+    } catch (error) {
+        console.error("Failed to fetch permissions:", error);
+        return { error: "Failed to fetch permissions" };
     }
+}
 
 /**
  * Get ALL Permissions for a specific User (Flattened)
  * Merges: Table-based Role Permissions And Array-based Role Permissions
+ * Returns an array of strings for serializability in Server Actions
  */
-export async function getUserPermissions(userId: string): Promise<Set<string>> {
-        try {
-            const session = await auth();
-            // Use user's tenant from session for context isolation
-            const tenantId = session?.user?.tenantId;
-
-            if (!tenantId) return new Set();
-
-            const permissionSet = new Set<string>();
-
-            // 1. Get User's Generic Roles (Previous Logic)
-            const userRoles = await prisma.user_role.findMany({
-                where: { user_id: userId, tenant_id: tenantId }
-            });
-            const roleIds = userRoles.map(ur => ur.role_id);
-
-            if (roleIds.length > 0) {
-                // 2. Fetch Roles (for array-based permissions)
-                const roles = await prisma.role.findMany({
-                    where: { id: { in: roleIds } }
-                });
-                roles.forEach(r => {
-                    if (Array.isArray(r.permissions)) {
-                        r.permissions.forEach((p: string) => permissionSet.add(p));
-                    }
-                });
-                // 3. Fetch Role-Permission Mappings (for table-based permissions)
-                const rolePermissions = await prisma.role_permission.findMany({
-                    where: { role_id: { in: roleIds }, is_granted: true }
-                });
-                rolePermissions.forEach(rp => permissionSet.add(rp.permission_code));
-            }
-
-
-
-            // 4. Check for User-Specific Permissions override
-            const userPermissions = await prisma.user_permission.findMany({
-                where: { user_id: userId, tenant_id: tenantId, is_granted: true }
-            });
-            userPermissions.forEach(up => permissionSet.add(up.permission_code));
-
-            // 5. Implicitly Grant Super Admin (Wildcard) if session says isAdmin
-            if (session?.user?.isAdmin) {
-                permissionSet.add('*');
-            }
-
-            return permissionSet;
-        } catch (error) {
-            console.error("Error fetching user permissions:", error);
-            return new Set();
-        }
-    }
-
-    /**
-     * Check if current user has a specific permission
-     */
-    export async function checkPermission(permissionCode: string): Promise<boolean> {
+export async function getUserPermissions(userId: string): Promise<string[]> {
+    try {
         const session = await auth();
-        if (!session?.user?.id) return false;
+        // Use user's tenant from session for context isolation
+        const tenantId = session?.user?.tenantId;
 
-        // Super Admin Bypass (optional)
-        // if (session.user.isAdmin) return true; 
+        if (!tenantId) return [];
 
-        const perms = await getUserPermissions(session.user.id);
+        const permissionSet = new Set<string>();
 
-        if (perms.has('*')) return true;
-        if (perms.has(permissionCode)) return true;
+        // 1. Get User's Generic Roles (Previous Logic)
+        const userRoles = await prisma.user_role.findMany({
+            where: { user_id: userId, tenant_id: tenantId }
+        });
+        const roleIds = userRoles.map(ur => ur.role_id);
 
-        return false;
+        if (roleIds.length > 0) {
+            // 2. Fetch Roles (for array-based permissions)
+            const roles = await prisma.role.findMany({
+                where: { id: { in: roleIds } }
+            });
+            roles.forEach(r => {
+                if (Array.isArray(r.permissions)) {
+                    r.permissions.forEach((p: string) => permissionSet.add(p));
+                }
+            });
+            // 3. Fetch Role-Permission Mappings (for table-based permissions)
+            const rolePermissions = await prisma.role_permission.findMany({
+                where: { role_id: { in: roleIds }, is_granted: true }
+            });
+            rolePermissions.forEach(rp => permissionSet.add(rp.permission_code));
+        }
+
+        // 4. Check for User-Specific Permissions override
+        const userPermissions = await prisma.user_permission.findMany({
+            where: { user_id: userId, tenant_id: tenantId, is_granted: true }
+        });
+        userPermissions.forEach(up => permissionSet.add(up.permission_code));
+
+        // 5. Implicitly Grant Super Admin (Wildcard) if session says isAdmin
+        if (session?.user?.isAdmin) {
+            permissionSet.add('*');
+        }
+
+        // Return as array for serializability
+        return Array.from(permissionSet);
+    } catch (error) {
+        console.error("Error fetching user permissions:", error);
+        return [];
     }
+}
+
+/**
+ * Check if current user has a specific permission
+ */
+export async function checkPermission(permissionCode: string): Promise<boolean> {
+    const session = await auth();
+    if (!session?.user?.id) return false;
+
+    // Super Admin Bypass (optional)
+    // if (session.user.isAdmin) return true; 
+
+    const perms = await getUserPermissions(session.user.id);
+
+    if (perms.includes('*')) return true;
+    if (perms.includes(permissionCode)) return true;
+
+    return false;
+}
