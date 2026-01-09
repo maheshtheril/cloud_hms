@@ -16,20 +16,23 @@ export default async function ReceptionDashboardPage() {
 
     // SELF-HEALING: If context missing for reception user, fetch or assign default
     if ((!tenantId || !companyId) && session.user.email === 'rece@live.com') {
-        const dbUser = await prisma.app_user.findUnique({ where: { email: session.user.email } });
-        if (dbUser?.tenant_id && dbUser?.company_id) {
-            tenantId = dbUser.tenant_id;
-            companyId = dbUser.company_id;
-        } else {
-            // Assign First Provider
-            const defaultCompany = await prisma.company.findFirst();
-            if (defaultCompany) {
-                await prisma.app_user.update({
-                    where: { email: session.user.email },
-                    data: { company_id: defaultCompany.id, tenant_id: defaultCompany.tenant_id }
-                });
-                tenantId = defaultCompany.tenant_id;
-                companyId = defaultCompany.id;
+        const dbUser = await prisma.app_user.findFirst({ where: { email: session.user.email } });
+
+        if (dbUser) {
+            if (dbUser.tenant_id && dbUser.company_id) {
+                tenantId = dbUser.tenant_id;
+                companyId = dbUser.company_id;
+            } else {
+                // Assign First Provider
+                const defaultCompany = await prisma.company.findFirst();
+                if (defaultCompany) {
+                    await prisma.app_user.update({
+                        where: { id: dbUser.id },
+                        data: { company_id: defaultCompany.id, tenant_id: defaultCompany.tenant_id }
+                    });
+                    tenantId = defaultCompany.tenant_id;
+                    companyId = defaultCompany.id;
+                }
             }
         }
     }
