@@ -39,7 +39,8 @@ export async function getMenuItems() {
                                 { key: 'hms-reception', label: 'Front Desk Dashboard', icon: 'Monitor', url: '/hms/reception/dashboard' },
                                 { key: 'hms-patients', label: 'Patient Registry', icon: 'Users', url: '/hms/patients' },
                                 { key: 'hms-appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
-                                // Doctor schedule is useful for reception
+                                { key: 'hms-billing', label: 'Billing & Invoices', icon: 'Receipt', url: '/hms/billing' },
+                                { key: 'hr-attendance', label: 'Attendance', icon: 'Clock', url: '/hr/attendance' },
 
                             ]
                         }
@@ -54,6 +55,8 @@ export async function getMenuItems() {
                             { key: 'hms-reception', label: 'Front Desk Dashboard', icon: 'Monitor', url: '/hms/reception/dashboard' },
                             { key: 'hms-patients', label: 'Patient Registry', icon: 'Users', url: '/hms/patients' },
                             { key: 'hms-appointments', label: 'Appointments', icon: 'Calendar', url: '/hms/appointments' },
+                            { key: 'hms-billing', label: 'Billing & Invoices', icon: 'Receipt', url: '/hms/billing' },
+                            { key: 'hr-attendance', label: 'Attendance', icon: 'Clock', url: '/hr/attendance' },
 
                         ]
                     }
