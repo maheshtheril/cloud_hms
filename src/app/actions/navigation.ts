@@ -16,11 +16,11 @@ export async function getMenuItems() {
     if (session?.user?.id) {
         try {
             // Quick check for role name to bypass complex logic if needed
-            const dbUser = await prisma.app_user.findUnique({
-                where: { id: session.user.id },
-                include: { user_roles: { include: { role: true } } }
+            const userRoles = await prisma.user_role.findMany({
+                where: { user_id: session.user.id },
+                include: { role: true }
             });
-            const roleName = dbUser?.user_roles?.[0]?.role?.name;
+            const roleName = userRoles?.[0]?.role?.name;
 
             if (roleName === 'Receptionist' || roleName === 'Front Desk') {
                 return [
