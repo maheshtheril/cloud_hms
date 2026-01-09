@@ -325,7 +325,7 @@ export default function PermissionsPage() {
                                             {availableModules.map(mod => (
                                                 <div
                                                     key={mod.id}
-                                                    onClick={() => { setNewPermission({ ...newPermission, module: mod.name }); setIsCustomModule(false); }}
+                                                    onClick={() => { setNewPermission({ ...newPermission, module: mod.name }); }}
                                                     className={cn(
                                                         "px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors border",
                                                         newPermission.module === mod.name
