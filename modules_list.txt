@@ -1,0 +1,11 @@
+dashboard - Dashboard
+crm - CRM
+sales - Sales
+purchase - Purchasing
+accounting - Accounting
+projects - Projects
+hr - HR
+reports - Reports
+hms - Hospital Management (HMS)
+inventory - Inventory
+purchasing - Purchasing
