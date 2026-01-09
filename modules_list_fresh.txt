@@ -1,6 +1,4 @@
-[HIDDEN] accounting : Accounting
 [ACTIVE] crm : CRM
-[HIDDEN] dashboard : Dashboard
 [ACTIVE] finance : Finance
 [ACTIVE] hms : Hospital Management (HMS)
 [ACTIVE] hr : HR
@@ -9,8 +7,5 @@
 [ACTIVE] projects : Projects
 [ACTIVE] purchasing : Purchasing
 [ACTIVE] reports : Reports
-[HIDDEN] role management : Role Management
 [ACTIVE] sales : Sales
-[HIDDEN] settings : Settings
 [ACTIVE] system : System
-[HIDDEN] user management : User Management
