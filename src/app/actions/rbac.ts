@@ -489,6 +489,13 @@ export async function getAllPermissions() {
             { code: 'purchasing:returns:view', name: 'View Purchase Returns', module: 'Purchasing' },
             { code: 'purchasing:returns:create', name: 'Create Purchase Returns', module: 'Purchasing' },
             { code: 'purchasing:returns:create', name: 'Create Purchase Returns', module: 'Purchasing' },
+
+            // HR - Attendance & Employees
+            { code: 'hr:view', name: 'View HR', module: 'HR' },
+            { code: 'hr:attendance:view', name: 'View Attendance', module: 'HR' },
+            { code: 'hr:attendance:create', name: 'Mark Attendance', module: 'HR' },
+            { code: 'hr:attendance:edit', name: 'Edit Attendance', module: 'HR' },
+            { code: 'hr:employees:view', name: 'View Employees', module: 'HR' },
         ];
 
         // Fetch Dynamic Permissions from DB
