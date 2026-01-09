@@ -15,6 +15,11 @@ const STANDARD_PERMISSIONS = [
     { code: 'roles:view', name: 'View Roles', module: 'System' },
     { code: 'roles:manage', name: 'Manage Roles', module: 'System' },
 
+    // Reports (Global)
+    { code: 'reports:view', name: 'View Reports', module: 'Reports' },
+    { code: 'reports:create', name: 'Create Custom Reports', module: 'Reports' },
+    { code: 'reports:export', name: 'Export Reports', module: 'Reports' },
+
     // Settings -> System
     { code: 'settings:view', name: 'View Settings', module: 'System' },
     { code: 'settings:edit', name: 'Edit Settings', module: 'System' },
