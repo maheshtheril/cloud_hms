@@ -27,7 +27,7 @@ export async function GET() {
         const results: Record<string, any> = { seeded: true, roles_fixed: true, permissions_synced: true };
 
         // 0. Ensure Target Modules Exist (Fixes FK Constraint Failures)
-        const targetModules = ['finance', 'inventory', 'reports'];
+        const targetModules = ['finance', 'inventory'];
         for (const key of targetModules) {
             const mod = await prisma.modules.findUnique({ where: { module_key: key } });
             if (!mod) {
@@ -36,12 +36,18 @@ export async function GET() {
                         module_key: key,
                         name: key.charAt(0).toUpperCase() + key.slice(1),
                         is_active: true,
-                        description: key === 'reports' ? 'Comprehensive reporting and analytics suite' : 'Core Module'
+                        description: 'Core Module'
                     }
                 });
                 results[`created_module_${key}`] = true;
             }
         }
+
+        // CLEANUP: Remove Reports Module if exists (User Request)
+        try {
+            await prisma.modules.delete({ where: { module_key: 'reports' } });
+            results['deleted_module_reports'] = true;
+        } catch (ignored) { }
 
         // 0.5. AUTO-SUBSCRIBE Tenants to Core Modules (Prevent Disappearing Menus)
         // If a tenant has HMS, they MUST have Accounting + Inventory for this new structure to work.
