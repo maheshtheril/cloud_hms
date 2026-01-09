@@ -118,13 +118,13 @@ export async function getMenuItems() {
             if (tenantModules.length === 0) {
                 if (isHealthcare) {
                     allowedModuleKeys.add('hms');
-                    allowedModuleKeys.add('accounting');
+                    allowedModuleKeys.add('finance');
                     allowedModuleKeys.add('inventory');
                 } else {
                     // FORCE CRM for non-healthcare
                     allowedModuleKeys.add('crm');
-                    // FORCE ACCOUNTING for verifying functionality
-                    allowedModuleKeys.add('accounting');
+                    // FORCE FINANCE for verifying functionality
+                    allowedModuleKeys.add('finance');
                     allowedModuleKeys.add('inventory');
                 }
             }
@@ -144,7 +144,7 @@ export async function getMenuItems() {
         // -------------------------
         try {
             // 0. Ensure Target Modules Exist (Fixes FK Constraint Failures)
-            const targetModules = ['accounting', 'inventory'];
+            const targetModules = ['finance', 'inventory'];
             for (const key of targetModules) {
                 const mod = await prisma.modules.findUnique({ where: { module_key: key } });
                 if (!mod) {
@@ -159,16 +159,16 @@ export async function getMenuItems() {
                 }
             }
 
-            // 1. Move HMS Accounting -> Accounting
+            // 1. Move HMS Accounting -> Finance
             await prisma.menu_items.updateMany({
-                where: { key: 'hms-accounting', module_key: { not: 'accounting' } },
-                data: { module_key: 'accounting', sort_order: 10 }
+                where: { key: 'hms-accounting', module_key: { not: 'finance' } },
+                data: { module_key: 'finance', sort_order: 10 }
             });
             const hmsAcc = await prisma.menu_items.findFirst({ where: { key: 'hms-accounting' } });
             if (hmsAcc) {
                 await prisma.menu_items.updateMany({
-                    where: { parent_id: hmsAcc.id, module_key: { not: 'accounting' } },
-                    data: { module_key: 'accounting' }
+                    where: { parent_id: hmsAcc.id, module_key: { not: 'finance' } },
+                    data: { module_key: 'finance' }
                 });
             }
 
