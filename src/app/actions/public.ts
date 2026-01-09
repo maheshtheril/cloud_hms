@@ -35,7 +35,10 @@ export async function getCurrencies() {
 export async function getModules() {
     try {
         const modules = await prisma.modules.findMany({
-            where: { is_active: true },
+            where: {
+                is_active: true,
+                module_key: { notIn: ['system'] } // System is mandatory/internal
+            },
             orderBy: { name: 'asc' },
             select: { id: true, module_key: true, name: true, description: true }
         });
@@ -45,9 +48,9 @@ export async function getModules() {
         return [
             { module_key: 'hms', name: 'Health Management', description: 'Hospital & Clinic Management' },
             { module_key: 'crm', name: 'CRM', description: 'Customer Relationship Management' },
-            { module_key: 'accounting', name: 'Accounting', description: 'Financial Accounting' },
+            { module_key: 'finance', name: 'Finance', description: 'Financial Accounting & Billing' },
             { module_key: 'inventory', name: 'Inventory', description: 'Stock & Warehouse Management' },
-            { module_key: 'manufacturing', name: 'Manufacturing', description: 'Production & BOM' },
+            { module_key: 'hr', name: 'HR', description: 'Human Resources & Payroll' },
         ];
     }
 }
