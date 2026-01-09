@@ -11,6 +11,7 @@ declare module "next-auth" {
             industry: string
             hasCRM: boolean
             hasHMS: boolean
+            role?: string | null
         } & DefaultSession["user"]
     }
 
@@ -23,6 +24,7 @@ declare module "next-auth" {
         industry: string
         hasCRM: boolean
         hasHMS: boolean
+        role?: string | null
     }
 }
 
@@ -36,5 +38,6 @@ declare module "next-auth/jwt" {
         industry: string
         hasCRM: boolean
         hasHMS: boolean
+        role?: string | null
     }
 }

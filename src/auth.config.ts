@@ -17,15 +17,20 @@ export const authConfig = {
             const isReceptionDashboard = nextUrl.pathname === "/hms/reception/dashboard";
 
             // Strict Role Redirects
-            if (isLoggedIn && auth?.user?.email) {
+            if (isLoggedIn && auth?.user) {
                 const email = auth.user.email;
-                if (email === 'rece@live.com' && (isOnRoot || isAuthPage)) {
+                const role = (auth.user as any).role?.toLowerCase();
+
+                // Receptionist
+                if ((email === 'rece@live.com' || role === 'receptionist') && (isOnRoot || isAuthPage)) {
                     return Response.redirect(new URL("/hms/reception/dashboard", nextUrl));
                 }
-                if (email === 'nurs@live.com' && (isOnRoot || isAuthPage)) {
+                // Nurse
+                if ((email === 'nurs@live.com' || role === 'nurse') && (isOnRoot || isAuthPage)) {
                     return Response.redirect(new URL("/hms/nursing/dashboard", nextUrl));
                 }
-                if (email === 'doct@live.com' && (isOnRoot || isAuthPage)) {
+                // Doctor
+                if ((email === 'doct@live.com' || role === 'doctor') && (isOnRoot || isAuthPage)) {
                     return Response.redirect(new URL("/hms/doctor/dashboard", nextUrl));
                 }
             }

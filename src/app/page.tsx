@@ -9,9 +9,11 @@ export default async function Home() {
   }
 
   // STRICT REDIRECTS FOR ROLES
-  if (session.user.email === 'rece@live.com') redirect('/hms/reception/dashboard');
-  if (session.user.email === 'nurs@live.com') redirect('/hms/nursing/dashboard');
-  if (session.user.email === 'doct@live.com') redirect('/hms/doctor/dashboard');
+  const role = session.user.role?.toLowerCase();
+
+  if (session.user.email === 'rece@live.com' || role === 'receptionist') redirect('/hms/reception/dashboard');
+  if (session.user.email === 'nurs@live.com' || role === 'nurse') redirect('/hms/nursing/dashboard');
+  if (session.user.email === 'doct@live.com' || role === 'doctor') redirect('/hms/doctor/dashboard');
 
   console.log('[DEBUG] Root Router:', {
     user: session.user.email,

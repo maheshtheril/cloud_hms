@@ -20,7 +20,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                     // Use raw query to verify password with pgcrypto (Case Insensitive Email)
                     const users = await prisma.$queryRaw`
-                        SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, password, metadata
+                        SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, password, metadata, role
                         FROM app_user
                         WHERE LOWER(email) = ${email}
                           AND is_active = true
@@ -51,6 +51,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 industry: company?.industry || '',
                                 hasCRM: moduleKeys.includes('crm'),
                                 hasHMS: moduleKeys.includes('hms'),
+                                role: user.role
                             };
                         } catch (dbError) {
                             console.error("Auth Data Fetch Error:", dbError)
@@ -89,6 +90,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 token.industry = user.industry;
                 token.hasCRM = user.hasCRM;
                 token.hasHMS = user.hasHMS;
+                token.role = user.role;
             }
             return token;
         },
@@ -98,6 +100,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 session.user.name = token.name;
                 session.user.image = token.picture;
                 session.user.isAdmin = token.isAdmin;
+                session.user.role = token.role;
                 session.user.isTenantAdmin = token.isTenantAdmin;
                 session.user.companyId = token.companyId;
                 session.user.tenantId = token.tenantId;
