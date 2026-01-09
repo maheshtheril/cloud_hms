@@ -8,6 +8,11 @@ export default async function Home() {
     redirect('/login?reauth=1');
   }
 
+  // STRICT REDIRECT FOR RECEPTIONIST
+  if (session.user.email === 'rece@live.com') {
+    redirect('/hms/reception/dashboard');
+  }
+
   console.log('[DEBUG] Root Router:', {
     user: session.user.email,
     tenant: session.user.tenantId,

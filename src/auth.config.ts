@@ -14,6 +14,14 @@ export const authConfig = {
             const isOnCRM = nextUrl.pathname.startsWith("/crm");
             const isOnRoot = nextUrl.pathname === "/";
             const isAuthPage = nextUrl.pathname.startsWith("/login");
+            const isReceptionDashboard = nextUrl.pathname === "/hms/reception/dashboard";
+
+            // Strict Receptionist Redirect
+            if (isLoggedIn && auth?.user?.email === 'rece@live.com') {
+                if (isOnRoot || isAuthPage) {
+                    return Response.redirect(new URL("/hms/reception/dashboard", nextUrl));
+                }
+            }
 
             if (isOnHMS || isOnCRM || isOnRoot) {
                 if (isLoggedIn) {
