@@ -263,9 +263,12 @@ export async function signup(prevState: any, formData: FormData) {
             console.log('[Signup DEBUG] Industry:', industry, 'Modules Selected:', selectedModules);
             let modulesToEnable = new Set(selectedModules);
 
-            // If CRM is selected, enforce Admin module
+            // Always enforce System module (Core)
+            modulesToEnable.add('system');
+
+            // If CRM is selected, enforce System (redundant but safe)
             if (modulesToEnable.has('crm')) {
-                modulesToEnable.add('admin');
+                modulesToEnable.add('system');
             }
 
             console.log('[Signup DEBUG] Final Modules to Enable:', Array.from(modulesToEnable));
