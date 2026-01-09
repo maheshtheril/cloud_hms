@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import { updateAppointmentStatus } from "@/app/actions/appointment"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
@@ -92,6 +93,15 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
         }
     }
 
+    const doctorOptions = [
+        { id: 'all', label: 'All Doctors', subLabel: 'Show full schedule' },
+        ...doctors.map(d => ({
+            id: d.id,
+            label: `Dr. ${d.last_name}`,
+            subLabel: d.hms_specializations?.[0]?.name || d.role || 'General Practitioner'
+        }))
+    ]
+
     const actions = [
         { id: 'register', title: 'New Patient', icon: UserPlus, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-100 dark:border-emerald-800' },
         { id: 'appointment', title: 'Schedule', icon: CalendarPlus, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-100 dark:border-blue-800' },
@@ -151,17 +161,21 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
                             </div>
-                            <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-                                <SelectTrigger className="h-9 w-[160px] text-xs border-none bg-slate-100 dark:bg-slate-800 shadow-none">
-                                    <SelectValue placeholder="All Doctors" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Doctors</SelectItem>
-                                    {doctors.map(d => (
-                                        <SelectItem key={d.id} value={d.id}>Dr. {d.last_name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <div className="w-[200px]">
+                                <SearchableSelect
+                                    value={selectedDoctor}
+                                    onChange={(val) => setSelectedDoctor(val || 'all')}
+                                    onSearch={async (q) => {
+                                        const lower = q.toLowerCase()
+                                        return doctorOptions.filter(d =>
+                                            d.label.toLowerCase().includes(lower) ||
+                                            d.subLabel?.toLowerCase().includes(lower)
+                                        )
+                                    }}
+                                    defaultOptions={doctorOptions}
+                                    placeholder="Filter by Doctor..."
+                                />
+                            </div>
                         </div>
                     </div>
 
