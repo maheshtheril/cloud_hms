@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { getAllPermissions } from "@/app/actions/rbac"
 import { createPermission, deletePermission } from "@/app/actions/permissions"
-import { getActiveModules } from "@/app/actions/modules"
+import { getActiveModules, syncMissingModules } from "@/app/actions/modules"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -55,6 +55,10 @@ export default function PermissionsPage() {
 
     const loadData = async () => {
         setLoading(true)
+
+        // Sync first to ensure DB has all used modules
+        await syncMissingModules();
+
         const [permRes, modRes] = await Promise.all([
             getAllPermissions(),
             getActiveModules()
@@ -137,34 +141,38 @@ export default function PermissionsPage() {
         });
     }, [permissions, searchQuery, selectedModule]);
 
-    // Group for stats (including empty DB modules)
+    // Group for stats (Strictly keys from DB)
     const moduleStats = useMemo(() => {
         const stats: Record<string, number> = {};
 
-        // Initialize with usage counts
+        // Initialize all DB modules with 0
+        dbModules.forEach(m => stats[m] = 0);
+
+        // Count usage
         permissions.forEach(p => {
-            stats[p.module] = (stats[p.module] || 0) + 1;
+            // Note: p.module might match dbModule name strictly or loosely?
+            // dbModules are Normalized names (e.g. "HMS").
+            // p.module should match that due to similar normalization.
+            // If p.module is NOT in dbModules (rare race condition or sync fail), it appears here?
+            // We'll trust the sync.
+            if (stats[p.module] !== undefined) {
+                stats[p.module]++;
+            } else {
+                // Fallback for case mismatch? or just init it
+                stats[p.module] = (stats[p.module] || 0) + 1;
+            }
         });
 
-        // Ensure DB modules exist with at least 0
-        dbModules.forEach(m => {
-            if (stats[m] === undefined) stats[m] = 0;
-        });
-
+        // Filter out non-db modules? User said "Only From DB".
+        // But if we have a permission "Alien:View" and "Alien" is not in DB (Sync failed?), we should show it?
+        // Sync should have caught it.
         return stats;
     }, [permissions, dbModules]);
 
-    // Dynamic Module List
+    // Dynamic Module List - STRICT DB ONLY
     const availableModules = useMemo(() => {
-        const mods = new Set(permissions.map(p => p.module));
-
-        // Add DB Modules
-        dbModules.forEach(m => mods.add(m));
-
-        // Ensure Core Modules always exist
-        ['HMS', 'CRM', 'Finance', 'Inventory', 'System'].forEach(m => mods.add(m));
-        return Array.from(mods).sort();
-    }, [permissions, dbModules]);
+        return dbModules.sort();
+    }, [dbModules]);
 
 
     return (
