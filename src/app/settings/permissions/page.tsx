@@ -262,8 +262,8 @@ export default function PermissionsPage() {
                                                     className={cn(
                                                         "px-3 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-colors border",
                                                         newPermission.module === mod.name
-                                                            ? "bg-cyan-900/40 text-cyan-300 border-cyan-500 shadow-[0_0_10px_rgba(8,145,178,0.2)]"
-                                                            : "bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-600 hover:text-slate-200"
+                                                            ? "bg-cyan-100 dark:bg-cyan-900/40 text-cyan-700 dark:text-cyan-300 border-cyan-500/50 dark:border-cyan-500 shadow-[0_0_10px_rgba(8,145,178,0.2)]"
+                                                            : "bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 hover:text-slate-800 dark:hover:text-slate-200"
                                                     )}
                                                 >
                                                     {mod.name}
@@ -274,8 +274,8 @@ export default function PermissionsPage() {
                                                 className={cn(
                                                     "cursor-pointer px-3 py-1.5 rounded-full text-xs font-medium transition-all border flex items-center gap-1",
                                                     isCustomModule
-                                                        ? "border-cyan-500 bg-cyan-950 text-cyan-400"
-                                                        : "border-slate-700 bg-slate-900 text-slate-400 hover:border-slate-600"
+                                                        ? "border-cyan-500 bg-cyan-100 dark:bg-cyan-950 text-cyan-700 dark:text-cyan-400"
+                                                        : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-600"
                                                 )}
                                             >
                                                 <Plus className="h-3 w-3" /> Other
@@ -305,12 +305,12 @@ export default function PermissionsPage() {
                 </header>
 
                 {/* Controls Section */}
-                <div className="flex flex-col md:flex-row gap-4 items-center justify-between sticky top-4 z-20 bg-slate-950/80 backdrop-blur-xl p-4 rounded-xl border border-white/5 shadow-2xl">
+                <div className="flex flex-col md:flex-row gap-4 items-center justify-between sticky top-4 z-20 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl p-4 rounded-xl border border-slate-200 dark:border-white/5 shadow-2xl">
                     <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto no-scrollbar">
                         <Button
                             variant="ghost"
                             onClick={() => setSelectedModule('All')}
-                            className={cn("rounded-full px-4", selectedModule === 'All' ? "bg-white text-slate-950 font-bold" : "text-slate-400 hover:text-white")}
+                            className={cn("rounded-full px-4", selectedModule === 'All' ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950 font-bold" : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white")}
                         >
                             All
                             <span className="ml-2 text-xs bg-slate-200/20 px-1.5 py-0.5 rounded-full">{permissions.length}</span>
@@ -351,19 +351,19 @@ export default function PermissionsPage() {
                                 placeholder="Search permissions..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-9 bg-slate-900/50 border-slate-700 focus:border-cyan-500/50 transition-all rounded-full h-9"
+                                className="pl-9 bg-slate-100 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 focus:border-cyan-500/50 transition-all rounded-full h-9"
                             />
                         </div>
-                        <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-800">
+                        <div className="flex bg-slate-100 dark:bg-slate-900 rounded-lg p-1 border border-slate-200 dark:border-slate-800">
                             <button
                                 onClick={() => setViewMode('grid')}
-                                className={cn("p-1.5 rounded-md transition-all", viewMode === 'grid' ? "bg-slate-700 text-white shadow" : "text-slate-500 hover:text-slate-300")}
+                                className={cn("p-1.5 rounded-md transition-all", viewMode === 'grid' ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}
                             >
                                 <LayoutGrid className="h-4 w-4" />
                             </button>
                             <button
                                 onClick={() => setViewMode('list')}
-                                className={cn("p-1.5 rounded-md transition-all", viewMode === 'list' ? "bg-slate-700 text-white shadow" : "text-slate-500 hover:text-slate-300")}
+                                className={cn("p-1.5 rounded-md transition-all", viewMode === 'list' ? "bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow" : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300")}
                             >
                                 <List className="h-4 w-4" />
                             </button>
@@ -396,7 +396,7 @@ export default function PermissionsPage() {
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     transition={{ duration: 0.2 }}
                                     key={perm.code}
-                                    className="group relative overflow-hidden bg-slate-900/50 border border-slate-800 hover:border-slate-600 rounded-xl p-5 hover:shadow-2xl hover:shadow-cyan-900/10 transition-all duration-300"
+                                    className="group relative overflow-hidden bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 rounded-xl p-5 hover:shadow-2xl hover:shadow-cyan-900/10 transition-all duration-300"
                                 >
                                     {/* Hover Glow Effect */}
                                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -419,10 +419,10 @@ export default function PermissionsPage() {
                                         </div>
 
                                         <div className="space-y-1">
-                                            <h3 className="font-semibold text-slate-200 group-hover:text-white truncate" title={perm.name}>
+                                            <h3 className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-slate-900 dark:group-hover:text-white truncate" title={perm.name}>
                                                 {perm.name}
                                             </h3>
-                                            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-mono bg-black/20 px-2 py-1 rounded w-fit max-w-full">
+                                            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-mono bg-slate-100 dark:bg-black/20 px-2 py-1 rounded w-fit max-w-full">
                                                 <Lock className="h-3 w-3 flex-shrink-0" />
                                                 <span className="truncate">{perm.code}</span>
                                             </div>
