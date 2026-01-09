@@ -43,11 +43,23 @@ export async function GET() {
             }
         }
 
-        // CLEANUP: Remove Reports Module if exists (User Request)
+        // CLEANUP: Force Delete Reports Module (User Request)
         try {
-            await prisma.modules.delete({ where: { module_key: 'reports' } });
+            // 1. Unsubscribe all tenants
+            await prisma.tenant_module.deleteMany({ where: { module_key: 'reports' } });
+            // 2. Unlink menus
+            const repMod = await prisma.modules.findUnique({ where: { module_key: 'reports' } });
+            if (repMod) {
+                await prisma.module_menu_map.deleteMany({ where: { module_id: repMod.id } });
+                await prisma.modules.delete({ where: { id: repMod.id } });
+            } else {
+                // Try deleting by key if ID fetch failed (though unlikely)
+                await prisma.modules.deleteMany({ where: { module_key: 'reports' } });
+            }
             results['deleted_module_reports'] = true;
-        } catch (ignored) { }
+        } catch (e: any) {
+            results['deleted_module_reports_error'] = e.message;
+        }
 
         // 0.5. AUTO-SUBSCRIBE Tenants to Core Modules (Prevent Disappearing Menus)
         // If a tenant has HMS, they MUST have Accounting + Inventory for this new structure to work.
