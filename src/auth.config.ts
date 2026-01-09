@@ -16,24 +16,8 @@ export const authConfig = {
             const isAuthPage = nextUrl.pathname.startsWith("/login");
             const isReceptionDashboard = nextUrl.pathname === "/hms/reception/dashboard";
 
-            // Strict Role Redirects
-            if (isLoggedIn && auth?.user) {
-                const email = auth.user.email;
-                const role = (auth.user as any).role?.toLowerCase();
-
-                // Receptionist
-                if ((email === 'rece@live.com' || role === 'receptionist') && (isOnRoot || isAuthPage)) {
-                    return Response.redirect(new URL("/hms/reception/dashboard", nextUrl));
-                }
-                // Nurse
-                if ((email === 'nurs@live.com' || role === 'nurse') && (isOnRoot || isAuthPage)) {
-                    return Response.redirect(new URL("/hms/nursing/dashboard", nextUrl));
-                }
-                // Doctor
-                if ((email === 'doct@live.com' || role === 'doctor') && (isOnRoot || isAuthPage)) {
-                    return Response.redirect(new URL("/hms/doctor/dashboard", nextUrl));
-                }
-            }
+            // Permissions-based redirection is handled in src/app/page.tsx
+            // This middleware only handles session validation and basic module access checks
 
             if (isOnHMS || isOnCRM || isOnRoot) {
                 if (isLoggedIn) {
