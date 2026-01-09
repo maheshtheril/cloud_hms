@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
+import { checkPermission } from '@/app/actions/rbac';
 
 export default async function Home() {
   const session = await auth();
@@ -8,12 +9,27 @@ export default async function Home() {
     redirect('/login?reauth=1');
   }
 
-  // STRICT REDIRECTS FOR ROLES
+  // ROLE & PERMISSION BASED REDIRECTS
   const role = session.user.role?.toLowerCase();
 
-  if (session.user.email === 'rece@live.com' || role === 'receptionist') redirect('/hms/reception/dashboard');
-  if (session.user.email === 'nurs@live.com' || role === 'nurse') redirect('/hms/nursing/dashboard');
-  if (session.user.email === 'doct@live.com' || role === 'doctor') redirect('/hms/doctor/dashboard');
+  // 1. Admins should not be auto-redirected to specific functional dashboards (they likely want the Menu)
+  if (!session.user.isAdmin && role !== 'admin' && role !== 'super_admin') {
+
+    // 2. Doctor Access
+    if (await checkPermission('hms:dashboard:doctor')) {
+      redirect('/hms/doctor/dashboard');
+    }
+
+    // 3. Nurse Access
+    if (await checkPermission('hms:dashboard:nurse')) {
+      redirect('/hms/nursing/dashboard');
+    }
+
+    // 4. Reception Access
+    if (await checkPermission('hms:dashboard:reception')) {
+      redirect('/hms/reception/dashboard');
+    }
+  }
 
   console.log('[DEBUG] Root Router:', {
     user: session.user.email,

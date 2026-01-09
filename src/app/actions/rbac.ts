@@ -57,7 +57,7 @@ export async function seedRolesAndPermissions() {
                     'patients:view', 'patients:edit',
                     'appointments:view', 'appointments:create',
                     'prescriptions:view', 'prescriptions:create', 'prescriptions:edit',
-                    'hms:view'
+                    'hms:view', 'hms:dashboard:doctor'
                 ]
             },
             {
@@ -67,7 +67,7 @@ export async function seedRolesAndPermissions() {
                     'patients:view',
                     'appointments:view',
                     'vitals:view', 'vitals:create', 'vitals:edit',
-                    'hms:view'
+                    'hms:view', 'hms:dashboard:nurse'
                 ]
             },
             {
@@ -87,7 +87,7 @@ export async function seedRolesAndPermissions() {
                     'patients:view', 'patients:create', 'patients:edit',
                     'appointments:view', 'appointments:create', 'appointments:edit',
                     'billing:view', 'billing:create',
-                    'hms:view'
+                    'hms:view', 'hms:dashboard:reception'
                 ]
             },
             {
@@ -419,6 +419,11 @@ export async function getAllPermissions() {
             { code: 'hms:create', name: 'Create HMS Records', module: 'HMS' },
             { code: 'hms:edit', name: 'Edit HMS Records', module: 'HMS' },
             { code: 'hms:delete', name: 'Delete HMS Records', module: 'HMS' },
+
+            // Dashboard Access
+            { code: 'hms:dashboard:doctor', name: 'Access Doctor Dashboard', module: 'HMS' },
+            { code: 'hms:dashboard:nurse', name: 'Access Nurse Dashboard', module: 'HMS' },
+            { code: 'hms:dashboard:reception', name: 'Access Reception Dashboard', module: 'HMS' },
 
             // HMS - Clinical & Patient
             { code: 'patients:view', name: 'View Patients', module: 'HMS' },
