@@ -354,19 +354,22 @@ export async function getAvailableRoles() {
     if (!session?.user?.tenantId) return []
 
     try {
-        const roles = await prisma.hms_role.findMany({
+        const roles = await prisma.role.findMany({
             where: {
                 tenant_id: session.user.tenantId,
             },
             select: {
                 id: true,
                 name: true,
-                description: true,
+                description: true, // Assuming schema has it, or we handle nulls in UI
             },
             orderBy: { name: 'asc' }
         })
 
-        return roles
+        return roles.map(r => ({
+            ...r,
+            description: r.description || r.name // Fallback
+        }))
 
     } catch (error) {
         console.error('Error fetching roles:', error)

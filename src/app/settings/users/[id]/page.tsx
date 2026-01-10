@@ -16,11 +16,12 @@ export default async function ManageUserPage({ params }: { params: Promise<{ id:
         }
 
         // Debug logging (will show in build logs if access available, or ignore)
-        // console.log("User:", user.id, "Roles count:", user.hms_user_roles.length)
+        // console.log("User:", user.id, "Roles count:", user.user_roles?.length)
 
-        const currentHMSRoleIds = user.hms_user_roles
-            .filter(ur => ur.hms_role)
-            .map(ur => ur.hms_role.id)
+        // Map Core Roles to UI
+        const currentHMSRoleIds = (user.user_roles || [])
+            .filter(ur => ur.role)
+            .map(ur => ur.role.id)
 
         return (
             <div className="max-w-4xl mx-auto space-y-6 p-6">
