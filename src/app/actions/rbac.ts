@@ -259,7 +259,7 @@ export async function seedRolesAndPermissions() {
                 key: 'accountant',
                 name: 'Accountant',
                 permissions: [
-                    'accounting:view', 'accounting:create', 'accounting:edit',
+                    // Operational Finance Only (No Ledger/Journals)
                     'billing:view', 'billing:create', 'billing:edit',
                     'purchasing:view', 'purchasing:create',
                     'suppliers:view',
