@@ -138,7 +138,7 @@ export async function createInvoice(data: any) {
     const companyId = session?.user?.companyId || session?.user?.tenantId;
     if (!companyId) return { error: "Unauthorized" };
 
-    const { patient_id, appointment_id, date, line_items, payments, status = 'draft', total_discount = 0 } = data;
+    const { patient_id, appointment_id, date, line_items, payments, status = 'draft', total_discount = 0, billing_metadata = {} } = data;
 
     if (!line_items || line_items.length === 0) {
         return { error: "At least one line item is required" };
@@ -233,6 +233,7 @@ export async function createInvoice(data: any) {
             total_discount: Number(total_discount),
             total_paid: totalPaid,
             outstanding_amount: outstandingAmount,
+            billing_metadata: billing_metadata,
             hms_invoice_lines: {
                 create: line_items.map((item: any, index: number) => ({
                     tenant_id: session.user.tenantId,
@@ -321,7 +322,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
     const companyId = session?.user?.companyId || session?.user?.tenantId;
     if (!companyId) return { error: "Unauthorized" };
 
-    const { patient_id, appointment_id, date, line_items, status = 'draft', total_discount = 0, payments = [] } = data;
+    const { patient_id, appointment_id, date, line_items, status = 'draft', total_discount = 0, payments = [], billing_metadata = {} } = data;
 
     if (!line_items || line_items.length === 0) {
         return { error: "At least one line item is required" };
@@ -366,6 +367,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
                     total_discount: Number(total_discount),
                     total_paid: totalPaid,
                     outstanding_amount: outstandingAmount,
+                    billing_metadata: billing_metadata,
                 }
             });
 
@@ -643,5 +645,47 @@ export async function getPatientBalance(patientId: string) {
     } catch (error: any) {
         console.error("Failed to fetch patient balance:", error);
         return { error: "Failed to fetch balance" };
+    }
+}
+
+export async function createQuickPatient(name: string, phone: string) {
+    const session = await auth();
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    if (!companyId) return { error: "Unauthorized" };
+
+    try {
+        // Split name
+        const parts = name.trim().split(' ');
+        const firstName = parts[0];
+        const lastName = parts.slice(1).join(' ') || '.';
+
+        const count = await prisma.hms_patient.count({ where: { tenant_id: session.user.tenantId } });
+        const patientNumber = `P${new Date().getFullYear()}${String(count + 1).padStart(5, '0')}`;
+
+        const newPatient = await prisma.hms_patient.create({
+            data: {
+                tenant_id: session.user.tenantId!,
+                company_id: companyId,
+                first_name: firstName,
+                last_name: lastName,
+                patient_number: patientNumber,
+                email: null,
+                gender: 'unknown',
+                dob: new Date(), // Default to today/unknown
+                contact: { phone: phone, address: 'Walk-in' },
+                metadata: {
+                    source: 'quick_billing',
+                    is_walk_in: true
+                }
+            }
+        });
+
+        return { success: true, data: newPatient };
+    } catch (error: any) {
+        console.error("Failed to create quick patient:", error);
+        if (error.code === 'P2002') {
+            return { error: "Patient with this details might already exist." };
+        }
+        return { error: `Failed to create patient: ${error.message}` };
     }
 }

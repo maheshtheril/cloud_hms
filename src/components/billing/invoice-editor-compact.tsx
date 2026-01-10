@@ -3,10 +3,14 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, X, Loader2, CreditCard, Banknote, Smartphone, Landmark, MessageCircle } from 'lucide-react'
-import { createInvoice, updateInvoice, getPatientBalance } from '@/app/actions/billing'
+import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, X, Loader2, CreditCard, Banknote, Smartphone, Landmark, MessageCircle, Maximize2, Minimize2, Check } from 'lucide-react'
+import { createInvoice, updateInvoice, getPatientBalance, createQuickPatient } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { useToast } from '@/components/ui/use-toast'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 
 export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice, onClose }: {
     patients: any[],
@@ -19,6 +23,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     onClose?: () => void
 }) {
 
+    // ... (Existing interfaces)
     interface Payment {
         method: 'cash' | 'card' | 'upi' | 'bank_transfer' | 'advance';
         amount: number;
@@ -28,6 +33,74 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     const searchParams = useSearchParams()
     const { toast } = useToast()
     const [loading, setLoading] = useState(false)
+    const [isMaximized, setIsMaximized] = useState(false)
+
+    // Quick Patient State
+    const [isQuickPatientOpen, setIsQuickPatientOpen] = useState(false)
+    const [quickPatientName, setQuickPatientName] = useState('')
+    const [quickPatientPhone, setQuickPatientPhone] = useState('')
+    const [isCreatingPatient, setIsCreatingPatient] = useState(false)
+
+    // Walk-in State (No Patient Record)
+    const [isWalkIn, setIsWalkIn] = useState(false)
+    const [walkInName, setWalkInName] = useState('')
+    const [walkInPhone, setWalkInPhone] = useState('')
+
+    // Effect: If a patient is selected, ensure Walk-in is OFF
+    useEffect(() => {
+        if (selectedPatientId) {
+            setIsWalkIn(false);
+        }
+    }, [selectedPatientId]);
+
+    // ... (Existing State)
+
+    // Handle Quick Patient Creation
+    const handleQuickPatientCreate = async () => {
+        if (!quickPatientName || !quickPatientPhone) {
+            toast({ title: "Missing Fields", description: "Name and Phone are required for Walk-in.", variant: "destructive" });
+            return;
+        }
+
+        setIsCreatingPatient(true);
+        const res = await createQuickPatient(quickPatientName, quickPatientPhone) as any;
+        if (res.success && res.data) {
+            toast({ title: "Patient Created", description: "Walk-in patient added successfully." });
+
+            // Add to local list roughly for immediate selection (Real list needs refresh but SearchableSelect might handle defaultOptions)
+            // Ideally we should push to 'patients' prop but we can't mutate props.
+            // SearchableSelect defaultOptions is derived from props.
+            // We can just set selected ID and let SearchableSelect handle the display if we pass a special defaultOption
+
+            // Hack: We can't easily update 'patients' prop without router.refresh(), but that might reset form.
+            // We rely on SearchableSelect's ability to show selected value even if not in options list if we provide it?
+            // Actually SearchableSelect logic usually filters from list.
+
+            // Better: Just set the ID, and we might need to "inject" this new patient into the lookup logic or reload.
+            // For now, let's reload the page or assume router.refresh works? No, form data loss.
+            // We will modify SearchableSelect usage to allow an "extra option".
+
+            setSelectedPatientId(res.data.id);
+            setIsQuickPatientOpen(false);
+            setQuickPatientName('');
+            setQuickPatientPhone('');
+        } else {
+            toast({ title: "Error", description: res.error || "Failed to create patient", variant: "destructive" });
+        }
+        setIsCreatingPatient(false);
+    }
+
+    // Derived Options for Search that includes the newly created one if selected
+    // Note: We don't have the new patient object fully in 'patients' array yet.
+    // Use an effect or state to track "extra" patients created in this session.
+    const [extraPatients, setExtraPatients] = useState<any[]>([]);
+
+    useEffect(() => {
+        // If we just created one, fetch it or just use the returned data
+        // For simplicity, handleQuickPatientCreate adds to extraPatients
+    }, []);
+
+    // ... (rest of component logic)
 
     // Read URL parameters for auto-fill
     const urlPatientId = searchParams.get('patientId')
@@ -120,6 +193,34 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             setLastAddedId(null)
         }
     }, [lastAddedId])
+
+    // Handle Quick Patient Creation
+    const handleQuickPatientCreate = async () => {
+        if (!quickPatientName || !quickPatientPhone) {
+            toast({ title: "Missing Fields", description: "Name and Phone are required for Walk-in.", variant: "destructive" });
+            return;
+        }
+
+        setIsCreatingPatient(true);
+        const res = await createQuickPatient(quickPatientName, quickPatientPhone) as any;
+        if (res.success && res.data) {
+            toast({ title: "Patient Created", description: "Walk-in patient added successfully." });
+
+            const newP = res.data;
+            setExtraPatients(prev => [newP, ...prev]);
+            setSelectedPatientId(newP.id);
+
+            setIsQuickPatientOpen(false);
+            setQuickPatientName('');
+            setQuickPatientPhone('');
+        } else {
+            toast({ title: "Error", description: res.error || "Failed to create patient", variant: "destructive" });
+        }
+        setIsCreatingPatient(false);
+    }
+
+    // Derived Options for Search that includes the newly created one if selected (Handled in search filter logic now)
+    const [extraPatients, setExtraPatients] = useState<any[]>([]);
 
     // --- REUSED LOGIC START ---
 
@@ -529,50 +630,96 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     }
 
     const handleSave = async (status: 'draft' | 'posted' | 'paid') => {
-        if (!selectedPatientId) return alert('Please select a patient')
+        if (!isWalkIn && !selectedPatientId) {
+            toast({
+                title: "Missing Patient",
+                description: "Please select a patient or switch to Walk-in mode.",
+                variant: "destructive"
+            })
+            return
+        }
+
+        if (isWalkIn && !walkInName) {
+            toast({
+                title: "Missing Name",
+                description: "Please enter the Walk-in Customer's Name.",
+                variant: "destructive"
+            })
+            return
+        }
+
+        if (lines.length === 0 || (lines.length === 1 && !lines[0].description && !lines[0].product_id)) {
+            toast({
+                title: "Empty Invoice",
+                description: "Add at least one item.",
+                variant: "destructive"
+            })
+            return
+        }
+
         setLoading(true)
-        let res;
+
+        // Metadata for Walk-in
+        const billingMetadata: any = {};
+        if (isWalkIn) {
+            billingMetadata.is_walk_in = true;
+            billingMetadata.patient_name = walkInName;
+            billingMetadata.patient_phone = walkInPhone;
+        }
+
         const payload = {
-            patient_id: selectedPatientId,
+            patient_id: isWalkIn ? null : selectedPatientId,
             appointment_id: appointmentId || urlAppointmentId,
             date,
             line_items: lines.filter(l => l.description || l.product_id), // Filter out empty lines on save
             status,
             total_discount: globalDiscount,
-            payments: payments
-        };
-
-        if (initialInvoice?.id) {
-            res = await updateInvoice(initialInvoice.id, payload);
-        } else {
-            res = await createInvoice(payload);
+            payments,
+            billing_metadata: billingMetadata
         }
+
+        let res;
+        if (initialInvoice?.id) {
+            res = await updateInvoice(initialInvoice.id, payload)
+        } else {
+            res = await createInvoice(payload)
+        }
+
+        setLoading(false)
 
         if (res.success) {
-            router.refresh()
+            toast({
+                title: "Success",
+                description: `Invoice ${status === 'draft' ? 'saved' : 'posted'} successfully.`
+            })
             if (onClose) {
-                onClose()
-            } else {
-                router.push('/hms/billing')
+                // Wait a bit for toast
+                setTimeout(() => onClose(), 500);
+            }
+            else {
+                router.push(`/hms/billing/${res.data.id}`)
             }
         } else {
-            alert(res.error || 'Failed to save')
+            toast({
+                title: "Error",
+                description: res.error || "Failed to save invoice",
+                variant: "destructive"
+            })
         }
-        setLoading(false)
     }
 
     // --- RENDER START ---
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 animate-in fade-in duration-200"
+            className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 ${isMaximized ? 'p-0' : 'p-2 sm:p-4'}`}
             onClick={() => onClose ? onClose() : router.back()}
         >
             <div
-                className="relative w-full max-w-[96vw] h-[95vh] sm:h-[90vh] flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 ring-1 ring-slate-900/10"
+                className={`relative flex flex-col bg-white dark:bg-slate-900 shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 ring-1 ring-slate-900/10 transition-all duration-300 ${isMaximized ? 'w-full h-full rounded-none' : 'w-full max-w-[96vw] h-[95vh] sm:h-[90vh] rounded-xl'}`}
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* 1. Header (Dense) */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md z-10">
+                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md z-10 shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="bg-gradient-to-br from-indigo-500 to-violet-600 p-2 rounded-lg text-white shadow-md shadow-indigo-500/20">
                             <Receipt className="h-4 w-4" />
@@ -582,8 +729,8 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                 {initialInvoice ? 'Edit' : 'New'} Invoice
                             </h2>
                             <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
-                                    {selectedPatientId ? 'Patient Selected' : 'Select Patient'}
+                                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${selectedPatientId ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
+                                    {selectedPatientId ? 'Patient Selected' : 'No Patient'}
                                 </span>
                                 <span className="text-[10px] text-slate-400">•</span>
                                 <p className="text-[10px] text-slate-500 font-medium">Create bill for patient</p>
@@ -592,41 +739,109 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                     </div>
 
                     <div className="flex items-center gap-3">
-                        {/* Patient Select (Searchable) */}
-                        <div className="w-56 sm:w-72 relative group">
-                            <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none text-slate-400">
-                                <User className="h-3.5 w-3.5" />
-                            </div>
-                            <div className="pl-7">
-                                <SearchableSelect
-                                    value={selectedPatientId}
-                                    onChange={(id) => setSelectedPatientId(id || '')}
-                                    onSearch={async (q) => {
-                                        const lower = q.toLowerCase()
-                                        return patients.filter(p =>
-                                            p.first_name.toLowerCase().includes(lower) ||
-                                            p.last_name.toLowerCase().includes(lower) ||
-                                            (p.patient_number && p.patient_number.toLowerCase().includes(lower)) ||
-                                            (p.contact?.phone && p.contact.phone.includes(lower))
-                                        )
-                                            .slice(0, 50)
-                                            .map(p => ({
+
+
+                        {/* Customer Section: World Standard Switcher */}
+                        <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700">
+                            {/* Tab 1: Registered */}
+                            <button
+                                onClick={() => {
+                                    setIsWalkIn(false);
+                                    // setTimeout(() => document.getElementById('patient-search-input')?.focus(), 50);
+                                }}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all duration-200 ${!isWalkIn ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm ring-1 ring-black/5 dark:ring-white/10' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                            >
+                                <Search className="w-3 h-3" />
+                                Registered
+                            </button>
+
+                            {/* Tab 2: Walk-in */}
+                            <button
+                                onClick={() => {
+                                    setIsWalkIn(true);
+                                    setSelectedPatientId('');
+                                    setTimeout(() => document.getElementById('walkin-mobile')?.focus(), 50);
+                                }}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all duration-200 ${isWalkIn ? 'bg-white dark:bg-slate-700 text-pink-600 shadow-sm ring-1 ring-black/5 dark:ring-white/10' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
+                            >
+                                <User className="w-3 h-3" />
+                                Walk-in
+                            </button>
+                        </div>
+
+                        {/* Input Area */}
+                        <div className="w-64 sm:w-80 h-9 relative">
+                            {isWalkIn ? (
+                                <div className="absolute inset-0 flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
+                                    {/* Mobile First (World Standard) */}
+                                    <div className="relative w-32 shrink-0">
+                                        <Smartphone className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                                        <Input
+                                            id="walkin-mobile"
+                                            value={walkInPhone}
+                                            onChange={(e) => setWalkInPhone(e.target.value)}
+                                            placeholder="Mobile No."
+                                            className="h-9 text-xs pl-8 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:border-pink-500 focus:ring-pink-500/20 transition-all font-mono"
+                                        />
+                                    </div>
+                                    {/* Name Second */}
+                                    <div className="relative flex-1">
+                                        <User className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
+                                        <Input
+                                            value={walkInName}
+                                            onChange={(e) => setWalkInName(e.target.value)}
+                                            placeholder="Guest Name"
+                                            className="h-9 text-xs pl-8 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:border-pink-500 focus:ring-pink-500/20 transition-all font-medium"
+                                        />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="absolute inset-0 group animate-in fade-in slide-in-from-left-2 duration-300">
+                                    <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-slate-400 z-10">
+                                        <Search className="h-3.5 w-3.5" />
+                                    </div>
+                                    <div className="pl-0 h-full">
+                                        <SearchableSelect
+                                            value={selectedPatientId}
+                                            onChange={(id) => setSelectedPatientId(id || '')}
+                                            onCreate={(query) => {
+                                                setQuickPatientName(query);
+                                                setIsQuickPatientOpen(true);
+                                                return Promise.resolve(null);
+                                            }}
+                                            onSearch={async (q) => {
+                                                const lower = q.toLowerCase()
+                                                const apiResults = patients.filter(p =>
+                                                    p.first_name.toLowerCase().includes(lower) ||
+                                                    p.last_name.toLowerCase().includes(lower) ||
+                                                    (p.patient_number && p.patient_number.toLowerCase().includes(lower)) ||
+                                                    (p.contact?.phone && p.contact.phone.includes(lower))
+                                                );
+                                                const extraFiltered = extraPatients.filter(p =>
+                                                    p.first_name.toLowerCase().includes(lower) ||
+                                                    p.contact?.phone?.includes(lower)
+                                                );
+                                                const merged = [...extraFiltered, ...apiResults];
+                                                return merged.slice(0, 50).map(p => ({
+                                                    id: p.id,
+                                                    label: `${p.first_name} ${p.last_name}`,
+                                                    subLabel: `ID: ${p.patient_number || 'New'} | Ph: ${p.contact?.phone || 'N/A'}`
+                                                }))
+                                            }}
+                                            defaultOptions={[...extraPatients, ...patients].slice(0, 50).map(p => ({
                                                 id: p.id,
                                                 label: `${p.first_name} ${p.last_name}`,
-                                                subLabel: `ID: ${p.patient_number || 'N/A'} | Ph: ${p.contact?.phone || 'N/A'}`
-                                            }))
-                                    }}
-                                    defaultOptions={patients.slice(0, 50).map(p => ({
-                                        id: p.id,
-                                        label: `${p.first_name} ${p.last_name}`,
-                                        subLabel: `ID: ${p.patient_number || 'N/A'} | Ph: ${p.contact?.phone || 'N/A'}`
-                                    }))}
-                                    placeholder="Search Patient..."
-                                    className="w-full text-xs border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-indigo-500/20 transition-all"
-                                    inputId="patient-search-input"
-                                />
-                            </div>
+                                                subLabel: `ID: ${p.patient_number || 'New'} | Ph: ${p.contact?.phone || 'N/A'}`
+                                            }))}
+                                            placeholder="Search Name or Mobile..."
+                                            className="w-full h-9 text-xs border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-indigo-500/20 transition-all pl-9"
+                                            inputId="patient-search-input"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
+
 
                         {/* Date (Inline) */}
                         <div className="relative">
@@ -638,6 +853,17 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                 onChange={(e) => setDate(e.target.value)}
                             />
                         </div>
+
+                        <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
+
+                        {/* Toggle Maximize */}
+                        <button
+                            onClick={() => setIsMaximized(!isMaximized)}
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 hover:text-indigo-500 transition-all duration-200"
+                            title={isMaximized ? "Restore Size" : "Maximize"}
+                        >
+                            {isMaximized ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+                        </button>
 
                         {/* Close Button */}
                         <button
@@ -973,6 +1199,41 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                     </div>
                 </div>
             </div>
+
+            {/* Quick Patient Dialog */}
+            <Dialog open={isQuickPatientOpen} onOpenChange={setIsQuickPatientOpen}>
+                <DialogContent className="sm:max-w-[425px] z-[60]">
+                    <DialogHeader>
+                        <DialogTitle>Details for "{quickPatientName}"</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="phone" className="text-right text-xs">
+                                Phone Number
+                            </Label>
+                            <Input
+                                id="phone"
+                                value={quickPatientPhone}
+                                onChange={(e) => setQuickPatientPhone(e.target.value)}
+                                className="col-span-3 text-sm h-9"
+                                placeholder="Enter mobile number"
+                                autoFocus
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="secondary" size="sm" onClick={() => setIsQuickPatientOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button type="button" size="sm" onClick={handleQuickPatientCreate} disabled={!quickPatientPhone || isCreatingPatient}>
+                            {isCreatingPatient ? <Loader2 className="h-4 w-4 animate-spin" /> :
+                                <>
+                                    <Check className="w-4 h-4 mr-2" /> Use this Patient
+                                </>}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

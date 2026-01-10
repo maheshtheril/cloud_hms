@@ -1,0 +1,9 @@
+Found Menu Items (PG):
+Label: Dashboard                 | URL: /dashboard                     | Perm: null | Module: dashboard
+Label: Financial Dashboard       | URL: /hms/accounting                | Perm: accounting:view | Module: finance
+Label: Dashboard                 | URL: /crm/dashboard                 | Perm: crm:view | Module: crm
+Label: Dashboard                 | URL: /hms/dashboard                 | Perm: hms:admin | Module: hms
+Label: Reception                 | URL: /hms/reception/dashboard       | Perm: hms:dashboard:reception | Module: hms
+Label: Doctor Dashboard          | URL: /hms/doctor/dashboard          | Perm: hms:dashboard:doctor | Module: hms
+Label: Attendance                | URL: /hms/attendance                | Perm: attendance:view | Module: hms
+Label: Attendance                | URL: /crm/attendance                | Perm: attendance:view | Module: crm

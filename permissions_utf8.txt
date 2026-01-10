@@ -1,0 +1,13 @@
+✅ Found Role: Receptionist (ID: e7bee97b-226e-449b-ab17-3fd8a13512c2, Key: receptionist)
+
+📋 Permissions (10):
+- appointments:create                      [GRANTED]
+- appointments:edit                        [GRANTED]
+- appointments:view                        [GRANTED]
+- billing:create                           [GRANTED]
+- billing:view                             [GRANTED]
+- hms:dashboard:reception                  [GRANTED]
+- hms:view                                 [GRANTED]
+- patients:create                          [GRANTED]
+- patients:edit                            [GRANTED]
+- patients:view                            [GRANTED]
