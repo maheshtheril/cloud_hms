@@ -99,6 +99,65 @@ export async function signup(prevState: any, formData: FormData) {
                 }
             }
 
+            // 3c. Seed Chart of Accounts and Accounting Settings (World Class Standard)
+            // We do this inside the transaction so the user is "Revenue Ready" instantly.
+            if (currencyId) {
+                // Determine Tax Label
+                let taxLabel = "Tax";
+
+                const coaTemplate = [
+                    { code: '1000', name: 'Cash on Hand', type: 'Asset' },
+                    { code: '1010', name: 'Bank Account', type: 'Asset' },
+                    { code: '1200', name: 'Accounts Receivable', type: 'Asset' },
+                    { code: '1400', name: 'Inventory / Stock', type: 'Asset' },
+                    { code: '2000', name: 'Accounts Payable', type: 'Liability' },
+                    { code: '2200', name: `${taxLabel} Output (Sales)`, type: 'Liability' },
+                    { code: '2210', name: `${taxLabel} Input (Purchase)`, type: 'Liability' },
+                    { code: '3000', name: 'Owner Capital / Equity', type: 'Equity' },
+                    { code: '4000', name: 'Product Sales', type: 'Revenue' },
+                    { code: '4100', name: 'Service Revenue', type: 'Revenue' },
+                    { code: '5000', name: 'Cost of Goods Sold (COGS)', type: 'Expense' },
+                    { code: '5100', name: 'Inventory Adjmnt', type: 'Expense' },
+                ];
+
+                await tx.accounts.createMany({
+                    data: coaTemplate.map(acc => ({
+                        id: crypto.randomUUID(),
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        code: acc.code,
+                        name: acc.name,
+                        type: acc.type,
+                        is_active: true
+                    }))
+                });
+
+                // Fetch back to get IDs
+                const createdAccounts = await tx.accounts.findMany({
+                    where: { company_id: companyId }
+                });
+                const findId = (code: string) => createdAccounts.find(a => a.code === code)?.id;
+
+                await tx.company_accounting_settings.create({
+                    data: {
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        currency_id: currencyId,
+                        ar_account_id: findId('1200'),
+                        ap_account_id: findId('2000'),
+                        sales_account_id: findId('4000'),
+                        purchase_account_id: findId('5000'),
+                        inventory_asset_account_id: findId('1400'),
+                        output_tax_account_id: findId('2200'),
+                        input_tax_account_id: findId('2210'),
+                        stock_adjustment_account_id: findId('5100'),
+                        fiscal_year_start: new Date(new Date().getFullYear(), 0, 1),
+                        fiscal_year_end: new Date(new Date().getFullYear(), 11, 31),
+                    }
+                });
+                console.log('[Signup] Seeded Financial Accounts and Settings');
+            }
+
             // 4. Create User (Admin)
             await tx.$executeRaw`
                 INSERT INTO app_user (id, tenant_id, company_id, email, password, name, is_admin, is_tenant_admin, is_active)

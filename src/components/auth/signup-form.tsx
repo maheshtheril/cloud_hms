@@ -190,7 +190,21 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Industry</label>
-                                    <select name="industry" value={formData.industry} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, industry: e.target.value })} className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white">
+                                    <select name="industry" value={formData.industry} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={(e) => {
+                                        const val = e.target.value;
+                                        let newModules = [...formData.modules];
+
+                                        // SMART DEFAULTS (World Class)
+                                        if (val === 'Healthcare') {
+                                            newModules = [...newModules, 'hms', 'inventory', 'accounting', 'crm'];
+                                        } else if (val === 'Retail' || val === 'Manufacturing') {
+                                            newModules = [...newModules, 'inventory', 'accounting', 'crm'];
+                                        } else if (val === 'Services') {
+                                            newModules = [...newModules, 'crm', 'accounting'];
+                                        }
+
+                                        setFormData({ ...formData, industry: val, modules: Array.from(new Set(newModules)) });
+                                    }} className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white">
                                         <option value="">Select Industry...</option>
                                         <option value="Healthcare">Healthcare / Hospital</option>
                                         <option value="Manufacturing">Manufacturing</option>
