@@ -21,7 +21,7 @@ export default async function ManageUserPage({ params }: { params: Promise<{ id:
         // Map Core Roles to UI
         const currentHMSRoleIds = (user.user_roles || [])
             .filter(ur => ur.role)
-            .map(ur => ur.role.id)
+            .map(ur => ur.role!.id)
 
         return (
             <div className="max-w-4xl mx-auto space-y-6 p-6">
