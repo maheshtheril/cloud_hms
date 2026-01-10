@@ -25,6 +25,15 @@ export async function getMenuItems() {
         userPerms.add('*');
     }
 
+    // FAILSAFE: Explicit Role-Based Permissions (Fixing missing/cache issues)
+    if (session?.user?.role === 'receptionist') {
+        userPerms.add('hms:dashboard:reception');
+        userPerms.add('attendance:view');
+        userPerms.add('hms:view');
+        userPerms.add('patients:view');
+        userPerms.add('appointments:view');
+    }
+
     try {
         // Self-Healing: Ensure Admin Menus Exist
         if (isAdmin) {
