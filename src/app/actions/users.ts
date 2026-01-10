@@ -117,10 +117,17 @@ export async function inviteUser(data: InviteUserData) {
             return { error: 'User with this email already exists' }
         }
 
+        // Fetch default company or first available company for the tenant
+        const defaultCompany = await prisma.company.findFirst({
+            where: { tenant_id: session.user.tenantId },
+            orderBy: { created_at: 'asc' } // Use first created company if no explicit default
+        })
+
         // Create user with PENDING state (is_active: false)
         const user = await prisma.app_user.create({
             data: {
                 tenant_id: session.user.tenantId,
+                company_id: defaultCompany?.id, // FIX: Assign default company to prevent Unauthorized errors
                 email: data.email.toLowerCase(),
                 full_name: data.fullName || data.email.split('@')[0],
                 name: data.email.split('@')[0],
