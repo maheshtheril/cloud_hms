@@ -256,6 +256,17 @@ export async function seedRolesAndPermissions() {
                 permissions: ['crm:view_own', 'crm:create_leads', 'crm:manage_own_deals', 'leads:view', 'leads:create', 'deals:view', 'deals:create']
             },
             {
+                key: 'accountant',
+                name: 'Accountant',
+                permissions: [
+                    'accounting:view', 'accounting:create', 'accounting:edit',
+                    'billing:view', 'billing:create', 'billing:edit',
+                    'purchasing:view', 'purchasing:create',
+                    'suppliers:view',
+                    'hms:view'
+                ]
+            },
+            {
                 key: 'inventory_manager',
                 name: 'Inventory Manager',
                 permissions: [
