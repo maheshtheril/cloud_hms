@@ -267,6 +267,17 @@ export async function seedRolesAndPermissions() {
                 ]
             },
             {
+                key: 'finance_manager',
+                name: 'Finance Manager',
+                permissions: [
+                    'accounting:view', 'accounting:create', 'accounting:edit',
+                    'billing:view', 'billing:create', 'billing:edit',
+                    'purchasing:view', 'purchasing:create',
+                    'suppliers:view',
+                    'hms:view'
+                ]
+            },
+            {
                 key: 'inventory_manager',
                 name: 'Inventory Manager',
                 permissions: [
