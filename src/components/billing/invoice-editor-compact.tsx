@@ -194,33 +194,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
         }
     }, [lastAddedId])
 
-    // Handle Quick Patient Creation
-    const handleQuickPatientCreate = async () => {
-        if (!quickPatientName || !quickPatientPhone) {
-            toast({ title: "Missing Fields", description: "Name and Phone are required for Walk-in.", variant: "destructive" });
-            return;
-        }
 
-        setIsCreatingPatient(true);
-        const res = await createQuickPatient(quickPatientName, quickPatientPhone) as any;
-        if (res.success && res.data) {
-            toast({ title: "Patient Created", description: "Walk-in patient added successfully." });
-
-            const newP = res.data;
-            setExtraPatients(prev => [newP, ...prev]);
-            setSelectedPatientId(newP.id);
-
-            setIsQuickPatientOpen(false);
-            setQuickPatientName('');
-            setQuickPatientPhone('');
-        } else {
-            toast({ title: "Error", description: res.error || "Failed to create patient", variant: "destructive" });
-        }
-        setIsCreatingPatient(false);
-    }
-
-    // Derived Options for Search that includes the newly created one if selected (Handled in search filter logic now)
-    const [extraPatients, setExtraPatients] = useState<any[]>([]);
 
     // --- REUSED LOGIC START ---
 
