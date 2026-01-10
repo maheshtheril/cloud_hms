@@ -553,6 +553,38 @@ export class AccountingService {
                 where: { company_id: invoice.company_id }
             });
 
+            // SELF-HEALING: Auto-configure defaults if missing
+            if (!settings) {
+                console.warn("Accounting Settings missing. Attempting auto-configuration...");
+                try {
+                    await ensureDefaultAccounts(invoice.company_id, invoice.tenant_id);
+
+                    const accounts = await prisma.accounts.findMany({
+                        where: { company_id: invoice.company_id }
+                    });
+
+                    const findId = (code: string) => accounts.find(a => a.code === code)?.id || null;
+
+                    settings = await prisma.company_accounting_settings.create({
+                        data: {
+                            company_id: invoice.company_id,
+                            tenant_id: invoice.tenant_id,
+                            ar_account_id: findId('1200'),
+                            ap_account_id: findId('2000'),
+                            sales_account_id: findId('4000'),
+                            purchase_account_id: findId('5000'),
+                            output_tax_account_id: findId('2200'),
+                            input_tax_account_id: findId('2210'),
+                            inventory_asset_account_id: findId('1400'),
+                            fiscal_year_start: new Date(new Date().getFullYear(), 3, 1),
+                            fiscal_year_end: new Date(new Date().getFullYear() + 1, 2, 31),
+                        }
+                    });
+                } catch (configError) {
+                    console.error("Failed to auto-configure accounting:", configError);
+                }
+            }
+
             if (!settings) throw new Error("Accounting settings not configured.");
 
             // 3. Determine Accounts
