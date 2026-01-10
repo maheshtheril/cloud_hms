@@ -32,6 +32,9 @@ export async function getMenuItems() {
         userPerms.add('appointments:view');
         userPerms.add('billing:view');
     }
+    if (session?.user?.role === 'lab_technician') {
+        userPerms.add('lab:view');
+    }
 
     try {
         // Self-Healing: Ensure Admin Menus Exist
@@ -492,6 +495,7 @@ export async function auditAndFixMenuPermissions() {
             // STRICT DASHBOARDS
             { key: 'hms-dashboard', perm: 'hms:admin' }, // Main dashboard is for admins
             { key: 'hms-reception', perm: 'hms:dashboard:reception' }, // Strict Reception Access
+            { key: 'hms-doctors', perm: 'hms:admin' }, // Only Admins should manage doctors menu
 
             // ATTENDANCE
             { key: 'hms-attendance', perm: 'hms:view' }, // Available to all clinical staff

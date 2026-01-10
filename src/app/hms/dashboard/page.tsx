@@ -14,6 +14,12 @@ export default async function DashboardPage() {
         redirect('/hms/reception/dashboard');
     }
 
+    // SECURITY: Redirect Lab Technicians to their dedicated dashboard
+    if (session?.user?.role === 'lab_technician') {
+        const { redirect } = await import('next/navigation');
+        redirect('/hms/lab/dashboard');
+    }
+
     const tenantId = session?.user?.tenantId
     const companyId = session?.user?.companyId
 
