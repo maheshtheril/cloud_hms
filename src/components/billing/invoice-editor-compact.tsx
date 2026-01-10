@@ -1092,9 +1092,9 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                             >
                                                 <option value="cash">Cash</option>
                                                 <option value="card">Card</option>
-                                                <option value="upi">UPI</option>
-                                                <option value="bank_transfer">Transfer</option>
-                                                <option value="advance">Advance</option>
+                                                <option value="upi">UPI / GPay</option>
+                                                <option value="bank_transfer">Bank Transfer</option>
+                                                <option value="advance">Use Customer Credit / Advance</option>
                                             </select>
                                         </div>
 
@@ -1109,19 +1109,35 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                                     newPayments[idx].amount = parseFloat(e.target.value) || 0
                                                     setPayments(newPayments)
                                                 }}
+                                                onFocus={(e) => e.target.select()}
                                             />
                                         </div>
 
-                                        <button onClick={() => setPayments(payments.filter((_, i) => i !== idx))} className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all disabled:hidden" disabled={payments.length === 1}>
-                                            <X className="h-3.5 w-3.5" />
+                                        <button onClick={() => setPayments(payments.filter((_, i) => i !== idx))} className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full hover:shadow-sm transition-all" title="Remove Payment (Credit Sale)">
+                                            <Trash2 className="h-3.5 w-3.5" />
                                         </button>
                                     </div>
                                 ))}
+
+                                {payments.length === 0 && (
+                                    <div className="flex flex-col items-center justify-center py-6 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-md bg-slate-50/50 dark:bg-slate-900/50 group hover:border-indigo-300 transition-colors">
+                                        <p className="text-[10px] text-slate-500 font-bold mb-1 uppercase tracking-wider">Credit Sale (Pay Later)</p>
+                                        <p className="text-[10px] text-slate-400 mb-2">No payment received now.</p>
+                                        <button
+                                            onClick={() => setPayments([{ method: 'cash', amount: grandTotal, reference: '' }])}
+                                            className="text-[10px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm px-3 py-1.5 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-bold text-indigo-600 group-hover:scale-105"
+                                        >
+                                            + Add Payment
+                                        </button>
+                                    </div>
+                                )}
                             </div>
 
-                            <button onClick={() => setPayments([...payments, { method: 'cash', amount: Math.max(0, balanceDue), reference: '' }])} className="mt-2 text-[10px] font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1.5 rounded transition-colors flex items-center justify-center gap-1 w-full border border-dashed border-indigo-200 dark:border-indigo-800">
-                                <Plus className="h-3 w-3" /> Split Payment (Add Mode)
-                            </button>
+                            {payments.length > 0 && (
+                                <button onClick={() => setPayments([...payments, { method: 'cash', amount: Math.max(0, balanceDue), reference: '' }])} className="mt-2 text-[10px] font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1.5 rounded transition-colors flex items-center justify-center gap-1 w-full border border-dashed border-indigo-200 dark:border-indigo-800">
+                                    <Plus className="h-3 w-3" /> Split Payment (Add More)
+                                </button>
+                            )}
                         </div>
 
                         {/* Right Side: Totals & Actions */}
