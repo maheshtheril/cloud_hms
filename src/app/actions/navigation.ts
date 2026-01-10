@@ -92,90 +92,9 @@ export async function getMenuItems() {
         allowedModuleKeys.add('configuration');
         // allowedModuleKeys.add('hms'); // REMOVED: Respect Tenant Subscriptions (CRM only should not see HMS)
 
-        // -------------------------
-        // AUTO-MIGRATION: Fix Module Assignments (World Standard)
-        // -------------------------
-        try {
-            // 0. Ensure Target Modules Exist (Fixes FK Constraint Failures)
-            const targetModules = ['finance', 'inventory'];
-            for (const key of targetModules) {
-                const mod = await prisma.modules.findUnique({ where: { module_key: key } });
-                if (!mod) {
-                    await prisma.modules.create({
-                        data: {
-                            module_key: key,
-                            name: key.charAt(0).toUpperCase() + key.slice(1),
-                            is_active: true,
-                            description: 'Core Module'
-                        }
-                    });
-                }
-            }
-
-            // 1. Move HMS Accounting -> Finance
-            await prisma.menu_items.updateMany({
-                where: { key: 'hms-accounting', module_key: { not: 'finance' } },
-                data: { module_key: 'finance', sort_order: 10 }
-            });
-            const hmsAcc = await prisma.menu_items.findFirst({ where: { key: 'hms-accounting' } });
-            if (hmsAcc) {
-                await prisma.menu_items.updateMany({
-                    where: { parent_id: hmsAcc.id, module_key: { not: 'finance' } },
-                    data: { module_key: 'finance' }
-                });
-            }
-
-            // 2. Move HMS Inventory -> Inventory
-            await prisma.menu_items.updateMany({
-                where: { key: 'hms-inventory', module_key: { not: 'inventory' } },
-                data: { module_key: 'inventory', sort_order: 50, label: 'Pharmacy Store' }
-            });
-            const hmsInv = await prisma.menu_items.findFirst({ where: { key: 'hms-inventory' } });
-            if (hmsInv) {
-                await prisma.menu_items.updateMany({
-                    where: { parent_id: hmsInv.id, module_key: { not: 'inventory' } },
-                    data: { module_key: 'inventory' }
-                });
-            }
-
-            // 3. Move HMS Purchasing -> Inventory (Procurement)
-            await prisma.menu_items.updateMany({
-                where: { key: 'hms-purchasing', module_key: { not: 'inventory' } },
-                data: { module_key: 'inventory', sort_order: 60, label: 'Central Purchasing' }
-            });
-            const hmsPurch = await prisma.menu_items.findFirst({ where: { key: 'hms-purchasing' } });
-            if (hmsPurch) {
-                await prisma.menu_items.updateMany({
-                    where: { parent_id: hmsPurch.id, module_key: { not: 'inventory' } },
-                    data: { module_key: 'inventory' }
-                });
-            }
-
-            // 4. REORDER HMS CLINICAL FLOW (Patient Journey)
-            // Front Desk (10-29) -> Clinical (30-49) -> Billing (50+)
-            const reorders = [
-                { key: 'hms-dashboard', sort: 10 },
-                { key: 'hms-reception', sort: 15 },
-                { key: 'hms-patients', sort: 20 },
-                { key: 'hms-appointments', sort: 25 },
-                { key: 'hms-doctors', sort: 30 },
-                { key: 'hms-nursing', sort: 35 },
-                { key: 'hms-lab', sort: 40 },
-                { key: 'hms-wards', sort: 45 },
-                { key: 'hms-billing', sort: 50 }, // Billing moves up to close the loop
-                { key: 'hms-sales-returns', sort: 52 }
-            ];
-
-            for (const item of reorders) {
-                await prisma.menu_items.updateMany({
-                    where: { key: item.key },
-                    data: { sort_order: item.sort }
-                });
-            }
-
-        } catch (e) {
-            console.error("Auto-Migration Failed:", e);
-        }
+        // AUTO-MIGRATION REMOVED
+        // We now rely on the 'auditAndFixMenuPermissions' function in RootLayout
+        // to handle data standardization. This prevents read-time mutation conflicts.
 
         // 1. FETCH ALL ITEMS
         const allMenuItems = await prisma.menu_items.findMany({
