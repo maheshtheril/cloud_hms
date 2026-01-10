@@ -15,7 +15,11 @@ export default async function DashboardPage() {
     }
 
     // SECURITY: Redirect Lab Technicians to their dedicated dashboard
-    if (session?.user?.role === 'lab_technician') {
+    const role = session?.user?.role?.toLowerCase() || '';
+    const name = session?.user?.name?.toLowerCase() || '';
+    const email = session?.user?.email?.toLowerCase() || '';
+
+    if (role === 'lab_technician' || role === 'lab technician' || role.includes('lab') || name.includes('lab') || email.includes('laab')) {
         const { redirect } = await import('next/navigation');
         redirect('/hms/lab/dashboard');
     }

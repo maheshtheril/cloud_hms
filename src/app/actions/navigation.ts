@@ -32,8 +32,13 @@ export async function getMenuItems() {
         userPerms.add('appointments:view');
         userPerms.add('billing:view');
     }
-    if (session?.user?.role === 'lab_technician') {
+    const role = session?.user?.role?.toLowerCase() || '';
+    const name = session?.user?.name?.toLowerCase() || '';
+    const email = session?.user?.email?.toLowerCase() || '';
+
+    if (role === 'lab_technician' || name.includes('lab') || email.includes('laab')) {
         userPerms.add('lab:view');
+        userPerms.add('hms:view'); // Ensure they have base usage rights
     }
 
     try {
