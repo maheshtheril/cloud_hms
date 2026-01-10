@@ -60,27 +60,57 @@ export async function getUsers(filters?: {
             where.is_active = filters.status === 'active'
         }
 
-        const [users, total] = await Promise.all([
+        // 1. Fetch Users
+        const [usersRaw, total] = await Promise.all([
             prisma.app_user.findMany({
                 where,
-                include: {
-                    hms_user_roles: {
-                        include: {
-                            hms_role: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                }
-                            }
-                        }
-                    }
-                },
+                // include: { hms_user_roles: ... } // REMOVED: Legacy relation
                 orderBy: { created_at: 'desc' },
                 take: limit,
                 skip,
             }),
             prisma.app_user.count({ where })
         ])
+
+        // 2. Fetch User Roles (Manual Join)
+        const userIds = usersRaw.map(u => u.id)
+
+        const userRolesRaw = await prisma.user_role.findMany({
+            where: {
+                user_id: { in: userIds },
+                tenant_id: session.user.tenantId
+            }
+        })
+
+        // 3. Fetch Role Names
+        const roleIds = [...new Set(userRolesRaw.map(ur => ur.role_id))]
+        const roles = await prisma.role.findMany({
+            where: { id: { in: roleIds } }
+        })
+        const roleMap = new Map(roles.map(r => [r.id, r]))
+
+        // 4. Stitch Relations
+        // We map it to 'hms_user_roles' structure to keep frontend compatible for now
+        const users = usersRaw.map(user => {
+            const myRoleIds = userRolesRaw
+                .filter(ur => ur.user_id === user.id)
+                .map(ur => ur.role_id)
+
+            const myRoles = myRoleIds
+                .map(id => roleMap.get(id))
+                .filter(r => r !== undefined) as any[]
+
+            return {
+                ...user,
+                // Mocking the structure expected by <UserTable />
+                hms_user_roles: myRoles.map(r => ({
+                    hms_role: {
+                        id: r.id,
+                        name: r.name
+                    }
+                }))
+            }
+        })
 
         return {
             users,
@@ -172,41 +202,31 @@ export async function inviteUser(data: InviteUserData) {
 
         if (data.roleId && data.roleId !== 'no-role') {
             try {
-                // 1. Assign HMS Role (UI)
-                await prisma.hms_user_roles.create({
-                    data: { user_id: user.id, role_id: data.roleId }
+                // Fetch the Core Role to verify and get key
+                const coreRole = await prisma.role.findUnique({
+                    where: { id: data.roleId }
                 })
 
-                // 2. Sync to Core RBAC (Permissions)
-                const hmsRole = await prisma.hms_role.findUnique({ where: { id: data.roleId } });
-                if (hmsRole) {
-                    const key = hmsRole.name.toLowerCase().replace(/\s+/g, '');
-                    const coreRole = await prisma.role.findFirst({
-                        where: {
-                            tenant_id: session.user.tenantId,
-                            key: key
+                if (coreRole) {
+                    // 1. Assign Core Role (Permissions) - Single Source of Truth
+                    await prisma.user_role.create({
+                        data: {
+                            user_id: user.id,
+                            role_id: coreRole.id,
+                            tenant_id: session.user.tenantId
                         }
-                    });
+                    })
 
-                    if (coreRole) {
-                        await prisma.user_role.create({
-                            data: {
-                                user_id: user.id,
-                                role_id: coreRole.id,
-                                tenant_id: session.user.tenantId
-                            }
-                        })
-                    }
-
-                    // Legacy string fallback
-                    if (['receptionist', 'admin', 'doctor', 'nurse'].includes(key)) {
+                    // 2. Legacy string fallback (Optimization for session)
+                    // We stick to standard roles for the session string to avoid breaking legacy checks
+                    const key = coreRole.key || coreRole.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+                    if (['receptionist', 'admin', 'doctor', 'nurse', 'pharmacist', 'labtechnician'].includes(key)) {
                         await prisma.app_user.update({
                             where: { id: user.id },
                             data: { role: key }
                         });
                     }
                 }
-
             } catch (roleError) {
                 console.error("Error assigning role:", roleError);
             }
