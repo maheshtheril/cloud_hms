@@ -46,12 +46,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     const [walkInName, setWalkInName] = useState('')
     const [walkInPhone, setWalkInPhone] = useState('')
 
-    // Effect: If a patient is selected, ensure Walk-in is OFF
-    useEffect(() => {
-        if (selectedPatientId) {
-            setIsWalkIn(false);
-        }
-    }, [selectedPatientId]);
+
 
     // ... (Existing State)
 
@@ -109,6 +104,14 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
 
     // State
     const [selectedPatientId, setSelectedPatientId] = useState(initialInvoice?.patient_id || initialPatientId || urlPatientId || '')
+
+    // Effect: If a patient is selected, ensure Walk-in is OFF
+    useEffect(() => {
+        if (selectedPatientId) {
+            setIsWalkIn(false);
+        }
+    }, [selectedPatientId]);
+
     const [date, setDate] = useState(initialInvoice?.invoice_date ? new Date(initialInvoice.invoice_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
     const [patientBalance, setPatientBalance] = useState<{ amount: number, type: 'due' | 'advance' } | null>(null)
 
