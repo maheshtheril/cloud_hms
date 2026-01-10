@@ -469,7 +469,19 @@ export async function auditAndFixMenuPermissions() {
             { key: 'hms-purchasing-returns', perm: 'purchasing:returns:view' },
             { key: 'inv-suppliers', perm: 'suppliers:view' },
             { key: 'hms-purchasing-suppliers', perm: 'suppliers:view' },
-            { key: 'purch-suppliers', perm: 'suppliers:view' }
+            { key: 'purch-suppliers', perm: 'suppliers:view' },
+
+            // RECEPTIONIST CLEANUP (Hide irrelevent items)
+            { key: 'hms-laboratory', perm: 'lab:view' },
+            { key: 'hms-pharmacy', perm: 'pharmacy:view' },
+            { key: 'hms-sales-returns', perm: 'billing:void' }, // Only admins/managers should process returns
+            { key: 'settings', perm: 'system:admin' }, // Hide Global Settings
+            { key: 'configuration', perm: 'system:admin' }, // Hide Configuration Group
+            { key: 'hms-settings', perm: 'hms:admin' },
+
+            // STRICT DASHBOARDS
+            { key: 'hms-dashboard', perm: 'hms:admin' }, // Main dashboard is for admins
+            { key: 'hms-reception', perm: 'hms:dashboard:reception' } // Explicitly keep reception accessible
         ];
 
         for (const o of specificOverrides) {
