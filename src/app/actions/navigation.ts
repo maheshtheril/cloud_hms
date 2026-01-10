@@ -473,19 +473,36 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
  */
 export async function auditAndFixMenuPermissions() {
     try {
-        // 1. STANDARDIZE MODULE KEYS (Fix Fragmentation)
-        const moduleRemaps = [
-            { old: 'finance', new: 'accounting' },
-            { old: 'sales', new: 'crm' },
-            { old: 'purchasing', new: 'inventory' }
+        // 0. CHECK REAL MODULES (User Request)
+        // We first understand what modules actually exist in the DB to avoid invalid remapping.
+        const allModules = await prisma.modules.findMany({ select: { module_key: true } });
+        const validKeys = new Set(allModules.map(m => m.module_key.toLowerCase()));
+
+        // 1. STANDARDIZE MODULE KEYS (Smart Fix)
+        const potentialRemaps = [
+            { source: 'finance', target: 'accounting' },
+            { source: 'sales', target: 'crm' },
+            { source: 'purchasing', target: 'inventory' }
         ];
-        for (const remap of moduleRemaps) {
-            await prisma.menu_items.updateMany({
-                where: { module_key: remap.old },
-                data: { module_key: remap.new }
-            });
+
+        for (const remap of potentialRemaps) {
+            if (validKeys.has(remap.target)) {
+                // Target exists (e.g. 'accounting'), safely move source items there
+                await prisma.menu_items.updateMany({
+                    where: { module_key: remap.source },
+                    data: { module_key: remap.target }
+                });
+            } else if (validKeys.has(remap.source)) {
+                // Target missing, but source exists (e.g. 'finance'). 
+                // Ensure consistency by moving any stray Target items to Source
+                await prisma.menu_items.updateMany({
+                    where: { module_key: remap.target },
+                    data: { module_key: remap.source }
+                });
+            }
         }
 
+        // 2. SPECIFIC OVERRIDES (Granular Control)
         const specificOverrides = [
             { key: 'crm-targets', perm: 'crm:targets:view' },
             { key: 'crm-pipeline', perm: 'crm:pipeline:view' },
@@ -505,19 +522,20 @@ export async function auditAndFixMenuPermissions() {
             });
         }
 
+        // 3. GENERIC MODULE SECURITY (Apply Permissions)
         const modulesToSecure = [
             { key: 'crm', perm: 'crm:view' },
-            { key: 'sales', perm: 'crm:view' },
             { key: 'inventory', perm: 'inventory:view' },
-            { key: 'purchasing', perm: 'inventory:view' },
             { key: 'hms', perm: 'hms:view' },
             { key: 'hr', perm: 'hr:view' },
-            { key: 'finance', perm: 'accounting:view' },
             { key: 'accounting', perm: 'accounting:view' },
+            { key: 'finance', perm: 'accounting:view' }, // Fallback
+            { key: 'purchasing', perm: 'inventory:view' }, // Fallback
             { key: 'projects', perm: 'crm:view' }
         ];
 
         for (const m of modulesToSecure) {
+            // Apply to whatever items remain (remapped or not)
             await prisma.menu_items.updateMany({
                 where: {
                     module_key: m.key,
@@ -527,7 +545,7 @@ export async function auditAndFixMenuPermissions() {
             });
         }
 
-        // REPORTS: Ensure valid permission (Do NOT Delete as per user request)
+        // 4. REPORTS (Safe Update)
         await prisma.menu_items.updateMany({
             where: { module_key: 'reports', permission_code: null },
             data: { permission_code: 'system:view' }
