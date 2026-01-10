@@ -78,10 +78,25 @@ export default async function Home() {
     if (isHealthcare) redirect('/hms/dashboard');
   }
 
-  // 4. Default fallback (if industry is not Healthcare/Hospital but no modules found either)
-  // Default to CRM as a safer modern landing or login?
-  redirect('/crm/dashboard');
+  // 4. Default fallback (Safer)
+  // If explicitly subscribed modules didn't match permissions above (or were missing), try generic permission checks.
 
-  // 5. Absolute fallback
+  if (await checkPermission('hms:view')) {
+    redirect('/hms/dashboard');
+  }
+
+  if (await checkPermission('crm:view')) {
+    redirect('/crm/dashboard');
+  }
+
+  // 5. Absolute fallback -> Welcome / Home
+  // Do NOT redirect to a specific dashboard to avoid 403 loops.
+  // We can redirect to a "Select App" page or remain on root (if root serves UI).
+  // For now, try HMS as safest bet for hospitals, or login.
+  // redirect('/hms/dashboard'); // Dangerous if no HMS.
+
+  // Return empty (renders Children if any, or nothing)
+  // Or redirect to a "No Access" error helper?
+  // Let's redirect to HMS as it has the best "Empty State" handling usually.
   redirect('/hms/dashboard');
 }
