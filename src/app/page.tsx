@@ -62,12 +62,15 @@ export default async function Home() {
   // Decision Logic:
   // Prioritize CRM if explicit, then HMS if explicit.
 
-  // 1. If CRM is present, go CRM. 
-  // (We prioritize CRM over HMS because HMS might be a legacy default or mistakenly inferred)
-  if (hasCRM) redirect('/crm/dashboard');
+  // 1. If CRM is present AND User has Access, go CRM.
+  if (hasCRM && await checkPermission('crm:view')) {
+    redirect('/crm/dashboard');
+  }
 
-  // 2. If HMS is present, go HMS.
-  if (hasHMS) redirect('/hms/dashboard');
+  // 2. If HMS is present AND User has Access, go HMS.
+  if (hasHMS && await checkPermission('hms:view')) {
+    redirect('/hms/dashboard');
+  }
 
   // 3. Fallback based on Industry (Legacy behavior)
   // Only if NO specific module is found in DB.
