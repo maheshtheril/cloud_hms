@@ -53,7 +53,7 @@ export default async function RolesPage() {
                         </p>
                     </div>
                     <div className="flex gap-3">
-                        {roles.length === 0 && <SeedRolesButton />}
+                        <SeedRolesButton />
                         <Link href="/settings/permissions">
                             <Button variant="outline" className="bg-white/40 border-slate-200/50 hover:bg-white text-slate-700 dark:text-slate-200 dark:bg-slate-900/40 dark:hover:bg-slate-900 backdrop-blur-md">
                                 <Key className="h-4 w-4 mr-2" />
