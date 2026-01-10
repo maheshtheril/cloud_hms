@@ -640,11 +640,31 @@ export async function getUserPermissions(userId: string): Promise<string[]> {
 
         const permissionSet = new Set<string>();
 
-        // 1. Get User's Generic Roles (Previous Logic)
         const userRoles = await prisma.user_role.findMany({
             where: { user_id: userId, tenant_id: tenantId }
         });
         const roleIds = userRoles.map(ur => ur.role_id);
+
+        // 1.5. HYBRID SUPPORT: Check for Legacy String Role in app_user
+        // Many users have 'role' column set (e.g. 'receptionist') but no entry in user_role table.
+        // We must bridge this gap to allow permissions to load.
+        const userRecord = await prisma.app_user.findUnique({
+            where: { id: userId },
+            select: { role: true }
+        });
+
+        if (userRecord?.role) {
+            // Find the role entity that matches this string key
+            const legacyRole = await prisma.role.findFirst({
+                where: {
+                    tenant_id: tenantId,
+                    key: userRecord.role.toLowerCase() // Normalization
+                }
+            });
+            if (legacyRole) {
+                roleIds.push(legacyRole.id);
+            }
+        }
 
         if (roleIds.length > 0) {
             // 2. Fetch Roles (for array-based permissions)

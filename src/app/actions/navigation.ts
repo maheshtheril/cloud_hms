@@ -90,7 +90,23 @@ export async function getMenuItems() {
         // Always allow General and Configuration
         allowedModuleKeys.add('general');
         allowedModuleKeys.add('configuration');
-        // allowedModuleKeys.add('hms'); // REMOVED: Respect Tenant Subscriptions (CRM only should not see HMS)
+
+        // 3. IMPLICIT PERMISSION-BASED MODULE ACCESS (Safety Net)
+        // If a user has permission to view a module, they should see its menu, 
+        // regardless of tenant-level flags (which might be misconfigured).
+        if (userPerms.has('hms:view') || userPerms.has('hms:dashboard:reception') || userPerms.has('hms:dashboard:doctor')) {
+            allowedModuleKeys.add('hms');
+        }
+        if (userPerms.has('crm:view') || userPerms.has('crm:admin')) {
+            allowedModuleKeys.add('crm');
+        }
+        if (userPerms.has('accounting:view') || userPerms.has('finance:view') || userPerms.has('billing:view')) {
+            allowedModuleKeys.add('accounting');
+            allowedModuleKeys.add('finance');
+        }
+        if (userPerms.has('inventory:view') || userPerms.has('purchasing:view') || userPerms.has('pharmacy:view')) {
+            allowedModuleKeys.add('inventory');
+        }
 
         // AUTO-MIGRATION REMOVED
         // We now rely on the 'auditAndFixMenuPermissions' function in RootLayout
@@ -265,7 +281,8 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
     items.push({
         module: { name: 'Health Management', module_key: 'hms' },
         items: [
-            { key: 'hms-dashboard', label: 'Command Center', icon: 'Activity', url: '/hms/dashboard' },
+            { key: 'hms-dashboard', label: 'Command Center', icon: 'Activity', url: '/hms/dashboard', permission_code: 'hms:admin' },
+            { key: 'hms-reception', label: 'Reception', icon: 'Monitor', url: '/hms/reception/dashboard', permission_code: 'hms:dashboard:reception' },
             {
                 key: 'hms-patients',
                 label: 'Patient Care',

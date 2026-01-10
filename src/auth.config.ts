@@ -25,8 +25,8 @@ export const authConfig = {
                     // If trying to access HMS but has no HMS module/industry -> Redirect
                     if (isOnHMS) {
                         // FIX: Explicitly check modules. If user has CRM but NOT HMS, redirect to CRM.
-                        // Independent of industry fallback which might be misleading.
-                        if (user.hasCRM && !user.hasHMS) {
+                        // EXCEPTION: Allow specific sub-dashboards that might be active via RBAC even if module is "off"
+                        if (user.hasCRM && !user.hasHMS && !isReceptionDashboard && !nextUrl.pathname.includes('/hms/doctor') && !nextUrl.pathname.includes('/hms/nursing')) {
                             return Response.redirect(new URL("/crm/dashboard", nextUrl));
                         }
                     }

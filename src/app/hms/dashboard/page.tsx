@@ -10,7 +10,20 @@ export default async function DashboardPage() {
     const companyId = session?.user?.companyId
 
     if (!tenantId || !companyId) {
-        return <div>Unauthorized</div>
+        // Fallback for Receptionists who might be routed here but belong at /hms/reception/dashboard
+        // and might not have a CompanyID assigned yet (Receptionists often work at Tenant Level).
+        if (session?.user?.role === 'receptionist') {
+            const { redirect } = await import('next/navigation');
+            redirect('/hms/reception/dashboard');
+        }
+
+        return (
+            <div className="flex flex-col items-center justify-center h-[60vh] text-slate-500">
+                <div className="text-lg font-semibold mb-2">Setup Required</div>
+                <p>You are logged in, but no default Company is assigned to your account.</p>
+                <p className="text-sm mt-4">Tenant ID: {tenantId || 'Missing'}</p>
+            </div>
+        )
     }
 
     const today = new Date()
