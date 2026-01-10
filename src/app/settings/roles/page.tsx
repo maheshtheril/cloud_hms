@@ -1,4 +1,5 @@
 import { getRoles } from "@/app/actions/role";
+import { auditAndFixMenuPermissions } from "@/app/actions/navigation"; // Import fix
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,6 +11,9 @@ import { RoleActions } from "@/components/settings/role-actions";
 import { RolesList } from "@/components/settings/roles-list";
 
 export default async function RolesPage() {
+    // SELF-HEALING: Run audit on page load to ensure data integrity
+    await auditAndFixMenuPermissions();
+
     const result = await getRoles();
 
     if (result.error) {
