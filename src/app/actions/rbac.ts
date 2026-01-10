@@ -223,6 +223,14 @@ export async function seedRolesAndPermissions() {
                 ]
             },
             {
+                key: 'lab_technician',
+                name: 'Lab Technician',
+                permissions: [
+                    'lab:view', 'lab:create', 'lab:edit',
+                    'hms:view'
+                ]
+            },
+            {
                 key: 'receptionist',
                 name: 'Receptionist',
                 permissions: [
