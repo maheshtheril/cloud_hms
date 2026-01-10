@@ -172,9 +172,41 @@ export async function inviteUser(data: InviteUserData) {
 
         if (data.roleId && data.roleId !== 'no-role') {
             try {
+                // 1. Assign HMS Role (UI)
                 await prisma.hms_user_roles.create({
                     data: { user_id: user.id, role_id: data.roleId }
                 })
+
+                // 2. Sync to Core RBAC (Permissions)
+                const hmsRole = await prisma.hms_role.findUnique({ where: { id: data.roleId } });
+                if (hmsRole) {
+                    const key = hmsRole.name.toLowerCase().replace(/\s+/g, '');
+                    const coreRole = await prisma.role.findFirst({
+                        where: {
+                            tenant_id: session.user.tenantId,
+                            key: key
+                        }
+                    });
+
+                    if (coreRole) {
+                        await prisma.user_role.create({
+                            data: {
+                                user_id: user.id,
+                                role_id: coreRole.id,
+                                tenant_id: session.user.tenantId
+                            }
+                        })
+                    }
+
+                    // Legacy string fallback
+                    if (['receptionist', 'admin', 'doctor', 'nurse'].includes(key)) {
+                        await prisma.app_user.update({
+                            where: { id: user.id },
+                            data: { role: key }
+                        });
+                    }
+                }
+
             } catch (roleError) {
                 console.error("Error assigning role:", roleError);
             }

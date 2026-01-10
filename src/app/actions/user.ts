@@ -146,14 +146,18 @@ export async function getHMSRoles() {
 }
 
 export async function updateUserHMSRoles(userId: string, roleIds: string[]) {
+    const session = await auth()
+    if (!session?.user?.id || !session.user.tenantId) return
+
     // Transaction to safely update roles
     await prisma.$transaction(async (tx) => {
-        // 1. Remove existing roles
+        // 1. HMS ROLES (UI/Display)
+        // Remove existing HMS roles
         await tx.hms_user_roles.deleteMany({
             where: { user_id: userId }
         })
 
-        // 2. Add new roles
+        // Add new HMS roles
         if (roleIds.length > 0) {
             await tx.hms_user_roles.createMany({
                 data: roleIds.map(roleId => ({
@@ -161,6 +165,64 @@ export async function updateUserHMSRoles(userId: string, roleIds: string[]) {
                     role_id: roleId
                 }))
             })
+        }
+
+        // 2. CORE RBAC ROLES (Permissions)
+        // Sync HMS roles to Core RBAC roles to ensuring actual permissions are granted.
+
+        // A. Clear current user_role assignments (for equality)
+        await tx.user_role.deleteMany({
+            where: { user_id: userId, tenant_id: session.user.tenantId }
+        })
+
+        if (roleIds.length > 0) {
+            // Fetch names of selected HMS Roles
+            const hmsRoles = await tx.hms_role.findMany({
+                where: { id: { in: roleIds } }
+            })
+
+            for (const hmsRole of hmsRoles) {
+                // Find matching Core Role (e.g. "Receptionist" -> "receptionist")
+                const coreRoleKey = hmsRole.name.toLowerCase().replace(/\s+/g, '') // "Lab Technician" -> "labtechnician"
+
+                // Allow fuzzy matching commonly used keys
+                let searchKey = coreRoleKey
+                if (coreRoleKey === 'doctor') searchKey = 'doctor'
+                if (coreRoleKey === 'nurse') searchKey = 'nurse'
+                if (coreRoleKey === 'receptionist') searchKey = 'receptionist'
+                if (coreRoleKey === 'pharmacist') searchKey = 'pharmacist'
+
+                const coreRole = await tx.role.findFirst({
+                    where: {
+                        tenant_id: session.user.tenantId,
+                        OR: [
+                            { key: searchKey },
+                            { key: hmsRole.name },
+                            // Fallback for special keys
+                            { key: { contains: searchKey } }
+                        ]
+                    }
+                })
+
+                if (coreRole) {
+                    // Create Link
+                    await tx.user_role.create({
+                        data: {
+                            user_id: userId,
+                            role_id: coreRole.id,
+                            tenant_id: session.user.tenantId!
+                        }
+                    })
+
+                    // Also update legacy string column for extra safety
+                    if (searchKey === 'receptionist' || searchKey === 'admin') {
+                        await tx.app_user.update({
+                            where: { id: userId },
+                            data: { role: searchKey }
+                        })
+                    }
+                }
+            }
         }
     })
 
