@@ -22,11 +22,16 @@ export const metadata: Metadata = {
   description: "World-class Hospital Management & ERP System",
 };
 
-export default function RootLayout({
+import { auditAndFixMenuPermissions } from "@/app/actions/navigation";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // SELF-HEALING: Ensure DB integrity on every page load (temporary fix)
+  await auditAndFixMenuPermissions();
+
   return (
     <html lang="en" suppressHydrationWarning className="dark">
       <body

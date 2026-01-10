@@ -513,6 +513,14 @@ export async function auditAndFixMenuPermissions() {
                 data: { permission_code: m.perm }
             });
         }
+
+        // CLEANUP: Orphan 'Reports' Menu Items
+        try {
+            await prisma.menu_items.deleteMany({
+                where: { module_key: 'reports' }
+            });
+        } catch (ignored) { }
+
         console.log("Self-healing: Menu permissions audited and fixed.");
         return { success: true };
     } catch (error) {
