@@ -24,6 +24,12 @@ export default async function DashboardPage() {
         redirect('/hms/lab/dashboard');
     }
 
+    // SECURITY: Redirect Accountants to Financial Dashboard
+    if (role === 'accountant' || role === 'finance' || name.includes('account') || email.includes('acc')) {
+        const { redirect } = await import('next/navigation');
+        redirect('/hms/accounting');
+    }
+
     const tenantId = session?.user?.tenantId
     const companyId = session?.user?.companyId
 
