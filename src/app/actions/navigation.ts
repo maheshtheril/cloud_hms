@@ -481,7 +481,11 @@ export async function auditAndFixMenuPermissions() {
 
             // STRICT DASHBOARDS
             { key: 'hms-dashboard', perm: 'hms:admin' }, // Main dashboard is for admins
-            { key: 'hms-reception', perm: 'hms:dashboard:reception' } // Explicitly keep reception accessible
+            { key: 'hms-reception', perm: 'hms:dashboard:reception' }, // Explicitly keep reception accessible
+
+            // ATTENDANCE
+            { key: 'hms-attendance', perm: 'attendance:view' },
+            { key: 'crm-attendance', perm: 'attendance:view' } // Or crm:view if preferred, but attendance:view is consistent
         ];
 
         for (const o of specificOverrides) {
