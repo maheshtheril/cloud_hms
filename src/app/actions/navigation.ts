@@ -473,6 +473,19 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
  */
 export async function auditAndFixMenuPermissions() {
     try {
+        // 1. STANDARDIZE MODULE KEYS (Fix Fragmentation)
+        const moduleRemaps = [
+            { old: 'finance', new: 'accounting' },
+            { old: 'sales', new: 'crm' },
+            { old: 'purchasing', new: 'inventory' }
+        ];
+        for (const remap of moduleRemaps) {
+            await prisma.menu_items.updateMany({
+                where: { module_key: remap.old },
+                data: { module_key: remap.new }
+            });
+        }
+
         const specificOverrides = [
             { key: 'crm-targets', perm: 'crm:targets:view' },
             { key: 'crm-pipeline', perm: 'crm:pipeline:view' },
@@ -514,12 +527,11 @@ export async function auditAndFixMenuPermissions() {
             });
         }
 
-        // CLEANUP: Orphan 'Reports' Menu Items
-        try {
-            await prisma.menu_items.deleteMany({
-                where: { module_key: 'reports' }
-            });
-        } catch (ignored) { }
+        // REPORTS: Ensure valid permission (Do NOT Delete as per user request)
+        await prisma.menu_items.updateMany({
+            where: { module_key: 'reports', permission_code: null },
+            data: { permission_code: 'system:view' }
+        });
 
         console.log("Self-healing: Menu permissions audited and fixed.");
         return { success: true };
