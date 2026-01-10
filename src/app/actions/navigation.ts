@@ -480,6 +480,8 @@ export async function auditAndFixMenuPermissions() {
             { key: 'configuration', perm: 'system:admin' }, // Hide Configuration Group
             { key: 'hms-settings', perm: 'hms:admin' },
 
+            { key: 'hms-lab', perm: 'lab:view' }, // Strict Lab Access
+
             // STRICT DASHBOARDS
             { key: 'hms-dashboard', perm: 'hms:admin' }, // Main dashboard is for admins
             { key: 'hms-reception', perm: 'hms:view' }, // Relaxed to ensure visibility
