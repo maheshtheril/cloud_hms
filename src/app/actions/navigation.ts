@@ -486,7 +486,13 @@ export async function auditAndFixMenuPermissions() {
 
             // ATTENDANCE
             { key: 'hms-attendance', perm: 'attendance:view' },
-            { key: 'crm-attendance', perm: 'attendance:view' } // Or crm:view if preferred, but attendance:view is consistent
+            { key: 'crm-attendance', perm: 'attendance:view' }, // Or crm:view if preferred, but attendance:view is consistent
+
+            // CORE CLINICAL (Ensure Granular Access)
+            { key: 'hms-patients', perm: 'patients:view' },
+            { key: 'hms-appointments', perm: 'appointments:view' },
+            { key: 'hms-schedule', perm: 'appointments:view' },
+            { key: 'hms-billing', perm: 'billing:view' }
         ];
 
         for (const o of specificOverrides) {
