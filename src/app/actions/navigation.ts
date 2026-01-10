@@ -484,17 +484,17 @@ export async function auditAndFixMenuPermissions() {
 
             // STRICT DASHBOARDS
             { key: 'hms-dashboard', perm: 'hms:admin' }, // Main dashboard is for admins
-            { key: 'hms-reception', perm: 'hms:view' }, // Relaxed to ensure visibility
+            { key: 'hms-reception', perm: 'hms:dashboard:reception' }, // Strict Reception Access
 
             // ATTENDANCE
-            { key: 'hms-attendance', perm: 'hms:view' },
-            { key: 'crm-attendance', perm: 'hms:view' }, // Or crm:view if preferred, but attendance:view is consistent
+            { key: 'hms-attendance', perm: 'hms:view' }, // Available to all clinical staff
+            { key: 'crm-attendance', perm: 'hms:view' },
 
-            // CORE CLINICAL (Ensure Granular Access)
-            { key: 'hms-patients', perm: 'hms:view' },
-            { key: 'hms-appointments', perm: 'hms:view' },
-            { key: 'hms-schedule', perm: 'hms:view' },
-            { key: 'hms-billing', perm: 'hms:view' }
+            // CORE CLINICAL (Granular Access)
+            { key: 'hms-patients', perm: 'patients:view' },
+            { key: 'hms-appointments', perm: 'appointments:view' },
+            { key: 'hms-schedule', perm: 'appointments:view' },
+            { key: 'hms-billing', perm: 'billing:view' }
         ];
 
         for (const o of specificOverrides) {
