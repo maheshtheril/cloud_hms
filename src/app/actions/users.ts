@@ -361,14 +361,14 @@ export async function getAvailableRoles() {
             select: {
                 id: true,
                 name: true,
-                description: true, // Assuming schema has it, or we handle nulls in UI
+                // description: true, // Field does not exist in Core Role table
             },
             orderBy: { name: 'asc' }
         })
 
         return roles.map(r => ({
             ...r,
-            description: r.description || r.name // Fallback
+            description: r.name // Fallback: Core Role table relies on name/key
         }))
 
     } catch (error) {
