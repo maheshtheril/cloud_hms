@@ -183,23 +183,16 @@ export async function updateUserHMSRoles(userId: string, roleIds: string[]) {
 
             for (const hmsRole of hmsRoles) {
                 // Find matching Core Role (e.g. "Receptionist" -> "receptionist")
-                const coreRoleKey = hmsRole.name.toLowerCase().replace(/\s+/g, '') // "Lab Technician" -> "labtechnician"
-
-                // Allow fuzzy matching commonly used keys
-                let searchKey = coreRoleKey
-                if (coreRoleKey === 'doctor') searchKey = 'doctor'
-                if (coreRoleKey === 'nurse') searchKey = 'nurse'
-                if (coreRoleKey === 'receptionist') searchKey = 'receptionist'
-                if (coreRoleKey === 'pharmacist') searchKey = 'pharmacist'
+                // DYNAMIC MATCHING: Normalize name to key format (e.g. "Lab Technician" -> "labtechnician")
+                const normalizedKey = hmsRole.name.toLowerCase().replace(/[^a-z0-9]/g, '');
 
                 const coreRole = await tx.role.findFirst({
                     where: {
                         tenant_id: session.user.tenantId,
                         OR: [
-                            { key: searchKey },
-                            { key: hmsRole.name },
-                            // Fallback for special keys
-                            { key: { contains: searchKey } }
+                            { key: normalizedKey }, // Exact key match (e.g. 'receptionist')
+                            { key: hmsRole.name.toLowerCase() }, // Direct name-as-key match
+                            { name: { equals: hmsRole.name, mode: 'insensitive' } } // Role Name match
                         ]
                     }
                 })
@@ -214,11 +207,11 @@ export async function updateUserHMSRoles(userId: string, roleIds: string[]) {
                         }
                     })
 
-                    // Also update legacy string column for extra safety
-                    if (searchKey === 'receptionist' || searchKey === 'admin') {
+                    // Legacy string fallback update (Dynamic)
+                    if (['receptionist', 'admin'].includes(normalizedKey)) {
                         await tx.app_user.update({
                             where: { id: userId },
-                            data: { role: searchKey }
+                            data: { role: normalizedKey }
                         })
                     }
                 }
