@@ -222,6 +222,20 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Module Selection</h3>
                                 <p className="text-sm text-gray-500 mb-4">Select the modules relevant to your business.</p>
 
+                                {/* Selected Summary Chips (Always Visible) */}
+                                {formData.modules.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 mb-4 p-3 bg-blue-50/50 rounded-lg border border-blue-100/50">
+                                        {formData.modules.map(key => {
+                                            const mod = modules.find(m => m.module_key === key);
+                                            return (
+                                                <span key={key} className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-1 rounded-full border border-blue-200 flex items-center gap-1">
+                                                    <Check className="w-3 h-3" /> {mod?.name || key.toUpperCase()}
+                                                </span>
+                                            )
+                                        })}
+                                    </div>
+                                )}
+
                                 <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-2">
                                     {modules.filter(m => !['reports', 'system'].includes(m.module_key.toLowerCase())).map(mod => (
                                         <div
