@@ -520,8 +520,16 @@ export async function auditAndFixMenuPermissions() {
             { key: 'crm-masters', perm: 'crm:admin' },
             { key: 'crm-settings', perm: 'crm:admin' },
             { key: 'hms-config', perm: 'hms:admin' },
-            { key: 'accounting-settings', perm: 'accounting:view' }
-        ];
+            { key: 'accounting-settings', perm: 'accounting:view' },
+
+            // PURCHASING & INVENTORY (Granular)
+            { key: 'inv-po', perm: 'purchasing:view' },
+            { key: 'hms-purchasing-orders', perm: 'purchasing:view' },
+            { key: 'inv-returns', perm: 'purchasing:returns:view' },
+            { key: 'hms-purchasing-returns', perm: 'purchasing:returns:view' },
+            { key: 'inv-suppliers', perm: 'suppliers:view' },
+            { key: 'hms-purchasing-suppliers', perm: 'suppliers:view' },
+            { key: 'purch-suppliers', perm: 'suppliers:view' }
 
         for (const o of specificOverrides) {
             await prisma.menu_items.updateMany({
