@@ -304,7 +304,7 @@ export async function ensureHmsMenus() {
             { key: 'hms-reception', label: 'Reception', url: '/hms/reception/dashboard', icon: 'MonitorCheck', sort: 12, permission: 'hms:dashboard:reception' },
             { key: 'hms-patients', label: 'Patients', url: '/hms/patients', icon: 'UserCircle', sort: 20, permission: 'patients:view' },
             { key: 'hms-appointments', label: 'Appointments', url: '/hms/appointments', icon: 'Calendar', sort: 30, permission: 'appointments:view' },
-            { key: 'hms-doctors', label: 'Doctors', url: '/hms/doctors', icon: 'Stethoscope', sort: 40, permission: 'prescriptions:view' },
+            { key: 'hms-doctors', label: 'Doctors', url: '/hms/doctors', icon: 'Stethoscope', sort: 40, permission: 'hms:admin' },
             { key: 'hms-doctor-dash', label: 'Doctor Dashboard', url: '/hms/doctor/dashboard', icon: 'AppWindow', sort: 41, permission: 'hms:dashboard:doctor' },
             { key: 'hms-nursing', label: 'Nursing Station', url: '/hms/nursing/dashboard', icon: 'Activity', sort: 45, permission: 'hms:dashboard:nurse' },
             { key: 'hms-lab', label: 'Laboratory', url: '/hms/lab/dashboard', icon: 'FlaskConical', sort: 46, permission: 'hms:view' },
