@@ -40,7 +40,7 @@ export default async function ReceptionDashboardPage() {
 
         // 2. Fetch Patients (for selection)
         prisma.hms_patient.findMany({
-            where: {}, // GLOBAL FAILSAFE
+            where: { tenant_id: tenantId }, // STRICT TENANT SCOPE
             take: 100, // Limit for dropdown performance
             orderBy: { updated_at: 'desc' },
             select: {
@@ -57,7 +57,8 @@ export default async function ReceptionDashboardPage() {
         // 3. Fetch Doctors
         prisma.hms_clinicians.findMany({
             where: {
-                is_active: true
+                is_active: true,
+                tenant_id: tenantId // STRICT TENANT SCOPE
             },
             select: {
                 id: true,
