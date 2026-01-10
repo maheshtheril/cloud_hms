@@ -634,6 +634,16 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             return
         }
 
+        // Strict validation: Walk-in customers CANNOT have credit sales (must pay full amount)
+        if (isWalkIn && balanceDue > 1) {
+            toast({
+                title: "Payment Required",
+                description: "Walk-in customers must pay the full amount immediately. Credit sales are not allowed for guests.",
+                variant: "destructive"
+            });
+            return;
+        }
+
         setLoading(true)
 
         // Metadata for Walk-in
