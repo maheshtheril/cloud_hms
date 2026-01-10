@@ -165,7 +165,28 @@ export async function GET() {
             });
         }
         // 5. ENFORCE PERMISSIONS (World Class Security)
-        // Assign generic 'view' permissions to items that are currently NULL
+
+        // 5a. Specific Granular Overrides (Precision Control)
+        const specificOverrides = [
+            { key: 'crm-targets', perm: 'crm:targets:view' },
+            { key: 'crm-pipeline', perm: 'crm:pipeline:view' },
+            { key: 'crm-scheduler', perm: 'crm:scheduler:view' },
+            { key: 'crm-activities', perm: 'crm:activities:view' },
+            { key: 'crm-contacts', perm: 'crm:contacts:view' },
+            { key: 'crm-accounts', perm: 'crm:accounts:view' },
+            { key: 'crm-leads', perm: 'leads:view' },
+            { key: 'crm-deals', perm: 'deals:view' },
+            { key: 'crm-reports', perm: 'crm:reports' }
+        ];
+
+        for (const o of specificOverrides) {
+            await prisma.menu_items.updateMany({
+                where: { key: o.key },
+                data: { permission_code: o.perm }
+            });
+        }
+
+        // 5b. Fallback: Assign generic 'view' permissions to items that are currently NULL
         const modulesToSecure = [
             { key: 'crm', perm: 'crm:view' },
             { key: 'sales', perm: 'crm:view' }, // Sales uses CRM view usually

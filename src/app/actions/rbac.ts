@@ -75,6 +75,14 @@ const STANDARD_PERMISSIONS = [
     { code: 'deals:create', name: 'Create Deals', module: 'CRM' },
     { code: 'deals:edit', name: 'Edit Deals', module: 'CRM' },
 
+    // CRM - Expanded Granular Permissions
+    { code: 'crm:targets:view', name: 'View Targets', module: 'CRM' },
+    { code: 'crm:pipeline:view', name: 'View Pipeline', module: 'CRM' },
+    { code: 'crm:scheduler:view', name: 'View Scheduler', module: 'CRM' },
+    { code: 'crm:activities:view', name: 'View Activities', module: 'CRM' },
+    { code: 'crm:contacts:view', name: 'View Contacts', module: 'CRM' },
+    { code: 'crm:accounts:view', name: 'View Accounts', module: 'CRM' },
+
     // Inventory
     { code: 'inventory:view', name: 'View Inventory', module: 'Inventory' },
     { code: 'inventory:create', name: 'Create Inventory', module: 'Inventory' },
