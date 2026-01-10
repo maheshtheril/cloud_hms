@@ -502,8 +502,9 @@ export async function auditAndFixMenuPermissions() {
             }
         }
 
-        // 2. SPECIFIC OVERRIDES (Granular Control)
+        // 2. SPECIFIC OVERRIDES (Granular Control & Configuration Security)
         const specificOverrides = [
+            // CRM Granular
             { key: 'crm-targets', perm: 'crm:targets:view' },
             { key: 'crm-pipeline', perm: 'crm:pipeline:view' },
             { key: 'crm-scheduler', perm: 'crm:scheduler:view' },
@@ -512,7 +513,14 @@ export async function auditAndFixMenuPermissions() {
             { key: 'crm-accounts', perm: 'crm:accounts:view' },
             { key: 'crm-leads', perm: 'leads:view' },
             { key: 'crm-deals', perm: 'deals:view' },
-            { key: 'crm-reports', perm: 'crm:reports' }
+            { key: 'crm-reports', perm: 'crm:reports' },
+
+            // CONFIGURATION SECURITY (Fix "Show to All" Issue)
+            // Ensure these settings items require specific module permissions
+            { key: 'crm-masters', perm: 'crm:admin' },
+            { key: 'crm-settings', perm: 'crm:admin' },
+            { key: 'hms-config', perm: 'hms:admin' },
+            { key: 'accounting-settings', perm: 'accounting:view' }
         ];
 
         for (const o of specificOverrides) {
