@@ -53,7 +53,7 @@ export async function ensureAccountingMenu() {
                     label: 'Financial Dashboard',
                     url: '/hms/accounting',
                     key: dashKey,
-                    module_key: 'accounting',
+                    module_key: 'finance',
                     icon: 'LayoutDashboard',
                     sort_order: 1, // First item
                     is_global: true
@@ -63,7 +63,7 @@ export async function ensureAccountingMenu() {
         } else if (existingDash.url !== '/hms/accounting') {
             await prisma.menu_items.update({
                 where: { id: existingDash.id },
-                data: { url: '/hms/accounting', module_key: 'accounting' }
+                data: { url: '/hms/accounting', module_key: 'finance' }
             });
         }
 
@@ -84,14 +84,14 @@ async function ensurePaymentMenus() {
     let custParent = await prisma.menu_items.findFirst({ where: { key: 'acc-customers' } });
     if (!custParent) {
         custParent = await prisma.menu_items.create({
-            data: { label: 'Customers', url: '#', key: 'acc-customers', module_key: 'accounting', icon: 'Users', sort_order: 10, is_global: true }
+            data: { label: 'Customers', url: '#', key: 'acc-customers', module_key: 'finance', icon: 'Users', sort_order: 10, is_global: true }
         });
     }
 
     const receiptMenu = await prisma.menu_items.findFirst({ where: { key: 'acc-receipts' } });
     if (!receiptMenu) {
         await prisma.menu_items.create({
-            data: { label: 'Receipts', url: '/accounting/customer/receipts', key: 'acc-receipts', module_key: 'accounting', icon: 'ArrowDownLeft', parent_id: custParent.id, sort_order: 20, is_global: true }
+            data: { label: 'Receipts', url: '/accounting/customer/receipts', key: 'acc-receipts', module_key: 'finance', icon: 'ArrowDownLeft', parent_id: custParent.id, sort_order: 20, is_global: true }
         });
     }
 
@@ -99,14 +99,14 @@ async function ensurePaymentMenus() {
     let vendParent = await prisma.menu_items.findFirst({ where: { key: 'acc-vendors' } });
     if (!vendParent) {
         vendParent = await prisma.menu_items.create({
-            data: { label: 'Vendors', url: '#', key: 'acc-vendors', module_key: 'accounting', icon: 'Truck', sort_order: 20, is_global: true }
+            data: { label: 'Vendors', url: '#', key: 'acc-vendors', module_key: 'finance', icon: 'Truck', sort_order: 20, is_global: true }
         });
     }
 
     const paymentMenu = await prisma.menu_items.findFirst({ where: { key: 'acc-payments' } });
     if (!paymentMenu) {
         await prisma.menu_items.create({
-            data: { label: 'Payments', url: '/accounting/vendor/payments', key: 'acc-payments', module_key: 'accounting', icon: 'ArrowUpRight', parent_id: vendParent.id, sort_order: 20, permission_code: 'billing:view', is_global: true }
+            data: { label: 'Payments', url: '/accounting/vendor/payments', key: 'acc-payments', module_key: 'finance', icon: 'ArrowUpRight', parent_id: vendParent.id, sort_order: 20, permission_code: 'billing:view', is_global: true }
         });
     }
 
@@ -114,7 +114,7 @@ async function ensurePaymentMenus() {
     // This catches 'acc-vendors' (created above) and any others missed.
     await prisma.menu_items.updateMany({
         where: {
-            module_key: 'accounting',
+            module_key: 'finance',
             permission_code: null
         },
         data: { permission_code: 'billing:view' }
@@ -136,7 +136,7 @@ async function ensureJournalMenu() {
                     label: 'General Ledger',
                     url: '#',
                     key: 'acc-ledger',
-                    module_key: 'accounting',
+                    module_key: 'finance',
                     icon: 'Book',
                     sort_order: 30, // Positioned after Sales/Purchases
                     permission_code: 'billing:view',
@@ -159,7 +159,7 @@ async function ensureJournalMenu() {
                     label: 'Journal Entries',
                     url: '/accounting/journals',
                     key: 'acc-journals',
-                    module_key: 'accounting',
+                    module_key: 'finance',
                     icon: 'BookOpen',
                     parent_id: ledgerParent.id,
                     sort_order: 10,
@@ -183,7 +183,7 @@ async function ensureJournalMenu() {
                     label: 'Chart of Accounts',
                     url: '/accounting/coa',
                     key: 'acc-coa',
-                    module_key: 'accounting',
+                    module_key: 'finance',
                     icon: 'ListTree',
                     parent_id: ledgerParent.id,
                     sort_order: 5, // Before Journals
@@ -493,7 +493,7 @@ export async function ensurePurchasingMenus() {
         // Move 'hms-accounting' to 'accounting' module
         await prisma.menu_items.updateMany({
             where: { key: 'hms-accounting' },
-            data: { module_key: 'accounting', sort_order: 10 }
+            data: { module_key: 'finance', sort_order: 10 }
         });
         // Ensure children follow (module_key is usually denormalized on parent, but good to be safe)
         const hmsAcc = await prisma.menu_items.findFirst({ where: { key: 'hms-accounting' } });
