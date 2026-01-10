@@ -669,7 +669,7 @@ export async function createQuickPatient(name: string, phone: string) {
                 first_name: firstName,
                 last_name: lastName,
                 patient_number: patientNumber,
-                email: null,
+
                 gender: 'unknown',
                 dob: new Date(), // Default to today/unknown
                 contact: { phone: phone, address: 'Walk-in' },
