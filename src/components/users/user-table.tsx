@@ -17,7 +17,7 @@ interface User {
     is_active: boolean | null
     created_at: Date | null
     hms_user_roles?: Array<{
-        id: string
+        id?: string // Made optional as we might assign it purely for UI structure
         hms_role: {
             id: string
             name: string
