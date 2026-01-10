@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
-import { getUserPermissions } from "./rbac"
+import { getUserPermissions, seedRolesAndPermissions } from "./rbac"
 import { ensureAdminMenus } from "@/lib/menu-seeder"
 
 export async function getMenuItems() {
@@ -220,11 +220,11 @@ export async function getMenuItems() {
         /*
         const fallback = getFallbackMenuItems(isAdmin);
         const coreKeys = ['accounting', 'inventory', 'crm', 'hms'];
-
+ 
         coreKeys.forEach(key => {
             // KEY FIX: Only consider injection if the module is in allowedModuleKeys
             if (!allowedModuleKeys.has(key)) return;
-
+ 
             const exists = result.find(g => g.module?.module_key === key);
             if (!exists) {
                 const fallbackGroup = fallback.find((g: any) => g.module?.module_key === key);
@@ -392,6 +392,10 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
  */
 export async function auditAndFixMenuPermissions() {
     try {
+        // -1. ENSURE PERMISSIONS EXIST
+        // Run seed check to register any missing permission codes (like 'hms:dashboard:reception')
+        await seedRolesAndPermissions();
+
         // 0. CHECK REAL MODULES (User Request)
         // We first understand what modules actually exist in the DB to avoid invalid remapping.
         const allModules = await prisma.modules.findMany({ select: { module_key: true } });
