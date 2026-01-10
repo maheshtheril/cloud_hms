@@ -6,6 +6,14 @@ import { ensureHmsMenus } from "@/lib/menu-seeder"
 export default async function DashboardPage() {
     await ensureHmsMenus()
     const session = await auth()
+
+    // SECURITY: Redirect Receptionists to their dedicated dashboard
+    // This prevents them from "landing" on the Admin dashboard even if they have hms:view permission
+    if (session?.user?.role === 'receptionist' || session?.user?.name?.toLowerCase().includes('reception')) {
+        const { redirect } = await import('next/navigation');
+        redirect('/hms/reception/dashboard');
+    }
+
     const tenantId = session?.user?.tenantId
     const companyId = session?.user?.companyId
 
