@@ -530,6 +530,7 @@ export async function auditAndFixMenuPermissions() {
             { key: 'inv-suppliers', perm: 'suppliers:view' },
             { key: 'hms-purchasing-suppliers', perm: 'suppliers:view' },
             { key: 'purch-suppliers', perm: 'suppliers:view' }
+        ];
 
         for (const o of specificOverrides) {
             await prisma.menu_items.updateMany({
