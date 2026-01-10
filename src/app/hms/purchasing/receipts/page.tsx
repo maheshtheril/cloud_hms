@@ -24,6 +24,7 @@ export default function PurchaseReceiptsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [selectedReceiptId, setSelectedReceiptId] = useState<string | null>(null);
 
     async function load() {
         setIsLoading(true);
@@ -141,7 +142,10 @@ export default function PurchaseReceiptsPage() {
                             {filteredReceipts.map((receipt) => (
                                 <div
                                     key={receipt.id}
-                                    onClick={() => router.push(`/hms/purchasing/receipts/${receipt.id}`)}
+                                    onClick={() => {
+                                        setSelectedReceiptId(receipt.id);
+                                        setIsDialogOpen(true);
+                                    }}
                                     className="grid grid-cols-12 gap-4 px-6 py-4 bg-card hover:bg-muted/50 transition-all rounded-xl border border-border items-center group cursor-pointer shadow-sm hover:shadow-md"
                                 >
                                     <div className="col-span-2 font-mono text-sm text-indigo-500 font-medium group-hover:text-indigo-600 dark:text-indigo-400 dark:group-hover:text-indigo-300">
@@ -177,9 +181,14 @@ export default function PurchaseReceiptsPage() {
 
             <ReceiptEntryDialog
                 isOpen={isDialogOpen}
-                onClose={() => setIsDialogOpen(false)}
+                onClose={() => {
+                    setIsDialogOpen(false);
+                    setSelectedReceiptId(null);
+                }}
+                viewReceiptId={selectedReceiptId}
                 onSuccess={() => {
                     setIsDialogOpen(false);
+                    setSelectedReceiptId(null);
                     load();
                 }}
             />

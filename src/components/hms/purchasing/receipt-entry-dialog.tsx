@@ -17,7 +17,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { SearchableSelect, type Option } from "@/components/ui/searchable-select";
 import { Toaster } from "@/components/ui/toaster";
 import { getSuppliersList, getProductsPremium, getProduct, findOrCreateProduct } from "@/app/actions/inventory";
-import { getPendingPurchaseOrders, createPurchaseReceipt, getPurchaseOrder } from "@/app/actions/receipt";
+import { getPendingPurchaseOrders, createPurchaseReceipt, getPurchaseOrder, getPurchaseReceipt, updatePurchaseReceipt } from "@/app/actions/receipt";
 import { motion } from "framer-motion";
 import { getCompanyDetails } from "@/app/actions/purchase";
 import { scanInvoiceFromUrl as scanInvoiceAction } from "@/app/actions/scan-invoice";
@@ -64,11 +64,12 @@ interface ReceiptEntryDialogProps {
     isOpen: boolean;
     onClose: () => void;
     onSuccess?: () => void;
+    viewReceiptId?: string | null;
 }
 
 const TAX_OPTIONS = [0, 5, 12, 18, 28];
 
-export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryDialogProps) {
+export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }: ReceiptEntryDialogProps) {
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isProductCreationOpen, setProductCreationOpen] = useState(false);
@@ -143,6 +144,75 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
         const rounded = Math.round(rawTotal);
         setRoundOff(Number((rounded - rawTotal).toFixed(2)));
     }, [items, isAutoRound]);
+
+
+    // Load Existing Receipt for Viewing/Editing
+    useEffect(() => {
+        if (!isOpen) return;
+
+        if (viewReceiptId) {
+            async function loadReceipt() {
+                setIsSubmitting(true);
+                try {
+                    const res = await getPurchaseReceipt(viewReceiptId!) as any;
+                    if (res.success && res.data) {
+                        const r = res.data;
+                        setSupplierId(r.supplierId);
+                        setSupplierName(r.supplierName);
+                        // Fetch supplier meta for GSTIN
+                        // const supDetails = await getSupplier(r.supplierId) ... // Optional optimization
+
+                        setReceivedDate(new Date(r.date).toISOString().split('T')[0]);
+                        setReference(r.reference);
+                        setNotes(r.notes);
+                        setAttachmentUrl(r.attachmentUrl);
+                        setMode('direct'); // Load as direct for now, or check for PO link
+
+                        // Map Items
+                        const mappedItems = r.items.map((i: any) => ({
+                            productId: i.productId,
+                            productName: i.productName,
+                            poLineId: i.poLineId,
+                            orderedQty: 0,
+                            pendingQty: 0,
+                            receivedQty: i.qty,
+                            unitPrice: i.unitPrice,
+                            batch: i.batch,
+                            expiry: i.expiry,
+                            mrp: i.mrp,
+                            salePrice: i.salePrice,
+                            marginPct: i.marginPct,
+                            markupPct: i.markupPct,
+                            pricingStrategy: i.pricingStrategy,
+                            mrpDiscountPct: i.mrpDiscountPct,
+                            taxRate: i.taxRate,
+                            taxAmount: i.taxAmount || 0, // Will recalculate anyway
+                            hsn: i.hsn,
+                            packing: i.pack,
+                            uom: '',
+                            schemeDiscount: 0,
+                            discountPct: 0,
+                            discountAmt: 0,
+                            freeQty: 0
+                        }));
+
+                        // Recalculate totals to be safe
+                        const recalcItems = mappedItems.map((i: any) => updateLineItemCalcs(i));
+                        setItems(recalcItems);
+                    }
+                } catch (e) {
+                    console.error(e);
+                    toast({ title: "Error", description: "Failed to load receipt details", variant: "destructive" });
+                } finally {
+                    setIsSubmitting(false);
+                }
+            }
+            loadReceipt();
+        } else {
+            // Reset for New Entry
+            resetForm();
+        }
+    }, [isOpen, viewReceiptId]);
 
     // Force Re-calculation mechanism to ensure derived values are correct
 
@@ -530,6 +600,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
             notes,
             attachmentUrl,
             items: items.map(i => ({
+                id: (i as any).id, // Pass ID for updates helps tracking
                 productId: i.productId,
                 poLineId: i.poLineId,
                 qtyReceived: i.receivedQty,
@@ -551,7 +622,13 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
             }))
         } as any;
 
-        const res = await createPurchaseReceipt(payload) as any;
+        let res;
+        if (viewReceiptId) {
+            res = await updatePurchaseReceipt(viewReceiptId, payload) as any;
+        } else {
+            res = await createPurchaseReceipt(payload) as any;
+        }
+
         if (res.error) {
             toast({ title: "Error", description: res.error, variant: "destructive" });
         } else if (res.warning) {
@@ -559,7 +636,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
             onSuccess?.();
             onClose();
         } else {
-            toast({ title: "Success", description: "Goods received successfully." });
+            toast({ title: "Success", description: viewReceiptId ? "Receipt updated successfully." : "Goods received successfully." });
             onSuccess?.();
             onClose();
         }
@@ -640,9 +717,11 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                         </div>
                         <div>
                             <DialogTitle className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-                                New Purchase Entry
+                                {viewReceiptId ? 'Purchase Receipt Details' : 'New Purchase Entry'}
                             </DialogTitle>
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">Record Supplier Stock Inward</p>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-black">
+                                {viewReceiptId ? 'Review Inward Stock Record' : 'Record Supplier Stock Inward'}
+                            </p>
                         </div>
                     </div>
 
@@ -1195,7 +1274,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                             disabled={items.length === 0 || isSubmitting || (scannedTotal > 0 && Math.abs(scannedTotal - netTotal) > 0.01)}
                             onClick={handleSubmit}
                         >
-                            {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Confirm & Post Entry <ArrowRight className="ml-2 w-5 h-5" /></>}
+                            {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> :
+                                viewReceiptId ? <>Save Changes <ArrowRight className="ml-2 w-5 h-5" /></> :
+                                    <>Confirm & Post Entry <ArrowRight className="ml-2 w-5 h-5" /></>}
                         </Button>
                     </div>
                 </div>
