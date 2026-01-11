@@ -4,13 +4,13 @@ import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, X, Loader2, CreditCard, Banknote, Smartphone, Landmark, MessageCircle, Maximize2, Minimize2, Check, Send, CheckCircle2 } from 'lucide-react'
-import { createInvoice, updateInvoice, getPatientBalance, createQuickPatient } from '@/app/actions/billing'
+import { createInvoice, updateInvoice, getPatientBalance, createQuickPatient, settlePatientDues } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { useToast } from '@/components/ui/use-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 
 export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice, onClose }: {
     patients: any[],
@@ -40,6 +40,11 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     const [quickPatientName, setQuickPatientName] = useState('')
     const [quickPatientPhone, setQuickPatientPhone] = useState('')
     const [isCreatingPatient, setIsCreatingPatient] = useState(false)
+
+    // Settlement State
+    const [isSettleDialogOpen, setIsSettleDialogOpen] = useState(false)
+    const [settleAmount, setSettleAmount] = useState(0)
+    const [settleMethod, setSettleMethod] = useState('cash')
 
     // Walk-in State (No Patient Record)
     const [isWalkIn, setIsWalkIn] = useState(false)
@@ -606,6 +611,42 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
         }))
     }
 
+    const handleSettleDues = async () => {
+        if (!selectedPatientId) return;
+        setLoading(true);
+        try {
+            const res = await settlePatientDues(selectedPatientId, settleAmount, settleMethod);
+            if (res.success) {
+                toast({
+                    title: "Dues Settled",
+                    description: `Successfully settled ${res.settled} invoice(s).`
+                });
+                setIsSettleDialogOpen(false);
+                // Refresh balance
+                if (selectedPatientId) {
+                    getPatientBalance(selectedPatientId).then(res => {
+                        if (res.success && res.rawBalance !== undefined) {
+                            setPatientBalance({ amount: res.balance, type: res.type as any });
+                        }
+                    });
+                }
+            } else {
+                toast({ title: "Error", description: res.error, variant: "destructive" });
+            }
+        } catch (error) {
+            console.error(error);
+            toast({ title: "Error", description: "Failed to settle dues.", variant: "destructive" });
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    // ... (rest of component logic)
+
+    // INJECT DIALOG AFTER RETURN
+    // (We will use replace_file_content to append the dialog code)
+
+
     const handleSave = async (status: 'draft' | 'posted' | 'paid') => {
         if (!isWalkIn && !selectedPatientId) {
             toast({
@@ -1047,15 +1088,30 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
 
                                 {/* SHOW PREVIOUS DUES (If Any) */}
                                 {patientBalance && patientBalance.type === 'due' && patientBalance.amount > 0 && (
-                                    <div className="flex items-center justify-between bg-red-50 dark:bg-red-900/10 p-2 rounded-md border border-red-100 dark:border-red-800 mb-2">
+                                    <div className="flex items-center justify-between bg-red-50 dark:bg-red-900/10 p-2 rounded-md border border-red-100 dark:border-red-800 mb-2 animate-in slide-in-from-top-1">
                                         <div className="flex items-center gap-1.5">
                                             <div className="bg-red-100 dark:bg-red-900/30 p-1 rounded-full">
                                                 <CreditCard className="h-3 w-3 text-red-600 dark:text-red-400" />
                                             </div>
-                                            <span className="text-[10px] font-medium text-red-700 dark:text-red-300">
-                                                Previous Dues: <span className="font-bold">₹{patientBalance.amount.toFixed(2)}</span>
-                                            </span>
+                                            <div className="flex flex-col">
+                                                <span className="text-[10px] font-bold text-red-700 dark:text-red-300">
+                                                    Previous Outstanding
+                                                </span>
+                                                <span className="text-[10px] text-red-600/80">
+                                                    Total: <span className="font-bold">₹{patientBalance.amount.toFixed(2)}</span>
+                                                </span>
+                                            </div>
                                         </div>
+                                        <button
+                                            onClick={() => {
+                                                // Open Settle Dialog
+                                                setSettleAmount(patientBalance.amount);
+                                                setIsSettleDialogOpen(true);
+                                            }}
+                                            className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded shadow-sm transition-all"
+                                        >
+                                            Settle Now
+                                        </button>
                                     </div>
                                 )}
 
@@ -1286,6 +1342,59 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                 <>
                                     <Check className="w-4 h-4 mr-2" /> Use this Patient
                                 </>}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Settle Dues Dialog */}
+            <Dialog open={isSettleDialogOpen} onOpenChange={setIsSettleDialogOpen}>
+                <DialogContent className="sm:max-w-[400px] z-[60]">
+                    <DialogHeader>
+                        <DialogTitle>Settle Outstanding Dues</DialogTitle>
+                        <DialogDescription>
+                            Enter the amount you are collecting from the patient to settle previous debts.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-4 py-4">
+                        <div className="flex flex-col gap-2">
+                            <Label className="text-xs">Amount to Collect</Label>
+                            <div className="relative">
+                                <span className="absolute left-3 top-2 text-slate-500 font-bold">₹</span>
+                                <Input
+                                    type="number"
+                                    value={settleAmount}
+                                    onChange={(e) => setSettleAmount(Number(e.target.value))}
+                                    className="pl-8 text-lg font-bold"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                            <Label className="text-xs">Payment Method</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    onClick={() => setSettleMethod('cash')}
+                                    className={`py-2 text-xs font-bold rounded border ${settleMethod === 'cash' ? 'bg-emerald-50 border-emerald-500 text-emerald-700' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+                                >
+                                    CASH
+                                </button>
+                                <button
+                                    onClick={() => setSettleMethod('upi')}
+                                    className={`py-2 text-xs font-bold rounded border ${settleMethod === 'upi' ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'bg-slate-50 border-slate-200 text-slate-600'}`}
+                                >
+                                    UPI / GPAY
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            onClick={handleSettleDues}
+                            disabled={loading || settleAmount <= 0}
+                            className={`w-full font-bold ${settleMethod === 'cash' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                        >
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                            Confirm Selection
                         </Button>
                     </DialogFooter>
                 </DialogContent>
