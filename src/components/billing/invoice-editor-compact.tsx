@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, X, Loader2, CreditCard, Banknote, Smartphone, Landmark, MessageCircle, Maximize2, Minimize2, Check } from 'lucide-react'
+import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, X, Loader2, CreditCard, Banknote, Smartphone, Landmark, MessageCircle, Maximize2, Minimize2, Check, Send, CheckCircle2 } from 'lucide-react'
 import { createInvoice, updateInvoice, getPatientBalance, createQuickPatient } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { useToast } from '@/components/ui/use-toast'
@@ -1088,98 +1088,105 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                 )}
                             </div>
 
-                            <div className="flex gap-2 mb-2">
-                                <button
-                                    onClick={() => setPayments([])}
-                                    title="Clear all payments (Credit Sale)"
-                                    className="flex-1 text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1.5 rounded font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                                >
-                                    Pay Later
-                                </button>
-                                <button
-                                    onClick={() => setPayments([{ method: 'cash', amount: grandTotal, reference: '' }])}
-                                    title="Paid Full Cash"
-                                    className="flex-1 text-[10px] bg-emerald-50 dark:bg-emerald-900/10 text-emerald-700 dark:text-emerald-400 px-2 py-1.5 rounded font-bold border border-emerald-100 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-colors"
-                                >
-                                    Paid Cash
-                                </button>
-                                <button
-                                    onClick={() => setPayments([{ method: 'upi', amount: grandTotal, reference: '' }])}
-                                    title="Paid Full UPI"
-                                    className="flex-1 text-[10px] bg-indigo-50 dark:bg-indigo-900/10 text-indigo-700 dark:text-indigo-400 px-2 py-1.5 rounded font-bold border border-indigo-100 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/20 transition-colors"
-                                >
-                                    Paid UPI
-                                </button>
-                            </div>
+                            {/* World-Standard Payment Controller */}
+                            <div className="flex flex-col gap-3">
+                                <div className="p-1 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-between border border-slate-200 dark:border-slate-700">
+                                    <button
+                                        onClick={() => setPayments([{ method: 'cash', amount: grandTotal, reference: '' }])}
+                                        className={`flex-1 py-1.5 text-[11px] font-bold rounded px-2 transition-all ${payments.length > 0 && payments[0].amount >= grandTotal && payments.length === 1 ? 'bg-white shadow-sm text-emerald-600 dark:bg-slate-700 dark:text-emerald-400' : 'text-slate-500 hover:text-slate-700'}`}
+                                    >
+                                        Pay Now
+                                    </button>
+                                    <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1" />
+                                    <button
+                                        onClick={() => setPayments([])}
+                                        className={`flex-1 py-1.5 text-[11px] font-bold rounded px-2 transition-all ${payments.length === 0 ? 'bg-white shadow-sm text-indigo-600 dark:bg-slate-700 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700'}`}
+                                    >
+                                        Pay Later
+                                    </button>
+                                    <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1" />
+                                    <button
+                                        onClick={() => {
+                                            if (payments.length <= 1) {
+                                                setPayments([
+                                                    { method: 'cash', amount: grandTotal > 0 ? grandTotal / 2 : 0, reference: '' },
+                                                    { method: 'upi', amount: grandTotal > 0 ? grandTotal / 2 : 0, reference: '' }
+                                                ]);
+                                            }
+                                        }}
+                                        className={`flex-1 py-1.5 text-[11px] font-bold rounded px-2 transition-all ${payments.length > 1 ? 'bg-white shadow-sm text-blue-600 dark:bg-slate-700 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700'}`}
+                                    >
+                                        Split
+                                    </button>
+                                </div>
 
-                            <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
-                                {payments.map((p, idx) => (
-                                    <div key={idx} className="flex items-center gap-2 group">
-                                        <div className="flex-1 flex items-center bg-white dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-700 focus-within:ring-2 ring-indigo-500/20 focus-within:border-indigo-400 transition-all shadow-sm">
-                                            <div className="pl-2 pr-1 text-slate-400">
-                                                {p.method === 'cash' && <Banknote className="h-3.5 w-3.5" />}
-                                                {p.method === 'card' && <CreditCard className="h-3.5 w-3.5" />}
-                                                {p.method === 'upi' && <Smartphone className="h-3.5 w-3.5" />}
-                                                {p.method === 'bank_transfer' && <Landmark className="h-3.5 w-3.5" />}
-                                                {p.method === 'advance' && <User className="h-3.5 w-3.5" />}
-                                            </div>
-                                            <select
-                                                className="text-xs bg-transparent border-none outline-none w-full py-2 font-medium text-slate-700 dark:text-slate-200 h-8"
-                                                value={p.method}
-                                                onChange={(e) => {
-                                                    const newPayments = [...payments]
-                                                    newPayments[idx].method = e.target.value as any
-                                                    setPayments(newPayments)
-                                                }}
-                                            >
-                                                <option value="cash">Cash</option>
-                                                <option value="card">Card</option>
-                                                <option value="upi">UPI / GPay</option>
-                                                <option value="bank_transfer">Bank Transfer</option>
-                                                <option value="advance">Use Customer Credit / Advance</option>
-                                            </select>
-                                        </div>
-
-                                        <div className="relative">
-                                            <span className="absolute left-2.5 top-2 text-[10px] text-slate-400 pointer-events-none">₹</span>
-                                            <input
-                                                type="number"
-                                                className="w-28 text-sm text-right bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md pl-5 pr-3 py-1.5 outline-none focus:ring-2 ring-emerald-500/20 focus:border-emerald-500 transition-all font-bold text-emerald-600 dark:text-emerald-400 h-8 shadow-sm"
-                                                value={p.amount}
-                                                onChange={(e) => {
-                                                    const newPayments = [...payments]
-                                                    newPayments[idx].amount = parseFloat(e.target.value) || 0
-                                                    setPayments(newPayments)
-                                                }}
-                                                onFocus={(e) => e.target.select()}
-                                            />
-                                        </div>
-
-                                        <button onClick={() => setPayments(payments.filter((_, i) => i !== idx))} className="text-slate-300 hover:text-red-500 hover:bg-red-50 p-1.5 rounded-full hover:shadow-sm transition-all" title="Remove Payment (Credit Sale)">
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                        </button>
+                                {/* Dynamic Content Based on Selection */}
+                                {payments.length === 0 ? (
+                                    <div className="text-center py-4 bg-indigo-50/50 dark:bg-indigo-900/10 border border-dashed border-indigo-200 dark:border-indigo-800 rounded-lg">
+                                        <p className="text-xs font-bold text-indigo-700 dark:text-indigo-300 mb-1">Credit Invoice</p>
+                                        <p className="text-[10px] text-slate-500">Invoice will be marked as Outstanding.</p>
                                     </div>
-                                ))}
-
-                                {payments.length === 0 && (
-                                    <div className="flex flex-col items-center justify-center py-6 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-md bg-slate-50/50 dark:bg-slate-900/50 group hover:border-indigo-300 transition-colors">
-                                        <p className="text-[10px] text-slate-500 font-bold mb-1 uppercase tracking-wider">Credit Sale (Pay Later)</p>
-                                        <p className="text-[10px] text-slate-400 mb-2">No payment received now.</p>
+                                ) : payments.length === 1 && payments[0].amount >= grandTotal ? (
+                                    <div className="grid grid-cols-3 gap-2">
                                         <button
                                             onClick={() => setPayments([{ method: 'cash', amount: grandTotal, reference: '' }])}
-                                            className="text-[10px] bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm px-3 py-1.5 rounded-md hover:bg-slate-50 dark:hover:bg-slate-700 transition-all font-bold text-indigo-600 group-hover:scale-105"
+                                            className={`py-2 rounded-md border text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all ${payments[0].method === 'cash' ? 'bg-emerald-50 border-emerald-200 text-emerald-700 ring-1 ring-emerald-500/20' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
                                         >
-                                            + Add Payment
+                                            <Banknote className="h-3.5 w-3.5" /> Cash
+                                        </button>
+                                        <button
+                                            onClick={() => setPayments([{ method: 'upi', amount: grandTotal, reference: '' }])}
+                                            className={`py-2 rounded-md border text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all ${payments[0].method === 'upi' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 ring-1 ring-indigo-500/20' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                                        >
+                                            <Smartphone className="h-3.5 w-3.5" /> UPI / GPay
+                                        </button>
+                                        <button
+                                            onClick={() => setPayments([{ method: 'card', amount: grandTotal, reference: '' }])}
+                                            className={`py-2 rounded-md border text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all ${payments[0].method === 'card' ? 'bg-blue-50 border-blue-200 text-blue-700 ring-1 ring-blue-500/20' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                                        >
+                                            <CreditCard className="h-3.5 w-3.5" /> Card
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                                        {payments.map((p, idx) => (
+                                            <div key={idx} className="flex items-center gap-2 group">
+                                                <select
+                                                    className="flex-1 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md h-8 pl-2 outline-none focus:ring-1 ring-indigo-500/20"
+                                                    value={p.method}
+                                                    onChange={(e) => {
+                                                        const newPayments = [...payments]
+                                                        newPayments[idx].method = e.target.value as any
+                                                        setPayments(newPayments)
+                                                    }}
+                                                >
+                                                    <option value="cash">Cash</option>
+                                                    <option value="card">Card</option>
+                                                    <option value="upi">UPI</option>
+                                                    <option value="bank_transfer">Transfer</option>
+                                                    <option value="advance">Use Advance</option>
+                                                </select>
+                                                <input
+                                                    type="number"
+                                                    className="w-24 text-right text-xs bg-white border border-slate-200 rounded-md h-8 px-2 font-bold focus:ring-1 ring-emerald-500/20 outline-none"
+                                                    value={p.amount}
+                                                    onChange={(e) => {
+                                                        const newPayments = [...payments]
+                                                        newPayments[idx].amount = parseFloat(e.target.value) || 0
+                                                        setPayments(newPayments)
+                                                    }}
+                                                />
+                                                <button onClick={() => setPayments(payments.filter((_, i) => i !== idx))} className="text-slate-400 hover:text-red-500 p-1">
+                                                    <Trash2 className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                        <button onClick={() => setPayments([...payments, { method: 'cash', amount: 0, reference: '' }])} className="w-full text-[10px] py-1 border border-dashed border-slate-300 rounded text-slate-500 hover:text-indigo-600 hover:border-indigo-300 transition-colors">
+                                            + Add Payment Line
                                         </button>
                                     </div>
                                 )}
                             </div>
-
-                            {payments.length > 0 && (
-                                <button onClick={() => setPayments([...payments, { method: 'cash', amount: Math.max(0, balanceDue), reference: '' }])} className="mt-2 text-[10px] font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-2 py-1.5 rounded transition-colors flex items-center justify-center gap-1 w-full border border-dashed border-indigo-200 dark:border-indigo-800">
-                                    <Plus className="h-3 w-3" /> Split Payment (Add More)
-                                </button>
-                            )}
                         </div>
 
                         {/* Right Side: Totals & Actions */}
@@ -1214,12 +1221,12 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                     Draft
                                 </button>
                                 <button
-                                    onClick={() => handleSave('paid' as any)}
+                                    onClick={() => handleSave(balanceDue > 1 ? 'posted' : 'paid')}
                                     disabled={loading}
-                                    className={`px-3 py-2.5 text-white text-xs font-bold rounded-xl hover:shadow-lg flex items-center justify-center gap-1.5 transition-all border-b-2 active:translate-y-0.5 active:border-b-0 ${balanceDue < 0 ? "bg-blue-600 hover:bg-blue-700 hover:shadow-blue-500/20 border-blue-800" : "bg-indigo-600 hover:bg-indigo-700 hover:shadow-indigo-500/20 border-indigo-800"}`}
+                                    className={`px-3 py-2.5 text-white text-xs font-bold rounded-xl hover:shadow-lg flex items-center justify-center gap-1.5 transition-all border-b-2 active:translate-y-0.5 active:border-b-0 ${balanceDue > 1 ? "bg-indigo-600 hover:bg-indigo-700 border-indigo-800" : "bg-emerald-600 hover:bg-emerald-700 border-emerald-800 hover:shadow-emerald-500/20"}`}
                                 >
-                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <DollarSign className="h-4 w-4" />}
-                                    {balanceDue < 0 ? 'Advance Receipt' : 'Collect'}
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : balanceDue > 1 ? <Send className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                                    {balanceDue > 1 ? 'Post Invoice (Credit)' : 'Post & Paid'}
                                 </button>
                                 <button
                                     onClick={() => handleSave('paid' as any)}
