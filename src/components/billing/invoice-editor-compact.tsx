@@ -1056,23 +1056,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                 </div>
 
                                 {/* SHOW PREVIOUS DUES (If Any) */}
-                                {patientBalance && patientBalance.type === 'due' && patientBalance.amount > 0 && (
-                                    <div className="flex items-center justify-between bg-red-50 dark:bg-red-900/10 p-2 rounded-md border border-red-100 dark:border-red-800 mb-2 animate-in slide-in-from-top-1">
-                                        <div className="flex items-center gap-1.5">
-                                            <div className="bg-red-100 dark:bg-red-900/30 p-1 rounded-full">
-                                                <CreditCard className="h-3 w-3 text-red-600 dark:text-red-400" />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] font-bold text-red-700 dark:text-red-300">
-                                                    Previous Outstanding
-                                                </span>
-                                                <span className="text-[10px] text-red-600/80">
-                                                    Total: <span className="font-bold">₹{patientBalance.amount.toFixed(2)}</span>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
+
 
                                 {patientBalance && patientBalance.type === 'advance' && patientBalance.amount > 0 && (
                                     <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/10 p-2 rounded-md border border-blue-100 dark:border-blue-800">
