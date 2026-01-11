@@ -667,17 +667,52 @@ export async function settlePatientDues(patientId: string, amount: number, metho
             return results;
         });
 
-        // 2. Trigger Accounting for each settled invoice payment
+        // 2. Trigger Accounting and Collect Errors
+        const accountingErrors: string[] = [];
         for (const res of paymentResults) {
             try {
-                await AccountingService.postSalesInvoice(res.invoiceId, session.user.id);
-            } catch (err) {
+                const accountingRes = await AccountingService.postSalesInvoice(res.invoiceId, session.user.id);
+                if (!accountingRes.success) accountingErrors.push(`Invoice ${res.invoiceId}: ${accountingRes.error}`);
+            } catch (err: any) {
                 console.error(`Failed to post accounting for settled invoice ${res.invoiceId}:`, err);
+                accountingErrors.push(`Invoice ${res.invoiceId}: ${err.message}`);
+            }
+        }
+
+        // 3. SELF-HEALING: If no invoices were settled (because they are already marked 'paid'?)
+        // but the user is trying to pay (implying 'getPatientBalance' showed a due),
+        // we might have a sync issue. Let's force-sync recent invoices.
+        let syncedCount = 0;
+        if (paymentResults.length === 0 && amount > 0) {
+            const recentPaidInvoices = await prisma.hms_invoice.findMany({
+                where: {
+                    patient_id: patientId,
+                    // We check paid or posted invoices that might have unposted payments
+                    status: { in: ['paid', 'posted'] },
+                },
+                orderBy: { updated_at: 'desc' },
+                take: 10
+            });
+
+            for (const inv of recentPaidInvoices) {
+                await AccountingService.postSalesInvoice(inv.id, session.user.id);
+                syncedCount++;
             }
         }
 
         revalidatePath('/hms/billing');
-        return { success: true, settled: paymentResults.length, remainingOffset: remainingAmount };
+
+        let message = `Successfully settled ${paymentResults.length} invoice(s).`;
+        if (syncedCount > 0) message += ` (Synced ${syncedCount} historical invoices)`;
+        if (accountingErrors.length > 0) message += ` Accounting Warning: ${accountingErrors.join(', ')}`;
+
+        return {
+            success: accountingErrors.length === 0 || paymentResults.length > 0 || syncedCount > 0,
+            settled: paymentResults.length,
+            remainingOffset: remainingAmount,
+            message: message,
+            error: accountingErrors.length > 0 ? accountingErrors.join(', ') : undefined
+        };
 
     } catch (error: any) {
         console.error("Settlement Error:", error);

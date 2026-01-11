@@ -619,7 +619,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             if (res.success) {
                 toast({
                     title: "Dues Settled",
-                    description: `Successfully settled ${res.settled} invoice(s).`
+                    description: res.message || `Successfully settled ${res.settled} invoice(s).`
                 });
                 setIsSettleDialogOpen(false);
                 router.refresh(); // Hard Refresh Server Data
