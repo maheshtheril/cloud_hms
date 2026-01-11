@@ -1071,6 +1071,13 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                                 </span>
                                             </div>
                                         </div>
+                                        <button
+                                            onClick={() => setPayments([{ method: 'cash', amount: Number((grandTotal + patientBalance.amount).toFixed(2)), reference: '' }])}
+                                            className="px-2 py-1 bg-red-100 hover:bg-red-200 dark:bg-red-900/50 dark:hover:bg-red-900 text-red-700 dark:text-red-300 text-[10px] font-bold rounded transition-colors border border-red-200 dark:border-red-700"
+                                            title="Add previous dues to payment amount"
+                                        >
+                                            Collect All
+                                        </button>
                                     </div>
                                 )}
 
