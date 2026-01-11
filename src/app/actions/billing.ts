@@ -669,22 +669,11 @@ export async function settlePatientDues(patientId: string, amount: number, metho
 
         // 2. Trigger Accounting for each settled invoice payment
         for (const res of paymentResults) {
-            // We need to trigger the specific logic that moves money from AR to Cash
-            // Currently recordPayment does this inside the transaction, but we did it manually here.
-            // We should call AccountingService to post these payments.
-            // Note: AccountingService.postSalesInvoice is for the INVOICE (Accrual).
-            // We need a specific call for PAYMENT. 
-            // Since 'hms_invoice_payments' are created, we can rely on a future job or helper.
-            // But for now, let's just re-trigger postSalesInvoice which handles payments too if configured?
-            // Actually, postSalesInvoice handles 'paid' status creation.
-            // Better: We should manually invoke the journal entry creation for the payment.
-            // This is complex to replicate here without duplicate code. 
-            // Simplified: The User will see the invoices as PAid. Accounting might lag until we fix the separate Payment Poster.
-
-            // WORKAROUND: Call recordPayment's logic logic? No, circular.
-            // We will assume AccountingService.postSalesInvoice(id) is safe to call again? 
-            // Yes, it checks if already posted. But it posts the INVOICE, not the PAYMENT if invoice is already posted.
-            // We need AccountingService.postInvoicePayment(paymentId).
+            try {
+                await AccountingService.postSalesInvoice(res.invoiceId, session.user.id);
+            } catch (err) {
+                console.error(`Failed to post accounting for settled invoice ${res.invoiceId}:`, err);
+            }
         }
 
         revalidatePath('/hms/billing');

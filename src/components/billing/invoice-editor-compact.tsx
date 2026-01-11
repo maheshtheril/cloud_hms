@@ -612,7 +612,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     }
 
     const handleSettleDues = async () => {
-        if (!selectedPatientId) return;
+        if (!selectedPatientId || loading) return;
         setLoading(true);
         try {
             const res = await settlePatientDues(selectedPatientId, settleAmount, settleMethod);
@@ -622,6 +622,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                     description: `Successfully settled ${res.settled} invoice(s).`
                 });
                 setIsSettleDialogOpen(false);
+                router.refresh(); // Hard Refresh Server Data
                 // Refresh balance
                 if (selectedPatientId) {
                     getPatientBalance(selectedPatientId).then(res => {
