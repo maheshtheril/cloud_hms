@@ -1080,6 +1080,30 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                 )}
                             </div>
 
+                            <div className="flex gap-2 mb-2">
+                                <button
+                                    onClick={() => setPayments([])}
+                                    title="Clear all payments (Credit Sale)"
+                                    className="flex-1 text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-1.5 rounded font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                >
+                                    Pay Later
+                                </button>
+                                <button
+                                    onClick={() => setPayments([{ method: 'cash', amount: grandTotal, reference: '' }])}
+                                    title="Paid Full Cash"
+                                    className="flex-1 text-[10px] bg-emerald-50 dark:bg-emerald-900/10 text-emerald-700 dark:text-emerald-400 px-2 py-1.5 rounded font-bold border border-emerald-100 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition-colors"
+                                >
+                                    Paid Cash
+                                </button>
+                                <button
+                                    onClick={() => setPayments([{ method: 'upi', amount: grandTotal, reference: '' }])}
+                                    title="Paid Full UPI"
+                                    className="flex-1 text-[10px] bg-indigo-50 dark:bg-indigo-900/10 text-indigo-700 dark:text-indigo-400 px-2 py-1.5 rounded font-bold border border-indigo-100 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/20 transition-colors"
+                                >
+                                    Paid UPI
+                                </button>
+                            </div>
+
                             <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
                                 {payments.map((p, idx) => (
                                     <div key={idx} className="flex items-center gap-2 group">
