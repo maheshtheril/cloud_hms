@@ -205,6 +205,9 @@ export function InvoiceControlPanel({
                             <DialogDescription>
                                 Select payment method to settle the outstanding amount.
                             </DialogDescription>
+                            <div className="text-[10px] bg-blue-50 text-blue-700 px-3 py-2 rounded-md border border-blue-100 mt-2">
+                                <strong>Note:</strong> This invoice is currently <strong>Unpaid (Credit)</strong>. Only proceed if you are receiving money now. If the customer is paying later, just close this popup.
+                            </div>
                         </DialogHeader>
 
                         <div className="flex flex-col gap-2 bg-slate-50 p-4 rounded-lg border border-slate-200">

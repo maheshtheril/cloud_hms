@@ -294,6 +294,7 @@ export async function createInvoice(data: any) {
             const accountingRes = await AccountingService.postSalesInvoice(result.id, session.user.id);
             if (!accountingRes.success) {
                 console.warn("Accounting Post Failed:", accountingRes.error);
+                (result as any).accountingWarning = accountingRes.error;
             }
 
             // 2. Send WhatsApp Notification (Fire and Forget)

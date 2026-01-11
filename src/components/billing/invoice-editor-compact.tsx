@@ -679,6 +679,14 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                 title: "Success",
                 description: `Invoice ${status === 'draft' ? 'saved' : 'posted'} successfully.`
             })
+            if (res.data?.accountingWarning) {
+                toast({
+                    title: "Accounting Warning",
+                    description: "Invoice saved, but failed to post to Ledger: " + res.data.accountingWarning,
+                    variant: "destructive",
+                    duration: 5000
+                })
+            }
             if (onClose) {
                 // Wait a bit for toast
                 setTimeout(() => onClose(), 500);
