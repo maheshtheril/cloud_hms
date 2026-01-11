@@ -679,10 +679,10 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                 title: "Success",
                 description: `Invoice ${status === 'draft' ? 'saved' : 'posted'} successfully.`
             })
-            if (res.data?.accountingWarning) {
+            if ((res.data as any)?.accountingWarning) {
                 toast({
                     title: "Accounting Warning",
-                    description: "Invoice saved, but failed to post to Ledger: " + res.data.accountingWarning,
+                    description: "Invoice saved, but failed to post to Ledger: " + (res.data as any).accountingWarning,
                     variant: "destructive",
                     duration: 5000
                 })
