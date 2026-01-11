@@ -741,28 +741,60 @@ export async function getPatientBalance(patientId: string) {
     if (!companyId) return { error: "Unauthorized" };
 
     try {
-        const result = await prisma.journal_entry_lines.aggregate({
-            where: {
-                partner_id: patientId,
-                company_id: companyId,
-                journal_entries: {
-                    posted: true
-                }
-            },
-            _sum: {
-                debit: true,
-                credit: true
-            }
-        });
+        const getLedgerBalance = async () => {
+            const result = await prisma.journal_entry_lines.aggregate({
+                where: {
+                    partner_id: patientId,
+                    company_id: companyId,
+                    journal_entries: { posted: true }
+                },
+                _sum: { debit: true, credit: true }
+            });
+            const totalDebit = Number(result._sum.debit || 0);
+            const totalCredit = Number(result._sum.credit || 0);
+            return totalDebit - totalCredit;
+        };
 
-        const totalDebit = Number(result._sum.debit || 0);
-        const totalCredit = Number(result._sum.credit || 0);
-        const balance = totalDebit - totalCredit;
+        let balance = await getLedgerBalance();
+
+        // SELF-HEALING: Verify against Invoice Records
+        if (balance > 0) {
+            const invoiceAgg = await prisma.hms_invoice.aggregate({
+                where: { patient_id: patientId, company_id: companyId, status: { not: 'cancelled' } },
+                _sum: { outstanding_amount: true }
+            });
+            const invoiceOutstanding = Number(invoiceAgg._sum.outstanding_amount || 0);
+
+            // If Ledger thinks they owe more than Invoices say (e.g. Ledger 500, Invoices 0),
+            // it means payments exist in Invoices but not in Ledger.
+            if (balance > invoiceOutstanding + 1.0) {
+                console.log(`[Self-Healing] Detected Accounting Mismatch for Patient ${patientId}. Ledger: ${balance}, Invoices: ${invoiceOutstanding}. Syncing...`);
+
+                // Fetch recent invoices to sync
+                const recentInvoices = await prisma.hms_invoice.findMany({
+                    where: { patient_id: patientId, company_id: companyId },
+                    orderBy: { updated_at: 'desc' },
+                    take: 20
+                });
+
+                for (const inv of recentInvoices) {
+                    try {
+                        await AccountingService.postSalesInvoice(inv.id, session.user.id);
+                    } catch (err) {
+                        console.error(`Self-heal failed for invoice ${inv.id}`, err);
+                    }
+                }
+
+                // Recalculate after sync
+                balance = await getLedgerBalance();
+                console.log(`[Self-Healing] New Balance: ${balance}`);
+            }
+        }
 
         return {
             success: true,
             balance: Math.abs(balance),
-            type: balance > 0 ? 'due' : 'advance',
+            type: balance > 0.1 ? 'due' : (balance < -0.1 ? 'advance' : 'due'), // Tolerance
             rawBalance: balance
         };
     } catch (error: any) {
