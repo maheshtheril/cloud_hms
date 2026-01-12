@@ -33,7 +33,7 @@ const ROLES_DEFINITION = [
         module: 'hms',
         description: 'Nursing staff for triage, vitals, and patient care',
         permissions: [
-            'hms.triage.view', 'hms.triage.create', 'hms.vitals.create'
+            'hms.triage.view', 'hms.triage.create', 'hms.vitals.create', 'hms.nursing.consume'
         ]
     },
     {

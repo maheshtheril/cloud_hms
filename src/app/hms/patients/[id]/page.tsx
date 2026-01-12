@@ -3,6 +3,8 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ArrowLeft, Calendar, User, Phone, MapPin, Clock, FileText, Plus, Edit, Mail } from "lucide-react"
 import { EditPatientButton } from "@/components/hms/patients/edit-patient-button"
+import { PatientPaymentDialog } from "@/components/hms/billing/patient-payment-dialog"
+import { PatientConsumptionDialog } from "@/components/hms/billing/patient-consumption-dialog"
 
 export default async function PatientDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -55,6 +57,14 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                     </div>
                 </div>
                 <div className="flex gap-3">
+                    <PatientPaymentDialog
+                        patientId={patientAny.id}
+                        patientName={`${patientAny.first_name} ${patientAny.last_name}`}
+                    />
+                    <PatientConsumptionDialog
+                        patientId={patientAny.id}
+                        patientName={`${patientAny.first_name} ${patientAny.last_name}`}
+                    />
                     <EditPatientButton patient={patientAny} />
                     <Link
                         href={`/hms/prescriptions/new?patientId=${patientAny.id}`}

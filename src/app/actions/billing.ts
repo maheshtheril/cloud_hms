@@ -616,7 +616,7 @@ export async function settlePatientDues(patientId: string, amount: number, metho
             where: {
                 company_id: companyId,
                 patient_id: patientId,
-                status: 'posted',
+                status: { in: ['posted', 'draft'] }, // Allow paying Draft invoices (auto-posts them)
                 outstanding_amount: { gt: 0 }
             },
             orderBy: { created_at: 'asc' }
@@ -755,47 +755,31 @@ export async function getPatientBalance(patientId: string) {
             return totalDebit - totalCredit;
         };
 
-        let balance = await getLedgerBalance();
+        let activeBalance = await getLedgerBalance();
 
-        // SELF-HEALING: Verify against Invoice Records
-        if (balance > 0) {
-            const invoiceAgg = await prisma.hms_invoice.aggregate({
-                where: { patient_id: patientId, company_id: companyId, status: { not: 'cancelled' } },
-                _sum: { outstanding_amount: true }
-            });
-            const invoiceOutstanding = Number(invoiceAgg._sum.outstanding_amount || 0);
+        // Add DRAFT invoices (Running Bills) which are not yet in Ledger
+        const draftInvoices = await prisma.hms_invoice.aggregate({
+            where: {
+                patient_id: patientId,
+                company_id: companyId,
+                status: 'draft'
+            },
+            _sum: { outstanding_amount: true }
+        });
+        const draftAmount = Number(draftInvoices._sum.outstanding_amount || 0);
 
-            // If Ledger thinks they owe more than Invoices say (e.g. Ledger 500, Invoices 0),
-            // it means payments exist in Invoices but not in Ledger.
-            if (balance > invoiceOutstanding + 1.0) {
-                console.log(`[Self-Healing] Detected Accounting Mismatch for Patient ${patientId}. Ledger: ${balance}, Invoices: ${invoiceOutstanding}. Syncing...`);
-
-                // Fetch recent invoices to sync
-                const recentInvoices = await prisma.hms_invoice.findMany({
-                    where: { patient_id: patientId, company_id: companyId },
-                    orderBy: { updated_at: 'desc' },
-                    take: 20
-                });
-
-                for (const inv of recentInvoices) {
-                    try {
-                        await AccountingService.postSalesInvoice(inv.id, session.user.id);
-                    } catch (err) {
-                        console.error(`Self-heal failed for invoice ${inv.id}`, err);
-                    }
-                }
-
-                // Recalculate after sync
-                balance = await getLedgerBalance();
-                console.log(`[Self-Healing] New Balance: ${balance}`);
-            }
-        }
+        // Effective Balance = Ledger (Posted/Paid) + Drafts (Unposted Consumption)
+        const finalBalance = activeBalance + draftAmount;
 
         return {
             success: true,
-            balance: Math.abs(balance),
-            type: balance > 0.1 ? 'due' : (balance < -0.1 ? 'advance' : 'due'), // Tolerance
-            rawBalance: balance
+            balance: Math.abs(finalBalance),
+            type: finalBalance > 0.1 ? 'due' : (finalBalance < -0.1 ? 'advance' : 'due'),
+            rawBalance: finalBalance,
+            breakdown: {
+                ledger: activeBalance,
+                draft: draftAmount
+            }
         };
     } catch (error: any) {
         console.error("Failed to fetch patient balance:", error);
@@ -842,5 +826,110 @@ export async function createQuickPatient(name: string, phone: string) {
             return { error: "Patient with this details might already exist." };
         }
         return { error: `Failed to create patient: ${error.message}` };
+    }
+}
+
+export async function recordPatientConsumption(patientId: string, items: any[], notes?: string) {
+    const session = await auth();
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    if (!companyId) return { error: "Unauthorized" };
+
+    if (!items || items.length === 0) return { error: "No items to record" };
+
+    try {
+        // 1. Find an Active (Draft) Invoice for this Patient (The "Running Bill")
+        const activeInvoice = await prisma.hms_invoice.findFirst({
+            where: {
+                company_id: companyId,
+                patient_id: patientId,
+                status: 'draft' // Crucial: We add to the DRAFT invoice
+            },
+            orderBy: { created_at: 'desc' },
+            include: { hms_invoice_lines: true }
+        });
+
+        if (activeInvoice) {
+            // APPEND to Existing Draft
+            await prisma.$transaction(async (tx) => {
+                // Determine next line index
+                const maxIdx = activeInvoice.hms_invoice_lines.reduce((max, l) => Math.max(max, l.line_idx), 0);
+                let currentIdx = maxIdx + 1;
+
+                // Create Lines
+                await tx.hms_invoice_lines.createMany({
+                    data: items.map((item) => ({
+                        tenant_id: session.user.tenantId,
+                        company_id: companyId,
+                        invoice_id: activeInvoice.id,
+                        line_idx: currentIdx++,
+                        product_id: item.productId || null,
+                        description: item.name || item.description,
+                        quantity: item.quantity || 1,
+                        unit_price: item.price || 0,
+                        net_amount: ((item.quantity || 1) * (item.price || 0)),
+                        tax_amount: 0,
+                        discount_amount: 0,
+                        metadata: {
+                            added_at: new Date().toISOString(),
+                            notes: notes,
+                            type: 'consumption'
+                        }
+                    }))
+                });
+
+                // Recalculate Totals
+                // Fetch ALL lines again to ensure accuracy
+                const allLines = await tx.hms_invoice_lines.findMany({ where: { invoice_id: activeInvoice.id } });
+
+                const subtotal = allLines.reduce((sum, l) => sum + Number(l.net_amount), 0);
+                const totalTax = allLines.reduce((sum, l) => sum + Number(l.tax_amount || 0), 0);
+                const total = subtotal + totalTax;
+
+                await tx.hms_invoice.update({
+                    where: { id: activeInvoice.id },
+                    data: {
+                        subtotal,
+                        total_tax: totalTax,
+                        total,
+                        outstanding_amount: total - Number(activeInvoice.total_paid || 0),
+                        updated_at: new Date()
+                    }
+                });
+            });
+
+            revalidatePath('/hms/billing');
+            return { success: true, message: `Added to running bill: ${activeInvoice.invoice_number}`, invoiceId: activeInvoice.id };
+
+        } else {
+            // CREATE New "Running Bill" (Draft Invoice)
+            const payload = {
+                patient_id: patientId,
+                date: new Date().toISOString(),
+                status: 'draft',
+                line_items: items.map(item => ({
+                    product_id: item.productId,
+                    description: item.name || item.description,
+                    quantity: item.quantity || 1,
+                    unit_price: item.price || 0,
+                    tax_amount: 0,
+                    discount_amount: 0
+                })),
+                billing_metadata: {
+                    notes: notes,
+                    origin: 'consumption_log',
+                    is_running_bill: true
+                }
+            };
+
+            const res = await createInvoice(payload);
+            if (res.error) throw new Error(res.error);
+
+            const newId = (res as any).data?.id;
+            return { success: true, message: "Created new detailed bill", invoiceId: newId };
+        }
+
+    } catch (error: any) {
+        console.error("Failed to record consumption:", error);
+        return { error: error.message };
     }
 }
