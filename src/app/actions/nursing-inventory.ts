@@ -53,8 +53,7 @@ export async function consumeStock(data: ConsumeStockData) {
                     company_id: companyId,
                     name: 'Main Warehouse',
                     code: 'WH-MAIN',
-                    location_type: 'warehouse',
-                    is_active: true
+                    location_type: 'warehouse'
                 }
             })
         }
@@ -201,8 +200,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                     company_id: companyId,
                     name: 'Main Warehouse',
                     code: 'WH-MAIN',
-                    location_type: 'warehouse',
-                    is_active: true
+                    location_type: 'warehouse'
                 }
             })
         }
