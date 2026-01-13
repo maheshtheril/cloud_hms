@@ -61,6 +61,15 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
             border: 'border-emerald-100 dark:border-emerald-800',
             desc: 'Monitor admitted patients',
             link: '/hms/nursing/wards'
+        },
+        {
+            title: 'Record Usage',
+            icon: ClipboardList, // Or another appropriate icon
+            color: 'text-orange-600',
+            bg: 'bg-orange-50 dark:bg-orange-900/20',
+            border: 'border-orange-100 dark:border-orange-800',
+            desc: 'Consumables & Inventory',
+            link: '/hms/nursing/inventory/usage' // Or correct link
         }
     ]
 
