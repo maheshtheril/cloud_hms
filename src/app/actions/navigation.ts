@@ -135,8 +135,8 @@ export async function getMenuItems() {
         });
 
         // --- HARD Override for Nurse Role ---
-        // Bypasses all DB state logic to GUARANTEE correct menu for frustrated user.
-        if (session?.user?.role === 'nurse') {
+        // CASE INSENSITIVE CHECK to ensure it catches 'Nurse', 'nurse', 'NURSE'
+        if (session?.user?.role && session.user.role.toLowerCase() === 'nurse') {
             const nurseMenu = [
                 {
                     key: 'hms-nursing', label: 'Nursing Station', url: '/hms/nursing/dashboard',
