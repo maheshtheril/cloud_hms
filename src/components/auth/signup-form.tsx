@@ -192,18 +192,19 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
                                     <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Industry</label>
                                     <select name="industry" value={formData.industry} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={(e) => {
                                         const val = e.target.value;
-                                        let newModules = [...formData.modules];
+                                        // RESET modules to ensure clean slate for the new industry
+                                        let newModules: string[] = [];
 
                                         // SMART DEFAULTS (World Class)
                                         if (val === 'Healthcare') {
-                                            newModules = [...newModules, 'hms', 'inventory', 'finance'];
+                                            newModules = ['hms', 'inventory', 'finance'];
                                         } else if (val === 'Retail' || val === 'Manufacturing') {
-                                            newModules = [...newModules, 'inventory', 'finance', 'crm'];
+                                            newModules = ['inventory', 'finance', 'crm'];
                                         } else if (val === 'Services') {
-                                            newModules = [...newModules, 'crm', 'finance'];
+                                            newModules = ['crm', 'finance'];
                                         }
 
-                                        setFormData({ ...formData, industry: val, modules: Array.from(new Set(newModules)) });
+                                        setFormData({ ...formData, industry: val, modules: newModules });
                                     }} className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white">
                                         <option value="">Select Industry...</option>
                                         <option value="Healthcare">Healthcare / Hospital</option>
