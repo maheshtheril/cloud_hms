@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
+import { useToast } from "@/components/ui/use-toast"
 import { consumeStockBulk, ConsumptionItem } from "@/app/actions/nursing-inventory"
 import { getProductsPremium } from "@/app/actions/inventory"
 import { Loader2, Check, ChevronsUpDown, PackageMinus, Plus, Trash2, ShoppingCart, Info, ScanLine, X } from "lucide-react"
@@ -45,6 +45,7 @@ type CartItem = ConsumptionItem & {
 
 export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuccess, isModal = false }: UsageFormProps) {
     const router = useRouter()
+    const { toast } = useToast()
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     // Search & Add State
@@ -80,7 +81,11 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
     const addItem = () => {
         if (!selectedProduct) return;
         if (quantity <= 0) {
-            toast.error("Quantity must be greater than 0")
+            toast({
+                title: "Invalid Quantity",
+                description: "Quantity must be greater than 0",
+                variant: "destructive"
+            })
             return
         }
 
@@ -101,7 +106,9 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
         setQuantity(1)
         setNotes("")
         setOpen(false) // Close dropdown if open
-        toast.success("Item added to list")
+        toast({
+            description: "Item added to list",
+        })
     }
 
     const removeItem = (id: string) => {
@@ -111,7 +118,11 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (cart.length === 0) {
-            toast.error("Please add at least one item")
+            toast({
+                title: "Cart Empty",
+                description: "Please add at least one item",
+                variant: "destructive"
+            })
             return
         }
 
@@ -124,10 +135,17 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
             })
 
             if (result.error) {
-                toast.error(result.error)
+                toast({
+                    title: "Error",
+                    description: result.error,
+                    variant: "destructive"
+                })
                 setIsSubmitting(false)
             } else {
-                toast.success("All items recorded successfully")
+                toast({
+                    title: "Success",
+                    description: "All items recorded successfully",
+                })
                 // Delay closing to allow user to see the success message
                 setTimeout(() => {
                     setIsSubmitting(false)
@@ -139,7 +157,11 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                 }, 1000)
             }
         } catch (error) {
-            toast.error("An unexpected error occurred")
+            toast({
+                title: "Error",
+                description: "An unexpected error occurred",
+                variant: "destructive"
+            })
             setIsSubmitting(false)
         }
     }
