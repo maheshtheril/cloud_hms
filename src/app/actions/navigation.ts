@@ -134,6 +134,26 @@ export async function getMenuItems() {
             include: { module_menu_map: { include: { modules: true } } }
         });
 
+        // --- HARD Override for Nurse Role ---
+        // Bypasses all DB state logic to GUARANTEE correct menu for frustrated user.
+        if (session?.user?.role === 'nurse') {
+            const nurseMenu = [
+                {
+                    key: 'hms-nursing', label: 'Nursing Station', url: '/hms/nursing/dashboard',
+                    icon: 'Activity', sort_order: 1, permission_code: 'hms:dashboard:nurse', is_global: true,
+                    module_key: 'hms', children: []
+                },
+                // Add basic settings if needed, or keep it strictly clinical
+                {
+                    key: 'settings_profile', label: 'Profile', url: '/settings/profile',
+                    icon: 'User', sort_order: 99, permission_code: null, is_global: true,
+                    module_key: 'general', children: []
+                }
+            ];
+            return nurseMenu as any;
+        }
+        // ------------------------------------
+
         if (allMenuItems.length === 0) {
             return getFallbackMenuItems(isAdmin);
         }
