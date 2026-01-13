@@ -196,7 +196,7 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
 
                                         // SMART DEFAULTS (World Class)
                                         if (val === 'Healthcare') {
-                                            newModules = [...newModules, 'hms', 'inventory', 'finance', 'crm'];
+                                            newModules = [...newModules, 'hms', 'inventory', 'finance'];
                                         } else if (val === 'Retail' || val === 'Manufacturing') {
                                             newModules = [...newModules, 'inventory', 'finance', 'crm'];
                                         } else if (val === 'Services') {

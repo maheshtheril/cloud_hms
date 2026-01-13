@@ -494,7 +494,7 @@ export async function auditAndFixMenuPermissions() {
             { key: 'settings', perm: 'system:admin' }, // Hide Global Settings
             { key: 'configuration', perm: 'system:admin' }, // Hide Configuration Group
             { key: 'hms-settings', perm: 'hms:admin' },
-            { key: 'roles', perm: 'hms:view' }, // TEMP FIX: Allow access to fix roles
+            { key: 'roles', perm: 'roles:manage' }, // Correct Security: Only Admins manage roles
 
             { key: 'hms-lab', perm: 'lab:view' }, // Strict Lab Access
 

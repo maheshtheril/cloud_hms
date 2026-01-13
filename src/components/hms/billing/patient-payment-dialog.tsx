@@ -6,10 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, DollarSign, CreditCard, Banknote, CheckCircle2 } from "lucide-react";
+import { Loader2, DollarSign, CreditCard, Banknote, CheckCircle2, ChevronDown, ChevronUp, Receipt } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { settlePatientDues, getPatientBalance } from '@/app/actions/billing';
+import { getPatientUnbilledItems } from '@/app/actions/billing-details';
 import { cn } from "@/lib/utils";
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+
 
 interface PatientPaymentDialogProps {
     patientId: string;
@@ -33,24 +40,36 @@ export function PatientPaymentDialog({
     const [reference, setReference] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Fetch balance when opened
+    // Bill Details State
+    const [billDetails, setBillDetails] = useState<any[]>([]);
+    const [showDetails, setShowDetails] = useState(false);
+
+    // Fetch balance & details when opened
     useEffect(() => {
         if (isOpen && patientId) {
             setIsLoading(true);
-            getPatientBalance(patientId)
-                .then(res => {
-                    if (res.success) {
-                        setBalance(res.type === 'due' ? res.balance : 0);
-                        if (res.type === 'due' && res.balance) {
-                            setAmount(res.balance.toString());
+
+            Promise.all([
+                getPatientBalance(patientId),
+                getPatientUnbilledItems(patientId)
+            ])
+                .then(([resBalance, resDetails]) => {
+                    // Handle Balance
+                    if (resBalance.success) {
+                        setBalance(resBalance.type === 'due' ? resBalance.balance : 0);
+                        if (resBalance.type === 'due' && resBalance.balance) {
+                            setAmount(resBalance.balance.toString());
                         }
-                    } else {
-                        toast({ title: "Error", description: "Failed to fetch patient balance.", variant: "destructive" });
+                    }
+
+                    // Handle Details
+                    if (resDetails.success && resDetails.lines) {
+                        setBillDetails(resDetails.lines);
                     }
                 })
                 .catch(err => {
                     console.error(err);
-                    toast({ title: "Error", description: "Network error fetching balance.", variant: "destructive" });
+                    toast({ title: "Error", description: "Network error fetching data.", variant: "destructive" });
                 })
                 .finally(() => setIsLoading(false));
         }
@@ -95,8 +114,8 @@ export function PatientPaymentDialog({
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="max-w-md bg-white p-0 overflow-hidden rounded-2xl border-none shadow-2xl">
-                <DialogHeader className="bg-emerald-600 p-6 text-white">
+            <DialogContent className="max-w-md bg-white p-0 overflow-hidden rounded-2xl border-none shadow-2xl max-h-[90vh] flex flex-col">
+                <DialogHeader className="bg-emerald-600 p-6 text-white shrink-0">
                     <DialogTitle className="text-2xl font-black flex items-center gap-3">
                         <div className="h-10 w-10 bg-emerald-500/50 rounded-xl flex items-center justify-center backdrop-blur-sm">
                             <Banknote className="h-6 w-6 text-white" />
@@ -106,7 +125,7 @@ export function PatientPaymentDialog({
                     <p className="text-emerald-100 font-medium opacity-90">for {patientName}</p>
                 </DialogHeader>
 
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-6 overflow-y-auto">
                     {/* Balance Display */}
                     <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100 flex justify-between items-center">
                         <div className="flex items-center gap-3">
@@ -119,7 +138,7 @@ export function PatientPaymentDialog({
                             )}
                             <div>
                                 <p className="text-xs font-bold text-emerald-600 uppercase tracking-widest">Total Outstanding</p>
-                                <p className="text-emerald-900 font-medium text-sm">Amount due from unbilled/unpaid invoices</p>
+                                <p className="text-emerald-900 font-medium text-sm">Amount due</p>
                             </div>
                         </div>
                         <div className="text-right">
@@ -132,6 +151,52 @@ export function PatientPaymentDialog({
                             )}
                         </div>
                     </div>
+
+
+                    {/* Bill Itemization (Collapsible) */}
+                    {billDetails.length > 0 && (
+                        <Collapsible
+                            open={showDetails}
+                            onOpenChange={setShowDetails}
+                            className="w-full space-y-2"
+                        >
+                            <CollapsibleTrigger asChild>
+                                <Button variant="ghost" size="sm" className="w-full flex items-center justify-between p-2 h-auto text-gray-500 hover:text-gray-900 hover:bg-gray-100 rounded-lg group">
+                                    <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest">
+                                        <Receipt className="h-4 w-4" />
+                                        {showDetails ? "Hide Item Details" : "View Item Details"} ({billDetails.length})
+                                    </span>
+                                    {showDetails ? (
+                                        <ChevronUp className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+                                    ) : (
+                                        <ChevronDown className="h-4 w-4 text-gray-400 group-hover:text-gray-600" />
+                                    )}
+                                </Button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="space-y-2">
+                                <div className="rounded-lg border border-gray-100 bg-gray-50/50 p-2 text-sm max-h-40 overflow-y-auto custom-scrollbar">
+                                    <table className="w-full">
+                                        <thead className="text-xs text-gray-400 font-medium uppercase border-b border-gray-100">
+                                            <tr>
+                                                <th className="text-left py-1">Item</th>
+                                                <th className="text-right py-1">Qty</th>
+                                                <th className="text-right py-1">Amt</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-100/50">
+                                            {billDetails.map((item, idx) => (
+                                                <tr key={idx} className="text-gray-600">
+                                                    <td className="py-1.5 pr-2 truncate max-w-[150px]">{item.description}</td>
+                                                    <td className="py-1.5 text-right font-mono text-xs">{item.quantity}</td>
+                                                    <td className="py-1.5 text-right font-mono text-xs font-medium">₹{item.amount}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </CollapsibleContent>
+                        </Collapsible>
+                    )}
 
                     <div className="space-y-4">
                         <div className="space-y-2">
@@ -176,7 +241,7 @@ export function PatientPaymentDialog({
                     </div>
                 </div>
 
-                <DialogFooter className="p-6 bg-gray-50 border-t border-gray-100 gap-3">
+                <DialogFooter className="p-6 bg-gray-50 border-t border-gray-100 gap-3 shrink-0">
                     <Button variant="ghost" onClick={() => setIsOpen(false)} className="h-12 px-6 rounded-xl font-bold text-gray-500 hover:text-gray-900 hover:bg-gray-200/50">
                         Cancel
                     </Button>
