@@ -5,6 +5,7 @@ import { auth } from "@/auth"
 
 import SearchInput from "@/components/search-input"
 import AppointmentsCalendar from "@/components/appointments/appointments-calendar"
+import { AppointmentDialog, MobileAppointmentFab } from "@/components/appointments/appointment-dialog"
 
 export default async function AppointmentsPage() {
     const session = await auth()
@@ -38,6 +39,36 @@ export default async function AppointmentsPage() {
             ws.setHours(0, 0, 0, 0)
             return ws
         })()
+    ])
+
+    // Fetch Patients and Doctors for the Modal
+    const [patients, doctors] = await Promise.all([
+        prisma.hms_patient.findMany({
+            where: tenantId ? { tenant_id: tenantId } : undefined,
+            take: 100,
+            orderBy: { updated_at: 'desc' },
+            select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                patient_number: true,
+                dob: true,
+                gender: true
+            }
+        }),
+        prisma.hms_clinicians.findMany({
+            where: { is_active: true },
+            select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+                hms_specializations: { select: { name: true } },
+                role: true,
+                consultation_start_time: true,
+                consultation_end_time: true
+            },
+            orderBy: { first_name: 'asc' }
+        })
     ])
 
     const weekCount = await prisma.hms_appointments.count({
@@ -90,15 +121,7 @@ export default async function AppointmentsPage() {
                                 </div>
                             </div>
 
-                            <Link
-                                href="/hms/appointments/new"
-                                className="group relative px-4 md:px-8 py-3 md:py-4 bg-white text-indigo-600 rounded-2xl hover:shadow-2xl hover:scale-105 transition-all duration-300 flex items-center gap-3 font-bold shadow-xl"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-pink-400 rounded-2xl opacity-0 group-hover:opacity-20 transition-opacity"></div>
-                                <Plus className="h-5 w-5 md:h-5 md:w-5" />
-                                <span className="hidden md:inline">Book Appointment</span>
-                                <Zap className="h-4 w-4 text-yellow-500 hidden md:inline" />
-                            </Link>
+                            <AppointmentDialog patients={patients} doctors={doctors} />
                         </div>
                     </div>
                 </div>
@@ -165,14 +188,7 @@ export default async function AppointmentsPage() {
             </div>
 
             {/* Mobile Floating Action Button (FAB) - World Standard */}
-            <Link
-                href="/hms/appointments/new"
-                className="fixed bottom-6 right-6 lg:hidden z-50 h-14 w-14 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full shadow-2xl shadow-indigo-500/50 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 animate-in slide-in-from-bottom-4 fade-in"
-                aria-label="Book Appointment"
-            >
-                <Plus className="h-8 w-8" />
-                <div className="absolute inset-0 rounded-full animate-ping bg-indigo-500 opacity-20 duration-1000"></div>
-            </Link>
+            <MobileAppointmentFab patients={patients} doctors={doctors} />
         </div>
     )
 }
