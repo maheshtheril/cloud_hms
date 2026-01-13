@@ -63,7 +63,7 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
     const [activeTab, setActiveTab] = useState<'general' | 'clinical' | 'documents'>('general')
     const [profileImageUrl, setProfileImageUrl] = useState('')
     const [signatureUrl, setSignatureUrl] = useState('')
-    const [documentUrls, setDocumentUrls] = useState<{ [key: string]: string }>({})
+    const [documentUrls, setDocumentUrls] = useState<string[]>([])
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -384,22 +384,31 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                                             Document Repository
                                         </h3>
                                         <div className="grid grid-cols-1 gap-4">
-                                            {[{ id: 'license', label: 'License Copy' }, { id: 'id_proof', label: 'ID Proof (Govt)' }].map(doc => (
+                                            {[
+                                                { id: 'degree', label: 'Medical Degree' },
+                                                { id: 'license', label: 'Practice License' },
+                                                { id: 'insurance', label: 'Insurance Credentials' }
+                                            ].map((doc, idx) => (
                                                 <div key={doc.id} className="p-5 bg-slate-50 border-2 border-slate-100 rounded-2xl space-y-4">
                                                     <div className="flex items-center gap-3">
                                                         <div className="h-10 w-10 bg-white rounded-xl flex items-center justify-center shadow-sm"><FileText className="h-5 w-5 text-purple-600" /></div>
                                                         <span className="text-xs font-black text-slate-700 uppercase tracking-wider">{doc.label}</span>
                                                     </div>
                                                     <FileUpload
-                                                        onUploadComplete={(url) => setDocumentUrls(prev => ({ ...prev, [doc.id]: url }))}
+                                                        onUploadComplete={(url) => {
+                                                            const newDocs = Array.isArray(documentUrls) ? [...documentUrls] : [];
+                                                            newDocs[idx] = url;
+                                                            setDocumentUrls(newDocs);
+                                                        }}
                                                         folder="staff/documents"
                                                         label={`Upload ${doc.label}`}
                                                         accept="application/pdf,image/*"
+                                                        currentFileUrl={Array.isArray(documentUrls) ? documentUrls[idx] : null}
                                                     />
                                                 </div>
                                             ))}
-                                            <input type="hidden" name="document_urls" value={JSON.stringify(Object.values(documentUrls).filter(Boolean))} />
                                         </div>
+                                        <input type="hidden" name="document_urls" value={JSON.stringify(Array.isArray(documentUrls) ? documentUrls.filter(Boolean) : [])} />
                                     </div>
                                 </div>
                             </div>
