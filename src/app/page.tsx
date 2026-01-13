@@ -16,17 +16,17 @@ export default async function Home() {
   if (!session.user.isAdmin && role !== 'admin' && role !== 'super_admin') {
 
     // 2. Doctor Access
-    if (await checkPermission('hms:dashboard:doctor')) {
+    if (role === 'doctor' || await checkPermission('hms:dashboard:doctor')) {
       redirect('/hms/doctor/dashboard');
     }
 
     // 3. Nurse Access
-    if (await checkPermission('hms:dashboard:nurse')) {
+    if (role === 'nurse' || await checkPermission('hms:dashboard:nurse')) {
       redirect('/hms/nursing/dashboard');
     }
 
     // 4. Reception Access
-    if (await checkPermission('hms:dashboard:reception')) {
+    if (role === 'receptionist' || await checkPermission('hms:dashboard:reception')) {
       redirect('/hms/reception/dashboard');
     }
   }
