@@ -350,7 +350,8 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                         description: `(Nursing) ${product.name}`,
                         quantity: item.quantity,
                         unit_price: price,
-                        net_amount: netAmount
+                        net_amount: netAmount,
+                        metadata: { source: 'nursing_consumption' }
                     }
                 });
 
