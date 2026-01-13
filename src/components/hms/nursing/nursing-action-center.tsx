@@ -61,15 +61,6 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
             border: 'border-emerald-100 dark:border-emerald-800',
             desc: 'Monitor admitted patients',
             link: '/hms/nursing/wards'
-        },
-        {
-            title: 'Record Usage',
-            icon: ClipboardList, // Or another appropriate icon
-            color: 'text-orange-600',
-            bg: 'bg-orange-50 dark:bg-orange-900/20',
-            border: 'border-orange-100 dark:border-orange-800',
-            desc: 'Consumables & Inventory',
-            link: '/hms/nursing/inventory/usage' // Or correct link
         }
     ]
 
@@ -223,9 +214,21 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                                                 <Clock className="h-3 w-3" />
                                                 {new Date(task.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                             </div>
-                                            <div className={`flex items-center gap-1 font-bold text-xs px-3 py-1.5 rounded-full transition-all shadow-sm ${activeTab === 'history' ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-pink-50 text-pink-600 hover:bg-pink-600 hover:text-white'
-                                                }`}>
-                                                {activeTab === 'history' ? 'Edit' : 'Assess'} <ChevronRight className="h-3 w-3" />
+                                            <div className="flex items-center gap-1">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        router.push(`/hms/nursing/inventory/usage?patientId=${task.patient_uuid}&encounterId=${task.id}`);
+                                                    }}
+                                                    className="flex items-center justify-center h-8 w-8 rounded-full bg-slate-100 text-slate-500 hover:bg-orange-100 hover:text-orange-600 transition-colors"
+                                                    title="Record Consumables Usage"
+                                                >
+                                                    <ClipboardList className="h-4 w-4" />
+                                                </button>
+                                                <div className={`flex items-center gap-1 font-bold text-xs px-3 py-1.5 rounded-full transition-all shadow-sm ${activeTab === 'history' ? 'bg-slate-100 text-slate-600 hover:bg-slate-200' : 'bg-pink-50 text-pink-600 hover:bg-pink-600 hover:text-white'
+                                                    }`}>
+                                                    {activeTab === 'history' ? 'Edit' : 'Assess'} <ChevronRight className="h-3 w-3" />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
