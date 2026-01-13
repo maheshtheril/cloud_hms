@@ -190,13 +190,28 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
 
         const locationId = location.id
 
+        // Fetch Product Details deeply for both Inventory and Billing
+        const productMap = new Map();
+        const productIds = data.items.map(i => i.productId);
+        const products = await prisma.hms_product.findMany({
+            where: { id: { in: productIds } },
+            include: {
+                hms_product_price_history: {
+                    orderBy: { valid_from: 'desc' },
+                    take: 1
+                }
+            }
+        });
+        products.forEach(p => productMap.set(p.id, p));
+
         await prisma.$transaction(async (tx) => {
+            // ---------------------------------------------------------
+            // 1. INVENTORY MOVEMENT
+            // ---------------------------------------------------------
             for (const item of data.items) {
                 if (item.quantity <= 0) continue
 
-                const product = await tx.hms_product.findUnique({
-                    where: { id: item.productId }
-                })
+                const product = productMap.get(item.productId);
                 if (!product) throw new Error(`Product ID ${item.productId} not found`)
 
                 // Create Stock Move
@@ -205,10 +220,10 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                         tenant_id: tenantId,
                         company_id: companyId,
                         product_id: item.productId,
-                        location_from: locationId,
-                        location_to: null,
+                        location_from: locationId, // From Warehouse
+                        location_to: null, // Consumed (gone)
                         qty: item.quantity,
-                        uom: product.uom,
+                        uom: product.uom || 'Unit',
                         move_type: 'out',
                         source: 'Nursing Consumption',
                         source_reference: data.encounterId,
@@ -224,7 +239,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                         product_id: item.productId,
                         movement_type: 'out',
                         qty: item.quantity,
-                        uom: product.uom,
+                        uom: product.uom || 'Unit',
                         from_location_id: locationId,
                         reference: `Patient: ${data.patientId}`,
                         related_type: 'hms_encounter',
@@ -267,10 +282,110 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                     })
                 }
             }
+
+            // ---------------------------------------------------------
+            // 2. BILLING INTEGRATION (Create/Update Invoice)
+            // ---------------------------------------------------------
+
+            // Find existing DRAFT invoice for this encounter
+            let invoice = await tx.hms_invoice.findFirst({
+                where: {
+                    company_id: companyId,
+                    appointment_id: data.encounterId,
+                    status: 'draft'
+                }
+            });
+
+            // If no draft invoice exists, create one
+            if (!invoice) {
+                // Generate Invoice Number (Simplified logic for now, standard is handy)
+                const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
+                const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+                const invoiceNumber = `INV-${dateStr}-${randomSuffix}`;
+
+                invoice = await tx.hms_invoice.create({
+                    data: {
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        patient_id: data.patientId,
+                        appointment_id: data.encounterId,
+                        invoice_number: invoiceNumber,
+                        invoice_date: new Date(),
+                        status: 'draft',
+                        currency: 'INR',
+                        total: 0,
+                        subtotal: 0,
+                        total_tax: 0,
+                        outstanding_amount: 0,
+                        created_by: userId
+                    }
+                });
+            }
+
+            // Get current max line index
+            const maxLine = await tx.hms_invoice_lines.aggregate({
+                where: { invoice_id: invoice.id },
+                _max: { line_idx: true }
+            });
+            let nextLineIdx = (maxLine._max.line_idx || 0) + 1;
+
+            // Add new lines
+            let addedTotal = 0;
+
+            for (const item of data.items) {
+                const product = productMap.get(item.productId);
+                if (!product) continue;
+
+                // Determine Price (Priority: Price History > Base Price > 0)
+                const price = product.hms_product_price_history?.[0]?.price?.toNumber() || Number(product.price) || 0;
+                const netAmount = price * item.quantity;
+
+                await tx.hms_invoice_lines.create({
+                    data: {
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        invoice_id: invoice.id,
+                        line_idx: nextLineIdx++,
+                        product_id: product.id,
+                        description: `(Nursing) ${product.name}`,
+                        quantity: item.quantity,
+                        unit_price: price,
+                        net_amount: netAmount,
+                        check_in_at: new Date()
+                    }
+                });
+
+                addedTotal += netAmount;
+            }
+
+            // Update Invoice Totals based on ALL lines (active aggregation for safety)
+            // We re-aggregate to ensure the invoice total strictly reflects all lines including previous ones.
+            const agg = await tx.hms_invoice_lines.aggregate({
+                where: { invoice_id: invoice.id },
+                _sum: { net_amount: true, tax_amount: true }
+            });
+
+            const newSubtotal = Number(agg._sum.net_amount || 0);
+            const newTax = Number(agg._sum.tax_amount || 0);
+            const newTotal = newSubtotal + newTax; // Discount handled separately if needed, simplified here
+
+            await tx.hms_invoice.update({
+                where: { id: invoice.id },
+                data: {
+                    subtotal: newSubtotal,
+                    total_tax: newTax,
+                    total: newTotal,
+                    outstanding_amount: newTotal, // Assuming no partial payments on draft yet
+                    updated_at: new Date()
+                }
+            });
+
         })
 
         revalidatePath('/hms/nursing/dashboard')
         revalidatePath('/hms/nursing/inventory/usage')
+        // Revalidate billing so Cashier sees the update
+        revalidatePath('/hms/billing')
 
         return { success: true }
     } catch (error: any) {
