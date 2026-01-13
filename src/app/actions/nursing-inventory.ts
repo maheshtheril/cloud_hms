@@ -27,10 +27,8 @@ export async function consumeStock(data: ConsumeStockData) {
     }
 
     try {
-        // 1. Find Location (Main Warehouse for now)
-        // Ideally, this should come from the user's assigned "Station" (Nursing Station A, etc.)
-        // We will default to the Main Warehouse or the first available warehouse.
-        const location = await prisma.hms_stock_location.findFirst({
+        // 1. Find Location (Robust Lookup)
+        let location = await prisma.hms_stock_location.findFirst({
             where: {
                 company_id: companyId,
                 OR: [
@@ -40,8 +38,25 @@ export async function consumeStock(data: ConsumeStockData) {
             }
         })
 
+        // Fallback: Find ANY location
         if (!location) {
-            return { error: "Configuration Error: No Stock Location found (Warehouse)" }
+            location = await prisma.hms_stock_location.findFirst({
+                where: { company_id: companyId }
+            })
+        }
+
+        // Final Fallback: Create Default Location
+        if (!location) {
+            location = await prisma.hms_stock_location.create({
+                data: {
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    name: 'Main Warehouse',
+                    code: 'WH-MAIN',
+                    location_type: 'warehouse',
+                    is_active: true
+                }
+            })
         }
 
         const locationId = location.id
@@ -55,8 +70,6 @@ export async function consumeStock(data: ConsumeStockData) {
             if (!product) throw new Error("Product not found")
 
             // B. Create Stock Move (Outbound)
-            // We use move_type: 'out' (assuming 'in'/'out' enum convention based on receipt logic)
-            // If enum fails, we will know.
             await tx.hms_stock_move.create({
                 data: {
                     tenant_id: tenantId,
@@ -80,11 +93,7 @@ export async function consumeStock(data: ConsumeStockData) {
                     company_id: companyId,
                     product_id: data.productId,
                     movement_type: 'out',
-                    qty: data.quantity, // Negative or Positive? Usually ledger stores quantity magnitude and type indicates direction.
-                    // However, for aggregations, signed values are easier. 
-                    // Let's look at `inventory.ts` line 764: it sums `quantity` from `hms_stock_levels`.
-                    // Ledger is usually just a log.
-                    // Let's store positive quantity here as movement_type 'out' handles the semantic.
+                    qty: data.quantity,
                     uom: product.uom,
                     from_location_id: locationId,
                     reference: `Patient: ${data.patientId}`,
@@ -98,7 +107,6 @@ export async function consumeStock(data: ConsumeStockData) {
             })
 
             // D. Decrement Stock Levels
-            // We need to find the specific level record
             const level = await tx.hms_stock_levels.findFirst({
                 where: {
                     tenant_id: tenantId,
@@ -109,9 +117,6 @@ export async function consumeStock(data: ConsumeStockData) {
             })
 
             if (level) {
-                // Determine new quantity
-                // We should prevent negative stock? Or allow it? 
-                // Many systems allow negative stock if configured. We'll allow it but maybe warn.
                 await tx.hms_stock_levels.update({
                     where: { id: level.id },
                     data: {
@@ -120,22 +125,18 @@ export async function consumeStock(data: ConsumeStockData) {
                     }
                 })
             } else {
-                // If no level exists, we create one with negative quantity (assuming consumption before receipt possibilities)
+                // Allow negative stock
                 await tx.hms_stock_levels.create({
                     data: {
                         tenant_id: tenantId,
                         company_id: companyId,
                         product_id: data.productId,
                         location_id: locationId,
-                        quantity: -data.quantity, // Negative
+                        quantity: -data.quantity,
                         reserved: 0
                     }
                 })
             }
-
-            // OPTIONAL: Add to Billing?
-            // This would require creating a `hms_bill_item` or similar.
-            // For now, we just record inventory usage.
         })
 
         revalidatePath('/hms/nursing/dashboard')
@@ -174,7 +175,8 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
     }
 
     try {
-        const location = await prisma.hms_stock_location.findFirst({
+        // 1. Find Location (Robust Lookup)
+        let location = await prisma.hms_stock_location.findFirst({
             where: {
                 company_id: companyId,
                 OR: [
@@ -184,8 +186,25 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
             }
         })
 
+        // Fallback: Find ANY location
         if (!location) {
-            return { error: "Configuration Error: No Stock Location found (Warehouse)" }
+            location = await prisma.hms_stock_location.findFirst({
+                where: { company_id: companyId }
+            })
+        }
+
+        // Final Fallback: Create Default Location
+        if (!location) {
+            location = await prisma.hms_stock_location.create({
+                data: {
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    name: 'Main Warehouse',
+                    code: 'WH-MAIN',
+                    location_type: 'warehouse',
+                    is_active: true
+                }
+            })
         }
 
         const locationId = location.id
