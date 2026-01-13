@@ -426,8 +426,18 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
 export async function auditAndFixMenuPermissions() {
     try {
         // -1. ENSURE PERMISSIONS EXIST
-        // Run seed check to register any missing permission codes (like 'hms:dashboard:reception')
+        // Run seed check to register any missing permission codes
         await seedRolesAndPermissions();
+
+        // -0.5 ENSURE CORE MENUS EXIST (Self-Healing Structure)
+        // We must ensure the physical menu items exist before we can secure them.
+        // Importing dynamically to avoid circular deps if any.
+        const { ensureHmsMenus, ensureAccountingMenu, ensureCrmMenus, ensurePurchasingMenus } = await import('@/lib/menu-seeder');
+
+        await ensureHmsMenus();
+        // await ensureAccountingMenu(); // Optional: Enable if needed for other roles
+        // await ensureCrmMenus();
+        // await ensurePurchasingMenus();
 
         // 0. CHECK REAL MODULES (User Request)
         // We first understand what modules actually exist in the DB to avoid invalid remapping.
