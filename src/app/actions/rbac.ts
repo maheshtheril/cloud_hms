@@ -207,7 +207,8 @@ export async function seedRolesAndPermissions() {
                     'hms:view',
                     'hms:dashboard:nurse',   // MAIN WORKSPACE
                     'vitals:view', 'vitals:create', 'vitals:edit', // Vitals Management
-                    'prescriptions:view'     // View Rx to Administer (Read Only)
+                    'prescriptions:view',    // View Rx to Administer (Read Only)
+                    'attendance:view'        // View/Mark Attendance
                 ]
             },
             // 5. RECEPTIONIST (Front Desk - Reg & Scheduling)

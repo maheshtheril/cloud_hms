@@ -152,6 +152,11 @@ export async function getMenuItems() {
                     module: { name: 'General', module_key: 'general' },
                     items: [
                         {
+                            key: 'hms-attendance', label: 'My Attendance', url: '/hms/attendance',
+                            icon: 'CalendarClock', sort_order: 10, permission_code: 'attendance:view', is_global: true,
+                            module_key: 'general', other_menu_items: []
+                        },
+                        {
                             key: 'settings_profile', label: 'Profile', url: '/settings/profile',
                             icon: 'User', sort_order: 99, permission_code: null, is_global: true,
                             module_key: 'general', other_menu_items: []
