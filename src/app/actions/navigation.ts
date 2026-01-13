@@ -561,23 +561,23 @@ export async function auditAndFixMenuPermissions() {
         });
 
         // 5. EMERGENCY REPAIR: Ensure Nursing Station & Enforce Permissions
-        // UPSERT: If exists, update it. If not, create it. Ensure NOT HIDDEN.
+        // UPSERT: If exists, update it. If not, create it.
         const nsExist = await prisma.menu_items.findFirst({ where: { key: 'hms-nursing' } });
         if (!nsExist) {
             console.log("Auto-repair: Creating missing Nursing Station menu");
             await prisma.menu_items.create({
                 data: {
                     label: 'Nursing Station', url: '/hms/nursing/dashboard', key: 'hms-nursing',
-                    module_key: 'hms', icon: 'Activity', sort_order: 45, permission_code: 'hms:dashboard:nurse', is_global: true, is_hidden: false
+                    module_key: 'hms', icon: 'Activity', sort_order: 45, permission_code: 'hms:dashboard:nurse', is_global: true
                 }
             });
         } else {
-            // Force visibility if it exists but is hidden or wrong
+            // Force properties if it exists
             await prisma.menu_items.update({
                 where: { id: nsExist.id },
                 data: {
                     label: 'Nursing Station', url: '/hms/nursing/dashboard',
-                    permission_code: 'hms:dashboard:nurse', module_key: 'hms', is_hidden: false
+                    permission_code: 'hms:dashboard:nurse', module_key: 'hms'
                 }
             });
         }
