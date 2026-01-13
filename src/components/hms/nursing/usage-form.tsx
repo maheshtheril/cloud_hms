@@ -125,17 +125,21 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
 
             if (result.error) {
                 toast.error(result.error)
+                setIsSubmitting(false)
             } else {
                 toast.success("All items recorded successfully")
-                if (onSuccess) {
-                    onSuccess()
-                } else {
-                    router.push('/hms/nursing/dashboard')
-                }
+                // Delay closing to allow user to see the success message
+                setTimeout(() => {
+                    setIsSubmitting(false)
+                    if (onSuccess) {
+                        onSuccess()
+                    } else {
+                        router.push('/hms/nursing/dashboard')
+                    }
+                }, 1000)
             }
         } catch (error) {
             toast.error("An unexpected error occurred")
-        } finally {
             setIsSubmitting(false)
         }
     }
@@ -306,7 +310,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                     {isSubmitting ? (
                         <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Recording...
+                            Success...
                         </>
                     ) : (
                         `Confirm (${cart.length} Items)`
