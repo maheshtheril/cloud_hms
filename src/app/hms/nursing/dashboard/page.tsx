@@ -25,6 +25,9 @@ export default async function NursingDashboardPage() {
                 starts_at: {
                     gte: todayStart,
                     lte: todayEnd
+                },
+                status: {
+                    notIn: ['Cancelled', 'No Show']
                 }
             },
             include: {

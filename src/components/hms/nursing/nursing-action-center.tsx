@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation"
 import { differenceInYears } from "date-fns"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import NursingVitalsForm from "@/components/nursing/vitals-form"
+import { UsageForm } from "./usage-form"
 
 interface NursingActionCenterProps {
     pendingTriage: any[]
@@ -23,6 +24,7 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
     const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedTask, setSelectedTask] = useState<any>(null)
+    const [selectedUsageTask, setSelectedUsageTask] = useState<any>(null)
     const [activeTab, setActiveTab] = useState<'queue' | 'history'>('queue')
 
     const quickActions = [
@@ -218,7 +220,7 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        router.push(`/hms/nursing/inventory/usage?patientId=${task.patient_uuid}&encounterId=${task.id}`);
+                                                        setSelectedUsageTask(task);
                                                     }}
                                                     className="flex items-center justify-center h-8 w-8 rounded-full bg-slate-100 text-slate-500 hover:bg-orange-100 hover:text-orange-600 transition-colors"
                                                     title="Record Consumables Usage"
@@ -352,6 +354,29 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                             Save Assessment
                         </button>
                     </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Modal for Usage */}
+            <Dialog open={!!selectedUsageTask} onOpenChange={(open) => !open && setSelectedUsageTask(null)}>
+                <DialogContent className="max-w-md p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+                    <div className="mb-4">
+                        <h2 className="text-lg font-bold">Record Consumption</h2>
+                        <p className="text-sm text-slate-500">For {selectedUsageTask?.patient_name}</p>
+                    </div>
+                    {selectedUsageTask && (
+                        <UsageForm
+                            patientId={selectedUsageTask.patient_uuid}
+                            encounterId={selectedUsageTask.id}
+                            patientName={selectedUsageTask.patient_name}
+                            isModal={true}
+                            onCancel={() => setSelectedUsageTask(null)}
+                            onSuccess={() => {
+                                setSelectedUsageTask(null)
+                                router.refresh()
+                            }}
+                        />
+                    )}
                 </DialogContent>
             </Dialog>
 
