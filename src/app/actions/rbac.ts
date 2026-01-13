@@ -206,6 +206,8 @@ export async function seedRolesAndPermissions() {
                 permissions: [
                     'hms:view',
                     'hms:dashboard:nurse',   // MAIN WORKSPACE
+                    'patients:view',         // View Patient History
+                    'appointments:view',     // View Schedule
                     'vitals:view', 'vitals:create', 'vitals:edit', // Vitals Management
                     'prescriptions:view'     // View Rx to Administer (Read Only)
                 ]
