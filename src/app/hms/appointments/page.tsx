@@ -57,7 +57,10 @@ export default async function AppointmentsPage() {
             }
         }),
         prisma.hms_clinicians.findMany({
-            where: { is_active: true },
+            where: {
+                tenant_id: tenantId,
+                is_active: true
+            },
             select: {
                 id: true,
                 first_name: true,
@@ -81,48 +84,31 @@ export default async function AppointmentsPage() {
     })
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-6">
-            <div className="max-w-[1800px] mx-auto space-y-6">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 md:p-8">
+            <div className="max-w-[1600px] mx-auto space-y-6">
 
-                {/* Futuristic Header */}
-                <div className="relative overflow-hidden bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-3xl p-8 shadow-2xl">
-                    {/* Animated background elements */}
-                    <div className="absolute inset-0 opacity-20">
-                        <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse"></div>
-                        <div className="absolute bottom-0 right-0 w-96 h-96 bg-pink-300 rounded-full blur-3xl animate-pulse delay-700"></div>
+                {/* Standard Enterprise Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                            Appointments
+                        </h1>
+                        <p className="text-slate-500 dark:text-slate-400 mt-1">
+                            Manage patient appointments, schedules, and unavailability.
+                        </p>
                     </div>
 
-                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-0">
-                        <div className="flex items-center gap-6">
-                            <div className="h-16 w-16 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center shadow-lg">
-                                <Calendar className="h-8 w-8 text-white" />
-                            </div>
-                            <div>
-                                <div className="flex items-center gap-3">
-                                    <h1 className="text-4xl font-black text-white tracking-tight">
-                                        Appointment Scheduler
-                                    </h1>
-                                    <div className="px-3 py-1 bg-yellow-400 text-yellow-900 text-xs font-bold rounded-full flex items-center gap-1">
-                                        <Sparkles className="h-3 w-3" />
-                                        Live Data
-                                    </div>
-                                </div>
-                                <p className="text-blue-100 text-lg mt-1">
-                                    Real-time scheduling • Smart conflict detection • Drag & drop
-                                </p>
-                            </div>
+                    <div className="flex items-center gap-3">
+                        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md shadow-sm">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                            </span>
+                            <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                                {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                            </span>
                         </div>
-
-                        <div className="flex items-center gap-4">
-                            <div className="bg-white/10 backdrop-blur-xl px-4 py-2 rounded-xl border border-white/20">
-                                <div className="text-white/70 text-xs">Today</div>
-                                <div className="text-white text-xl font-bold">
-                                    {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                </div>
-                            </div>
-
-                            <AppointmentDialog patients={patients} doctors={doctors} />
-                        </div>
+                        <AppointmentDialog patients={patients} doctors={doctors} />
                     </div>
                 </div>
 
