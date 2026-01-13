@@ -48,7 +48,7 @@ export default async function DebugPage() {
 
             <div className="mt-8 border p-4">
                 <h2 className="font-bold text-purple-600">Sidebar Result (getMenuItems)</h2>
-                <pre>{JSON.stringify(sidebar.map(g => ({
+                <pre>{JSON.stringify(sidebar.map((g: any) => ({
                     module: g.module?.name,
                     itemCount: g.items.length,
                     items: g.items.map((i: any) => `${i.label} [${i.key}]`)
