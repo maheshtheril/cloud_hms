@@ -139,15 +139,24 @@ export async function getMenuItems() {
         if (session?.user?.role && session.user.role.toLowerCase() === 'nurse') {
             const nurseMenu = [
                 {
-                    key: 'hms-nursing', label: 'Nursing Station', url: '/hms/nursing/dashboard',
-                    icon: 'Activity', sort_order: 1, permission_code: 'hms:dashboard:nurse', is_global: true,
-                    module_key: 'hms', children: []
+                    module: { name: 'Clinical', module_key: 'hms' },
+                    items: [
+                        {
+                            key: 'hms-nursing', label: 'Nursing Station', url: '/hms/nursing/dashboard',
+                            icon: 'Activity', sort_order: 1, permission_code: 'hms:dashboard:nurse', is_global: true,
+                            module_key: 'hms', other_menu_items: []
+                        }
+                    ]
                 },
-                // Add basic settings if needed, or keep it strictly clinical
                 {
-                    key: 'settings_profile', label: 'Profile', url: '/settings/profile',
-                    icon: 'User', sort_order: 99, permission_code: null, is_global: true,
-                    module_key: 'general', children: []
+                    module: { name: 'General', module_key: 'general' },
+                    items: [
+                        {
+                            key: 'settings_profile', label: 'Profile', url: '/settings/profile',
+                            icon: 'User', sort_order: 99, permission_code: null, is_global: true,
+                            module_key: 'general', other_menu_items: []
+                        }
+                    ]
                 }
             ];
             return nurseMenu as any;
