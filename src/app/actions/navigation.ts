@@ -560,6 +560,31 @@ export async function auditAndFixMenuPermissions() {
             data: { permission_code: 'system:view' }
         });
 
+        // 5. EMERGENCY REPAIR: Ensure Nursing Station & Enforce Permissions
+        const nsExist = await prisma.menu_items.findFirst({ where: { key: 'hms-nursing' } });
+        if (!nsExist) {
+            console.log("Auto-repair: Creating missing Nursing Station menu");
+            await prisma.menu_items.create({
+                data: {
+                    label: 'Nursing Station', url: '/hms/nursing/dashboard', key: 'hms-nursing',
+                    module_key: 'hms', icon: 'Activity', sort_order: 45, permission_code: 'hms:dashboard:nurse', is_global: true
+                }
+            });
+        }
+
+        // STRICT ENFORCEMENT: Fix permissions that might be loose
+        const fixes = [
+            { k: 'hms-patients', p: 'patients:view' },
+            { k: 'hms-appointments', p: 'appointments:view' },
+            { k: 'hms-lab', p: 'lab:view' },
+            { k: 'hms-nursing', p: 'hms:dashboard:nurse' },
+            { k: 'hms-doctors', p: 'hms:admin' },
+            { k: 'hms-dashboard', p: 'hms:admin' }
+        ];
+        for (const f of fixes) {
+            await prisma.menu_items.updateMany({ where: { key: f.k }, data: { permission_code: f.p } });
+        }
+
         console.log("Self-healing: Menu permissions audited and fixed.");
         return { success: true };
     } catch (error) {
