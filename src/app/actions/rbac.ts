@@ -166,11 +166,13 @@ export async function seedRolesAndPermissions() {
 
         // Define standard roles with permissions
         const rolesData = [
+            // 1. SUPER ADMIN (System Owner)
             {
                 key: 'super_admin',
                 name: 'Super Administrator',
-                permissions: ['*'] // All permissions
+                permissions: ['*']
             },
+            // 2. ADMINISTRATOR (Hospital Admin)
             {
                 key: 'admin',
                 name: 'Administrator',
@@ -178,116 +180,79 @@ export async function seedRolesAndPermissions() {
                     'users:view', 'users:create', 'users:edit', 'users:delete',
                     'roles:view', 'roles:manage',
                     'settings:view', 'settings:edit',
-                    'hms:admin', 'crm:admin', 'inventory:admin'
+                    'hms:admin', 'crm:admin', 'inventory:admin',
+                    'hms:view', 'crm:view', 'inventory:view', 'accounting:view'
                 ]
             },
-            {
-                key: 'hms_admin',
-                name: 'HMS Administrator',
-                permissions: [
-                    'hms:view', 'hms:create', 'hms:edit', 'hms:delete',
-                    'patients:view', 'patients:create', 'patients:edit',
-                    'appointments:view', 'appointments:create', 'appointments:edit',
-                    'billing:view', 'billing:create',
-                    'pharmacy:view'
-                ]
-            },
+            // 3. DOCTOR (Clinical - Diagnosis & Treatment)
             {
                 key: 'doctor',
                 name: 'Doctor',
                 permissions: [
-                    'patients:view', 'patients:edit',
-                    'appointments:view', 'appointments:create',
-                    'prescriptions:view', 'prescriptions:create', 'prescriptions:edit',
-                    'hms:view', 'hms:dashboard:doctor'
+                    'hms:view',
+                    'hms:dashboard:doctor',  // Specific Dashboard
+                    'patients:view',         // Needs to see History
+                    'appointments:view',     // Needs to see Schedule
+                    'prescriptions:view', 'prescriptions:create', 'prescriptions:edit', // Rx
+                    'lab:view',              // View Lab Results
+                    'vitals:view'            // View Vitals
                 ]
             },
+            // 4. NURSE (Clinical - Care & Vitals)
+            // STRICT: No Patient Registry, No Appointment Scheduling. Focused on Nursing Station.
             {
                 key: 'nurse',
                 name: 'Nurse',
                 permissions: [
-                    'vitals:view', 'vitals:create', 'vitals:edit',
-                    'hms:view', 'hms:dashboard:nurse'
+                    'hms:view',
+                    'hms:dashboard:nurse',   // MAIN WORKSPACE
+                    'vitals:view', 'vitals:create', 'vitals:edit', // Vitals Management
+                    'prescriptions:view'     // View Rx to Administer (Read Only)
                 ]
             },
-            {
-                key: 'pharmacist',
-                name: 'Pharmacist',
-                permissions: [
-                    'pharmacy:view', 'pharmacy:create', 'pharmacy:edit',
-                    'inventory:view', 'inventory:view',
-                    'prescriptions:view',
-                    'hms:view'
-                ]
-            },
-            {
-                key: 'lab_technician',
-                name: 'Lab Technician',
-                permissions: [
-                    'lab:view', 'lab:create', 'lab:edit',
-                    'hms:view'
-                ]
-            },
+            // 5. RECEPTIONIST (Front Desk - Reg & Scheduling)
             {
                 key: 'receptionist',
                 name: 'Receptionist',
                 permissions: [
-                    'patients:view', 'patients:create', 'patients:edit',
-                    'appointments:view', 'appointments:create', 'appointments:edit',
-                    'billing:view', 'billing:create',
-                    'hms:view', 'hms:dashboard:reception'
+                    'hms:view',
+                    'hms:dashboard:reception', // MAIN WORKSPACE
+                    'patients:view', 'patients:create', 'patients:edit', // Registry Access
+                    'appointments:view', 'appointments:create', 'appointments:edit', // Scheduling
+                    'billing:view', 'billing:create' // Basic Cashiering
                 ]
             },
+            // 6. PHARMACIST (Inventory & Dispensing)
             {
-                key: 'crm_supervisor',
-                name: 'CRM Supervisor',
-                permissions: ['crm:admin', 'crm:view_all', 'crm:reports', 'leads:view', 'leads:edit', 'deals:view', 'deals:edit']
+                key: 'pharmacist',
+                name: 'Pharmacist',
+                permissions: [
+                    'hms:view',
+                    'pharmacy:view', 'pharmacy:create', 'pharmacy:edit', // Dispensing
+                    'inventory:view', 'inventory:adjustments:create',    // Stock Mgmt
+                    'prescriptions:view' // View Rx to Dispense
+                ]
             },
+            // 7. LAB TECHNICIAN (Diagnostics)
             {
-                key: 'crm_manager',
-                name: 'CRM Manager',
-                permissions: ['crm:view_team', 'crm:manage_deals', 'crm:assign_leads', 'leads:view', 'leads:edit', 'deals:view', 'deals:edit']
+                key: 'lab_technician',
+                name: 'Lab Technician',
+                permissions: [
+                    'hms:view',
+                    'lab:view', 'lab:create', 'lab:edit', // Lab Orders & Results
+                    'patients:view' // Needs to select patient for result entry
+                ]
             },
-            {
-                key: 'sales_executive',
-                name: 'Sales Executive',
-                permissions: ['crm:view_own', 'crm:create_leads', 'crm:manage_own_deals', 'leads:view', 'leads:create', 'deals:view', 'deals:create']
-            },
+            // 8. ACCOUNTANT (Finance)
             {
                 key: 'accountant',
                 name: 'Accountant',
                 permissions: [
-                    // Operational Finance Only (No Ledger/Journals)
-                    'billing:view', 'billing:create', 'billing:edit',
-                    'purchasing:view', 'purchasing:create',
-                    'suppliers:view',
-                    'hms:view'
+                    'hms:view',
+                    'billing:view', 'billing:create', 'billing:edit', 'billing:returns:view',
+                    'accounting:view', 'accounting:create',
+                    'purchasing:view', 'suppliers:view'
                 ]
-            },
-            {
-                key: 'finance_manager',
-                name: 'Finance Manager',
-                permissions: [
-                    'accounting:view', 'accounting:create', 'accounting:edit',
-                    'billing:view', 'billing:create', 'billing:edit',
-                    'purchasing:view', 'purchasing:create',
-                    'suppliers:view',
-                    'hms:view'
-                ]
-            },
-            {
-                key: 'inventory_manager',
-                name: 'Inventory Manager',
-                permissions: [
-                    'inventory:view', 'inventory:create', 'inventory:edit', 'inventory:delete',
-                    'purchasing:view', 'purchasing:create', 'purchasing:edit',
-                    'suppliers:view', 'suppliers:create', 'suppliers:edit'
-                ]
-            },
-            {
-                key: 'readonly',
-                name: 'Read Only User',
-                permissions: ['*.view'] // View-only access to all modules  
             }
         ];
 
@@ -326,7 +291,8 @@ export async function seedRolesAndPermissions() {
 
                 results.push({ action: 'created', role: newRole.name, key: newRole.key });
             } else {
-                // Update permissions if role exists
+                // OVERWRITE (Force Standard Compliance - "Stress Free")
+                // We update permissions to ensure the role matches the definition
                 await prisma.role.update({
                     where: { id: existing.id },
                     data: { permissions: roleData.permissions }
