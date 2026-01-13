@@ -27,7 +27,7 @@ export default async function NursingDashboardPage() {
                     lte: todayEnd
                 },
                 status: {
-                    notIn: ['Cancelled', 'No Show']
+                    notIn: ['Cancelled', 'No Show', 'cancelled', 'no_show', 'no-show', 'No-Show', 'Rescheduled']
                 }
             },
             include: {
