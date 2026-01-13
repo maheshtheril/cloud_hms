@@ -206,8 +206,6 @@ export async function seedRolesAndPermissions() {
                 key: 'nurse',
                 name: 'Nurse',
                 permissions: [
-                    'patients:view',
-                    'appointments:view',
                     'vitals:view', 'vitals:create', 'vitals:edit',
                     'hms:view', 'hms:dashboard:nurse'
                 ]
