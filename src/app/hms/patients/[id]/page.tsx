@@ -57,6 +57,35 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
     const prods = await prisma.hms_product.findMany({ where: { id: { in: pIds } }, select: { id: true, name: true } })
     const productMap = new Map(prods.map(p => [p.id, p.name]))
 
+    // Fetch User Details for Consumption (Nurses)
+    const userIds = [...new Set(consumptionHistory.map(c => c.created_by).filter(Boolean))] as string[]
+    const users = await prisma.app_user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true, full_name: true } })
+    const userMap = new Map(users.map(u => [u.id, u.full_name || u.name || 'Unknown']))
+
+    // Group Consumption into Events (same logic as history action)
+    const consumptionEvents: any[] = []
+    consumptionHistory.forEach(move => {
+        const moveTime = new Date(move.created_at).getTime()
+        let event = consumptionEvents.find(e => Math.abs(new Date(e.date).getTime() - moveTime) < 2000 && e.nurseId === move.created_by)
+
+        if (!event) {
+            event = {
+                type: 'consumption_group',
+                date: move.created_at,
+                nurseName: userMap.get(move.created_by || '') || 'Unknown Nurse',
+                nurseId: move.created_by,
+                items: []
+            }
+            consumptionEvents.push(event)
+        }
+
+        event.items.push({
+            productName: productMap.get(move.product_id) || 'Unknown Item',
+            qty: Number(move.qty),
+            uom: move.uom
+        })
+    })
+
     const patientAny = patient as any
 
     // Merge Clinical Events for Timeline
@@ -66,12 +95,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
             date: v.recorded_at,
             data: v
         })),
-        ...consumptionHistory.map(c => ({
-            type: 'consumption',
-            date: c.created_at,
-            productName: productMap.get(c.product_id) || 'Unknown Item',
-            data: c
-        }))
+        ...consumptionEvents
     ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
 
     return (
@@ -221,7 +245,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                         <div className="flex-1">
                                             <div className="flex justify-between items-start">
                                                 <p className="font-bold text-sm text-gray-800">
-                                                    {event.type === 'vital' ? 'Vitals Recorded' : 'Stock Consumed'}
+                                                    {event.type === 'vital' ? 'Vitals Recorded' : `Stock Consumed by ${event.nurseName || 'Nurse'}`}
                                                 </p>
                                                 <span className="text-xs text-gray-400">
                                                     {event.date ? new Date(event.date).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
@@ -237,11 +261,15 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                                         {event.data.spo2 && <span>SpO2: <b>{Number(event.data.spo2)}%</b></span>}
                                                     </div>
                                                 ) : (
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="font-medium text-gray-900">{event.productName}</span>
-                                                        <span className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600">
-                                                            Qty: {Number(event.data.qty)} {event.data.uom}
-                                                        </span>
+                                                    <div className="space-y-1 mt-1">
+                                                        {event.items.map((item: any, j: number) => (
+                                                            <div key={j} className="flex justify-between items-center bg-gray-50/50 p-1 rounded">
+                                                                <span className="font-medium text-xs text-gray-900">{item.productName}</span>
+                                                                <span className="text-[10px] font-bold bg-white border border-gray-100 px-1.5 py-0.5 rounded text-gray-600">
+                                                                    {item.qty} {item.uom}
+                                                                </span>
+                                                            </div>
+                                                        ))}
                                                     </div>
                                                 )}
                                             </div>
