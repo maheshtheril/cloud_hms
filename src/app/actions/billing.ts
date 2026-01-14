@@ -431,7 +431,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
                     total: total,
                     subtotal: subtotal,
                     total_tax: totalTaxAmount,
-                    outstanding_amount: (status === 'posted') ? total : 0
+                    outstanding_amount: (status === 'paid') ? 0 : Math.max(0, total - totalPaid)
                 }
             });
 

@@ -616,6 +616,8 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
 
 
     const handleSave = async (status: 'draft' | 'posted' | 'paid') => {
+        if (loading) return; // Prevent double submission
+
         if (!isWalkIn && !selectedPatientId) {
             toast({
                 title: "Missing Patient",
@@ -698,39 +700,48 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             billing_metadata: billingMetadata
         }
 
-        let res;
-        if (initialInvoice?.id) {
-            res = await updateInvoice(initialInvoice.id, payload)
-        } else {
-            res = await createInvoice(payload)
-        }
+        try {
+            let res;
+            if (initialInvoice?.id) {
+                res = await updateInvoice(initialInvoice.id, payload)
+            } else {
+                res = await createInvoice(payload)
+            }
 
-        setLoading(false)
-
-        if (res.success) {
-            toast({
-                title: "Success",
-                description: `Invoice ${status === 'draft' ? 'saved' : 'posted'} successfully.`
-            })
-            if ((res.data as any)?.accountingWarning) {
+            if (res.success) {
                 toast({
-                    title: "Accounting Warning",
-                    description: "Invoice saved, but failed to post to Ledger: " + (res.data as any).accountingWarning,
-                    variant: "destructive",
-                    duration: 5000
+                    title: "Bill Saved",
+                    description: `Successfully ${status === 'draft' ? 'saved draft' : 'posted payment'}.`
+                })
+
+                if ((res.data as any)?.accountingWarning) {
+                    toast({
+                        title: "Accounting Warning",
+                        description: (res.data as any).accountingWarning,
+                        variant: "destructive",
+                        duration: 5000
+                    })
+                }
+
+                if (onClose) {
+                    onClose();
+                } else if (res.data?.id) {
+                    // Force navigation and don't turn off loading (keeps buttons disabled)
+                    router.replace(`/hms/billing/${res.data.id}`)
+                }
+            } else {
+                setLoading(false)
+                toast({
+                    title: "Save Failed",
+                    description: res.error || "Please check your network or form data.",
+                    variant: "destructive"
                 })
             }
-            if (onClose) {
-                // Wait a bit for toast
-                setTimeout(() => onClose(), 500);
-            }
-            else {
-                router.push(`/hms/billing/${res.data.id}`)
-            }
-        } else {
+        } catch (err: any) {
+            setLoading(false)
             toast({
-                title: "Error",
-                description: res.error || "Failed to save invoice",
+                title: "System Error",
+                description: err.message || "An unexpected error occurred.",
                 variant: "destructive"
             })
         }
