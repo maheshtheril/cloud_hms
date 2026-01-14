@@ -32,8 +32,7 @@ export async function updateProfile(prevState: ProfileFormState, formData: FormD
         // If email is changed, we should probably check uniqueness, but let's stick to name/avatar for MVP "production ready" visual.
 
         const updateData: any = {
-            name,
-            updated_at: new Date()
+            name
         }
 
         // Handle Avatar
