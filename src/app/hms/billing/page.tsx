@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import { Plus, TrendingUp, AlertCircle, CheckCircle2, Search } from "lucide-react"
+import { Plus, TrendingUp, AlertCircle, CheckCircle2, Search, FileText, Clock, Receipt } from "lucide-react"
 import { auth } from "@/auth"
 
 import SearchInput from "@/components/search-input"
@@ -11,21 +11,27 @@ export default async function BillingPage({
 }: {
     searchParams: Promise<{
         q?: string
+        status?: string
     }>
 }) {
     const session = await auth();
     if (!session?.user?.companyId) return <div>Unauthorized</div>;
 
-    const { q } = await searchParams;
+    const { q, status } = await searchParams;
     const query = q || ''
+    const currentStatus = status || 'all'
+
+    // Status filter logic
+    const statusFilter = currentStatus !== 'all' ? { status: currentStatus } : {}
 
     // Parallel fetch for stats and list
-    const [invoices, stats] = await Promise.all([
+    const [invoices, stats, draftCount] = await Promise.all([
         prisma.hms_invoice.findMany({
-            orderBy: { issued_at: 'desc' }, // Use issued_at as main date
+            orderBy: { created_at: 'desc' }, // Use created_at to see newest drafts first
             where: {
                 tenant_id: session.user.tenantId,
                 company_id: session.user.companyId,
+                ...statusFilter,
                 OR: query ? [
                     { invoice_number: { contains: query, mode: 'insensitive' } },
                     {
@@ -41,7 +47,7 @@ export default async function BillingPage({
             include: {
                 hms_patient: true
             },
-            take: 20
+            take: 50 // Increased limit to see more
         }),
         prisma.hms_invoice.aggregate({
             where: {
@@ -56,6 +62,14 @@ export default async function BillingPage({
             _count: {
                 id: true
             }
+        }),
+        // Explicit count for drafts to show badge if needed
+        prisma.hms_invoice.count({
+            where: {
+                tenant_id: session.user.tenantId,
+                company_id: session.user.companyId,
+                status: 'draft'
+            }
         })
     ]);
 
@@ -64,17 +78,17 @@ export default async function BillingPage({
     const totalBilled = stats._sum.total?.toNumber() || 0;
 
     return (
-        <div className="space-y-8 max-w-7xl mx-auto">
-            <div className="flex justify-between items-center">
+        <div className="space-y-8 max-w-7xl mx-auto p-4 md:p-6 lg:p-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Billing & Finance</h1>
-                    <p className="text-gray-500 mt-1">Overview of financial health and invoices</p>
+                    <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Billing & Finance</h1>
+                    <p className="text-slate-500 mt-1 font-medium">Manage invoices, track revenue, and handle billing operations.</p>
                 </div>
                 <div className="flex gap-3">
-                    <Link href="/hms/billing/returns" className="bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 px-5 py-2.5 rounded-lg flex items-center gap-2 transition-all shadow-sm font-medium hover:text-emerald-700 hover:border-emerald-200">
+                    <Link href="/hms/billing/returns" className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all shadow-sm font-bold text-sm hover:text-indigo-600 hover:border-indigo-200">
                         Credit Notes
                     </Link>
-                    <Link href="/hms/billing/new" className="bg-black text-white px-5 py-2.5 rounded-lg flex items-center gap-2 hover:bg-gray-800 transition-all shadow-lg shadow-gray-200 font-medium">
+                    <Link href="/hms/billing/new" className="bg-indigo-600 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 font-bold text-sm active:scale-95">
                         <Plus className="h-4 w-4" />
                         Create Invoice
                     </Link>
@@ -83,104 +97,162 @@ export default async function BillingPage({
 
             {/* KPI Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-start justify-between">
-                    <div>
-                        <p className="text-sm font-medium text-gray-500">Total Revenue</p>
-                        <h3 className="text-2xl font-bold text-gray-900 mt-1">₹{totalRevenue.toLocaleString('en-IN')}</h3>
-                        <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
-                            <TrendingUp className="h-3 w-3" />
-                            Collected to date
-                        </p>
+                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-start justify-between relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <TrendingUp className="h-20 w-20 text-emerald-500" />
                     </div>
-                    <div className="h-10 w-10 bg-green-50 rounded-lg flex items-center justify-center">
-                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    <div className="relative z-10">
+                        <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Total Revenue</p>
+                        <h3 className="text-3xl font-black text-slate-900 mt-2 tracking-tight">₹{totalRevenue.toLocaleString('en-IN')}</h3>
+                        <p className="text-xs text-emerald-600 mt-2 font-bold flex items-center gap-1 bg-emerald-50 w-fit px-2 py-1 rounded-lg">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Collected
+                        </p>
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-start justify-between">
-                    <div>
-                        <p className="text-sm font-medium text-gray-500">Outstanding</p>
-                        <h3 className="text-2xl font-bold text-gray-900 mt-1">₹{totalOutstanding.toLocaleString('en-IN')}</h3>
-                        <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" />
-                            Pending payments
-                        </p>
+                <div className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-start justify-between relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <AlertCircle className="h-20 w-20 text-orange-500" />
                     </div>
-                    <div className="h-10 w-10 bg-amber-50 rounded-lg flex items-center justify-center">
-                        <AlertCircle className="h-5 w-5 text-amber-600" />
+                    <div>
+                        <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Outstanding</p>
+                        <h3 className="text-3xl font-black text-slate-900 mt-2 tracking-tight">₹{totalOutstanding.toLocaleString('en-IN')}</h3>
+                        <p className="text-xs text-orange-600 mt-2 font-bold flex items-center gap-1 bg-orange-50 w-fit px-2 py-1 rounded-lg">
+                            <Clock className="h-3 w-3" />
+                            Pending Collection
+                        </p>
                     </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex items-start justify-between">
+                <Link href="?status=draft" className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-start justify-between relative overflow-hidden group hover:border-indigo-200 transition-colors cursor-pointer ring-offset-2 focus:ring-2 ring-indigo-500">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                        <FileText className="h-20 w-20 text-indigo-500" />
+                    </div>
                     <div>
-                        <p className="text-sm font-medium text-gray-500">Total Billed</p>
-                        <h3 className="text-2xl font-bold text-gray-900 mt-1">₹{totalBilled.toLocaleString('en-IN')}</h3>
-                        <p className="text-xs text-gray-500 mt-2">
-                            Across {stats._count.id} invoices
+                        <p className="text-sm font-bold text-slate-400 uppercase tracking-wider">Draft Invoices</p>
+                        <h3 className="text-3xl font-black text-slate-900 mt-2 tracking-tight">{draftCount}</h3>
+                        <p className="text-xs text-indigo-600 mt-2 font-bold flex items-center gap-1 bg-indigo-50 w-fit px-2 py-1 rounded-lg">
+                            <FileText className="h-3 w-3" />
+                            Needs Attention
                         </p>
                     </div>
-                    <div className="h-10 w-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                        <TrendingUp className="h-5 w-5 text-blue-600" />
-                    </div>
-                </div>
+                </Link>
             </div>
 
-            {/* Search */}
-            <div className="relative max-w-md">
-                <SearchInput placeholder="Search by patient, number..." />
+            {/* Filters & Search */}
+            <div className="flex flex-col md:flex-row gap-4 justify-between items-end md:items-center bg-slate-50 p-1.5 rounded-2xl">
+                <div className="flex bg-white rounded-xl p-1 shadow-sm border border-slate-200">
+                    <Link
+                        href="?status=all"
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${currentStatus === 'all' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+                    >
+                        All
+                    </Link>
+                    <Link
+                        href="?status=draft"
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${currentStatus === 'draft' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+                    >
+                        Drafts
+                        {draftCount > 0 && <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${currentStatus === 'draft' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'}`}>{draftCount}</span>}
+                    </Link>
+                    <Link
+                        href="?status=posted"
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${currentStatus === 'posted' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+                    >
+                        Unpaid
+                    </Link>
+                    <Link
+                        href="?status=paid"
+                        className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${currentStatus === 'paid' ? 'bg-slate-900 text-white shadow-md' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+                    >
+                        Paid
+                    </Link>
+                </div>
+
+                <div className="w-full md:w-auto relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="h-4 w-4 text-slate-400" />
+                    </div>
+                    <SearchInput placeholder="Search invoice..." className="pl-10 w-full md:w-80 bg-white border-slate-200 focus:border-indigo-500 rounded-xl" />
+                </div>
             </div>
 
             {/* Invoices Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                 <table className="w-full text-left">
-                    <thead className="bg-gray-50/50 border-b border-gray-200">
+                    <thead className="bg-slate-50/80 border-b border-slate-100">
                         <tr>
-                            <th className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider">Invoice</th>
-                            <th className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider">Patient</th>
-                            <th className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider">Date</th>
-                            <th className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider">Status</th>
-                            <th className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider text-right">Amount</th>
-                            <th className="p-4 font-semibold text-xs text-gray-500 uppercase tracking-wider text-right w-[50px]">Actions</th>
+                            <th className="p-5 font-bold text-xs text-slate-500 uppercase tracking-wider">Invoice</th>
+                            <th className="p-5 font-bold text-xs text-slate-500 uppercase tracking-wider">Patient</th>
+                            <th className="p-5 font-bold text-xs text-slate-500 uppercase tracking-wider">Date</th>
+                            <th className="p-5 font-bold text-xs text-slate-500 uppercase tracking-wider">Status</th>
+                            <th className="p-5 font-bold text-xs text-slate-500 uppercase tracking-wider text-right">Amount</th>
+                            <th className="p-5 font-bold text-xs text-slate-500 uppercase tracking-wider text-right w-[50px]">Actions</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-100">
+                    <tbody className="divide-y divide-slate-100">
                         {invoices.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="p-12 text-center text-gray-500">
-                                    No invoices found. <Link href="/hms/billing/new" className="text-blue-600 hover:underline">Create your first one</Link>.
+                                <td colSpan={6} className="p-20 text-center">
+                                    <div className="flex flex-col items-center justify-center">
+                                        <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                                            <Receipt className="h-8 w-8 text-slate-300" />
+                                        </div>
+                                        <h3 className="text-slate-900 font-bold text-lg mb-1">No invoices found</h3>
+                                        <p className="text-slate-500 mb-6 max-w-xs mx-auto text-sm">
+                                            {status === 'draft' ? "Great job! All draft invoices have been processed." : "Try adjusting your search or filters."}
+                                        </p>
+                                        <Link href="/hms/billing/new" className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 transition-colors shadow-lg shadow-slate-200">
+                                            Create Invoice
+                                        </Link>
+                                    </div>
                                 </td>
                             </tr>
                         ) : (
                             invoices.map((inv) => (
-                                <tr key={inv.id} className="hover:bg-gray-50/80 transition-colors group">
-                                    <td className="p-4 text-gray-900 font-medium font-mono text-sm">
-                                        <Link href={`/hms/billing/${inv.id}`} className="text-blue-600 hover:text-blue-800 font-bold hover:underline transition-colors">
-                                            {inv.invoice_number}
+                                <tr key={inv.id} className="hover:bg-slate-50/50 transition-colors group">
+                                    <td className="p-5 text-slate-900 font-black font-mono text-sm">
+                                        <Link href={`/hms/billing/${inv.id}`} className="flex items-center gap-2 hover:text-indigo-600 transition-colors">
+                                            <Receipt className="h-4 w-4 text-slate-300 group-hover:text-indigo-300" />
+                                            {inv.invoice_number || 'DRAFT'}
                                         </Link>
                                     </td>
-                                    <td className="p-4 text-gray-700 font-medium">
-                                        <div className="flex items-center gap-2">
-                                            <div className="h-6 w-6 rounded-full bg-gray-100 text-xs flex items-center justify-center text-gray-500">
-                                                {inv.hms_patient?.first_name?.[0]}
+                                    <td className="p-5">
+                                        {inv.hms_patient ? (
+                                            <div className="flex items-center gap-3">
+                                                <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ring-2 ring-white shadow-sm ${inv.hms_patient.gender === 'male' ? 'bg-blue-100 text-blue-700' :
+                                                        inv.hms_patient.gender === 'female' ? 'bg-pink-100 text-pink-700' : 'bg-slate-100 text-slate-700'
+                                                    }`}>
+                                                    {inv.hms_patient.first_name?.[0]}
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-slate-900 text-sm">{inv.hms_patient.first_name} {inv.hms_patient.last_name}</p>
+                                                    <p className="text-xs text-slate-500 font-mono">{inv.hms_patient.patient_number}</p>
+                                                </div>
                                             </div>
-                                            {inv.hms_patient?.first_name} {inv.hms_patient?.last_name}
-                                        </div>
+                                        ) : (
+                                            <span className="text-slate-400 italic text-sm">Guest</span>
+                                        )}
                                     </td>
-                                    <td className="p-4 text-gray-500 text-sm">
-                                        {inv.invoice_date ? new Date(inv.invoice_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
+                                    <td className="p-5 text-slate-500 text-sm font-medium">
+                                        {inv.created_at ? new Date(inv.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '-'}
                                     </td>
-                                    <td className="p-4">
-                                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize border 
-                                            ${inv.status === 'paid' ? 'bg-green-50 text-green-700 border-green-100' :
+                                    <td className="p-5">
+                                        <span className={`px-2.5 py-1 rounded-md text-xs font-bold capitalize border inline-flex items-center gap-1.5
+                                            ${inv.status === 'paid' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
                                                 inv.status === 'posted' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                                    'bg-gray-50 text-gray-700 border-gray-200'}`}>
+                                                    'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                                            <span className={`h-1.5 w-1.5 rounded-full ${inv.status === 'paid' ? 'bg-emerald-500' :
+                                                    inv.status === 'posted' ? 'bg-blue-500' : 'bg-slate-400'
+                                                }`}></span>
                                             {inv.status || 'draft'}
                                         </span>
                                     </td>
-                                    <td className="p-4 text-right font-mono text-sm font-medium text-gray-900">
+                                    <td className="p-5 text-right font-mono text-sm font-black text-slate-900">
                                         ₹{Number(inv.total || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                     </td>
-                                    <td className="p-4 text-right">
+                                    <td className="p-5 text-right">
                                         <BillingActions invoiceId={inv.id} invoiceNumber={inv.invoice_number} />
                                     </td>
                                 </tr>
