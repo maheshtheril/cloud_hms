@@ -42,6 +42,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             // Extract Avatar from metadata
                             const metadata = user.metadata as any;
                             const avatarUrl = metadata?.avatar_url || null;
+                            const safeImage = avatarUrl?.startsWith('data:') ? null : avatarUrl;
 
                             return {
                                 id: user.id,
@@ -55,7 +56,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 hasCRM: moduleKeys.includes('crm'),
                                 hasHMS: moduleKeys.includes('hms'),
                                 role: user.role,
-                                image: avatarUrl
+                                image: safeImage
                             };
                         } catch (dbError) {
                             console.error("Auth Data Fetch Error:", dbError)

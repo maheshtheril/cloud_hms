@@ -41,14 +41,6 @@ export const authConfig = {
                 return Response.redirect(new URL("/", nextUrl))
             }
             return true
-        },
-        async session({ session, token }: any) {
-            if (token.sub && session.user) {
-                session.user.id = token.sub;
-                session.user.isAdmin = token.isAdmin as boolean;
-                session.user.isTenantAdmin = token.isTenantAdmin as boolean;
-            }
-            return session;
         }
     },
     providers: [], // Providers added in auth.ts
