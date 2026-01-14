@@ -11,8 +11,17 @@ export default async function ReceptionDashboardPage() {
         redirect("/auth/signin")
     }
 
-    const tenantId = session.user.tenantId
-    const companyId = session.user.companyId
+    const tenantId = session.user.tenantId as string
+    const companyId = session.user.companyId as string
+
+    if (!tenantId || !companyId) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-slate-500">
+                <h2 className="text-xl font-bold mb-2">Access Restricted</h2>
+                <p>Your account is not fully setup. Please contact admin to assign a Company/Branch.</p>
+            </div>
+        )
+    }
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
     const todayEnd = new Date()
