@@ -106,6 +106,29 @@ export function DashboardClient({ user, stats, appointments, patients, doctors }
                     </Link>
                 </div>
 
+                {/* CRITICAL: Pending Actions Section (Receptionist View) */}
+                {stats.pendingBills > 0 && (
+                    <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-500">
+                        <div className="flex gap-4">
+                            <div className="h-12 w-12 rounded-xl bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 flex items-center justify-center shrink-0">
+                                <Receipt className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Action Required: {stats.pendingBills} Draft Invoices</h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-300">
+                                    You have draft bills waiting to be finalized. Please review and process them.
+                                </p>
+                            </div>
+                        </div>
+                        <Link
+                            href="/hms/billing?status=draft"
+                            className="whitespace-nowrap px-6 py-3 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-lg shadow-amber-200 dark:shadow-none transition-all active:scale-95 flex items-center gap-2"
+                        >
+                            View Drafts <Clock className="h-4 w-4" />
+                        </Link>
+                    </div>
+                )}
+
                 {/* Highlighted Appointment Table Section */}
                 <div className="space-y-4">
                     <div className="flex items-center justify-between">
