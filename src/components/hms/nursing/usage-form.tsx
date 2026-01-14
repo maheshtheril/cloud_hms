@@ -61,9 +61,22 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
     const [quantity, setQuantity] = useState(1)
     const [notes, setNotes] = useState("")
 
+    const [history, setHistory] = useState<any[]>([])
+    const [loadingHistory, setLoadingHistory] = useState(false)
+
     useEffect(() => {
+        loadHistory()
         loadProducts()
     }, [])
+
+    async function loadHistory() {
+        setLoadingHistory(true)
+        const res = await getConsumptionHistory(encounterId)
+        if (res.data) {
+            setHistory(res.data)
+        }
+        setLoadingHistory(false)
+    }
 
     async function loadProducts(query: string = '') {
         setLoadingProducts(true)
@@ -143,10 +156,15 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                 setIsSubmitting(false)
             } else {
                 toast({
-                    title: "Success",
-                    description: "All items recorded successfully",
+                    title: "Charges Added to Bill",
+                    description: "Inventory consumed and charges posted to draft invoice.",
                 })
-                // Delay closing to allow user to see the success message
+
+                // Refresh history immediatelly so user sees it if they don't close
+                await loadHistory()
+                setCart([])
+
+                // Delay closing
                 setTimeout(() => {
                     setIsSubmitting(false)
                     if (onSuccess) {
@@ -154,7 +172,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                     } else {
                         router.push('/hms/nursing/dashboard')
                     }
-                }, 1000)
+                }, 1500)
             }
         } catch (error) {
             toast({
@@ -217,129 +235,177 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
         </div>
     )
 
-    const FormContent = (
-        <form onSubmit={handleSubmit} className="flex flex-col h-full">
-            {/* Quick Add Section */}
-            <div className="grid grid-cols-12 gap-3 mb-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
-                <div className="col-span-12 md:col-span-6 space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-500 uppercase">Select Consumable</Label>
-                    <Popover open={open} onOpenChange={setOpen}>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant="outline"
-                                role="combobox"
-                                aria-expanded={open}
-                                className="w-full justify-between bg-white dark:bg-slate-800"
-                            >
-                                {selectedProduct ? (
-                                    <span className="truncate font-medium">{selectedProduct.name}</span>
-                                ) : (
-                                    <span className="text-slate-400">Search sku, name...</span>
-                                )}
-                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[300px] p-0" align="start">
-                            <Command shouldFilter={false}>
-                                <CommandInput
-                                    placeholder="Search inventory..."
-                                    onValueChange={handleSearch}
-                                />
-                                <CommandList>
-                                    <CommandEmpty>No product found.</CommandEmpty>
-                                    <CommandGroup>
-                                        {products.map((product) => (
-                                            <CommandItem
-                                                key={product.id}
-                                                value={product.name}
-                                                onSelect={() => {
-                                                    setSelectedProduct(product)
-                                                    setOpen(false)
-                                                }}
-                                            >
-                                                <Check
-                                                    className={cn(
-                                                        "mr-2 h-4 w-4",
-                                                        selectedProduct?.id === product.id ? "opacity-100" : "opacity-0"
-                                                    )}
-                                                />
-                                                <div className="flex flex-col">
-                                                    <span className="font-medium">{product.name}</span>
-                                                    <span className="text-xs text-slate-400">Stock: {product.totalStock} {product.uom}</span>
-                                                </div>
-                                            </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
-                        </PopoverContent>
-                    </Popover>
+    const HistoryList = () => (
+        <div className="space-y-3 h-[400px] overflow-y-auto px-1">
+            {loadingHistory ? (
+                <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
+            ) : history.length === 0 ? (
+                <div className="text-center p-8 text-slate-400">
+                    <Info className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No usage history for this encounter yet.</p>
                 </div>
-
-                <div className="col-span-6 md:col-span-3 space-y-1.5">
-                    <Label className="text-xs font-bold text-slate-500 uppercase">Quantity</Label>
-                    <div className="relative">
-                        <Input
-                            type="number"
-                            min="0.1"
-                            step="0.1"
-                            value={quantity}
-                            onChange={(e) => setQuantity(e.target.valueAsNumber)}
-                            className="bg-white dark:bg-slate-800 font-bold"
-                        />
-                        {selectedProduct && (
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] uppercase font-bold text-slate-400">
-                                {selectedProduct.uom}
-                            </span>
-                        )}
+            ) : (
+                history.map((item, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800">
+                        <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xs">
+                                {i + 1}
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold text-slate-900 dark:text-white">{item.description}</p>
+                                <p className="text-xs text-slate-500">
+                                    Qty: {item.quantity} • {item.invoiceNumber ? <span className="text-emerald-600 font-medium">Billed ({item.status})</span> : 'Recorded'}
+                                </p>
+                            </div>
+                        </div>
+                        <div className="text-right">
+                            {/* <p className="text-sm font-bold">{item.netAmount.toFixed(2)}</p> */}
+                            <p className="text-[10px] text-slate-400">{item.recordedAt ? format(new Date(item.recordedAt), 'HH:mm') : '-'}</p>
+                        </div>
                     </div>
-                </div>
+                ))
+            )}
+        </div>
+    )
 
-                <div className="col-span-6 md:col-span-3 flex items-end">
-                    <Button
-                        type="button"
-                        onClick={addItem}
-                        disabled={!selectedProduct}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
-                    >
-                        <Plus className="h-4 w-4 mr-2" /> Add
-                    </Button>
-                </div>
-
-                <div className="col-span-12 space-y-1.5 hidden md:block">
-                    {/* Optional Notes for row - Mobile hidden for compact view or expandable */}
-                </div>
+    const FormContent = (
+        <Tabs defaultValue="new" className="h-full flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="new">Record New</TabsTrigger>
+                    <TabsTrigger value="history">History & Billing</TabsTrigger>
+                </TabsList>
             </div>
 
-            {/* List of Added Items */}
-            <CartList />
+            <TabsContent value="new" className="flex-1 flex flex-col h-full mt-0">
+                <form onSubmit={handleSubmit} className="flex flex-col h-full">
+                    {/* Quick Add Section */}
+                    <div className="grid grid-cols-12 gap-3 mb-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-300 dark:border-slate-700">
+                        <div className="col-span-12 md:col-span-6 space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-500 uppercase">Select Consumable</Label>
+                            <Popover open={open} onOpenChange={setOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        role="combobox"
+                                        aria-expanded={open}
+                                        className="w-full justify-between bg-white dark:bg-slate-800"
+                                    >
+                                        {selectedProduct ? (
+                                            <span className="truncate font-medium">{selectedProduct.name}</span>
+                                        ) : (
+                                            <span className="text-slate-400">Search sku, name...</span>
+                                        )}
+                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[300px] p-0" align="start">
+                                    <Command shouldFilter={false}>
+                                        <CommandInput
+                                            placeholder="Search inventory..."
+                                            onValueChange={handleSearch}
+                                        />
+                                        <CommandList>
+                                            <CommandEmpty>No product found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {products.map((product) => (
+                                                    <CommandItem
+                                                        key={product.id}
+                                                        value={product.name}
+                                                        onSelect={() => {
+                                                            setSelectedProduct(product)
+                                                            setOpen(false)
+                                                        }}
+                                                    >
+                                                        <Check
+                                                            className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                selectedProduct?.id === product.id ? "opacity-100" : "opacity-0"
+                                                            )}
+                                                        />
+                                                        <div className="flex flex-col">
+                                                            <span className="font-medium">{product.name}</span>
+                                                            <span className="text-xs text-slate-400">Stock: {product.totalStock} {product.uom}</span>
+                                                        </div>
+                                                    </CommandItem>
+                                                ))}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
 
-            {/* Footer Actions */}
-            <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
-                <Button
-                    type="button"
-                    variant="outline"
-                    className="font-bold text-slate-500"
-                    onClick={() => onCancel ? onCancel() : router.back()}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    type="submit"
-                    className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-8 shadow-lg shadow-orange-600/20"
-                    disabled={isSubmitting || cart.length === 0}
-                >
-                    {isSubmitting ? (
-                        <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Success...
-                        </>
-                    ) : (
-                        `Confirm (${cart.length} Items)`
-                    )}
-                </Button>
-            </div>
-        </form>
+                        <div className="col-span-6 md:col-span-3 space-y-1.5">
+                            <Label className="text-xs font-bold text-slate-500 uppercase">Quantity</Label>
+                            <div className="relative">
+                                <Input
+                                    type="number"
+                                    min="0.1"
+                                    step="0.1"
+                                    value={quantity}
+                                    onChange={(e) => setQuantity(e.target.valueAsNumber)}
+                                    className="bg-white dark:bg-slate-800 font-bold"
+                                />
+                                {selectedProduct && (
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] uppercase font-bold text-slate-400">
+                                        {selectedProduct.uom}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="col-span-6 md:col-span-3 flex items-end">
+                            <Button
+                                type="button"
+                                onClick={addItem}
+                                disabled={!selectedProduct}
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold"
+                            >
+                                <Plus className="h-4 w-4 mr-2" /> Add
+                            </Button>
+                        </div>
+
+                        <div className="col-span-12 space-y-1.5 hidden md:block">
+                            {/* Optional Notes for row - Mobile hidden for compact view or expandable */}
+                        </div>
+                    </div>
+
+                    {/* List of Added Items */}
+                    <CartList />
+
+                    {/* Footer Actions */}
+                    <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="font-bold text-slate-500"
+                            onClick={() => onCancel ? onCancel() : router.back()}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            className="bg-orange-600 hover:bg-orange-700 text-white font-bold px-8 shadow-lg shadow-orange-600/20"
+                            disabled={isSubmitting || cart.length === 0}
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Success...
+                                </>
+                            ) : (
+                                `Confirm (${cart.length} Items)`
+                            )}
+                        </Button>
+                    </div>
+                </form>
+            </TabsContent>
+
+            <TabsContent value="history" className="flex-1 mt-0">
+                <HistoryList />
+            </TabsContent>
+        </Tabs>
     );
 
     if (isModal) {
