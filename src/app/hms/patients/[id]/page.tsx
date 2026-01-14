@@ -99,23 +99,42 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
     ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
 
     return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Link href="/hms/patients" className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                        <ArrowLeft className="h-5 w-5 text-gray-600" />
+    // Group Timeline Events by Date for World-Class Presentation
+    const groupedTimeline: { [key: string]: any[] } = {};
+        timelineEvents.forEach(event => {
+            const dateKey = new Date(event.date || 0).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            if (!groupedTimeline[dateKey]) groupedTimeline[dateKey] = [];
+            groupedTimeline[dateKey].push(event);
+        });
+
+    return (
+        <div className="space-y-6 max-w-7xl mx-auto pb-20">
+            {/* World-Class Header */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                <div className="flex items-center gap-5">
+                    <Link href="/hms/patients" className="h-10 w-10 flex items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-full transition-colors border border-slate-200">
+                        <ArrowLeft className="h-5 w-5 text-slate-600" />
                     </Link>
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-800">{patientAny.first_name} {patientAny.last_name}</h1>
-                        <p className="text-gray-500 flex items-center gap-2">
-                            <span>ID: {patientAny.patient_number || 'N/A'}</span>
-                            <span className="text-gray-300">•</span>
-                            <span className="capitalize">{patientAny.gender || 'Unknown Gender'}</span>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{patientAny.first_name} {patientAny.last_name}</h1>
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${patientAny.gender === 'male' ? 'bg-blue-50 text-blue-700' :
+                                    patientAny.gender === 'female' ? 'bg-pink-50 text-pink-700' : 'bg-slate-50 text-slate-700'
+                                }`}>
+                                {patientAny.gender || 'Unknown'}
+                            </span>
+                        </div>
+                        <p className="text-slate-500 flex items-center gap-4 mt-1 text-sm font-medium">
+                            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>ID: <span className="font-mono text-slate-700">{patientAny.patient_number || 'N/A'}</span></span>
+                            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>Born: {patientAny.dob ? new Date(patientAny.dob).toLocaleDateString() : '-'}</span>
+                            {(patientAny.contact as any)?.phone && <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span><Phone className="h-3 w-3" /> {(patientAny.contact as any).phone}</span>}
                         </p>
                     </div>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex flex-wrap gap-3">
+                    <button className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200 transition-all" title="Print Medical Record">
+                        <FileText className="h-4 w-4" />
+                    </button>
                     <PatientPaymentDialog
                         patientId={patientAny.id}
                         patientName={`${patientAny.first_name} ${patientAny.last_name}`}
@@ -126,224 +145,152 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                     />
                     <EditPatientButton patient={patientAny} />
                     <Link
-                        href={`/hms/prescriptions/new?patientId=${patientAny.id}`}
-                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex items-center gap-2"
-                    >
-                        <FileText className="h-4 w-4" />
-                        Prescribe
-                    </Link>
-                    <Link
                         href={`/hms/appointments/new?patient_id=${patientAny.id}`}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center gap-2"
+                        className="h-10 px-4 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium flex items-center gap-2 shadow-sm shadow-indigo-200 transition-all active:scale-95"
                     >
                         <Plus className="h-4 w-4" />
-                        Book Appointment
+                        Book Visit
                     </Link>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-                {/* Left Column: Basic Info */}
-                <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
-                        <h2 className="font-semibold text-gray-900 border-b border-gray-100 pb-2">Patient Details</h2>
+                {/* Left Column: Timeline (activity feed) - Spans 8 cols */}
+                <div className="lg:col-span-8 space-y-8">
 
-                        <div className="space-y-4">
-                            <div className="flex items-start gap-3">
-                                <Phone className="h-5 w-5 text-gray-400 mt-0.5" />
-                                <div>
-                                    <p className="text-sm font-medium text-gray-500">Phone</p>
-                                    <p className="text-gray-900">{(patientAny.contact as any)?.phone || 'Not provided'}</p>
-                                </div>
+                    {/* Timeline Header */}
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                            <Clock className="h-5 w-5 text-indigo-600" />
+                            Reference Timeline
+                        </h2>
+                        <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{timelineEvents.length} Events</span>
+                    </div>
+
+                    {Object.keys(groupedTimeline).length === 0 ? (
+                        <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
+                            <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <Clock className="h-8 w-8 text-slate-300" />
                             </div>
-                            <div className="flex items-start gap-3">
-                                <Mail className="h-5 w-5 text-gray-400 mt-0.5" />
-                                <div>
-                                    <p className="text-sm font-medium text-gray-500">Email</p>
-                                    <p className="text-gray-900">{(patientAny.contact as any)?.email || 'Not provided'}</p>
-                                </div>
-                            </div>
+                            <p className="text-slate-500 font-medium">No clinical history recorded yet.</p>
+                            <p className="text-slate-400 text-sm mt-1">Vitals and consumption events will appear here.</p>
+                        </div>
+                    ) : (
+                        <div className="relative pl-8 border-l-2 border-slate-100 space-y-10">
+                            {Object.entries(groupedTimeline).map(([dateString, events]) => (
+                                <div key={dateString} className="relative">
+                                    {/* Date Header Marker */}
+                                    <div className="absolute -left-[41px] top-0 h-5 w-5 rounded-full border-4 border-white bg-slate-300 ring-4 ring-slate-50" />
+                                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6 pl-2">{dateString}</h3>
 
-                            <div className="flex items-start gap-3">
-                                <User className="h-5 w-5 text-gray-400 mt-0.5" />
-                                <div>
-                                    <p className="text-sm font-medium text-gray-500">Bio / Demographics</p>
-                                    <p className="text-gray-900">
-                                        Born: {patientAny.dob ? new Date(patientAny.dob).toLocaleDateString() : 'Unknown'}
-                                        {patientAny.dob && ` (${new Date().getFullYear() - new Date(patientAny.dob).getFullYear()} yrs)`}
-                                    </p>
-                                    <p className="text-gray-900">
-                                        Blood Group: {(patientAny.metadata as any)?.blood_group || 'Unknown'}
-                                    </p>
-                                </div>
-                            </div>
+                                    <div className="space-y-4">
+                                        {events.map((event: any, i: number) => (
+                                            <div key={i} className="group relative bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:border-indigo-100 transition-all duration-300">
+                                                {/* Line Connector to Bullet */}
+                                                <div className="absolute top-1/2 -left-8 w-6 h-[2px] bg-slate-100 group-hover:bg-indigo-100 transition-colors" />
 
-                            <div className="flex items-start gap-3">
-                                <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
-                                <div>
-                                    <p className="text-sm font-medium text-gray-500">Address</p>
-                                    <div className="text-gray-900">
-                                        {(patientAny.contact as any)?.address?.street && <p>{(patientAny.contact as any).address.street}</p>}
-                                        <p>
-                                            {[(patientAny.contact as any)?.address?.city, (patientAny.contact as any)?.address?.state, (patientAny.contact as any)?.address?.zip].filter(Boolean).join(', ')}
-                                        </p>
-                                        {(patientAny.contact as any)?.address?.country && <p>{(patientAny.contact as any).address.country}</p>}
-                                        {!((patientAny.contact as any)?.address) && 'No address on file'}
+                                                <div className="flex items-start gap-5">
+                                                    {/* Context Icon */}
+                                                    <div className={`mt-1 h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${event.type === 'vital' ? 'bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600' :
+                                                            'bg-gradient-to-br from-orange-50 to-amber-100 text-orange-600'
+                                                        }`}>
+                                                        {event.type === 'vital' ? <FileText className="h-6 w-6" /> : <Clock className="h-6 w-6" />}
+                                                    </div>
+
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <h4 className={`text-base font-bold ${event.type === 'vital' ? 'text-slate-800' : 'text-slate-900'}`}>
+                                                                    {event.type === 'vital' ? 'Vitals Check' : 'Inventory Consumption'}
+                                                                </h4>
+                                                                {event.type === 'consumption_group' && (
+                                                                    <p className="text-xs font-medium text-slate-500 mt-0.5 flex items-center gap-1">
+                                                                        <User className="h-3 w-3" /> Recorded by {event.nurseName}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                            <span className="text-xs font-mono font-medium text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                                                                {event.date ? new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Details */}
+                                                        <div className="mt-4">
+                                                            {event.type === 'vital' ? (
+                                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
+                                                                        <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">Temp</span>
+                                                                        <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.temperature) || '-'}°C</span>
+                                                                    </div>
+                                                                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
+                                                                        <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">BP</span>
+                                                                        <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.systolic)}/{Number(event.data.diastolic)}</span>
+                                                                    </div>
+                                                                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
+                                                                        <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">Pulse</span>
+                                                                        <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.pulse) || '-'}</span>
+                                                                    </div>
+                                                                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
+                                                                        <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">SpO2</span>
+                                                                        <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.spo2) || '-'}%</span>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <div className="bg-orange-50/50 rounded-xl border border-orange-100/50 overflow-hidden">
+                                                                    {event.items.map((item: any, j: number) => (
+                                                                        <div key={j} className="flex justify-between items-center px-4 py-2.5 border-b last:border-0 border-orange-100/50 hover:bg-white/50 transition-colors">
+                                                                            <span className="font-medium text-sm text-slate-800">{item.productName}</span>
+                                                                            <span className="text-xs font-bold font-mono text-orange-700 bg-orange-100/50 px-2 py-0.5 rounded ml-4 whitespace-nowrap">
+                                                                                {item.qty} {item.uom}
+                                                                            </span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
-                            </div>
-
-                            {/* Emergency Contact */}
-                            {(patientAny.contact as any)?.emergency_contact?.name && (
-                                <div className="mt-4 pt-4 border-t border-gray-100">
-                                    <p className="text-sm font-medium text-gray-500 mb-1">Emergency Contact</p>
-                                    <p className="text-gray-900 font-medium">{(patientAny.contact as any).emergency_contact.name} <span className="text-gray-500 text-sm">({(patientAny.contact as any).emergency_contact.relation})</span></p>
-                                    <p className="text-gray-600 text-sm">{(patientAny.contact as any).emergency_contact.phone}</p>
-                                </div>
-                            )}
+                            ))}
                         </div>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                        <h2 className="font-semibold text-gray-900 mb-4">Quick Stats</h2>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="bg-blue-50 p-4 rounded-lg">
-                                <p className="text-2xl font-bold text-blue-600">{patientAny.hms_appointments.length}</p>
-                                <p className="text-xs text-blue-600 font-medium">Visits</p>
-                            </div>
-                            <div className="bg-green-50 p-4 rounded-lg">
-                                <p className="text-2xl font-bold text-green-600">{patientAny.hms_invoice.length}</p>
-                                <p className="text-xs text-green-600 font-medium">Invoices</p>
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
 
-                {/* Right Column: Activity Feed */}
-                <div className="lg:col-span-2 space-y-6">
+                {/* Right Column: Key Info & Actions - Spans 4 cols */}
+                <div className="lg:col-span-4 space-y-6">
 
-                    {/* Clinical Timeline (New World Standard Feature) */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                            <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                                <Clock className="h-4 w-4 text-orange-600" />
-                                Clinical Timeline
-                            </h2>
-                            <span className="text-xs font-medium text-gray-500">Recent Activity</span>
-                        </div>
-                        <div className="divide-y divide-gray-100">
-                            {timelineEvents.length === 0 ? (
-                                <p className="p-8 text-center text-gray-500 text-sm">No clinical history recorded.</p>
-                            ) : (
-                                timelineEvents.map((event: any, i: number) => (
-                                    <div key={i} className="p-4 hover:bg-gray-50 transition-colors flex gap-4">
-                                        <div className={`mt-1 h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${event.type === 'vital' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'
-                                            }`}>
-                                            {event.type === 'vital' ? <FileText className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-start">
-                                                <p className="font-bold text-sm text-gray-800">
-                                                    {event.type === 'vital' ? 'Vitals Recorded' : `Stock Consumed by ${event.nurseName || 'Nurse'}`}
-                                                </p>
-                                                <span className="text-xs text-gray-400">
-                                                    {event.date ? new Date(event.date).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
-                                                </span>
-                                            </div>
+                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 sticky top-6">
+                        <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <MapPin className="h-4 w-4 text-slate-400" />
+                            Emergency Contact
+                        </h3>
+                        {(patientAny.contact as any)?.emergency_contact?.name ? (
+                            <div className="bg-red-50 p-4 rounded-xl border border-red-100">
+                                <p className="font-bold text-red-900 text-lg">{(patientAny.contact as any).emergency_contact.name}</p>
+                                <p className="text-red-700 text-sm font-medium mb-2">{(patientAny.contact as any).emergency_contact.relation}</p>
+                                <div className="flex items-center gap-2 text-red-800 bg-white/50 p-2 rounded-lg justify-center font-mono font-bold">
+                                    <Phone className="h-4 w-4" />
+                                    {(patientAny.contact as any).emergency_contact.phone}
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-slate-400 text-sm italic">No emergency contact on file.</p>
+                        )}
 
-                                            <div className="mt-1 text-sm text-gray-600">
-                                                {event.type === 'vital' ? (
-                                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                                                        {event.data.temperature && <span>Temp: <b>{Number(event.data.temperature)}°C</b></span>}
-                                                        {event.data.systolic && <span>BP: <b>{Number(event.data.systolic)}/{Number(event.data.diastolic)}</b></span>}
-                                                        {event.data.pulse && <span>Pulse: <b>{Number(event.data.pulse)}</b></span>}
-                                                        {event.data.spo2 && <span>SpO2: <b>{Number(event.data.spo2)}%</b></span>}
-                                                    </div>
-                                                ) : (
-                                                    <div className="space-y-1 mt-1">
-                                                        {event.items.map((item: any, j: number) => (
-                                                            <div key={j} className="flex justify-between items-center bg-gray-50/50 p-1 rounded">
-                                                                <span className="font-medium text-xs text-gray-900">{item.productName}</span>
-                                                                <span className="text-[10px] font-bold bg-white border border-gray-100 px-1.5 py-0.5 rounded text-gray-600">
-                                                                    {item.qty} {item.uom}
-                                                                </span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Appointments Card */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                            <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                                <Calendar className="h-4 w-4" />
-                                Recent Appointments
-                            </h2>
-                            <Link href="/hms/appointments" className="text-xs font-medium text-blue-600 hover:text-blue-700">View All</Link>
-                        </div>
-                        <div className="divide-y divide-gray-100">
-                            {patientAny.hms_appointments.length === 0 ? (
-                                <p className="p-8 text-center text-gray-500 text-sm">No appointment history.</p>
-                            ) : (
-                                patientAny.hms_appointments.map((apt: any) => (
-                                    <div key={apt.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
-                                        <div className="flex items-center gap-4">
-                                            <div className="h-10 w-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center font-bold">
-                                                {new Date(apt.starts_at).getDate()}
-                                            </div>
-                                            <div>
-                                                <p className="font-medium text-gray-900">Consultation</p>
-                                                <p className="text-xs text-gray-500 flex items-center gap-1">
-                                                    <Clock className="h-3 w-3" />
-                                                    {new Date(apt.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full capitalize">
-                                            {apt.status}
-                                        </span>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Invoices Card */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                            <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                                <FileText className="h-4 w-4" />
-                                Billing History
-                            </h2>
-                            <Link href="/hms/billing" className="text-xs font-medium text-blue-600 hover:text-blue-700">View All</Link>
-                        </div>
-                        <div className="divide-y divide-gray-100">
-                            {patientAny.hms_invoice.length === 0 ? (
-                                <p className="p-8 text-center text-gray-500 text-sm">No invoices found.</p>
-                            ) : (
-                                patientAny.hms_invoice.map((inv: any) => (
-                                    <div key={inv.id} className="p-4 flex justify-between items-center hover:bg-gray-50 transition-colors">
-                                        <div>
-                                            <p className="font-medium text-gray-900">{inv.invoice_no}</p>
-                                            <p className="text-xs text-gray-500">{new Date(inv.created_at).toLocaleDateString()}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="font-bold text-gray-900">${Number(inv.outstanding_amount).toFixed(2)}</p>
-                                            <p className={`text-xs capitalize ${inv.status === 'paid' ? 'text-green-600' : 'text-orange-600'}`}>
-                                                {inv.status}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
+                        <div className="mt-6 pt-6 border-t border-slate-100">
+                            <h3 className="font-bold text-slate-900 mb-4">Patient Address</h3>
+                            <div className="text-sm text-slate-600 leading-relaxed">
+                                {(patientAny.contact as any)?.address?.street && <p>{(patientAny.contact as any).address.street}</p>}
+                                <p>
+                                    {[(patientAny.contact as any)?.address?.city, (patientAny.contact as any)?.address?.state].filter(Boolean).join(', ')}
+                                    {(patientAny.contact as any)?.address?.zip && ` ${(patientAny.contact as any).address.zip}`}
+                                </p>
+                                {(patientAny.contact as any)?.address?.country && <p className="font-medium">{(patientAny.contact as any).address.country}</p>}
+                            </div>
                         </div>
                     </div>
 
