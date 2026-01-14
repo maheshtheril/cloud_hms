@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Calendar, User, Phone, MapPin, Clock, FileText, Plus, Edit, Mail, Pill, Activity, Receipt, CreditCard, LayoutDashboard, Stethoscope, History } from "lucide-react"
+import { ArrowLeft, Calendar, User, Phone, MapPin, Clock, FileText, Plus, Edit, Mail, Package, Activity, Receipt, CreditCard } from "lucide-react"
 import { EditPatientButton } from "@/components/hms/patients/edit-patient-button"
 import { PatientPaymentDialog } from "@/components/hms/billing/patient-payment-dialog"
 import { PatientConsumptionDialog } from "@/components/hms/billing/patient-consumption-dialog"
@@ -121,8 +121,8 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
     });
 
     // Calculate financials
-    const totalInvoiced = patient.hms_invoice.reduce((sum, inv) => sum + Number(inv.total_amount), 0)
-    const totalOutstanding = patient.hms_invoice.reduce((sum, inv) => sum + Number(inv.outstanding_amount), 0)
+    const totalInvoiced = patient.hms_invoice.reduce((sum, inv) => sum + Number(inv.total || 0), 0)
+    const totalOutstanding = patient.hms_invoice.reduce((sum, inv) => sum + Number(inv.outstanding_amount || 0), 0)
 
     return (
         <div className="h-screen w-full bg-slate-100/50 p-2 md:p-4 lg:p-6 flex flex-col overflow-hidden">
@@ -139,7 +139,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                             <div className="flex items-center gap-3">
                                 <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{patientAny.first_name} {patientAny.last_name}</h1>
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm ${patientAny.gender === 'male' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
-                                        patientAny.gender === 'female' ? 'bg-pink-50 text-pink-700 border border-pink-100' : 'bg-slate-50 text-slate-700 border border-slate-100'
+                                    patientAny.gender === 'female' ? 'bg-pink-50 text-pink-700 border border-pink-100' : 'bg-slate-50 text-slate-700 border border-slate-100'
                                     }`}>
                                     {patientAny.gender || 'Unknown'}
                                 </span>
@@ -180,11 +180,11 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                     <div className="px-6 border-b border-slate-100 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
                         <TabsList className="h-12 bg-transparent gap-6 p-0">
                             <TabsTrigger value="overview" className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 data-[state=active]:shadow-none px-2 text-slate-500 font-medium text-sm hover:text-indigo-500 transition-colors">
-                                <LayoutDashboard className="h-4 w-4 mr-2" />
+                                <FileText className="h-4 w-4 mr-2" />
                                 360° Overview
                             </TabsTrigger>
                             <TabsTrigger value="clinical" className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 data-[state=active]:shadow-none px-2 text-slate-500 font-medium text-sm hover:text-indigo-500 transition-colors">
-                                <Stethoscope className="h-4 w-4 mr-2" />
+                                <Activity className="h-4 w-4 mr-2" />
                                 Clinical Data
                             </TabsTrigger>
                             <TabsTrigger value="financials" className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 data-[state=active]:shadow-none px-2 text-slate-500 font-medium text-sm hover:text-indigo-500 transition-colors">
@@ -192,7 +192,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                 Financials
                             </TabsTrigger>
                             <TabsTrigger value="history" className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 data-[state=active]:shadow-none px-2 text-slate-500 font-medium text-sm hover:text-indigo-500 transition-colors">
-                                <History className="h-4 w-4 mr-2" />
+                                <Clock className="h-4 w-4 mr-2" />
                                 History Log
                             </TabsTrigger>
                         </TabsList>
@@ -202,7 +202,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                     <div className="flex-1 overflow-y-auto bg-slate-50/30 p-6 md:p-8 scroll-smooth">
 
                         {/* TAB: OVERVIEW (Timeline) */}
-                        <TabsContent value="overview" className="m-0 space-y-8 max-w-7xl mx-auto animate-in fade-in-50 duration-500 slide-in-from-bottom-2 selection:bg-indigo-100">
+                        <TabsContent value="overview" className="m-0 space-y-8 max-w-7xl mx-auto selection:bg-indigo-100">
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                                 {/* Left: Timeline */}
                                 <div className="lg:col-span-8 space-y-6">
@@ -242,7 +242,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                                                 title = 'Vitals Recorded';
                                                             } else if (event.type === 'consumption_group') {
                                                                 iconColor = 'bg-orange-100 text-orange-600';
-                                                                Icon = Pill;
+                                                                Icon = Package;
                                                                 title = 'Medication/Consumables';
                                                             } else if (event.type === 'appointment') {
                                                                 LinkComponent = Link;
@@ -346,7 +346,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                         </TabsContent>
 
                         {/* TAB: CLINICAL */}
-                        <TabsContent value="clinical" className="m-0 max-w-7xl mx-auto space-y-6 animate-in fade-in-50 duration-500">
+                        <TabsContent value="clinical" className="m-0 max-w-7xl mx-auto space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Vitals Card */}
                                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
@@ -386,7 +386,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                 <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
                                     <div className="flex justify-between items-center mb-6">
                                         <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
-                                            <Pill className="h-5 w-5 text-orange-500" /> Medications / Consumption
+                                            <Package className="h-5 w-5 text-orange-500" /> Medications / Consumption
                                         </h3>
                                     </div>
                                     <div className="space-y-3">
@@ -411,7 +411,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                         </TabsContent>
 
                         {/* TAB: FINANCIALS */}
-                        <TabsContent value="financials" className="m-0 max-w-7xl mx-auto space-y-6 animate-in fade-in-50 duration-500">
+                        <TabsContent value="financials" className="m-0 max-w-7xl mx-auto space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                                     <p className="text-slate-500 font-medium text-sm">Total Invoiced</p>
@@ -440,7 +440,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                                 </div>
                                             </div>
                                             <div className="text-right">
-                                                <p className="font-mono font-bold text-slate-900">₹{Number(inv.total_amount).toLocaleString()}</p>
+                                                <p className="font-mono font-bold text-slate-900">₹{Number(inv.total || 0).toLocaleString()}</p>
                                                 <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${inv.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
                                                     {inv.status}
                                                 </span>
