@@ -291,7 +291,11 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                                                             <div className="flex justify-between items-start">
                                                                                 <div>
                                                                                     <h5 className="font-bold text-slate-900">{title}</h5>
-                                                                                    {event.type === 'invoice' && <p className="text-sm font-mono text-slate-600 font-medium">#{event.data.invoice_no}</p>}
+                                                                                    {event.type === 'invoice' && (
+                                                                                        <p className="text-sm font-mono text-slate-600 font-medium text-orange-600">
+                                                                                            {event.data.invoice_no || event.data.invoice_number ? `#${event.data.invoice_no || event.data.invoice_number}` : 'DRAFT'}
+                                                                                        </p>
+                                                                                    )}
                                                                                     {event.type === 'appointment' && <p className="text-sm text-slate-600 capitalize">{event.data.type || 'General'}</p>}
                                                                                 </div>
                                                                                 <span className="text-xs font-mono font-medium text-slate-400">{event.date ? new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
@@ -486,7 +490,9 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                                             <Receipt className="h-5 w-5" />
                                                         </div>
                                                         <div className="text-left">
-                                                            <p className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">Invoice #{inv.invoice_no}</p>
+                                                            <p className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                                                                {inv.invoice_no || inv.invoice_number ? `Invoice #${inv.invoice_no || inv.invoice_number}` : 'DRAFT INVOICE'}
+                                                            </p>
                                                             <p className="text-xs text-slate-500">{new Date(inv.created_at).toLocaleDateString()}</p>
                                                         </div>
                                                     </div>
