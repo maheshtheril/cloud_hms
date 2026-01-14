@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, X, Loader2, CreditCard, Banknote, Smartphone, Landmark, MessageCircle, Maximize2, Minimize2, Check, Send, CheckCircle2 } from 'lucide-react'
+import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, X, Loader2, CreditCard, Banknote, Smartphone, Landmark, MessageCircle, Maximize2, Minimize2, Check, Send, CheckCircle2, QrCode, Printer, ArrowRight } from 'lucide-react'
 import { createInvoice, updateInvoice, getPatientBalance, createQuickPatient } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { useToast } from '@/components/ui/use-toast'
@@ -1092,13 +1092,13 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                             {/* WORLD CLASS POS BAR */}
                             <div className="bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-200 dark:border-slate-800 p-3 shadow-sm">
                                 <div className="flex flex-col gap-4">
-                                    {/* Line 1: Quick Method Select */}
-                                    <div className="flex items-center gap-2">
+                                    {/* Line 1: Quick Method Select - POS STYLE */}
+                                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
                                         {[
-                                            { id: 'cash', label: 'CASH', icon: Banknote, color: 'emerald' },
-                                            { id: 'upi', label: 'UPI/GPAY', icon: Smartphone, color: 'indigo' },
-                                            { id: 'card', label: 'CARD', icon: CreditCard, color: 'blue' },
-                                            { id: 'bank_transfer', label: 'TRANSFER', icon: Landmark, color: 'slate' }
+                                            { id: 'cash', label: 'CASH', icon: Banknote },
+                                            { id: 'upi', label: 'UPI / QR', icon: QrCode },
+                                            { id: 'card', label: 'CARD', icon: CreditCard },
+                                            { id: 'bank_transfer', label: 'BANK', icon: Landmark }
                                         ].map((m) => (
                                             <button
                                                 key={m.id}
@@ -1112,9 +1112,9 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                                     }
                                                     setPayments(newPayments);
                                                 }}
-                                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 font-black text-[10px] transition-all ${payments[0]?.method === m.id ? `bg-${m.color}-600 border-${m.color}-400 text-white shadow-lg scale-105 shadow-${m.color}-500/20` : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-500 hover:border-slate-300'}`}
+                                                className={`flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-lg font-black text-[9px] transition-all gap-1 ${payments[0]?.method === m.id ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm border border-indigo-100' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}
                                             >
-                                                <m.icon className="h-4 w-4" />
+                                                <m.icon className={`h-4 w-4 ${payments[0]?.method === m.id ? 'text-indigo-600 font-bold' : 'text-slate-300'}`} />
                                                 {m.label}
                                             </button>
                                         ))}
@@ -1177,7 +1177,10 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                             className={`p-2 rounded-lg border transition-all ${payments.length > 1 ? 'bg-indigo-100 border-indigo-200 text-indigo-600' : 'bg-slate-100 border-slate-200 text-slate-400 hover:text-slate-600'}`}
                                             title="Toggle Multi-Method Split Payment"
                                         >
-                                            <MessageCircle className="h-4 w-4" />
+                                            <div className="flex flex-col gap-0.5 items-center justify-center scale-90">
+                                                <div className="w-3 h-1 bg-current rounded-full opacity-40" />
+                                                <div className="w-3 h-1 bg-current rounded-full" />
+                                            </div>
                                         </button>
                                     </div>
 
@@ -1257,25 +1260,25 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                 <button
                                     onClick={() => handleSave('draft')}
                                     disabled={loading}
-                                    className="px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all border-b-2 active:translate-y-0.5 active:border-b-0"
+                                    className="px-3 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-black rounded-2xl hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
                                 >
-                                    Draft
+                                    SAVE DRAFT
                                 </button>
                                 <button
                                     onClick={() => handleSave(balanceDue > 1 ? 'posted' : 'paid')}
                                     disabled={loading}
-                                    className={`px-3 py-2.5 text-white text-xs font-bold rounded-xl hover:shadow-lg flex items-center justify-center gap-1.5 transition-all border-b-2 active:translate-y-0.5 active:border-b-0 ${balanceDue > 1 ? "bg-indigo-600 hover:bg-indigo-700 border-indigo-800" : "bg-emerald-600 hover:bg-emerald-700 border-emerald-800 hover:shadow-emerald-500/20"}`}
+                                    className={`px-3 py-3 text-white text-xs font-black rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-indigo-500/10 ${balanceDue > 1 ? "bg-slate-800 border-b-4 border-slate-950" : "bg-emerald-600 border-b-4 border-emerald-800"}`}
                                 >
-                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : balanceDue > 1 ? <Send className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                                    {balanceDue > 1 ? 'Post Invoice (Credit)' : 'Post & Paid'}
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : balanceDue > 1 ? <ArrowRight className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                                    {balanceDue > 1 ? 'PAY LATER (CREDIT)' : 'PAY & FINALIZE'}
                                 </button>
                                 <button
                                     onClick={() => handleSave('paid' as any)}
                                     disabled={loading}
-                                    className="col-span-2 lg:col-span-1 px-3 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-500/20 flex items-center justify-center gap-1.5 transition-all border-b-2 border-emerald-800 active:translate-y-0.5 active:border-b-0"
+                                    className="col-span-2 lg:col-span-1 px-3 py-3 bg-emerald-100 text-emerald-700 text-xs font-black rounded-2xl hover:bg-emerald-200 flex items-center justify-center gap-2 transition-all active:scale-95"
                                 >
-                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
-                                    WhatsApp
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+                                    PRINT BILL
                                 </button>
                             </div>
                         </div>
