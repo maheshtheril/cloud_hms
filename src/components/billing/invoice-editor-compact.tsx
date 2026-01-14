@@ -488,7 +488,8 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     const totalTax = lines.reduce((sum, line) => sum + (line.tax_amount || 0), 0)
     const grandTotal = Math.max(0, subtotal + totalTax - globalDiscount)
     const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0)
-    const balanceDue = grandTotal - totalPaid
+    const balanceDue = Math.max(0, grandTotal - totalPaid)
+    const changeAmount = Math.max(0, totalPaid - grandTotal)
 
     const [isMounted, setIsMounted] = useState(false)
     useEffect(() => { setIsMounted(true) }, [])
@@ -1067,31 +1068,38 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                         <CreditCard className="h-3 w-3" /> Payment Breakdown
                                     </div>
-                                    <div className="flex flex-col items-end gap-1">
+                                    <div className="flex flex-col items-end gap-1.5">
+                                        {/* Row 1: The Balance Due (Caps at 0) */}
                                         <div className="flex items-center gap-2">
-                                            <span className="text-xs text-slate-500 font-bold">
-                                                {balanceDue < -0.1 ? (isWalkIn ? 'Change to Return:' : 'Excess (Keep as Advance):') : 'Balance Due:'}
+                                            <span className="text-xs text-slate-500 font-bold uppercase tracking-tighter">
+                                                Balance Due:
                                             </span>
-                                            <span
-                                                onClick={() => {
-                                                    if (balanceDue > 0) {
-                                                        setPayments([{ method: 'cash', amount: grandTotal, reference: '' }]);
-                                                    }
-                                                }}
-                                                className={`text-xs font-bold px-2 py-0.5 rounded shadow-sm border cursor-pointer hover:scale-105 transition-transform ${balanceDue > 1 ? "bg-red-50 text-red-600 border-red-100 dark:text-red-400 dark:bg-red-500/10 dark:border-red-500/20" : balanceDue < -1 ? "bg-blue-50 text-blue-600 border-blue-100 dark:text-blue-400 dark:bg-blue-500/10 dark:border-blue-500/20" : "bg-emerald-50 text-emerald-600 border-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20"}`}
-                                                title={balanceDue > 0 ? "Click to auto-fill payment" : ""}
-                                            >
-                                                {balanceDue > 1 ? `₹${balanceDue.toFixed(2)}` : balanceDue < -1 ? `₹${Math.abs(balanceDue).toFixed(2)}` : 'SETTLED'}
+                                            <span className={`text-xs font-bold px-3 py-1 rounded shadow-sm border transition-all ${balanceDue > 0 ? "bg-red-50 text-red-600 border-red-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"}`}>
+                                                ₹{balanceDue.toFixed(2)}
                                             </span>
                                         </div>
-                                        {balanceDue < -1 && !isWalkIn && (
-                                            <p className="text-[9px] text-blue-500 font-medium animate-pulse flex items-center gap-1">
-                                                <CheckCircle2 className="w-2 w-2" /> Will be added to Patient Advance
+
+                                        {/* Row 2: The Change (Only shows if there is overpayment) */}
+                                        {changeAmount > 0 && (
+                                            <div className="flex items-center gap-2 animate-in slide-in-from-right-2 duration-300">
+                                                <span className="text-xs text-blue-600 font-black uppercase tracking-tighter italic">
+                                                    {isWalkIn ? 'Return Change:' : 'To Advance:'}
+                                                </span>
+                                                <span className={`text-sm font-black px-3 py-1 rounded shadow-lg border-2 scale-110 active:scale-100 transition-all ${isWalkIn ? "bg-pink-600 text-white border-pink-400" : "bg-blue-600 text-white border-blue-400"}`}>
+                                                    ₹{changeAmount.toFixed(2)}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {/* Row 3: Helper hints */}
+                                        {changeAmount > 0 && isWalkIn && (
+                                            <p className="text-[10px] text-pink-500 font-bold flex items-center gap-1 mt-1 animate-pulse">
+                                                <X className="w-3 h-3" /> PHYSICAL CASH RETURN REQUIRED
                                             </p>
                                         )}
-                                        {balanceDue < -1 && isWalkIn && (
-                                            <p className="text-[9px] text-pink-500 font-medium animate-pulse flex items-center gap-1">
-                                                <X className="w-2 w-2" /> Please return change to guest
+                                        {changeAmount > 0 && !isWalkIn && (
+                                            <p className="text-[10px] text-blue-500 font-bold flex items-center gap-1 mt-1">
+                                                <CheckCircle2 className="w-3 h-3" /> STOCKED IN PATIENT WALLET (ADVANCE)
                                             </p>
                                         )}
                                     </div>
