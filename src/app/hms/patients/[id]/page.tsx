@@ -95,17 +95,26 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
             date: v.recorded_at,
             data: v
         })),
-        ...consumptionEvents
+        ...consumptionEvents,
+        ...patient.hms_appointments.map(a => ({
+            type: 'appointment',
+            date: a.starts_at,
+            data: a
+        })),
+        ...patient.hms_invoice.map(i => ({
+            type: 'invoice',
+            date: i.created_at,
+            data: i
+        }))
     ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
 
-    return (
     // Group Timeline Events by Date for World-Class Presentation
     const groupedTimeline: { [key: string]: any[] } = {};
-        timelineEvents.forEach(event => {
-            const dateKey = new Date(event.date || 0).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            if (!groupedTimeline[dateKey]) groupedTimeline[dateKey] = [];
-            groupedTimeline[dateKey].push(event);
-        });
+    timelineEvents.forEach(event => {
+        const dateKey = new Date(event.date || 0).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        if (!groupedTimeline[dateKey]) groupedTimeline[dateKey] = [];
+        groupedTimeline[dateKey].push(event);
+    });
 
     return (
         <div className="space-y-6 max-w-7xl mx-auto pb-20">
@@ -174,7 +183,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                 <Clock className="h-8 w-8 text-slate-300" />
                             </div>
                             <p className="text-slate-500 font-medium">No clinical history recorded yet.</p>
-                            <p className="text-slate-400 text-sm mt-1">Vitals and consumption events will appear here.</p>
+                            <p className="text-slate-400 text-sm mt-1">Vitals, Consultations, and Billing history will appear here.</p>
                         </div>
                     ) : (
                         <div className="relative pl-8 border-l-2 border-slate-100 space-y-10">
@@ -185,74 +194,116 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                     <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6 pl-2">{dateString}</h3>
 
                                     <div className="space-y-4">
-                                        {events.map((event: any, i: number) => (
-                                            <div key={i} className="group relative bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:border-indigo-100 transition-all duration-300">
-                                                {/* Line Connector to Bullet */}
-                                                <div className="absolute top-1/2 -left-8 w-6 h-[2px] bg-slate-100 group-hover:bg-indigo-100 transition-colors" />
+                                        {events.map((event: any, i: number) => {
+                                            // Determine Link and Colors based on type
+                                            let LinkComponent: any = 'div';
+                                            let linkProps: any = {};
+                                            let iconColor = '';
+                                            let Icon = Clock;
+                                            let title = '';
 
-                                                <div className="flex items-start gap-5">
-                                                    {/* Context Icon */}
-                                                    <div className={`mt-1 h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${event.type === 'vital' ? 'bg-gradient-to-br from-blue-50 to-blue-100 text-blue-600' :
-                                                            'bg-gradient-to-br from-orange-50 to-amber-100 text-orange-600'
-                                                        }`}>
-                                                        {event.type === 'vital' ? <FileText className="h-6 w-6" /> : <Clock className="h-6 w-6" />}
-                                                    </div>
+                                            // Default styles
+                                            iconColor = 'bg-gradient-to-br from-slate-50 to-slate-100 text-slate-600';
 
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex justify-between items-start">
-                                                            <div>
-                                                                <h4 className={`text-base font-bold ${event.type === 'vital' ? 'text-slate-800' : 'text-slate-900'}`}>
-                                                                    {event.type === 'vital' ? 'Vitals Check' : 'Inventory Consumption'}
-                                                                </h4>
-                                                                {event.type === 'consumption_group' && (
-                                                                    <p className="text-xs font-medium text-slate-500 mt-0.5 flex items-center gap-1">
-                                                                        <User className="h-3 w-3" /> Recorded by {event.nurseName}
-                                                                    </p>
-                                                                )}
+                                            if (event.type === 'vital') {
+                                                iconColor = 'bg-gradient-to-br from-cyan-50 to-cyan-100 text-cyan-600';
+                                                Icon = FileText;
+                                                title = 'Vitals Check';
+                                            } else if (event.type === 'consumption_group') {
+                                                iconColor = 'bg-gradient-to-br from-orange-50 to-orange-100 text-orange-600';
+                                                Icon = FileText;
+                                                title = 'Inventory Consumption';
+                                            } else if (event.type === 'appointment') {
+                                                LinkComponent = Link;
+                                                linkProps = { href: `/hms/appointments/${event.data.id}` };
+                                                iconColor = 'bg-gradient-to-br from-indigo-50 to-indigo-100 text-indigo-600';
+                                                Icon = Calendar;
+                                                title = 'Consultation';
+                                            } else if (event.type === 'invoice') {
+                                                LinkComponent = Link;
+                                                linkProps = { href: `/hms/billing/${event.data.id}` };
+                                                iconColor = 'bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600';
+                                                Icon = FileText;
+                                                title = `Invoice #${event.data.invoice_no}`;
+                                            }
+
+                                            return (
+                                                <LinkComponent key={i} {...linkProps} className={`block group relative bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:border-indigo-100 transition-all duration-300 ${LinkComponent === Link ? 'cursor-pointer' : ''}`}>
+                                                    {/* Line Connector to Bullet */}
+                                                    <div className="absolute top-1/2 -left-8 w-6 h-[2px] bg-slate-100 group-hover:bg-indigo-100 transition-colors" />
+
+                                                    <div className="flex items-start gap-5">
+                                                        {/* Context Icon */}
+                                                        <div className={`mt-1 h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${iconColor}`}>
+                                                            <Icon className="h-6 w-6" />
+                                                        </div>
+
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex justify-between items-start">
+                                                                <div>
+                                                                    <h4 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                                                                        {title}
+                                                                    </h4>
+                                                                    {event.type === 'consumption_group' && (
+                                                                        <p className="text-xs font-medium text-slate-500 mt-0.5 flex items-center gap-1">
+                                                                            <User className="h-3 w-3" /> Recorded by {event.nurseName}
+                                                                        </p>
+                                                                    )}
+                                                                    {event.type === 'appointment' && (
+                                                                        <p className="text-xs font-medium text-slate-500 mt-0.5 capitalize">
+                                                                            {event.data.status} • {event.data.type || 'General Checkup'}
+                                                                        </p>
+                                                                    )}
+                                                                    {event.type === 'invoice' && (
+                                                                        <p className={`text-xs font-bold mt-0.5 ${event.data.status === 'paid' ? 'text-emerald-600' : 'text-orange-600'} uppercase`}>
+                                                                            {event.data.status} • ${Number(event.data.outstanding_amount).toFixed(2)} Due
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                                <span className="text-xs font-mono font-medium text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                                                                    {event.date ? new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
+                                                                </span>
                                                             </div>
-                                                            <span className="text-xs font-mono font-medium text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-                                                                {event.date ? new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
-                                                            </span>
-                                                        </div>
 
-                                                        {/* Details */}
-                                                        <div className="mt-4">
-                                                            {event.type === 'vital' ? (
-                                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                                                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
-                                                                        <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">Temp</span>
-                                                                        <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.temperature) || '-'}°C</span>
-                                                                    </div>
-                                                                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
-                                                                        <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">BP</span>
-                                                                        <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.systolic)}/{Number(event.data.diastolic)}</span>
-                                                                    </div>
-                                                                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
-                                                                        <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">Pulse</span>
-                                                                        <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.pulse) || '-'}</span>
-                                                                    </div>
-                                                                    <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
-                                                                        <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">SpO2</span>
-                                                                        <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.spo2) || '-'}%</span>
-                                                                    </div>
-                                                                </div>
-                                                            ) : (
-                                                                <div className="bg-orange-50/50 rounded-xl border border-orange-100/50 overflow-hidden">
-                                                                    {event.items.map((item: any, j: number) => (
-                                                                        <div key={j} className="flex justify-between items-center px-4 py-2.5 border-b last:border-0 border-orange-100/50 hover:bg-white/50 transition-colors">
-                                                                            <span className="font-medium text-sm text-slate-800">{item.productName}</span>
-                                                                            <span className="text-xs font-bold font-mono text-orange-700 bg-orange-100/50 px-2 py-0.5 rounded ml-4 whitespace-nowrap">
-                                                                                {item.qty} {item.uom}
-                                                                            </span>
+                                                            {/* Details */}
+                                                            <div className="mt-4">
+                                                                {event.type === 'vital' ? (
+                                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
+                                                                            <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">Temp</span>
+                                                                            <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.temperature) || '-'}°C</span>
                                                                         </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
+                                                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
+                                                                            <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">BP</span>
+                                                                            <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.systolic)}/{Number(event.data.diastolic)}</span>
+                                                                        </div>
+                                                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
+                                                                            <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">Pulse</span>
+                                                                            <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.pulse) || '-'}</span>
+                                                                        </div>
+                                                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
+                                                                            <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">SpO2</span>
+                                                                            <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.spo2) || '-'}%</span>
+                                                                        </div>
+                                                                    </div>
+                                                                ) : event.type === 'consumption_group' ? (
+                                                                    <div className="bg-orange-50/50 rounded-xl border border-orange-100/50 overflow-hidden">
+                                                                        {event.items.map((item: any, j: number) => (
+                                                                            <div key={j} className="flex justify-between items-center px-4 py-2.5 border-b last:border-0 border-orange-100/50 hover:bg-white/50 transition-colors">
+                                                                                <span className="font-medium text-sm text-slate-800">{item.productName}</span>
+                                                                                <span className="text-xs font-bold font-mono text-orange-700 bg-orange-100/50 px-2 py-0.5 rounded ml-4 whitespace-nowrap">
+                                                                                    {item.qty} {item.uom}
+                                                                                </span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                ) : null}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                                </LinkComponent>
+                                            )
+                                        })}
                                     </div>
                                 </div>
                             ))}
