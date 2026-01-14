@@ -453,11 +453,14 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
     return items;
 }
 
+let hasAudited = false;
+
 /**
  * SELF-HEALING: Audit and Fix Menu Permissions
  * Ensures all menu items have valid permission codes.
  */
 export async function auditAndFixMenuPermissions() {
+    if (hasAudited) return { success: true };
     try {
         // -1. ENSURE PERMISSIONS EXIST
         // Run seed check to register any missing permission codes
@@ -630,6 +633,7 @@ export async function auditAndFixMenuPermissions() {
         }
 
         console.log("Self-healing: Menu permissions audited and fixed.");
+        hasAudited = true;
         return { success: true };
     } catch (error) {
         console.error("Self-healing failed:", error);

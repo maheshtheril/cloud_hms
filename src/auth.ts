@@ -39,11 +39,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             });
                             const moduleKeys = tenantModules.map(m => m.module_key);
 
+                            // SECURITY/PERFORMANCE: Avoid storing massive base64 images in session cookie (causes 431 errors)
+                            const rawAvatar = user.metadata?.avatar_url || null;
+                            const safeAvatar = (typeof rawAvatar === 'string' && rawAvatar.startsWith('data:') && rawAvatar.length > 5000)
+                                ? null
+                                : rawAvatar;
+
                             return {
                                 id: user.id,
                                 email: user.email,
                                 name: user.name,
-                                image: user.metadata?.avatar_url || null, // Map avatar
+                                image: safeAvatar,
                                 isAdmin: user.is_admin,
                                 isTenantAdmin: user.is_tenant_admin,
                                 companyId: user.company_id,
