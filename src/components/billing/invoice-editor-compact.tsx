@@ -354,7 +354,11 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                             </div>
                         ) : (
                             <SearchableSelect
-                                options={patients.concat(extraPatients).map(p => ({ label: `${p.name} (${p.phone || 'No Phone'})`, value: p.id }))}
+                                defaultOptions={patients.concat(extraPatients).map(p => ({ label: p.name, id: p.id, subLabel: p.phone }))}
+                                onSearch={async (q) => {
+                                    const all = patients.concat(extraPatients).map(p => ({ label: p.name, id: p.id, subLabel: p.phone }));
+                                    return all.filter(p => p.label.toLowerCase().includes(q.toLowerCase()) || (p.subLabel && p.subLabel.includes(q)));
+                                }}
                                 value={selectedPatientId}
                                 onChange={(val) => setSelectedPatientId(val)}
                                 placeholder="Search Patient..."
@@ -405,12 +409,18 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                     <tr key={line.id} className="group hover:bg-slate-100/50 dark:hover:bg-slate-800/30 transition-colors">
                                         <td className="py-3 px-3">
                                             <SearchableSelect
-                                                id={`product-search-${line.id}`}
-                                                options={billableOptions.map(o => ({ label: `${o.label}${o.sku ? ` [${o.sku}]` : ''}`, value: o.id }))}
+                                                inputId={`product-search-${line.id}`}
+                                                defaultOptions={billableOptions.map(o => ({ label: o.label, id: o.id, subLabel: o.sku }))}
+                                                onSearch={async (q) => {
+                                                    return billableOptions
+                                                        .filter(o => o.label.toLowerCase().includes(q.toLowerCase()) || (o.sku && o.sku.toLowerCase().includes(q.toLowerCase())))
+                                                        .map(o => ({ label: o.label, id: o.id, subLabel: o.sku }));
+                                                }}
                                                 value={line.product_id}
                                                 onChange={(val) => updateLine(line.id, 'product_id', val)}
                                                 placeholder="Choose Item..."
-                                                className="border-none shadow-none bg-transparent hover:bg-white dark:hover:bg-slate-800 focus:ring-0 focus:bg-white dark:focus:bg-slate-800 transition-all rounded-lg"
+                                                variant="ghost"
+                                                className="w-full"
                                             />
                                         </td>
                                         <td className="py-3 px-3">
