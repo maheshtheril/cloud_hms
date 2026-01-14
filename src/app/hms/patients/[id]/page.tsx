@@ -6,6 +6,8 @@ import { EditPatientButton } from "@/components/hms/patients/edit-patient-button
 import { PatientPaymentDialog } from "@/components/hms/billing/patient-payment-dialog"
 import { PatientConsumptionDialog } from "@/components/hms/billing/patient-consumption-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { InvoicePreviewDialog } from "@/components/hms/billing/invoice-preview-dialog"
+import { AppointmentManageDialog } from "@/components/hms/appointments/appointment-manage-dialog"
 
 export default async function PatientDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -39,6 +41,21 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                 take: 50
             }
         }
+    })
+
+    // Fetch doctors for appointment dialog
+    const doctors = await prisma.hms_clinicians.findMany({
+        where: { is_active: true },
+        select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            hms_specializations: { select: { name: true } },
+            role: true,
+            consultation_start_time: true,
+            consultation_end_time: true
+        },
+        orderBy: { first_name: 'asc' }
     })
 
     if (!patient) {
@@ -165,13 +182,18 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                             patientName={`${patientAny.first_name} ${patientAny.last_name}`}
                         />
                         <EditPatientButton patient={patientAny} />
-                        <Link
-                            href={`/hms/appointments/new?patient_id=${patientAny.id}`}
-                            className="h-10 px-5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium flex items-center gap-2 shadow-lg shadow-indigo-200 transition-all active:scale-95"
-                        >
-                            <Plus className="h-4 w-4" />
-                            Book Checkup
-                        </Link>
+                        <AppointmentManageDialog
+                            patient={patientAny}
+                            doctors={doctors}
+                            trigger={
+                                <button
+                                    className="h-10 px-5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium flex items-center gap-2 shadow-lg shadow-indigo-200 transition-all active:scale-95"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                    Book Checkup
+                                </button>
+                            }
+                        />
                     </div>
                 </div>
 
@@ -258,8 +280,8 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                                                 title = `Invoice Generated`;
                                                             }
 
-                                                            return (
-                                                                <LinkComponent key={i} {...linkProps} className={`block bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:border-indigo-200 transition-all duration-200 group relative ${LinkComponent === Link ? 'cursor-pointer' : ''}`}>
+                                                            const CardContentFallback = (
+                                                                <div className={`block bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:border-indigo-200 transition-all duration-200 group relative cursor-pointer`}>
                                                                     <div className="absolute top-1/2 -left-8 w-6 h-[2px] bg-slate-200 group-hover:bg-indigo-200 transition-colors" />
                                                                     <div className="flex gap-4">
                                                                         <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ${iconColor}`}>
@@ -287,8 +309,33 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                                                             )}
                                                                         </div>
                                                                     </div>
-                                                                </LinkComponent>
+                                                                </div>
                                                             )
+
+                                                            if (event.type === 'appointment') {
+                                                                return (
+                                                                    <AppointmentManageDialog
+                                                                        key={i}
+                                                                        patient={patientAny}
+                                                                        doctors={doctors}
+                                                                        existingAppointment={event.data}
+                                                                        trigger={CardContentFallback}
+                                                                    />
+                                                                )
+                                                            }
+
+                                                            if (event.type === 'invoice') {
+                                                                return (
+                                                                    <InvoicePreviewDialog
+                                                                        key={i}
+                                                                        invoice={event.data}
+                                                                        trigger={CardContentFallback}
+                                                                    />
+                                                                )
+                                                            }
+
+                                                            return <div key={i}>{CardContentFallback}</div>
+
                                                         })}
                                                     </div>
                                                 </div>
@@ -429,23 +476,29 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                 </div>
                                 <div className="divide-y divide-slate-100">
                                     {patient.hms_invoice.map((inv, i) => (
-                                        <Link href={`/hms/billing/${inv.id}`} key={i} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
-                                            <div className="flex items-center gap-4">
-                                                <div className={`h-10 w-10 rounded-full flex items-center justify-center transition-colors ${inv.status === 'paid' ? 'bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200' : 'bg-orange-100 text-orange-600 group-hover:bg-orange-200'}`}>
-                                                    <Receipt className="h-5 w-5" />
+                                        <InvoicePreviewDialog
+                                            key={i}
+                                            invoice={inv}
+                                            trigger={
+                                                <div className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group cursor-pointer w-full">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className={`h-10 w-10 rounded-full flex items-center justify-center transition-colors ${inv.status === 'paid' ? 'bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200' : 'bg-orange-100 text-orange-600 group-hover:bg-orange-200'}`}>
+                                                            <Receipt className="h-5 w-5" />
+                                                        </div>
+                                                        <div className="text-left">
+                                                            <p className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">Invoice #{inv.invoice_no}</p>
+                                                            <p className="text-xs text-slate-500">{new Date(inv.created_at).toLocaleDateString()}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="font-mono font-bold text-slate-900">₹{Number(inv.total || 0).toLocaleString()}</p>
+                                                        <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${inv.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                            {inv.status}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">Invoice #{inv.invoice_no}</p>
-                                                    <p className="text-xs text-slate-500">{new Date(inv.created_at).toLocaleDateString()}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="font-mono font-bold text-slate-900">₹{Number(inv.total || 0).toLocaleString()}</p>
-                                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${inv.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
-                                                    {inv.status}
-                                                </span>
-                                            </div>
-                                        </Link>
+                                            }
+                                        />
                                     ))}
                                     {patient.hms_invoice.length === 0 && <p className="p-6 text-slate-400 text-center italic">No invoices found.</p>}
                                 </div>
