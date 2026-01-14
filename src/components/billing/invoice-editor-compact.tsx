@@ -494,17 +494,15 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     useEffect(() => { setIsMounted(true) }, [])
 
     // Auto-update default payment if only one exists (UX convenience)
-    // ONLY for new invoices or when user is interacting (not on initial load of existing invoice)
+    // ONLY for new invoices or when user is interacting
     useEffect(() => {
-        if (!isMounted) return; // Skip on first run to protect DB values
-        if (initialInvoice && payments.length === 1 && payments[0].amount !== 0) {
-            // If we have an initial invoice and a non-zero payment, don't overwrite it automatically
-            // unless the user changes something else? For now, let's be conservative.
-            return;
-        }
+        if (!isMounted) return;
+        if (initialInvoice) return; // Never auto-fill for existing invoices
 
-        if (payments.length === 1 && payments[0].amount !== grandTotal) {
-            setPayments([{ ...payments[0], amount: grandTotal }])
+        // User says: "it should be 0 right?" - so we default to 0 for strict accounting.
+        // We provide a big "Pay Now" button to auto-fill with one click.
+        if (payments.length === 1 && payments[0].amount === 0 && grandTotal > 0) {
+            // Keep it 0 by default as per user request
         }
     }, [grandTotal, isMounted])
 
@@ -664,6 +662,30 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             billingMetadata.patient_phone = walkInPhone;
         }
 
+        // World Class: Handle Overpayment/Change
+        let finalizedPayments = [...payments];
+
+        if (isWalkIn && balanceDue < -0.01) {
+            // For Walk-in, any overpayment is physical "Change" given back.
+            // We should only record the invoice total as the payment to keep the cash ledger clean.
+            // This prevents the system from thinking there's "Advance" for a guest.
+            const excess = Math.abs(balanceDue);
+
+            // Deduct the excess from the payment(s)
+            let remainingToDeduct = excess;
+            finalizedPayments = finalizedPayments.map(p => {
+                if (remainingToDeduct <= 0) return p;
+                const deduct = Math.min(p.amount, remainingToDeduct);
+                remainingToDeduct -= deduct;
+                return { ...p, amount: p.amount - deduct };
+            }).filter(p => p.amount > 0);
+
+            toast({
+                title: "Change Handled",
+                description: `₹${excess.toFixed(2)} recorded as physical change given back. Only ₹${grandTotal.toFixed(2)} was posted to the ledger.`,
+            });
+        }
+
         const payload = {
             patient_id: isWalkIn ? null : selectedPatientId,
             appointment_id: appointmentId || urlAppointmentId,
@@ -671,7 +693,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             line_items: lines.filter(l => l.description || l.product_id), // Filter out empty lines on save
             status,
             total_discount: globalDiscount,
-            payments,
+            payments: finalizedPayments,
             billing_metadata: billingMetadata
         }
 
@@ -1045,13 +1067,33 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                         <CreditCard className="h-3 w-3" /> Payment Breakdown
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs text-slate-500">
-                                            {balanceDue < 0 ? 'Advance / Change:' : 'Balance Due:'}
-                                        </span>
-                                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${balanceDue > 1 ? "bg-red-100 text-red-600 dark:text-red-400 dark:bg-red-500/10" : balanceDue < 0 ? "bg-blue-100 text-blue-600 dark:text-blue-400 dark:bg-blue-500/10" : "bg-emerald-100 text-emerald-600 dark:text-emerald-400 dark:bg-emerald-500/10"}`}>
-                                            {balanceDue > 1 ? `₹${balanceDue.toFixed(2)}` : balanceDue < 0 ? `₹${Math.abs(balanceDue).toFixed(2)}` : 'PAID'}
-                                        </span>
+                                    <div className="flex flex-col items-end gap-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs text-slate-500 font-bold">
+                                                {balanceDue < -0.1 ? (isWalkIn ? 'Change to Return:' : 'Excess (Keep as Advance):') : 'Balance Due:'}
+                                            </span>
+                                            <span
+                                                onClick={() => {
+                                                    if (balanceDue > 0) {
+                                                        setPayments([{ method: 'cash', amount: grandTotal, reference: '' }]);
+                                                    }
+                                                }}
+                                                className={`text-xs font-bold px-2 py-0.5 rounded shadow-sm border cursor-pointer hover:scale-105 transition-transform ${balanceDue > 1 ? "bg-red-50 text-red-600 border-red-100 dark:text-red-400 dark:bg-red-500/10 dark:border-red-500/20" : balanceDue < -1 ? "bg-blue-50 text-blue-600 border-blue-100 dark:text-blue-400 dark:bg-blue-500/10 dark:border-blue-500/20" : "bg-emerald-50 text-emerald-600 border-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/20"}`}
+                                                title={balanceDue > 0 ? "Click to auto-fill payment" : ""}
+                                            >
+                                                {balanceDue > 1 ? `₹${balanceDue.toFixed(2)}` : balanceDue < -1 ? `₹${Math.abs(balanceDue).toFixed(2)}` : 'SETTLED'}
+                                            </span>
+                                        </div>
+                                        {balanceDue < -1 && !isWalkIn && (
+                                            <p className="text-[9px] text-blue-500 font-medium animate-pulse flex items-center gap-1">
+                                                <CheckCircle2 className="w-2 w-2" /> Will be added to Patient Advance
+                                            </p>
+                                        )}
+                                        {balanceDue < -1 && isWalkIn && (
+                                            <p className="text-[9px] text-pink-500 font-medium animate-pulse flex items-center gap-1">
+                                                <X className="w-2 w-2" /> Please return change to guest
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
 
