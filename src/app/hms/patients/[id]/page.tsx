@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Calendar, User, Phone, MapPin, Clock, FileText, Plus, Edit, Mail, Package, Activity, Receipt, CreditCard } from "lucide-react"
+import { ArrowLeft, Calendar, User, Phone, MapPin, Clock, FileText, Plus, Edit, Mail, Package, Activity, Receipt, CreditCard, History } from "lucide-react"
 import { EditPatientButton } from "@/components/hms/patients/edit-patient-button"
 import { PatientPaymentDialog } from "@/components/hms/billing/patient-payment-dialog"
 import { PatientConsumptionDialog } from "@/components/hms/billing/patient-consumption-dialog"
@@ -359,8 +359,8 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                         {patient.hms_vitals.map((v, i) => (
                                             <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
                                                 <div className="text-xs font-mono font-medium text-slate-500">
-                                                    {new Date(v.recorded_at).toLocaleDateString()} <br />
-                                                    {new Date(v.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    {v.recorded_at ? new Date(v.recorded_at).toLocaleDateString() : '-'} <br />
+                                                    {v.recorded_at ? new Date(v.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                                                 </div>
                                                 <div className="text-right flex gap-4">
                                                     <div>
