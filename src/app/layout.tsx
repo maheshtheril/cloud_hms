@@ -29,8 +29,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // SELF-HEALING: Ensure DB integrity on every page load (temporary fix)
-  await auditAndFixMenuPermissions();
+  // SELF-HEALING: Disabled because it's too expensive (100+ DB writes per request) 
+  // and causes hanging/performance issues. 
+  // await auditAndFixMenuPermissions();
 
   return (
     <html lang="en" suppressHydrationWarning className="dark">

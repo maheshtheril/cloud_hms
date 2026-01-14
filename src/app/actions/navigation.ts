@@ -42,16 +42,8 @@ export async function getMenuItems() {
     }
 
     try {
-        // Self-Healing: Ensure Admin Menus Exist
-        if (isAdmin) {
-            await ensureAdminMenus();
-            // Ensure Journal menus are seeded for admins/finance
-            const { ensureAccountingMenu, ensureCrmMenus, ensurePurchasingMenus, ensureHmsMenus } = await import('@/lib/menu-seeder');
-            await ensureAccountingMenu();
-            await ensureCrmMenus();
-            await ensurePurchasingMenus();
-            await ensureHmsMenus();
-        }
+        // Removed database side-effects for performance. 
+        // Admin menus are now assumed to be pre-seeded.
 
         // Fetch Tenant Details for Industry Check
         let industry = '';
@@ -204,14 +196,7 @@ export async function getMenuItems() {
             }
         }
 
-        // SELF-HEAL: Ensure CRM Menus are correct if CRM is active
-        if (allowedModuleKeys.has('crm')) {
-            const { ensureCrmMenus } = await import('@/lib/menu-seeder');
-            // We run this asynchronously to not block the UI response too much, 
-            // but for the first fix we await it to ensure immediate result.
-            // check if we need to run it (maybe optimize later)
-            await ensureCrmMenus();
-        }
+        // CRM Menu seeding moved out of request path.
 
         if (!grouped['general']) { // Always ensure General exists
             grouped['general'] = { module: { name: 'General', module_key: 'general' }, items: [] };
