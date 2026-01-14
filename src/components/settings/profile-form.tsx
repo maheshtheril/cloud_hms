@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useFormState } from 'react-dom'
 import { updateProfile, ProfileFormState } from '@/app/actions/settings'
 import { FileUpload } from '@/components/ui/file-upload'
@@ -9,11 +9,23 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { SubmitButton } from '@/components/ui/submit-button'
 import { User, Sparkles, Shield, Mail, CheckCircle2 } from 'lucide-react'
+import { useSession } from 'next-auth/react'
 
 export function ProfileForm({ user }: { user: any }) {
+    const { update } = useSession()
     const initialState: ProfileFormState = {}
     const [state, dispatch] = useFormState(updateProfile, initialState)
     const [avatarUrl, setAvatarUrl] = useState<string>(user.metadata?.avatar_url || '')
+    const [name, setName] = useState<string>(user.name || '')
+
+    useEffect(() => {
+        if (state?.success) {
+            update({
+                name: name,
+                image: avatarUrl
+            })
+        }
+    }, [state?.success, avatarUrl, name, update])
 
     return (
         <form action={dispatch} className="space-y-8">
@@ -78,7 +90,8 @@ export function ProfileForm({ user }: { user: any }) {
                                 <Input
                                     id="name"
                                     name="name"
-                                    defaultValue={user.name}
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
                                     required
                                     className="h-14 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl font-bold text-lg text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all"
                                 />

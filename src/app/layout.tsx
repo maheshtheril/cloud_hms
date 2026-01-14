@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   description: "World-class Hospital Management & ERP System",
 };
 
-import { auditAndFixMenuPermissions } from "@/app/actions/navigation";
+import { AuthProvider } from "@/components/auth-provider";
 
 export default async function RootLayout({
   children,
@@ -38,10 +38,12 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider>
-          {children}
-          <Toaster />
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            {children}
+            <Toaster />
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

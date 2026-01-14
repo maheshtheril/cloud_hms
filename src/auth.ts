@@ -20,7 +20,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                     // Use raw query to verify password with pgcrypto (Case Insensitive Email)
                     const users = await prisma.$queryRaw`
-                        SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, password, role
+                        SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, password, role, metadata
                         FROM app_user
                         WHERE LOWER(email) = ${email}
                           AND is_active = true
@@ -39,6 +39,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             });
                             const moduleKeys = tenantModules.map(m => m.module_key);
 
+                            // Extract Avatar from metadata
+                            const metadata = user.metadata as any;
+                            const avatarUrl = metadata?.avatar_url || null;
+
                             return {
                                 id: user.id,
                                 email: user.email,
@@ -50,7 +54,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 industry: company?.industry || '',
                                 hasCRM: moduleKeys.includes('crm'),
                                 hasHMS: moduleKeys.includes('hms'),
-                                role: user.role
+                                role: user.role,
+                                image: avatarUrl
                             };
                         } catch (dbError) {
                             console.error("Auth Data Fetch Error:", dbError)
@@ -69,7 +74,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }),
     ],
     callbacks: {
-        async jwt({ token, user }: any) {
+        async jwt({ token, user, trigger, session }: any) {
             if (user) {
                 token.id = user.id;
                 token.name = user.name;
@@ -81,7 +86,17 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 token.hasCRM = user.hasCRM;
                 token.hasHMS = user.hasHMS;
                 token.role = user.role;
+                // ONLY store real URLs in the token, NOT base64 data URIs to avoid Header too Large errors
+                token.image = user.image?.startsWith('data:') ? null : user.image;
             }
+
+            // Handle profile updates manually via trigger
+            if (trigger === "update" && session) {
+                if (session.name) token.name = session.name;
+                // Same here: avoid base64 in session
+                if (session.image) token.image = session.image.startsWith('data:') ? null : session.image;
+            }
+
             return token;
         },
         async session({ session, token }: any) {
@@ -96,6 +111,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 session.user.industry = token.industry;
                 session.user.hasCRM = token.hasCRM;
                 session.user.hasHMS = token.hasHMS;
+                session.user.image = token.image;
             }
             return session;
         }

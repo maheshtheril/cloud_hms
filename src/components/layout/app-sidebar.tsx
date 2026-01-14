@@ -24,6 +24,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useSession } from 'next-auth/react';
+import { getUserProfile } from '@/app/actions/settings';
 
 // Dynamically retrieve icons
 const getIcon = (iconName: string) => {
@@ -32,7 +34,31 @@ const getIcon = (iconName: string) => {
     return Icon || Activity; // Default to Activity if not found
 };
 
-export function AppSidebar({ menuItems, currentCompany, user, children }: { menuItems: any[], currentCompany: any, user?: any, children: React.ReactNode }) {
+export function AppSidebar({ menuItems, currentCompany, user: initialUser, children }: { menuItems: any[], currentCompany: any, user?: any, children: React.ReactNode }) {
+    const { data: session } = useSession();
+    const [freshAvatar, setFreshAvatar] = useState<string | null>(null);
+
+    // Get the base user from session or prop
+    const baseUser = session?.user || initialUser;
+
+    // Load fresh avatar if it's a data-URI (which we exclude from session for performance/security)
+    useEffect(() => {
+        if (baseUser?.id && !baseUser?.image) {
+            getUserProfile().then(profile => {
+                if (profile?.metadata) {
+                    const meta = profile.metadata as any;
+                    if (meta.avatar_url) setFreshAvatar(meta.avatar_url);
+                }
+            });
+        }
+    }, [baseUser?.id, baseUser?.image]);
+
+    // The 'user' object used throughout the component now includes the reactive avatar
+    const user = {
+        ...baseUser,
+        image: baseUser?.image || freshAvatar
+    };
+
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [collapsed, setCollapsed] = useState(false);
     const [mounted, setMounted] = useState(false);
