@@ -20,7 +20,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                     // Use raw query to verify password with pgcrypto (Case Insensitive Email)
                     const users = await prisma.$queryRaw`
-                        SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, password, metadata, role
+                        SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, password, role
                         FROM app_user
                         WHERE LOWER(email) = ${email}
                           AND is_active = true
@@ -39,17 +39,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             });
                             const moduleKeys = tenantModules.map(m => m.module_key);
 
-                            // SECURITY/PERFORMANCE: Avoid storing massive base64 images in session cookie (causes 431 errors)
-                            const rawAvatar = user.metadata?.avatar_url || null;
-                            const safeAvatar = (typeof rawAvatar === 'string' && rawAvatar.startsWith('data:') && rawAvatar.length > 5000)
-                                ? null
-                                : rawAvatar;
-
                             return {
                                 id: user.id,
                                 email: user.email,
                                 name: user.name,
-                                image: safeAvatar,
                                 isAdmin: user.is_admin,
                                 isTenantAdmin: user.is_tenant_admin,
                                 companyId: user.company_id,
@@ -61,18 +54,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             };
                         } catch (dbError) {
                             console.error("Auth Data Fetch Error:", dbError)
-                            // return partial session or fail? Fail is safer.
                             return null;
                         }
                     } else {
                         console.log("Auth Failed: User not found or password verification failed for", email)
-                        // Debugging: Check if user exists without password check
-                        const debugUser = await prisma.app_user.findFirst({ where: { email: email } })
-                        if (debugUser) {
-                            console.log("Debug: User exists, password mismatch.")
-                        } else {
-                            console.log("Debug: User does nit exist.")
-                        }
                     }
                 } catch (error) {
                     console.error("Auth error:", error);
@@ -88,7 +73,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (user) {
                 token.id = user.id;
                 token.name = user.name;
-                token.picture = user.image;
                 token.isAdmin = user.isAdmin;
                 token.isTenantAdmin = user.isTenantAdmin;
                 token.companyId = user.companyId;
@@ -104,7 +88,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (session.user) {
                 session.user.id = token.id;
                 session.user.name = token.name;
-                session.user.image = token.picture;
                 session.user.isAdmin = token.isAdmin;
                 session.user.role = token.role;
                 session.user.isTenantAdmin = token.isTenantAdmin;

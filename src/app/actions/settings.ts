@@ -37,6 +37,11 @@ export async function updateProfile(prevState: ProfileFormState, formData: FormD
 
         // Handle Avatar
         if (avatarUrl) {
+            // SECURITY: Prevent massive base64 strings from bloating DB and Cookies
+            if (avatarUrl.length > 1000000) {
+                return { error: "Image is too large. Please use a smaller photo (max 1MB)" }
+            }
+
             // Fetch current metadata to merge
             const currentUser = await prisma.app_user.findUnique({
                 where: { id: session.user.id },
