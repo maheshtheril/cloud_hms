@@ -151,6 +151,26 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             : [{ method: 'cash', amount: 0, reference: '' }]
     )
 
+    // Keyboard Shortcuts for "World Class" Speed
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'F7') {
+                e.preventDefault();
+                document.getElementById('pos-main-input')?.focus();
+            }
+            if (e.key === 'F8') {
+                e.preventDefault();
+                handleSave(balanceDue > 1 ? 'posted' : 'paid');
+            }
+            if (e.key === 'F9') {
+                e.preventDefault();
+                handleSave('paid' as any); // Logic for Print/WhatsApp
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [balanceDue, loading, handleSave]);
+
     const [globalDiscount, setGlobalDiscount] = useState(Number(initialInvoice?.total_discount || 0))
 
     // Memoize billable items as options for performance
@@ -1061,28 +1081,28 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                     <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                                         <CreditCard className="h-3 w-3" /> Payment Breakdown
                                     </div>
-                                    <div className="flex flex-col items-end gap-1.5">
-                                        {/* Row 1: The Balance Due (Caps at 0) */}
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-slate-500 font-bold uppercase tracking-tighter">
-                                                Balance Due:
-                                            </span>
-                                            <span className={`text-xs font-bold px-3 py-1 rounded shadow-sm border transition-all ${balanceDue > 0 ? "bg-red-50 text-red-600 border-red-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"}`}>
-                                                ₹{balanceDue.toFixed(2)}
-                                            </span>
-                                        </div>
-
-                                        {/* Row 2: The Cash Change */}
-                                        {changeAmount > 0 && (
-                                            <div className="flex items-center gap-2 animate-in slide-in-from-right-2 duration-300">
-                                                <span className="text-xs text-pink-600 font-black uppercase tracking-tighter italic">
-                                                    Cash Change:
-                                                </span>
-                                                <span className="text-sm font-black px-3 py-1 bg-pink-600 text-white rounded shadow-lg border-2 border-pink-400 scale-110 active:scale-100 transition-all">
-                                                    ₹{changeAmount.toFixed(2)}
+                                    {/* STATUS PILLS: WORLD CLASS FEEDBACK */}
+                                    <div className="flex flex-col items-end gap-2 mb-2">
+                                        <div className="flex items-center gap-3">
+                                            <div className="flex flex-col items-end">
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">To Collect</span>
+                                                <span className={`text-xl font-black tracking-tighter transition-all ${balanceDue > 0 ? "text-red-600" : "text-emerald-600"}`}>
+                                                    ₹{balanceDue.toFixed(2)}
                                                 </span>
                                             </div>
-                                        )}
+
+                                            {changeAmount > 0 && (
+                                                <>
+                                                    <div className="w-px h-8 bg-slate-200 dark:bg-slate-800 mx-1" />
+                                                    <div className="flex flex-col items-end group">
+                                                        <span className="text-[10px] font-black text-pink-500 uppercase tracking-widest animate-pulse">Return Change</span>
+                                                        <span className="text-2xl font-black text-pink-600 tracking-tighter drop-shadow-sm group-active:scale-110 transition-transform">
+                                                            ₹{changeAmount.toFixed(2)}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -1092,96 +1112,94 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                             {/* WORLD CLASS POS BAR */}
                             <div className="bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-200 dark:border-slate-800 p-3 shadow-sm">
                                 <div className="flex flex-col gap-4">
-                                    {/* Line 1: Quick Method Select - POS STYLE */}
-                                    <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-                                        {[
-                                            { id: 'cash', label: 'CASH', icon: Banknote },
-                                            { id: 'upi', label: 'UPI / QR', icon: QrCode },
-                                            { id: 'card', label: 'CARD', icon: CreditCard },
-                                            { id: 'bank_transfer', label: 'BANK', icon: Landmark }
-                                        ].map((m) => (
-                                            <button
-                                                key={m.id}
-                                                onClick={() => {
-                                                    const newPayments = [...payments];
-                                                    if (newPayments.length === 0) {
-                                                        newPayments.push({ method: m.id as any, amount: grandTotal, reference: '' });
-                                                    } else {
-                                                        newPayments[0].method = m.id as any;
-                                                        if (newPayments[0].amount === 0) newPayments[0].amount = grandTotal;
-                                                    }
-                                                    setPayments(newPayments);
-                                                }}
-                                                className={`flex-1 flex flex-col items-center justify-center py-2 px-1 rounded-lg font-black text-[9px] transition-all gap-1 ${payments[0]?.method === m.id ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm border border-indigo-100' : 'text-slate-400 hover:text-slate-600 hover:bg-white/50'}`}
-                                            >
-                                                <m.icon className={`h-4 w-4 ${payments[0]?.method === m.id ? 'text-indigo-600 font-bold' : 'text-slate-300'}`} />
-                                                {m.label}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    {/* Line 2: The Action Area */}
-                                    <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
-                                        <div className="flex-1">
-                                            <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Amount Received</label>
-                                            <div className="relative mt-0.5">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-black text-slate-300">₹</span>
-                                                <input
-                                                    type="number"
-                                                    className="w-full h-12 pl-8 pr-4 bg-transparent text-2xl font-black text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-200"
-                                                    placeholder="0.00"
-                                                    value={payments[0]?.amount || ''}
-                                                    onChange={(e) => {
-                                                        const val = parseFloat(e.target.value) || 0;
-                                                        if (payments.length === 0) {
-                                                            setPayments([{ method: 'cash', amount: val, reference: '' }]);
+                                    {/* POS THEME: THE QUICK SELECT BAR */}
+                                    <div className="flex flex-col gap-3">
+                                        <div className="grid grid-cols-4 gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+                                            {[
+                                                { id: 'cash', label: 'CASH', icon: Banknote },
+                                                { id: 'upi', label: 'UPI / QR', icon: QrCode },
+                                                { id: 'card', label: 'CARD', icon: CreditCard },
+                                                { id: 'bank_transfer', label: 'BANK', icon: Landmark }
+                                            ].map((m) => (
+                                                <button
+                                                    key={m.id}
+                                                    onClick={() => {
+                                                        const newP = [...payments];
+                                                        if (newP.length === 0) {
+                                                            newP.push({ method: m.id as any, amount: grandTotal, reference: '' });
                                                         } else {
-                                                            const newP = [...payments];
-                                                            newP[0].amount = val;
-                                                            setPayments(newP);
+                                                            newP[0].method = m.id as any;
+                                                            if (newP[0].amount === 0) newP[0].amount = grandTotal;
                                                         }
-                                                    }}
-                                                    onFocus={(e) => e.target.select()}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="h-10 w-px bg-slate-200 dark:bg-slate-800" />
-
-                                        <div className="w-32">
-                                            <label className="text-[9px] font-black text-slate-400 font-mono uppercase">Reference/Note</label>
-                                            <input
-                                                type="text"
-                                                placeholder="Optional..."
-                                                className="w-full bg-transparent text-xs font-bold text-slate-600 dark:text-slate-300 outline-none mt-1"
-                                                value={payments[0]?.reference || ''}
-                                                onChange={(e) => {
-                                                    const newP = [...payments];
-                                                    if (newP[0]) {
-                                                        newP[0].reference = e.target.value;
                                                         setPayments(newP);
-                                                    }
-                                                }}
-                                            />
+                                                    }}
+                                                    className={`group relative flex flex-col items-center justify-center py-3 rounded-xl transition-all duration-300 ${payments[0]?.method === m.id ? 'bg-white dark:bg-slate-700 shadow-xl scale-105 border-b-4 border-indigo-500' : 'opacity-60 hover:opacity-100 dark:text-slate-400 font-bold'}`}
+                                                >
+                                                    <m.icon className={`h-5 w-5 mb-1.5 transition-transform group-active:scale-90 ${payments[0]?.method === m.id ? 'text-indigo-600' : 'text-slate-400'}`} />
+                                                    <span className={`text-[9px] font-black tracking-widest ${payments[0]?.method === m.id ? 'text-slate-900 dark:text-white' : 'text-slate-500'}`}>{m.label}</span>
+                                                    {payments[0]?.method === m.id && <div className="absolute -top-1 -right-1 w-2 h-2 bg-indigo-500 rounded-full animate-ping" />}
+                                                </button>
+                                            ))}
                                         </div>
 
-                                        {/* Split Toggle */}
-                                        <button
-                                            onClick={() => {
-                                                if (payments.length === 1) {
-                                                    setPayments([...payments, { method: 'upi', amount: 0, reference: '' }]);
-                                                } else {
-                                                    setPayments([payments[0]]);
-                                                }
-                                            }}
-                                            className={`p-2 rounded-lg border transition-all ${payments.length > 1 ? 'bg-indigo-100 border-indigo-200 text-indigo-600' : 'bg-slate-100 border-slate-200 text-slate-400 hover:text-slate-600'}`}
-                                            title="Toggle Multi-Method Split Payment"
-                                        >
-                                            <div className="flex flex-col gap-0.5 items-center justify-center scale-90">
-                                                <div className="w-3 h-1 bg-current rounded-full opacity-40" />
-                                                <div className="w-3 h-1 bg-current rounded-full" />
+                                        {/* THE TERMINAL ROW: MAIN INPUT + QUICK AMOUNTS */}
+                                        <div className="flex flex-col gap-2">
+                                            <div className="flex items-stretch gap-2">
+                                                <div className="flex-1 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-inner ring-offset-2 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Amount Tendering</span>
+                                                        <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest bg-indigo-50 px-2 py-0.5 rounded-full">Manual</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="text-4xl font-black text-slate-300 select-none">₹</span>
+                                                        <input
+                                                            id="pos-main-input"
+                                                            type="number"
+                                                            className="flex-1 text-5xl font-black text-slate-900 dark:text-white bg-transparent outline-none placeholder:text-slate-100"
+                                                            value={payments[0]?.amount || ''}
+                                                            onChange={(e) => {
+                                                                const val = parseFloat(e.target.value) || 0;
+                                                                const newP = [...payments];
+                                                                if (newP.length === 0) newP.push({ method: 'cash', amount: val, reference: '' });
+                                                                else newP[0].amount = val;
+                                                                setPayments(newP);
+                                                            }}
+                                                            onFocus={(e) => e.target.select()}
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                {/* QUICK DENOMINATIONS: FOR SPEED DEMONS */}
+                                                <div className="grid grid-cols-2 gap-1 w-32 shrink-0">
+                                                    {[100, 200, 500, 2000].map(amt => (
+                                                        <button
+                                                            key={amt}
+                                                            onClick={() => {
+                                                                const current = payments[0]?.amount || 0;
+                                                                const newP = [...payments];
+                                                                const final = amt >= grandTotal ? amt : current + amt;
+                                                                if (newP.length === 0) newP.push({ method: 'cash', amount: final, reference: '' });
+                                                                else newP[0].amount = final;
+                                                                setPayments(newP);
+                                                            }}
+                                                            className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-black text-slate-600 dark:text-slate-400 rounded-lg border border-slate-200 dark:border-slate-700 active:translate-y-0.5 transition-all"
+                                                        >
+                                                            +{amt}
+                                                        </button>
+                                                    ))}
+                                                    <button
+                                                        onClick={() => {
+                                                            const newP = [...payments];
+                                                            if (newP[0]) newP[0].amount = grandTotal;
+                                                            setPayments(newP);
+                                                        }}
+                                                        className="col-span-2 bg-indigo-600 text-white text-[9px] font-black rounded-lg hover:bg-indigo-700 transition-all uppercase tracking-tighter"
+                                                    >
+                                                        EXACT ₹{grandTotal.toFixed(0)}
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </button>
+                                        </div>
                                     </div>
 
                                     {/* Line 3: Multi-Payment Lines (Only if Split) */}
@@ -1256,29 +1274,29 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mt-2">
                                 <button
                                     onClick={() => handleSave('draft')}
                                     disabled={loading}
-                                    className="px-3 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-black rounded-2xl hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
+                                    className="px-3 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-[10px] font-black rounded-3xl hover:bg-slate-50 transition-all active:scale-95 shadow-sm uppercase tracking-widest"
                                 >
-                                    SAVE DRAFT
+                                    Draft (Save)
                                 </button>
                                 <button
                                     onClick={() => handleSave(balanceDue > 1 ? 'posted' : 'paid')}
                                     disabled={loading}
-                                    className={`px-3 py-3 text-white text-xs font-black rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg shadow-indigo-500/10 ${balanceDue > 1 ? "bg-slate-800 border-b-4 border-slate-950" : "bg-emerald-600 border-b-4 border-emerald-800"}`}
+                                    className={`relative px-3 py-4 text-white text-xs font-black rounded-3xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-2xl hover:brightness-110 active:shadow-none ${balanceDue > 1 ? "bg-slate-900 border-b-4 border-black" : "bg-emerald-600 border-b-4 border-emerald-800 shadow-emerald-500/20"}`}
                                 >
-                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : balanceDue > 1 ? <ArrowRight className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                                    {balanceDue > 1 ? 'PAY LATER (CREDIT)' : 'PAY & FINALIZE'}
+                                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : balanceDue > 1 ? <ArrowRight className="h-5 w-5" /> : <CheckCircle2 className="h-5 w-5" />}
+                                    <span className="uppercase tracking-tighter text-sm">{balanceDue > 1 ? 'PAY LATER [F8]' : 'COLLECT & FINALIZE [F8]'}</span>
                                 </button>
                                 <button
                                     onClick={() => handleSave('paid' as any)}
                                     disabled={loading}
-                                    className="col-span-2 lg:col-span-1 px-3 py-3 bg-emerald-100 text-emerald-700 text-xs font-black rounded-2xl hover:bg-emerald-200 flex items-center justify-center gap-2 transition-all active:scale-95"
+                                    className="col-span-2 lg:col-span-1 px-3 py-4 bg-indigo-50 text-indigo-700 text-[10px] font-black rounded-3xl hover:bg-indigo-100 flex items-center justify-center gap-2 transition-all active:scale-95 border border-indigo-100"
                                 >
                                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
-                                    PRINT BILL
+                                    PRINT RECEIPT [F9]
                                 </button>
                             </div>
                         </div>
