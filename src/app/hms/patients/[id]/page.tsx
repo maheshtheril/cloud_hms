@@ -48,20 +48,14 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
             source_reference: { in: appointmentIds },
             source: 'Nursing Consumption'
         },
-        include: {
-            hms_product: true // using include for name, assuming relation exists or will be fixed, fallback to ID if issues
-        },
         orderBy: { created_at: 'desc' },
         take: 20
     })
 
-    // Fallback manual product fetch if relation fails (defensive)
-    let productMap = new Map<string, string>();
-    if (consumptionHistory.some(c => !c.hms_product)) {
-        const pIds = [...new Set(consumptionHistory.map(c => c.product_id))]
-        const prods = await prisma.hms_product.findMany({ where: { id: { in: pIds } }, select: { id: true, name: true } })
-        productMap = new Map(prods.map(p => [p.id, p.name]))
-    }
+    // Fetch product details manually
+    const pIds = [...new Set(consumptionHistory.map(c => c.product_id))]
+    const prods = await prisma.hms_product.findMany({ where: { id: { in: pIds } }, select: { id: true, name: true } })
+    const productMap = new Map(prods.map(p => [p.id, p.name]))
 
     const patientAny = patient as any
 
@@ -75,7 +69,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
         ...consumptionHistory.map(c => ({
             type: 'consumption',
             date: c.created_at,
-            productName: c.hms_product?.name || productMap.get(c.product_id) || 'Unknown Item',
+            productName: productMap.get(c.product_id) || 'Unknown Item',
             data: c
         }))
     ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
