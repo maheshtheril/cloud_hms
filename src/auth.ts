@@ -100,6 +100,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             // Handle profile updates manually via trigger
             if (trigger === "update" && session) {
                 if (session.name) token.name = session.name;
+                if (session.companyId) token.companyId = session.companyId;
                 // Same here: avoid base64 in session
                 if (session.image) {
                     token.image = session.image.startsWith('data:') ? null : session.image;

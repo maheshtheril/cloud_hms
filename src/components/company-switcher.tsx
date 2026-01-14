@@ -5,6 +5,7 @@ import { Building2, ChevronDown, Check, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { getTenantCompanies, switchCompany } from '@/app/actions/company'
 import Link from 'next/link'
+import { useSession } from 'next-auth/react'
 
 export function CompanySwitcher({
     initialActiveCompany
@@ -29,13 +30,18 @@ export function CompanySwitcher({
         }
     }, [isOpen, companies.length])
 
+    const { update } = useSession()
+
     const handleSwitch = async (companyId: string) => {
         setLoading(true)
         const res = await switchCompany(companyId)
         if (res.success) {
+            // Update the session cookie immediately
+            await update({ companyId })
+
             setIsOpen(false)
             router.refresh()
-            // Optional: Hard reload to ensure all state is clear
+            // Robustness: Sometimes a hard refresh is better for clearing deep state
             // window.location.reload() 
         } else {
             alert('Failed to switch company')
