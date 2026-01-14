@@ -115,23 +115,6 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     }, [selectedPatientId]);
 
     const [date, setDate] = useState(initialInvoice?.invoice_date ? new Date(initialInvoice.invoice_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
-    const [patientBalance, setPatientBalance] = useState<{ amount: number, type: 'due' | 'advance' } | null>(null)
-
-    // Fetch Patient Balance
-    useEffect(() => {
-        if (!selectedPatientId) {
-            setPatientBalance(null)
-            return
-        }
-
-        const fetchBalance = async () => {
-            const res = await getPatientBalance(selectedPatientId)
-            if (res.success) {
-                setPatientBalance({ amount: res.balance, type: res.type as any })
-            }
-        }
-        fetchBalance()
-    }, [selectedPatientId])
 
     // Use configured default or empty (force user to select)
     const getDefaultTaxId = () => {
@@ -665,14 +648,13 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             billingMetadata.patient_phone = walkInPhone;
         }
 
-        // World Class: Handle Overpayment/Change
+        // Global Standard: Handle Overpayment as Physical Change
         let finalizedPayments = [...payments];
 
-        if (isWalkIn && balanceDue < -0.01) {
-            // For Walk-in, any overpayment is physical "Change" given back.
-            // We should only record the invoice total as the payment to keep the cash ledger clean.
-            // This prevents the system from thinking there's "Advance" for a guest.
-            const excess = Math.abs(balanceDue);
+        if (changeAmount > 0.01) {
+            // Any overpayment is physical "Change" given back.
+            // We should only record the invoice total as the payment to keep the ledger zeroed.
+            const excess = changeAmount;
 
             // Deduct the excess from the payment(s)
             let remainingToDeduct = excess;
@@ -684,8 +666,8 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
             }).filter(p => p.amount > 0);
 
             toast({
-                title: "Change Handled",
-                description: `₹${excess.toFixed(2)} recorded as physical change given back. Only ₹${grandTotal.toFixed(2)} was posted to the ledger.`,
+                title: "Cash Change Given",
+                description: `₹${excess.toFixed(2)} returned to customer. Ledger balanced at ₹${grandTotal.toFixed(2)}.`,
             });
         }
 
@@ -1090,100 +1072,20 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                                             </span>
                                         </div>
 
-                                        {/* Row 2: The Change (Only shows if there is overpayment) */}
+                                        {/* Row 2: The Cash Change */}
                                         {changeAmount > 0 && (
                                             <div className="flex items-center gap-2 animate-in slide-in-from-right-2 duration-300">
-                                                <span className="text-xs text-blue-600 font-black uppercase tracking-tighter italic">
-                                                    {isWalkIn ? 'Return Change:' : 'To Advance:'}
+                                                <span className="text-xs text-pink-600 font-black uppercase tracking-tighter italic">
+                                                    Cash Change:
                                                 </span>
-                                                <span className={`text-sm font-black px-3 py-1 rounded shadow-lg border-2 scale-110 active:scale-100 transition-all ${isWalkIn ? "bg-pink-600 text-white border-pink-400" : "bg-blue-600 text-white border-blue-400"}`}>
+                                                <span className="text-sm font-black px-3 py-1 bg-pink-600 text-white rounded shadow-lg border-2 border-pink-400 scale-110 active:scale-100 transition-all">
                                                     ₹{changeAmount.toFixed(2)}
                                                 </span>
                                             </div>
                                         )}
-
-                                        {/* Row 3: Helper hints */}
-                                        {changeAmount > 0 && isWalkIn && (
-                                            <p className="text-[10px] text-pink-500 font-bold flex items-center gap-1 mt-1 animate-pulse">
-                                                <X className="w-3 h-3" /> PHYSICAL CASH RETURN REQUIRED
-                                            </p>
-                                        )}
-                                        {changeAmount > 0 && !isWalkIn && (
-                                            <p className="text-[10px] text-blue-500 font-bold flex items-center gap-1 mt-1">
-                                                <CheckCircle2 className="w-3 h-3" /> STOCKED IN PATIENT WALLET (ADVANCE)
-                                            </p>
-                                        )}
                                     </div>
                                 </div>
 
-                                {/* SHOW PREVIOUS DUES (If Any) - RESTORED & FIXED */}
-                                {patientBalance && patientBalance.type === 'due' && patientBalance.amount > 1 && (
-                                    <div className="flex items-center justify-between bg-red-50 dark:bg-red-900/10 p-2 rounded-md border border-red-100 dark:border-red-800 mb-2 animate-in slide-in-from-top-1">
-                                        <div className="flex items-center gap-1.5">
-                                            <div className="bg-red-100 dark:bg-red-900/30 p-1 rounded-full">
-                                                <CreditCard className="h-3 w-3 text-red-600 dark:text-red-400" />
-                                            </div>
-                                            <div className="flex flex-col">
-                                                <span className="text-[10px] font-bold text-red-700 dark:text-red-300">
-                                                    Previous Outstanding
-                                                </span>
-                                                <span className="text-[10px] text-red-600/80">
-                                                    Pending: <span className="font-bold">₹{patientBalance.amount.toFixed(2)}</span>
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <button
-                                            onClick={() => setPayments([{ method: 'cash', amount: Number((grandTotal + patientBalance.amount).toFixed(2)), reference: '' }])}
-                                            className="px-2 py-1 bg-red-100 hover:bg-red-200 dark:bg-red-900/50 dark:hover:bg-red-900 text-red-700 dark:text-red-300 text-[10px] font-bold rounded transition-colors border border-red-200 dark:border-red-700"
-                                            title="Add previous dues to payment amount"
-                                        >
-                                            Collect All
-                                        </button>
-                                    </div>
-                                )}
-
-
-                                {patientBalance && patientBalance.type === 'advance' && patientBalance.amount > 0 && (
-                                    <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/10 p-2 rounded-md border border-blue-100 dark:border-blue-800">
-                                        <div className="flex items-center gap-1.5">
-                                            <User className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
-                                            <span className="text-[10px] font-medium text-blue-700 dark:text-blue-300">
-                                                Available Credit: <span className="font-bold">₹{patientBalance.amount.toFixed(2)}</span>
-                                            </span>
-                                        </div>
-                                        <button
-                                            onClick={() => {
-                                                // 1. Determine how much we CAN pay with credit
-                                                // Use grandTotal because balanceDue might be 0 if there's a default 'cash' entry
-                                                const amountToUse = Math.min(grandTotal, patientBalance.amount);
-
-                                                if (amountToUse <= 0) {
-                                                    toast({ title: "Nothing to apply", description: "Invoice total is 0 or uncalculated." });
-                                                    return;
-                                                }
-
-                                                // 2. "Magic": Replace existing payments with this Advance entry
-                                                // This ensures the user sees something change immediately.
-                                                // If there's a remainder, the user will see a "Balance Due" and can add another payment (Cash/Card).
-                                                setPayments([
-                                                    {
-                                                        method: 'advance',
-                                                        amount: amountToUse,
-                                                        reference: 'Advance Adjustment'
-                                                    }
-                                                ]);
-
-                                                toast({
-                                                    title: "Credit Applied",
-                                                    description: `Applied ₹${amountToUse.toFixed(2)} from patient advance.`
-                                                });
-                                            }}
-                                            className="text-[10px] bg-blue-100 hover:bg-blue-200 text-blue-700 dark:bg-blue-800 dark:text-blue-200 px-2 py-1 rounded font-bold transition-colors"
-                                        >
-                                            Apply Credit
-                                        </button>
-                                    </div>
-                                )}
                             </div>
 
                             {/* World-Standard Payment Controller */}
