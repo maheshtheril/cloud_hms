@@ -66,6 +66,12 @@ export default async function DashboardPage() {
                                 Schedule
                             </Button>
                         </Link>
+                        <a href="/api/crm/guide" download>
+                            <Button variant="outline" className="h-12 px-6 rounded-xl border-indigo-200 dark:border-indigo-900 bg-indigo-50/50 dark:bg-indigo-900/10 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 transition-all font-bold">
+                                <Activity className="w-5 h-5 mr-2" />
+                                Download Guide
+                            </Button>
+                        </a>
                     </div>
                 </div>
 
