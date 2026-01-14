@@ -278,9 +278,20 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                         </div>
 
                         {/* Footer status */}
-                        <div className="bg-emerald-50/50 px-4 py-1.5 border-t border-emerald-100/50 text-[10px] text-emerald-700 font-medium flex justify-end">
-                            <span className="flex items-center gap-1">
-                                <Check className="h-3 w-3" /> Billed to Invoice
+                        <div className={cn(
+                            "px-4 py-1.5 border-t text-[10px] font-medium flex justify-end",
+                            event.status === 'draft'
+                                ? "bg-orange-50/50 border-orange-100/50 text-orange-700"
+                                : "bg-emerald-50/50 border-emerald-100/50 text-emerald-700"
+                        )}>
+                            <span className="flex items-center gap-1 uppercase tracking-wide">
+                                {event.status === 'draft' ? (
+                                    <Info className="h-3 w-3" />
+                                ) : (
+                                    <Check className="h-3 w-3" />
+                                )}
+                                {event.status || 'Recorded'}
+                                {event.invoiceNumber && <span className="font-mono ml-1 px-1 bg-white/50 rounded">#{event.invoiceNumber}</span>}
                             </span>
                         </div>
                     </div>

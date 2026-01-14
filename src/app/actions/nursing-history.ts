@@ -35,6 +35,19 @@ export async function getConsumptionHistory(encounterId: string) {
     })
     const productMap = new Map(products.map(p => [p.id, p.name]))
 
+    // Fetch Invoice Status for this Encounter
+    // We assume items consumed for this encounter are added to the encounter's primary invoice.
+    const invoices = await prisma.hms_invoice.findMany({
+        where: { appointment_id: encounterId },
+        select: { status: true, invoice_number: true },
+        orderBy: { created_at: 'desc' },
+        take: 1
+    })
+
+    const latestInvoice = invoices[0]
+    const globalStatus = latestInvoice ? latestInvoice.status : 'Pending'
+    const globalInvoiceNo = latestInvoice ? latestInvoice.invoice_number : undefined
+
     // Group by Time Window (e.g., recorded within the same minute = one "Entry")
     const events: any[] = []
 
@@ -49,6 +62,8 @@ export async function getConsumptionHistory(encounterId: string) {
                 timestamp: move.created_at,
                 nurseName: userMap.get(move.created_by || '') || 'Unknown Nurse',
                 nurseId: move.created_by,
+                status: globalStatus, // Apply encounter invoice status to the event
+                invoiceNumber: globalInvoiceNo,
                 items: []
             }
             events.push(event)
