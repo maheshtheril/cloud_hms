@@ -239,7 +239,7 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
     )
 
     const HistoryList = () => (
-        <div className="space-y-3 h-[400px] overflow-y-auto px-1">
+        <div className="space-y-4 h-[400px] overflow-y-auto px-1">
             {loadingHistory ? (
                 <div className="flex justify-center p-8"><Loader2 className="h-6 w-6 animate-spin text-slate-400" /></div>
             ) : history.length === 0 ? (
@@ -248,22 +248,40 @@ export function UsageForm({ patientId, encounterId, patientName, onCancel, onSuc
                     <p className="text-sm">No usage history for this encounter yet.</p>
                 </div>
             ) : (
-                history.map((item, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800">
-                        <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xs">
-                                {i + 1}
+                history.map((event, i) => (
+                    <div key={i} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                        {/* Event Header: Nurse & Time */}
+                        <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-2 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                                <div className="h-6 w-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold">
+                                    {(event.nurseName || 'U').charAt(0)}
+                                </div>
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{event.nurseName}</span>
                             </div>
-                            <div>
-                                <p className="text-sm font-bold text-slate-900 dark:text-white">{item.description}</p>
-                                <p className="text-xs text-slate-500">
-                                    Qty: {item.quantity} • {item.invoiceNumber ? <span className="text-emerald-600 font-medium">Billed ({item.status})</span> : 'Recorded'}
-                                </p>
-                            </div>
+                            <span className="text-[10px] font-mono text-slate-400">
+                                {event.timestamp ? format(new Date(event.timestamp), 'MMM d, HH:mm') : '-'}
+                            </span>
                         </div>
-                        <div className="text-right">
-                            {/* <p className="text-sm font-bold">{item.netAmount.toFixed(2)}</p> */}
-                            <p className="text-[10px] text-slate-400">{item.recordedAt ? format(new Date(item.recordedAt), 'HH:mm') : '-'}</p>
+
+                        {/* Items List */}
+                        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {event.items.map((item: any, j: number) => (
+                                <div key={j} className="flex justify-between items-center px-4 py-2">
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                        {item.productName}
+                                    </span>
+                                    <span className="text-xs font-bold bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-slate-600">
+                                        {item.quantity} {item.uom}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Footer status */}
+                        <div className="bg-emerald-50/50 px-4 py-1.5 border-t border-emerald-100/50 text-[10px] text-emerald-700 font-medium flex justify-end">
+                            <span className="flex items-center gap-1">
+                                <Check className="h-3 w-3" /> Billed to Invoice
+                            </span>
                         </div>
                     </div>
                 ))
