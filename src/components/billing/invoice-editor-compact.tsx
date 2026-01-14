@@ -1176,103 +1176,144 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                             </div>
 
                             {/* World-Standard Payment Controller */}
-                            <div className="flex flex-col gap-3">
-                                <div className="p-1 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-between border border-slate-200 dark:border-slate-700">
-                                    <button
-                                        onClick={() => setPayments([{ method: 'cash', amount: grandTotal, reference: '' }])}
-                                        className={`flex-1 py-1.5 text-[11px] font-bold rounded px-2 transition-all ${payments.length > 0 && payments[0].amount >= grandTotal && payments.length === 1 ? 'bg-white shadow-sm text-emerald-600 dark:bg-slate-700 dark:text-emerald-400' : 'text-slate-500 hover:text-slate-700'}`}
-                                    >
-                                        Pay Now
-                                    </button>
-                                    <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1" />
-                                    <button
-                                        onClick={() => setPayments([])}
-                                        className={`flex-1 py-1.5 text-[11px] font-bold rounded px-2 transition-all ${payments.length === 0 ? 'bg-white shadow-sm text-indigo-600 dark:bg-slate-700 dark:text-indigo-400' : 'text-slate-500 hover:text-slate-700'}`}
-                                    >
-                                        Pay Later
-                                    </button>
-                                    <div className="w-px h-4 bg-slate-300 dark:bg-slate-600 mx-1" />
-                                    <button
-                                        onClick={() => {
-                                            if (payments.length <= 1) {
-                                                setPayments([
-                                                    { method: 'cash', amount: grandTotal > 0 ? grandTotal / 2 : 0, reference: '' },
-                                                    { method: 'upi', amount: grandTotal > 0 ? grandTotal / 2 : 0, reference: '' }
-                                                ]);
-                                            }
-                                        }}
-                                        className={`flex-1 py-1.5 text-[11px] font-bold rounded px-2 transition-all ${payments.length > 1 ? 'bg-white shadow-sm text-blue-600 dark:bg-slate-700 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700'}`}
-                                    >
-                                        Split
-                                    </button>
-                                </div>
+                            {/* WORLD CLASS POS BAR */}
+                            <div className="bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-200 dark:border-slate-800 p-3 shadow-sm">
+                                <div className="flex flex-col gap-4">
+                                    {/* Line 1: Quick Method Select */}
+                                    <div className="flex items-center gap-2">
+                                        {[
+                                            { id: 'cash', label: 'CASH', icon: Banknote, color: 'emerald' },
+                                            { id: 'upi', label: 'UPI/GPAY', icon: Smartphone, color: 'indigo' },
+                                            { id: 'card', label: 'CARD', icon: CreditCard, color: 'blue' },
+                                            { id: 'bank_transfer', label: 'TRANSFER', icon: Landmark, color: 'slate' }
+                                        ].map((m) => (
+                                            <button
+                                                key={m.id}
+                                                onClick={() => {
+                                                    const newPayments = [...payments];
+                                                    if (newPayments.length === 0) {
+                                                        newPayments.push({ method: m.id as any, amount: grandTotal, reference: '' });
+                                                    } else {
+                                                        newPayments[0].method = m.id as any;
+                                                        if (newPayments[0].amount === 0) newPayments[0].amount = grandTotal;
+                                                    }
+                                                    setPayments(newPayments);
+                                                }}
+                                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 font-black text-[10px] transition-all ${payments[0]?.method === m.id ? `bg-${m.color}-600 border-${m.color}-400 text-white shadow-lg scale-105 shadow-${m.color}-500/20` : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-500 hover:border-slate-300'}`}
+                                            >
+                                                <m.icon className="h-4 w-4" />
+                                                {m.label}
+                                            </button>
+                                        ))}
+                                    </div>
 
-                                {/* Dynamic Content Based on Selection */}
-                                {payments.length === 0 ? (
-                                    <div className="text-center py-4 bg-indigo-50/50 dark:bg-indigo-900/10 border border-dashed border-indigo-200 dark:border-indigo-800 rounded-lg">
-                                        <p className="text-xs font-bold text-indigo-700 dark:text-indigo-300 mb-1">Credit Invoice</p>
-                                        <p className="text-[10px] text-slate-500">Invoice will be marked as Outstanding.</p>
-                                    </div>
-                                ) : payments.length === 1 && payments[0].amount >= grandTotal ? (
-                                    <div className="grid grid-cols-3 gap-2">
-                                        <button
-                                            onClick={() => setPayments([{ method: 'cash', amount: grandTotal, reference: '' }])}
-                                            className={`py-2 rounded-md border text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all ${payments[0].method === 'cash' ? 'bg-emerald-50 border-emerald-200 text-emerald-700 ring-1 ring-emerald-500/20' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
-                                        >
-                                            <Banknote className="h-3.5 w-3.5" /> Cash
-                                        </button>
-                                        <button
-                                            onClick={() => setPayments([{ method: 'upi', amount: grandTotal, reference: '' }])}
-                                            className={`py-2 rounded-md border text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all ${payments[0].method === 'upi' ? 'bg-indigo-50 border-indigo-200 text-indigo-700 ring-1 ring-indigo-500/20' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
-                                        >
-                                            <Smartphone className="h-3.5 w-3.5" /> UPI / GPay
-                                        </button>
-                                        <button
-                                            onClick={() => setPayments([{ method: 'card', amount: grandTotal, reference: '' }])}
-                                            className={`py-2 rounded-md border text-[10px] font-bold flex flex-col items-center justify-center gap-1 transition-all ${payments[0].method === 'card' ? 'bg-blue-50 border-blue-200 text-blue-700 ring-1 ring-blue-500/20' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
-                                        >
-                                            <CreditCard className="h-3.5 w-3.5" /> Card
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                                        {payments.map((p, idx) => (
-                                            <div key={idx} className="flex items-center gap-2 group">
-                                                <select
-                                                    className="flex-1 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md h-8 pl-2 outline-none focus:ring-1 ring-indigo-500/20"
-                                                    value={p.method}
-                                                    onChange={(e) => {
-                                                        const newPayments = [...payments]
-                                                        newPayments[idx].method = e.target.value as any
-                                                        setPayments(newPayments)
-                                                    }}
-                                                >
-                                                    <option value="cash">Cash</option>
-                                                    <option value="card">Card</option>
-                                                    <option value="upi">UPI</option>
-                                                    <option value="bank_transfer">Transfer</option>
-                                                    <option value="advance">Use Advance</option>
-                                                </select>
+                                    {/* Line 2: The Action Area */}
+                                    <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
+                                        <div className="flex-1">
+                                            <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Amount Received</label>
+                                            <div className="relative mt-0.5">
+                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-black text-slate-300">₹</span>
                                                 <input
                                                     type="number"
-                                                    className="w-24 text-right text-xs bg-white border border-slate-200 rounded-md h-8 px-2 font-bold focus:ring-1 ring-emerald-500/20 outline-none"
-                                                    value={p.amount}
+                                                    className="w-full h-12 pl-8 pr-4 bg-transparent text-2xl font-black text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-200"
+                                                    placeholder="0.00"
+                                                    value={payments[0]?.amount || ''}
                                                     onChange={(e) => {
-                                                        const newPayments = [...payments]
-                                                        newPayments[idx].amount = parseFloat(e.target.value) || 0
-                                                        setPayments(newPayments)
+                                                        const val = parseFloat(e.target.value) || 0;
+                                                        if (payments.length === 0) {
+                                                            setPayments([{ method: 'cash', amount: val, reference: '' }]);
+                                                        } else {
+                                                            const newP = [...payments];
+                                                            newP[0].amount = val;
+                                                            setPayments(newP);
+                                                        }
                                                     }}
+                                                    onFocus={(e) => e.target.select()}
                                                 />
-                                                <button onClick={() => setPayments(payments.filter((_, i) => i !== idx))} className="text-slate-400 hover:text-red-500 p-1">
-                                                    <Trash2 className="h-3.5 w-3.5" />
-                                                </button>
                                             </div>
-                                        ))}
-                                        <button onClick={() => setPayments([...payments, { method: 'cash', amount: 0, reference: '' }])} className="w-full text-[10px] py-1 border border-dashed border-slate-300 rounded text-slate-500 hover:text-indigo-600 hover:border-indigo-300 transition-colors">
-                                            + Add Payment Line
+                                        </div>
+
+                                        <div className="h-10 w-px bg-slate-200 dark:bg-slate-800" />
+
+                                        <div className="w-32">
+                                            <label className="text-[9px] font-black text-slate-400 font-mono uppercase">Reference/Note</label>
+                                            <input
+                                                type="text"
+                                                placeholder="Optional..."
+                                                className="w-full bg-transparent text-xs font-bold text-slate-600 dark:text-slate-300 outline-none mt-1"
+                                                value={payments[0]?.reference || ''}
+                                                onChange={(e) => {
+                                                    const newP = [...payments];
+                                                    if (newP[0]) {
+                                                        newP[0].reference = e.target.value;
+                                                        setPayments(newP);
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* Split Toggle */}
+                                        <button
+                                            onClick={() => {
+                                                if (payments.length === 1) {
+                                                    setPayments([...payments, { method: 'upi', amount: 0, reference: '' }]);
+                                                } else {
+                                                    setPayments([payments[0]]);
+                                                }
+                                            }}
+                                            className={`p-2 rounded-lg border transition-all ${payments.length > 1 ? 'bg-indigo-100 border-indigo-200 text-indigo-600' : 'bg-slate-100 border-slate-200 text-slate-400 hover:text-slate-600'}`}
+                                            title="Toggle Multi-Method Split Payment"
+                                        >
+                                            <MessageCircle className="h-4 w-4" />
                                         </button>
                                     </div>
-                                )}
+
+                                    {/* Line 3: Multi-Payment Lines (Only if Split) */}
+                                    {payments.length > 1 && (
+                                        <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800 animate-in fade-in duration-300">
+                                            {payments.map((p, idx) => idx > 0 && (
+                                                <div key={idx} className="flex items-center gap-2">
+                                                    <select
+                                                        className="flex-1 h-9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold px-2"
+                                                        value={p.method}
+                                                        onChange={(e) => {
+                                                            const newP = [...payments];
+                                                            newP[idx].method = e.target.value as any;
+                                                            setPayments(newP);
+                                                        }}
+                                                    >
+                                                        <option value="cash">CASH</option>
+                                                        <option value="upi">UPI</option>
+                                                        <option value="card">CARD</option>
+                                                        <option value="bank_transfer">BANK</option>
+                                                    </select>
+                                                    <input
+                                                        type="number"
+                                                        className="w-32 h-9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-right text-sm font-black px-3"
+                                                        value={p.amount}
+                                                        onChange={(e) => {
+                                                            const newP = [...payments];
+                                                            newP[idx].amount = parseFloat(e.target.value) || 0;
+                                                            setPayments(newP);
+                                                        }}
+                                                    />
+                                                    <button
+                                                        onClick={() => setPayments(payments.filter((_, i) => i !== idx))}
+                                                        className="text-slate-300 hover:text-red-500 transition-colors"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                            <button
+                                                onClick={() => setPayments([...payments, { method: 'upi', amount: 0, reference: '' }])}
+                                                className="w-full py-1 text-[9px] font-black text-slate-400 border border-dashed border-slate-200 hover:border-indigo-300 hover:text-indigo-500 rounded-lg transition-all"
+                                            >
+                                                + ADD ANOTHER SPLIT METHOD
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
