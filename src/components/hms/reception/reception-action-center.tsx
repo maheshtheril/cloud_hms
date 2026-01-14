@@ -35,12 +35,24 @@ interface ReceptionActionCenterProps {
     todayPayments?: any[]
     todayExpenses?: any[]
     totalExpenses?: number
+    draftCount?: number
 }
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import Link from "next/link"
 
-export function ReceptionActionCenter({ todayAppointments, patients, doctors, dailyCollection = 0, collectionBreakdown = {}, todayPayments = [], todayExpenses = [], totalExpenses = 0 }: ReceptionActionCenterProps) {
+export function ReceptionActionCenter({
+    todayAppointments,
+    patients,
+    doctors,
+    dailyCollection = 0,
+    collectionBreakdown = {},
+    todayPayments = [],
+    todayExpenses = [],
+    totalExpenses = 0,
+    draftCount = 0
+}: ReceptionActionCenterProps) {
     const router = useRouter()
     const { toast } = useToast()
     const [activeModal, setActiveModal] = useState<string | null>(null)
@@ -134,7 +146,43 @@ export function ReceptionActionCenter({ todayAppointments, patients, doctors, da
                         <Clock className="h-5 w-5 text-blue-500" />
                     </div>
                 </Card>
+                <Link href="/hms/billing?status=draft" className="block cursor-pointer">
+                    <Card className="p-4 bg-white dark:bg-slate-900 border-none shadow-sm flex items-center justify-between group hover:shadow-md transition-all hover:ring-2 hover:ring-orange-500/20">
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Draft Bills</p>
+                            <h3 className="text-xl font-black text-orange-600">{draftCount}</h3>
+                        </div>
+                        <div className="h-10 w-10 rounded-xl bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center">
+                            <Activity className="h-5 w-5 text-orange-500" />
+                        </div>
+                    </Card>
+                </Link>
             </div>
+
+            {/* DRAFT ALERT: PROMINENT CALL TO ACTION */}
+            {draftCount > 0 && (
+                <motion.div
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-orange-50 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/50 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm"
+                >
+                    <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 rounded-xl bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center shrink-0">
+                            <CreditCard className="h-6 w-6 text-orange-600" />
+                        </div>
+                        <div>
+                            <h4 className="font-bold text-slate-900 dark:text-white">Action Required: {draftCount} Draft Invoices</h4>
+                            <p className="text-xs font-medium text-slate-500 dark:text-slate-400">You have pending draft invoices that need to be finalized and printed for patients.</p>
+                        </div>
+                    </div>
+                    <Button
+                        asChild
+                        className="bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl px-6"
+                    >
+                        <Link href="/hms/billing?status=draft">Process Drafts</Link>
+                    </Button>
+                </motion.div>
+            )}
 
             {/* 2. DUAL-PANEL FOCUS AREA */}
             <div className="flex flex-col xl:flex-row gap-8 min-h-[700px]">
