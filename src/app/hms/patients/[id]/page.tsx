@@ -13,7 +13,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
         include: {
             hms_appointments: {
                 orderBy: { starts_at: 'desc' },
-                take: 5
+                take: 20 // Increased to get more context for consumption
             },
             hms_invoice: {
                 orderBy: { created_at: 'desc' },
@@ -29,6 +29,10 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                         }
                     }
                 }
+            },
+            hms_vitals: {
+                orderBy: { recorded_at: 'desc' },
+                take: 10
             }
         }
     })
@@ -37,7 +41,44 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
         return notFound()
     }
 
+    // Fetch Nursing Consumption History (Linked to Encounters/Appointments)
+    const appointmentIds = patient.hms_appointments.map(a => a.id)
+    const consumptionHistory = await prisma.hms_stock_move.findMany({
+        where: {
+            source_reference: { in: appointmentIds },
+            source: 'Nursing Consumption'
+        },
+        include: {
+            hms_product: true // using include for name, assuming relation exists or will be fixed, fallback to ID if issues
+        },
+        orderBy: { created_at: 'desc' },
+        take: 20
+    })
+
+    // Fallback manual product fetch if relation fails (defensive)
+    let productMap = new Map<string, string>();
+    if (consumptionHistory.some(c => !c.hms_product)) {
+        const pIds = [...new Set(consumptionHistory.map(c => c.product_id))]
+        const prods = await prisma.hms_product.findMany({ where: { id: { in: pIds } }, select: { id: true, name: true } })
+        productMap = new Map(prods.map(p => [p.id, p.name]))
+    }
+
     const patientAny = patient as any
+
+    // Merge Clinical Events for Timeline
+    const timelineEvents = [
+        ...patient.hms_vitals.map(v => ({
+            type: 'vital',
+            date: v.recorded_at,
+            data: v
+        })),
+        ...consumptionHistory.map(c => ({
+            type: 'consumption',
+            date: c.created_at,
+            productName: c.hms_product?.name || productMap.get(c.product_id) || 'Unknown Item',
+            data: c
+        }))
+    ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
 
     return (
         <div className="space-y-6">
@@ -164,46 +205,52 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                 {/* Right Column: Activity Feed */}
                 <div className="lg:col-span-2 space-y-6">
 
-                    {/* Prescriptions Card */}
+                    {/* Clinical Timeline (New World Standard Feature) */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
                             <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                                <FileText className="h-4 w-4 text-purple-600" />
-                                Recent Prescriptions
+                                <Clock className="h-4 w-4 text-orange-600" />
+                                Clinical Timeline
                             </h2>
-                            <Link href="#" className="text-xs font-medium text-blue-600 hover:text-blue-700">View All</Link>
+                            <span className="text-xs font-medium text-gray-500">Recent Activity</span>
                         </div>
                         <div className="divide-y divide-gray-100">
-                            {(patient as any).prescription.length === 0 ? (
-                                <p className="p-8 text-center text-gray-500 text-sm">No prescriptions found.</p>
+                            {timelineEvents.length === 0 ? (
+                                <p className="p-8 text-center text-gray-500 text-sm">No clinical history recorded.</p>
                             ) : (
-                                (patient as any).prescription.map((rx: any) => (
-                                    <div key={rx.id} className="p-4 hover:bg-gray-50 transition-colors">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <div>
-                                                <p className="font-bold text-gray-900">
-                                                    {new Date(rx.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                                </p>
-                                                <p className="text-xs text-gray-500">{rx.diagnosis || 'No diagnosis recorded'}</p>
-                                            </div>
-                                            <Link
-                                                href={`/hms/billing/new?patientId=${patientAny.id}&medicines=${encodeURIComponent(JSON.stringify(rx.prescription_items.map((i: any) => ({
-                                                    id: i.hms_product.id,
-                                                    name: i.hms_product.name,
-                                                    price: i.hms_product.price,
-                                                    quantity: (i.morning + i.afternoon + i.evening + i.night) * i.days
-                                                }))))}`}
-                                                className="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded font-bold hover:bg-blue-100"
-                                            >
-                                                Create Bill
-                                            </Link>
+                                timelineEvents.map((event: any, i: number) => (
+                                    <div key={i} className="p-4 hover:bg-gray-50 transition-colors flex gap-4">
+                                        <div className={`mt-1 h-8 w-8 rounded-full flex items-center justify-center shrink-0 ${event.type === 'vital' ? 'bg-blue-100 text-blue-600' : 'bg-orange-100 text-orange-600'
+                                            }`}>
+                                            {event.type === 'vital' ? <FileText className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
                                         </div>
-                                        <div className="flex flex-wrap gap-2 mt-2">
-                                            {rx.prescription_items.map((item: any, i: number) => (
-                                                <span key={i} className="text-[10px] bg-gray-100 text-gray-700 px-1.5 py-0.5 rounded">
-                                                    {item.hms_product.name}
+                                        <div className="flex-1">
+                                            <div className="flex justify-between items-start">
+                                                <p className="font-bold text-sm text-gray-800">
+                                                    {event.type === 'vital' ? 'Vitals Recorded' : 'Stock Consumed'}
+                                                </p>
+                                                <span className="text-xs text-gray-400">
+                                                    {event.date ? new Date(event.date).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-'}
                                                 </span>
-                                            ))}
+                                            </div>
+
+                                            <div className="mt-1 text-sm text-gray-600">
+                                                {event.type === 'vital' ? (
+                                                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                                                        {event.data.temperature && <span>Temp: <b>{Number(event.data.temperature)}°C</b></span>}
+                                                        {event.data.systolic && <span>BP: <b>{Number(event.data.systolic)}/{Number(event.data.diastolic)}</b></span>}
+                                                        {event.data.pulse && <span>Pulse: <b>{Number(event.data.pulse)}</b></span>}
+                                                        {event.data.spo2 && <span>SpO2: <b>{Number(event.data.spo2)}%</b></span>}
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-medium text-gray-900">{event.productName}</span>
+                                                        <span className="text-xs bg-gray-100 px-2 py-0.5 rounded text-gray-600">
+                                                            Qty: {Number(event.data.qty)} {event.data.uom}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 ))
