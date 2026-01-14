@@ -125,6 +125,7 @@ export default async function NursingDashboardPage() {
                 completedTriage={formattedCompletedTriage}
                 activeAdmissions={formattedAdmissions}
                 pendingSamples={formattedSamples}
+                allPatients={appointments.map(formatAppointment)}
             />
         </div>
     )

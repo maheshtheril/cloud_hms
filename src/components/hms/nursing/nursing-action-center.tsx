@@ -18,14 +18,15 @@ interface NursingActionCenterProps {
     completedTriage?: any[]
     activeAdmissions: any[]
     pendingSamples: any[]
+    allPatients?: any[]
 }
 
-export function NursingActionCenter({ pendingTriage, completedTriage = [], activeAdmissions, pendingSamples }: NursingActionCenterProps) {
+export function NursingActionCenter({ pendingTriage, completedTriage = [], activeAdmissions, pendingSamples, allPatients = [] }: NursingActionCenterProps) {
     const router = useRouter()
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedTask, setSelectedTask] = useState<any>(null)
     const [selectedUsageTask, setSelectedUsageTask] = useState<any>(null)
-    const [activeTab, setActiveTab] = useState<'queue' | 'history'>('queue')
+    const [activeTab, setActiveTab] = useState<'queue' | 'history' | 'census'>('queue')
 
     const quickActions = [
         {
@@ -66,7 +67,7 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
         }
     ]
 
-    const displayedTasks = (activeTab === 'queue' ? pendingTriage : completedTriage).filter(task => {
+    const displayedTasks = (activeTab === 'queue' ? pendingTriage : activeTab === 'census' ? allPatients : completedTriage).filter(task => {
         if (!searchQuery) return true;
         const q = searchQuery.toLowerCase();
         return (
@@ -105,7 +106,18 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                         <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{pendingTriage.length}</div>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:border-indigo-300 transition-colors" onClick={() => setActiveTab('history')}>
+                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:border-blue-300 transition-colors" onClick={() => setActiveTab('census')}>
+                        <div className="flex justify-between items-start mb-2">
+                            <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
+                                <Activity className="h-6 w-6" />
+                            </div>
+                            <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full">{allPatients.length}</span>
+                        </div>
+                        <div className={`text-xs font-medium uppercase tracking-wider ${activeTab === 'census' ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>Active Patients</div>
+                        <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{allPatients.length}</div>
+                    </div>
+
+                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:border-emerald-300 transition-colors" onClick={() => setActiveTab('history')}>
                         <div className="flex justify-between items-start mb-2">
                             <div className="h-10 w-10 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600">
                                 <UserCheck className="h-6 w-6" />
@@ -114,17 +126,6 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                         </div>
                         <div className={`text-xs font-medium uppercase tracking-wider ${activeTab === 'history' ? 'text-emerald-600 font-bold' : 'text-slate-500'}`}>Completed Today</div>
                         <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{completedTriage.length}</div>
-                    </div>
-
-                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
-                        <div className="flex justify-between items-start mb-2">
-                            <div className="h-10 w-10 bg-violet-100 rounded-lg flex items-center justify-center text-violet-600">
-                                <TestTube2 className="h-6 w-6" />
-                            </div>
-                            <span className="bg-violet-100 text-violet-700 text-xs font-bold px-2 py-1 rounded-full">{pendingSamples.length}</span>
-                        </div>
-                        <div className="text-slate-500 text-xs font-medium uppercase tracking-wider">Sample Tasks</div>
-                        <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{pendingSamples.length}</div>
                     </div>
                 </div>
 
@@ -138,6 +139,13 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                             >
                                 <Clock className="h-4 w-4" />
                                 Awaiting Vitals
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('census')}
+                                className={`text-sm font-bold flex items-center gap-2 pb-2 border-b-2 transition-all ${activeTab === 'census' ? 'text-blue-600 border-blue-600' : 'text-slate-500 border-transparent hover:text-slate-700'}`}
+                            >
+                                <Activity className="h-4 w-4" />
+                                All Patients
                             </button>
                             <button
                                 onClick={() => setActiveTab('history')}
@@ -171,6 +179,11 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                                         <UserCheck className="h-12 w-12 mx-auto text-slate-300 mb-2" />
                                         <p>No patients waiting for vitals assessment</p>
                                     </>
+                                ) : activeTab === 'census' ? (
+                                    <>
+                                        <Activity className="h-12 w-12 mx-auto text-slate-300 mb-2" />
+                                        <p>No active patients found today</p>
+                                    </>
                                 ) : (
                                     <>
                                         <ClipboardList className="h-12 w-12 mx-auto text-slate-300 mb-2" />
@@ -185,7 +198,8 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                                     <div
                                         key={task.id}
                                         className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center justify-between cursor-pointer border-l-4 ${activeTab === 'history' ? 'border-emerald-500 bg-emerald-50/5' :
-                                            isHighPriority ? 'border-red-500 bg-red-50/10' : 'border-transparent'
+                                            activeTab === 'census' ? 'border-blue-500 bg-blue-50/5' :
+                                                isHighPriority ? 'border-red-500 bg-red-50/10' : 'border-transparent'
                                             }`}
                                         onClick={() => setSelectedTask(task)}
                                     >
