@@ -22,7 +22,8 @@ export default async function BillingPage({
     const currentStatus = status || 'all'
 
     // Status filter logic
-    const statusFilter = currentStatus !== 'all' ? { status: currentStatus } : {}
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const statusFilter: any = currentStatus !== 'all' ? { status: currentStatus } : {}
 
     // Parallel fetch for stats and list
     const [invoices, stats, draftCount] = await Promise.all([
@@ -222,7 +223,7 @@ export default async function BillingPage({
                                         {inv.hms_patient ? (
                                             <div className="flex items-center gap-3">
                                                 <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ring-2 ring-white shadow-sm ${inv.hms_patient.gender === 'male' ? 'bg-blue-100 text-blue-700' :
-                                                        inv.hms_patient.gender === 'female' ? 'bg-pink-100 text-pink-700' : 'bg-slate-100 text-slate-700'
+                                                    inv.hms_patient.gender === 'female' ? 'bg-pink-100 text-pink-700' : 'bg-slate-100 text-slate-700'
                                                     }`}>
                                                     {inv.hms_patient.first_name?.[0]}
                                                 </div>
@@ -244,7 +245,7 @@ export default async function BillingPage({
                                                 inv.status === 'posted' ? 'bg-blue-50 text-blue-700 border-blue-100' :
                                                     'bg-slate-100 text-slate-600 border-slate-200'}`}>
                                             <span className={`h-1.5 w-1.5 rounded-full ${inv.status === 'paid' ? 'bg-emerald-500' :
-                                                    inv.status === 'posted' ? 'bg-blue-500' : 'bg-slate-400'
+                                                inv.status === 'posted' ? 'bg-blue-500' : 'bg-slate-400'
                                                 }`}></span>
                                             {inv.status || 'draft'}
                                         </span>
