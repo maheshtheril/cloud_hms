@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Calendar, User, Phone, MapPin, Clock, FileText, Plus, Edit, Mail } from "lucide-react"
+import { ArrowLeft, Calendar, User, Phone, MapPin, Clock, FileText, Plus, Edit, Mail, Pill, Activity, Receipt, CreditCard, LayoutDashboard, Stethoscope, History } from "lucide-react"
 import { EditPatientButton } from "@/components/hms/patients/edit-patient-button"
 import { PatientPaymentDialog } from "@/components/hms/billing/patient-payment-dialog"
 import { PatientConsumptionDialog } from "@/components/hms/billing/patient-consumption-dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default async function PatientDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -13,15 +14,18 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
         include: {
             hms_appointments: {
                 orderBy: { starts_at: 'desc' },
-                take: 20 // Increased to get more context for consumption
+                take: 50
             },
             hms_invoice: {
                 orderBy: { created_at: 'desc' },
-                take: 5
+                take: 50,
+                include: {
+                    hms_invoice_lines: true
+                }
             },
             prescription: {
                 orderBy: { created_at: 'desc' },
-                take: 5,
+                take: 20,
                 include: {
                     prescription_items: {
                         include: {
@@ -32,7 +36,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
             },
             hms_vitals: {
                 orderBy: { recorded_at: 'desc' },
-                take: 10
+                take: 50
             }
         }
     })
@@ -49,7 +53,7 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
             source: 'Nursing Consumption'
         },
         orderBy: { created_at: 'desc' },
-        take: 20
+        take: 50
     })
 
     // Fetch product details manually
@@ -116,236 +120,348 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
         groupedTimeline[dateKey].push(event);
     });
 
+    // Calculate financials
+    const totalInvoiced = patient.hms_invoice.reduce((sum, inv) => sum + Number(inv.total_amount), 0)
+    const totalOutstanding = patient.hms_invoice.reduce((sum, inv) => sum + Number(inv.outstanding_amount), 0)
+
     return (
-        <div className="space-y-6 max-w-7xl mx-auto pb-20">
-            {/* World-Class Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-                <div className="flex items-center gap-5">
-                    <Link href="/hms/patients" className="h-10 w-10 flex items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-full transition-colors border border-slate-200">
-                        <ArrowLeft className="h-5 w-5 text-slate-600" />
-                    </Link>
-                    <div>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{patientAny.first_name} {patientAny.last_name}</h1>
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${patientAny.gender === 'male' ? 'bg-blue-50 text-blue-700' :
-                                    patientAny.gender === 'female' ? 'bg-pink-50 text-pink-700' : 'bg-slate-50 text-slate-700'
-                                }`}>
-                                {patientAny.gender || 'Unknown'}
-                            </span>
-                        </div>
-                        <p className="text-slate-500 flex items-center gap-4 mt-1 text-sm font-medium">
-                            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>ID: <span className="font-mono text-slate-700">{patientAny.patient_number || 'N/A'}</span></span>
-                            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>Born: {patientAny.dob ? new Date(patientAny.dob).toLocaleDateString() : '-'}</span>
-                            {(patientAny.contact as any)?.phone && <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span><Phone className="h-3 w-3" /> {(patientAny.contact as any).phone}</span>}
-                        </p>
-                    </div>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                    <button className="h-10 w-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200 transition-all" title="Print Medical Record">
-                        <FileText className="h-4 w-4" />
-                    </button>
-                    <PatientPaymentDialog
-                        patientId={patientAny.id}
-                        patientName={`${patientAny.first_name} ${patientAny.last_name}`}
-                    />
-                    <PatientConsumptionDialog
-                        patientId={patientAny.id}
-                        patientName={`${patientAny.first_name} ${patientAny.last_name}`}
-                    />
-                    <EditPatientButton patient={patientAny} />
-                    <Link
-                        href={`/hms/appointments/new?patient_id=${patientAny.id}`}
-                        className="h-10 px-4 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium flex items-center gap-2 shadow-sm shadow-indigo-200 transition-all active:scale-95"
-                    >
-                        <Plus className="h-4 w-4" />
-                        Book Visit
-                    </Link>
-                </div>
-            </div>
+        <div className="h-screen w-full bg-slate-100/50 p-2 md:p-4 lg:p-6 flex flex-col overflow-hidden">
+            {/* "Popup" Window Container */}
+            <div className="flex-1 bg-white rounded-[2rem] shadow-2xl border border-slate-200 flex flex-col overflow-hidden relative">
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
-                {/* Left Column: Timeline (activity feed) - Spans 8 cols */}
-                <div className="lg:col-span-8 space-y-8">
-
-                    {/* Timeline Header */}
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                            <Clock className="h-5 w-5 text-indigo-600" />
-                            Reference Timeline
-                        </h2>
-                        <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{timelineEvents.length} Events</span>
-                    </div>
-
-                    {Object.keys(groupedTimeline).length === 0 ? (
-                        <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
-                            <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Clock className="h-8 w-8 text-slate-300" />
+                {/* 1. Header Section */}
+                <div className="shrink-0 bg-white border-b border-slate-100 p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 z-10">
+                    <div className="flex items-center gap-5">
+                        <Link href="/hms/patients" className="h-10 w-10 flex items-center justify-center bg-slate-50 hover:bg-slate-100 rounded-full transition-colors border border-slate-200 shadow-sm">
+                            <ArrowLeft className="h-5 w-5 text-slate-600" />
+                        </Link>
+                        <div>
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{patientAny.first_name} {patientAny.last_name}</h1>
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm ${patientAny.gender === 'male' ? 'bg-blue-50 text-blue-700 border border-blue-100' :
+                                        patientAny.gender === 'female' ? 'bg-pink-50 text-pink-700 border border-pink-100' : 'bg-slate-50 text-slate-700 border border-slate-100'
+                                    }`}>
+                                    {patientAny.gender || 'Unknown'}
+                                </span>
                             </div>
-                            <p className="text-slate-500 font-medium">No clinical history recorded yet.</p>
-                            <p className="text-slate-400 text-sm mt-1">Vitals, Consultations, and Billing history will appear here.</p>
+                            <p className="text-slate-500 flex items-center gap-4 mt-1 text-sm font-medium">
+                                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>ID: <span className="font-mono text-slate-700">{patientAny.patient_number || 'N/A'}</span></span>
+                                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span>Born: {patientAny.dob ? new Date(patientAny.dob).toLocaleDateString() : '-'}</span>
+                                {(patientAny.contact as any)?.phone && <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-300"></span><Phone className="h-3 w-3" /> {(patientAny.contact as any).phone}</span>}
+                            </p>
                         </div>
-                    ) : (
-                        <div className="relative pl-8 border-l-2 border-slate-100 space-y-10">
-                            {Object.entries(groupedTimeline).map(([dateString, events]) => (
-                                <div key={dateString} className="relative">
-                                    {/* Date Header Marker */}
-                                    <div className="absolute -left-[41px] top-0 h-5 w-5 rounded-full border-4 border-white bg-slate-300 ring-4 ring-slate-50" />
-                                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-6 pl-2">{dateString}</h3>
+                    </div>
 
-                                    <div className="space-y-4">
-                                        {events.map((event: any, i: number) => {
-                                            // Determine Link and Colors based on type
-                                            let LinkComponent: any = 'div';
-                                            let linkProps: any = {};
-                                            let iconColor = '';
-                                            let Icon = Clock;
-                                            let title = '';
+                    <div className="flex flex-wrap gap-2">
+                        <button className="h-10 px-4 flex items-center gap-2 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200 transition-all font-medium text-sm shadow-sm" title="Print Medical Record">
+                            <FileText className="h-4 w-4" /> Print
+                        </button>
+                        <PatientPaymentDialog
+                            patientId={patientAny.id}
+                            patientName={`${patientAny.first_name} ${patientAny.last_name}`}
+                        />
+                        <PatientConsumptionDialog
+                            patientId={patientAny.id}
+                            patientName={`${patientAny.first_name} ${patientAny.last_name}`}
+                        />
+                        <EditPatientButton patient={patientAny} />
+                        <Link
+                            href={`/hms/appointments/new?patient_id=${patientAny.id}`}
+                            className="h-10 px-5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 font-medium flex items-center gap-2 shadow-lg shadow-indigo-200 transition-all active:scale-95"
+                        >
+                            <Plus className="h-4 w-4" />
+                            Book Checkup
+                        </Link>
+                    </div>
+                </div>
 
-                                            // Default styles
-                                            iconColor = 'bg-gradient-to-br from-slate-50 to-slate-100 text-slate-600';
+                {/* 2. Tabs Navigation */}
+                <Tabs defaultValue="overview" className="flex-1 flex flex-col min-h-0">
+                    <div className="px-6 border-b border-slate-100 bg-white/50 backdrop-blur-sm sticky top-0 z-10">
+                        <TabsList className="h-12 bg-transparent gap-6 p-0">
+                            <TabsTrigger value="overview" className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 data-[state=active]:shadow-none px-2 text-slate-500 font-medium text-sm hover:text-indigo-500 transition-colors">
+                                <LayoutDashboard className="h-4 w-4 mr-2" />
+                                360° Overview
+                            </TabsTrigger>
+                            <TabsTrigger value="clinical" className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 data-[state=active]:shadow-none px-2 text-slate-500 font-medium text-sm hover:text-indigo-500 transition-colors">
+                                <Stethoscope className="h-4 w-4 mr-2" />
+                                Clinical Data
+                            </TabsTrigger>
+                            <TabsTrigger value="financials" className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 data-[state=active]:shadow-none px-2 text-slate-500 font-medium text-sm hover:text-indigo-500 transition-colors">
+                                <CreditCard className="h-4 w-4 mr-2" />
+                                Financials
+                            </TabsTrigger>
+                            <TabsTrigger value="history" className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 data-[state=active]:shadow-none px-2 text-slate-500 font-medium text-sm hover:text-indigo-500 transition-colors">
+                                <History className="h-4 w-4 mr-2" />
+                                History Log
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
 
-                                            if (event.type === 'vital') {
-                                                iconColor = 'bg-gradient-to-br from-cyan-50 to-cyan-100 text-cyan-600';
-                                                Icon = FileText;
-                                                title = 'Vitals Check';
-                                            } else if (event.type === 'consumption_group') {
-                                                iconColor = 'bg-gradient-to-br from-orange-50 to-orange-100 text-orange-600';
-                                                Icon = FileText;
-                                                title = 'Inventory Consumption';
-                                            } else if (event.type === 'appointment') {
-                                                LinkComponent = Link;
-                                                linkProps = { href: `/hms/appointments/${event.data.id}` };
-                                                iconColor = 'bg-gradient-to-br from-indigo-50 to-indigo-100 text-indigo-600';
-                                                Icon = Calendar;
-                                                title = 'Consultation';
-                                            } else if (event.type === 'invoice') {
-                                                LinkComponent = Link;
-                                                linkProps = { href: `/hms/billing/${event.data.id}` };
-                                                iconColor = 'bg-gradient-to-br from-emerald-50 to-emerald-100 text-emerald-600';
-                                                Icon = FileText;
-                                                title = `Invoice #${event.data.invoice_no}`;
-                                            }
+                    {/* 3. Scrollable Content Area */}
+                    <div className="flex-1 overflow-y-auto bg-slate-50/30 p-6 md:p-8 scroll-smooth">
 
-                                            return (
-                                                <LinkComponent key={i} {...linkProps} className={`block group relative bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:border-indigo-100 transition-all duration-300 ${LinkComponent === Link ? 'cursor-pointer' : ''}`}>
-                                                    {/* Line Connector to Bullet */}
-                                                    <div className="absolute top-1/2 -left-8 w-6 h-[2px] bg-slate-100 group-hover:bg-indigo-100 transition-colors" />
+                        {/* TAB: OVERVIEW (Timeline) */}
+                        <TabsContent value="overview" className="m-0 space-y-8 max-w-7xl mx-auto animate-in fade-in-50 duration-500 slide-in-from-bottom-2 selection:bg-indigo-100">
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                {/* Left: Timeline */}
+                                <div className="lg:col-span-8 space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                                            <Clock className="h-5 w-5 text-indigo-500" />
+                                            Recent Timeline
+                                        </h3>
+                                        <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">{timelineEvents.length} Activities</span>
+                                    </div>
 
-                                                    <div className="flex items-start gap-5">
-                                                        {/* Context Icon */}
-                                                        <div className={`mt-1 h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${iconColor}`}>
-                                                            <Icon className="h-6 w-6" />
-                                                        </div>
+                                    {Object.keys(groupedTimeline).length === 0 ? (
+                                        <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
+                                            <div className="h-16 w-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                                <Clock className="h-8 w-8 text-slate-300" />
+                                            </div>
+                                            <p className="text-slate-500 font-medium">No clinical history recorded.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="relative pl-8 border-l-2 border-slate-200 space-y-10 ml-3">
+                                            {Object.entries(groupedTimeline).map(([dateString, events]) => (
+                                                <div key={dateString} className="relative">
+                                                    <div className="absolute -left-[43px] top-0 h-5 w-5 rounded-full border-4 border-white bg-slate-300 ring-4 ring-slate-50" />
+                                                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-6 pl-2">{dateString}</h4>
 
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex justify-between items-start">
-                                                                <div>
-                                                                    <h4 className="text-base font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                                                                        {title}
-                                                                    </h4>
-                                                                    {event.type === 'consumption_group' && (
-                                                                        <p className="text-xs font-medium text-slate-500 mt-0.5 flex items-center gap-1">
-                                                                            <User className="h-3 w-3" /> Recorded by {event.nurseName}
-                                                                        </p>
-                                                                    )}
-                                                                    {event.type === 'appointment' && (
-                                                                        <p className="text-xs font-medium text-slate-500 mt-0.5 capitalize">
-                                                                            {event.data.status} • {event.data.type || 'General Checkup'}
-                                                                        </p>
-                                                                    )}
-                                                                    {event.type === 'invoice' && (
-                                                                        <p className={`text-xs font-bold mt-0.5 ${event.data.status === 'paid' ? 'text-emerald-600' : 'text-orange-600'} uppercase`}>
-                                                                            {event.data.status} • ${Number(event.data.outstanding_amount).toFixed(2)} Due
-                                                                        </p>
-                                                                    )}
-                                                                </div>
-                                                                <span className="text-xs font-mono font-medium text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-                                                                    {event.date ? new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '-'}
-                                                                </span>
-                                                            </div>
+                                                    <div className="space-y-4">
+                                                        {events.map((event: any, i: number) => {
+                                                            let LinkComponent: any = 'div';
+                                                            let linkProps: any = {};
+                                                            let iconColor = 'bg-slate-100 text-slate-500';
+                                                            let Icon = Clock;
+                                                            let title = '';
 
-                                                            {/* Details */}
-                                                            <div className="mt-4">
-                                                                {event.type === 'vital' ? (
-                                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
-                                                                            <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">Temp</span>
-                                                                            <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.temperature) || '-'}°C</span>
+                                                            if (event.type === 'vital') {
+                                                                iconColor = 'bg-cyan-100 text-cyan-600';
+                                                                Icon = Activity;
+                                                                title = 'Vitals Recorded';
+                                                            } else if (event.type === 'consumption_group') {
+                                                                iconColor = 'bg-orange-100 text-orange-600';
+                                                                Icon = Pill;
+                                                                title = 'Medication/Consumables';
+                                                            } else if (event.type === 'appointment') {
+                                                                LinkComponent = Link;
+                                                                linkProps = { href: `/hms/appointments/${event.data.id}` };
+                                                                iconColor = 'bg-indigo-100 text-indigo-600';
+                                                                Icon = Calendar;
+                                                                title = 'Consultation Visit';
+                                                            } else if (event.type === 'invoice') {
+                                                                LinkComponent = Link;
+                                                                linkProps = { href: `/hms/billing/${event.data.id}` };
+                                                                iconColor = 'bg-emerald-100 text-emerald-600';
+                                                                Icon = Receipt;
+                                                                title = `Invoice Generated`;
+                                                            }
+
+                                                            return (
+                                                                <LinkComponent key={i} {...linkProps} className={`block bg-white p-5 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md hover:border-indigo-200 transition-all duration-200 group relative ${LinkComponent === Link ? 'cursor-pointer' : ''}`}>
+                                                                    <div className="absolute top-1/2 -left-8 w-6 h-[2px] bg-slate-200 group-hover:bg-indigo-200 transition-colors" />
+                                                                    <div className="flex gap-4">
+                                                                        <div className={`h-12 w-12 rounded-2xl flex items-center justify-center shrink-0 ${iconColor}`}>
+                                                                            <Icon className="h-6 w-6" />
                                                                         </div>
-                                                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
-                                                                            <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">BP</span>
-                                                                            <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.systolic)}/{Number(event.data.diastolic)}</span>
-                                                                        </div>
-                                                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
-                                                                            <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">Pulse</span>
-                                                                            <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.pulse) || '-'}</span>
-                                                                        </div>
-                                                                        <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 text-center">
-                                                                            <span className="block text-[10px] uppercase text-slate-400 font-bold mb-1">SpO2</span>
-                                                                            <span className="font-mono text-sm font-bold text-slate-700">{Number(event.data.spo2) || '-'}%</span>
-                                                                        </div>
-                                                                    </div>
-                                                                ) : event.type === 'consumption_group' ? (
-                                                                    <div className="bg-orange-50/50 rounded-xl border border-orange-100/50 overflow-hidden">
-                                                                        {event.items.map((item: any, j: number) => (
-                                                                            <div key={j} className="flex justify-between items-center px-4 py-2.5 border-b last:border-0 border-orange-100/50 hover:bg-white/50 transition-colors">
-                                                                                <span className="font-medium text-sm text-slate-800">{item.productName}</span>
-                                                                                <span className="text-xs font-bold font-mono text-orange-700 bg-orange-100/50 px-2 py-0.5 rounded ml-4 whitespace-nowrap">
-                                                                                    {item.qty} {item.uom}
-                                                                                </span>
+                                                                        <div className="flex-1">
+                                                                            <div className="flex justify-between items-start">
+                                                                                <div>
+                                                                                    <h5 className="font-bold text-slate-900">{title}</h5>
+                                                                                    {event.type === 'invoice' && <p className="text-sm font-mono text-slate-600 font-medium">#{event.data.invoice_no}</p>}
+                                                                                    {event.type === 'appointment' && <p className="text-sm text-slate-600 capitalize">{event.data.type || 'General'}</p>}
+                                                                                </div>
+                                                                                <span className="text-xs font-mono font-medium text-slate-400">{event.date ? new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</span>
                                                                             </div>
-                                                                        ))}
+
+                                                                            {/* Inline Details for Overview */}
+                                                                            {event.type === 'vital' && (
+                                                                                <div className="mt-3 flex gap-3 text-xs font-mono font-medium text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100 w-fit">
+                                                                                    <span>BP: {event.data.systolic}/{event.data.diastolic}</span>
+                                                                                    <span className="w-px bg-slate-200 h-4" />
+                                                                                    <span>HR: {event.data.pulse}</span>
+                                                                                    <span className="w-px bg-slate-200 h-4" />
+                                                                                    <span>Temp: {event.data.temperature}°</span>
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
                                                                     </div>
-                                                                ) : null}
-                                                            </div>
-                                                        </div>
+                                                                </LinkComponent>
+                                                            )
+                                                        })}
                                                     </div>
-                                                </LinkComponent>
-                                            )
-                                        })}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Right: Fast Facts Card */}
+                                <div className="lg:col-span-4 space-y-6">
+                                    <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 flex flex-col gap-6">
+                                        <div>
+                                            <h3 className="font-bold text-slate-900 mb-2 flex items-center gap-2">
+                                                <MapPin className="h-4 w-4 text-slate-400" /> Emergency
+                                            </h3>
+                                            {(patientAny.contact as any)?.emergency_contact?.name ? (
+                                                <div className="bg-red-50 p-4 rounded-2xl border border-red-100 text-center">
+                                                    <p className="font-black text-red-900 text-lg mb-1">{(patientAny.contact as any).emergency_contact.name}</p>
+                                                    <p className="text-red-600 text-xs font-bold uppercase tracking-wider mb-3">{(patientAny.contact as any).emergency_contact.relation}</p>
+                                                    <a href={`tel:${(patientAny.contact as any).emergency_contact.phone}`} className="inline-flex items-center gap-2 bg-white text-red-600 px-4 py-2 rounded-xl font-mono font-bold text-sm shadow-sm hover:bg-red-50 transition-colors">
+                                                        <Phone className="h-3 w-3" /> {(patientAny.contact as any).emergency_contact.phone}
+                                                    </a>
+                                                </div>
+                                            ) : <span className="text-slate-400 text-sm">Not set</span>}
+                                        </div>
+
+                                        <div className="h-px bg-slate-100" />
+
+                                        <div>
+                                            <h3 className="font-bold text-slate-900 mb-2">Address</h3>
+                                            <p className="text-sm text-slate-500 leading-relaxed">
+                                                {[(patientAny.contact as any)?.address?.street, (patientAny.contact as any)?.address?.city, (patientAny.contact as any)?.address?.state, (patientAny.contact as any)?.address?.zip].filter(Boolean).join(', ')}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {/* Quick Financial Summary */}
+                                    {totalOutstanding > 0 && (
+                                        <div className="bg-gradient-to-br from-orange-500 to-red-500 p-6 rounded-3xl shadow-lg shadow-orange-200 text-white">
+                                            <p className="font-medium opacity-90 text-sm mb-1">Outstanding Balance</p>
+                                            <p className="text-3xl font-black mb-4">₹{totalOutstanding.toLocaleString()}</p>
+                                            <PatientPaymentDialog
+                                                patientId={patientAny.id}
+                                                patientName={`${patientAny.first_name} ${patientAny.last_name}`}
+                                                trigger={
+                                                    <button className="w-full bg-white text-orange-600 font-bold py-3 rounded-xl hover:bg-orange-50 transition-colors text-sm">
+                                                        Pay Now
+                                                    </button>
+                                                }
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </TabsContent>
+
+                        {/* TAB: CLINICAL */}
+                        <TabsContent value="clinical" className="m-0 max-w-7xl mx-auto space-y-6 animate-in fade-in-50 duration-500">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Vitals Card */}
+                                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+                                            <Activity className="h-5 w-5 text-cyan-500" /> Vitals History
+                                        </h3>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {patient.hms_vitals.map((v, i) => (
+                                            <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                                <div className="text-xs font-mono font-medium text-slate-500">
+                                                    {new Date(v.recorded_at).toLocaleDateString()} <br />
+                                                    {new Date(v.recorded_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
+                                                <div className="text-right flex gap-4">
+                                                    <div>
+                                                        <span className="block text-[10px] uppercase text-slate-400 font-bold">BP</span>
+                                                        <span className="font-mono font-bold text-slate-800">{Number(v.systolic)}/{Number(v.diastolic)}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="block text-[10px] uppercase text-slate-400 font-bold">HR</span>
+                                                        <span className="font-mono font-bold text-slate-800">{Number(v.pulse)}</span>
+                                                    </div>
+                                                    <div>
+                                                        <span className="block text-[10px] uppercase text-slate-400 font-bold">Temp</span>
+                                                        <span className="font-mono font-bold text-slate-800">{Number(v.temperature)}°</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {patient.hms_vitals.length === 0 && <p className="text-slate-400 text-sm italic">No vitals recorded.</p>}
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
 
-                {/* Right Column: Key Info & Actions - Spans 4 cols */}
-                <div className="lg:col-span-4 space-y-6">
-
-                    <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 sticky top-6">
-                        <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-slate-400" />
-                            Emergency Contact
-                        </h3>
-                        {(patientAny.contact as any)?.emergency_contact?.name ? (
-                            <div className="bg-red-50 p-4 rounded-xl border border-red-100">
-                                <p className="font-bold text-red-900 text-lg">{(patientAny.contact as any).emergency_contact.name}</p>
-                                <p className="text-red-700 text-sm font-medium mb-2">{(patientAny.contact as any).emergency_contact.relation}</p>
-                                <div className="flex items-center gap-2 text-red-800 bg-white/50 p-2 rounded-lg justify-center font-mono font-bold">
-                                    <Phone className="h-4 w-4" />
-                                    {(patientAny.contact as any).emergency_contact.phone}
+                                {/* Clinical Notes / Consumption */}
+                                <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100">
+                                    <div className="flex justify-between items-center mb-6">
+                                        <h3 className="font-bold text-slate-900 text-lg flex items-center gap-2">
+                                            <Pill className="h-5 w-5 text-orange-500" /> Medications / Consumption
+                                        </h3>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {consumptionEvents.map((c: any, i) => (
+                                            <div key={i} className="p-4 bg-orange-50/50 rounded-xl border border-orange-100">
+                                                <div className="flex justify-between mb-2">
+                                                    <span className="text-xs font-bold uppercase text-orange-800 bg-orange-100 px-2 py-0.5 rounded">{new Date(c.date).toLocaleDateString()}</span>
+                                                    <span className="text-xs font-medium text-orange-600">Recorded by {c.nurseName}</span>
+                                                </div>
+                                                {c.items.map((item: any, j: number) => (
+                                                    <div key={j} className="flex justify-between text-sm text-slate-700 py-1 border-b border-orange-100/50 last:border-0">
+                                                        <span>{item.productName}</span>
+                                                        <span className="font-mono font-bold">{item.qty} {item.uom}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ))}
+                                        {consumptionEvents.length === 0 && <p className="text-slate-400 text-sm italic">No consumption records.</p>}
+                                    </div>
                                 </div>
                             </div>
-                        ) : (
-                            <p className="text-slate-400 text-sm italic">No emergency contact on file.</p>
-                        )}
+                        </TabsContent>
 
-                        <div className="mt-6 pt-6 border-t border-slate-100">
-                            <h3 className="font-bold text-slate-900 mb-4">Patient Address</h3>
-                            <div className="text-sm text-slate-600 leading-relaxed">
-                                {(patientAny.contact as any)?.address?.street && <p>{(patientAny.contact as any).address.street}</p>}
-                                <p>
-                                    {[(patientAny.contact as any)?.address?.city, (patientAny.contact as any)?.address?.state].filter(Boolean).join(', ')}
-                                    {(patientAny.contact as any)?.address?.zip && ` ${(patientAny.contact as any).address.zip}`}
-                                </p>
-                                {(patientAny.contact as any)?.address?.country && <p className="font-medium">{(patientAny.contact as any).address.country}</p>}
+                        {/* TAB: FINANCIALS */}
+                        <TabsContent value="financials" className="m-0 max-w-7xl mx-auto space-y-6 animate-in fade-in-50 duration-500">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                    <p className="text-slate-500 font-medium text-sm">Total Invoiced</p>
+                                    <p className="text-3xl font-black text-slate-900 mt-2">₹{totalInvoiced.toLocaleString()}</p>
+                                </div>
+                                <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                                    <p className="text-slate-500 font-medium text-sm">Outstanding</p>
+                                    <p className={`text-3xl font-black mt-2 ${totalOutstanding > 0 ? 'text-red-600' : 'text-emerald-600'}`}>₹{totalOutstanding.toLocaleString()}</p>
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                </div>
+                            <div className="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                                <div className="p-6 border-b border-slate-100">
+                                    <h3 className="font-bold text-slate-900 text-lg">Invoices & Payments</h3>
+                                </div>
+                                <div className="divide-y divide-slate-100">
+                                    {patient.hms_invoice.map((inv, i) => (
+                                        <Link href={`/hms/billing/${inv.id}`} key={i} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
+                                            <div className="flex items-center gap-4">
+                                                <div className={`h-10 w-10 rounded-full flex items-center justify-center transition-colors ${inv.status === 'paid' ? 'bg-emerald-100 text-emerald-600 group-hover:bg-emerald-200' : 'bg-orange-100 text-orange-600 group-hover:bg-orange-200'}`}>
+                                                    <Receipt className="h-5 w-5" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">Invoice #{inv.invoice_no}</p>
+                                                    <p className="text-xs text-slate-500">{new Date(inv.created_at).toLocaleDateString()}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-mono font-bold text-slate-900">₹{Number(inv.total_amount).toLocaleString()}</p>
+                                                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${inv.status === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                    {inv.status}
+                                                </span>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                    {patient.hms_invoice.length === 0 && <p className="p-6 text-slate-400 text-center italic">No invoices found.</p>}
+                                </div>
+                            </div>
+                        </TabsContent>
+
+                        {/* TAB: HISTORY (Placeholder for future audit logs) */}
+                        <TabsContent value="history" className="m-0 max-w-7xl mx-auto animate-in fade-in-50 duration-500">
+                            <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200">
+                                <History className="h-10 w-10 text-slate-300 mx-auto mb-4" />
+                                <p className="text-slate-500 font-medium">Audit logs coming soon</p>
+                            </div>
+                        </TabsContent>
+
+                    </div>
+                </Tabs>
             </div>
         </div>
     )
