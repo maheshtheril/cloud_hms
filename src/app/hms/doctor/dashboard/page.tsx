@@ -14,7 +14,7 @@ export default async function DoctorDashboardPage() {
     const session = await auth()
 
     if (!session?.user?.email) {
-        redirect("/auth/signin")
+        redirect("/login")
     }
 
     const tenantId = session.user.tenantId

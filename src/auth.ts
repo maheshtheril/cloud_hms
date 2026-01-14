@@ -76,6 +76,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     ],
     callbacks: {
         async jwt({ token, user, trigger, session }: any) {
+            // PROACTIVE SECURITY: Always clear base64 data from the token on every pass
+            // This prevents 431 Header Too Large errors if a giant string somehow got into the cookie.
+            if (token.image && typeof token.image === 'string' && token.image.startsWith('data:')) {
+                token.image = null;
+            }
+
             if (user) {
                 token.id = user.id;
                 token.name = user.name;
@@ -87,7 +93,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 token.hasCRM = user.hasCRM;
                 token.hasHMS = user.hasHMS;
                 token.role = user.role;
-                // ONLY store real URLs in the token, NOT base64 data URIs to avoid Header too Large errors
+                // ONLY store real URLs in the token, NOT base64 data URIs
                 token.image = user.image?.startsWith('data:') ? null : user.image;
             }
 
@@ -95,7 +101,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (trigger === "update" && session) {
                 if (session.name) token.name = session.name;
                 // Same here: avoid base64 in session
-                if (session.image) token.image = session.image.startsWith('data:') ? null : session.image;
+                if (session.image) {
+                    token.image = session.image.startsWith('data:') ? null : session.image;
+                }
             }
 
             return token;

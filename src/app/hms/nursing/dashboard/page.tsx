@@ -6,8 +6,8 @@ import { redirect } from "next/navigation"
 export default async function NursingDashboardPage() {
     const session = await auth()
 
-    if (!session?.user?.id) {
-        redirect("/auth/signin")
+    if (!session?.user?.email) {
+        redirect("/login")
     }
 
     const tenantId = session.user.tenantId

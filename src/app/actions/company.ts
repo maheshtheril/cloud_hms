@@ -106,6 +106,12 @@ export async function createCompany(data: {
     industry?: string;
     country_id?: string;
     currency_id?: string;
+    phone?: string;
+    email?: string;
+    website?: string;
+    address?: string;
+    gstin?: string;
+    registration_number?: string;
 }) {
     const session = await auth();
     if (!session?.user?.id) return { error: "Unauthorized" };
@@ -154,7 +160,15 @@ export async function createCompany(data: {
                     name: data.name,
                     industry: industry,
                     country_id: countryId,
-                    enabled: true
+                    enabled: true,
+                    metadata: {
+                        phone: data.phone,
+                        email: data.email,
+                        website: data.website,
+                        address: data.address,
+                        gstin: data.gstin,
+                        registration_number: data.registration_number
+                    }
                 }
             });
 
