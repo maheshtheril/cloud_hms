@@ -1,1324 +1,749 @@
-'use client'
+"use client";
 
-import { useState, useEffect, useMemo } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, X, Loader2, CreditCard, Banknote, Smartphone, Landmark, MessageCircle, Maximize2, Minimize2, Check, Send, CheckCircle2 } from 'lucide-react'
-import { createInvoice, updateInvoice, getPatientBalance, createQuickPatient } from '@/app/actions/billing'
-import { SearchableSelect } from '@/components/ui/searchable-select'
-import { useToast } from '@/components/ui/use-toast'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
+import { useState, useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import {
+  Plus,
+  Trash2,
+  Search,
+  Save,
+  FileText,
+  Calendar,
+  User,
+  DollarSign,
+  Receipt,
+  X,
+  Loader2,
+  CreditCard,
+  Banknote,
+  Smartphone,
+  Landmark,
+  MessageCircle,
+  Maximize2,
+  Minimize2,
+  Check,
+  Send,
+  CheckCircle2,
+  QrCode,
+  Clock,
+  ArrowRight,
+} from "lucide-react";
+import {
+  createInvoice,
+  updateInvoice,
+  getPatientBalance,
+  createQuickPatient,
+} from "@/app/actions/billing";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
-export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice, onClose }: {
-    patients: any[],
-    billableItems: any[],
-    taxConfig: { defaultTax: any, taxRates: any[] },
-    initialPatientId?: string,
-    initialMedicines?: any[],
-    appointmentId?: string,
-    initialInvoice?: any,
-    onClose?: () => void
+export function CompactInvoiceEditor({
+  patients,
+  billableItems,
+  taxConfig,
+  initialPatientId,
+  initialMedicines,
+  appointmentId,
+  initialInvoice,
+  onClose,
+}: {
+  patients: any[];
+  billableItems: any[];
+  taxConfig: { defaultTax: any; taxRates: any[] };
+  initialPatientId?: string;
+  initialMedicines?: any[];
+  appointmentId?: string;
+  initialInvoice?: any;
+  onClose?: () => void;
 }) {
+  interface Payment {
+    method: "cash" | "card" | "upi" | "bank_transfer" | "advance";
+    amount: number;
+    reference?: string;
+  }
 
-    // ... (Existing interfaces)
-    interface Payment {
-        method: 'cash' | 'card' | 'upi' | 'bank_transfer' | 'advance';
-        amount: number;
-        reference?: string;
-    }
-    const router = useRouter()
-    const searchParams = useSearchParams()
-    const { toast } = useToast()
-    const [loading, setLoading] = useState(false)
-    const [isMaximized, setIsMaximized] = useState(false)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
+  const [isQuickPatientOpen, setIsQuickPatientOpen] = useState(false);
+  const [quickPatientName, setQuickPatientName] = useState("");
+  const [quickPatientPhone, setQuickPatientPhone] = useState("");
+  const [isCreatingPatient, setIsCreatingPatient] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isWalkIn, setIsWalkIn] = useState(false);
+  const [walkInName, setWalkInName] = useState("");
+  const [walkInPhone, setWalkInPhone] = useState("");
 
-    // Quick Patient State
-    const [isQuickPatientOpen, setIsQuickPatientOpen] = useState(false)
-    const [quickPatientName, setQuickPatientName] = useState('')
-    const [quickPatientPhone, setQuickPatientPhone] = useState('')
-    const [isCreatingPatient, setIsCreatingPatient] = useState(false)
+  const urlPatientId = searchParams.get("patientId");
+  const urlMedicines = searchParams.get("medicines");
+  const urlAppointmentId = searchParams.get("appointmentId");
 
+  const [selectedPatientId, setSelectedPatientId] = useState(
+    initialInvoice?.patient_id || initialPatientId || urlPatientId || "",
+  );
+  const [date, setDate] = useState(
+    initialInvoice?.invoice_date
+      ? new Date(initialInvoice.invoice_date).toISOString().split("T")[0]
+      : new Date().toISOString().split("T")[0],
+  );
 
+  const defaultTaxId = taxConfig.defaultTax?.id || "";
 
-    // Walk-in State (No Patient Record)
-    const [isWalkIn, setIsWalkIn] = useState(false)
-    const [walkInName, setWalkInName] = useState('')
-    const [walkInPhone, setWalkInPhone] = useState('')
-
-
-
-    // ... (Existing State)
-
-    // Handle Quick Patient Creation
-    const handleQuickPatientCreate = async () => {
-        if (!quickPatientName || !quickPatientPhone) {
-            toast({ title: "Missing Fields", description: "Name and Phone are required for Walk-in.", variant: "destructive" });
-            return;
-        }
-
-        setIsCreatingPatient(true);
-        const res = await createQuickPatient(quickPatientName, quickPatientPhone) as any;
-        if (res.success && res.data) {
-            toast({ title: "Patient Created", description: "Walk-in patient added successfully." });
-
-            // Add to local list roughly for immediate selection (Real list needs refresh but SearchableSelect might handle defaultOptions)
-            // Ideally we should push to 'patients' prop but we can't mutate props.
-            // SearchableSelect defaultOptions is derived from props.
-            // We can just set selected ID and let SearchableSelect handle the display if we pass a special defaultOption
-
-            // Hack: We can't easily update 'patients' prop without router.refresh(), but that might reset form.
-            // We rely on SearchableSelect's ability to show selected value even if not in options list if we provide it?
-            // Actually SearchableSelect logic usually filters from list.
-
-            // Better: Just set the ID, and we might need to "inject" this new patient into the lookup logic or reload.
-            // For now, let's reload the page or assume router.refresh works? No, form data loss.
-            // We will modify SearchableSelect usage to allow an "extra option".
-
-            setSelectedPatientId(res.data.id);
-            setIsQuickPatientOpen(false);
-            setQuickPatientName('');
-            setQuickPatientPhone('');
-        } else {
-            toast({ title: "Error", description: res.error || "Failed to create patient", variant: "destructive" });
-        }
-        setIsCreatingPatient(false);
-    }
-
-    // Derived Options for Search that includes the newly created one if selected
-    // Note: We don't have the new patient object fully in 'patients' array yet.
-    // Use an effect or state to track "extra" patients created in this session.
-    const [extraPatients, setExtraPatients] = useState<any[]>([]);
-
-    useEffect(() => {
-        // If we just created one, fetch it or just use the returned data
-        // For simplicity, handleQuickPatientCreate adds to extraPatients
-    }, []);
-
-    // ... (rest of component logic)
-
-    // Read URL parameters for auto-fill
-    const urlPatientId = searchParams.get('patientId')
-    const urlMedicines = searchParams.get('medicines')
-    const urlAppointmentId = searchParams.get('appointmentId')
-
-    // State
-    const [selectedPatientId, setSelectedPatientId] = useState(initialInvoice?.patient_id || initialPatientId || urlPatientId || '')
-
-    // Effect: If a patient is selected, ensure Walk-in is OFF
-    useEffect(() => {
-        if (selectedPatientId) {
-            setIsWalkIn(false);
-        }
-    }, [selectedPatientId]);
-
-    const [date, setDate] = useState(initialInvoice?.invoice_date ? new Date(initialInvoice.invoice_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
-
-    // Use configured default or empty (force user to select)
-    const getDefaultTaxId = () => {
-        if (taxConfig.defaultTax?.id) return taxConfig.defaultTax.id;
-        return '';
-    };
-
-    const defaultTaxId = getDefaultTaxId();
-
-    const [lines, setLines] = useState<any[]>(initialInvoice?.hms_invoice_lines ? initialInvoice.hms_invoice_lines
-        .filter((l: any) => l.description || l.product_id) // Filter empty rows from DB
-        .map((l: any) => ({
+  const [lines, setLines] = useState<any[]>(
+    initialInvoice?.hms_invoice_lines
+      ? initialInvoice.hms_invoice_lines
+          .filter((l: any) => l.description || l.product_id)
+          .map((l: any) => ({
             id: l.id || Date.now() + Math.random(),
-            product_id: l.product_id || '',
+            product_id: l.product_id || "",
             description: l.description,
             quantity: Number(l.quantity),
-            uom: l.uom || 'PCS',
-            base_uom: 'PCS', // Default fallback
+            uom: l.uom || "PCS",
             unit_price: Number(l.unit_price),
-            tax_rate_id: l.tax_rate_id || defaultTaxId,
+            tax_rate_id: l.tax_rate_id,
             tax_amount: Number(l.tax_amount),
             discount_amount: Number(l.discount_amount),
-            net_amount: Number(l.net_amount)
-        })) : [
-        { id: 1, product_id: '', description: '', quantity: 1, uom: 'PCS', base_uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0 }
-    ])
-    const [payments, setPayments] = useState<Payment[]>(
-        initialInvoice?.hms_invoice_payments?.length > 0
-            ? initialInvoice.hms_invoice_payments.map((p: any) => ({
-                method: (p.method?.toLowerCase() as any) || 'cash',
-                amount: Number(p.amount) || 0,
-                reference: p.reference || ''
-            }))
-            : [{ method: 'cash', amount: 0, reference: '' }]
-    )
-
-    const [globalDiscount, setGlobalDiscount] = useState(Number(initialInvoice?.total_discount || 0))
-
-    // Memoize billable items as options for performance
-    const billableOptions = useMemo(() => {
-        return billableItems.map(item => ({
-            id: item.id,
-            label: item.label,
-            price: item.price,
-            sku: item.sku,
-            description: item.description,
-            metadata: item.metadata
-        }))
-    }, [billableItems])
-
-    // UX Focus Management State
-    const [lastAddedId, setLastAddedId] = useState<number | null>(null)
-
-    // Effect to focus new row
-    useEffect(() => {
-        if (lastAddedId) {
-            // Tiny timeout to ensure DOM is ready
-            setTimeout(() => {
-                const el = document.getElementById(`product-search-${lastAddedId}`)
-                if (el) {
-                    el.focus()
-                }
-            }, 50)
-            setLastAddedId(null)
-        }
-    }, [lastAddedId])
-
-
-
-    // --- REUSED LOGIC START ---
-
-    // Auto-load medicines/items from URL
-    useEffect(() => {
-        const itemsParam = searchParams.get('items');
-        const medicinesToLoad = initialMedicines || (urlMedicines ? JSON.parse(decodeURIComponent(urlMedicines)) : null) || (itemsParam ? JSON.parse(decodeURIComponent(itemsParam)) : null);
-
-        if (medicinesToLoad) {
-            try {
-                const parsedLines = medicinesToLoad.map((med: any, idx: number) => {
-                    let dbProduct = null;
-                    if (med.name) {
-                        const normalizedName = med.name.replace(/\+/g, ' ').toLowerCase();
-                        if (normalizedName.includes('patient registration fee') || normalizedName.includes('registration fee')) {
-                            dbProduct = billableItems.find(p => p.label.toLowerCase().includes('registration') && p.type === 'service');
-                        } else {
-                            dbProduct = billableItems.find(p => p.id === med.id);
-                        }
-                    }
-
-                    const lineItem: any = {
-                        id: Date.now() + idx,
-                        product_id: dbProduct ? dbProduct.id : (med.id || ''),
-                        description: dbProduct ? (dbProduct.description || dbProduct.label) : (med.name?.replace(/\+/g, ' ') || 'Service'),
-                        quantity: med.quantity || 1,
-                        unit_price: parseFloat(med.price?.toString() || '0'),
-                        uom: med.uom || 'PCS',
-                        base_uom: 'PCS', // Default fallback
-                        tax_rate_id: defaultTaxId,
-                        tax_amount: 0,
-                        discount_amount: 0
-                    };
-
-                    if (dbProduct) {
-                        if (dbProduct.price && dbProduct.price > 0) {
-                            lineItem.unit_price = dbProduct.price;
-                        }
-                        lineItem.description = dbProduct.description || dbProduct.label;
-
-                        // Tax Logic
-                        if (dbProduct.metadata?.tax_exempt) {
-                            // Look for a 0% tax rate
-                            const zeroTax = taxConfig.taxRates.find(t => t.rate === 0);
-                            lineItem.tax_rate_id = zeroTax ? zeroTax.id : ''; // Use 0% rate or no rate
-                        } else if (dbProduct.categoryTaxId) {
-                            lineItem.tax_rate_id = dbProduct.categoryTaxId;
-                        } else if (dbProduct.metadata?.purchase_tax_rate) {
-                            const matchingTax = taxConfig.taxRates.find(t => t.rate === Number(dbProduct.metadata.purchase_tax_rate));
-                            if (matchingTax) lineItem.tax_rate_id = matchingTax.id;
-                        }
-                    }
-
-                    const taxRateObj = taxConfig.taxRates.find(t => t.id === lineItem.tax_rate_id);
-                    const rate = taxRateObj ? taxRateObj.rate : 0;
-                    lineItem.tax_amount = (lineItem.quantity * lineItem.unit_price * rate) / 100;
-
-                    return lineItem;
-                })
-
-                setLines(parsedLines)
-            } catch (error) {
-                console.error('Error loading items:', error)
-            }
-        }
-    }, [urlMedicines, initialMedicines, billableItems])
-
-    // Auto-load appointment fee and lab tests
-    useEffect(() => {
-        // ONLY auto-load appointment data for NEW invoices
-        if (initialInvoice) return;
-
-        const activeAppointmentId = appointmentId || urlAppointmentId
-        if (activeAppointmentId) {
-            const loadAppointmentData = async () => {
-                try {
-                    const res = await fetch(`/api/appointments/${activeAppointmentId}`)
-                    const data = await res.json()
-
-                    if (data.success && data.appointment) {
-                        const appointment = data.appointment
-                        const appointmentLines: any[] = []
-
-                        if (appointment.consultation_fee) {
-                            // SMART LOOKUP: Find actual Consultation product for better tax/accounting
-                            const consultProduct = billableItems.find(p =>
-                                (p.label.toLowerCase().includes('consult') || p.label.toLowerCase().includes('opd')) &&
-                                p.id.length > 5 // Ensure it's not a dummy ID
-                            );
-
-                            const taxId = consultProduct?.categoryTaxId || defaultTaxId;
-                            const taxRateObj = taxConfig.taxRates.find(t => t.id === taxId);
-                            const rate = taxRateObj ? taxRateObj.rate : 0;
-                            const tax_amount = (appointment.consultation_fee * rate) / 100;
-
-                            appointmentLines.push({
-                                id: Date.now() + 1000,
-                                product_id: consultProduct?.id || '',
-                                description: appointment.clinician_name ? `Consultation Fee - Dr. ${appointment.clinician_name}` : 'Consultation Fee',
-                                quantity: 1,
-                                unit_price: parseFloat(appointment.consultation_fee.toString()),
-                                uom: 'Service',
-                                tax_rate_id: taxId,
-                                tax_amount: tax_amount,
-                                discount_amount: 0
-                            })
-                        }
-
-                        if (appointment.lab_tests?.length > 0) {
-                            appointment.lab_tests.forEach((test: any, idx: number) => {
-                                // Try to find matched Lab product
-                                const labProduct = billableItems.find(p => p.label.toLowerCase() === test.test_name.toLowerCase());
-                                const taxId = labProduct?.categoryTaxId || defaultTaxId;
-                                const taxRateObj = taxConfig.taxRates.find(t => t.id === taxId);
-                                const rate = taxRateObj ? taxRateObj.rate : 0;
-                                const tax_amount = (test.test_fee * rate) / 100;
-
-                                appointmentLines.push({
-                                    id: Date.now() + 2000 + idx,
-                                    product_id: labProduct?.id || '',
-                                    description: test.test_name,
-                                    quantity: 1,
-                                    unit_price: parseFloat(test.test_fee.toString()),
-                                    uom: 'Test',
-                                    tax_rate_id: taxId,
-                                    tax_amount: tax_amount,
-                                    discount_amount: 0
-                                })
-                            })
-                        }
-
-                        if (appointment.prescription_items?.length > 0) {
-                            appointment.prescription_items.forEach((item: any, idx: number) => {
-                                const product = billableItems.find(p => p.id === item.id);
-                                const defaultItemTaxId = product?.categoryTaxId || defaultTaxId;
-                                const taxRateObj = taxConfig.taxRates.find(t => t.id === defaultItemTaxId);
-                                const rate = taxRateObj ? taxRateObj.rate : 0;
-                                const baseTotal = (item.quantity * item.price);
-                                const tax_amount = (Math.max(0, baseTotal) * rate) / 100;
-
-                                appointmentLines.push({
-                                    id: Date.now() + 3000 + idx,
-                                    product_id: item.id,
-                                    description: item.name,
-                                    quantity: item.quantity,
-                                    unit_price: item.price,
-                                    uom: 'PCS',
-                                    tax_rate_id: defaultItemTaxId,
-                                    tax_amount: tax_amount,
-                                    discount_amount: 0,
-                                    base_price: item.price,
-                                    conversion_factor: 1
-                                })
-                            })
-                        }
-
-                        if (appointmentLines.length > 0) {
-                            setLines(prev => {
-                                // If current is just one empty row, replace it
-                                if (prev.length === 1 && !prev[0].description && !prev[0].product_id) {
-                                    return appointmentLines;
-                                }
-                                return [...appointmentLines, ...prev];
-                            })
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error loading appointment data:', error)
-                }
-            }
-            loadAppointmentData()
-        }
-    }, [urlAppointmentId, appointmentId])
-
-    // Registration Expiry Check & Auto-Add
-    useEffect(() => {
-        if (!selectedPatientId || initialInvoice) return;
-
-        const patient = patients.find((p: any) => p.id === selectedPatientId);
-        if (patient) {
-            const meta = patient.metadata as any;
-            if (meta?.registration_expiry) {
-                const expiry = new Date(meta.registration_expiry);
-                const today = new Date();
-                if (expiry < today) {
-                    // Check if already added
-                    const alreadyAdded = lines.some((l: any) =>
-                        l.description?.toLowerCase().includes('registration') ||
-                        l.description?.toLowerCase().includes('renewal')
-                    );
-
-                    if (!alreadyAdded) {
-                        toast({
-                            title: "Registration Expired",
-                            description: `Patient registration expired on ${expiry.toLocaleDateString()}. Adding renewal fee.`,
-                            variant: "destructive"
-                        });
-
-                        // Add the fee
-                        const regProduct = billableItems.find((p: any) => p.label.toLowerCase().includes('registration'));
-                        const taxId = regProduct?.categoryTaxId || defaultTaxId;
-                        const taxRateObj = taxConfig.taxRates.find((t: any) => t.id === taxId);
-                        const rate = taxRateObj ? taxRateObj.rate : 0;
-                        const price = regProduct?.price || 100;
-
-                        setLines(prev => {
-                            // Logic: If registration fee is being added, check if there's a consultation fee.
-                            // Some clinics treat registration as the consultation fee for that day.
-                            let newLines = [...prev];
-
-                            // 1. Find consultation line if any
-                            const consultLineIdx = newLines.findIndex(l =>
-                                l.description?.toLowerCase().includes('consult') ||
-                                l.description?.toLowerCase().includes('opd')
-                            );
-
-                            if (consultLineIdx !== -1) {
-                                // Automatically discount the consultation fee 100% since registration is being paid
-                                // This matches the user's "registration fee will be the consulting fee also" rule.
-                                newLines[consultLineIdx] = {
-                                    ...newLines[consultLineIdx],
-                                    discount_amount: newLines[consultLineIdx].unit_price, // 100% discount
-                                    net_amount: 0
-                                };
-                                toast({
-                                    title: "Billing Adjusted",
-                                    description: "Consultation fee discounted as it is covered by the registration fee.",
-                                });
-                            }
-
-                            const itemToAdd = {
-                                id: Date.now() + 4000,
-                                product_id: regProduct?.id || '',
-                                description: 'Patient Registration Renewal Fee',
-                                quantity: 1,
-                                unit_price: Number(price),
-                                uom: 'Service',
-                                tax_rate_id: taxId,
-                                tax_amount: (Number(price) * rate) / 100,
-                                discount_amount: 0,
-                                net_amount: Number(price) + ((Number(price) * rate) / 100)
-                            };
-
-                            if (newLines.length === 1 && !newLines[0].description && !newLines[0].product_id) {
-                                return [itemToAdd];
-                            }
-                            return [...newLines, itemToAdd];
-                        });
-                    }
-                }
-            }
-        }
-    }, [selectedPatientId, patients, billableItems, toast, lines.length]);
-
-
-    const loadPrescriptionMedicines = async () => {
-        if (!selectedPatientId) return alert('Please select a patient first')
-        setLoading(true)
-        try {
-            const res = await fetch(`/api/prescriptions/by-patient/${selectedPatientId}`)
-            const data = await res.json()
-            if (data.success && data.latest && data.latest.medicines.length > 0) {
-                const prescription = data.latest
-                const medicineLines = prescription.medicines.map((med: any, idx: number) => ({
-                    id: Date.now() + idx,
-                    product_id: med.id,
-                    description: med.description,
-                    quantity: med.quantity,
-                    unit_price: med.unit_price,
-                    uom: 'PCS',
-                    tax_rate_id: defaultTaxId,
-                    tax_amount: 0,
-                    discount_amount: 0
-                }))
-                setLines(medicineLines)
-            } else {
-                alert('No recent prescriptions found')
-            }
-        } catch (error) {
-            console.error('Error loading prescription:', error)
-        }
-        setLoading(false)
-    }
-
-    const subtotal = lines.reduce((sum, line) => sum + ((line.quantity * line.unit_price) - (line.discount_amount || 0)), 0)
-    const totalTax = lines.reduce((sum, line) => sum + (line.tax_amount || 0), 0)
-    const grandTotal = Math.max(0, subtotal + totalTax - globalDiscount)
-    const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0)
-    const balanceDue = Math.max(0, grandTotal - totalPaid)
-    const changeAmount = Math.max(0, totalPaid - grandTotal)
-
-    const [isMounted, setIsMounted] = useState(false)
-    useEffect(() => { setIsMounted(true) }, [])
-
-    // Auto-update default payment if only one exists (UX convenience)
-    // ONLY for new invoices or when user is interacting
-    useEffect(() => {
-        if (!isMounted) return;
-        if (initialInvoice) return; // Never auto-fill for existing invoices
-
-        // User says: "it should be 0 right?" - so we default to 0 for strict accounting.
-        // We provide a big "Pay Now" button to auto-fill with one click.
-        if (payments.length === 1 && payments[0].amount === 0 && grandTotal > 0) {
-            // Keep it 0 by default as per user request
-        }
-    }, [grandTotal, isMounted])
-
-    const handleAddItem = () => {
-        const newId = Date.now()
-        setLines([...lines, {
-            id: newId,
-            product_id: '',
-            description: '',
+          }))
+      : [
+          {
+            id: 1,
+            product_id: "",
+            description: "",
             quantity: 1,
+            uom: "PCS",
             unit_price: 0,
-            uom: 'PCS',
             tax_rate_id: defaultTaxId,
             tax_amount: 0,
-            discount_amount: 0
-        }])
-        setLastAddedId(newId)
+            discount_amount: 0,
+          },
+        ],
+  );
+
+  const [payments, setPayments] = useState<Payment[]>([
+    { method: "cash", amount: 0, reference: "" },
+  ]);
+  const [globalDiscount, setGlobalDiscount] = useState(
+    Number(initialInvoice?.total_discount || 0),
+  );
+
+  const subtotal = lines.reduce(
+    (sum, line) =>
+      sum + (line.quantity * line.unit_price - (line.discount_amount || 0)),
+    0,
+  );
+  const totalTax = lines.reduce((sum, line) => sum + (line.tax_amount || 0), 0);
+  const grandTotal = Math.max(0, subtotal + totalTax - globalDiscount);
+  const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0);
+  const balanceDue = Math.max(0, grandTotal - totalPaid);
+  const changeAmount = Math.max(0, totalPaid - grandTotal);
+
+  useEffect(() => {
+    if (selectedPatientId) setIsWalkIn(false);
+  }, [selectedPatientId]);
+
+  const handleQuickPatientCreate = async () => {
+    if (!quickPatientName || !quickPatientPhone) return;
+    setIsCreatingPatient(true);
+    const res = (await createQuickPatient(
+      quickPatientName,
+      quickPatientPhone,
+    )) as any;
+    if (res.success && res.data) {
+      setSelectedPatientId(res.data.id);
+      setIsQuickPatientOpen(false);
     }
+    setIsCreatingPatient(false);
+  };
 
-    const handleRemoveItem = (id: number) => {
-        if (lines.length > 1) {
-            setLines(lines.filter(l => l.id !== id))
-        }
-    }
+  const handleAddItem = () => {
+    setLines([
+      ...lines,
+      {
+        id: Date.now(),
+        product_id: "",
+        description: "",
+        quantity: 1,
+        uom: "PCS",
+        unit_price: 0,
+        tax_rate_id: defaultTaxId,
+        tax_amount: 0,
+        discount_amount: 0,
+      },
+    ]);
+  };
 
-    const updateLine = (id: number, field: string, value: any) => {
-        setLines(lines.map(line => {
-            if (line.id === id) {
-                const updated = { ...line, [field]: value }
+  const handleRemoveItem = (id: number) => {
+    if (lines.length > 1) setLines(lines.filter((l) => l.id !== id));
+  };
 
-                if (field === 'product_id') {
-                    const product = billableItems.find(i => i.id === value)
-                    if (product) {
-                        updated.description = product.description || product.label
-                        const basePrice = product.metadata?.basePrice || product.price || 0;
-                        const packPrice = product.metadata?.packPrice || product.price || 0;
-                        const conversionFactor = product.metadata?.conversionFactor || 1;
-                        const packUom = product.metadata?.packUom || 'PCS';
-                        const baseUom = product.metadata?.baseUom || 'PCS';
-
-                        updated.base_price = basePrice;
-                        updated.pack_price = packPrice;
-                        updated.conversion_factor = conversionFactor;
-                        updated.pack_uom = packUom;
-                        updated.base_uom = baseUom;
-                        updated.uom = baseUom;
-                        updated.unit_price = basePrice;
-
-                        const purchaseTaxRate = product.metadata?.purchase_tax_rate;
-                        let purchaseTaxId = null;
-                        if (purchaseTaxRate) {
-                            const matchingTax = taxConfig.taxRates.find(t => t.rate === Number(purchaseTaxRate));
-                            purchaseTaxId = matchingTax?.id;
-                        }
-                        const taxToUse = purchaseTaxId || product.categoryTaxId || defaultTaxId;
-                        updated.tax_rate_id = taxToUse;
-                    }
-                }
-
-                if (field === 'uom') {
-                    const selectedUom = (value || '').toUpperCase();
-                    if (line.base_price) {
-                        if (selectedUom === 'PCS' || selectedUom === (line.base_uom || 'PCS').toUpperCase()) {
-                            updated.unit_price = line.base_price;
-                        } else if (line.pack_uom && selectedUom === line.pack_uom.toUpperCase() && line.pack_price) {
-                            updated.unit_price = line.pack_price;
-                        } else {
-                            // Smart derive for common patterns if metadata didn't catch it
-                            const packMatch = selectedUom.match(/(?:PACK|BOX|STRIP|TRAY)-(\d+)/i);
-                            const simpleMatch = selectedUom.match(/^(\d+)(?:'S|S|X\d+|X)?$/i);
-
-                            let derivedFactor = 0;
-                            if (packMatch) derivedFactor = parseInt(packMatch[1]);
-                            else if (simpleMatch) derivedFactor = parseInt(simpleMatch[1]);
-                            else if (selectedUom === 'STRIP') derivedFactor = 10;
-
-                            if (derivedFactor > 0) {
-                                updated.unit_price = line.base_price * derivedFactor;
-                            }
-                        }
-                    }
-                }
-
-                if (['product_id', 'quantity', 'unit_price', 'tax_rate_id', 'discount_amount', 'uom'].includes(field)) {
-                    const currentTaxId = field === 'tax_rate_id' ? value : updated.tax_rate_id;
-                    const taxRateObj = taxConfig.taxRates.find(t => t.id === currentTaxId);
-                    const rate = taxRateObj ? taxRateObj.rate : 0;
-                    const baseTotal = (updated.quantity * updated.unit_price) - (updated.discount_amount || 0);
-                    updated.tax_amount = (Math.max(0, baseTotal) * rate) / 100;
-                }
-
-                if (!updated.base_price && line.base_price) updated.base_price = line.base_price;
-                if (!updated.pack_price && line.pack_price) updated.pack_price = line.pack_price;
-                if (!updated.pack_uom && line.pack_uom) updated.pack_uom = line.pack_uom;
-                if (!updated.base_uom && line.base_uom) updated.base_uom = line.base_uom;
-                if (!updated.conversion_factor && line.conversion_factor) updated.conversion_factor = line.conversion_factor;
-
-                return updated
+  const updateLine = (id: number, field: string, value: any) => {
+    setLines(
+      lines.map((line) => {
+        if (line.id === id) {
+          const updated = { ...line, [field]: value };
+          if (field === "product_id") {
+            const product = billableItems.find((i) => i.id === value);
+            if (product) {
+              updated.description = product.description || product.label;
+              updated.unit_price = product.price || 0;
+              updated.tax_rate_id = product.categoryTaxId || defaultTaxId;
             }
-            return line
-        }))
+          }
+          const taxRateObj = taxConfig.taxRates.find(
+            (t: any) => t.id === updated.tax_rate_id,
+          );
+          const rate = taxRateObj ? taxRateObj.rate : 0;
+          updated.tax_amount =
+            (updated.quantity *
+              (updated.unit_price -
+                (updated.discount_amount / updated.quantity || 0)) *
+              rate) /
+            100;
+          return updated;
+        }
+        return line;
+      }),
+    );
+  };
+
+  const handleSave = async (status: "draft" | "posted" | "paid") => {
+    if (loading) return;
+    setLoading(true);
+    const payload = {
+      patient_id: isWalkIn ? null : selectedPatientId,
+      appointment_id: appointmentId || urlAppointmentId,
+      date,
+      line_items: lines.filter((l) => l.description || l.product_id),
+      status,
+      total_discount: globalDiscount,
+      payments: payments.filter((p) => p.amount > 0),
+      billing_metadata: isWalkIn
+        ? {
+            is_walk_in: true,
+            patient_name: walkInName,
+            patient_phone: walkInPhone,
+          }
+        : {},
+    };
+    const res = await (initialInvoice?.id
+      ? updateInvoice(initialInvoice.id, payload)
+      : createInvoice(payload));
+    if (res.success) {
+      toast({ title: "Success", description: "Invoiced processed." });
+      if (onClose) onClose();
+      else router.replace(`/hms/billing/${res.data?.id}`);
+    } else {
+      setLoading(false);
+      toast({ title: "Error", description: res.error, variant: "destructive" });
     }
+  };
 
+  return (
+    <div
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm ${isMaximized ? "p-0" : "p-4"}`}
+      onClick={() => (onClose ? onClose() : router.back())}
+    >
+      <div
+        className={`relative flex flex-col bg-white dark:bg-slate-900 shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 transition-all ${isMaximized ? "w-full h-full" : "w-full max-w-[95vw] h-[90vh] rounded-2xl"}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="bg-indigo-600 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/20">
+              <Receipt className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                Billing Terminal
+              </h2>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                Enterprise Edition v4.2
+              </p>
+            </div>
+          </div>
 
-
-    // ... (rest of component logic)
-
-    // INJECT DIALOG AFTER RETURN
-    // (We will use replace_file_content to append the dialog code)
-
-
-    const handleSave = async (status: 'draft' | 'posted' | 'paid') => {
-        if (loading) return; // Prevent double submission
-
-        if (!isWalkIn && !selectedPatientId) {
-            toast({
-                title: "Missing Patient",
-                description: "Please select a patient or switch to Walk-in mode.",
-                variant: "destructive"
-            })
-            return
-        }
-
-        if (isWalkIn && !walkInName) {
-            toast({
-                title: "Missing Name",
-                description: "Please enter the Walk-in Customer's Name.",
-                variant: "destructive"
-            })
-            return
-        }
-
-        if (lines.length === 0 || (lines.length === 1 && !lines[0].description && !lines[0].product_id)) {
-            toast({
-                title: "Empty Invoice",
-                description: "Add at least one item.",
-                variant: "destructive"
-            })
-            return
-        }
-
-        // Strict validation: Walk-in customers CANNOT have credit sales (must pay full amount)
-        if (isWalkIn && balanceDue > 1) {
-            toast({
-                title: "Payment Required",
-                description: "Walk-in customers must pay the full amount immediately. Credit sales are not allowed for guests.",
-                variant: "destructive"
-            });
-            return;
-        }
-
-        setLoading(true)
-
-        // Metadata for Walk-in
-        const billingMetadata: any = {};
-        if (isWalkIn) {
-            billingMetadata.is_walk_in = true;
-            billingMetadata.patient_name = walkInName;
-            billingMetadata.patient_phone = walkInPhone;
-        }
-
-        // Global Standard: Handle Overpayment as Physical Change
-        let finalizedPayments = [...payments];
-
-        if (changeAmount > 0.01) {
-            // Any overpayment is physical "Change" given back.
-            // We should only record the invoice total as the payment to keep the ledger zeroed.
-            const excess = changeAmount;
-
-            // Deduct the excess from the payment(s)
-            let remainingToDeduct = excess;
-            finalizedPayments = finalizedPayments.map(p => {
-                if (remainingToDeduct <= 0) return p;
-                const deduct = Math.min(p.amount, remainingToDeduct);
-                remainingToDeduct -= deduct;
-                return { ...p, amount: p.amount - deduct };
-            }).filter(p => p.amount > 0);
-
-            toast({
-                title: "Cash Change Given",
-                description: `₹${excess.toFixed(2)} returned to customer. Ledger balanced at ₹${grandTotal.toFixed(2)}.`,
-            });
-        }
-
-        const payload = {
-            patient_id: isWalkIn ? null : selectedPatientId,
-            appointment_id: appointmentId || urlAppointmentId,
-            date,
-            line_items: lines.filter(l => l.description || l.product_id), // Filter out empty lines on save
-            status,
-            total_discount: globalDiscount,
-            payments: finalizedPayments,
-            billing_metadata: billingMetadata
-        }
-
-        try {
-            let res;
-            if (initialInvoice?.id) {
-                res = await updateInvoice(initialInvoice.id, payload)
-            } else {
-                res = await createInvoice(payload)
-            }
-
-            if (res.success) {
-                toast({
-                    title: "Bill Saved",
-                    description: `Successfully ${status === 'draft' ? 'saved draft' : 'posted payment'}.`
-                })
-
-                if ((res.data as any)?.accountingWarning) {
-                    toast({
-                        title: "Accounting Warning",
-                        description: (res.data as any).accountingWarning,
-                        variant: "destructive",
-                        duration: 5000
-                    })
-                }
-
-                if (onClose) {
-                    onClose();
-                } else if (res.data?.id) {
-                    // Force navigation and don't turn off loading (keeps buttons disabled)
-                    router.replace(`/hms/billing/${res.data.id}`)
-                }
-            } else {
-                setLoading(false)
-                toast({
-                    title: "Save Failed",
-                    description: res.error || "Please check your network or form data.",
-                    variant: "destructive"
-                })
-            }
-        } catch (err: any) {
-            setLoading(false)
-            toast({
-                title: "System Error",
-                description: err.message || "An unexpected error occurred.",
-                variant: "destructive"
-            })
-        }
-    }
-
-    // --- RENDER START ---
-    return (
-        <div
-            className={`fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200 ${isMaximized ? 'p-0' : 'p-2 sm:p-4'}`}
-            onClick={() => onClose ? onClose() : router.back()}
-        >
-            <div
-                className={`relative flex flex-col bg-white dark:bg-slate-900 shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 ring-1 ring-slate-900/10 transition-all duration-300 ${isMaximized ? 'w-full h-full rounded-none' : 'w-full max-w-[96vw] h-[95vh] sm:h-[90vh] rounded-xl'}`}
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* 1. Header (Dense) */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md z-10 shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-gradient-to-br from-indigo-500 to-violet-600 p-2 rounded-lg text-white shadow-md shadow-indigo-500/20">
-                            <Receipt className="h-4 w-4" />
-                        </div>
-                        <div>
-                            <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-tight">
-                                {initialInvoice ? 'Edit' : 'New'} Invoice
-                            </h2>
-                            <div className="flex items-center gap-2 mt-0.5">
-                                <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full border ${selectedPatientId ? 'bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-400 dark:border-emerald-500/20' : 'bg-slate-100 text-slate-500 border-slate-200'}`}>
-                                    {selectedPatientId ? 'Patient Selected' : 'No Patient'}
-                                </span>
-                                <span className="text-[10px] text-slate-400">•</span>
-                                <p className="text-[10px] text-slate-500 font-medium">Create bill for patient</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-
-
-                        {/* Customer Section: World Standard Switcher */}
-                        <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-1 border border-slate-200 dark:border-slate-700">
-                            {/* Tab 1: Registered */}
-                            <button
-                                onClick={() => {
-                                    setIsWalkIn(false);
-                                    // setTimeout(() => document.getElementById('patient-search-input')?.focus(), 50);
-                                }}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all duration-200 ${!isWalkIn ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm ring-1 ring-black/5 dark:ring-white/10' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
-                            >
-                                <Search className="w-3 h-3" />
-                                Registered
-                            </button>
-
-                            {/* Tab 2: Walk-in */}
-                            <button
-                                onClick={() => {
-                                    setIsWalkIn(true);
-                                    setSelectedPatientId('');
-                                    setTimeout(() => document.getElementById('walkin-mobile')?.focus(), 50);
-                                }}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold rounded-md transition-all duration-200 ${isWalkIn ? 'bg-white dark:bg-slate-700 text-pink-600 shadow-sm ring-1 ring-black/5 dark:ring-white/10' : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'}`}
-                            >
-                                <User className="w-3 h-3" />
-                                Walk-in
-                            </button>
-                        </div>
-
-                        {/* Input Area */}
-                        <div className="w-64 sm:w-80 h-9 relative">
-                            {isWalkIn ? (
-                                <div className="absolute inset-0 flex items-center gap-2 animate-in fade-in slide-in-from-right-2 duration-300">
-                                    {/* Mobile First (World Standard) */}
-                                    <div className="relative w-32 shrink-0">
-                                        <Smartphone className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                                        <Input
-                                            id="walkin-mobile"
-                                            value={walkInPhone}
-                                            onChange={(e) => setWalkInPhone(e.target.value)}
-                                            placeholder="Mobile No."
-                                            className="h-9 text-xs pl-8 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:border-pink-500 focus:ring-pink-500/20 transition-all font-mono"
-                                        />
-                                    </div>
-                                    {/* Name Second */}
-                                    <div className="relative flex-1">
-                                        <User className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                                        <Input
-                                            value={walkInName}
-                                            onChange={(e) => setWalkInName(e.target.value)}
-                                            placeholder="Guest Name"
-                                            className="h-9 text-xs pl-8 bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 focus:border-pink-500 focus:ring-pink-500/20 transition-all font-medium"
-                                        />
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="absolute inset-0 group animate-in fade-in slide-in-from-left-2 duration-300">
-                                    <div className="absolute inset-y-0 left-2.5 flex items-center pointer-events-none text-slate-400 z-10">
-                                        <Search className="h-3.5 w-3.5" />
-                                    </div>
-                                    <div className="pl-0 h-full">
-                                        <SearchableSelect
-                                            value={selectedPatientId}
-                                            onChange={(id) => setSelectedPatientId(id || '')}
-                                            onCreate={(query) => {
-                                                setQuickPatientName(query);
-                                                setIsQuickPatientOpen(true);
-                                                return Promise.resolve(null);
-                                            }}
-                                            onSearch={async (q) => {
-                                                const lower = q.toLowerCase()
-                                                const apiResults = patients.filter(p =>
-                                                    p.first_name.toLowerCase().includes(lower) ||
-                                                    p.last_name.toLowerCase().includes(lower) ||
-                                                    (p.patient_number && p.patient_number.toLowerCase().includes(lower)) ||
-                                                    (p.contact?.phone && p.contact.phone.includes(lower))
-                                                );
-                                                const extraFiltered = extraPatients.filter(p =>
-                                                    p.first_name.toLowerCase().includes(lower) ||
-                                                    p.contact?.phone?.includes(lower)
-                                                );
-                                                const merged = [...extraFiltered, ...apiResults];
-                                                return merged.slice(0, 50).map(p => ({
-                                                    id: p.id,
-                                                    label: `${p.first_name} ${p.last_name}`,
-                                                    subLabel: `ID: ${p.patient_number || 'New'} | Ph: ${p.contact?.phone || 'N/A'}`
-                                                }))
-                                            }}
-                                            defaultOptions={[...extraPatients, ...patients].slice(0, 50).map(p => ({
-                                                id: p.id,
-                                                label: `${p.first_name} ${p.last_name}`,
-                                                subLabel: `ID: ${p.patient_number || 'New'} | Ph: ${p.contact?.phone || 'N/A'}`
-                                            }))}
-                                            placeholder="Search Name or Mobile..."
-                                            className="w-full h-9 text-xs border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 focus:ring-2 focus:ring-indigo-500/20 transition-all pl-9"
-                                            inputId="patient-search-input"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-
-
-                        {/* Date (Inline) */}
-                        <div className="relative">
-                            <Calendar className="absolute left-2.5 top-1.5 h-3.5 w-3.5 text-slate-400 pointer-events-none" />
-                            <input
-                                type="date"
-                                className="text-xs pl-8 pr-2 py-1.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-md outline-none w-32 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-600 dark:text-slate-300 font-medium"
-                                value={date}
-                                onChange={(e) => setDate(e.target.value)}
-                            />
-                        </div>
-
-                        <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-1" />
-
-                        {/* Toggle Maximize */}
-                        <button
-                            onClick={() => setIsMaximized(!isMaximized)}
-                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 hover:text-indigo-500 transition-all duration-200"
-                            title={isMaximized ? "Restore Size" : "Maximize"}
-                        >
-                            {isMaximized ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
-                        </button>
-
-                        {/* Close Button */}
-                        <button
-                            onClick={() => onClose ? onClose() : router.back()}
-                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full text-slate-400 hover:text-red-500 transition-all duration-200 hover:rotate-90"
-                        >
-                            <X className="h-5 w-5" />
-                        </button>
-                    </div>
-                </div>
-
-                {/* 2. Scrollable Body (Table) */}
-                <div className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-slate-950/50 relative scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
-                    <table className="w-full text-left border-collapse">
-                        <thead className="bg-slate-50 dark:bg-slate-900 sticky top-0 z-20 shadow-sm text-[10px] uppercase tracking-wider text-slate-500 font-bold border-b border-slate-200 dark:border-slate-800">
-                            <tr>
-                                <th className="px-4 py-3 w-10 text-center bg-slate-50 dark:bg-slate-900">#</th>
-                                <th className="px-4 py-3 w-[40%] bg-slate-50 dark:bg-slate-900">Item Details</th>
-                                <th className="px-2 py-3 w-32 text-right bg-slate-50 dark:bg-slate-900">Qty / UOM</th>
-                                <th className="px-2 py-3 w-28 text-right bg-slate-50 dark:bg-slate-900">Price</th>
-                                <th className="px-2 py-3 w-24 text-right bg-slate-50 dark:bg-slate-900">Disc</th>
-                                <th className="px-2 py-3 w-28 text-right bg-slate-50 dark:bg-slate-900">Tax</th>
-                                <th className="px-4 py-3 text-right bg-slate-50 dark:bg-slate-900">Total</th>
-                                <th className="px-2 py-3 w-10 bg-slate-50 dark:bg-slate-900"></th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-                            {lines.map((line, idx) => (
-                                <tr key={line.id} className="bg-white dark:bg-slate-900/40 hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10 group transition-colors">
-                                    <td className="px-4 py-3 text-[11px] text-slate-400 text-center font-mono">{idx + 1}</td>
-                                    <td className="px-4 py-2">
-                                        <SearchableSelect
-                                            inputId={`product-search-${line.id}`}
-                                            value={line.product_id}
-                                            onChange={(id, option) => {
-                                                updateLine(line.id, 'product_id', id)
-                                                // UX: Auto-focus Qty and select text
-                                                setTimeout(() => {
-                                                    const qtyInput = document.getElementById(`qty-${line.id}`) as HTMLInputElement
-                                                    if (qtyInput) {
-                                                        qtyInput.focus()
-                                                        qtyInput.select()
-                                                    }
-                                                }, 100)
-                                            }}
-                                            onSearch={async (query) => {
-                                                const lower = query.toLowerCase()
-                                                return billableOptions
-                                                    .filter(item =>
-                                                        item.label.toLowerCase().includes(lower) ||
-                                                        (item.sku && item.sku.toLowerCase().includes(lower)) ||
-                                                        (item.description && item.description.toLowerCase().includes(lower))
-                                                    )
-                                                    .slice(0, 50)
-                                                    .map(item => ({
-                                                        id: item.id,
-                                                        label: `${item.label} - ₹${item.price}`,
-                                                        subLabel: `${item.sku ? `[${item.sku}] ` : ''}${item.description || ''}`.trim()
-                                                    }))
-                                            }}
-                                            defaultOptions={billableOptions.slice(0, 50).map(item => ({
-                                                id: item.id,
-                                                label: `${item.label} - ₹${item.price}`,
-                                                subLabel: `${item.sku ? `[${item.sku}] ` : ''}${item.description || ''}`.trim()
-                                            }))}
-                                            placeholder="Search item..."
-                                            className="w-full text-xs font-medium"
-                                        />
-                                        {/* Description field for visibility (especially for non-product items like consultation) */}
-                                        <input
-                                            type="text"
-                                            className="w-full mt-1.5 px-2 py-1 text-[11px] bg-slate-50/50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800 focus:border-indigo-500/50 rounded outline-none text-slate-600 dark:text-slate-400 font-medium"
-                                            placeholder="Additional description..."
-                                            value={line.description || ''}
-                                            onChange={(e) => updateLine(line.id, 'description', e.target.value)}
-                                        />
-                                    </td>
-                                    <td className="px-2 py-2">
-                                        <div className="flex flex-col items-end">
-                                            <div className="flex items-center gap-1 bg-slate-50 dark:bg-slate-800/50 rounded-md px-1.5 py-0.5 border border-transparent focus-within:border-indigo-500 transition-all">
-                                                <input
-                                                    id={`qty-${line.id}`}
-                                                    type="number"
-                                                    min="1"
-                                                    className="w-14 text-right bg-transparent border-none px-0 py-1 text-xs outline-none font-bold text-slate-700 dark:text-slate-200"
-                                                    value={line.quantity}
-                                                    onChange={(e) => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
-                                                    onKeyDown={(e) => {
-                                                        if ((e.key === 'Enter' || e.key === 'ArrowDown') && line.quantity > 0) {
-                                                            e.preventDefault()
-                                                            handleAddItem()
-                                                        }
-                                                    }}
-                                                />
-                                                <div className="w-px h-3 bg-slate-200 dark:bg-slate-700 mx-0.5" />
-                                                <select
-                                                    value={line.uom || 'PCS'}
-                                                    onChange={(e) => updateLine(line.id, 'uom', e.target.value)}
-                                                    className="w-auto min-w-[3rem] bg-transparent text-[10px] font-bold text-indigo-600 dark:text-indigo-400 border-none outline-none cursor-pointer hover:underline focus:ring-0 text-left"
-                                                >
-                                                    <option value={line.base_uom || 'PCS'}>{line.base_uom || 'PCS'}</option>
-                                                    {line.pack_uom && line.pack_uom !== (line.base_uom || 'PCS') && (
-                                                        <option value={line.pack_uom}>
-                                                            {line.pack_uom} {line.conversion_factor > 1 ? `(${line.conversion_factor})` : ''}
-                                                        </option>
-                                                    )}
-                                                </select>
-                                            </div>
-                                            {line.uom !== (line.base_uom || 'PCS') && line.conversion_factor > 1 && (
-                                                <div className="text-[9px] text-slate-500 font-medium mr-1 mt-0.5 animate-in fade-in slide-in-from-right-1">
-                                                    = {line.quantity * line.conversion_factor} {line.base_uom || 'PCS'}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </td>
-                                    <td className="px-2 py-2">
-                                        <div className="relative">
-                                            <span className="absolute left-1 top-1 text-[10px] text-slate-400">₹</span>
-                                            <input type="number" min="0" className="w-full text-right bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800 border-b border-transparent hover:border-slate-300 dark:hover:border-slate-600 pl-3 pr-1 py-1 text-xs outline-none font-medium focus:border-indigo-500 focus:bg-indigo-50/20 text-slate-700 dark:text-slate-200" value={line.unit_price} onChange={(e) => updateLine(line.id, 'unit_price', parseFloat(e.target.value) || 0)} />
-                                        </div>
-                                    </td>
-                                    <td className="px-2 py-2">
-                                        <input type="number" min="0" className="w-full text-right bg-transparent hover:bg-red-50 dark:hover:bg-red-900/10 border-b border-transparent hover:border-red-200 dark:hover:border-red-900/30 px-1 py-1 text-xs outline-none font-medium text-red-500 placeholder-red-200" value={line.discount_amount || ''} placeholder="0" onChange={(e) => updateLine(line.id, 'discount_amount', parseFloat(e.target.value) || 0)} />
-                                    </td>
-                                    <td className="px-2 py-2">
-                                        <select className="w-full text-right bg-transparent text-[11px] outline-none text-slate-600 dark:text-slate-400 cursor-pointer hover:text-indigo-600" value={line.tax_rate_id} onChange={(e) => updateLine(line.id, 'tax_rate_id', e.target.value)}>
-                                            <option value="">No Tax</option>
-                                            {taxConfig.taxRates.map(t => <option key={t.id} value={t.id}>{t.rate}%</option>)}
-                                        </select>
-                                        <div className="text-[10px] text-slate-400 text-right mt-0.5">₹{line.tax_amount?.toFixed(2)}</div>
-                                    </td>
-                                    <td className="px-4 py-2 text-right text-xs font-bold text-slate-800 dark:text-slate-100 font-mono tracking-tight bg-slate-50/30 dark:bg-slate-900/30">
-                                        ₹{((line.quantity * line.unit_price) - (line.discount_amount || 0) + (line.tax_amount || 0)).toFixed(2)}
-                                    </td>
-                                    <td className="px-2 py-2 text-center">
-                                        <button onClick={() => handleRemoveItem(line.id)} className="text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-1.5 rounded-full transition-all disabled:opacity-0" disabled={lines.length === 1}>
-                                            <Trash2 className="h-3.5 w-3.5" />
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                            {/* Quick Add Row */}
-                            <tr>
-                                <td colSpan={8} className="px-4 py-3 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800">
-                                    <button onClick={handleAddItem} className="flex items-center gap-2 text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 px-3 py-1.5 rounded-md transition-all">
-                                        <div className="bg-indigo-100 dark:bg-indigo-900/50 p-0.5 rounded">
-                                            <Plus className="h-3 w-3" />
-                                        </div>
-                                        Add Line Item
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    {/* Empty State / Hints */}
-                    {lines.length < 3 && (
-                        <div className="p-12 flex flex-col items-center justify-center text-slate-300 dark:text-slate-700 opacity-60 pointer-events-none">
-                            <div className="bg-slate-50 dark:bg-slate-900 p-4 rounded-full mb-3">
-                                <Search className="h-8 w-8 text-slate-200 dark:text-slate-700" />
-                            </div>
-                            <p className="text-xs font-medium">Search items or medicines to add to bill</p>
-                        </div>
-                    )}
-                </div>
-
-                {/* 3. Footer (Fixed) */}
-                <div className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)] z-20">
-                    <div className="flex flex-col sm:flex-row h-full">
-                        {/* Left Side: Payment Details */}
-                        <div className="flex-1 p-4 border-b sm:border-b-0 sm:border-r border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-                            <div className="flex flex-col gap-2 mb-3">
-                                <div className="flex items-center justify-between">
-                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                        <CreditCard className="h-3 w-3" /> Payment Breakdown
-                                    </div>
-                                    <div className="flex flex-col items-end gap-1.5">
-                                        {/* Row 1: The Balance Due (Caps at 0) */}
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs text-slate-500 font-bold uppercase tracking-tighter">
-                                                Balance Due:
-                                            </span>
-                                            <span className={`text-xs font-bold px-3 py-1 rounded shadow-sm border transition-all ${balanceDue > 0 ? "bg-red-50 text-red-600 border-red-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"}`}>
-                                                ₹{balanceDue.toFixed(2)}
-                                            </span>
-                                        </div>
-
-                                        {/* Row 2: The Cash Change */}
-                                        {changeAmount > 0 && (
-                                            <div className="flex items-center gap-2 animate-in slide-in-from-right-2 duration-300">
-                                                <span className="text-xs text-pink-600 font-black uppercase tracking-tighter italic">
-                                                    Cash Change:
-                                                </span>
-                                                <span className="text-sm font-black px-3 py-1 bg-pink-600 text-white rounded shadow-lg border-2 border-pink-400 scale-110 active:scale-100 transition-all">
-                                                    ₹{changeAmount.toFixed(2)}
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            {/* World-Standard Payment Controller */}
-                            {/* WORLD CLASS POS BAR */}
-                            <div className="bg-white dark:bg-slate-900 rounded-xl border-2 border-slate-200 dark:border-slate-800 p-3 shadow-sm">
-                                <div className="flex flex-col gap-4">
-                                    {/* Line 1: Quick Method Select */}
-                                    <div className="flex items-center gap-2">
-                                        {[
-                                            { id: 'cash', label: 'CASH', icon: Banknote, color: 'emerald' },
-                                            { id: 'upi', label: 'UPI/GPAY', icon: Smartphone, color: 'indigo' },
-                                            { id: 'card', label: 'CARD', icon: CreditCard, color: 'blue' },
-                                            { id: 'bank_transfer', label: 'TRANSFER', icon: Landmark, color: 'slate' }
-                                        ].map((m) => (
-                                            <button
-                                                key={m.id}
-                                                onClick={() => {
-                                                    const newPayments = [...payments];
-                                                    if (newPayments.length === 0) {
-                                                        newPayments.push({ method: m.id as any, amount: grandTotal, reference: '' });
-                                                    } else {
-                                                        newPayments[0].method = m.id as any;
-                                                        if (newPayments[0].amount === 0) newPayments[0].amount = grandTotal;
-                                                    }
-                                                    setPayments(newPayments);
-                                                }}
-                                                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border-2 font-black text-[10px] transition-all ${payments[0]?.method === m.id ? `bg-${m.color}-600 border-${m.color}-400 text-white shadow-lg scale-105 shadow-${m.color}-500/20` : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-500 hover:border-slate-300'}`}
-                                            >
-                                                <m.icon className="h-4 w-4" />
-                                                {m.label}
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    {/* Line 2: The Action Area */}
-                                    <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-950 p-2 rounded-lg border border-slate-100 dark:border-slate-800">
-                                        <div className="flex-1">
-                                            <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Amount Received</label>
-                                            <div className="relative mt-0.5">
-                                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-black text-slate-300">₹</span>
-                                                <input
-                                                    type="number"
-                                                    className="w-full h-12 pl-8 pr-4 bg-transparent text-2xl font-black text-slate-800 dark:text-slate-100 outline-none placeholder:text-slate-200"
-                                                    placeholder="0.00"
-                                                    value={payments[0]?.amount || ''}
-                                                    onChange={(e) => {
-                                                        const val = parseFloat(e.target.value) || 0;
-                                                        if (payments.length === 0) {
-                                                            setPayments([{ method: 'cash', amount: val, reference: '' }]);
-                                                        } else {
-                                                            const newP = [...payments];
-                                                            newP[0].amount = val;
-                                                            setPayments(newP);
-                                                        }
-                                                    }}
-                                                    onFocus={(e) => e.target.select()}
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="h-10 w-px bg-slate-200 dark:bg-slate-800" />
-
-                                        <div className="w-32">
-                                            <label className="text-[9px] font-black text-slate-400 font-mono uppercase">Reference/Note</label>
-                                            <input
-                                                type="text"
-                                                placeholder="Optional..."
-                                                className="w-full bg-transparent text-xs font-bold text-slate-600 dark:text-slate-300 outline-none mt-1"
-                                                value={payments[0]?.reference || ''}
-                                                onChange={(e) => {
-                                                    const newP = [...payments];
-                                                    if (newP[0]) {
-                                                        newP[0].reference = e.target.value;
-                                                        setPayments(newP);
-                                                    }
-                                                }}
-                                            />
-                                        </div>
-
-                                        {/* Split Toggle */}
-                                        <button
-                                            onClick={() => {
-                                                if (payments.length === 1) {
-                                                    setPayments([...payments, { method: 'upi', amount: 0, reference: '' }]);
-                                                } else {
-                                                    setPayments([payments[0]]);
-                                                }
-                                            }}
-                                            className={`p-2 rounded-lg border transition-all ${payments.length > 1 ? 'bg-indigo-100 border-indigo-200 text-indigo-600' : 'bg-slate-100 border-slate-200 text-slate-400 hover:text-slate-600'}`}
-                                            title="Toggle Multi-Method Split Payment"
-                                        >
-                                            <MessageCircle className="h-4 w-4" />
-                                        </button>
-                                    </div>
-
-                                    {/* Line 3: Multi-Payment Lines (Only if Split) */}
-                                    {payments.length > 1 && (
-                                        <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800 animate-in fade-in duration-300">
-                                            {payments.map((p, idx) => idx > 0 && (
-                                                <div key={idx} className="flex items-center gap-2">
-                                                    <select
-                                                        className="flex-1 h-9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-bold px-2"
-                                                        value={p.method}
-                                                        onChange={(e) => {
-                                                            const newP = [...payments];
-                                                            newP[idx].method = e.target.value as any;
-                                                            setPayments(newP);
-                                                        }}
-                                                    >
-                                                        <option value="cash">CASH</option>
-                                                        <option value="upi">UPI</option>
-                                                        <option value="card">CARD</option>
-                                                        <option value="bank_transfer">BANK</option>
-                                                    </select>
-                                                    <input
-                                                        type="number"
-                                                        className="w-32 h-9 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-right text-sm font-black px-3"
-                                                        value={p.amount}
-                                                        onChange={(e) => {
-                                                            const newP = [...payments];
-                                                            newP[idx].amount = parseFloat(e.target.value) || 0;
-                                                            setPayments(newP);
-                                                        }}
-                                                    />
-                                                    <button
-                                                        onClick={() => setPayments(payments.filter((_, i) => i !== idx))}
-                                                        className="text-slate-300 hover:text-red-500 transition-colors"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </button>
-                                                </div>
-                                            ))}
-                                            <button
-                                                onClick={() => setPayments([...payments, { method: 'upi', amount: 0, reference: '' }])}
-                                                className="w-full py-1 text-[9px] font-black text-slate-400 border border-dashed border-slate-200 hover:border-indigo-300 hover:text-indigo-500 rounded-lg transition-all"
-                                            >
-                                                + ADD ANOTHER SPLIT METHOD
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Right Side: Totals & Actions */}
-                        <div className="p-4 w-full sm:w-80 flex flex-col justify-between gap-4 bg-slate-50/50 dark:bg-slate-900/50 sm:bg-transparent">
-                            <div className="space-y-1.5 pt-1">
-                                <div className="flex items-center justify-between text-xs font-medium">
-                                    <span className="text-slate-500">Subtotal</span>
-                                    <span className="text-slate-700 dark:text-slate-200">₹{subtotal.toFixed(2)}</span>
-                                </div>
-                                <div className="flex items-center justify-between text-xs font-medium">
-                                    <span className="text-slate-500">Tax</span>
-                                    <span className="text-indigo-500">₹{totalTax.toFixed(2)}</span>
-                                </div>
-                                <div className="flex items-center justify-between text-xs font-medium">
-                                    <span className="text-slate-500">Discount</span>
-                                    <div className="relative w-20">
-                                        <input type="number" className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1 text-right outline-none text-red-500 focus:ring-1 ring-red-500/20" value={globalDiscount || ''} placeholder="0" onChange={(e) => setGlobalDiscount(parseFloat(e.target.value) || 0)} />
-                                    </div>
-                                </div>
-                                <div className="flex items-center justify-between pt-2 border-t border-slate-200 dark:border-slate-800 mt-2">
-                                    <span className="font-bold text-slate-800 dark:text-slate-100">Grand Total</span>
-                                    <span className="font-bold text-2xl text-slate-900 dark:text-white tracking-tighter">₹{grandTotal.toFixed(2)}</span>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
-                                <button
-                                    onClick={() => handleSave('draft')}
-                                    disabled={loading}
-                                    className="px-3 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-all border-b-2 active:translate-y-0.5 active:border-b-0"
-                                >
-                                    Draft
-                                </button>
-                                <button
-                                    onClick={() => handleSave(balanceDue > 1 ? 'posted' : 'paid')}
-                                    disabled={loading}
-                                    className={`px-3 py-2.5 text-white text-xs font-bold rounded-xl hover:shadow-lg flex items-center justify-center gap-1.5 transition-all border-b-2 active:translate-y-0.5 active:border-b-0 ${balanceDue > 1 ? "bg-indigo-600 hover:bg-indigo-700 border-indigo-800" : "bg-emerald-600 hover:bg-emerald-700 border-emerald-800 hover:shadow-emerald-500/20"}`}
-                                >
-                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : balanceDue > 1 ? <Send className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                                    {balanceDue > 1 ? 'Post Invoice (Credit)' : 'Post & Paid'}
-                                </button>
-                                <button
-                                    onClick={() => handleSave('paid' as any)}
-                                    disabled={loading}
-                                    className="col-span-2 lg:col-span-1 px-3 py-2.5 bg-emerald-600 text-white text-xs font-bold rounded-xl hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-500/20 flex items-center justify-center gap-1.5 transition-all border-b-2 border-emerald-800 active:translate-y-0.5 active:border-b-0"
-                                >
-                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
-                                    WhatsApp
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+              <button
+                onClick={() => setIsWalkIn(false)}
+                className={`px-4 py-1.5 text-[11px] font-black rounded-lg transition-all ${!isWalkIn ? "bg-white dark:bg-slate-700 text-indigo-600 shadow-sm" : "text-slate-500"}`}
+              >
+                REGISTERED
+              </button>
+              <button
+                onClick={() => {
+                  setIsWalkIn(true);
+                  setSelectedPatientId("");
+                }}
+                className={`px-4 py-1.5 text-[11px] font-black rounded-lg transition-all ${isWalkIn ? "bg-white dark:bg-slate-700 text-pink-600 shadow-sm" : "text-slate-500"}`}
+              >
+                WALK-IN
+              </button>
             </div>
 
-            {/* Quick Patient Dialog */}
-            <Dialog open={isQuickPatientOpen} onOpenChange={setIsQuickPatientOpen}>
-                <DialogContent className="sm:max-w-[425px] z-[60]">
-                    <DialogHeader>
-                        <DialogTitle>Details for "{quickPatientName}"</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="phone" className="text-right text-xs">
-                                Phone Number
-                            </Label>
-                            <Input
-                                id="phone"
-                                value={quickPatientPhone}
-                                onChange={(e) => setQuickPatientPhone(e.target.value)}
-                                className="col-span-3 text-sm h-9"
-                                placeholder="Enter mobile number"
-                                autoFocus
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button type="button" variant="secondary" size="sm" onClick={() => setIsQuickPatientOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button type="button" size="sm" onClick={handleQuickPatientCreate} disabled={!quickPatientPhone || isCreatingPatient}>
-                            {isCreatingPatient ? <Loader2 className="h-4 w-4 animate-spin" /> :
-                                <>
-                                    <Check className="w-4 h-4 mr-2" /> Use this Patient
-                                </>}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <div className="w-80 h-10">
+              {isWalkIn ? (
+                <div className="flex gap-2">
+                  <Input
+                    value={walkInPhone}
+                    onChange={(e) => setWalkInPhone(e.target.value)}
+                    placeholder="Phone..."
+                    className="h-10 text-xs bg-white dark:bg-slate-950"
+                  />
+                  <Input
+                    value={walkInName}
+                    onChange={(e) => setWalkInName(e.target.value)}
+                    placeholder="Full Name..."
+                    className="h-10 text-xs bg-white dark:bg-slate-950"
+                  />
+                </div>
+              ) : (
+                <SearchableSelect
+                  value={selectedPatientId}
+                  onChange={(id) => setSelectedPatientId(id || "")}
+                  onCreate={(q) => {
+                    setQuickPatientName(q);
+                    setIsQuickPatientOpen(true);
+                    return Promise.resolve(null);
+                  }}
+                  onSearch={async (q) =>
+                    patients
+                      .filter((p) =>
+                        p.first_name.toLowerCase().includes(q.toLowerCase()),
+                      )
+                      .map((p) => ({
+                        id: p.id,
+                        label: `${p.first_name} ${p.last_name}`,
+                        subLabel: p.patient_number,
+                      }))
+                  }
+                  placeholder="Search Patient..."
+                />
+              )}
+            </div>
 
-
+            <button
+              onClick={() => setIsMaximized(!isMaximized)}
+              className="p-2 text-slate-400 hover:text-slate-600"
+            >
+              <Maximize2 className="h-5 w-5" />
+            </button>
+            <button
+              onClick={() => (onClose ? onClose() : router.back())}
+              className="p-2 text-slate-400 hover:text-red-500"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
-    )
+
+        {/* Main Table Area */}
+        <div className="flex-1 overflow-auto p-8 bg-slate-50/30 dark:bg-slate-900/10">
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-white dark:bg-slate-950 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
+              <table className="w-full text-left">
+                <thead className="bg-slate-50 dark:bg-slate-900/50 text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                  <tr>
+                    <th className="px-8 py-5">Service Description</th>
+                    <th className="px-4 py-5 w-24">Qty</th>
+                    <th className="px-4 py-5 w-32">Unit Price</th>
+                    <th className="px-4 py-5 w-40">Tax</th>
+                    <th className="px-8 py-5 w-32 text-right">Total</th>
+                    <th className="px-4 py-5 w-12"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-900">
+                  {lines.map((line) => (
+                    <tr
+                      key={line.id}
+                      className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/10 transition-colors"
+                    >
+                      <td className="px-8 py-4">
+                        <SearchableSelect
+                          value={line.product_id}
+                          onChange={(v) => updateLine(line.id, "product_id", v)}
+                          onSearch={async (q) =>
+                            billableItems
+                              .filter((i) =>
+                                i.name.toLowerCase().includes(q.toLowerCase()),
+                              )
+                              .map((i) => ({
+                                id: i.id,
+                                label: i.name,
+                                subLabel: `₹${i.price}`,
+                              }))
+                          }
+                          placeholder="Select Service..."
+                        />
+                      </td>
+                      <td className="px-4 py-4">
+                        <Input
+                          type="number"
+                          value={line.quantity}
+                          onChange={(e) =>
+                            updateLine(
+                              line.id,
+                              "quantity",
+                              parseFloat(e.target.value) || 0,
+                            )
+                          }
+                          className="h-10 text-xs font-bold bg-transparent"
+                        />
+                      </td>
+                      <td className="px-4 py-4">
+                        <Input
+                          type="number"
+                          value={line.unit_price}
+                          onChange={(e) =>
+                            updateLine(
+                              line.id,
+                              "unit_price",
+                              parseFloat(e.target.value) || 0,
+                            )
+                          }
+                          className="h-10 text-xs font-mono bg-transparent"
+                        />
+                      </td>
+                      <td className="px-4 py-4">
+                        <select
+                          className="w-full h-10 bg-transparent border border-slate-200 dark:border-slate-800 rounded-xl px-3 text-[11px] font-bold outline-none"
+                          value={line.tax_rate_id || ""}
+                          onChange={(e) =>
+                            updateLine(line.id, "tax_rate_id", e.target.value)
+                          }
+                        >
+                          <option value="">No Tax</option>
+                          {taxConfig.taxRates.map((t: any) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name} ({t.rate}%)
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-8 py-4 text-right font-black text-slate-800 dark:text-slate-100">
+                        ₹{(line.quantity * line.unit_price).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <button
+                          onClick={() => handleRemoveItem(line.id)}
+                          className="text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="p-6 bg-slate-50/30 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  onClick={handleAddItem}
+                  className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-indigo-600 hover:text-indigo-700 transition-all"
+                >
+                  <Plus className="h-5 w-5" /> Add New Row
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Section */}
+        <div className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 p-8 shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
+          <div className="max-w-6xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-10">
+            <div className="flex gap-12">
+              <div className="flex gap-4 items-center">
+                <div className="p-4 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl">
+                  <Receipt className="h-7 w-7 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">
+                    Items To Bill
+                  </p>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white italic">
+                    {lines.filter((l) => l.description || l.product_id).length}{" "}
+                    Services
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-4 items-center">
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl">
+                  <DollarSign className="h-7 w-7 text-emerald-600" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1">
+                    Net Payable
+                  </p>
+                  <p className="text-4xl font-black text-emerald-600 tracking-tighter italic">
+                    ₹{grandTotal.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+              <button
+                onClick={() => setIsPaymentModalOpen(true)}
+                disabled={loading || lines.length === 0}
+                className="px-10 py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2rem] shadow-2xl flex items-center justify-center gap-3 transition-all hover:-translate-y-1 active:scale-95 text-lg font-black italic uppercase tracking-tight"
+              >
+                Collect Funds <ArrowRight className="h-6 w-6" />
+              </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleSave("draft")}
+                  disabled={loading}
+                  className="px-8 py-5 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 hover:bg-slate-50 transition-all"
+                >
+                  Draft
+                </button>
+                <button
+                  onClick={() => handleSave("posted")}
+                  disabled={loading}
+                  className="px-8 py-5 bg-slate-100 dark:bg-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:bg-slate-200 transition-all"
+                >
+                  Credit
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ZENITH SETTLE TERMINAL */}
+      <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-[#0f172a] border-none shadow-[0_50px_100px_rgba(0,0,0,0.8)] rounded-[3rem] ring-1 ring-white/10 z-[80]">
+          <div className="grid grid-cols-1 lg:grid-cols-2">
+            <div className="p-12 bg-slate-900/50 border-r border-white/5 flex flex-col justify-between">
+              <div>
+                <div className="flex items-center gap-4 mb-12">
+                  <div className="bg-indigo-500/20 p-4 rounded-2xl border border-indigo-500/30">
+                    <Receipt className="h-7 w-7 text-indigo-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-black tracking-widest text-xs uppercase opacity-40">
+                      System
+                    </h3>
+                    <p className="text-indigo-400 font-bold italic">
+                      Zenith Interface v4.0
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-10">
+                  <div className="flex flex-col border-b border-white/10 pb-8">
+                    <span className="text-slate-500 font-black uppercase tracking-[0.4em] text-[9px] mb-2">
+                      Recipient
+                    </span>
+                    <span className="text-white font-black text-3xl tracking-tight">
+                      {isWalkIn
+                        ? walkInName
+                        : patients.find((p) => p.id === selectedPatientId)
+                            ?.name || "Guest"}
+                    </span>
+                  </div>
+                  <div className="space-y-4">
+                    <span className="text-slate-500 font-black uppercase tracking-[0.4em] text-[9px]">
+                      Value Ledger
+                    </span>
+                    <div className="space-y-3">
+                      {lines
+                        .filter((l) => l.description || l.product_id)
+                        .slice(0, 4)
+                        .map((l, i) => (
+                          <div
+                            key={i}
+                            className="flex justify-between text-xs font-black"
+                          >
+                            <span className="text-slate-400 uppercase tracking-widest">
+                              {l.description}{" "}
+                              <span className="opacity-30">x{l.quantity}</span>
+                            </span>
+                            <span className="text-slate-200">
+                              ₹{(l.quantity * l.unit_price).toFixed(2)}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-16">
+                <p className="text-slate-600 font-black uppercase tracking-[0.6em] text-[10px] mb-4">
+                  Net Outstanding
+                </p>
+                <div className="flex items-baseline gap-4">
+                  <span className="text-8xl font-black text-white tracking-tighter italic">
+                    ₹{grandTotal.toFixed(2)}
+                  </span>
+                  <span className="text-green-500 font-black text-xs animate-pulse">
+                    ● LIVE
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="p-12 flex flex-col gap-10 bg-[#0c1222]">
+              <div className="text-center">
+                <h2 className="text-4xl font-black text-white tracking-tight mb-2 italic">
+                  SETTLE NOW
+                </h2>
+                <div className="h-1 w-16 bg-indigo-600 mx-auto rounded-full"></div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  {
+                    id: "cash",
+                    label: "CASH",
+                    icon: Banknote,
+                    color: "text-emerald-400",
+                  },
+                  {
+                    id: "upi",
+                    label: "UPI / QR",
+                    icon: QrCode,
+                    color: "text-indigo-400",
+                  },
+                  {
+                    id: "card",
+                    label: "CARD",
+                    icon: CreditCard,
+                    color: "text-blue-400",
+                  },
+                  {
+                    id: "bank_transfer",
+                    label: "DEBT",
+                    icon: Clock,
+                    color: "text-amber-400",
+                  },
+                ].map((m) => (
+                  <button
+                    key={m.id}
+                    onClick={() => {
+                      if (m.id === "bank_transfer") {
+                        setIsPaymentModalOpen(false);
+                        handleSave("posted");
+                      } else {
+                        setPayments([
+                          { method: m.id as any, amount: grandTotal },
+                        ]);
+                        setIsPaymentModalOpen(false);
+                        handleSave("paid");
+                      }
+                    }}
+                    className="group relative h-40 bg-slate-900 border border-white/5 rounded-[2.5rem] flex flex-col items-center justify-center gap-4 transition-all hover:-translate-y-2 hover:border-white/20 active:scale-95"
+                  >
+                    <div className="p-4 rounded-3xl bg-slate-950 border border-white/10 group-hover:border-current transition-all">
+                      <m.icon className={`h-8 w-8 ${m.color}`} />
+                    </div>
+                    <span className="block text-xs font-black tracking-widest text-white">
+                      {m.label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <div className="bg-slate-950 border border-white/5 p-10 rounded-[2.5rem] mt-auto shadow-inner relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-6 opacity-5">
+                  <DollarSign className="h-20 w-20 text-white" />
+                </div>
+                <span className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] mb-6">
+                  Adjustment Entry
+                </span>
+                <div className="flex gap-4 items-center relative z-10">
+                  <div className="flex-1 relative">
+                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700 font-black text-2xl italic">
+                      ₹
+                    </span>
+                    <input
+                      type="number"
+                      className="w-full bg-[#0c1222] border-2 border-slate-900 h-16 rounded-3xl pl-12 pr-6 text-white font-black text-3xl focus:border-indigo-600 outline-none transition-all"
+                      value={payments[0]?.amount || ""}
+                      onChange={(e) =>
+                        setPayments([
+                          {
+                            ...payments[0],
+                            amount: parseFloat(e.target.value) || 0,
+                          },
+                        ])
+                      }
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsPaymentModalOpen(false);
+                      handleSave("paid");
+                    }}
+                    disabled={loading || !payments[0]?.amount}
+                    className="bg-indigo-600 hover:bg-indigo-500 h-16 w-16 rounded-3xl text-white flex items-center justify-center transition-all active:scale-90 shadow-xl shadow-indigo-500/20"
+                  >
+                    <ArrowRight className="h-8 w-8" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* QUICK PATIENT */}
+      <Dialog open={isQuickPatientOpen} onOpenChange={setIsQuickPatientOpen}>
+        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 rounded-[2rem] border-none p-10">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black italic tracking-tight">
+              Quick Registration
+            </DialogTitle>
+            <DialogDescription className="text-xs font-medium text-slate-500">
+              Add basic details to proceed with billing for {quickPatientName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-6 py-6">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                Mobile Number
+              </Label>
+              <Input
+                value={quickPatientPhone}
+                onChange={(e) => setQuickPatientPhone(e.target.value)}
+                className="h-12 border-slate-100 dark:border-slate-800 rounded-xl"
+                autoFocus
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setIsQuickPatientOpen(false)}
+              className="text-[10px] font-black uppercase tracking-widest"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleQuickPatientCreate}
+              disabled={!quickPatientPhone || isCreatingPatient}
+              className="bg-indigo-600 hover:bg-indigo-700 h-12 rounded-xl text-xs font-black uppercase tracking-widest px-8 shadow-xl shadow-indigo-500/20"
+            >
+              {isCreatingPatient ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Verify & Use"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
