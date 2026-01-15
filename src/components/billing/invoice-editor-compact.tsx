@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 
-export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice, onClose }: {
+export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice, onClose, currency = '₹' }: {
   patients: any[],
   billableItems: any[],
   uoms?: any[],
@@ -24,7 +24,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   initialMedicines?: any[],
   appointmentId?: string,
   initialInvoice?: any,
-  onClose?: () => void
+  onClose?: () => void,
+  currency?: string
 }) {
 
   const getUomOptions = (itemType: string, currentUom: string) => {
@@ -322,7 +323,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                               .map(i => ({
                                 id: i.id,
                                 label: i.label || i.name || 'Unnamed Item',
-                                subLabel: `[${(i.type || 'item').toUpperCase()}] STOCK: ${i.stock || 0} | ₹${i.price}`
+                                subLabel: `[${(i.type || 'item').toUpperCase()}] STOCK: ${i.stock || 0} | ${currency}${i.price}`
                               }));
                           }}
                           placeholder="START TYPING MEDICINE NAME OR SERVICE..."
@@ -348,7 +349,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                           {taxConfig.taxRates.map((t: any) => <option key={t.id} value={t.id}>{t.name} ({t.rate}%)</option>)}
                         </select>
                       </td>
-                      <td className="px-10 py-5 text-right font-black text-xl italic tracking-tighter text-slate-800 dark:text-white">₹{(line.quantity * line.unit_price).toFixed(2)}</td>
+                      <td className="px-10 py-5 text-right font-black text-xl italic tracking-tighter text-slate-800 dark:text-white">{currency}{(line.quantity * line.unit_price).toFixed(2)}</td>
                       <td className="px-6 py-5">
                         <button onClick={() => handleRemoveItem(line.id)} className="text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 className="h-5 w-5" /></button>
                       </td>
@@ -383,7 +384,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                 <div className="p-5 bg-emerald-500/10 rounded-[2rem] border border-emerald-500/20 shadow-inner"><DollarSign className="h-9 w-9 text-emerald-600" /></div>
                 <div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em] mb-2">Net Financial Liability</p>
-                  <p className="text-6xl font-black text-emerald-600 tracking-tighter italic drop-shadow-[0_0_20px_rgba(5,150,105,0.2)]">₹{grandTotal.toFixed(2)}</p>
+                  <p className="text-6xl font-black text-emerald-600 tracking-tighter italic drop-shadow-[0_0_20px_rgba(5,150,105,0.2)]">{currency}{grandTotal.toFixed(2)}</p>
                 </div>
               </div>
             </div>
@@ -424,11 +425,11 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                   </div>
                   <div className="space-y-6">
                     <span className="text-slate-500 font-black uppercase tracking-[0.6em] text-[10px]">Ledger Breakdown</span>
-                    <div className="space-y-4">{lines.filter(l => l.description || l.product_id).slice(0, 5).map((l, i) => (<div key={i} className="flex justify-between text-sm font-black"><span className="text-slate-400 uppercase tracking-[0.2em]">{l.description} <span className="opacity-20 ml-2">x{l.quantity}</span></span><span className="text-indigo-300">₹{(l.quantity * l.unit_price).toFixed(2)}</span></div>))}</div>
+                    <div className="space-y-4">{lines.filter(l => l.description || l.product_id).slice(0, 5).map((l, i) => (<div key={i} className="flex justify-between text-sm font-black"><span className="text-slate-400 uppercase tracking-[0.2em]">{l.description} <span className="opacity-20 ml-2">x{l.quantity}</span></span><span className="text-indigo-300">{currency}{(l.quantity * l.unit_price).toFixed(2)}</span></div>))}</div>
                   </div>
                 </div>
               </div>
-              <div className="mt-20"><p className="text-slate-600 font-black uppercase tracking-[0.6em] text-[11px] mb-4 text-center">Final Aggregated Balance</p><div className="flex items-center justify-center gap-6"><span className="text-9xl font-black text-white tracking-tighter italic drop-shadow-[0_0_40px_rgba(255,255,255,0.1)]">₹{grandTotal.toFixed(0)}</span><div className="flex flex-col"><span className="text-emerald-500 font-black text-sm animate-pulse">● ONLINE</span><span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest mt-1">NODE:08</span></div></div></div>
+              <div className="mt-20"><p className="text-slate-600 font-black uppercase tracking-[0.6em] text-[11px] mb-4 text-center">Final Aggregated Balance</p><div className="flex items-center justify-center gap-6"><span className="text-9xl font-black text-white tracking-tighter italic drop-shadow-[0_0_40px_rgba(255,255,255,0.1)]">{currency}{grandTotal.toFixed(0)}</span><div className="flex flex-col"><span className="text-emerald-500 font-black text-sm animate-pulse">● ONLINE</span><span className="text-[10px] text-slate-600 font-bold uppercase tracking-widest mt-1">NODE:08</span></div></div></div>
             </div>
 
             {/* Settlement Matrix */}
@@ -454,7 +455,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                 <span className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.6em] mb-6 text-center italic">Partial / Split Settlement Node</span>
                 <div className="flex gap-6 items-center relative z-10">
                   <div className="flex-1 relative">
-                    <span className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-800 font-black text-4xl italic">₹</span>
+                    <span className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-800 font-black text-4xl italic">{currency}</span>
                     <input type="number" className="w-full bg-[#0c1222] border-2 border-slate-900 h-20 rounded-[2rem] pl-16 pr-10 text-white font-black text-4xl focus:border-indigo-600 outline-none transition-all placeholder:opacity-20" value={payments[0]?.amount || ''} onChange={e => setPayments([{ ...payments[0], amount: parseFloat(e.target.value) || 0 }])} placeholder="0.00" />
                   </div>
                   <button onClick={() => { setIsPaymentModalOpen(false); handleSave('paid'); }} disabled={loading || !payments[0]?.amount} className="bg-indigo-600 hover:bg-indigo-500 h-20 w-20 rounded-[2rem] text-white flex items-center justify-center transition-all active:scale-90 shadow-2xl shadow-indigo-600/40"><ArrowRight className="h-10 w-10" /></button>

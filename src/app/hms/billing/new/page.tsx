@@ -23,7 +23,7 @@ export default async function NewInvoicePage({
     const tenantId = session.user.tenantId;
 
     // Parallel data fetching
-    const [patients, itemsRes, taxRes, uomsRes] = await Promise.all([
+    const [patients, itemsRes, taxRes, uomsRes, companySettings] = await Promise.all([
         prisma.hms_patient.findMany({
             where: {
                 tenant_id: tenantId // Filter by current user's tenant
@@ -43,12 +43,17 @@ export default async function NewInvoicePage({
         }),
         getBillableItems(),
         getTaxConfiguration(),
-        getUoms()
+        getUoms(),
+        prisma.company_settings.findUnique({
+            where: { company_id: session.user.companyId || session.user.tenantId },
+            include: { currencies: true }
+        })
     ]);
 
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
     const uoms = (uomsRes as any).success ? (uomsRes as any).data : [];
+    const currency = companySettings?.currencies?.symbol || '₹';
 
     // Standardization logic for initial items
     let initialItems = items ? JSON.parse(decodeURIComponent(items)) : (medicines ? JSON.parse(decodeURIComponent(medicines)) : []);
@@ -165,6 +170,7 @@ export default async function NewInvoicePage({
             initialPatientId={effectivePatientId}
             initialMedicines={initialItems}
             appointmentId={appointmentId}
+            currency={currency}
         />
     )
 }
