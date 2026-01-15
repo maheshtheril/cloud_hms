@@ -115,7 +115,7 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
         if (field === 'product_id') {
           const item = billableItems.find(bi => bi.id === value)
           if (item) {
-            updated.description = item.description || item.name
+            updated.description = item.description || item.label || item.name
             updated.item_type = item.type || 'item'
 
             // Extract Prices (Support for packing metadata)
@@ -248,7 +248,21 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                   value={selectedPatientId}
                   onChange={id => setSelectedPatientId(id || '')}
                   onCreate={q => { setQuickPatientName(q); setIsQuickPatientOpen(true); return Promise.resolve(null); }}
-                  onSearch={async q => patients.filter(p => p.first_name.toLowerCase().includes(q.toLowerCase()) || p.contact?.phone?.includes(q)).map(p => ({ id: p.id, label: `${p.first_name} ${p.last_name}`, subLabel: `ID: ${p.patient_number} | Ph: ${p.contact?.phone || 'N/A'}` }))}
+                  onSearch={async q => {
+                    const search = q.toLowerCase();
+                    return patients
+                      .filter(p =>
+                        (p.first_name?.toLowerCase().includes(search)) ||
+                        (p.last_name?.toLowerCase().includes(search)) ||
+                        (p.patient_number?.toLowerCase().includes(search)) ||
+                        (p.contact?.phone && String(p.contact.phone).includes(q))
+                      )
+                      .map(p => ({
+                        id: p.id,
+                        label: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unnamed Patient',
+                        subLabel: `ID: ${p.patient_number || 'N/A'} | Ph: ${p.contact?.phone || 'N/A'}`
+                      }));
+                  }}
                   placeholder="SEARCH PATIENT IDENTITY / MOBILE / ID..."
                 />
               )}
@@ -285,11 +299,16 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                         <SearchableSelect
                           value={line.product_id}
                           onChange={v => updateLine(line.id, 'product_id', v)}
-                          onSearch={async q => billableItems.filter(i => i.name.toLowerCase().includes(q.toLowerCase())).map(i => ({
-                            id: i.id,
-                            label: i.name,
-                            subLabel: `[${(i.type || 'item').toUpperCase()}] STOCK: ${i.stock || 0} | ₹${i.price}`
-                          }))}
+                          onSearch={async q => {
+                            const search = q.toLowerCase();
+                            return billableItems
+                              .filter(i => (i.label?.toLowerCase().includes(search)) || (i.sku?.toLowerCase().includes(search)))
+                              .map(i => ({
+                                id: i.id,
+                                label: i.label || i.name || 'Unnamed Item',
+                                subLabel: `[${(i.type || 'item').toUpperCase()}] STOCK: ${i.stock || 0} | ₹${i.price}`
+                              }));
+                          }}
                           placeholder="START TYPING MEDICINE NAME OR SERVICE..."
                         />
                       </td>
@@ -383,7 +402,12 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                   <div><h3 className="text-white font-black tracking-[0.5em] text-[10px] uppercase opacity-40 mb-1">Financial Node</h3><p className="text-indigo-400 font-black italic text-xl">Zenith Secure v4.0</p></div>
                 </div>
                 <div className="space-y-12 relative z-10">
-                  <div className="flex flex-col border-b border-white/10 pb-10"><span className="text-slate-500 font-black uppercase tracking-[0.6em] text-[10px] mb-3">Recipient Identity</span><span className="text-white font-black text-5xl tracking-tighter">{isWalkIn ? walkInName : (patients.find(p => p.id === selectedPatientId)?.name || 'UNIDENTIFIED_GUEST')}</span></div>
+                  <div className="flex flex-col border-b border-white/10 pb-10">
+                    <span className="text-slate-500 font-black uppercase tracking-[0.6em] text-[10px] mb-3">Recipient Identity</span>
+                    <span className="text-white font-black text-5xl tracking-tighter">
+                      {isWalkIn ? walkInName : (patients.find(p => p.id === selectedPatientId) ? `${patients.find(p => p.id === selectedPatientId).first_name} ${patients.find(p => p.id === selectedPatientId).last_name}` : 'UNIDENTIFIED_GUEST')}
+                    </span>
+                  </div>
                   <div className="space-y-6">
                     <span className="text-slate-500 font-black uppercase tracking-[0.6em] text-[10px]">Ledger Breakdown</span>
                     <div className="space-y-4">{lines.filter(l => l.description || l.product_id).slice(0, 5).map((l, i) => (<div key={i} className="flex justify-between text-sm font-black"><span className="text-slate-400 uppercase tracking-[0.2em]">{l.description} <span className="opacity-20 ml-2">x{l.quantity}</span></span><span className="text-indigo-300">₹{(l.quantity * l.unit_price).toFixed(2)}</span></div>))}</div>
