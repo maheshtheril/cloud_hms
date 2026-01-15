@@ -230,7 +230,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         }
       }
       toast({ title: "Terminal Sync Complete", description: tallyMsg })
-      setIsPaymentModalOpen(false)
+      // Keep modal open during redirect to prevent background flicker
       if (onClose) onClose()
       else router.replace(`/hms/billing/${res.data?.id}`)
     } else {
@@ -267,6 +267,16 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
   return (
     <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md transition-all ${isMaximized ? 'p-0' : 'p-4'}`} onClick={() => onClose ? onClose() : router.back()}>
+      {/* Global Sync Overlay */}
+      {loading && (
+        <div className="absolute inset-0 z-[200] bg-slate-900/40 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-2xl border border-white/10 flex flex-col items-center gap-4">
+            <Loader2 className="h-12 w-12 animate-spin text-indigo-600" />
+            <p className="text-xs font-black uppercase tracking-[0.4em] text-slate-500 animate-pulse">Syncing Ledger Node...</p>
+          </div>
+        </div>
+      )}
+
       <div className={`relative flex flex-col bg-white dark:bg-slate-900 shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-200 dark:border-slate-800 transition-all duration-500 ease-out ${isMaximized ? 'w-full h-full' : 'w-full max-w-[98vw] h-[95vh] rounded-[2.5rem]'}`} onClick={e => e.stopPropagation()}>
 
         {/* 1. Header Area */}
@@ -505,9 +515,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                   setIsPaymentModalOpen(true);
                 }}
                 onFocus={() => {
-                  // Final Audit Cleanup: Remove any empty provisional lines
-                  const validLines = lines.filter(l => l.product_id || l.description);
-                  if (validLines.length < lines.length) setLines(validLines);
+                  // Removed auto-cleanup to prevent UI shifts
                 }}
                 disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
                 className="group relative px-10 py-4 bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-white/20 outline-none text-white rounded-2xl shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 text-lg font-black italic uppercase tracking-tighter overflow-hidden focus:translate-y-[-2px] border-2 border-transparent focus:border-white/50"
