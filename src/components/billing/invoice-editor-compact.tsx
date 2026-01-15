@@ -225,13 +225,13 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
       <div className={`relative flex flex-col bg-white dark:bg-slate-900 shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-200 dark:border-slate-800 transition-all duration-500 ease-out ${isMaximized ? 'w-full h-full' : 'w-full max-w-[98vw] h-[95vh] rounded-[2.5rem]'}`} onClick={e => e.stopPropagation()}>
 
         {/* 1. Header Area */}
-        <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 z-20">
-          <div className="flex items-center gap-6">
-            <div className="bg-indigo-600 p-3 rounded-2xl text-white shadow-2xl shadow-indigo-500/40">
-              <Activity className="h-6 w-6 animate-pulse" />
+        <div className="flex items-center justify-between px-6 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 z-20">
+          <div className="flex items-center gap-4">
+            <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-xl shadow-indigo-500/20">
+              <Activity className="h-5 w-5 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight italic">Zenith Unified Terminal</h2>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight italic">Zenith Unified Terminal</h2>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-500 bg-indigo-500/5 px-2 py-0.5 rounded-full">v4.2 PRO</span>
                 <div className="h-1 w-1 rounded-full bg-slate-300" />
@@ -249,16 +249,16 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             </div>
 
             {/* Customer Mode Switcher */}
-            <div className="flex items-center bg-slate-200/50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-200/50 dark:border-slate-700">
-              <button onClick={() => setIsWalkIn(false)} className={`px-6 py-2 text-[10px] font-black rounded-xl transition-all ${!isWalkIn ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-xl' : 'text-slate-500'}`}>REGISTERED</button>
-              <button onClick={() => { setIsWalkIn(true); setSelectedPatientId(''); }} className={`px-6 py-2 text-[10px] font-black rounded-xl transition-all ${isWalkIn ? 'bg-white dark:bg-slate-700 text-pink-600 shadow-xl' : 'text-slate-500'}`}>WALK-IN GUEST</button>
+            <div className="flex items-center bg-slate-200/50 dark:bg-slate-800/50 p-1 rounded-xl border border-slate-200/50 dark:border-slate-700">
+              <button onClick={() => setIsWalkIn(false)} className={`px-4 py-1.5 text-[9px] font-black rounded-lg transition-all ${!isWalkIn ? 'bg-white dark:bg-slate-700 text-indigo-600 shadow-sm' : 'text-slate-500'}`}>REGISTERED</button>
+              <button onClick={() => { setIsWalkIn(true); setSelectedPatientId(''); }} className={`px-4 py-1.5 text-[9px] font-black rounded-lg transition-all ${isWalkIn ? 'bg-white dark:bg-slate-700 text-pink-600 shadow-sm' : 'text-slate-500'}`}>WALK-IN GUEST</button>
             </div>
 
             <div className="w-[450px]">
               {isWalkIn ? (
-                <div className="flex gap-3 animate-in slide-in-from-right-4">
-                  <Input value={walkInPhone} onChange={e => setWalkInPhone(e.target.value)} placeholder="CUSTOMER_MOBILE..." className="h-12 bg-white dark:bg-slate-950 border-2 border-transparent focus:border-pink-500 rounded-2xl text-xs font-black tracking-widest uppercase" />
-                  <Input value={walkInName} onChange={e => setWalkInName(e.target.value)} placeholder="CUSTOMER_NAME..." className="h-12 bg-white dark:bg-slate-950 border-2 border-transparent focus:border-pink-500 rounded-2xl text-xs font-black tracking-widest uppercase" />
+                <div className="flex gap-2 animate-in slide-in-from-right-4">
+                  <Input value={walkInPhone} onChange={e => setWalkInPhone(e.target.value)} placeholder="MOBILE..." className="h-10 bg-white dark:bg-slate-950 border-transparent focus:border-pink-500 rounded-xl text-[10px] font-black tracking-widest uppercase" />
+                  <Input value={walkInName} onChange={e => setWalkInName(e.target.value)} placeholder="NAME..." className="h-10 bg-white dark:bg-slate-950 border-transparent focus:border-pink-500 rounded-xl text-[10px] font-black tracking-widest uppercase" />
                 </div>
               ) : (
                 <SearchableSelect
@@ -293,26 +293,26 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         </div>
 
         {/* 2. Unified Grid (Medicine & Services) */}
-        <div className="flex-1 overflow-auto p-10 bg-slate-50/20 dark:bg-slate-950/20 space-y-8">
+        <div className="flex-1 overflow-auto p-6 bg-slate-50/20 dark:bg-slate-950/20 space-y-6">
           <div className="max-w-[1400px] mx-auto">
-            <div className="bg-white dark:bg-slate-950 rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-[0_40px_100px_rgba(0,0,0,0.05)] overflow-hidden">
+            <div className="bg-white dark:bg-slate-950 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
               <table className="w-full text-left">
-                <thead className="bg-slate-900 text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 border-b border-slate-800">
+                <thead className="bg-slate-900 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 border-b border-slate-800">
                   <tr>
-                    <th className="px-10 py-6">Product / Service Description</th>
-                    <th className="px-4 py-6 w-28">Type</th>
-                    <th className="px-4 py-6 w-32 text-center">Qty / Days</th>
-                    <th className="px-4 py-6 w-36">UOM</th>
-                    <th className="px-4 py-6 w-32">Unit Rate</th>
-                    <th className="px-4 py-6 w-40">Tax Payload</th>
-                    <th className="px-10 py-6 w-40 text-right italic">Line Total</th>
-                    <th className="px-6 py-6 w-16"></th>
+                    <th className="px-8 py-4">Item Description</th>
+                    <th className="px-4 py-4 w-24">Type</th>
+                    <th className="px-4 py-4 w-28 text-center">Qty</th>
+                    <th className="px-4 py-4 w-32">UOM</th>
+                    <th className="px-4 py-4 w-32">Rate</th>
+                    <th className="px-4 py-4 w-36">Tax</th>
+                    <th className="px-8 py-4 w-36 text-right italic">Total</th>
+                    <th className="px-4 py-4 w-12"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-900">
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-900 border-b border-slate-100 dark:border-slate-900">
                   {lines.map(line => (
                     <tr key={line.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all">
-                      <td className="px-10 py-5">
+                      <td className="px-8 py-3">
                         <SearchableSelect
                           value={line.product_id}
                           onChange={v => updateLine(line.id, 'product_id', v)}
@@ -326,41 +326,41 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                                 subLabel: `[${(i.type || 'item').toUpperCase()}] STOCK: ${i.stock || 0} | ${currency}${i.price}`
                               }));
                           }}
-                          placeholder="START TYPING MEDICINE NAME OR SERVICE..."
+                          placeholder="SEARCH..."
                         />
                       </td>
-                      <td className="px-4 py-5">
-                        <span className={`text-[10px] font-black px-2 py-1 rounded-full ${line.item_type === 'service' ? 'bg-indigo-500/10 text-indigo-600' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                      <td className="px-4 py-3">
+                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md ${line.item_type === 'service' ? 'bg-indigo-500/10 text-indigo-600' : 'bg-emerald-500/10 text-emerald-600'}`}>
                           {(line.item_type || 'ITEM').toUpperCase()}
                         </span>
                       </td>
-                      <td className="px-4 py-5"><Input type="number" value={line.quantity} onChange={e => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)} className="h-12 bg-transparent border-none text-center font-black text-lg focus:ring-0" /></td>
-                      <td className="px-4 py-5">
-                        <select className="w-full h-12 bg-slate-50 dark:bg-slate-900 border-none rounded-xl px-4 text-[11px] font-black tracking-widest outline-none focus:ring-2 focus:ring-indigo-500" value={line.uom || ''} onChange={e => updateLine(line.id, 'uom', e.target.value)}>
+                      <td className="px-4 py-3"><Input type="number" value={line.quantity} onChange={e => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)} className="h-10 bg-transparent border-none text-center font-black text-base focus:ring-0" /></td>
+                      <td className="px-4 py-3">
+                        <select className="w-full h-10 bg-slate-50 dark:bg-slate-900 border-none rounded-lg px-2 text-[9px] font-black tracking-widest outline-none focus:ring-1 focus:ring-indigo-500" value={line.uom || ''} onChange={e => updateLine(line.id, 'uom', e.target.value)}>
                           {getUomOptions(line.item_type, line.uom).map(u => (
                             <option key={u} value={u}>{u}</option>
                           ))}
                         </select>
                       </td>
-                      <td className="px-4 py-5"><Input type="number" value={line.unit_price} onChange={e => updateLine(line.id, 'unit_price', parseFloat(e.target.value) || 0)} className="h-12 bg-transparent border-none font-mono font-black text-slate-400 focus:ring-0" /></td>
-                      <td className="px-4 py-5">
-                        <select className="w-full h-12 bg-transparent border border-slate-100 dark:border-slate-800 rounded-xl px-3 text-[10px] font-black outline-none" value={line.tax_rate_id || ''} onChange={e => updateLine(line.id, 'tax_rate_id', e.target.value)}>
+                      <td className="px-4 py-3"><Input type="number" value={line.unit_price} onChange={e => updateLine(line.id, 'unit_price', parseFloat(e.target.value) || 0)} className="h-10 bg-transparent border-none font-mono font-black text-slate-400 text-sm focus:ring-0" /></td>
+                      <td className="px-4 py-3">
+                        <select className="w-full h-10 bg-transparent border border-slate-100 dark:border-slate-800 rounded-lg px-2 text-[8px] font-black outline-none" value={line.tax_rate_id || ''} onChange={e => updateLine(line.id, 'tax_rate_id', e.target.value)}>
                           <option value="">NO_TAX</option>
                           {taxConfig.taxRates.map((t: any) => <option key={t.id} value={t.id}>{t.name} ({t.rate}%)</option>)}
                         </select>
                       </td>
-                      <td className="px-10 py-5 text-right font-black text-xl italic tracking-tighter text-slate-800 dark:text-white">{currency}{(line.quantity * line.unit_price).toFixed(2)}</td>
-                      <td className="px-6 py-5">
-                        <button onClick={() => handleRemoveItem(line.id)} className="text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 className="h-5 w-5" /></button>
+                      <td className="px-8 py-3 text-right font-black text-lg italic tracking-tighter text-slate-800 dark:text-white">{currency}{(line.quantity * line.unit_price).toFixed(2)}</td>
+                      <td className="px-4 py-3">
+                        <button onClick={() => handleRemoveItem(line.id)} className="text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 className="h-4 w-4" /></button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              <div className="p-10 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-900">
-                <button onClick={handleAddItem} className="flex items-center gap-4 text-[11px] font-black uppercase tracking-[0.4em] text-indigo-600 hover:text-indigo-800 transition-all group">
-                  <div className="bg-white dark:bg-slate-800 p-2 rounded-xl border border-indigo-200 dark:border-indigo-900/40 shadow-sm group-hover:rotate-90 transition-transform"><Plus className="h-5 w-5" /></div>
-                  REGISTER ADDITIONAL LINE
+              <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-900">
+                <button onClick={handleAddItem} className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.3em] text-indigo-600 hover:text-indigo-800 transition-all group">
+                  <div className="bg-white dark:bg-slate-800 p-1.5 rounded-lg border border-indigo-200 dark:border-indigo-900/40 shadow-sm group-hover:rotate-90 transition-transform"><Plus className="h-4 w-4" /></div>
+                  ADD LINE
                 </button>
               </div>
             </div>
@@ -368,36 +368,36 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         </div>
 
         {/* 3. Global Control Bar */}
-        <div className="bg-white dark:bg-[#0c1222] border-t border-slate-100 dark:border-slate-800 p-10 z-20">
-          <div className="max-w-[1400px] mx-auto flex flex-col xl:flex-row justify-between items-center gap-12">
+        <div className="bg-white dark:bg-[#0c1222] border-t border-slate-100 dark:border-slate-800 px-10 py-6 z-20">
+          <div className="max-w-[1400px] mx-auto flex flex-col xl:flex-row justify-between items-center gap-8">
 
             {/* Summary Metrics */}
-            <div className="flex gap-16">
-              <div className="flex gap-6 items-center">
-                <div className="p-5 bg-indigo-500/10 rounded-[2rem] border border-indigo-500/20 shadow-inner"><Receipt className="h-9 w-9 text-indigo-600" /></div>
+            <div className="flex gap-10">
+              <div className="flex gap-4 items-center">
+                <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20"><Receipt className="h-6 w-6 text-indigo-600" /></div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em] mb-2">Queue Load</p>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white italic tracking-tighter">{lines.filter(l => l.description || l.product_id).length} Active Nodes</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Queue Load</p>
+                  <p className="text-xl font-black text-slate-900 dark:text-white italic tracking-tighter">{lines.filter(l => l.description || l.product_id).length} Active</p>
                 </div>
               </div>
-              <div className="flex gap-6 items-center">
-                <div className="p-5 bg-emerald-500/10 rounded-[2rem] border border-emerald-500/20 shadow-inner"><DollarSign className="h-9 w-9 text-emerald-600" /></div>
+              <div className="flex gap-4 items-center">
+                <div className="p-3 bg-emerald-500/10 rounded-2xl border border-emerald-500/20"><DollarSign className="h-6 w-6 text-emerald-600" /></div>
                 <div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.5em] mb-2">Net Financial Liability</p>
-                  <p className="text-6xl font-black text-emerald-600 tracking-tighter italic drop-shadow-[0_0_20px_rgba(5,150,105,0.2)]">{currency}{grandTotal.toFixed(2)}</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Settlement Total</p>
+                  <p className="text-4xl font-black text-emerald-600 tracking-tighter italic drop-shadow-[0_0_20px_rgba(5,150,105,0.1)]">{currency}{grandTotal.toFixed(2)}</p>
                 </div>
               </div>
             </div>
 
             {/* Action Nodes */}
-            <div className="flex flex-col sm:flex-row gap-6 w-full xl:w-auto">
-              <button onClick={() => setIsPaymentModalOpen(true)} disabled={loading || lines.length === 0} className="group relative px-14 py-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2.5rem] shadow-[0_25px_60px_rgba(79,70,229,0.4)] flex items-center justify-center gap-4 transition-all hover:scale-105 active:scale-95 text-2xl font-black italic uppercase tracking-tighter overflow-hidden">
-                <div className="absolute inset-x-0 bottom-0 h-1 bg-white/20 animate-pulse" />
-                COLLECT SETTLEMENT <ArrowRight className="h-8 w-8 group-hover:translate-x-2 transition-transform" />
+            <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
+              <button onClick={() => setIsPaymentModalOpen(true)} disabled={loading || lines.length === 0} className="group relative px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 text-lg font-black italic uppercase tracking-tighter overflow-hidden">
+                <div className="absolute inset-x-0 bottom-0 h-0.5 bg-white/20 animate-pulse" />
+                COLLECT SETTLEMENT <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
               </button>
-              <div className="flex gap-4">
-                <button onClick={() => handleSave('draft')} disabled={loading} className="px-10 py-6 bg-slate-100 dark:bg-slate-800 border-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600 rounded-[2rem] text-[11px] font-black uppercase tracking-[0.3em] text-slate-500 transition-all">Save Draft</button>
-                <button onClick={() => handleSave('posted')} disabled={loading} className="px-10 py-6 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-[2.5rem] text-[11px] font-black uppercase tracking-[0.3em] hover:opacity-90 transition-all shadow-xl">Post Credit</button>
+              <div className="flex gap-3">
+                <button onClick={() => handleSave('draft')} disabled={loading} className="px-6 py-4 bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all">Save Draft</button>
+                <button onClick={() => handleSave('posted')} disabled={loading} className="px-8 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg">Post Credit</button>
               </div>
             </div>
           </div>
