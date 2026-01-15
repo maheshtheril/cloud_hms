@@ -153,6 +153,13 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
             // Metadata for complex items
             updated.metadata = item.metadata
+
+            // World Class UX: After item selection, move focus to quantity
+            setTimeout(() => {
+              const lineIndex = lines.findIndex(l => l.id === id);
+              const qtyInput = document.getElementById(`qty-input-${lineIndex}`);
+              if (qtyInput) (qtyInput as HTMLInputElement).focus();
+            }, 100);
           }
         }
 
@@ -372,7 +379,27 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                           {(line.item_type || 'ITEM').toUpperCase()}
                         </span>
                       </td>
-                      <td className="px-4 py-3"><Input type="number" value={line.quantity} onChange={e => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)} className="h-10 bg-transparent border-none text-center font-black text-base focus:ring-0" /></td>
+                      <td className="px-4 py-3">
+                        <Input
+                          id={`qty-input-${index}`}
+                          type="number"
+                          value={line.quantity}
+                          onFocus={(e) => e.target.select()}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddItem();
+                              // Wait for state update to focus the new search terminal
+                              setTimeout(() => {
+                                const nextItemSearch = document.getElementById(`item-search-${index + 1}`);
+                                if (nextItemSearch) nextItemSearch.focus();
+                              }, 150);
+                            }
+                          }}
+                          onChange={e => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
+                          className="h-10 bg-transparent border-none text-center font-black text-base focus:ring-0"
+                        />
+                      </td>
                       <td className="px-4 py-3">
                         <select className="w-full h-10 bg-slate-50 dark:bg-slate-900 border-none rounded-lg px-2 text-[9px] font-black tracking-widest outline-none focus:ring-1 focus:ring-indigo-500" value={line.uom || ''} onChange={e => updateLine(line.id, 'uom', e.target.value)}>
                           {getUomOptions(line.item_type, line.uom).map(u => (
