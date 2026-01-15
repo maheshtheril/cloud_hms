@@ -87,13 +87,27 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [walkInName, setWalkInName] = useState('')
   const [walkInPhone, setWalkInPhone] = useState('')
   const [selectedPatientId, setSelectedPatientId] = useState(initialInvoice?.patient_id || initialPatientId || '')
+
+  const patientOptions = useMemo(() => patients.map(p => ({
+    id: p.id,
+    label: p.label || p.name || `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unnamed Patient',
+    subLabel: `${p.phone || p.contact || ''} ${p.patient_number ? `• UID: ${p.patient_number}` : ''}`
+  })), [patients]);
+
+  const itemOptions = useMemo(() => billableItems.map(i => ({
+    id: i.id,
+    label: i.label || i.name,
+    subLabel: `[${(i.type || 'item').toUpperCase()}] ${i.sku ? `SKU: ${i.sku} | ` : ''}${currency}${i.price}`
+  })), [billableItems, currency]);
+
   const selectedPatientLabel = useMemo(() => {
     if (!selectedPatientId) return ''
-    const p = patients.find(p => p.id === selectedPatientId)
-    if (p) return p.label || p.name
+    const p = patientOptions.find(p => p.id === selectedPatientId)
+    if (p) return p.label
     // Fallback to initial invoice patient name if available
-    return (initialInvoice as any)?.hms_patient?.full_name || (initialInvoice as any)?.hms_patient?.first_name || (initialInvoice as any)?.patient_name || ''
-  }, [selectedPatientId, patients, initialInvoice])
+    const inv = initialInvoice as any
+    return inv?.hms_patient?.full_name || `${inv?.hms_patient?.first_name || ''} ${inv?.hms_patient?.last_name || ''}`.trim() || inv?.patient_name || ''
+  }, [selectedPatientId, patientOptions, initialInvoice])
 
   const [date, setDate] = useState(initialInvoice?.invoice_date ? new Date(initialInvoice.invoice_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
 
@@ -464,25 +478,17 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                 <SearchableSelect
                   value={selectedPatientId}
                   valueLabel={selectedPatientLabel}
+                  defaultOptions={patientOptions.slice(0, 20)}
                   onChange={id => setSelectedPatientId(id || '')}
                   onCreate={q => { setQuickPatientName(q); setIsQuickPatientOpen(true); return Promise.resolve(null); }}
                   onSearch={async q => {
                     const search = q.toLowerCase();
-                    return patients
-                      .filter(p =>
-                        (p.first_name?.toLowerCase().includes(search)) ||
-                        (p.last_name?.toLowerCase().includes(search)) ||
-                        (p.patient_number?.toLowerCase().includes(search)) ||
-                        (p.contact?.phone && String(p.contact.phone).includes(q))
-                      )
-                      .map(p => ({
-                        id: p.id,
-                        label: `${p.first_name || ''} ${p.last_name || ''}`.trim() || 'Unnamed Patient',
-                        subLabel: `ID: ${p.patient_number || 'N/A'} | Ph: ${p.contact?.phone || 'N/A'}`
-                      }));
+                    return patientOptions.filter(p =>
+                      p.label.toLowerCase().includes(search) ||
+                      p.subLabel.toLowerCase().includes(search)
+                    );
                   }}
-                  placeholder="SEARCH PATIENT IDENTITY / MOBILE / ID..."
-                  autoFocus={true}
+                  placeholder="IDENTIFY PATIENT..."
                 />
               )}
             </div>
@@ -574,16 +580,14 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                           inputId={index === 0 ? 'item-search-0' : `item-search-${index}`}
                           value={line.product_id}
                           valueLabel={line.description}
+                          defaultOptions={itemOptions.slice(0, 20)}
                           onChange={v => updateLine(line.id, 'product_id', v)}
                           onSearch={async q => {
                             const search = q.toLowerCase();
-                            return billableItems
-                              .filter(i => (i.label?.toLowerCase().includes(search)) || (i.sku?.toLowerCase().includes(search)))
-                              .map(i => ({
-                                id: i.id,
-                                label: i.label || i.name || 'Unnamed Item',
-                                subLabel: `[${(i.type || 'item').toUpperCase()}] STOCK: ${i.stock || 0} | ${currency}${i.price}`
-                              }));
+                            return itemOptions.filter(i =>
+                              i.label.toLowerCase().includes(search) ||
+                              i.subLabel.toLowerCase().includes(search)
+                            );
                           }}
                           placeholder="SEARCH..."
                           onKeyDown={(e) => {
