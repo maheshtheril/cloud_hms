@@ -780,8 +780,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     }}
                     disabled={loading || (payments.length === 0 && (parseFloat(activePaymentAmount) || 0) === 0)}
                     className={`flex-1 h-16 rounded-2xl text-white font-black text-[10px] uppercase tracking-[0.3em] transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-3 col-span-1 ${balanceDue > 0 ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20' :
-                      totalPaid > grandTotal ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' :
-                        'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
+                        totalPaid > grandTotal ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' :
+                          'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
                       }`}
                   >
                     {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
@@ -814,6 +814,6 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
           </DialogContent>
         </Dialog>
       </div>
-    </div>
+    </div >
   )
 }
