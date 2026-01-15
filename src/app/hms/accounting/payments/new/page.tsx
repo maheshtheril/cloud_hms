@@ -25,10 +25,13 @@ interface DirectLine {
     amount: string;
 }
 
+import { ClassicVoucherEditor } from '@/components/accounting/classic-voucher-editor';
+
 export default function NewPaymentPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [classicMode, setClassicMode] = useState(false);
 
     // Mode: Bill Payment vs Direct Expense
     const [paymentType, setPaymentType] = useState<PaymentType>('bill');
@@ -139,8 +142,21 @@ export default function NewPaymentPage() {
     };
 
     // --- Submission ---
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSavePayload = async (payload: any) => {
+        setIsSubmitting(true);
+        const res = await upsertPayment(payload);
+
+        if (res.error) {
+            toast({ title: "Error", description: res.error, variant: "destructive" });
+            setIsSubmitting(false);
+        } else {
+            toast({ title: "Success", description: "Payment recorded successfully" });
+            router.push('/hms/accounting/payments');
+        }
+    };
+
+    const handleSubmit = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
 
         if (paymentType === 'bill' && !partnerId) {
             toast({ title: "Validation Error", description: "Please select a Vendor", variant: "destructive" });
@@ -156,8 +172,6 @@ export default function NewPaymentPage() {
             toast({ title: "Validation Error", description: "Please enter a valid amount", variant: "destructive" });
             return;
         }
-
-        setIsSubmitting(true);
 
         const payload: any = {
             type: 'outbound',
@@ -185,21 +199,26 @@ export default function NewPaymentPage() {
 
             if (payload.lines.length === 0) {
                 toast({ title: "Validation Error", description: "Please add at least one valid expense line", variant: "destructive" });
-                setIsSubmitting(false);
                 return;
             }
         }
 
-        const res = await upsertPayment(payload);
-
-        if (res.error) {
-            toast({ title: "Error", description: res.error, variant: "destructive" });
-            setIsSubmitting(false);
-        } else {
-            toast({ title: "Success", description: "Payment recorded successfully" });
-            router.push('/hms/accounting/payments');
-        }
+        await handleSavePayload(payload);
     };
+
+    if (classicMode) {
+        return (
+            <ClassicVoucherEditor
+                type="payment"
+                onSave={handleSavePayload}
+                onCancel={() => setClassicMode(false)}
+                suppliersSearch={searchSuppliers}
+                accountsSearch={handleAccountSearch}
+                getBills={getOutstandingPurchaseBills as any}
+                currency="₹"
+            />
+        );
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-neutral-950 font-sans relative overflow-hidden text-neutral-900 dark:text-neutral-100 pb-20">
@@ -231,6 +250,13 @@ export default function NewPaymentPage() {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setClassicMode(true)}
+                            className="h-10 px-6 rounded-xl border border-slate-200 dark:border-white/10 text-[10px] font-black uppercase tracking-widest hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-indigo-500"
+                        >
+                            Classic ERP Mode
+                        </button>
                         <div className="hidden md:flex flex-col items-end mr-4">
                             <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Total Payment</span>
                             <span className="text-xl font-black text-rose-500 font-mono">

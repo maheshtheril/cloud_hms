@@ -14,10 +14,13 @@ import { Toaster } from '@/components/ui/toaster';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
+import { ClassicVoucherEditor } from '@/components/accounting/classic-voucher-editor';
+
 export default function NewReceiptPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [classicMode, setClassicMode] = useState(false);
 
     // Form State
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -28,8 +31,26 @@ export default function NewReceiptPage() {
     const [reference, setReference] = useState('');
     const [memo, setMemo] = useState('');
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSavePayload = async (payload: any) => {
+        setIsSubmitting(true);
+        const res = await upsertPayment(payload);
+
+        if (res.error) {
+            toast({ title: "Failed to Save", description: res.error, variant: "destructive" });
+            setIsSubmitting(false);
+        } else {
+            toast({
+                title: "Receipt Saved",
+                description: `Successfully recorded receipt for ₹${payload.amount}`,
+                className: "bg-emerald-900 border-emerald-800 text-white"
+            });
+            // Small delay for user to see success
+            setTimeout(() => router.push('/hms/accounting/receipts'), 500);
+        }
+    };
+
+    const handleSubmit = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
         if (!partnerId) {
             toast({ title: "Missing Payer", description: "Please select who the receipt is from.", variant: "destructive" });
             return;
@@ -39,8 +60,7 @@ export default function NewReceiptPage() {
             return;
         }
 
-        setIsSubmitting(true);
-        const res = await upsertPayment({
+        const payload: any = {
             type: 'inbound',
             partner_id: partnerId,
             amount: Number(amount),
@@ -48,21 +68,22 @@ export default function NewReceiptPage() {
             reference,
             date: new Date(date),
             memo
-        });
+        };
 
-        if (res.error) {
-            toast({ title: "Failed to Save", description: res.error, variant: "destructive" });
-            setIsSubmitting(false);
-        } else {
-            toast({
-                title: "Receipt Saved",
-                description: `Successfully recorded receipt for ₹${amount}`,
-                className: "bg-emerald-900 border-emerald-800 text-white"
-            });
-            // Small delay for user to see success
-            setTimeout(() => router.push('/hms/accounting/receipts'), 500);
-        }
+        await handleSavePayload(payload);
     };
+
+    if (classicMode) {
+        return (
+            <ClassicVoucherEditor
+                type="receipt"
+                onSave={handleSavePayload}
+                onCancel={() => setClassicMode(false)}
+                patientsSearch={searchPatients}
+                currency="₹"
+            />
+        );
+    }
 
     return (
         <div className="min-h-screen bg-neutral-950 text-neutral-200 font-sans selection:bg-emerald-500/30 relative overflow-hidden">
@@ -95,6 +116,13 @@ export default function NewReceiptPage() {
                             </h1>
                         </div>
                     </div>
+
+                    <button
+                        onClick={() => setClassicMode(true)}
+                        className="px-4 py-2 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all text-emerald-400"
+                    >
+                        Classic ERP Mode
+                    </button>
                 </div>
             </motion.div>
 
