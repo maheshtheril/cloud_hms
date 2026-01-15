@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Plus, Trash2, Search, Save, User, DollarSign, Receipt, X,
   Loader2, CreditCard, Banknote, Smartphone, Maximize2,
-  Minimize2, Check, QrCode, Clock, ArrowRight, Activity, Package
+  Minimize2, Check, QrCode, Clock, ArrowRight, Activity, Package, Landmark
 } from 'lucide-react'
 import { createInvoice, updateInvoice, createQuickPatient, getPatientOutstandingBalance, getPatientLedger } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
@@ -799,7 +799,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     { id: 'cash', label: 'CASH', icon: Banknote, color: 'text-emerald-500 dark:text-emerald-400' },
                     { id: 'upi', label: 'UPI / QR', icon: QrCode, color: 'text-indigo-600 dark:text-indigo-400' },
                     { id: 'card', label: 'CARD', icon: CreditCard, color: 'text-blue-600 dark:text-blue-400' },
-                    { id: 'bank_transfer', label: 'CREDIT', icon: Clock, color: 'text-amber-600 dark:text-amber-400' }
+                    { id: 'bank_transfer', label: 'BANK TRANSFER', icon: Landmark, color: 'text-amber-600 dark:text-amber-400' }
                   ].map(m => (
                     <button
                       key={m.id}
