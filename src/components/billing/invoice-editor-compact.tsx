@@ -7,7 +7,7 @@ import {
   Loader2, CreditCard, Banknote, Smartphone, Maximize2,
   Minimize2, Check, QrCode, Clock, ArrowRight, Activity, Package
 } from 'lucide-react'
-import { createInvoice, updateInvoice, createQuickPatient } from '@/app/actions/billing'
+import { createInvoice, updateInvoice, createQuickPatient, getPatientOutstandingBalance } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { useToast } from '@/components/ui/use-toast'
 import { Button } from '@/components/ui/button'
@@ -61,6 +61,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [isWalkIn, setIsWalkIn] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [lastSavedId, setLastSavedId] = useState<string | null>(null)
+  const [patientBalance, setPatientBalance] = useState(0)
   const amountInputRef = useRef<HTMLInputElement>(null)
 
   // Focus management for modal
@@ -110,15 +111,21 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0)
   const balanceDue = Math.max(0, grandTotal - totalPaid)
 
-  // Handlers
+  // World Class Ledger Sync: Fetch previous balance for selected patient
   useEffect(() => {
     if (selectedPatientId) {
       setIsWalkIn(false);
+      getPatientOutstandingBalance(selectedPatientId).then(res => {
+        if (res.success) setPatientBalance(res.balance || 0);
+      });
+
       // World Class UX: After selecting patient, move focus to first item search
       setTimeout(() => {
         const firstItemSearch = document.getElementById('item-search-0');
         if (firstItemSearch) firstItemSearch.focus();
       }, 100);
+    } else {
+      setPatientBalance(0);
     }
   }, [selectedPatientId]);
 
@@ -432,7 +439,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
           </div>
         </div>
 
-        {/* 2. Metadata Ribbon (Regulatory Compliance) */}
+        {/* 2. Metadata Ribbon & Debt Alert (Regulatory Compliance) */}
         <div className="flex items-center justify-between px-6 py-2 bg-slate-100/50 dark:bg-slate-800/10 border-b border-slate-200/50 dark:border-slate-800/50 z-10 transition-all">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
@@ -452,7 +459,28 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               />
             </div>
           </div>
+
           <div className="flex items-center gap-4">
+            {/* World Class Debt Awareness Node */}
+            {patientBalance > 0 && !isWalkIn && (
+              <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/20 px-4 py-1 rounded-full animate-in slide-in-from-right-4 duration-500">
+                <div className="flex items-center gap-2">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                  </span>
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-amber-600">Previous Balance Detected:</span>
+                </div>
+                <span className="text-[10px] font-black text-amber-700 bg-amber-500/20 px-2 rounded-md">{currency}{patientBalance.toFixed(2)}</span>
+                <button
+                  onClick={() => router.push(`/hms/patients/${selectedPatientId}/ledger`)}
+                  className="text-[8px] font-black uppercase tracking-[0.2em] text-amber-600 hover:text-amber-800 underline active:scale-95 transition-all"
+                >
+                  View Ledger Node
+                </button>
+              </div>
+            )}
+
             <div className="flex items-center gap-1.5 opacity-60">
               <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600">Secure Node Enabled</span>

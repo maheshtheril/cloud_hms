@@ -964,3 +964,34 @@ export async function recordPatientConsumption(patientId: string, items: any[], 
         return { error: error.message };
     }
 }
+
+/**
+ * World Class Ledger Analytics: 
+ * Fetches the real-time financial standing of a patient across all sub-ledgers.
+ */
+export async function getPatientOutstandingBalance(patientId: string) {
+    const session = await auth();
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    if (!companyId || !patientId) return { error: "Unauthorized or missing ID" };
+
+    try {
+        const invoices = await prisma.hms_invoice.findMany({
+            where: {
+                tenant_id: session.user.tenantId,
+                company_id: companyId,
+                patient_id: patientId,
+                status: { in: ['posted', 'partial'] } // Only confirmed debts
+            },
+            select: {
+                outstanding_amount: true
+            }
+        });
+
+        const totalDebt = invoices.reduce((sum, inv) => sum + Number(inv.outstanding_amount || 0), 0);
+
+        return { success: true, balance: totalDebt };
+    } catch (error: any) {
+        console.error("Ledger Fetch Failed:", error);
+        return { error: "Could not compute patient balance" };
+    }
+}
