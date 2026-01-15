@@ -59,6 +59,14 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [isQuickPatientOpen, setIsQuickPatientOpen] = useState(false)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [isWalkIn, setIsWalkIn] = useState(false)
+  const amountInputRef = React.useRef<HTMLInputElement>(null)
+
+  // Focus management for modal
+  useEffect(() => {
+    if (isPaymentModalOpen) {
+      setTimeout(() => amountInputRef.current?.focus(), 150);
+    }
+  }, [isPaymentModalOpen]);
 
   // Form State
   const [quickPatientName, setQuickPatientName] = useState('')
@@ -576,12 +584,24 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                   <div className="flex-1 relative">
                     <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-700 font-black text-xl italic">{currency}</span>
                     <input
+                      ref={amountInputRef}
                       type="number"
                       className="w-full bg-white dark:bg-slate-950/50 border border-slate-200 dark:border-white/10 h-16 rounded-2xl pl-12 pr-6 text-slate-900 dark:text-white font-black text-2xl focus:border-indigo-600 outline-none transition-all placeholder:text-slate-300"
                       value={activePaymentAmount}
                       onChange={e => setActivePaymentAmount(e.target.value)}
                       placeholder="Enter Amount..."
                       onFocus={(e) => e.target.select()}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && activePaymentAmount) {
+                          const amt = parseFloat(activePaymentAmount) || 0;
+                          if (amt > 0) {
+                            setPayments(prev => [...prev, { method: 'cash', amount: amt }]);
+                            const currentSettled = payments.reduce((sum, p) => sum + p.amount, 0) + amt;
+                            const remaining = Math.max(0, grandTotal - currentSettled);
+                            setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : '');
+                          }
+                        }
+                      }}
                     />
                   </div>
                 </div>
@@ -600,10 +620,13 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     onClick={() => {
                       const amt = parseFloat(activePaymentAmount) || 0;
                       if (amt > 0) {
-                        setPayments([...payments, { method: m.id as any, amount: amt }]);
-                        // Clear or set to remaining
-                        const remaining = Math.max(0, grandTotal - (totalPaid + amt));
+                        setPayments(prev => [...prev, { method: m.id as any, amount: amt }]);
+                        // Calculate next suggested amount based on prev state + current amt
+                        const currentSettled = payments.reduce((sum, p) => sum + p.amount, 0) + amt;
+                        const remaining = Math.max(0, grandTotal - currentSettled);
                         setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : '');
+                      } else {
+                        toast({ title: "Quantity Required", description: "Enter an amount before selecting a payment method.", variant: "warning" });
                       }
                     }}
                     className="group relative py-4 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-indigo-600 active:scale-95 shadow-sm dark:shadow-none"
@@ -617,20 +640,29 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               </div>
 
               {/* Final Conclusion Action */}
-              <div className="flex items-center gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <button
                   onClick={() => setIsPaymentModalOpen(false)}
-                  className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+                  className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors border border-slate-200 dark:border-white/5 rounded-2xl"
                 >
                   Cancel
                 </button>
                 <button
+                  onClick={() => {
+                    setPayments([]);
+                    setActivePaymentAmount(grandTotal.toFixed(2));
+                  }}
+                  className="px-6 py-4 text-[10px] font-black text-rose-400 uppercase tracking-widest hover:text-rose-600 transition-colors border border-rose-200/50 dark:border-rose-500/20 rounded-2xl"
+                >
+                  Reset
+                </button>
+                <button
                   onClick={() => handleSave('paid')}
                   disabled={loading || payments.length === 0}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 h-16 rounded-2xl text-white font-black text-xs uppercase tracking-[0.4em] transition-all active:scale-[0.98] shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3"
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 h-16 rounded-2xl text-white font-black text-xs uppercase tracking-[0.4em] transition-all active:scale-[0.98] shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 col-span-1"
                 >
                   {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                    <>FINALIZE & POST BILL <Check className="h-5 w-5" /></>
+                    <>FINALIZE <Check className="h-5 w-5" /></>
                   )}
                 </button>
               </div>
