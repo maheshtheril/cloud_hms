@@ -147,11 +147,28 @@ export async function getBillableItems() {
             }
 
             // FINAL TAX RESOLUTION: Specific Rule > Latest Purchase Identity > Category Default
-            const effectiveTaxId = productTaxRule?.tax_rate_id || purchaseTaxId || category?.default_tax_rate_id || null;
+            let effectiveTaxId = productTaxRule?.tax_rate_id || purchaseTaxId || category?.default_tax_rate_id || null;
+
+            // SERVICE OVERRIDE: Hospital services (Consultation, etc.) are typically tax-exempt (0%)
+            // If it is a service and no specific product tax rule exists, we default to 0
+            if (item.is_service && !productTaxRule?.tax_rate_id) {
+                effectiveTaxId = null;
+            }
 
             // Re-verify the rate against the final resolved ID
-            const finalTaxRateObj = companyTaxRates.find(tr => tr.id === effectiveTaxId) || productTaxRule?.tax_rates || category?.tax_rates;
-            const effectiveTaxRate = finalTaxRateObj?.rate ? Number(finalTaxRateObj.rate) : (purchaseTaxRate || 0);
+            const finalTaxRateObj = companyTaxRates.find(tr => tr.id === effectiveTaxId);
+
+            // Priority for Rate: Resolved ID > Rule > Purchase > Category (only for items) > 0
+            let effectiveTaxRate = 0;
+            if (finalTaxRateObj) {
+                effectiveTaxRate = Number(finalTaxRateObj.rate);
+            } else if (productTaxRule?.tax_rates?.rate) {
+                effectiveTaxRate = Number(productTaxRule.tax_rates.rate);
+            } else if (purchaseTaxRate > 0) {
+                effectiveTaxRate = purchaseTaxRate;
+            } else if (!item.is_service && category?.tax_rates?.rate) {
+                effectiveTaxRate = Number(category.tax_rates.rate);
+            }
 
             // Extract UOM pricing data from metadata
             const metadata = item.metadata as any || {};

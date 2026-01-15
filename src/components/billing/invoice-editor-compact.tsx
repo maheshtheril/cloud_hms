@@ -114,22 +114,73 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const defaultTaxId = taxConfig.defaultTax?.id || ''
 
   // Robust Line Item State
-  const [lines, setLines] = useState<any[]>(initialInvoice?.hms_invoice_lines ? initialInvoice.hms_invoice_lines
-    .map((l: any) => ({
-      id: l.id || Date.now() + Math.random(),
-      product_id: l.product_id || '',
-      description: l.description,
-      quantity: Number(l.quantity),
-      uom: l.uom || 'PCS',
-      unit_price: Number(l.unit_price),
-      tax_rate_id: l.tax_rate_id,
-      tax_amount: Number(l.tax_amount),
-      discount_amount: Number(l.discount_amount),
-      base_price: l.unit_price, // Fallback
-      item_type: l.product_id ? (billableItems.find(bi => bi.id === l.product_id)?.type || 'item') : 'item'
-    })) : [
-    { id: 1, product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0, item_type: 'item' }
-  ])
+  const [lines, setLines] = useState<any[]>(() => {
+    // 1. If we are editing an existing invoice, use those lines
+    if (initialInvoice?.hms_invoice_lines) {
+      return initialInvoice.hms_invoice_lines.map((l: any) => ({
+        id: l.id || Date.now() + Math.random(),
+        product_id: l.product_id || '',
+        description: l.description,
+        quantity: Number(l.quantity),
+        uom: l.uom || 'PCS',
+        unit_price: Number(l.unit_price),
+        tax_rate_id: l.tax_rate_id,
+        tax_amount: Number(l.tax_amount),
+        discount_amount: Number(l.discount_amount),
+        base_price: l.unit_price,
+        item_type: l.product_id ? (billableItems.find(bi => bi.id === l.product_id)?.type || 'item') : 'item'
+      }))
+    }
+
+    // 2. If we have initial items passed (e.g., from an appointment or prescription)
+    if (initialMedicines && initialMedicines.length > 0) {
+      return initialMedicines.map((m: any) => {
+        const billable = billableItems.find(bi => bi.id === m.id || bi.label === m.name);
+        // SERVICES (Consultation, etc.) should default to 0% tax if no specific tax ID is set
+        const taxId = billable?.categoryTaxId !== undefined ? billable.categoryTaxId : (m.type === 'service' ? null : defaultTaxId);
+
+        return {
+          id: Math.random(),
+          product_id: billable?.id || m.id || '',
+          description: m.name || m.description || '',
+          quantity: Number(m.quantity || 1),
+          uom: m.uom || 'PCS',
+          unit_price: Number(m.price || 0),
+          tax_rate_id: taxId,
+          tax_amount: 0, // Recalculated in useEffect
+          discount_amount: 0,
+          base_price: Number(m.price || 0),
+          item_type: m.type || 'item'
+        }
+      })
+    }
+
+    // 3. Absolute Default: Single empty line
+    return [
+      { id: 1, product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0, item_type: 'item' }
+    ]
+  })
+
+  // Sync Tax Amounts on Mount for initial items
+  useEffect(() => {
+    if (lines.length > 0) {
+      const updatedLines = lines.map(line => {
+        const taxRateObj = taxConfig.taxRates.find((t: any) => t.id === line.tax_rate_id)
+        const rate = taxRateObj ? Number(taxRateObj.rate) : 0
+        const lineNet = (line.quantity * line.unit_price) - (line.discount_amount || 0)
+        return {
+          ...line,
+          tax_amount: (Math.max(0, lineNet) * rate) / 100
+        }
+      })
+
+      // Only update if changes detected to avoid infinite loop
+      const hasChanges = updatedLines.some((l, idx) => l.tax_amount !== lines[idx].tax_amount);
+      if (hasChanges) {
+        setLines(updatedLines);
+      }
+    }
+  }, []);
 
   const [payments, setPayments] = useState<Payment[]>([])
   const [activePaymentAmount, setActivePaymentAmount] = useState<string>('')
@@ -200,7 +251,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             updated.base_price = basePrice
             updated.unit_price = basePrice
             updated.uom = item.metadata?.baseUom || 'PCS'
-            updated.tax_rate_id = item.categoryTaxId || defaultTaxId
+            updated.tax_rate_id = (item.categoryTaxId !== undefined) ? item.categoryTaxId : defaultTaxId;
 
             // Metadata for complex items
             updated.metadata = item.metadata
@@ -605,9 +656,21 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                         />
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-md ${line.item_type === 'service' ? 'bg-indigo-500/10 text-indigo-600' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newType = line.item_type === 'service' ? 'item' : 'service';
+                            setLines(prev => prev.map(l => l.id === line.id ? {
+                              ...l,
+                              item_type: newType,
+                              // Auto-exempt services from tax when toggled manually
+                              tax_rate_id: newType === 'service' ? null : (l.tax_rate_id || defaultTaxId)
+                            } : l));
+                          }}
+                          className={`text-[8px] font-black px-1.5 py-0.5 rounded-md transition-all active:scale-95 ${line.item_type === 'service' ? 'bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20' : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'}`}
+                        >
                           {(line.item_type || 'ITEM').toUpperCase()}
-                        </span>
+                        </button>
                       </td>
                       <td className="px-4 py-3">
                         <Input
