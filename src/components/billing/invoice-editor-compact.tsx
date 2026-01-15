@@ -393,9 +393,9 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               <Activity className="h-5 w-5 animate-pulse" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight italic">Zenith Unified Terminal</h2>
+              <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight italic">Financial Billing Terminal</h2>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-500 bg-indigo-500/5 px-2 py-0.5 rounded-full">v4.2 PRO</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-500 bg-indigo-500/5 px-2 py-0.5 rounded-full">CORE FINANCE L3</span>
                 <div className="h-1 w-1 rounded-full bg-slate-300" />
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Services & Pharmacy Terminal</p>
               </div>
@@ -680,7 +680,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
           </div>
         </div>
 
-        {/* ZENITH SETTLE TERMINAL OVERLAY */}
+        {/* PROFESSIONAL BILLING SETTLEMENT OVERLAY */}
         <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
           <DialogContent
             onInteractOutside={(e) => e.preventDefault()}
@@ -907,7 +907,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     )}
                   </button>
                 </div>
-                <p className="text-[8px] font-black text-center text-slate-600 uppercase tracking-[0.4em] opacity-40">Verified Secure Financial Settlement Node</p>
+                <p className="text-[8px] font-black text-center text-slate-600 uppercase tracking-[0.4em] opacity-40">Standard Institutional Billing & Settlement Node</p>
               </div>
             </div>
           </DialogContent>
