@@ -67,6 +67,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [ledgerData, setLedgerData] = useState<any[]>([])
   const [isFetchingLedger, setIsFetchingLedger] = useState(false)
   const amountInputRef = useRef<HTMLInputElement>(null)
+  const finalizeButtonRef = useRef<HTMLButtonElement>(null)
 
   // Focus management for modal
   useEffect(() => {
@@ -774,17 +775,23 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                           if (e.key === 'Enter') {
                             e.preventDefault();
                             e.stopPropagation();
-                            if (activePaymentAmount) {
-                              const amt = parseFloat(activePaymentAmount) || 0;
-                              if (amt > 0) {
-                                setPayments(prev => {
-                                  const newPayments: Payment[] = [...prev, { method: 'cash', amount: amt } as Payment];
-                                  const currentTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
-                                  const remaining = Math.max(0, grandTotal - currentTotalPaid);
-                                  setTimeout(() => setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : ''), 0);
-                                  return newPayments;
-                                });
-                              }
+                            const amt = parseFloat(activePaymentAmount) || 0;
+                            const target = grandTotal + (includePrevBalance ? patientBalance : 0);
+
+                            if (amt > 0) {
+                              setPayments(prev => {
+                                const newPayments: Payment[] = [...prev, { method: 'cash', amount: amt } as Payment];
+                                const currentTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
+                                const remaining = Math.max(0, target - currentTotalPaid);
+                                if (remaining === 0) {
+                                  setTimeout(() => finalizeButtonRef.current?.focus(), 100);
+                                }
+                                setTimeout(() => setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : ''), 0);
+                                return newPayments;
+                              });
+                            } else if (totalPaid >= target || (payments.length === 0 && amt === 0)) {
+                              // If already tallied or user wants to post as credit with 0 paid
+                              finalizeButtonRef.current?.focus();
                             }
                           }
                         }}
@@ -853,6 +860,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     Reset
                   </button>
                   <button
+                    ref={finalizeButtonRef}
                     type="button"
                     onClick={(e) => {
                       e.preventDefault();
