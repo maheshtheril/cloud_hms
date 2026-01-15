@@ -219,7 +219,19 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     }
     const res = await (initialInvoice?.id ? updateInvoice(initialInvoice.id, payload) : createInvoice(payload))
     if (res.success) {
-      toast({ title: "Terminal Sync Successful", description: `Transaction recorded as ${effectiveStatus}.` })
+      let tallyMsg = `Transaction recorded as ${effectiveStatus}.`;
+      if (totalPaid > 0) {
+        if (totalPaid < grandTotal) {
+          tallyMsg = `Partial payment of ${currency}${totalPaid.toFixed(2)} recorded. Balance ${currency}${balanceDue.toFixed(2)} outstanding.`;
+        } else if (totalPaid > grandTotal) {
+          tallyMsg = `Settlement fully paid with ${currency}${(totalPaid - grandTotal).toFixed(2)} advance/excess recorded.`;
+        } else {
+          tallyMsg = `Bill fully settled for ${currency}${grandTotal.toFixed(2)}.`;
+        }
+      } else {
+        tallyMsg = `Invoice posted as credit for ${currency}${grandTotal.toFixed(2)}.`;
+      }
+      toast({ title: "Terminal Sync Successful", description: tallyMsg })
       if (onClose) onClose()
       else router.replace(`/hms/billing/${res.data?.id}`)
     } else {
@@ -671,6 +683,24 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                       <span className="text-[8px] font-black tracking-[0.2em] text-slate-500 dark:text-white opacity-60 group-hover:opacity-100 uppercase">{m.label}</span>
                     </button>
                   ))}
+                </div>
+
+                {/* Tally Summary Overlay */}
+                <div className="bg-slate-100/50 dark:bg-slate-900/50 p-5 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tally Mode</span>
+                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${balanceDue > 0 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                      {balanceDue > 0 ? 'Partial / Credit' : totalPaid > grandTotal ? 'Advance / Excess' : 'Balanced'}
+                    </span>
+                  </div>
+                  <p className="text-xs font-black text-slate-700 dark:text-slate-300 italic tracking-tight">
+                    {balanceDue > 0 ?
+                      `Collecting ${currency}${totalPaid.toFixed(2)} of ${currency}${grandTotal.toFixed(2)}. ${currency}${balanceDue.toFixed(2)} will be carried as outstanding debt.` :
+                      totalPaid > grandTotal ?
+                        `Collecting ${currency}${totalPaid.toFixed(2)}. Excess of ${currency}${(totalPaid - grandTotal).toFixed(2)} will be credited to patient identity node.` :
+                        `Transaction perfectly tallied at ${currency}${grandTotal.toFixed(2)}. Closing settlement node.`
+                    }
+                  </p>
                 </div>
 
                 {/* Final Conclusion Action */}
