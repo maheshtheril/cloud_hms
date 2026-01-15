@@ -58,7 +58,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [isMaximized, setIsMaximized] = useState(false)
   const [isQuickPatientOpen, setIsQuickPatientOpen] = useState(false)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
-  const [isWalkIn, setIsWalkIn] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [lastSavedId, setLastSavedId] = useState<string | null>(null)
   const amountInputRef = useRef<HTMLInputElement>(null)
 
   // Focus management for modal
@@ -236,18 +237,11 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
         toast({ title: "Sync Successful", description: tallyMsg })
 
-        // Immediate UX Resolution: Close the modal to show intent is fulfilled
+        // EXPLICIT CLOSURE: Trigger success state instead of silent redirect
+        setLastSavedId(res.data?.id || null)
+        setIsSuccess(true)
+        setLoading(false)
         setIsPaymentModalOpen(false)
-
-        if (onClose) {
-          setLoading(false)
-          onClose()
-        } else {
-          // Trigger navigation - the Global Overlay will stay until redirect completes
-          router.replace(`/hms/billing/${res.data?.id}`)
-          // Self-correcting loader: If redirect takes over 10s, release the UI
-          setTimeout(() => setLoading(false), 10000)
-        }
       } else {
         setLoading(false)
         console.error("Sync Interrupted:", res.error);
@@ -292,6 +286,67 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
       }
     } catch (e) { console.error(e) }
     setLoading(false)
+  }
+
+  if (isSuccess) {
+    return (
+      <div className="fixed inset-0 z-[300] bg-slate-950 flex items-center justify-center p-6">
+        <div className="max-w-4xl w-full bg-white dark:bg-slate-900 rounded-[4rem] shadow-[0_50px_100px_rgba(0,0,0,0.8)] overflow-hidden border border-white/5 animate-in zoom-in-95 duration-500">
+          <div className="p-16 flex flex-col items-center text-center">
+            <div className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center shadow-2xl shadow-emerald-500/20 mb-8 animate-bounce">
+              <Check className="h-12 w-12 text-white stroke-[3px]" />
+            </div>
+            <h1 className="text-5xl font-black italic tracking-tighter text-slate-900 dark:text-white mb-4">TRANSACTION FINALIZED</h1>
+            <p className="text-xs font-black uppercase tracking-[0.6em] text-slate-500 mb-12">Serial: {initialInvoice?.invoice_number || 'NEW_ENTRY'} | Ledger Node Synced</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+              <button
+                onClick={() => window.open(`/hms/billing/${lastSavedId}/print`, '_blank')}
+                className="group p-8 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-indigo-500 transition-all text-center"
+              >
+                <div className="bg-indigo-600 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-xl shadow-indigo-600/20 group-hover:scale-110 transition-transform">
+                  <Receipt className="h-6 w-6" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Action 01</p>
+                <p className="text-sm font-black text-slate-900 dark:text-white mt-1">PRINT RECEIPT</p>
+              </button>
+
+              <button
+                onClick={() => {
+                  if (onClose) onClose();
+                  else window.location.reload(); // Hard reset for new bill
+                }}
+                className="group p-8 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-emerald-500 transition-all text-center"
+              >
+                <div className="bg-emerald-600 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-xl shadow-emerald-600/20 group-hover:scale-110 transition-transform">
+                  <Plus className="h-6 w-6" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Action 02</p>
+                <p className="text-sm font-black text-slate-900 dark:text-white mt-1">NEW TRANSACTION</p>
+              </button>
+
+              <button
+                onClick={() => router.push(`/hms/billing/${lastSavedId}`)}
+                className="group p-8 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-blue-500 transition-all text-center"
+              >
+                <div className="bg-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-xl shadow-blue-600/20 group-hover:scale-110 transition-transform">
+                  <Search className="h-6 w-6" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Action 03</p>
+                <p className="text-sm font-black text-slate-900 dark:text-white mt-1">VIEW LEDGER</p>
+              </button>
+            </div>
+
+            <button
+              onClick={() => router.push('/hms/billing')}
+              className="mt-12 text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 hover:text-indigo-600 transition-colors"
+            >
+              ← Back to Billing Registry
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -780,8 +835,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     }}
                     disabled={loading || (payments.length === 0 && (parseFloat(activePaymentAmount) || 0) === 0)}
                     className={`flex-1 h-16 rounded-2xl text-white font-black text-[10px] uppercase tracking-[0.3em] transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-3 col-span-1 ${balanceDue > 0 ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20' :
-                        totalPaid > grandTotal ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' :
-                          'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
+                      totalPaid > grandTotal ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' :
+                        'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
                       }`}
                   >
                     {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
