@@ -15,9 +15,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 
-export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice, onClose }: {
+export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice, onClose }: {
   patients: any[],
   billableItems: any[],
+  uoms?: any[],
   taxConfig: { defaultTax: any, taxRates: any[] },
   initialPatientId?: string,
   initialMedicines?: any[],
@@ -25,6 +26,21 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
   initialInvoice?: any,
   onClose?: () => void
 }) {
+
+  const getUomOptions = (itemType: string, currentUom: string) => {
+    // Standard sets
+    const serviceUnits = ['SERVICE', 'UNIT', 'VISIT', 'HOUR', 'DAY'];
+    const stockUnits = ['PCS', 'STRIP', 'BOX', 'VIAL', 'ML', 'TABLET', 'CAPSULE'];
+
+    // Combine with DB units
+    const dbUnitNames = uoms.map(u => u.name.toUpperCase());
+    const allUnits = Array.from(new Set([...serviceUnits, ...stockUnits, ...dbUnitNames, (currentUom || '').toUpperCase()]));
+
+    if (itemType === 'service') {
+      return allUnits.filter(u => serviceUnits.includes(u) || (u === currentUom?.toUpperCase()) || (uoms.find(du => du.name.toUpperCase() === u && du.uom_type === 'service')));
+    }
+    return allUnits.filter(u => stockUnits.includes(u) || (u === currentUom?.toUpperCase()) || dbUnitNames.includes(u));
+  }
 
   interface Payment {
     method: 'cash' | 'card' | 'upi' | 'bank_transfer' | 'advance';
@@ -320,11 +336,9 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
                       <td className="px-4 py-5"><Input type="number" value={line.quantity} onChange={e => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)} className="h-12 bg-transparent border-none text-center font-black text-lg focus:ring-0" /></td>
                       <td className="px-4 py-5">
                         <select className="w-full h-12 bg-slate-50 dark:bg-slate-900 border-none rounded-xl px-4 text-[11px] font-black tracking-widest outline-none focus:ring-2 focus:ring-indigo-500" value={line.uom || ''} onChange={e => updateLine(line.id, 'uom', e.target.value)}>
-                          <option value="PCS">PIECE (PCS)</option>
-                          <option value="STRIP">STRIP</option>
-                          <option value="BOX">BOX / PACK</option>
-                          <option value="SERVICE">SERVICE</option>
-                          <option value="VIAL">VIAL / BOTTLE</option>
+                          {getUomOptions(line.item_type, line.uom).map(u => (
+                            <option key={u} value={u}>{u}</option>
+                          ))}
                         </select>
                       </td>
                       <td className="px-4 py-5"><Input type="number" value={line.unit_price} onChange={e => updateLine(line.id, 'unit_price', parseFloat(e.target.value) || 0)} className="h-12 bg-transparent border-none font-mono font-black text-slate-400 focus:ring-0" /></td>

@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
-import { getBillableItems, getTaxConfiguration } from "@/app/actions/billing"
+import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/billing"
 import { auth } from "@/auth"
 
 export default async function NewInvoicePage({
@@ -23,7 +23,7 @@ export default async function NewInvoicePage({
     const tenantId = session.user.tenantId;
 
     // Parallel data fetching
-    const [patients, itemsRes, taxRes] = await Promise.all([
+    const [patients, itemsRes, taxRes, uomsRes] = await Promise.all([
         prisma.hms_patient.findMany({
             where: {
                 tenant_id: tenantId // Filter by current user's tenant
@@ -42,11 +42,13 @@ export default async function NewInvoicePage({
             take: 50
         }),
         getBillableItems(),
-        getTaxConfiguration()
+        getTaxConfiguration(),
+        getUoms()
     ]);
 
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
+    const uoms = (uomsRes as any).success ? (uomsRes as any).data : [];
 
     // Standardization logic for initial items
     let initialItems = items ? JSON.parse(decodeURIComponent(items)) : (medicines ? JSON.parse(decodeURIComponent(medicines)) : []);
@@ -158,6 +160,7 @@ export default async function NewInvoicePage({
         <CompactInvoiceEditor
             patients={JSON.parse(JSON.stringify(patients))}
             billableItems={JSON.parse(JSON.stringify(billableItems))}
+            uoms={JSON.parse(JSON.stringify(uoms))}
             taxConfig={JSON.parse(JSON.stringify(taxConfig))}
             initialPatientId={effectivePatientId}
             initialMedicines={initialItems}

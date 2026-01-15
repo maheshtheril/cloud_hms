@@ -7,6 +7,26 @@ import { revalidatePath } from "next/cache"
 import { AccountingService } from "@/lib/services/accounting"
 import { NotificationService } from "@/lib/services/notification";
 
+export async function getUoms() {
+    const session = await auth();
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    if (!companyId) return { error: "Unauthorized" };
+
+    try {
+        const uoms = await prisma.hms_uom.findMany({
+            where: {
+                tenant_id: session.user.tenantId,
+                company_id: companyId,
+                is_active: true
+            }
+        });
+        return { success: true, data: uoms };
+    } catch (error) {
+        console.error("Failed to fetch UOMs:", error);
+        return { error: "Failed to fetch UOMs" };
+    }
+}
+
 export async function getBillableItems() {
     const session = await auth();
     const companyId = session?.user?.companyId || session?.user?.tenantId;
@@ -18,7 +38,6 @@ export async function getBillableItems() {
                 tenant_id: session.user.tenantId,
                 company_id: companyId,
                 is_active: true
-                // Removed is_service filter - show all products (pharmacy + services)
             },
             select: {
                 id: true,
@@ -26,9 +45,9 @@ export async function getBillableItems() {
                 name: true,
                 description: true,
                 uom: true,
-                price: true, // Fetch base price
-                metadata: true, // Include metadata for purchase_tax_rate
-                // We'll need to join with price history to get current price
+                price: true,
+                metadata: true,
+                is_service: true,
                 hms_product_price_history: {
                     orderBy: { valid_from: 'desc' },
                     take: 1,
@@ -64,13 +83,14 @@ export async function getBillableItems() {
                 description: item.description || '',
                 uom: item.uom || 'Unit',
                 price: priceHistory?.price?.toNumber() || Number(item.price) || 0,
+                type: item.is_service ? 'service' : 'item',
                 metadata: {
                     ...metadata,
                     // UOM Pricing (Industry Standard)
-                    baseUom: uomData.base_uom || 'PCS',
+                    baseUom: uomData.base_uom || item.uom || 'PCS',
                     basePrice: uomData.base_price || Number(item.price) || 0,
                     conversionFactor: uomData.conversion_factor || 1,
-                    packUom: uomData.pack_uom || (uomData.conversion_factor > 1 ? `PACK-${uomData.conversion_factor}` : 'PCS'),
+                    packUom: uomData.pack_uom || (uomData.conversion_factor > 1 ? `PACK-${uomData.conversion_factor}` : (item.uom || 'PCS')),
                     packPrice: uomData.pack_price || (Number(item.price) * (uomData.conversion_factor || 1)),
                     packSize: uomData.pack_size || uomData.conversion_factor || 1
                 },
