@@ -100,6 +100,12 @@ export function CompactInvoiceEditor({ patients, billableItems, taxConfig, initi
     setLines([...lines, { id: Date.now(), product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0, item_type: 'item' }])
   }
 
+  const handleRemoveItem = (id: number) => {
+    if (lines.length > 1) {
+      setLines(lines.filter(l => l.id !== id))
+    }
+  }
+
   const updateLine = (id: number, field: string, value: any) => {
     setLines(lines.map(line => {
       if (line.id === id) {
