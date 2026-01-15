@@ -372,6 +372,13 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                               }));
                           }}
                           placeholder="SEARCH..."
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !line.product_id && lines.some(l => l.product_id)) {
+                              e.preventDefault();
+                              const settleBtn = document.getElementById('settle-button');
+                              if (settleBtn) settleBtn.focus();
+                            }
+                          }}
                         />
                       </td>
                       <td className="px-4 py-3">
@@ -456,7 +463,12 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
             {/* Action Nodes */}
             <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
-              <button onClick={() => setIsPaymentModalOpen(true)} disabled={loading || lines.filter(l => l.product_id || l.description).length === 0} className="group relative px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 text-lg font-black italic uppercase tracking-tighter overflow-hidden">
+              <button
+                id="settle-button"
+                onClick={() => setIsPaymentModalOpen(true)}
+                disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
+                className="group relative px-10 py-4 bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-white/20 outline-none text-white rounded-2xl shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 text-lg font-black italic uppercase tracking-tighter overflow-hidden focus:translate-y-[-2px] border-2 border-transparent focus:border-white/50"
+              >
                 <div className="absolute inset-x-0 bottom-0 h-0.5 bg-white/20 animate-pulse" />
                 COLLECT SETTLEMENT <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
               </button>

@@ -46,6 +46,7 @@ interface SearchableSelectProps {
     inputId?: string;
     usePortal?: boolean;
     autoFocus?: boolean;
+    onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }
 
 export function SearchableSelect({
@@ -64,6 +65,7 @@ export function SearchableSelect({
     inputId,
     usePortal = true,
     autoFocus = false,
+    onKeyDown,
 }: SearchableSelectProps) {
     const [open, setOpen] = React.useState(false);
     const [query, setQuery] = React.useState("");
@@ -228,7 +230,10 @@ export function SearchableSelect({
         }
     };
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        // Bubble up to parent if provided
+        if (onKeyDown) onKeyDown(e);
+
         if (!open) {
             if (e.key === 'ArrowDown' || e.key === 'Enter') {
                 setOpen(true);
