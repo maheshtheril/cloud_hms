@@ -219,7 +219,9 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     }
 
     try {
+      // Execute the save action with a focus on core persistence
       const res = await (initialInvoice?.id ? updateInvoice(initialInvoice.id, payload) : createInvoice(payload))
+
       if (res.success) {
         let tallyMsg = `Transaction serialized as ${effectiveStatus}.`;
         if (totalPaid > 0) {
@@ -231,27 +233,36 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             tallyMsg = `Invoice fully settled for ${currency}${grandTotal.toFixed(2)}. Connection closed.`;
           }
         }
-        toast({ title: "Terminal Sync Complete", description: tallyMsg })
 
-        // Immediate cleanup: close the tally modal
+        toast({ title: "Sync Successful", description: tallyMsg })
+
+        // Immediate UX Resolution: Close the modal to show intent is fulfilled
         setIsPaymentModalOpen(false)
 
         if (onClose) {
           setLoading(false)
           onClose()
         } else {
-          // Navigation will unmount the component
+          // Trigger navigation - the Global Overlay will stay until redirect completes
           router.replace(`/hms/billing/${res.data?.id}`)
+          // Self-correcting loader: If redirect takes over 10s, release the UI
+          setTimeout(() => setLoading(false), 10000)
         }
       } else {
         setLoading(false)
-        toast({ title: "Sync Interrupted", description: res.error, variant: "destructive" })
+        console.error("Sync Interrupted:", res.error);
+        toast({
+          title: "Sync Interrupted",
+          description: res.error || "The server rejected the transaction. Please check your data and retry.",
+          variant: "destructive"
+        })
       }
     } catch (error: any) {
       setLoading(false)
+      console.error("Terminal Sync Error:", error);
       toast({
-        title: "Terminal Crash",
-        description: error.message || "A networking or runtime error occurred. Please check your connection and try again.",
+        title: "Network / Engine Failure",
+        description: "A continuous hang usually indicates a lost connection to the database. We've interrupted the wait to let you try again.",
         variant: "destructive"
       })
     }

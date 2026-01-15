@@ -310,17 +310,24 @@ export async function createInvoice(data: any) {
         });
 
         if ((result.status === 'posted' || result.status === 'paid') && result.id) {
-            // 1. Accounting Post
-            const accountingRes = await AccountingService.postSalesInvoice(result.id, session.user.id);
-            if (!accountingRes.success) {
-                console.warn("Accounting Post Failed:", accountingRes.error);
-                (result as any).accountingWarning = accountingRes.error;
+            // 1. Accounting Post (Safely wrapped)
+            try {
+                const accountingRes = await AccountingService.postSalesInvoice(result.id, session.user.id);
+                if (!accountingRes.success) {
+                    console.warn("Accounting Post Partial Failure:", accountingRes.error);
+                }
+            } catch (err) {
+                console.error("Accounting Post Exception:", err);
             }
 
             // 2. Send WhatsApp Notification (Fire and Forget)
-            NotificationService.sendInvoiceWhatsapp(result.id, session.user.tenantId!).catch(err => {
-                console.error("Background WhatsApp Send Failed:", err);
-            });
+            try {
+                NotificationService.sendInvoiceWhatsapp(result.id, session.user.tenantId!).catch(err => {
+                    console.error("Background WhatsApp Send Failed:", err);
+                });
+            } catch (err) {
+                console.error("WhatsApp Trigger Exception:", err);
+            }
         }
 
         revalidatePath('/hms/billing');
@@ -464,9 +471,13 @@ export async function updateInvoice(invoiceId: string, data: any) {
         });
 
         if ((result.status === 'posted' || result.status === 'paid') && result.id) {
-            const accountingRes = await AccountingService.postSalesInvoice(result.id, session.user.id);
-            if (!accountingRes.success) {
-                console.warn("Accounting Post Failed:", accountingRes.error);
+            try {
+                const accountingRes = await AccountingService.postSalesInvoice(result.id, session.user.id);
+                if (!accountingRes.success) {
+                    console.warn("Accounting Post Partial Failure:", accountingRes.error);
+                }
+            } catch (err) {
+                console.error("Accounting Post Exception:", err);
             }
         }
 
