@@ -7,7 +7,7 @@ import {
   Loader2, CreditCard, Banknote, Smartphone, Maximize2,
   Minimize2, Check, QrCode, Clock, ArrowRight, Activity, Package
 } from 'lucide-react'
-import { createInvoice, updateInvoice, createQuickPatient, getPatientOutstandingBalance } from '@/app/actions/billing'
+import { createInvoice, updateInvoice, createQuickPatient, getPatientOutstandingBalance, getPatientLedger } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { useToast } from '@/components/ui/use-toast'
 import { Button } from '@/components/ui/button'
@@ -62,6 +62,9 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [isSuccess, setIsSuccess] = useState(false)
   const [lastSavedId, setLastSavedId] = useState<string | null>(null)
   const [patientBalance, setPatientBalance] = useState(0)
+  const [isLedgerOpen, setIsLedgerOpen] = useState(false)
+  const [ledgerData, setLedgerData] = useState<any[]>([])
+  const [isFetchingLedger, setIsFetchingLedger] = useState(false)
   const amountInputRef = useRef<HTMLInputElement>(null)
 
   // Focus management for modal
@@ -473,7 +476,14 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                 </div>
                 <span className="text-[10px] font-black text-amber-700 bg-amber-500/20 px-2 rounded-md">{currency}{patientBalance.toFixed(2)}</span>
                 <button
-                  onClick={() => router.push(`/hms/patients/${selectedPatientId}/ledger`)}
+                  onClick={() => {
+                    setIsFetchingLedger(true);
+                    setIsLedgerOpen(true);
+                    getPatientLedger(selectedPatientId).then(res => {
+                      if (res.success) setLedgerData(res.data || []);
+                      setIsFetchingLedger(false);
+                    });
+                  }}
                   className="text-[8px] font-black uppercase tracking-[0.2em] text-amber-600 hover:text-amber-800 underline active:scale-95 transition-all"
                 >
                   View Ledger Node
@@ -895,6 +905,78 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               <div className="space-y-3"><Label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 pl-2">Sync Mobile Terminal</Label><Input value={quickPatientPhone} onChange={e => setQuickPatientPhone(e.target.value)} className="h-14 bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 rounded-2xl text-lg font-black tracking-widest transition-all focus:ring-4 focus:ring-indigo-500/10" placeholder="+91..." autoFocus /></div>
             </div>
             <DialogFooter><Button variant="ghost" onClick={() => setIsQuickPatientOpen(false)} className="text-[10px] font-black uppercase tracking-widest py-6">Abort</Button><button onClick={handleQuickPatientCreate} disabled={!quickPatientPhone || isCreatingPatient} className="bg-indigo-600 hover:bg-indigo-700 h-14 rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] px-12 text-white shadow-2xl shadow-indigo-500/30 transition-all flex items-center gap-3">{isCreatingPatient ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Verify & Initialize <Check className="h-4 w-4" /></>}</button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* FINANCIAL LEDGER DIALOG */}
+        <Dialog open={isLedgerOpen} onOpenChange={setIsLedgerOpen}>
+          <DialogContent className="max-w-4xl bg-white dark:bg-slate-950 rounded-[3rem] border-none p-0 overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.4)]">
+            <div className="p-10">
+              <DialogHeader className="mb-8">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <DialogTitle className="text-4xl font-black italic tracking-tighter text-slate-900 dark:text-white">Patient Ledger Audit</DialogTitle>
+                    <DialogDescription className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mt-2">Full financial reconciliation for patient identity node</DialogDescription>
+                  </div>
+                  <div className="bg-amber-500/10 border border-amber-500/20 px-4 py-2 rounded-2xl text-right">
+                    <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">Total Liability</p>
+                    <p className="text-2xl font-black text-amber-700">{currency}{patientBalance.toFixed(2)}</p>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="max-h-[500px] overflow-y-auto pr-4 custom-scrollbar">
+                {isFetchingLedger ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-4">
+                    <Loader2 className="h-10 w-10 text-indigo-500 animate-spin" />
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">Syncing Ledger Node...</p>
+                  </div>
+                ) : ledgerData.length === 0 ? (
+                  <div className="text-center py-20">
+                    <p className="text-xs font-black uppercase tracking-widest text-slate-400 italic">No financial movements found for this identity node.</p>
+                  </div>
+                ) : (
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-100 dark:border-white/5">
+                        <th className="py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Date/Time</th>
+                        <th className="py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Reference</th>
+                        <th className="py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400">Account Node</th>
+                        <th className="py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Debit</th>
+                        <th className="py-4 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 text-right">Credit</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50 dark:divide-white/5">
+                      {ledgerData.map((line, idx) => (
+                        <tr key={idx} className="group hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                          <td className="py-4 font-mono text-[10px] text-slate-500">
+                            {new Date(line.journal_entries?.date).toLocaleDateString()}
+                          </td>
+                          <td className="py-4">
+                            <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase truncate max-w-[150px]">{line.journal_entries?.ref || 'N/A'}</p>
+                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">{line.journal_entries?.journals?.name}</p>
+                          </td>
+                          <td className="py-4">
+                            <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 rounded uppercase">{line.accounts?.name}</span>
+                          </td>
+                          <td className="py-4 text-right font-mono text-xs font-black text-rose-500">
+                            {line.debit > 0 ? `${currency}${Number(line.debit).toFixed(2)}` : '-'}
+                          </td>
+                          <td className="py-4 text-right font-mono text-xs font-black text-emerald-500">
+                            {line.credit > 0 ? `${currency}${Number(line.credit).toFixed(2)}` : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+            <div className="p-8 bg-slate-50 dark:bg-slate-900 flex justify-end">
+              <Button onClick={() => setIsLedgerOpen(false)} variant="secondary" className="px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest py-6">
+                Close Audit Terminal
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>

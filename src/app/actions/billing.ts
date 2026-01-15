@@ -995,3 +995,41 @@ export async function getPatientOutstandingBalance(patientId: string) {
         return { error: "Could not compute patient balance" };
     }
 }
+
+/**
+ * World Class Financial Transparency:
+ * Fetches the full audit trail of all financial movements for a patient.
+ */
+export async function getPatientLedger(patientId: string) {
+    const session = await auth();
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    if (!companyId || !patientId) return { error: "Unauthorized or missing ID" };
+
+    try {
+        const lines = await prisma.journal_entry_lines.findMany({
+            where: {
+                tenant_id: session.user.tenantId,
+                company_id: companyId,
+                partner_id: patientId
+            },
+            include: {
+                journal_entries: {
+                    select: {
+                        date: true,
+                        ref: true,
+                        journals: { select: { name: true, code: true } }
+                    }
+                },
+                accounts: { select: { name: true, code: true } }
+            },
+            orderBy: {
+                journal_entries: { date: 'desc' }
+            }
+        });
+
+        return { success: true, data: lines };
+    } catch (error: any) {
+        console.error("Patient Ledger Fetch Failed:", error);
+        return { error: "Could not fetch patient ledger" };
+    }
+}
