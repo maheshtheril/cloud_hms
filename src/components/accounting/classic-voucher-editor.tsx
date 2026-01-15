@@ -102,7 +102,17 @@ export function ClassicVoucherEditor({
             }
         }
 
-        await onSave(payload);
+        const success = await onSave(payload);
+        if (success !== false) {
+            // If the parent doesn't redirect or tells us we're done, clear locally
+            setAmount('');
+            setPartnerId(null);
+            setAllocations({});
+            setDirectLines([{ id: '1', accountId: '', accountName: '', description: '', amount: '' }]);
+            setMemo('');
+            // Focus back to start
+            document.getElementById('main-ledger-search')?.focus();
+        }
         setIsSubmitting(false);
     };
 
@@ -171,12 +181,17 @@ export function ClassicVoucherEditor({
                                     onChange={(id, opt) => {
                                         handlePartnerChange(id, opt);
                                         if (id) {
+                                            // More aggressive focus attempt
                                             setTimeout(() => {
-                                                const firstAmt = document.getElementById('amount-bill-0');
-                                                if (firstAmt) firstAmt.focus();
-                                                const firstPart = document.getElementById('particulars-direct-0')?.querySelector('input');
-                                                if (firstPart) firstPart.focus();
-                                            }, 100);
+                                                const btn = document.getElementById('entry-mode-bill');
+                                                if (btn) btn.focus();
+                                                else {
+                                                    const firstAmt = document.getElementById('amount-bill-0');
+                                                    if (firstAmt) firstAmt.focus();
+                                                    const firstPart = document.getElementById('particulars-direct-0')?.querySelector('input');
+                                                    if (firstPart) firstPart.focus();
+                                                }
+                                            }, 150);
                                         }
                                     }}
                                     onSearch={((type === 'payment' ? suppliersSearch : patientsSearch) || (async () => [])) as any}
@@ -194,11 +209,25 @@ export function ClassicVoucherEditor({
                                 <span className="w-4">:</span>
                                 <div className="flex gap-4">
                                     <button
+                                        id="entry-mode-bill"
                                         onClick={() => setVoucherType('bill')}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                setVoucherType('bill');
+                                                setTimeout(() => document.getElementById('amount-bill-0')?.focus(), 50);
+                                            }
+                                        }}
                                         className={`px-2 ${voucherType === 'bill' ? 'bg-[#ffffcc] text-black' : 'hover:bg-[#006666]'}`}
                                     >Against Bill</button>
                                     <button
+                                        id="entry-mode-direct"
                                         onClick={() => setVoucherType('direct')}
+                                        onKeyDown={e => {
+                                            if (e.key === 'Enter') {
+                                                setVoucherType('direct');
+                                                setTimeout(() => document.getElementById('particulars-direct-0')?.querySelector('input')?.focus(), 50);
+                                            }
+                                        }}
                                         className={`px-2 ${voucherType === 'direct' ? 'bg-[#ffffcc] text-black' : 'hover:bg-[#006666]'}`}
                                     >Direct Expense</button>
                                 </div>
@@ -242,7 +271,7 @@ export function ClassicVoucherEditor({
                                                             const total = (Object.values(newAllocations) as number[]).reduce((a, b) => a + Number(b || 0), 0);
                                                             setAmount(total.toString());
                                                         }}
-                                                        className="bg-transparent border-none text-right w-full outline-none focus:bg-[#ffffcc] focus:text-black"
+                                                        className="bg-transparent border-none text-right w-full outline-none text-[#ffffcc] focus:bg-[#ffffcc] focus:text-black"
                                                     />
                                                 </div>
                                             </div>
@@ -268,7 +297,7 @@ export function ClassicVoucherEditor({
                                                         }}
                                                         onSearch={(accountsSearch || (async () => [])) as any}
                                                         placeholder="Select Expense Account..."
-                                                        className="bg-transparent border-none text-[10px]"
+                                                        className="bg-transparent border-none text-[10px] text-[#ffffcc]"
                                                         isDark
                                                     />
                                                 </div>
@@ -283,9 +312,14 @@ export function ClassicVoucherEditor({
                                                                 if (next) {
                                                                     next.focus();
                                                                 } else {
-                                                                    const addBtn = document.getElementById('add-line-btn');
-                                                                    if (addBtn) addBtn.focus();
-                                                                    else document.querySelector('textarea')?.focus();
+                                                                    // Auto-add line or move to narration
+                                                                    if (line.amount && line.accountId) {
+                                                                        const newLine = { id: Math.random().toString(), accountId: '', accountName: '', description: '', amount: '' };
+                                                                        setDirectLines([...directLines, newLine]);
+                                                                        setTimeout(() => document.getElementById(`particulars-direct-${idx + 1}`)?.querySelector('input')?.focus(), 50);
+                                                                    } else {
+                                                                        document.querySelector('textarea')?.focus();
+                                                                    }
                                                                 }
                                                             }
                                                         }}
@@ -296,7 +330,7 @@ export function ClassicVoucherEditor({
                                                             const total = newLines.reduce((a: number, b: any) => a + Number(b.amount || 0), 0);
                                                             setAmount(total.toString());
                                                         }}
-                                                        className="bg-transparent border-none text-right w-full outline-none focus:bg-[#ffffcc] focus:text-black"
+                                                        className="bg-transparent border-none text-right w-full outline-none text-[#ffffcc] focus:bg-[#ffffcc] focus:text-black"
                                                     />
                                                 </div>
                                             </div>

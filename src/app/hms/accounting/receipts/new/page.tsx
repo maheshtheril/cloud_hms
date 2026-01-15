@@ -38,6 +38,7 @@ export default function NewReceiptPage() {
         if (res.error) {
             toast({ title: "Failed to Save", description: res.error, variant: "destructive" });
             setIsSubmitting(false);
+            return false;
         } else {
             toast({
                 title: "Receipt Saved",
@@ -46,6 +47,7 @@ export default function NewReceiptPage() {
             });
             // Small delay for user to see success
             setTimeout(() => router.push('/hms/accounting/receipts'), 500);
+            return true;
         }
     };
 

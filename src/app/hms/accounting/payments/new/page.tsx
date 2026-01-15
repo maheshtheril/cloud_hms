@@ -149,9 +149,11 @@ export default function NewPaymentPage() {
         if (res.error) {
             toast({ title: "Error", description: res.error, variant: "destructive" });
             setIsSubmitting(false);
+            return false;
         } else {
             toast({ title: "Success", description: "Payment recorded successfully" });
             router.push('/hms/accounting/payments');
+            return true;
         }
     };
 
