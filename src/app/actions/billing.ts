@@ -150,25 +150,38 @@ export async function getTaxConfiguration() {
             }
         });
 
-        // 2. Fetch ALL Tax Rates for the Tenant (to ensure everything is available)
-        const allRates = await prisma.tax_rates.findMany({
+        // 2. Fetch ALL Tax Rates for the Tenant via the enabled join table
+        const enabledRates = await prisma.tenant_enabled_tax_rates.findMany({
             where: {
-                OR: [
-                    { tenant_id: tenantId },
-                    { tenant_id: null } // System standard rates
-                ],
-                is_active: true
+                tenant_id: tenantId
+            },
+            include: {
+                tax_rates: true
             }
         });
+
+        let allRates: any[] = [];
+
+        if (enabledRates.length > 0) {
+            allRates = enabledRates.map(er => er.tax_rates);
+        } else {
+            // Fallback: If no tenant-specific rates are enabled, fetch all active system rates
+            // This prevents the 'No Tax' issue for basic setups
+            allRates = await prisma.tax_rates.findMany({
+                where: { is_active: true }
+            });
+        }
 
         // 3. Map to UI structure, using maps to set isDefault
         const taxRates = allRates.map(tr => {
             const map = taxMaps.find(m => m.tax_rate_id === tr.id);
+            const tenantDefault = enabledRates.find(er => er.tax_rate_id === tr.id)?.is_default;
+
             return {
                 id: tr.id,
                 name: tr.name,
                 rate: Number(tr.rate),
-                isDefault: !!map?.is_default
+                isDefault: !!map?.is_default || !!tenantDefault
             };
         });
 
