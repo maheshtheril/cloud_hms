@@ -675,52 +675,50 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             onInteractOutside={(e) => e.preventDefault()}
             onPointerDownOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
-            className="max-w-xl p-0 overflow-hidden bg-white dark:bg-[#0a0f1e] border-none shadow-[0_60px_150px_rgba(0,0,0,0.1)] dark:shadow-[0_60px_150px_rgba(0,0,0,0.9)] rounded-[3rem] ring-1 ring-slate-200 dark:ring-white/10 z-[100] max-h-[90vh] flex flex-col"
+            className="max-w-4xl p-0 overflow-hidden bg-white dark:bg-[#0a0f1e] border-none shadow-[0_60px_200px_rgba(0,0,0,0.2)] dark:shadow-[0_60px_200px_rgba(0,0,0,1)] rounded-[3rem] ring-1 ring-slate-200 dark:ring-white/10 z-[100]"
           >
-            <div className="flex flex-col flex-1 overflow-y-auto [ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {/* Header & Amount Summary */}
-              <div className="p-8 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-white/5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 opacity-[0.03] dark:opacity-5 -rotate-12"><Receipt className="h-40 w-40 text-slate-900 dark:text-white" /></div>
-                <div className="relative z-10 flex flex-col items-center">
-                  <h3 className="text-slate-400 font-black tracking-[0.4em] text-[8px] uppercase mb-4 text-center">Settlement Matrix</h3>
-                  <div className="flex items-center gap-6">
-                    <div className="text-center">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Amount</p>
-                      <div className="flex items-center gap-2">
-                        <p className={`text-2xl font-black italic transition-colors ${includePrevBalance ? 'text-amber-600' : 'text-slate-900 dark:text-white'}`}>
-                          {currency}{(grandTotal + (includePrevBalance ? patientBalance : 0)).toFixed(2)}
-                        </p>
-                        {includePrevBalance && <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping" />}
-                      </div>
+            <div className="flex flex-col md:flex-row min-h-[500px]">
+              {/* COLUMN 1: Audit & Reconciliation (Left) */}
+              <div className="flex-1 bg-slate-50 dark:bg-slate-900 border-r border-slate-100 dark:border-white/5 p-10 flex flex-col gap-8">
+                <div>
+                  <h3 className="text-slate-400 font-black tracking-[0.4em] text-[8px] uppercase mb-6">Financial Audit Node</h3>
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bill Total</p>
+                      <p className="text-xl font-black text-slate-900 dark:text-white italic">{currency}{grandTotal.toFixed(2)}</p>
                     </div>
-                    <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
-                    <div className="text-center">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Paid</p>
-                      <p className="text-2xl font-black text-emerald-600 italic">{currency}{totalPaid.toFixed(2)}</p>
-                    </div>
-                    {(grandTotal + (includePrevBalance ? patientBalance : 0)) - totalPaid > 0 && (
-                      <>
-                        <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
-                        <div className="text-center">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-rose-500">To Balance</p>
-                          <p className="text-2xl font-black text-rose-500 italic animate-pulse">
-                            {currency}{((grandTotal + (includePrevBalance ? patientBalance : 0)) - totalPaid).toFixed(2)}
-                          </p>
+                    {patientBalance > 0 && (
+                      <div className="flex justify-between items-center bg-amber-500/5 p-4 rounded-2xl border border-amber-500/10">
+                        <div>
+                          <p className="text-[9px] font-black text-amber-600 uppercase tracking-widest">Previous Debt</p>
+                          <p className="text-sm font-black text-amber-700">{currency}{patientBalance.toFixed(2)}</p>
                         </div>
-                      </>
+                        <button
+                          onClick={() => setIncludePrevBalance(!includePrevBalance)}
+                          className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-widest transition-all ${includePrevBalance ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/20' : 'bg-white dark:bg-slate-800 text-amber-600 border border-amber-200 dark:border-amber-900'}`}
+                        >
+                          {includePrevBalance ? 'INCLUDED' : 'ADD TO TALLY'}
+                        </button>
+                      </div>
                     )}
+                    <div className="h-px bg-slate-200 dark:bg-slate-800 w-full" />
+                    <div className="flex justify-between items-center">
+                      <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Settlement Target</p>
+                      <p className="text-3xl font-black text-slate-900 dark:text-white italic tracking-tighter">
+                        {currency}{(grandTotal + (includePrevBalance ? patientBalance : 0)).toFixed(2)}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Split Ledger Table (If multiple payments) */}
-              {payments.length > 0 && (
-                <div className="px-10 py-4 bg-slate-50 dark:bg-slate-900/20 border-b border-slate-100 dark:border-white/5 max-h-[150px] overflow-auto">
-                  <div className="space-y-2">
+                {/* History list inside Audit column */}
+                {payments.length > 0 && (
+                  <div className="space-y-3 flex-1 overflow-auto max-h-[180px] pr-2 custom-scrollbar">
+                    <p className="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mb-2">Payment Stream</p>
                     {payments.map((p, idx) => (
-                      <div key={idx} className="flex items-center justify-between bg-white dark:bg-slate-800/40 p-2 rounded-xl border border-slate-100 dark:border-white/5">
+                      <div key={idx} className="flex items-center justify-between bg-white dark:bg-slate-800/40 p-3 rounded-2xl border border-slate-100 dark:border-white/5">
                         <div className="flex items-center gap-3">
-                          <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-900">
+                          <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-900">
                             {p.method === 'cash' && <Banknote className="h-3 w-3 text-emerald-500" />}
                             {p.method === 'upi' && <QrCode className="h-3 w-3 text-indigo-500" />}
                             {p.method === 'card' && <CreditCard className="h-3 w-3 text-blue-500" />}
@@ -735,34 +733,27 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
-
-              <div className="p-10 flex flex-col gap-8 bg-slate-50/50 dark:bg-[#0c1222]">
-
-                {/* World Class Debt Integration Toggle (Consolidated Settlement) */}
-                {patientBalance > 0 && (
-                  <button
-                    onClick={() => setIncludePrevBalance(!includePrevBalance)}
-                    className={`p-6 rounded-[2.5rem] border-2 transition-all flex items-center justify-between group animate-in slide-in-from-top-4 duration-500 ${includePrevBalance
-                      ? 'bg-amber-600 border-amber-600 shadow-xl shadow-amber-600/20'
-                      : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 hover:border-amber-400'
-                      }`}
-                  >
-                    <div className="flex items-center gap-4 text-left">
-                      <div className={`p-3 rounded-2xl transition-colors ${includePrevBalance ? 'bg-white/20' : 'bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900/50'}`}>
-                        <Activity className={`h-5 w-5 ${includePrevBalance ? 'text-white' : 'text-amber-600'}`} />
-                      </div>
-                      <div>
-                        <p className={`text-[9px] font-black uppercase tracking-[0.3em] ${includePrevBalance ? 'text-white/60' : 'text-slate-400'}`}>Ledger Awareness Mode</p>
-                        <p className={`text-sm font-black mt-0.5 ${includePrevBalance ? 'text-white' : 'text-slate-900 dark:text-white'}`}>INCLUDE PREVIOUS DEBT ({currency}{patientBalance.toFixed(2)})</p>
-                      </div>
-                    </div>
-                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${includePrevBalance ? 'bg-white border-white scale-110' : 'border-slate-200'}`}>
-                      {includePrevBalance ? <Check className="h-5 w-5 text-amber-600 stroke-[4px]" /> : <Plus className="h-4 w-4 text-slate-300" />}
-                    </div>
-                  </button>
                 )}
+
+                {/* Tally Summary Overlay Moved here */}
+                <div className="mt-auto bg-slate-200/50 dark:bg-slate-800/50 p-6 rounded-3xl border border-white/5">
+                  <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${(totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0))) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                    {(totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0))) ? 'Partial / Credit' : totalPaid > (grandTotal + (includePrevBalance ? patientBalance : 0)) ? 'Advance / Excess' : 'Balanced'}
+                  </span>
+                  <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-4 leading-relaxed tracking-tight underline-offset-4 decoration-dotted decoration-slate-300">
+                    {(totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0))) ?
+                      `Deficit: ${currency}${(Math.max(0, (grandTotal + (includePrevBalance ? patientBalance : 0)) - totalPaid)).toFixed(2)} to be carried as debt.` :
+                      totalPaid > (grandTotal + (includePrevBalance ? patientBalance : 0)) ?
+                        `Surplus: ${currency}${(totalPaid - (grandTotal + (includePrevBalance ? patientBalance : 0))).toFixed(2)} will be credited.` :
+                        `Transaction perfectly tallied. Ready for sync.`
+                    }
+                  </p>
+                </div>
+              </div>
+
+              {/* COLUMN 2: Matrix Input (Right) */}
+              <div className="flex-[1.2] p-10 flex flex-col gap-10 bg-white dark:bg-[#0a0f1e]">
+
 
                 {/* Manual Split / Adjustment Input */}
                 <div className="group/input relative">
@@ -839,23 +830,6 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                   ))}
                 </div>
 
-                {/* Tally Summary Overlay */}
-                <div className="bg-slate-100/50 dark:bg-slate-900/50 p-5 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tally Mode</span>
-                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${(totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0))) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                      {(totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0))) ? 'Partial / Credit' : totalPaid > (grandTotal + (includePrevBalance ? patientBalance : 0)) ? 'Advance / Excess' : 'Balanced'}
-                    </span>
-                  </div>
-                  <p className="text-xs font-black text-slate-700 dark:text-slate-300 italic tracking-tight">
-                    {(totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0))) ?
-                      `Collecting ${currency}${totalPaid.toFixed(2)} of ${currency}${(grandTotal + (includePrevBalance ? patientBalance : 0)).toFixed(2)}. ${currency}${(Math.max(0, (grandTotal + (includePrevBalance ? patientBalance : 0)) - totalPaid)).toFixed(2)} will be carried as outstanding debt.` :
-                      totalPaid > (grandTotal + (includePrevBalance ? patientBalance : 0)) ?
-                        `Collecting ${currency}${totalPaid.toFixed(2)}. Excess of ${currency}${(totalPaid - (grandTotal + (includePrevBalance ? patientBalance : 0))).toFixed(2)} will be credited to patient identity node.` :
-                        `Transaction perfectly tallied at ${currency}${(grandTotal + (includePrevBalance ? patientBalance : 0)).toFixed(2)}. Closing settlement node.`
-                    }
-                  </p>
-                </div>
 
                 {/* Final Conclusion Action */}
                 <div className="grid grid-cols-3 gap-4">
