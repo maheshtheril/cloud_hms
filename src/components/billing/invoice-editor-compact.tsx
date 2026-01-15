@@ -406,36 +406,36 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
       {/* ZENITH SETTLE TERMINAL OVERLAY */}
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent className="max-w-xl p-0 overflow-hidden bg-[#0a0f1e] border-none shadow-[0_60px_150px_rgba(0,0,0,0.9)] rounded-[3rem] ring-1 ring-white/10 z-[100]">
+        <DialogContent className="max-w-xl p-0 overflow-hidden bg-white dark:bg-[#0a0f1e] border-none shadow-[0_60px_150px_rgba(0,0,0,0.1)] dark:shadow-[0_60px_150px_rgba(0,0,0,0.9)] rounded-[3rem] ring-1 ring-slate-200 dark:ring-white/10 z-[100]">
           <div className="flex flex-col">
             {/* Header & Amount Summary */}
-            <div className="p-10 bg-slate-900/40 border-b border-white/5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-5 -rotate-12"><Receipt className="h-40 w-40 text-white" /></div>
+            <div className="p-10 bg-slate-50 dark:bg-slate-900/40 border-b border-slate-100 dark:border-white/5 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5 -rotate-12 dark:opacity-5"><Receipt className="h-40 w-40 text-slate-900 dark:text-white" /></div>
               <div className="relative z-10 flex flex-col items-center text-center">
-                <div className="bg-indigo-600/20 p-3 rounded-2xl mb-4 border border-indigo-500/20">
-                  <DollarSign className="h-6 w-6 text-indigo-400" />
+                <div className="bg-indigo-600/10 dark:bg-indigo-600/20 p-3 rounded-2xl mb-4 border border-indigo-500/10 dark:border-indigo-500/20">
+                  <DollarSign className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                 </div>
-                <h3 className="text-slate-500 font-black tracking-[0.4em] text-[10px] uppercase mb-2">Total Settlement Due</h3>
+                <h3 className="text-slate-400 dark:text-slate-500 font-black tracking-[0.4em] text-[10px] uppercase mb-2">Total Settlement Due</h3>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-white/40 italic">{currency}</span>
-                  <span className="text-7xl font-black text-white tracking-tighter italic drop-shadow-[0_10px_30px_rgba(255,255,255,0.1)]">{grandTotal.toFixed(2)}</span>
+                  <span className="text-3xl font-black text-slate-300 dark:text-white/40 italic">{currency}</span>
+                  <span className="text-7xl font-black text-slate-900 dark:text-white tracking-tighter italic drop-shadow-[0_10px_30px_rgba(0,0,0,0.05)] dark:drop-shadow-[0_10px_30px_rgba(255,255,255,0.1)]">{grandTotal.toFixed(2)}</span>
                 </div>
-                <div className="mt-4 px-4 py-1.5 bg-white/5 rounded-full border border-white/5">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                    Recipient: <span className="text-indigo-400">{isWalkIn ? walkInName : (patients.find(p => p.id === selectedPatientId) ? `${patients.find(p => p.id === selectedPatientId).first_name} ${patients.find(p => p.id === selectedPatientId).last_name}` : 'UNIDENTIFIED')}</span>
+                <div className="mt-4 px-4 py-1.5 bg-slate-200/50 dark:bg-white/5 rounded-full border border-slate-200 dark:border-white/5">
+                  <p className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+                    Recipient: <span className="text-indigo-600 dark:text-indigo-400 font-black">{isWalkIn ? walkInName : (patients.find(p => p.id === selectedPatientId) ? `${patients.find(p => p.id === selectedPatientId).first_name} ${patients.find(p => p.id === selectedPatientId).last_name}` : 'UNIDENTIFIED')}</span>
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Settlement Matrix - Now single column or 2x2 but more compact */}
-            <div className="p-10 flex flex-col gap-8 bg-[#0c1222]">
+            <div className="p-10 flex flex-col gap-8 bg-white dark:bg-[#0c1222]">
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { id: 'cash', label: 'CASH', icon: Banknote, color: 'text-emerald-400' },
-                  { id: 'upi', label: 'UPI / QR', icon: QrCode, color: 'text-indigo-400' },
-                  { id: 'card', label: 'CARD', icon: CreditCard, color: 'text-blue-400' },
-                  { id: 'bank_transfer', label: 'CREDIT', icon: Clock, color: 'text-amber-400' }
+                  { id: 'cash', label: 'CASH', icon: Banknote, color: 'text-emerald-500 dark:text-emerald-400' },
+                  { id: 'upi', label: 'UPI / QR', icon: QrCode, color: 'text-indigo-600 dark:text-indigo-400' },
+                  { id: 'card', label: 'CARD', icon: CreditCard, color: 'text-blue-600 dark:text-blue-400' },
+                  { id: 'bank_transfer', label: 'CREDIT', icon: Clock, color: 'text-amber-600 dark:text-amber-400' }
                 ].map(m => (
                   <button
                     key={m.id}
@@ -443,12 +443,12 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                       if (m.id === 'bank_transfer') { setIsPaymentModalOpen(false); handleSave('posted'); }
                       else { setPayments([{ method: m.id as any, amount: grandTotal }]); setIsPaymentModalOpen(false); handleSave('paid'); }
                     }}
-                    className="group relative py-6 bg-slate-900/50 border border-white/5 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all hover:bg-slate-800 hover:border-white/20 active:scale-95 overflow-hidden"
+                    className="group relative py-6 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all hover:bg-white dark:hover:bg-slate-800 hover:border-indigo-200 dark:hover:border-white/20 active:scale-95 overflow-hidden shadow-sm dark:shadow-none"
                   >
-                    <div className="p-3 rounded-xl bg-slate-950 border border-white/10 group-hover:border-current transition-all">
+                    <div className="p-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-100 dark:border-white/10 group-hover:border-current transition-all">
                       <m.icon className={`h-6 w-6 ${m.color}`} />
                     </div>
-                    <span className="text-[10px] font-black tracking-[0.2em] text-white opacity-60 group-hover:opacity-100 uppercase">{m.label}</span>
+                    <span className="text-[10px] font-black tracking-[0.2em] text-slate-500 dark:text-white opacity-60 group-hover:opacity-100 uppercase">{m.label}</span>
                   </button>
                 ))}
               </div>
@@ -457,13 +457,13 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               <div className="group/input relative">
                 <div className="flex items-center gap-4">
                   <div className="flex-1 relative">
-                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700 font-black text-xl italic">{currency}</span>
+                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-700 font-black text-xl italic">{currency}</span>
                     <input
                       type="number"
-                      className="w-full bg-slate-950/50 border border-white/10 h-16 rounded-2xl pl-12 pr-6 text-white font-black text-2xl focus:border-indigo-600 outline-none transition-all placeholder:opacity-20"
+                      className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-white/10 h-16 rounded-2xl pl-12 pr-6 text-slate-900 dark:text-white font-black text-2xl focus:border-indigo-600 outline-none transition-all placeholder:text-slate-300 dark:placeholder:opacity-20"
                       value={payments[0]?.amount || ''}
                       onChange={e => setPayments([{ ...payments[0], amount: parseFloat(e.target.value) || 0 }])}
-                      placeholder="Partial Settlement..."
+                      placeholder="0.00"
                     />
                   </div>
                   <button
