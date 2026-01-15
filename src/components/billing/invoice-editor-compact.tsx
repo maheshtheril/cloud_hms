@@ -64,7 +64,6 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [patientBalance, setPatientBalance] = useState(0)
   const [includePrevBalance, setIncludePrevBalance] = useState(false)
   const [isLedgerOpen, setIsLedgerOpen] = useState(false)
-  const [isLedgerOpen, setIsLedgerOpen] = useState(false)
   const [ledgerData, setLedgerData] = useState<any[]>([])
   const [isFetchingLedger, setIsFetchingLedger] = useState(false)
   const amountInputRef = useRef<HTMLInputElement>(null)
@@ -746,8 +745,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                   <button
                     onClick={() => setIncludePrevBalance(!includePrevBalance)}
                     className={`p-6 rounded-[2.5rem] border-2 transition-all flex items-center justify-between group animate-in slide-in-from-top-4 duration-500 ${includePrevBalance
-                        ? 'bg-amber-600 border-amber-600 shadow-xl shadow-amber-600/20'
-                        : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 hover:border-amber-400'
+                      ? 'bg-amber-600 border-amber-600 shadow-xl shadow-amber-600/20'
+                      : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 hover:border-amber-400'
                       }`}
                   >
                     <div className="flex items-center gap-4 text-left">
