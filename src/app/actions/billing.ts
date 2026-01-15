@@ -980,7 +980,7 @@ export async function getPatientOutstandingBalance(patientId: string) {
                 tenant_id: session.user.tenantId,
                 company_id: companyId,
                 patient_id: patientId,
-                status: { in: ['posted', 'partial'] } // Only confirmed debts
+                status: 'posted' // Only confirmed debts (unpaid or partially paid)
             },
             select: {
                 outstanding_amount: true
