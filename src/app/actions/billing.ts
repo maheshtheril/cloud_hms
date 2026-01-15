@@ -75,30 +75,52 @@ export async function getBillableItems() {
             }
         });
 
-        // Flatten price for easier consumption
+        const itemIds = items.map(i => i.id);
+
+        // Manual lookup for last purchase entries (Invoices) since no relation exists in Prisma
+        const lastInvoiceEntries = await prisma.hms_purchase_invoice_line.findMany({
+            where: {
+                product_id: { in: itemIds },
+                tenant_id: session.user.tenantId,
+                company_id: companyId
+            },
+            orderBy: { created_at: 'desc' },
+            distinct: ['product_id']
+        });
+
+        // Flatten price and tax logic for the terminal
         const flatItems = items.map(item => {
             const priceHistory = item.hms_product_price_history?.[0];
             const categoryRel = item.hms_product_category_rel?.[0];
             const category = categoryRel?.hms_product_category;
-
-            // PRIORITY: Product Specific Tax Rule > Last Purchase Tax > Category Tax Rule
             const productTaxRule = item.product_tax_rules?.[0];
-            const purchaseLine = item.hms_purchase_order_line?.[0];
 
-            // Extract tax ID and rate from last purchase if product rules are missing
+            // Procurement Sync: Check both POs and Direct Invoice Entries
+            const poLine = item.hms_purchase_order_line?.[0];
+            const piLine = lastInvoiceEntries.find(pi => pi.product_id === item.id);
+
+            // Choose the absolute latest procurement record to extract tax from
+            const latestPurchase: any = (!piLine || (poLine && poLine.created_at > piLine.created_at)) ? poLine : piLine;
+
             let purchaseTaxId = null;
             let purchaseTaxRate = 0;
-            if (purchaseLine?.tax && typeof purchaseLine.tax === 'object') {
-                const taxInfo = purchaseLine.tax as any;
-                purchaseTaxId = taxInfo.id;
-                purchaseTaxRate = Number(taxInfo.rate) || 0;
+
+            if (latestPurchase?.tax) {
+                const taxInfo = latestPurchase.tax;
+                if (Array.isArray(taxInfo) && taxInfo.length > 0) {
+                    purchaseTaxId = taxInfo[0].id;
+                    purchaseTaxRate = Number(taxInfo[0].rate) || 0;
+                } else if (typeof taxInfo === 'object' && (taxInfo as any).id) {
+                    purchaseTaxId = (taxInfo as any).id;
+                    purchaseTaxRate = Number((taxInfo as any).rate) || 0;
+                }
             }
 
-            const taxRate = productTaxRule?.tax_rates || category?.tax_rates;
-
-            // Final Resolution: Rule > Purchase > Category
+            // FINAL TAX RESOLUTION: Specific Rule > Latest Purchase Identity > Category Default
             const effectiveTaxId = productTaxRule?.tax_rate_id || purchaseTaxId || category?.default_tax_rate_id || null;
-            const effectiveTaxRate = productTaxRule?.tax_rates?.rate ? Number(productTaxRule.tax_rates.rate) : (purchaseTaxRate || (category?.tax_rates?.rate ? Number(category.tax_rates.rate) : 0));
+            const effectiveTaxRate = productTaxRule?.tax_rates?.rate
+                ? Number(productTaxRule.tax_rates.rate)
+                : (purchaseTaxRate || (category?.tax_rates?.rate ? Number(category.tax_rates.rate) : 0));
 
             // Extract UOM pricing data from metadata
             const metadata = item.metadata as any || {};
@@ -138,54 +160,29 @@ export async function getBillableItems() {
 export async function getTaxConfiguration() {
     const session = await auth();
     const companyId = session?.user?.companyId || session?.user?.tenantId;
-    const tenantId = session?.user?.tenantId;
-    if (!companyId || !tenantId) return { error: "Unauthorized" };
+    if (!companyId) return { error: "Unauthorized" };
 
     try {
-        // 1. Fetch Company Tax Maps (to know which one is default for this company)
+        // 1. Fetch Company Tax Maps (Primary source of truth for allowed taxes)
         const taxMaps = await prisma.company_tax_maps.findMany({
             where: {
                 company_id: companyId,
                 is_active: true
-            }
-        });
-
-        // 2. Fetch ALL Tax Rates for the Tenant via the enabled join table
-        const enabledRates = await prisma.tenant_enabled_tax_rates.findMany({
-            where: {
-                tenant_id: tenantId
             },
             include: {
                 tax_rates: true
             }
         });
 
-        let allRates: any[] = [];
+        // 2. Map to simpler structure for the UI terminal
+        const taxRates = taxMaps.map(m => ({
+            id: m.tax_rate_id,
+            name: m.tax_rates.name,
+            rate: m.tax_rates.rate.toNumber(),
+            isDefault: m.is_default
+        }));
 
-        if (enabledRates.length > 0) {
-            allRates = enabledRates.map(er => er.tax_rates);
-        } else {
-            // Fallback: If no tenant-specific rates are enabled, fetch all active system rates
-            // This prevents the 'No Tax' issue for basic setups
-            allRates = await prisma.tax_rates.findMany({
-                where: { is_active: true }
-            });
-        }
-
-        // 3. Map to UI structure, using maps to set isDefault
-        const taxRates = allRates.map(tr => {
-            const map = taxMaps.find(m => m.tax_rate_id === tr.id);
-            const tenantDefault = enabledRates.find(er => er.tax_rate_id === tr.id)?.is_default;
-
-            return {
-                id: tr.id,
-                name: tr.name,
-                rate: Number(tr.rate),
-                isDefault: !!map?.is_default || !!tenantDefault
-            };
-        });
-
-        const defaultRate = taxRates.find(t => t.isDefault) || (taxMaps.length > 0 ? taxRates.find(r => r.id === taxMaps[0].tax_rate_id) : taxRates[0]);
+        const defaultRate = taxRates.find(t => t.isDefault) || taxRates[0];
 
         return {
             success: true,
@@ -196,7 +193,7 @@ export async function getTaxConfiguration() {
         };
     } catch (error) {
         console.error("Failed to fetch tax configuration:", error);
-        return { error: "Failed to fetch taxes" };
+        return { error: "Failed to fetch company taxes" };
     }
 }
 
