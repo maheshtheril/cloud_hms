@@ -87,6 +87,14 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [walkInName, setWalkInName] = useState('')
   const [walkInPhone, setWalkInPhone] = useState('')
   const [selectedPatientId, setSelectedPatientId] = useState(initialInvoice?.patient_id || initialPatientId || '')
+  const selectedPatientLabel = useMemo(() => {
+    if (!selectedPatientId) return ''
+    const p = patients.find(p => p.id === selectedPatientId)
+    if (p) return p.label || p.name
+    // Fallback to initial invoice patient name if available
+    return (initialInvoice as any)?.hms_patient?.full_name || (initialInvoice as any)?.hms_patient?.first_name || (initialInvoice as any)?.patient_name || ''
+  }, [selectedPatientId, patients, initialInvoice])
+
   const [date, setDate] = useState(initialInvoice?.invoice_date ? new Date(initialInvoice.invoice_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
 
   const defaultTaxId = taxConfig.defaultTax?.id || ''
@@ -128,11 +136,13 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         if (res.success) setPatientBalance(res.balance || 0);
       });
 
-      // World Class UX: After selecting patient, move focus to first item search
-      setTimeout(() => {
-        const firstItemSearch = document.getElementById('item-search-0');
-        if (firstItemSearch) firstItemSearch.focus();
-      }, 100);
+      // World Class UX: After selecting patient, move focus to first item search (ONLY for NEW bills)
+      if (!initialInvoice) {
+        setTimeout(() => {
+          const firstItemSearch = document.getElementById('item-search-0');
+          if (firstItemSearch) firstItemSearch.focus();
+        }, 100);
+      }
     } else {
       setPatientBalance(0);
     }
@@ -453,6 +463,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               ) : (
                 <SearchableSelect
                   value={selectedPatientId}
+                  valueLabel={selectedPatientLabel}
                   onChange={id => setSelectedPatientId(id || '')}
                   onCreate={q => { setQuickPatientName(q); setIsQuickPatientOpen(true); return Promise.resolve(null); }}
                   onSearch={async q => {
@@ -562,6 +573,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                         <SearchableSelect
                           inputId={index === 0 ? 'item-search-0' : `item-search-${index}`}
                           value={line.product_id}
+                          valueLabel={line.description}
                           onChange={v => updateLine(line.id, 'product_id', v)}
                           onSearch={async q => {
                             const search = q.toLowerCase();

@@ -96,16 +96,11 @@ export function SearchableSelect({
     // Initial value handling
     React.useEffect(() => {
         // If the dropdown is open (user is interacting/searching), DO NOT touch the query.
-        // This prevents overwriting user's typing with the current value/label.
         if (open) return;
 
         if (!value) {
             setSelectedOption(null);
-            if (valueLabel) {
-                setQuery(valueLabel);
-            } else {
-                setQuery("");
-            }
+            setQuery(valueLabel || "");
             return;
         }
 
@@ -114,16 +109,17 @@ export function SearchableSelect({
 
         if (found) {
             setSelectedOption(found);
-            // In ghost variant, we want the text in the input
             if (variant === 'ghost') {
-                if (!open) setQuery(found.label);
-            } else if (!open) {
+                setQuery(found.label);
+            } else {
                 setQuery("");
             }
         } else if (valueLabel) {
-            // Fallback to valueLabel if provided (e.g. after AI scan)
-            setSelectedOption({ id: value, label: valueLabel });
-            if (variant === 'ghost' && !open) setQuery(valueLabel);
+            // Fallback to valueLabel if provided
+            const fallbackOption = { id: value, label: valueLabel };
+            setSelectedOption(fallbackOption);
+            if (variant === 'ghost') setQuery(valueLabel);
+            else setQuery("");
         }
     }, [value, valueLabel, options, defaultOptions, variant, open]);
 
@@ -363,6 +359,14 @@ export function SearchableSelect({
                         ${baseStyles}
                         ${disabled ? 'opacity-70 cursor-not-allowed bg-gray-50 dark:bg-neutral-800' : ''}
                     `}
+                    tabIndex={disabled ? -1 : 0}
+                    onFocus={() => {
+                        if (disabled) return;
+                        if (selectedOption && !open) {
+                            setOpen(true);
+                        }
+                        setTimeout(() => inputRef.current?.focus(), 0);
+                    }}
                     onClick={() => {
                         if (disabled) return;
                         if (selectedOption && !open) {
