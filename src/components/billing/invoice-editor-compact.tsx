@@ -626,7 +626,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                         const remaining = Math.max(0, grandTotal - currentSettled);
                         setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : '');
                       } else {
-                        toast({ title: "Quantity Required", description: "Enter an amount before selecting a payment method.", variant: "warning" });
+                        toast({ title: "Quantity Required", description: "Enter an amount before selecting a payment method.", variant: "destructive" });
                       }
                     }}
                     className="group relative py-4 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-indigo-600 active:scale-95 shadow-sm dark:shadow-none"
