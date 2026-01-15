@@ -30,7 +30,7 @@ export default function NewPurchaseOrderPage() {
         getCompanyDefaults().then(defaults => {
             if (defaults.currency) setCurrency(defaults.currency);
         });
-        setItems([{ productId: '', productName: '', qty: 1, uom: 'PCS', unitPrice: 0 }]);
+        setItems([{ productId: '', productName: '', qty: 1, uom: 'PCS', unitPrice: 0, taxRate: 0 }]);
     }, []);
 
     const handleScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,10 +62,11 @@ export default function NewPurchaseOrderPage() {
                         qty: item.qty || 1,
                         uom: item.uom || 'PCS', // ← Extract UOM from scan
                         unitPrice: item.unitPrice || 0,
+                        taxRate: item.taxRate || 0, // ← Capture Tax from scan
                         sku: item.sku || ''
                     })));
                 } else if (items.length === 0) {
-                    setItems([{ productId: '', productName: '', qty: 1, uom: 'PCS', unitPrice: 0 }]);
+                    setItems([{ productId: '', productName: '', qty: 1, uom: 'PCS', unitPrice: 0, taxRate: 0 }]);
                 }
                 toast({ title: "Invoice Processed", description: "Data auto-filled from document." });
             }
@@ -99,8 +100,9 @@ export default function NewPurchaseOrderPage() {
             items: validItems.map(item => ({
                 productId: item.productId,
                 qty: Number(item.qty),
-                uom: item.uom || 'PCS', // Include UOM
-                unitPrice: Number(item.unitPrice)
+                uom: item.uom || 'PCS',
+                unitPrice: Number(item.unitPrice),
+                taxRate: Number(item.taxRate || 0)
             }))
         };
 
@@ -114,7 +116,7 @@ export default function NewPurchaseOrderPage() {
         setIsSubmitting(false);
     };
 
-    const addItem = () => setItems([...items, { productId: '', productName: '', qty: 1, uom: 'PCS', unitPrice: 0 }]);
+    const addItem = () => setItems([...items, { productId: '', productName: '', qty: 1, uom: 'PCS', unitPrice: 0, taxRate: 0 }]);
     const removeItem = (index: number) => {
         const newItems = [...items];
         newItems.splice(index, 1);
@@ -128,14 +130,22 @@ export default function NewPurchaseOrderPage() {
     const handleProductSelect = (index: number, id: string | null, option?: Option | null) => {
         const newItems = [...items];
         if (option) {
-            newItems[index] = { ...newItems[index], productId: id, productName: option.label, unitPrice: option.price || newItems[index].unitPrice };
+            newItems[index] = {
+                ...newItems[index],
+                productId: id,
+                productName: option.label,
+                unitPrice: option.price || newItems[index].unitPrice,
+                taxRate: option.taxRate || newItems[index].taxRate || 0
+            };
         } else {
-            newItems[index] = { ...newItems[index], productId: '', productName: '', unitPrice: 0 };
+            newItems[index] = { ...newItems[index], productId: '', productName: '', unitPrice: 0, taxRate: 0 };
         }
         setItems(newItems);
     };
 
     const subtotal = items.reduce((acc, item) => acc + (Number(item.qty || 0) * Number(item.unitPrice || 0)), 0);
+    const taxTotal = items.reduce((acc, item) => acc + ((Number(item.qty || 0) * Number(item.unitPrice || 0)) * (Number(item.taxRate || 0) / 100)), 0);
+    const grandTotal = subtotal + taxTotal;
 
     return (
         <div className="min-h-screen bg-neutral-950 text-white selection:bg-indigo-500/30 selection:text-indigo-200 font-sans">
@@ -255,10 +265,11 @@ export default function NewPurchaseOrderPage() {
                             <table className="w-full text-left">
                                 <thead>
                                     <tr className="border-b border-white/5 bg-neutral-900/50">
-                                        <th className="py-4 pl-6 pr-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-[40%]">Item</th>
+                                        <th className="py-4 pl-6 pr-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-[35%]">Item</th>
                                         <th className="py-4 px-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-20 text-center">Qty</th>
-                                        <th className="py-4 px-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-28 text-center">UOM</th>
+                                        <th className="py-4 px-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-24 text-center">UOM</th>
                                         <th className="py-4 px-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-28 text-right">Price</th>
+                                        <th className="py-4 px-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-24 text-right">Tax (%)</th>
                                         <th className="py-4 px-4 text-xs font-medium uppercase tracking-wider text-neutral-500 w-32 text-right">Total</th>
                                         <th className="w-12"></th>
                                     </tr>
@@ -311,8 +322,21 @@ export default function NewPurchaseOrderPage() {
                                                 />
                                             </td>
                                             <td className="py-2 px-4 text-right">
+                                                <select
+                                                    value={item.taxRate || 0}
+                                                    onChange={(e) => updateItem(index, 'taxRate', Number(e.target.value))}
+                                                    className="w-full bg-transparent text-right font-mono text-sm text-neutral-300 focus:text-white outline-none cursor-pointer"
+                                                >
+                                                    <option value="0" className="bg-neutral-900">0%</option>
+                                                    <option value="5" className="bg-neutral-900">5%</option>
+                                                    <option value="12" className="bg-neutral-900">12%</option>
+                                                    <option value="18" className="bg-neutral-900">18%</option>
+                                                    <option value="28" className="bg-neutral-900">28%</option>
+                                                </select>
+                                            </td>
+                                            <td className="py-2 px-4 text-right">
                                                 <span className="font-mono text-sm font-medium text-neutral-400 group-hover:text-white transition-colors">
-                                                    {(Number(item.qty || 0) * Number(item.unitPrice || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                    {((Number(item.qty || 0) * Number(item.unitPrice || 0)) * (1 + (Number(item.taxRate || 0) / 100))).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                 </span>
                                             </td>
                                             <td className="py-2 pr-4 text-right">
@@ -335,7 +359,7 @@ export default function NewPurchaseOrderPage() {
                                 </div>
                                 <div className="flex justify-between text-sm text-neutral-500">
                                     <span>Tax</span>
-                                    <span className="font-mono">0.00</span>
+                                    <span className="font-mono">{taxTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                 </div>
                                 <div className="h-px bg-white/5"></div>
                                 <div className="flex justify-between items-baseline">
@@ -343,7 +367,7 @@ export default function NewPurchaseOrderPage() {
                                     <div className="flex items-baseline gap-2">
                                         <span className="text-xs text-neutral-500">{currency}</span>
                                         <span className="text-2xl font-bold text-white tracking-tight">
-                                            {subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                            {grandTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                         </span>
                                     </div>
                                 </div>
