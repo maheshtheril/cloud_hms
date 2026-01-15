@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Plus, Trash2, Search, Save, User, DollarSign, Receipt, X,
@@ -59,7 +59,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [isQuickPatientOpen, setIsQuickPatientOpen] = useState(false)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [isWalkIn, setIsWalkIn] = useState(false)
-  const amountInputRef = React.useRef<HTMLInputElement>(null)
+  const amountInputRef = useRef<HTMLInputElement>(null)
 
   // Focus management for modal
   useEffect(() => {
