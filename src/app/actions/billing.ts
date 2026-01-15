@@ -89,7 +89,14 @@ export async function getBillableItems() {
         });
 
         // Flatten price and tax logic for the terminal
-        const flatItems = items.map(item => {
+        // Pre-fetch company tax rates to resolve IDs from rates if needed
+        const taxMaps = await prisma.company_tax_maps.findMany({
+            where: { company_id: companyId },
+            include: { tax_rates: true }
+        });
+        const companyTaxRates = taxMaps.map(m => m.tax_rates).filter(Boolean);
+
+        const flatItems = items.map((item) => {
             const priceHistory = item.hms_product_price_history?.[0];
             const categoryRel = item.hms_product_category_rel?.[0];
             const category = categoryRel?.hms_product_category;
@@ -131,13 +138,20 @@ export async function getBillableItems() {
                 }
             }
 
+            // CRITICAL: If we have a purchase rate but no ID, resolve the ID from company settings
+            if (!purchaseTaxId && purchaseTaxRate > 0) {
+                const matchedRate = companyTaxRates.find(tr => Number(tr.rate) === purchaseTaxRate);
+                if (matchedRate) {
+                    purchaseTaxId = matchedRate.id;
+                }
+            }
+
             // FINAL TAX RESOLUTION: Specific Rule > Latest Purchase Identity > Category Default
             const effectiveTaxId = productTaxRule?.tax_rate_id || purchaseTaxId || category?.default_tax_rate_id || null;
 
-            // Re-verify the rate if we only had an ID
-            const effectiveTaxRate = productTaxRule?.tax_rates?.rate
-                ? Number(productTaxRule.tax_rates.rate)
-                : (purchaseTaxRate || (category?.tax_rates?.rate ? Number(category.tax_rates.rate) : 0));
+            // Re-verify the rate against the final resolved ID
+            const finalTaxRateObj = companyTaxRates.find(tr => tr.id === effectiveTaxId) || productTaxRule?.tax_rates || category?.tax_rates;
+            const effectiveTaxRate = finalTaxRateObj?.rate ? Number(finalTaxRateObj.rate) : (purchaseTaxRate || 0);
 
             // Extract UOM pricing data from metadata
             const metadata = item.metadata as any || {};

@@ -210,9 +210,23 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 });
             }
 
+            // Fetch company tax rates to resolve IDs for metadata
+            const taxMaps = await tx.company_tax_maps.findMany({
+                where: { company_id: companyId },
+                include: { tax_rates: true }
+            });
+            const companyTaxRates = taxMaps.map(m => m.tax_rates).filter(Boolean);
+
             // 3. Create Receipt Lines & Update Stock
             for (const item of data.items) {
                 if (!item.productId) throw new Error("Product ID is missing for one or more items.");
+
+                // Resolve Tax ID from Rate if not provided
+                let resolvedTaxId = (item as any).taxId || null;
+                if (!resolvedTaxId && item.taxRate) {
+                    const match = companyTaxRates.find(tr => Number(tr.rate) === Number(item.taxRate));
+                    if (match) resolvedTaxId = match.id;
+                }
 
                 // Handle Batch (Create if new, or find)
                 let batchId = null;
@@ -295,8 +309,11 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     markup_pct: item.markupPct,
                     pricing_strategy: item.pricingStrategy,
                     mrp_discount_pct: item.mrpDiscountPct,
-                    tax_rate: item.taxRate,
-                    tax_amount: item.taxAmount,
+                    tax: {
+                        id: resolvedTaxId,
+                        rate: item.taxRate || 0,
+                        amount: item.taxAmount || 0
+                    },
                     hsn: item.hsn,
                     packing: item.packing,
                     // UOM data
@@ -414,7 +431,9 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                             default_cost: avgCostPerBaseUnit, // Update Last Buy Cost
                             metadata: {
                                 ...(currentProduct?.metadata as any || {}),
+                                purchase_tax_id: resolvedTaxId,
                                 purchase_tax_rate: item.taxRate,
+                                tax: { id: resolvedTaxId, rate: item.taxRate },
                                 last_purchase_date: new Date().toISOString(),
                                 // UOM Pricing Data (Industry Standard)
                                 uom_data: {
@@ -489,6 +508,9 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 invoiceSubtotal += taxable;
                 invoiceTaxTotal += tax;
 
+                // Resolve Tax ID again for the invoice line (could pass it through but simpler to re-find in this map context)
+                const lineResolvedTaxId = companyTaxRates.find(tr => Number(tr.rate) === Number(item.taxRate))?.id || null;
+
                 return {
                     tenant_id: session.user.tenantId!,
                     company_id: companyId!,
@@ -496,7 +518,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     description: "Auto-created from Receipt",
                     qty: qty,
                     unit_price: price,
-                    tax: { rate: item.taxRate, amount: tax },
+                    tax: { id: lineResolvedTaxId, rate: item.taxRate, amount: tax },
                     line_total: lineTotal
                 };
             });
@@ -728,7 +750,21 @@ export async function updatePurchaseReceipt(id: string, data: PurchaseReceiptDat
             }
         });
 
+        // Fetch company tax rates to resolve IDs for metadata
+        const taxMaps = await prisma.company_tax_maps.findMany({
+            where: { company_id: session.user.companyId },
+            include: { tax_rates: true }
+        });
+        const companyTaxRates = taxMaps.map(m => m.tax_rates).filter(Boolean);
+
         for (const item of data.items) {
+            // Resolve Tax ID from Rate
+            let resolvedTaxId = (item as any).taxId || null;
+            if (!resolvedTaxId && item.taxRate) {
+                const match = companyTaxRates.find(tr => Number(tr.rate) === Number(item.taxRate));
+                if (match) resolvedTaxId = match.id;
+            }
+
             if ((item as any).id) {
                 await prisma.hms_purchase_receipt_line.update({
                     where: { id: (item as any).id },
@@ -743,8 +779,11 @@ export async function updatePurchaseReceipt(id: string, data: PurchaseReceiptDat
                             markup_pct: item.markupPct,
                             pricing_strategy: item.pricingStrategy,
                             mrp_discount_pct: item.mrpDiscountPct,
-                            tax_rate: item.taxRate,
-                            tax_amount: item.taxAmount,
+                            tax: {
+                                id: resolvedTaxId,
+                                rate: item.taxRate || 0,
+                                amount: item.taxAmount || 0
+                            },
                             hsn: item.hsn,
                             packing: item.packing,
                             // UOM data
@@ -768,7 +807,9 @@ export async function updatePurchaseReceipt(id: string, data: PurchaseReceiptDat
                         data: {
                             metadata: {
                                 ...(currentProduct?.metadata as any || {}),
+                                purchase_tax_id: resolvedTaxId,
                                 purchase_tax_rate: item.taxRate,
+                                tax: { id: resolvedTaxId, rate: item.taxRate },
                                 last_purchase_date: new Date().toISOString()
                             }
                         }
