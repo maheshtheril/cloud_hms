@@ -48,7 +48,10 @@ export async function upsertPurchaseInvoice(data: any) {
                                 qty: item.qty,
                                 unit_price: item.unitPrice,
                                 line_total: item.lineTotal,
-                                tax: item.tax || {},
+                                tax: {
+                                    id: item.taxId || null,
+                                    rate: item.taxRate || 0
+                                },
                                 metadata: item.metadata || {},
                             })),
                         },
@@ -68,7 +71,10 @@ export async function upsertPurchaseInvoice(data: any) {
                                 qty: item.qty,
                                 unit_price: item.unitPrice,
                                 line_total: item.lineTotal,
-                                tax: item.tax || {},
+                                tax: {
+                                    id: item.taxId || null,
+                                    rate: item.taxRate || 0
+                                },
                                 metadata: item.metadata || {},
                             })),
                         },

@@ -278,7 +278,11 @@ export async function createPurchaseOrder(data: PurchaseOrderData) {
                     qty: item.qty,
                     uom: item.uom || 'PCS', // Save UOM
                     unit_price: item.unitPrice,
-                    tax: taxAmount,
+                    tax: {
+                        amount: taxAmount,
+                        rate: item.taxRate || 0,
+                        id: (item as any).taxId || null
+                    },
                     line_total: lineTotal + taxAmount
                 }
             })

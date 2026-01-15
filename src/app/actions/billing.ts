@@ -107,17 +107,34 @@ export async function getBillableItems() {
 
             if (latestPurchase?.tax) {
                 const taxInfo = latestPurchase.tax;
+                // Scenario 1: Array of tax objects (Modern standard)
                 if (Array.isArray(taxInfo) && taxInfo.length > 0) {
                     purchaseTaxId = taxInfo[0].id;
                     purchaseTaxRate = Number(taxInfo[0].rate) || 0;
-                } else if (typeof taxInfo === 'object' && (taxInfo as any).id) {
-                    purchaseTaxId = (taxInfo as any).id;
-                    purchaseTaxRate = Number((taxInfo as any).rate) || 0;
+                }
+                // Scenario 2: Single object with rate/id
+                else if (typeof taxInfo === 'object') {
+                    const info = taxInfo as any;
+                    purchaseTaxId = info.id || null;
+                    purchaseTaxRate = Number(info.rate) || 0;
+
+                    // Fallback for amount-only objects
+                    if (!purchaseTaxRate && info.amount && latestPurchase.unit_price) {
+                        const total = Number(latestPurchase.qty) * Number(latestPurchase.unit_price);
+                        if (total > 0) purchaseTaxRate = (Number(info.amount) / total) * 100;
+                    }
+                }
+                // Scenario 3: Legacy number (Amount only)
+                else if (typeof taxInfo === 'number' && latestPurchase.unit_price) {
+                    const total = Number(latestPurchase.qty) * Number(latestPurchase.unit_price);
+                    if (total > 0) purchaseTaxRate = (taxInfo / total) * 100;
                 }
             }
 
             // FINAL TAX RESOLUTION: Specific Rule > Latest Purchase Identity > Category Default
             const effectiveTaxId = productTaxRule?.tax_rate_id || purchaseTaxId || category?.default_tax_rate_id || null;
+
+            // Re-verify the rate if we only had an ID
             const effectiveTaxRate = productTaxRule?.tax_rates?.rate
                 ? Number(productTaxRule.tax_rates.rate)
                 : (purchaseTaxRate || (category?.tax_rates?.rate ? Number(category.tax_rates.rate) : 0));
