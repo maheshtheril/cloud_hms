@@ -487,7 +487,9 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
               <button
                 id="settle-button"
-                onClick={() => {
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
                   setActivePaymentAmount(grandTotal.toFixed(2));
                   setIsPaymentModalOpen(true);
                 }}
@@ -503,8 +505,22 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                 COLLECT SETTLEMENT <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
               </button>
               <div className="flex gap-3">
-                <button onClick={() => handleSave('draft')} disabled={loading || lines.filter(l => l.product_id || l.description).length === 0} className="px-6 py-4 bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all">Save Draft</button>
-                <button onClick={() => handleSave('posted')} disabled={loading || lines.filter(l => l.product_id || l.description).length === 0} className="px-8 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg">Post Credit</button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); handleSave('draft'); }}
+                  disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
+                  className="px-6 py-4 bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all"
+                >
+                  Save Draft
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); handleSave('posted'); }}
+                  disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
+                  className="px-8 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg"
+                >
+                  Post Credit
+                </button>
               </div>
             </div>
           </div>
@@ -592,13 +608,20 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                       placeholder="Enter Amount..."
                       onFocus={(e) => e.target.select()}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && activePaymentAmount) {
-                          const amt = parseFloat(activePaymentAmount) || 0;
-                          if (amt > 0) {
-                            setPayments(prev => [...prev, { method: 'cash', amount: amt }]);
-                            const currentSettled = payments.reduce((sum, p) => sum + p.amount, 0) + amt;
-                            const remaining = Math.max(0, grandTotal - currentSettled);
-                            setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : '');
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (activePaymentAmount) {
+                            const amt = parseFloat(activePaymentAmount) || 0;
+                            if (amt > 0) {
+                              setPayments(prev => {
+                                const newPayments = [...prev, { method: 'cash', amount: amt }];
+                                const currentTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
+                                const remaining = Math.max(0, grandTotal - currentTotalPaid);
+                                setTimeout(() => setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : ''), 0);
+                                return newPayments;
+                              });
+                            }
                           }
                         }
                       }}
@@ -617,16 +640,21 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                 ].map(m => (
                   <button
                     key={m.id}
-                    onClick={() => {
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
                       const amt = parseFloat(activePaymentAmount) || 0;
                       if (amt > 0) {
-                        setPayments(prev => [...prev, { method: m.id as any, amount: amt }]);
-                        // Calculate next suggested amount based on prev state + current amt
-                        const currentSettled = payments.reduce((sum, p) => sum + p.amount, 0) + amt;
-                        const remaining = Math.max(0, grandTotal - currentSettled);
-                        setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : '');
+                        setPayments(prev => {
+                          const newPayments = [...prev, { method: m.id as any, amount: amt }];
+                          const currentTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
+                          const remaining = Math.max(0, grandTotal - currentTotalPaid);
+                          setTimeout(() => setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : ''), 0);
+                          return newPayments;
+                        });
                       } else {
-                        toast({ title: "Quantity Required", description: "Enter an amount before selecting a payment method.", variant: "destructive" });
+                        toast({ title: "Amount Required", description: "Enter an amount before selecting a payment method.", variant: "destructive" });
                       }
                     }}
                     className="group relative py-4 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-indigo-600 active:scale-95 shadow-sm dark:shadow-none"
@@ -642,13 +670,17 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               {/* Final Conclusion Action */}
               <div className="grid grid-cols-3 gap-4">
                 <button
-                  onClick={() => setIsPaymentModalOpen(false)}
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsPaymentModalOpen(false); }}
                   className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors border border-slate-200 dark:border-white/5 rounded-2xl"
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     setPayments([]);
                     setActivePaymentAmount(grandTotal.toFixed(2));
                   }}
@@ -657,9 +689,10 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                   Reset
                 </button>
                 <button
-                  onClick={() => handleSave('paid')}
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSave('paid'); }}
                   disabled={loading || payments.length === 0}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 h-16 rounded-2xl text-white font-black text-xs uppercase tracking-[0.4em] transition-all active:scale-[0.98] shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 col-span-1"
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 h-16 rounded-2xl text-white font-black text-xs uppercase tracking-[0.4em] transition-all active:scale-[0.98] shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 col-span-1"
                 >
                   {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                     <>FINALIZE <Check className="h-5 w-5" /></>
