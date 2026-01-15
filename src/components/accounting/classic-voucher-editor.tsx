@@ -205,7 +205,7 @@ export function ClassicVoucherEditor({
                                                             const val = Number(e.target.value);
                                                             const newAllocations = { ...allocations, [bill.id]: val };
                                                             setAllocations(newAllocations);
-                                                            const total = Object.values(newAllocations).reduce((a: number, b: number) => a + b, 0);
+                                                            const total = (Object.values(newAllocations) as number[]).reduce((a, b) => a + Number(b || 0), 0);
                                                             setAmount(total.toString());
                                                         }}
                                                         className="bg-transparent border-none text-right w-full outline-none focus:bg-[#ffffcc] focus:text-black"
