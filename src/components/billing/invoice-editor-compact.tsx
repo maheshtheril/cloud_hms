@@ -219,24 +219,23 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     }
     const res = await (initialInvoice?.id ? updateInvoice(initialInvoice.id, payload) : createInvoice(payload))
     if (res.success) {
-      let tallyMsg = `Transaction recorded as ${effectiveStatus}.`;
+      let tallyMsg = `Transaction serialized as ${effectiveStatus}.`;
       if (totalPaid > 0) {
         if (totalPaid < grandTotal) {
-          tallyMsg = `Partial payment of ${currency}${totalPaid.toFixed(2)} recorded. Balance ${currency}${balanceDue.toFixed(2)} outstanding.`;
+          tallyMsg = `Partial settlement of ${currency}${totalPaid.toFixed(2)} recorded. Balance ${currency}${balanceDue.toFixed(2)} posted to Patient Credit ledger.`;
         } else if (totalPaid > grandTotal) {
-          tallyMsg = `Settlement fully paid with ${currency}${(totalPaid - grandTotal).toFixed(2)} advance/excess recorded.`;
+          tallyMsg = `Full settlement recorded with ${currency}${(totalPaid - grandTotal).toFixed(2)} advance deposit detected.`;
         } else {
-          tallyMsg = `Bill fully settled for ${currency}${grandTotal.toFixed(2)}.`;
+          tallyMsg = `Invoice fully settled for ${currency}${grandTotal.toFixed(2)}. Connection closed.`;
         }
-      } else {
-        tallyMsg = `Invoice posted as credit for ${currency}${grandTotal.toFixed(2)}.`;
       }
-      toast({ title: "Terminal Sync Successful", description: tallyMsg })
+      toast({ title: "Terminal Sync Complete", description: tallyMsg })
+      setIsPaymentModalOpen(false)
       if (onClose) onClose()
       else router.replace(`/hms/billing/${res.data?.id}`)
     } else {
       setLoading(false)
-      toast({ title: "Sync Failed", description: res.error, variant: "destructive" })
+      toast({ title: "Sync Interrupted", description: res.error, variant: "destructive" })
     }
   }
 
@@ -726,12 +725,38 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                   </button>
                   <button
                     type="button"
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSave('paid'); }}
-                    disabled={loading || payments.length === 0}
-                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 h-16 rounded-2xl text-white font-black text-xs uppercase tracking-[0.4em] transition-all active:scale-[0.98] shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 col-span-1"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+
+                      // Safety: Check if there's an un-ledgered amount in the input box
+                      const floatingAmt = parseFloat(activePaymentAmount) || 0;
+                      if (floatingAmt > 0) {
+                        return toast({
+                          title: "Unapplied Amount Detected",
+                          description: `You have ${currency}${floatingAmt} typed in the amount box that hasn't been ledgered. Please click a payment method (Cash/Card/etc) to apply it, or clear the box before finalizing.`,
+                          variant: "destructive"
+                        });
+                      }
+
+                      handleSave('paid');
+                    }}
+                    disabled={loading || (payments.length === 0 && (parseFloat(activePaymentAmount) || 0) === 0)}
+                    className={`flex-1 h-16 rounded-2xl text-white font-black text-[10px] uppercase tracking-[0.3em] transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-3 col-span-1 ${balanceDue > 0 ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20' :
+                      totalPaid > grandTotal ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' :
+                        'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
+                      }`}
                   >
                     {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                      <>FINALIZE <Check className="h-5 w-5" /></>
+                      <>
+                        {balanceDue > 0 ? (
+                          <>POST AS CREDIT <ArrowRight className="h-4 w-4" /></>
+                        ) : totalPaid > grandTotal ? (
+                          <>RECEIVE ADVANCE <Plus className="h-4 w-4" /></>
+                        ) : (
+                          <>FINALIZE SETTLEMENT <Check className="h-5 w-5" /></>
+                        )}
+                      </>
                     )}
                   </button>
                 </div>
