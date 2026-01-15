@@ -217,25 +217,43 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
       payments: finalPayments,
       billing_metadata: isWalkIn ? { is_walk_in: true, patient_name: walkInName, patient_phone: walkInPhone } : {}
     }
-    const res = await (initialInvoice?.id ? updateInvoice(initialInvoice.id, payload) : createInvoice(payload))
-    if (res.success) {
-      let tallyMsg = `Transaction serialized as ${effectiveStatus}.`;
-      if (totalPaid > 0) {
-        if (totalPaid < grandTotal) {
-          tallyMsg = `Partial settlement of ${currency}${totalPaid.toFixed(2)} recorded. Balance ${currency}${balanceDue.toFixed(2)} posted to Patient Credit ledger.`;
-        } else if (totalPaid > grandTotal) {
-          tallyMsg = `Full settlement recorded with ${currency}${(totalPaid - grandTotal).toFixed(2)} advance deposit detected.`;
-        } else {
-          tallyMsg = `Invoice fully settled for ${currency}${grandTotal.toFixed(2)}. Connection closed.`;
+
+    try {
+      const res = await (initialInvoice?.id ? updateInvoice(initialInvoice.id, payload) : createInvoice(payload))
+      if (res.success) {
+        let tallyMsg = `Transaction serialized as ${effectiveStatus}.`;
+        if (totalPaid > 0) {
+          if (totalPaid < grandTotal) {
+            tallyMsg = `Partial settlement of ${currency}${totalPaid.toFixed(2)} recorded. Balance ${currency}${balanceDue.toFixed(2)} posted to Patient Credit ledger.`;
+          } else if (totalPaid > grandTotal) {
+            tallyMsg = `Full settlement recorded with ${currency}${(totalPaid - grandTotal).toFixed(2)} advance deposit detected.`;
+          } else {
+            tallyMsg = `Invoice fully settled for ${currency}${grandTotal.toFixed(2)}. Connection closed.`;
+          }
         }
+        toast({ title: "Terminal Sync Complete", description: tallyMsg })
+
+        // Immediate cleanup: close the tally modal
+        setIsPaymentModalOpen(false)
+
+        if (onClose) {
+          setLoading(false)
+          onClose()
+        } else {
+          // Navigation will unmount the component
+          router.replace(`/hms/billing/${res.data?.id}`)
+        }
+      } else {
+        setLoading(false)
+        toast({ title: "Sync Interrupted", description: res.error, variant: "destructive" })
       }
-      toast({ title: "Terminal Sync Complete", description: tallyMsg })
-      // Keep modal open during redirect to prevent background flicker
-      if (onClose) onClose()
-      else router.replace(`/hms/billing/${res.data?.id}`)
-    } else {
+    } catch (error: any) {
       setLoading(false)
-      toast({ title: "Sync Interrupted", description: res.error, variant: "destructive" })
+      toast({
+        title: "Terminal Crash",
+        description: error.message || "A networking or runtime error occurred. Please check your connection and try again.",
+        variant: "destructive"
+      })
     }
   }
 
