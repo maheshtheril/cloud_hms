@@ -312,7 +312,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             <h1 className="text-5xl font-black italic tracking-tighter text-slate-900 dark:text-white mb-4">TRANSACTION FINALIZED</h1>
             <p className="text-xs font-black uppercase tracking-[0.6em] text-slate-500 mb-12">Serial: {initialInvoice?.invoice_number || 'NEW_ENTRY'} | Ledger Node Synced</p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full mb-12">
+              {/* PRINT RECEIPT */}
               <button
                 onClick={() => window.open(`/hms/billing/${lastSavedId}/print`, '_blank')}
                 className="group p-8 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-indigo-500 transition-all text-center"
@@ -320,24 +321,26 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                 <div className="bg-indigo-600 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-xl shadow-indigo-600/20 group-hover:scale-110 transition-transform">
                   <Receipt className="h-6 w-6" />
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Action 01</p>
-                <p className="text-sm font-black text-slate-900 dark:text-white mt-1">PRINT RECEIPT</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Print node</p>
+                <p className="text-[11px] font-black text-slate-900 dark:text-white mt-1">RECEIPT</p>
               </button>
 
+              {/* NEW TRANSACTION */}
               <button
                 onClick={() => {
                   if (onClose) onClose();
-                  else window.location.reload(); // Hard reset for new bill
+                  else window.location.reload();
                 }}
                 className="group p-8 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-emerald-500 transition-all text-center"
               >
                 <div className="bg-emerald-600 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-xl shadow-emerald-600/20 group-hover:scale-110 transition-transform">
                   <Plus className="h-6 w-6" />
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Action 02</p>
-                <p className="text-sm font-black text-slate-900 dark:text-white mt-1">NEW TRANSACTION</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">New Sync</p>
+                <p className="text-[11px] font-black text-slate-900 dark:text-white mt-1">NEXT BILL</p>
               </button>
 
+              {/* VIEW LEDGER */}
               <button
                 onClick={() => router.push(`/hms/billing/${lastSavedId}`)}
                 className="group p-8 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-blue-500 transition-all text-center"
@@ -345,17 +348,24 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                 <div className="bg-blue-600 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-xl shadow-blue-600/20 group-hover:scale-110 transition-transform">
                   <Search className="h-6 w-6" />
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Action 03</p>
-                <p className="text-sm font-black text-slate-900 dark:text-white mt-1">VIEW LEDGER</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Audit Node</p>
+                <p className="text-[11px] font-black text-slate-900 dark:text-white mt-1">LEDGER</p>
+              </button>
+
+              {/* FINISH & EXIT (World Standard Hub Redirect) */}
+              <button
+                onClick={() => router.push('/hms/billing')}
+                className="group p-8 bg-slate-900 dark:bg-white rounded-[2.5rem] border-4 border-white/10 hover:border-indigo-500 transition-all text-center shadow-2xl shadow-slate-900/50"
+              >
+                <div className="bg-indigo-500 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-xl shadow-indigo-500/30 group-hover:rotate-12 transition-transform">
+                  <ArrowRight className="h-6 w-6" />
+                </div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400 opacity-60">Complete</p>
+                <p className="text-[11px] font-black text-white dark:text-slate-900 mt-1">EXIT TO HUB</p>
               </button>
             </div>
 
-            <button
-              onClick={() => router.push('/hms/billing')}
-              className="mt-12 text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 hover:text-indigo-600 transition-colors"
-            >
-              ← Back to Billing Registry
-            </button>
+            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Financial Cycle Closed • Identity Node Deselected</p>
           </div>
         </div>
       </div>
