@@ -67,6 +67,10 @@ export async function getBillableItems() {
                     include: { tax_rates: true },
                     orderBy: { priority: 'desc' },
                     take: 1
+                },
+                hms_purchase_order_line: {
+                    orderBy: { created_at: 'desc' },
+                    take: 1
                 }
             }
         });
@@ -77,9 +81,24 @@ export async function getBillableItems() {
             const categoryRel = item.hms_product_category_rel?.[0];
             const category = categoryRel?.hms_product_category;
 
-            // PRIORITY: Product Specific Tax Rule > Category Tax Rule
+            // PRIORITY: Product Specific Tax Rule > Last Purchase Tax > Category Tax Rule
             const productTaxRule = item.product_tax_rules?.[0];
+            const purchaseLine = item.hms_purchase_order_line?.[0];
+
+            // Extract tax ID and rate from last purchase if product rules are missing
+            let purchaseTaxId = null;
+            let purchaseTaxRate = 0;
+            if (purchaseLine?.tax && typeof purchaseLine.tax === 'object') {
+                const taxInfo = purchaseLine.tax as any;
+                purchaseTaxId = taxInfo.id;
+                purchaseTaxRate = Number(taxInfo.rate) || 0;
+            }
+
             const taxRate = productTaxRule?.tax_rates || category?.tax_rates;
+
+            // Final Resolution: Rule > Purchase > Category
+            const effectiveTaxId = productTaxRule?.tax_rate_id || purchaseTaxId || category?.default_tax_rate_id || null;
+            const effectiveTaxRate = productTaxRule?.tax_rates?.rate ? Number(productTaxRule.tax_rates.rate) : (purchaseTaxRate || (category?.tax_rates?.rate ? Number(category.tax_rates.rate) : 0));
 
             // Extract UOM pricing data from metadata
             const metadata = item.metadata as any || {};
@@ -103,9 +122,9 @@ export async function getBillableItems() {
                     packPrice: uomData.pack_price || (Number(item.price) * (uomData.conversion_factor || 1)),
                     packSize: uomData.pack_size || uomData.conversion_factor || 1
                 },
-                // Extract tax for auto-suggest (prioritize product-specific rule)
-                categoryTaxId: taxRate?.id || category?.default_tax_rate_id || null,
-                categoryTaxRate: taxRate?.rate ? taxRate.rate.toNumber() : 0
+                // Extract tax for auto-suggest (prioritize rule > purchase > category)
+                categoryTaxId: effectiveTaxId,
+                categoryTaxRate: effectiveTaxRate
             };
         });
 
@@ -119,43 +138,49 @@ export async function getBillableItems() {
 export async function getTaxConfiguration() {
     const session = await auth();
     const companyId = session?.user?.companyId || session?.user?.tenantId;
-    if (!companyId) return { error: "Unauthorized" };
+    const tenantId = session?.user?.tenantId;
+    if (!companyId || !tenantId) return { error: "Unauthorized" };
 
     try {
-        // 1. Fetch Company Tax Maps
+        // 1. Fetch Company Tax Maps (to know which one is default for this company)
         const taxMaps = await prisma.company_tax_maps.findMany({
             where: {
                 company_id: companyId,
                 is_active: true
-            },
-            include: {
-                tax_rates: true
             }
         });
 
-        // 2. Identify Default and Active Rates
-        const defaultMap = taxMaps.find(m => m.is_default);
+        // 2. Fetch ALL Tax Rates for the Tenant (to ensure everything is available)
+        const allRates = await prisma.tax_rates.findMany({
+            where: {
+                OR: [
+                    { tenant_id: tenantId },
+                    { tenant_id: null } // System standard rates
+                ],
+                is_active: true
+            }
+        });
 
-        // Map to simpler structure
-        const taxRates = taxMaps.map(m => ({
-            id: m.tax_rate_id,
-            name: m.tax_rates.name,
-            rate: m.tax_rates.rate.toNumber(),
-            isDefault: m.is_default
-        }));
+        // 3. Map to UI structure, using maps to set isDefault
+        const taxRates = allRates.map(tr => {
+            const map = taxMaps.find(m => m.tax_rate_id === tr.id);
+            return {
+                id: tr.id,
+                name: tr.name,
+                rate: Number(tr.rate),
+                isDefault: !!map?.is_default
+            };
+        });
+
+        const defaultRate = taxRates.find(t => t.isDefault) || (taxMaps.length > 0 ? taxRates.find(r => r.id === taxMaps[0].tax_rate_id) : taxRates[0]);
 
         return {
             success: true,
             data: {
-                defaultTax: defaultMap ? {
-                    id: defaultMap.tax_rate_id,
-                    name: defaultMap.tax_rates.name,
-                    rate: defaultMap.tax_rates.rate.toNumber()
-                } : null,
-                taxRates
+                defaultTax: defaultRate || null,
+                taxRates: taxRates
             }
         };
-
     } catch (error) {
         console.error("Failed to fetch tax configuration:", error);
         return { error: "Failed to fetch taxes" };
