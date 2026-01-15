@@ -378,10 +378,64 @@ export async function createInvoice(data: any) {
     }
 }
 
+// Helper to check if a transaction is locked based on lock date or roles
+async function checkTransactionLock(invoiceId: string, company_id: string, session: any) {
+    const existing = await prisma.hms_invoice.findUnique({
+        where: { id: invoiceId },
+        select: { status: true, invoice_date: true, issued_at: true }
+    });
+
+    if (!existing) throw new Error("Transaction node not found.");
+
+    // 1. Lock Date Check (Fiscal Period)
+    const settings = await prisma.company_accounting_settings.findUnique({
+        where: { company_id }
+    });
+
+    if (settings?.lock_date) {
+        const txDate = existing.invoice_date || existing.issued_at;
+        if (new Date(txDate) <= new Date(settings.lock_date)) {
+            return { locked: true, reason: `Fiscal period is closed. Transactions before ${new Date(settings.lock_date).toLocaleDateString()} are frozen.` };
+        }
+    }
+
+    // 2. Role Check (Only Admin can edit posted/paid)
+    const isAdmin = session?.user?.isAdmin;
+    if (existing.status !== 'draft' && !isAdmin) {
+        return { locked: true, reason: "Administrative privileges required to modify a finalized ledger entry." };
+    }
+
+    return { locked: false, existing };
+}
+
+export async function cancelInvoice(invoiceId: string) {
+    const session = await auth();
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    if (!companyId) return { error: "Unauthorized" };
+
+    try {
+        const lockCheck = await checkTransactionLock(invoiceId, companyId, session);
+        if (lockCheck.locked) return { error: lockCheck.reason };
+
+        await prisma.hms_invoice.update({
+            where: { id: invoiceId },
+            data: { status: 'cancelled' as any }
+        });
+
+        revalidatePath('/hms/billing');
+        return { success: true, message: "Transaction voided successfully." };
+    } catch (error: any) {
+        return { error: error.message || "Failed to cancel transaction." };
+    }
+}
+
 export async function updateInvoice(invoiceId: string, data: any) {
     const session = await auth();
     const companyId = session?.user?.companyId || session?.user?.tenantId;
     if (!companyId) return { error: "Unauthorized" };
+
+    const lockCheck = await checkTransactionLock(invoiceId, companyId, session);
+    if (lockCheck.locked) return { error: lockCheck.reason };
 
     const { patient_id, appointment_id, date, line_items, status = 'draft', total_discount = 0, payments = [], billing_metadata = {} } = data;
 

@@ -7,9 +7,10 @@ import {
   Loader2, CreditCard, Banknote, Smartphone, Maximize2,
   Minimize2, Check, QrCode, Clock, ArrowRight, Activity, Package, Landmark
 } from 'lucide-react'
-import { createInvoice, updateInvoice, createQuickPatient, getPatientOutstandingBalance, getPatientLedger } from '@/app/actions/billing'
+import { createInvoice, updateInvoice, cancelInvoice, createQuickPatient, getPatientOutstandingBalance, getPatientLedger } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { useToast } from '@/components/ui/use-toast'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -52,6 +53,9 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const router = useRouter()
   const searchParams = useSearchParams()
   const { toast } = useToast()
+
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.isAdmin
 
   // UI State
   const [loading, setLoading] = useState(false)
@@ -272,6 +276,30 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         description: "A continuous hang usually indicates a lost connection to the database. We've interrupted the wait to let you try again.",
         variant: "destructive"
       })
+    }
+  }
+
+  const handleCancelBill = async () => {
+    if (!initialInvoice?.id || loading) return
+    if (!isAdmin) return toast({ title: "Access Denied", description: "Only financial administrators can void saved transactions.", variant: "destructive" })
+
+    const confirmed = window.confirm("WORLD CLASS SECURITY ALERT: Are you sure you want to VOID this transaction? This will invalidate the ledger node and cannot be undone.")
+    if (!confirmed) return
+
+    setLoading(true)
+    try {
+      const res = await cancelInvoice(initialInvoice.id)
+      if (res.success) {
+        toast({ title: "Node Invalidated", description: res.message })
+        router.push('/hms/billing')
+        router.refresh()
+      } else {
+        toast({ title: "Validation Failed", description: res.error, variant: "destructive" })
+      }
+    } catch (error) {
+      toast({ title: "System Error", description: "Failed to communicate with settlement engine.", variant: "destructive" })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -641,41 +669,57 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
             {/* Action Nodes */}
             <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
-              <button
-                id="settle-button"
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActivePaymentAmount(grandTotal.toFixed(2));
-                  setIsPaymentModalOpen(true);
-                }}
-                onFocus={() => {
-                  // Removed auto-cleanup to prevent UI shifts
-                }}
-                disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
-                className="group relative px-10 py-4 bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-white/20 outline-none text-white rounded-2xl shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 text-lg font-black italic uppercase tracking-tighter overflow-hidden focus:translate-y-[-2px] border-2 border-transparent focus:border-white/50"
-              >
-                <div className="absolute inset-x-0 bottom-0 h-0.5 bg-white/20 animate-pulse" />
-                COLLECT SETTLEMENT <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={(e) => { e.preventDefault(); handleSave('draft'); }}
-                  disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
-                  className="px-6 py-4 bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all"
-                >
-                  Save Draft
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => { e.preventDefault(); handleSave('posted'); }}
-                  disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
-                  className="px-8 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg"
-                >
-                  Post Credit
-                </button>
-              </div>
+              {initialInvoice?.status === 'cancelled' ? (
+                <div className="px-10 py-4 bg-rose-500/10 border-2 border-rose-500/20 rounded-2xl flex items-center gap-3">
+                  <X className="h-6 w-6 text-rose-600" />
+                  <p className="text-rose-600 font-black italic tracking-wider uppercase">VOIDED TRANSACTION • NO EDITS PERMITTED</p>
+                </div>
+              ) : (
+                <>
+                  {isAdmin && initialInvoice?.id && (
+                    <button
+                      onClick={handleCancelBill}
+                      disabled={loading}
+                      className="px-6 py-4 text-[10px] font-black text-rose-500 uppercase tracking-widest hover:bg-rose-500/10 border border-rose-500/20 rounded-2xl transition-all mr-2"
+                    >
+                      Void / Cancel Node
+                    </button>
+                  )}
+
+                  <button
+                    id="settle-button"
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setActivePaymentAmount(grandTotal.toFixed(2));
+                      setIsPaymentModalOpen(true);
+                    }}
+                    disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
+                    className="group relative px-10 py-4 bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-white/20 outline-none text-white rounded-2xl shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 text-lg font-black italic uppercase tracking-tighter overflow-hidden focus:translate-y-[-2px] border-2 border-transparent focus:border-white/50"
+                  >
+                    <div className="absolute inset-x-0 bottom-0 h-0.5 bg-white/20 animate-pulse" />
+                    COLLECT SETTLEMENT <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); handleSave('draft'); }}
+                      disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
+                      className="px-6 py-4 bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all"
+                    >
+                      Save Draft
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); handleSave('posted'); }}
+                      disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
+                      className="px-8 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg"
+                    >
+                      Post Credit
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
