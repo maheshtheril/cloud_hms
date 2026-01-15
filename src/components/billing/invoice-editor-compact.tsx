@@ -675,9 +675,9 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             onInteractOutside={(e) => e.preventDefault()}
             onPointerDownOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
-            className="max-w-xl p-0 overflow-hidden bg-white dark:bg-[#0a0f1e] border-none shadow-[0_60px_150px_rgba(0,0,0,0.1)] dark:shadow-[0_60px_150px_rgba(0,0,0,0.9)] rounded-[3rem] ring-1 ring-slate-200 dark:ring-white/10 z-[100]"
+            className="max-w-xl p-0 overflow-hidden bg-white dark:bg-[#0a0f1e] border-none shadow-[0_60px_150px_rgba(0,0,0,0.1)] dark:shadow-[0_60px_150px_rgba(0,0,0,0.9)] rounded-[3rem] ring-1 ring-slate-200 dark:ring-white/10 z-[100] max-h-[90vh] flex flex-col"
           >
-            <div className="flex flex-col">
+            <div className="flex flex-col flex-1 overflow-y-auto custom-scrollbar">
               {/* Header & Amount Summary */}
               <div className="p-8 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-white/5 relative overflow-hidden">
                 <div className="absolute top-0 right-0 p-4 opacity-[0.03] dark:opacity-5 -rotate-12"><Receipt className="h-40 w-40 text-slate-900 dark:text-white" /></div>
@@ -897,16 +897,16 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                       handleSave('paid');
                     }}
                     disabled={loading || (payments.length === 0 && (parseFloat(activePaymentAmount) || 0) === 0)}
-                    className={`flex-1 h-16 rounded-2xl text-white font-black text-[10px] uppercase tracking-[0.3em] transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-3 col-span-1 ${balanceDue > 0 ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20' :
-                      totalPaid > grandTotal ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' :
-                        'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
+                    className={`flex-1 h-16 rounded-2xl text-white font-black text-[10px] uppercase tracking-[0.3em] transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-3 col-span-1 ${totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0)) ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20' :
+                        totalPaid > (grandTotal + (includePrevBalance ? patientBalance : 0)) ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' :
+                          'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
                       }`}
                   >
                     {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                       <>
-                        {balanceDue > 0 ? (
+                        {totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0)) ? (
                           <>POST AS CREDIT <ArrowRight className="h-4 w-4" /></>
-                        ) : totalPaid > grandTotal ? (
+                        ) : totalPaid > (grandTotal + (includePrevBalance ? patientBalance : 0)) ? (
                           <>RECEIVE ADVANCE <Plus className="h-4 w-4" /></>
                         ) : (
                           <>FINALIZE SETTLEMENT <Check className="h-5 w-5" /></>
