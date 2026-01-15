@@ -391,13 +391,13 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
             {/* Action Nodes */}
             <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
-              <button onClick={() => setIsPaymentModalOpen(true)} disabled={loading || lines.length === 0} className="group relative px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 text-lg font-black italic uppercase tracking-tighter overflow-hidden">
+              <button onClick={() => setIsPaymentModalOpen(true)} disabled={loading || lines.filter(l => l.product_id || l.description).length === 0} className="group relative px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 text-lg font-black italic uppercase tracking-tighter overflow-hidden">
                 <div className="absolute inset-x-0 bottom-0 h-0.5 bg-white/20 animate-pulse" />
                 COLLECT SETTLEMENT <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
               </button>
               <div className="flex gap-3">
-                <button onClick={() => handleSave('draft')} disabled={loading} className="px-6 py-4 bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all">Save Draft</button>
-                <button onClick={() => handleSave('posted')} disabled={loading} className="px-8 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg">Post Credit</button>
+                <button onClick={() => handleSave('draft')} disabled={loading || lines.filter(l => l.product_id || l.description).length === 0} className="px-6 py-4 bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all">Save Draft</button>
+                <button onClick={() => handleSave('posted')} disabled={loading || lines.filter(l => l.product_id || l.description).length === 0} className="px-8 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg">Post Credit</button>
               </div>
             </div>
           </div>
