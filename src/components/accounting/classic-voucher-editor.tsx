@@ -205,7 +205,7 @@ export function ClassicVoucherEditor({
                                                             const val = Number(e.target.value);
                                                             const newAllocations = { ...allocations, [bill.id]: val };
                                                             setAllocations(newAllocations);
-                                                            const total = Object.values(newAllocations).reduce((a, b) => a + b, 0);
+                                                            const total = Object.values(newAllocations).reduce((a: number, b: number) => a + b, 0);
                                                             setAmount(total.toString());
                                                         }}
                                                         className="bg-transparent border-none text-right w-full outline-none focus:bg-[#ffffcc] focus:text-black"
@@ -243,7 +243,7 @@ export function ClassicVoucherEditor({
                                                         const val = e.target.value;
                                                         const newLines = directLines.map(l => l.id === line.id ? { ...l, amount: val } : l);
                                                         setDirectLines(newLines);
-                                                        const total = newLines.reduce((a, b) => a + Number(b.amount || 0), 0);
+                                                        const total = newLines.reduce((a: number, b: any) => a + Number(b.amount || 0), 0);
                                                         setAmount(total.toString());
                                                     }}
                                                     className="bg-transparent border-none text-right w-full outline-none focus:bg-[#ffffcc] focus:text-black"
