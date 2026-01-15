@@ -615,7 +615,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                             const amt = parseFloat(activePaymentAmount) || 0;
                             if (amt > 0) {
                               setPayments(prev => {
-                                const newPayments = [...prev, { method: 'cash', amount: amt }];
+                                const newPayments: Payment[] = [...prev, { method: 'cash', amount: amt } as Payment];
                                 const currentTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
                                 const remaining = Math.max(0, grandTotal - currentTotalPaid);
                                 setTimeout(() => setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : ''), 0);
@@ -647,7 +647,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                       const amt = parseFloat(activePaymentAmount) || 0;
                       if (amt > 0) {
                         setPayments(prev => {
-                          const newPayments = [...prev, { method: m.id as any, amount: amt }];
+                          const newPayments: Payment[] = [...prev, { method: m.id as any, amount: amt } as Payment];
                           const currentTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
                           const remaining = Math.max(0, grandTotal - currentTotalPaid);
                           setTimeout(() => setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : ''), 0);
