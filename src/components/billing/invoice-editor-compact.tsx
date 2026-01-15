@@ -100,7 +100,16 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const balanceDue = Math.max(0, grandTotal - totalPaid)
 
   // Handlers
-  useEffect(() => { if (selectedPatientId) setIsWalkIn(false); }, [selectedPatientId]);
+  useEffect(() => {
+    if (selectedPatientId) {
+      setIsWalkIn(false);
+      // World Class UX: After selecting patient, move focus to first item search
+      setTimeout(() => {
+        const firstItemSearch = document.getElementById('item-search-0');
+        if (firstItemSearch) firstItemSearch.focus();
+      }, 100);
+    }
+  }, [selectedPatientId]);
 
   const handleQuickPatientCreate = async () => {
     if (!quickPatientName || !quickPatientPhone) return;
@@ -281,6 +290,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                       }));
                   }}
                   placeholder="SEARCH PATIENT IDENTITY / MOBILE / ID..."
+                  autoFocus={true}
                 />
               )}
             </div>
@@ -337,10 +347,11 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-900 border-b border-slate-100 dark:border-slate-900">
-                  {lines.map(line => (
+                  {lines.map((line, index) => (
                     <tr key={line.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all">
                       <td className="px-8 py-3">
                         <SearchableSelect
+                          inputId={index === 0 ? 'item-search-0' : `item-search-${index}`}
                           value={line.product_id}
                           onChange={v => updateLine(line.id, 'product_id', v)}
                           onSearch={async q => {

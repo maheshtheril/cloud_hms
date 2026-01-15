@@ -45,6 +45,7 @@ interface SearchableSelectProps {
     isDark?: boolean;
     inputId?: string;
     usePortal?: boolean;
+    autoFocus?: boolean;
 }
 
 export function SearchableSelect({
@@ -62,6 +63,7 @@ export function SearchableSelect({
     isDark = false,
     inputId,
     usePortal = true,
+    autoFocus = false,
 }: SearchableSelectProps) {
     const [open, setOpen] = React.useState(false);
     const [query, setQuery] = React.useState("");
@@ -175,6 +177,13 @@ export function SearchableSelect({
             }
         }
     }, [activeIndex, open]);
+
+    // Handle initial focus
+    React.useEffect(() => {
+        if (autoFocus && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [autoFocus]);
 
 
     const performSearch = useDebouncedCallback(async (searchTerm: string) => {
@@ -393,6 +402,7 @@ export function SearchableSelect({
                                         performSearch(query);
                                     }
                                 }}
+                                autoFocus={autoFocus}
                                 disabled={disabled}
                                 autoComplete="off"
                             />
