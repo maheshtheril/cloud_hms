@@ -62,6 +62,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [isSuccess, setIsSuccess] = useState(false)
   const [lastSavedId, setLastSavedId] = useState<string | null>(null)
   const [patientBalance, setPatientBalance] = useState(0)
+  const [includePrevBalance, setIncludePrevBalance] = useState(false)
+  const [isLedgerOpen, setIsLedgerOpen] = useState(false)
   const [isLedgerOpen, setIsLedgerOpen] = useState(false)
   const [ledgerData, setLedgerData] = useState<any[]>([])
   const [isFetchingLedger, setIsFetchingLedger] = useState(false)
@@ -684,29 +686,27 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                   <h3 className="text-slate-400 font-black tracking-[0.4em] text-[8px] uppercase mb-4 text-center">Settlement Matrix</h3>
                   <div className="flex items-center gap-6">
                     <div className="text-center">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Bill</p>
-                      <p className="text-2xl font-black text-slate-900 dark:text-white italic">{currency}{grandTotal.toFixed(2)}</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Amount</p>
+                      <div className="flex items-center gap-2">
+                        <p className={`text-2xl font-black italic transition-colors ${includePrevBalance ? 'text-amber-600' : 'text-slate-900 dark:text-white'}`}>
+                          {currency}{(grandTotal + (includePrevBalance ? patientBalance : 0)).toFixed(2)}
+                        </p>
+                        {includePrevBalance && <div className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-ping" />}
+                      </div>
                     </div>
                     <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
                     <div className="text-center">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Paid</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Current Paid</p>
                       <p className="text-2xl font-black text-emerald-600 italic">{currency}{totalPaid.toFixed(2)}</p>
                     </div>
-                    {balanceDue > 0 && (
+                    {(grandTotal + (includePrevBalance ? patientBalance : 0)) - totalPaid > 0 && (
                       <>
                         <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
                         <div className="text-center">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-rose-500">Remaining</p>
-                          <p className="text-2xl font-black text-rose-500 italic animate-pulse">{currency}{balanceDue.toFixed(2)}</p>
-                        </div>
-                      </>
-                    )}
-                    {balanceDue === 0 && totalPaid > grandTotal && (
-                      <>
-                        <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
-                        <div className="text-center">
-                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-blue-500">Overpaid</p>
-                          <p className="text-2xl font-black text-blue-500 italic">{currency}{(totalPaid - grandTotal).toFixed(2)}</p>
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-rose-500">To Balance</p>
+                          <p className="text-2xl font-black text-rose-500 italic animate-pulse">
+                            {currency}{((grandTotal + (includePrevBalance ? patientBalance : 0)) - totalPaid).toFixed(2)}
+                          </p>
                         </div>
                       </>
                     )}
@@ -740,6 +740,31 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               )}
 
               <div className="p-10 flex flex-col gap-8 bg-slate-50/50 dark:bg-[#0c1222]">
+
+                {/* World Class Debt Integration Toggle (Consolidated Settlement) */}
+                {patientBalance > 0 && (
+                  <button
+                    onClick={() => setIncludePrevBalance(!includePrevBalance)}
+                    className={`p-6 rounded-[2.5rem] border-2 transition-all flex items-center justify-between group animate-in slide-in-from-top-4 duration-500 ${includePrevBalance
+                        ? 'bg-amber-600 border-amber-600 shadow-xl shadow-amber-600/20'
+                        : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 hover:border-amber-400'
+                      }`}
+                  >
+                    <div className="flex items-center gap-4 text-left">
+                      <div className={`p-3 rounded-2xl transition-colors ${includePrevBalance ? 'bg-white/20' : 'bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900/50'}`}>
+                        <Activity className={`h-5 w-5 ${includePrevBalance ? 'text-white' : 'text-amber-600'}`} />
+                      </div>
+                      <div>
+                        <p className={`text-[9px] font-black uppercase tracking-[0.3em] ${includePrevBalance ? 'text-white/60' : 'text-slate-400'}`}>Ledger Awareness Mode</p>
+                        <p className={`text-sm font-black mt-0.5 ${includePrevBalance ? 'text-white' : 'text-slate-900 dark:text-white'}`}>INCLUDE PREVIOUS DEBT ({currency}{patientBalance.toFixed(2)})</p>
+                      </div>
+                    </div>
+                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all ${includePrevBalance ? 'bg-white border-white scale-110' : 'border-slate-200'}`}>
+                      {includePrevBalance ? <Check className="h-5 w-5 text-amber-600 stroke-[4px]" /> : <Plus className="h-4 w-4 text-slate-300" />}
+                    </div>
+                  </button>
+                )}
+
                 {/* Manual Split / Adjustment Input */}
                 <div className="group/input relative">
                   <div className="flex items-center gap-4">
@@ -819,16 +844,16 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                 <div className="bg-slate-100/50 dark:bg-slate-900/50 p-5 rounded-2xl border border-dashed border-slate-200 dark:border-white/10">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Tally Mode</span>
-                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${balanceDue > 0 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                      {balanceDue > 0 ? 'Partial / Credit' : totalPaid > grandTotal ? 'Advance / Excess' : 'Balanced'}
+                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${(totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0))) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                      {(totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0))) ? 'Partial / Credit' : totalPaid > (grandTotal + (includePrevBalance ? patientBalance : 0)) ? 'Advance / Excess' : 'Balanced'}
                     </span>
                   </div>
                   <p className="text-xs font-black text-slate-700 dark:text-slate-300 italic tracking-tight">
-                    {balanceDue > 0 ?
-                      `Collecting ${currency}${totalPaid.toFixed(2)} of ${currency}${grandTotal.toFixed(2)}. ${currency}${balanceDue.toFixed(2)} will be carried as outstanding debt.` :
-                      totalPaid > grandTotal ?
-                        `Collecting ${currency}${totalPaid.toFixed(2)}. Excess of ${currency}${(totalPaid - grandTotal).toFixed(2)} will be credited to patient identity node.` :
-                        `Transaction perfectly tallied at ${currency}${grandTotal.toFixed(2)}. Closing settlement node.`
+                    {(totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0))) ?
+                      `Collecting ${currency}${totalPaid.toFixed(2)} of ${currency}${(grandTotal + (includePrevBalance ? patientBalance : 0)).toFixed(2)}. ${currency}${(Math.max(0, (grandTotal + (includePrevBalance ? patientBalance : 0)) - totalPaid)).toFixed(2)} will be carried as outstanding debt.` :
+                      totalPaid > (grandTotal + (includePrevBalance ? patientBalance : 0)) ?
+                        `Collecting ${currency}${totalPaid.toFixed(2)}. Excess of ${currency}${(totalPaid - (grandTotal + (includePrevBalance ? patientBalance : 0))).toFixed(2)} will be credited to patient identity node.` :
+                        `Transaction perfectly tallied at ${currency}${(grandTotal + (includePrevBalance ? patientBalance : 0)).toFixed(2)}. Closing settlement node.`
                     }
                   </p>
                 </div>

@@ -287,6 +287,39 @@ export async function createInvoice(data: any) {
                 data: invoicePayload as any
             });
 
+            // WORLD CLASS: Auto-Allocation of Excess Funds (Reconciliation)
+            if (totalPaid > total && patient_id) {
+                let excess = totalPaid - total;
+                const oldInvoices = await tx.hms_invoice.findMany({
+                    where: {
+                        tenant_id: session.user.tenantId,
+                        company_id: companyId,
+                        patient_id: patient_id as string,
+                        status: 'posted',
+                        id: { not: newInvoice.id }
+                    },
+                    orderBy: { issued_at: 'asc' }
+                });
+
+                for (const oldInv of oldInvoices) {
+                    if (excess <= 0) break;
+                    const due = Number(oldInv.outstanding_amount || 0);
+                    const paymentToApply = Math.min(due, excess);
+
+                    if (paymentToApply > 0) {
+                        await tx.hms_invoice.update({
+                            where: { id: oldInv.id },
+                            data: {
+                                total_paid: Number(oldInv.total_paid || 0) + paymentToApply,
+                                outstanding_amount: due - paymentToApply,
+                                status: (due - paymentToApply <= 0.01) ? 'paid' : 'posted'
+                            }
+                        });
+                        excess -= paymentToApply;
+                    }
+                }
+            }
+
             // If status is paid and appointment is linked, mark appointment as completed
             if (status === 'paid' && appointment_id) {
                 await tx.hms_appointments.update({
@@ -440,6 +473,39 @@ export async function updateInvoice(invoiceId: string, data: any) {
                         paid_at: new Date()
                     }))
                 });
+
+                // WORLD CLASS: Auto-Allocation of Excess Funds (Reconciliation)
+                if (totalPaid > total && patient_id) {
+                    let excess = totalPaid - total;
+                    const oldInvoices = await tx.hms_invoice.findMany({
+                        where: {
+                            tenant_id: session.user.tenantId,
+                            company_id: companyId,
+                            patient_id: patient_id as string,
+                            status: 'posted',
+                            id: { not: invoiceId }
+                        },
+                        orderBy: { issued_at: 'asc' }
+                    });
+
+                    for (const oldInv of oldInvoices) {
+                        if (excess <= 0) break;
+                        const due = Number(oldInv.outstanding_amount || 0);
+                        const paymentToApply = Math.min(due, excess);
+
+                        if (paymentToApply > 0) {
+                            await tx.hms_invoice.update({
+                                where: { id: oldInv.id },
+                                data: {
+                                    total_paid: Number(oldInv.total_paid || 0) + paymentToApply,
+                                    outstanding_amount: due - paymentToApply,
+                                    status: (due - paymentToApply <= 0.01) ? 'paid' : 'posted'
+                                }
+                            });
+                            excess -= paymentToApply;
+                        }
+                    }
+                }
             }
 
             // If status is paid and appointment is linked, mark appointment as completed
