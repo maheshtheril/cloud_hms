@@ -89,7 +89,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     { id: 1, product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0, item_type: 'item' }
   ])
 
-  const [payments, setPayments] = useState<Payment[]>([{ method: 'cash', amount: 0, reference: '' }])
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [activePaymentAmount, setActivePaymentAmount] = useState<string>('')
   const [globalDiscount, setGlobalDiscount] = useState(Number(initialInvoice?.total_discount || 0))
 
   // Totals
@@ -188,20 +189,29 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
   const handleSave = async (status: 'draft' | 'posted' | 'paid') => {
     if (loading) return
+    const finalPayments = payments.filter(p => p.amount > 0)
+
+    // Auto-paid if fully settled
+    const effectiveStatus = (status === 'paid' && totalPaid < grandTotal) ? 'posted' : status;
+
+    if (effectiveStatus === 'paid' && finalPayments.length === 0) {
+      return toast({ title: "Payment Required", description: "Apply at least one payment method to mark as paid.", variant: "destructive" });
+    }
+
     setLoading(true)
     const payload = {
       patient_id: isWalkIn ? null : selectedPatientId,
       appointment_id: appointmentId || searchParams.get('appointmentId'),
       date,
       line_items: lines.filter(l => l.description || l.product_id),
-      status,
+      status: effectiveStatus,
       total_discount: globalDiscount,
-      payments: payments.filter(p => p.amount > 0),
+      payments: finalPayments,
       billing_metadata: isWalkIn ? { is_walk_in: true, patient_name: walkInName, patient_phone: walkInPhone } : {}
     }
     const res = await (initialInvoice?.id ? updateInvoice(initialInvoice.id, payload) : createInvoice(payload))
     if (res.success) {
-      toast({ title: "Terminal Sync Successful", description: `Transaction recorded as ${status}.` })
+      toast({ title: "Terminal Sync Successful", description: `Transaction recorded as ${effectiveStatus}.` })
       if (onClose) onClose()
       else router.replace(`/hms/billing/${res.data?.id}`)
     } else {
@@ -469,7 +479,10 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             <div className="flex flex-col sm:flex-row gap-4 w-full xl:w-auto">
               <button
                 id="settle-button"
-                onClick={() => setIsPaymentModalOpen(true)}
+                onClick={() => {
+                  setActivePaymentAmount(grandTotal.toFixed(2));
+                  setIsPaymentModalOpen(true);
+                }}
                 onFocus={() => {
                   // Final Audit Cleanup: Remove any empty provisional lines
                   const validLines = lines.filter(l => l.product_id || l.description);
@@ -495,28 +508,87 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         <DialogContent className="max-w-xl p-0 overflow-hidden bg-white dark:bg-[#0a0f1e] border-none shadow-[0_60px_150px_rgba(0,0,0,0.1)] dark:shadow-[0_60px_150px_rgba(0,0,0,0.9)] rounded-[3rem] ring-1 ring-slate-200 dark:ring-white/10 z-[100]">
           <div className="flex flex-col">
             {/* Header & Amount Summary */}
-            <div className="p-10 bg-white dark:bg-slate-900/40 border-b border-slate-200 dark:border-white/5 relative overflow-hidden">
+            <div className="p-8 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-white/5 relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4 opacity-[0.03] dark:opacity-5 -rotate-12"><Receipt className="h-40 w-40 text-slate-900 dark:text-white" /></div>
-              <div className="relative z-10 flex flex-col items-center text-center">
-                <div className="bg-indigo-600/10 dark:bg-indigo-600/20 p-3 rounded-2xl mb-4 border border-indigo-500/10 dark:border-indigo-500/20">
-                  <DollarSign className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                </div>
-                <h3 className="text-slate-400 dark:text-slate-500 font-black tracking-[0.4em] text-[10px] uppercase mb-2">Total Settlement Due</h3>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-slate-300 dark:text-white/40 italic">{currency}</span>
-                  <span className="text-7xl font-black text-slate-900 dark:text-white tracking-tighter italic drop-shadow-[0_10px_30px_rgba(0,0,0,0.05)] dark:drop-shadow-[0_10px_30px_rgba(255,255,255,0.1)]">{grandTotal.toFixed(2)}</span>
-                </div>
-                <div className="mt-4 px-4 py-1.5 bg-slate-100 dark:bg-white/5 rounded-full border border-slate-200 dark:border-white/5">
-                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-400 uppercase tracking-widest">
-                    Recipient: <span className="text-slate-900 dark:text-indigo-400 font-black">{isWalkIn ? walkInName : (patients.find(p => p.id === selectedPatientId) ? `${patients.find(p => p.id === selectedPatientId).first_name} ${patients.find(p => p.id === selectedPatientId).last_name}` : 'UNIDENTIFIED')}</span>
-                  </p>
+              <div className="relative z-10 flex flex-col items-center">
+                <h3 className="text-slate-400 font-black tracking-[0.4em] text-[8px] uppercase mb-4 text-center">Settlement Matrix</h3>
+                <div className="flex items-center gap-6">
+                  <div className="text-center">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Bill</p>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white italic">{currency}{grandTotal.toFixed(2)}</p>
+                  </div>
+                  <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
+                  <div className="text-center">
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Paid</p>
+                    <p className="text-2xl font-black text-emerald-600 italic">{currency}{totalPaid.toFixed(2)}</p>
+                  </div>
+                  {balanceDue > 0 && (
+                    <>
+                      <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
+                      <div className="text-center">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-rose-500">Remaining</p>
+                        <p className="text-2xl font-black text-rose-500 italic animate-pulse">{currency}{balanceDue.toFixed(2)}</p>
+                      </div>
+                    </>
+                  )}
+                  {balanceDue === 0 && totalPaid > grandTotal && (
+                    <>
+                      <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
+                      <div className="text-center">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-blue-500">Overpaid</p>
+                        <p className="text-2xl font-black text-blue-500 italic">{currency}{(totalPaid - grandTotal).toFixed(2)}</p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Settlement Matrix - Now single column or 2x2 but more compact */}
+            {/* Split Ledger Table (If multiple payments) */}
+            {payments.length > 0 && (
+              <div className="px-10 py-4 bg-slate-50 dark:bg-slate-900/20 border-b border-slate-100 dark:border-white/5 max-h-[150px] overflow-auto">
+                <div className="space-y-2">
+                  {payments.map((p, idx) => (
+                    <div key={idx} className="flex items-center justify-between bg-white dark:bg-slate-800/40 p-2 rounded-xl border border-slate-100 dark:border-white/5">
+                      <div className="flex items-center gap-3">
+                        <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-900">
+                          {p.method === 'cash' && <Banknote className="h-3 w-3 text-emerald-500" />}
+                          {p.method === 'upi' && <QrCode className="h-3 w-3 text-indigo-500" />}
+                          {p.method === 'card' && <CreditCard className="h-3 w-3 text-blue-500" />}
+                          {p.method === 'bank_transfer' && <Clock className="h-3 w-3 text-amber-500" />}
+                        </div>
+                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{p.method}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-xs font-black text-slate-900 dark:text-white">{currency}{p.amount.toFixed(2)}</span>
+                        <button onClick={() => setPayments(payments.filter((_, i) => i !== idx))} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 className="h-3 w-3" /></button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="p-10 flex flex-col gap-8 bg-slate-50/50 dark:bg-[#0c1222]">
-              <div className="grid grid-cols-2 gap-4">
+              {/* Manual Split / Adjustment Input */}
+              <div className="group/input relative">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1 relative">
+                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-700 font-black text-xl italic">{currency}</span>
+                    <input
+                      type="number"
+                      className="w-full bg-white dark:bg-slate-950/50 border border-slate-200 dark:border-white/10 h-16 rounded-2xl pl-12 pr-6 text-slate-900 dark:text-white font-black text-2xl focus:border-indigo-600 outline-none transition-all placeholder:text-slate-300"
+                      value={activePaymentAmount}
+                      onChange={e => setActivePaymentAmount(e.target.value)}
+                      placeholder="Enter Amount..."
+                      onFocus={(e) => e.target.select()}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Settlement Matrix Buttons */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { id: 'cash', label: 'CASH', icon: Banknote, color: 'text-emerald-500 dark:text-emerald-400' },
                   { id: 'upi', label: 'UPI / QR', icon: QrCode, color: 'text-indigo-600 dark:text-indigo-400' },
@@ -526,42 +598,43 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                   <button
                     key={m.id}
                     onClick={() => {
-                      if (m.id === 'bank_transfer') { setIsPaymentModalOpen(false); handleSave('posted'); }
-                      else { setPayments([{ method: m.id as any, amount: grandTotal }]); setIsPaymentModalOpen(false); handleSave('paid'); }
+                      const amt = parseFloat(activePaymentAmount) || 0;
+                      if (amt > 0) {
+                        setPayments([...payments, { method: m.id as any, amount: amt }]);
+                        // Clear or set to remaining
+                        const remaining = Math.max(0, grandTotal - (totalPaid + amt));
+                        setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : '');
+                      }
                     }}
-                    className="group relative py-6 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-indigo-600 dark:hover:border-white/20 active:scale-95 overflow-hidden shadow-sm dark:shadow-none"
+                    className="group relative py-4 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-indigo-600 active:scale-95 shadow-sm dark:shadow-none"
                   >
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-white/10 group-hover:border-current transition-all">
-                      <m.icon className={`h-6 w-6 ${m.color}`} />
+                    <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-white/10 group-hover:border-current transition-all">
+                      <m.icon className={`h-4 w-4 ${m.color}`} />
                     </div>
-                    <span className="text-[10px] font-black tracking-[0.2em] text-slate-500 dark:text-white opacity-60 group-hover:opacity-100 uppercase">{m.label}</span>
+                    <span className="text-[8px] font-black tracking-[0.2em] text-slate-500 dark:text-white opacity-60 group-hover:opacity-100 uppercase">{m.label}</span>
                   </button>
                 ))}
               </div>
 
-              {/* Manual Split / Adjustment Terminal */}
-              <div className="group/input relative">
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 relative">
-                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-700 font-black text-xl italic">{currency}</span>
-                    <input
-                      type="number"
-                      className="w-full bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-white/10 h-16 rounded-2xl pl-12 pr-6 text-slate-900 dark:text-white font-black text-2xl focus:border-indigo-600 outline-none transition-all placeholder:text-slate-300 dark:placeholder:opacity-20"
-                      value={payments[0]?.amount || ''}
-                      onChange={e => setPayments([{ ...payments[0], amount: parseFloat(e.target.value) || 0 }])}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <button
-                    onClick={() => { setIsPaymentModalOpen(false); handleSave('paid'); }}
-                    disabled={loading || !payments[0]?.amount}
-                    className="bg-indigo-600 hover:bg-indigo-500 h-16 px-8 rounded-2xl text-white font-black text-xs uppercase tracking-widest transition-all active:scale-90 shadow-xl shadow-indigo-600/20"
-                  >
-                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : "SETTLE"}
-                  </button>
-                </div>
-                <p className="text-[8px] font-black text-center text-slate-600 uppercase tracking-[0.4em] mt-4 opacity-40">Zenith Pay Protocol Secure Terminal</p>
+              {/* Final Conclusion Action */}
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setIsPaymentModalOpen(false)}
+                  className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleSave('paid')}
+                  disabled={loading || payments.length === 0}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-500 h-16 rounded-2xl text-white font-black text-xs uppercase tracking-[0.4em] transition-all active:scale-[0.98] shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3"
+                >
+                  {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                    <>FINALIZE & POST BILL <Check className="h-5 w-5" /></>
+                  )}
+                </button>
               </div>
+              <p className="text-[8px] font-black text-center text-slate-600 uppercase tracking-[0.4em] opacity-40">Verified Secure Financial Settlement Node</p>
             </div>
           </div>
         </DialogContent>
