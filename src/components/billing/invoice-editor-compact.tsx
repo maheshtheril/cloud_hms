@@ -525,196 +525,203 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ZENITH SETTLE TERMINAL OVERLAY */}
-      <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent className="max-w-xl p-0 overflow-hidden bg-white dark:bg-[#0a0f1e] border-none shadow-[0_60px_150px_rgba(0,0,0,0.1)] dark:shadow-[0_60px_150px_rgba(0,0,0,0.9)] rounded-[3rem] ring-1 ring-slate-200 dark:ring-white/10 z-[100]">
-          <div className="flex flex-col">
-            {/* Header & Amount Summary */}
-            <div className="p-8 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-white/5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-[0.03] dark:opacity-5 -rotate-12"><Receipt className="h-40 w-40 text-slate-900 dark:text-white" /></div>
-              <div className="relative z-10 flex flex-col items-center">
-                <h3 className="text-slate-400 font-black tracking-[0.4em] text-[8px] uppercase mb-4 text-center">Settlement Matrix</h3>
-                <div className="flex items-center gap-6">
-                  <div className="text-center">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Bill</p>
-                    <p className="text-2xl font-black text-slate-900 dark:text-white italic">{currency}{grandTotal.toFixed(2)}</p>
-                  </div>
-                  <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
-                  <div className="text-center">
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Paid</p>
-                    <p className="text-2xl font-black text-emerald-600 italic">{currency}{totalPaid.toFixed(2)}</p>
-                  </div>
-                  {balanceDue > 0 && (
-                    <>
-                      <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
-                      <div className="text-center">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-rose-500">Remaining</p>
-                        <p className="text-2xl font-black text-rose-500 italic animate-pulse">{currency}{balanceDue.toFixed(2)}</p>
-                      </div>
-                    </>
-                  )}
-                  {balanceDue === 0 && totalPaid > grandTotal && (
-                    <>
-                      <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
-                      <div className="text-center">
-                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-blue-500">Overpaid</p>
-                        <p className="text-2xl font-black text-blue-500 italic">{currency}{(totalPaid - grandTotal).toFixed(2)}</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Split Ledger Table (If multiple payments) */}
-            {payments.length > 0 && (
-              <div className="px-10 py-4 bg-slate-50 dark:bg-slate-900/20 border-b border-slate-100 dark:border-white/5 max-h-[150px] overflow-auto">
-                <div className="space-y-2">
-                  {payments.map((p, idx) => (
-                    <div key={idx} className="flex items-center justify-between bg-white dark:bg-slate-800/40 p-2 rounded-xl border border-slate-100 dark:border-white/5">
-                      <div className="flex items-center gap-3">
-                        <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-900">
-                          {p.method === 'cash' && <Banknote className="h-3 w-3 text-emerald-500" />}
-                          {p.method === 'upi' && <QrCode className="h-3 w-3 text-indigo-500" />}
-                          {p.method === 'card' && <CreditCard className="h-3 w-3 text-blue-500" />}
-                          {p.method === 'bank_transfer' && <Clock className="h-3 w-3 text-amber-500" />}
-                        </div>
-                        <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{p.method}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-xs font-black text-slate-900 dark:text-white">{currency}{p.amount.toFixed(2)}</span>
-                        <button onClick={() => setPayments(payments.filter((_, i) => i !== idx))} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 className="h-3 w-3" /></button>
-                      </div>
+        {/* ZENITH SETTLE TERMINAL OVERLAY */}
+        <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+          <DialogContent
+            onInteractOutside={(e) => e.preventDefault()}
+            onPointerDownOutside={(e) => e.preventDefault()}
+            onEscapeKeyDown={(e) => e.preventDefault()}
+            className="max-w-xl p-0 overflow-hidden bg-white dark:bg-[#0a0f1e] border-none shadow-[0_60px_150px_rgba(0,0,0,0.1)] dark:shadow-[0_60px_150px_rgba(0,0,0,0.9)] rounded-[3rem] ring-1 ring-slate-200 dark:ring-white/10 z-[100]"
+          >
+            <div className="flex flex-col">
+              {/* Header & Amount Summary */}
+              <div className="p-8 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-white/5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-[0.03] dark:opacity-5 -rotate-12"><Receipt className="h-40 w-40 text-slate-900 dark:text-white" /></div>
+                <div className="relative z-10 flex flex-col items-center">
+                  <h3 className="text-slate-400 font-black tracking-[0.4em] text-[8px] uppercase mb-4 text-center">Settlement Matrix</h3>
+                  <div className="flex items-center gap-6">
+                    <div className="text-center">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Bill</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-white italic">{currency}{grandTotal.toFixed(2)}</p>
                     </div>
-                  ))}
+                    <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
+                    <div className="text-center">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Paid</p>
+                      <p className="text-2xl font-black text-emerald-600 italic">{currency}{totalPaid.toFixed(2)}</p>
+                    </div>
+                    {balanceDue > 0 && (
+                      <>
+                        <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
+                        <div className="text-center">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-rose-500">Remaining</p>
+                          <p className="text-2xl font-black text-rose-500 italic animate-pulse">{currency}{balanceDue.toFixed(2)}</p>
+                        </div>
+                      </>
+                    )}
+                    {balanceDue === 0 && totalPaid > grandTotal && (
+                      <>
+                        <div className="h-8 w-px bg-slate-200 dark:bg-slate-800" />
+                        <div className="text-center">
+                          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1 text-blue-500">Overpaid</p>
+                          <p className="text-2xl font-black text-blue-500 italic">{currency}{(totalPaid - grandTotal).toFixed(2)}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
-            )}
 
-            <div className="p-10 flex flex-col gap-8 bg-slate-50/50 dark:bg-[#0c1222]">
-              {/* Manual Split / Adjustment Input */}
-              <div className="group/input relative">
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 relative">
-                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-700 font-black text-xl italic">{currency}</span>
-                    <input
-                      ref={amountInputRef}
-                      type="number"
-                      className="w-full bg-white dark:bg-slate-950/50 border border-slate-200 dark:border-white/10 h-16 rounded-2xl pl-12 pr-6 text-slate-900 dark:text-white font-black text-2xl focus:border-indigo-600 outline-none transition-all placeholder:text-slate-300"
-                      value={activePaymentAmount}
-                      onChange={e => setActivePaymentAmount(e.target.value)}
-                      placeholder="Enter Amount..."
-                      onFocus={(e) => e.target.select()}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
+              {/* Split Ledger Table (If multiple payments) */}
+              {payments.length > 0 && (
+                <div className="px-10 py-4 bg-slate-50 dark:bg-slate-900/20 border-b border-slate-100 dark:border-white/5 max-h-[150px] overflow-auto">
+                  <div className="space-y-2">
+                    {payments.map((p, idx) => (
+                      <div key={idx} className="flex items-center justify-between bg-white dark:bg-slate-800/40 p-2 rounded-xl border border-slate-100 dark:border-white/5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-900">
+                            {p.method === 'cash' && <Banknote className="h-3 w-3 text-emerald-500" />}
+                            {p.method === 'upi' && <QrCode className="h-3 w-3 text-indigo-500" />}
+                            {p.method === 'card' && <CreditCard className="h-3 w-3 text-blue-500" />}
+                            {p.method === 'bank_transfer' && <Clock className="h-3 w-3 text-amber-500" />}
+                          </div>
+                          <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">{p.method}</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="text-xs font-black text-slate-900 dark:text-white">{currency}{p.amount.toFixed(2)}</span>
+                          <button onClick={() => setPayments(payments.filter((_, i) => i !== idx))} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 className="h-3 w-3" /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="p-10 flex flex-col gap-8 bg-slate-50/50 dark:bg-[#0c1222]">
+                {/* Manual Split / Adjustment Input */}
+                <div className="group/input relative">
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 relative">
+                      <span className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-700 font-black text-xl italic">{currency}</span>
+                      <input
+                        ref={amountInputRef}
+                        type="number"
+                        className="w-full bg-white dark:bg-slate-950/50 border border-slate-200 dark:border-white/10 h-16 rounded-2xl pl-12 pr-6 text-slate-900 dark:text-white font-black text-2xl focus:border-indigo-600 outline-none transition-all placeholder:text-slate-300"
+                        value={activePaymentAmount}
+                        onChange={e => setActivePaymentAmount(e.target.value)}
+                        placeholder="Enter Amount..."
+                        onFocus={(e) => { e.target.select(); e.stopPropagation(); }}
+                        onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
                           e.stopPropagation();
-                          if (activePaymentAmount) {
-                            const amt = parseFloat(activePaymentAmount) || 0;
-                            if (amt > 0) {
-                              setPayments(prev => {
-                                const newPayments: Payment[] = [...prev, { method: 'cash', amount: amt } as Payment];
-                                const currentTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
-                                const remaining = Math.max(0, grandTotal - currentTotalPaid);
-                                setTimeout(() => setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : ''), 0);
-                                return newPayments;
-                              });
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (activePaymentAmount) {
+                              const amt = parseFloat(activePaymentAmount) || 0;
+                              if (amt > 0) {
+                                setPayments(prev => {
+                                  const newPayments: Payment[] = [...prev, { method: 'cash', amount: amt } as Payment];
+                                  const currentTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
+                                  const remaining = Math.max(0, grandTotal - currentTotalPaid);
+                                  setTimeout(() => setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : ''), 0);
+                                  return newPayments;
+                                });
+                              }
                             }
                           }
-                        }
-                      }}
-                    />
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Settlement Matrix Buttons */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                  { id: 'cash', label: 'CASH', icon: Banknote, color: 'text-emerald-500 dark:text-emerald-400' },
-                  { id: 'upi', label: 'UPI / QR', icon: QrCode, color: 'text-indigo-600 dark:text-indigo-400' },
-                  { id: 'card', label: 'CARD', icon: CreditCard, color: 'text-blue-600 dark:text-blue-400' },
-                  { id: 'bank_transfer', label: 'CREDIT', icon: Clock, color: 'text-amber-600 dark:text-amber-400' }
-                ].map(m => (
+                {/* Settlement Matrix Buttons */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    { id: 'cash', label: 'CASH', icon: Banknote, color: 'text-emerald-500 dark:text-emerald-400' },
+                    { id: 'upi', label: 'UPI / QR', icon: QrCode, color: 'text-indigo-600 dark:text-indigo-400' },
+                    { id: 'card', label: 'CARD', icon: CreditCard, color: 'text-blue-600 dark:text-blue-400' },
+                    { id: 'bank_transfer', label: 'CREDIT', icon: Clock, color: 'text-amber-600 dark:text-amber-400' }
+                  ].map(m => (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const amt = parseFloat(activePaymentAmount) || 0;
+                        if (amt > 0) {
+                          setPayments(prev => {
+                            const newPayments: Payment[] = [...prev, { method: m.id as any, amount: amt } as Payment];
+                            const currentTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
+                            const remaining = Math.max(0, grandTotal - currentTotalPaid);
+                            setTimeout(() => setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : ''), 0);
+                            return newPayments;
+                          });
+                        } else {
+                          toast({ title: "Amount Required", description: "Enter an amount before selecting a payment method.", variant: "destructive" });
+                        }
+                      }}
+                      className="group relative py-4 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-indigo-600 active:scale-95 shadow-sm dark:shadow-none"
+                    >
+                      <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-white/10 group-hover:border-current transition-all">
+                        <m.icon className={`h-4 w-4 ${m.color}`} />
+                      </div>
+                      <span className="text-[8px] font-black tracking-[0.2em] text-slate-500 dark:text-white opacity-60 group-hover:opacity-100 uppercase">{m.label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Final Conclusion Action */}
+                <div className="grid grid-cols-3 gap-4">
                   <button
-                    key={m.id}
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsPaymentModalOpen(false); }}
+                    className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors border border-slate-200 dark:border-white/5 rounded-2xl"
+                  >
+                    Cancel
+                  </button>
+                  <button
                     type="button"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      const amt = parseFloat(activePaymentAmount) || 0;
-                      if (amt > 0) {
-                        setPayments(prev => {
-                          const newPayments: Payment[] = [...prev, { method: m.id as any, amount: amt } as Payment];
-                          const currentTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
-                          const remaining = Math.max(0, grandTotal - currentTotalPaid);
-                          setTimeout(() => setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : ''), 0);
-                          return newPayments;
-                        });
-                      } else {
-                        toast({ title: "Amount Required", description: "Enter an amount before selecting a payment method.", variant: "destructive" });
-                      }
+                      setPayments([]);
+                      setActivePaymentAmount(grandTotal.toFixed(2));
                     }}
-                    className="group relative py-4 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-indigo-600 active:scale-95 shadow-sm dark:shadow-none"
+                    className="px-6 py-4 text-[10px] font-black text-rose-400 uppercase tracking-widest hover:text-rose-600 transition-colors border border-rose-200/50 dark:border-rose-500/20 rounded-2xl"
                   >
-                    <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-white/10 group-hover:border-current transition-all">
-                      <m.icon className={`h-4 w-4 ${m.color}`} />
-                    </div>
-                    <span className="text-[8px] font-black tracking-[0.2em] text-slate-500 dark:text-white opacity-60 group-hover:opacity-100 uppercase">{m.label}</span>
+                    Reset
                   </button>
-                ))}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSave('paid'); }}
+                    disabled={loading || payments.length === 0}
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 h-16 rounded-2xl text-white font-black text-xs uppercase tracking-[0.4em] transition-all active:scale-[0.98] shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 col-span-1"
+                  >
+                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
+                      <>FINALIZE <Check className="h-5 w-5" /></>
+                    )}
+                  </button>
+                </div>
+                <p className="text-[8px] font-black text-center text-slate-600 uppercase tracking-[0.4em] opacity-40">Verified Secure Financial Settlement Node</p>
               </div>
-
-              {/* Final Conclusion Action */}
-              <div className="grid grid-cols-3 gap-4">
-                <button
-                  type="button"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setIsPaymentModalOpen(false); }}
-                  className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors border border-slate-200 dark:border-white/5 rounded-2xl"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setPayments([]);
-                    setActivePaymentAmount(grandTotal.toFixed(2));
-                  }}
-                  className="px-6 py-4 text-[10px] font-black text-rose-400 uppercase tracking-widest hover:text-rose-600 transition-colors border border-rose-200/50 dark:border-rose-500/20 rounded-2xl"
-                >
-                  Reset
-                </button>
-                <button
-                  type="button"
-                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleSave('paid'); }}
-                  disabled={loading || payments.length === 0}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 h-16 rounded-2xl text-white font-black text-xs uppercase tracking-[0.4em] transition-all active:scale-[0.98] shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 col-span-1"
-                >
-                  {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
-                    <>FINALIZE <Check className="h-5 w-5" /></>
-                  )}
-                </button>
-              </div>
-              <p className="text-[8px] font-black text-center text-slate-600 uppercase tracking-[0.4em] opacity-40">Verified Secure Financial Settlement Node</p>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
 
-      {/* QUICK PATIENT DIALOG */}
-      <Dialog open={isQuickPatientOpen} onOpenChange={setIsQuickPatientOpen}>
-        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 rounded-[3rem] border-none p-12 shadow-[0_50px_100px_rgba(0,0,0,0.5)]">
-          <DialogHeader><DialogTitle className="text-3xl font-black italic tracking-tighter text-slate-900 dark:text-white">Quick Identification</DialogTitle><DialogDescription className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Register new medical identity node for {quickPatientName}</DialogDescription></DialogHeader>
-          <div className="grid gap-8 py-8">
-            <div className="space-y-3"><Label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 pl-2">Sync Mobile Terminal</Label><Input value={quickPatientPhone} onChange={e => setQuickPatientPhone(e.target.value)} className="h-14 bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 rounded-2xl text-lg font-black tracking-widest transition-all focus:ring-4 focus:ring-indigo-500/10" placeholder="+91..." autoFocus /></div>
-          </div>
-          <DialogFooter><Button variant="ghost" onClick={() => setIsQuickPatientOpen(false)} className="text-[10px] font-black uppercase tracking-widest py-6">Abort</Button><button onClick={handleQuickPatientCreate} disabled={!quickPatientPhone || isCreatingPatient} className="bg-indigo-600 hover:bg-indigo-700 h-14 rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] px-12 text-white shadow-2xl shadow-indigo-500/30 transition-all flex items-center gap-3">{isCreatingPatient ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Verify & Initialize <Check className="h-4 w-4" /></>}</button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div >
+        {/* QUICK PATIENT DIALOG */}
+        <Dialog open={isQuickPatientOpen} onOpenChange={setIsQuickPatientOpen}>
+          <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 rounded-[3rem] border-none p-12 shadow-[0_50px_100px_rgba(0,0,0,0.5)]">
+            <DialogHeader><DialogTitle className="text-3xl font-black italic tracking-tighter text-slate-900 dark:text-white">Quick Identification</DialogTitle><DialogDescription className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Register new medical identity node for {quickPatientName}</DialogDescription></DialogHeader>
+            <div className="grid gap-8 py-8">
+              <div className="space-y-3"><Label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 pl-2">Sync Mobile Terminal</Label><Input value={quickPatientPhone} onChange={e => setQuickPatientPhone(e.target.value)} className="h-14 bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 rounded-2xl text-lg font-black tracking-widest transition-all focus:ring-4 focus:ring-indigo-500/10" placeholder="+91..." autoFocus /></div>
+            </div>
+            <DialogFooter><Button variant="ghost" onClick={() => setIsQuickPatientOpen(false)} className="text-[10px] font-black uppercase tracking-widest py-6">Abort</Button><button onClick={handleQuickPatientCreate} disabled={!quickPatientPhone || isCreatingPatient} className="bg-indigo-600 hover:bg-indigo-700 h-14 rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] px-12 text-white shadow-2xl shadow-indigo-500/30 transition-all flex items-center gap-3">{isCreatingPatient ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Verify & Initialize <Check className="h-4 w-4" /></>}</button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
   )
 }
