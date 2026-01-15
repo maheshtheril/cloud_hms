@@ -375,8 +375,12 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && !line.product_id && lines.some(l => l.product_id)) {
                               e.preventDefault();
-                              const settleBtn = document.getElementById('settle-button');
-                              if (settleBtn) settleBtn.focus();
+                              // Automate cleanup: Remove the empty line before settling
+                              handleRemoveItem(line.id);
+                              setTimeout(() => {
+                                const settleBtn = document.getElementById('settle-button');
+                                if (settleBtn) settleBtn.focus();
+                              }, 100);
                             }
                           }}
                         />
@@ -466,6 +470,11 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               <button
                 id="settle-button"
                 onClick={() => setIsPaymentModalOpen(true)}
+                onFocus={() => {
+                  // Final Audit Cleanup: Remove any empty provisional lines
+                  const validLines = lines.filter(l => l.product_id || l.description);
+                  if (validLines.length < lines.length) setLines(validLines);
+                }}
                 disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
                 className="group relative px-10 py-4 bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-white/20 outline-none text-white rounded-2xl shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 text-lg font-black italic uppercase tracking-tighter overflow-hidden focus:translate-y-[-2px] border-2 border-transparent focus:border-white/50"
               >
