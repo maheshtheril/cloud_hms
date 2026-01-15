@@ -58,6 +58,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [isMaximized, setIsMaximized] = useState(false)
   const [isQuickPatientOpen, setIsQuickPatientOpen] = useState(false)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+  const [isWalkIn, setIsWalkIn] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [lastSavedId, setLastSavedId] = useState<string | null>(null)
   const amountInputRef = useRef<HTMLInputElement>(null)
