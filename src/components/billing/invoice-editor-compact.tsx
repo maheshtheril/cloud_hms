@@ -284,10 +284,37 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                 />
               )}
             </div>
-
             <div className="flex gap-2 border-l border-slate-200 dark:border-slate-800 pl-6">
               <button onClick={() => setIsMaximized(!isMaximized)} className="p-3 text-slate-400 hover:text-slate-900 transition-all"><Maximize2 className="h-5 w-5" /></button>
               <button onClick={() => onClose ? onClose() : router.back()} className="p-3 text-slate-400 hover:text-red-500 transition-all"><X className="h-5 w-5" /></button>
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Metadata Ribbon (Regulatory Compliance) */}
+        <div className="flex items-center justify-between px-6 py-2 bg-slate-100/50 dark:bg-slate-800/10 border-b border-slate-200/50 dark:border-slate-800/50 z-10 transition-all">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Ledger Identity:</span>
+              <span className="text-[10px] font-mono font-black text-indigo-600 dark:text-indigo-400 bg-indigo-500/5 dark:bg-indigo-500/10 px-2 py-0.5 rounded cursor-help">
+                {initialInvoice?.invoice_number || 'TXN_PROVISIONAL_NODE'}
+              </span>
+            </div>
+            <div className="h-3 w-[1px] bg-slate-200 dark:bg-slate-700" />
+            <div className="flex items-center gap-2 group">
+              <Clock className="h-3 w-3 text-slate-400 group-hover:text-indigo-500 transition-all" />
+              <input
+                type="date"
+                value={date}
+                onChange={e => setDate(e.target.value)}
+                className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 focus:ring-0 cursor-pointer hover:text-indigo-600 transition-all p-0"
+              />
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 opacity-60">
+              <div className="h-1 w-1 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[8px] font-black uppercase tracking-widest text-emerald-600">Secure Node Enabled</span>
             </div>
           </div>
         </div>
