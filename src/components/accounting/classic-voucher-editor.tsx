@@ -153,7 +153,7 @@ export function ClassicVoucherEditor({
                                 <SearchableSelect
                                     value={partnerId}
                                     onChange={handlePartnerChange}
-                                    onSearch={type === 'payment' ? suppliersSearch : patientsSearch}
+                                    onSearch={((type === 'payment' ? suppliersSearch : patientsSearch) || (async () => [])) as any}
                                     placeholder="Select Ledger..."
                                     className="bg-[#002b2b] border-none text-xs text-[#ffffcc]"
                                     isDark
@@ -229,7 +229,7 @@ export function ClassicVoucherEditor({
                                                         const newLines = directLines.map(l => l.id === line.id ? { ...l, accountId: id, accountName: opt?.label } : l);
                                                         setDirectLines(newLines);
                                                     }}
-                                                    onSearch={accountsSearch}
+                                                    onSearch={(accountsSearch || (async () => [])) as any}
                                                     placeholder="Select Expense Account..."
                                                     className="bg-transparent border-none text-[10px]"
                                                     isDark
