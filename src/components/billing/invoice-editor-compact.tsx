@@ -489,6 +489,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     );
                   }}
                   placeholder="IDENTIFY PATIENT..."
+                  autoFocus={!initialInvoice}
                 />
               )}
             </div>

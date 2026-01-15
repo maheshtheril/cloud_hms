@@ -61,6 +61,12 @@ export async function getBillableItems() {
                             }
                         }
                     }
+                },
+                product_tax_rules: {
+                    where: { is_active: true },
+                    include: { tax_rates: true },
+                    orderBy: { priority: 'desc' },
+                    take: 1
                 }
             }
         });
@@ -70,7 +76,10 @@ export async function getBillableItems() {
             const priceHistory = item.hms_product_price_history?.[0];
             const categoryRel = item.hms_product_category_rel?.[0];
             const category = categoryRel?.hms_product_category;
-            const taxRate = category?.tax_rates;
+
+            // PRIORITY: Product Specific Tax Rule > Category Tax Rule
+            const productTaxRule = item.product_tax_rules?.[0];
+            const taxRate = productTaxRule?.tax_rates || category?.tax_rates;
 
             // Extract UOM pricing data from metadata
             const metadata = item.metadata as any || {};
@@ -94,8 +103,8 @@ export async function getBillableItems() {
                     packPrice: uomData.pack_price || (Number(item.price) * (uomData.conversion_factor || 1)),
                     packSize: uomData.pack_size || uomData.conversion_factor || 1
                 },
-                // Extract category tax for auto-suggest
-                categoryTaxId: category?.default_tax_rate_id || null,
+                // Extract tax for auto-suggest (prioritize product-specific rule)
+                categoryTaxId: taxRate?.id || category?.default_tax_rate_id || null,
                 categoryTaxRate: taxRate?.rate ? taxRate.rate.toNumber() : 0
             };
         });
