@@ -29,7 +29,6 @@ import { recordExpense } from "@/app/actions/accounting/expenses"
 import { getExpenseAccounts } from "@/app/actions/accounting/payments"
 import { cn } from "@/lib/utils"
 import { SearchableSelect } from "@/components/ui/searchable-select"
-import { PettyCashVoucher } from "./petty-cash-voucher"
 import { Separator } from "@/components/ui/separator"
 
 const expenseSchema = z.object({
@@ -50,8 +49,6 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
     const { toast } = useToast()
     const [loading, setLoading] = useState(false)
     const [accounts, setAccounts] = useState<{ id: string; name: string; code: string }[]>([])
-    const [successData, setSuccessData] = useState<any>(null)
-    const [showVoucher, setShowVoucher] = useState(false)
 
     // Fetch expense accounts on mount
     useEffect(() => {
@@ -94,12 +91,11 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
             if (result.success) {
                 toast({
                     title: "Expense Recorded",
-                    description: "Expense saved securely. Generating voucher...",
+                    description: "Expense saved successfully.",
                     className: "bg-emerald-50 border-emerald-200"
                 })
-                setSuccessData(result.data)
-                setShowVoucher(true)
                 onSuccess?.()
+                onClose()
             } else {
                 toast({ title: "Error", description: result.error || "Failed to save expense", variant: "destructive" })
             }
@@ -116,23 +112,6 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
         label: acc.name,
         subLabel: acc.code
     }));
-
-    if (showVoucher && successData) {
-        return (
-            <div className="animate-in fade-in zoom-in duration-300">
-                <div className="flex flex-col items-center justify-center p-6 text-center space-y-4 mb-4 bg-emerald-50 rounded-lg border border-emerald-100">
-                    <div className="h-12 w-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-600">
-                        <CheckCircle2 className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-emerald-900">Expense Recorded Successfully!</h3>
-                        <p className="text-sm text-emerald-700">Transaction ID: {successData.payment_number}</p>
-                    </div>
-                </div>
-                <PettyCashVoucher payment={successData} onClose={onClose} />
-            </div>
-        )
-    }
 
     return (
         <div className="p-0 bg-white dark:bg-slate-900">
