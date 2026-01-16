@@ -36,7 +36,7 @@ export function PremiumPrintWrapper({ children }: PremiumPrintWrapperProps) {
                 
                 #print-area {
                     max-width: 890px;
-                    margin: 40px auto;
+                    margin: 20px auto;
                     padding: 40px;
                     background: white;
                     min-height: 1000px;
@@ -45,7 +45,7 @@ export function PremiumPrintWrapper({ children }: PremiumPrintWrapperProps) {
                 }
 
                 /* Modern Typography for Prints */
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
                 
                 .hms-print-container {
                     font-family: 'Inter', sans-serif;
@@ -56,7 +56,7 @@ export function PremiumPrintWrapper({ children }: PremiumPrintWrapperProps) {
                 <PrintControls />
             </div>
 
-            <div id="print-area" className="hms-print-container shadow-sm border border-slate-200 flex flex-col">
+            <div id="print-area" className="hms-print-container border border-slate-200 flex flex-col">
                 {children}
             </div>
 

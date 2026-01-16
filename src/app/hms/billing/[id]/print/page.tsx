@@ -46,8 +46,8 @@ export default async function PrintPage({ params, searchParams }: {
                     {/* Patient Info Card */}
                     <div className="grid grid-cols-2 gap-8 mb-10 bg-slate-50 p-8 rounded-2xl border border-slate-100 relative overflow-hidden">
                         <div className="relative z-10 font-sans">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2 text-left">Patient Details</p>
-                            <p className="text-2xl font-black text-slate-900 mb-1">{prescription.hms_patient?.first_name} {prescription.hms_patient?.last_name}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2 text-left">Patient Details</p>
+                            <p className="text-2xl font-bold text-slate-800 mb-1">{prescription.hms_patient?.first_name} {prescription.hms_patient?.last_name}</p>
                             <div className="flex gap-4 text-sm font-bold text-slate-600">
                                 <span>{prescription.hms_patient?.gender}</span>
                                 <span className="text-slate-300">|</span>
@@ -56,8 +56,8 @@ export default async function PrintPage({ params, searchParams }: {
                             <p className="text-xs font-mono text-slate-400 mt-2">UHID: {prescription.hms_patient?.patient_number || 'N/A'}</p>
                         </div>
                         <div className="text-right flex flex-col justify-end relative z-10">
-                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1 text-right">Date of Visit</p>
-                            <p className="text-xl font-bold text-slate-900">{new Date(prescription.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-1 text-right">Date of Visit</p>
+                            <p className="text-xl font-bold text-slate-800">{new Date(prescription.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                         </div>
                     </div>
 
@@ -65,26 +65,26 @@ export default async function PrintPage({ params, searchParams }: {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-12">
                         {prescription.vitals && (
                             <div className="bg-white border-l-4 border-emerald-500 pl-4 py-1">
-                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Clinical Vitals</h3>
+                                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Clinical Vitals</h3>
                                 <p className="text-base font-bold text-slate-800 leading-relaxed whitespace-pre-wrap italic">{prescription.vitals}</p>
                             </div>
                         )}
                         {prescription.diagnosis && (
                             <div className="bg-white border-l-4 border-blue-500 pl-4 py-1">
-                                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Primary Diagnosis</h3>
-                                <p className="text-base font-bold text-slate-900 leading-relaxed whitespace-pre-wrap">{prescription.diagnosis}</p>
+                                <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">Primary Diagnosis</h3>
+                                <p className="text-base font-bold text-slate-800 leading-relaxed whitespace-pre-wrap">{prescription.diagnosis}</p>
                             </div>
                         )}
                     </div>
 
                     {/* Prescription Table */}
                     <div className="mb-16">
-                        <div className="flex items-center gap-3 mb-6 border-b-2 border-slate-900 pb-2">
-                            <h3 className="text-sm font-black text-slate-900 uppercase tracking-[0.15em]">Medication Schedule</h3>
+                        <div className="flex items-center gap-3 mb-6 border-b-2 border-slate-300 pb-2">
+                            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-[0.15em]">Medication Schedule</h3>
                         </div>
                         <table className="w-full text-left font-sans">
                             <thead>
-                                <tr className="border-y-2 border-slate-900 text-[10px] text-slate-900 uppercase tracking-widest font-black">
+                                <tr className="border-y-2 border-slate-300 text-[10px] text-slate-800 uppercase tracking-widest font-bold">
                                     <th className="px-6 py-4 text-left">Medicine Name & Formulation</th>
                                     <th className="px-6 py-4 text-left">Dosage Plan</th>
                                     <th className="px-6 py-4 text-left">Duration</th>
@@ -95,20 +95,20 @@ export default async function PrintPage({ params, searchParams }: {
                                 {prescription.prescription_items.map((item: any, idx: number) => (
                                     <tr key={idx} className="hover:bg-slate-50 transition-colors">
                                         <td className="px-6 py-5">
-                                            <p className="font-black text-base text-slate-900">{item.hms_product?.name || 'Unknown Medicine'}</p>
+                                            <p className="font-bold text-base text-slate-800">{item.hms_product?.name || 'Unknown Medicine'}</p>
                                             <p className="text-xs text-slate-400 font-medium mt-1 uppercase tracking-tighter italic">Generic: {item.hms_product?.generic_name || 'Pharmacological Grade'}</p>
                                         </td>
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-2">
-                                                <span className="font-mono text-base font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
+                                                <span className="font-mono text-base font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
                                                     {item.morning}-{item.afternoon}-{item.evening}-{item.night}
                                                 </span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-5">
-                                            <p className="text-sm font-black text-slate-700">{item.days} <span className="text-slate-400 font-bold uppercase text-[10px]">Days</span></p>
+                                            <p className="text-sm font-bold text-slate-700">{item.days} <span className="text-slate-400 font-bold uppercase text-[10px]">Days</span></p>
                                         </td>
-                                        <td className="px-6 py-5 text-right font-black text-lg text-slate-900">
+                                        <td className="px-6 py-5 text-right font-bold text-lg text-slate-800">
                                             {(item.morning + item.afternoon + item.evening + item.night) * item.days}
                                         </td>
                                     </tr>
@@ -154,11 +154,11 @@ export default async function PrintPage({ params, searchParams }: {
                 {/* Meta Info */}
                 <div className="grid grid-cols-2 gap-12 mb-10 p-2 font-sans">
                     <div className="space-y-2">
-                        <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 text-left">
+                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2 text-left">
                             <span className="h-1.5 w-1.5 bg-indigo-500 rounded-full text-left"></span> Bill To
                         </h3>
                         <div className="pl-4 border-l-2 border-slate-100">
-                            <p className="text-xl font-black text-slate-900">{invoice.hms_patient?.first_name} {invoice.hms_patient?.last_name}</p>
+                            <p className="text-xl font-bold text-slate-800">{invoice.hms_patient?.first_name} {invoice.hms_patient?.last_name}</p>
                             <p className="text-xs font-bold text-slate-500 uppercase mt-1">Patient ID: {invoice.hms_patient?.patient_number || 'N/A'}</p>
                             <p className="text-xs font-bold text-slate-500 uppercase">Contact: {((invoice.hms_patient?.contact as any)?.phone) || 'N/A'}</p>
                         </div>
@@ -171,7 +171,7 @@ export default async function PrintPage({ params, searchParams }: {
                             </div>
                             <div className="flex justify-between gap-4">
                                 <span className="text-xs font-bold text-slate-400 uppercase tracking-widest text-left">Payment Status:</span>
-                                <span className={`font-black uppercase text-[10px] text-right ${invoice.status === 'paid' ? 'text-emerald-600' : 'text-slate-600'}`}>
+                                <span className={`font-bold uppercase text-[10px] text-right ${invoice.status === 'paid' ? 'text-emerald-600' : 'text-slate-600'}`}>
                                     {invoice.status}
                                 </span>
                             </div>
@@ -181,7 +181,7 @@ export default async function PrintPage({ params, searchParams }: {
 
                 <div className="mb-10 overflow-hidden border-y border-slate-200 font-sans">
                     <table className="w-full text-left">
-                        <thead className="border-b border-slate-900 text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">
+                        <thead className="border-b border-slate-300 text-[10px] font-bold text-slate-800 uppercase tracking-[0.2em]">
                             <tr>
                                 <th className="px-6 py-5 text-left">#</th>
                                 <th className="px-6 py-5 text-left">Description & Service Category</th>
@@ -195,12 +195,12 @@ export default async function PrintPage({ params, searchParams }: {
                                 <tr key={item.id} className="text-slate-700 hover:bg-slate-50 transition-colors">
                                     <td className="px-6 py-5 font-bold text-slate-300">{idx + 1}</td>
                                     <td className="px-6 py-5">
-                                        <p className="font-black text-slate-900 text-base">{item.description}</p>
+                                        <p className="font-bold text-slate-800 text-base">{item.description}</p>
                                         <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter mt-1">{item.uom || 'Unit'}</p>
                                     </td>
                                     <td className="px-6 py-5 text-right font-bold">{Number(item.quantity)}</td>
                                     <td className="px-6 py-5 text-right font-medium text-slate-500">₹{Number(item.unit_price).toFixed(2)}</td>
-                                    <td className="px-6 py-5 text-right font-black text-slate-900 text-base">₹{Number(item.net_amount).toFixed(2)}</td>
+                                    <td className="px-6 py-5 text-right font-bold text-slate-800 text-base">₹{Number(item.net_amount).toFixed(2)}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -212,31 +212,31 @@ export default async function PrintPage({ params, searchParams }: {
                     <div className="w-80 space-y-4">
                         <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-widest">
                             <span className="text-left">Subtotal</span>
-                            <span className="text-slate-900 font-black text-right">₹{Number(invoice.subtotal).toFixed(2)}</span>
+                            <span className="text-slate-800 font-bold text-right">₹{Number(invoice.subtotal).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between items-center text-xs font-bold text-slate-400 uppercase tracking-widest">
                             <span className="text-left">Tax Assessment</span>
-                            <span className="text-indigo-600 font-black text-right">₹{Number(invoice.total_tax).toFixed(2)}</span>
+                            <span className="text-indigo-600 font-bold text-right">₹{Number(invoice.total_tax).toFixed(2)}</span>
                         </div>
 
-                        <div className="pt-4 border-t-4 border-slate-900">
+                        <div className="pt-4 border-t border-slate-300">
                             <div className="flex justify-between items-center">
-                                <span className="text-lg font-black text-slate-900 uppercase tracking-tighter text-left">Grand Total</span>
-                                <span className="text-3xl font-black text-slate-900 tracking-tighter text-right">₹{Number(invoice.total).toFixed(2)}</span>
+                                <span className="text-lg font-bold text-slate-800 uppercase tracking-tighter text-left">Grand Total</span>
+                                <span className="text-3xl font-bold text-slate-800 tracking-tighter text-right">₹{Number(invoice.total).toFixed(2)}</span>
                             </div>
                         </div>
 
                         <div className="pt-8 text-left">
-                            <div className="rounded-2xl p-6 border-2 border-slate-900 relative overflow-hidden">
+                            <div className="rounded-2xl p-6 border-2 border-slate-300 relative overflow-hidden">
                                 <div className="relative z-10">
                                     <div className="flex justify-between items-center mb-2">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Institutional Paid</span>
-                                        <span className="text-xl font-black text-emerald-600 tracking-tighter text-right">₹{Number(invoice.total_paid).toFixed(2)}</span>
+                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-left">Institutional Paid</span>
+                                        <span className="text-xl font-bold text-emerald-600 tracking-tighter text-right">₹{Number(invoice.total_paid).toFixed(2)}</span>
                                     </div>
                                     <div className="h-px bg-slate-200 my-4"></div>
                                     <div className="flex justify-between items-center">
-                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-left">Outstanding</span>
-                                        <span className="text-lg font-black text-slate-900 tracking-tighter text-right">₹{Number(invoice.outstanding_amount).toFixed(2)}</span>
+                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest text-left">Outstanding</span>
+                                        <span className="text-lg font-bold text-slate-800 tracking-tighter text-right">₹{Number(invoice.outstanding_amount).toFixed(2)}</span>
                                     </div>
                                 </div>
                             </div>

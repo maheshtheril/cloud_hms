@@ -23,10 +23,10 @@ export function PremiumPrintFooter({
 
                 {showSignature && (
                     <div className="flex flex-col items-center justify-end">
-                        <div className="h-20 w-56 border-b border-slate-300 border-dashed mb-4 flex items-center justify-center italic text-slate-300 text-[9px] uppercase tracking-widest">
+                        <div className="h-20 w-56 border-b border-slate-200 border-dashed mb-4 flex items-center justify-center italic text-slate-300 text-[9px] uppercase tracking-widest">
                             Authorized Seal / Signature
                         </div>
-                        <p className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">{signatureLabel}</p>
+                        <p className="text-[11px] font-bold text-slate-800 uppercase tracking-[0.2em]">{signatureLabel}</p>
                     </div>
                 )}
             </div>
