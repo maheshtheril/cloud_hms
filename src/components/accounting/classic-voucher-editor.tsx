@@ -104,7 +104,7 @@ export function ClassicVoucherEditor({
 
         const success = await onSave(payload);
         if (success !== false) {
-            // If the parent doesn't redirect or tells us we're done, clear locally
+            // Reset Form for next entry
             setAmount('');
             setPartnerId(null);
             setPartnerName('');
@@ -113,9 +113,14 @@ export function ClassicVoucherEditor({
             setAllocations({});
             setDirectLines([{ id: '1', accountId: '', accountName: '', description: '', amount: '' }]);
             setMemo('');
-            // Focus back to start
+
+            // Force focus back to Ledger Search
             setTimeout(() => {
-                document.getElementById('main-ledger-search')?.querySelector('input')?.focus();
+                const ledgerInput = document.getElementById('main-ledger-search') as HTMLInputElement;
+                if (ledgerInput) {
+                    ledgerInput.focus();
+                    ledgerInput.select();
+                }
             }, 100);
         }
         setIsSubmitting(false);
