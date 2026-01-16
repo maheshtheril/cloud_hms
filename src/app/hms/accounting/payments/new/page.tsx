@@ -152,7 +152,9 @@ export default function NewPaymentPage() {
             return false;
         } else {
             toast({ title: "Success", description: "Payment recorded successfully" });
-            router.push('/hms/accounting/payments');
+            if (!classicMode) {
+                router.push('/hms/accounting/payments');
+            }
             return true;
         }
     };

@@ -45,8 +45,11 @@ export default function NewReceiptPage() {
                 description: `Successfully recorded receipt for ₹${payload.amount}`,
                 className: "bg-emerald-900 border-emerald-800 text-white"
             });
-            // Small delay for user to see success
-            setTimeout(() => router.push('/hms/accounting/receipts'), 500);
+
+            if (!classicMode) {
+                // Small delay for user to see success
+                setTimeout(() => router.push('/hms/accounting/receipts'), 500);
+            }
             return true;
         }
     };
