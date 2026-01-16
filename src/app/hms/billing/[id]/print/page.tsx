@@ -84,11 +84,11 @@ export default async function PrintPage({ params, searchParams }: {
                         </div>
                         <table className="w-full text-left font-sans">
                             <thead>
-                                <tr className="bg-slate-900 text-[10px] text-slate-200 uppercase tracking-widest">
-                                    <th className="px-6 py-4 rounded-tl-xl text-left">Medicine Name & Formulation</th>
+                                <tr className="border-y-2 border-slate-900 text-[10px] text-slate-900 uppercase tracking-widest font-black">
+                                    <th className="px-6 py-4 text-left">Medicine Name & Formulation</th>
                                     <th className="px-6 py-4 text-left">Dosage Plan</th>
                                     <th className="px-6 py-4 text-left">Duration</th>
-                                    <th className="px-6 py-4 text-right rounded-tr-xl">Total Qty</th>
+                                    <th className="px-6 py-4 text-right">Total Qty</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100 border-x border-b border-slate-100 rounded-b-xl">
@@ -179,10 +179,9 @@ export default async function PrintPage({ params, searchParams }: {
                     </div>
                 </div>
 
-                {/* Table */}
-                <div className="mb-10 overflow-hidden border border-slate-100 rounded-2xl shadow-sm font-sans">
+                <div className="mb-10 overflow-hidden border-y border-slate-200 font-sans">
                     <table className="w-full text-left">
-                        <thead className="bg-slate-900 text-[10px] font-black text-slate-200 uppercase tracking-[0.2em]">
+                        <thead className="border-b border-slate-900 text-[10px] font-black text-slate-900 uppercase tracking-[0.2em]">
                             <tr>
                                 <th className="px-6 py-5 text-left">#</th>
                                 <th className="px-6 py-5 text-left">Description & Service Category</th>
@@ -228,17 +227,16 @@ export default async function PrintPage({ params, searchParams }: {
                         </div>
 
                         <div className="pt-8 text-left">
-                            <div className="bg-slate-900 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-16 -mt-16"></div>
+                            <div className="rounded-2xl p-6 border-2 border-slate-900 relative overflow-hidden">
                                 <div className="relative z-10">
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-left">Institutional Paid</span>
-                                        <span className="text-xl font-black text-emerald-400 tracking-tighter text-right">₹{Number(invoice.total_paid).toFixed(2)}</span>
+                                        <span className="text-xl font-black text-emerald-600 tracking-tighter text-right">₹{Number(invoice.total_paid).toFixed(2)}</span>
                                     </div>
-                                    <div className="h-px bg-white/10 my-4"></div>
+                                    <div className="h-px bg-slate-200 my-4"></div>
                                     <div className="flex justify-between items-center">
-                                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest text-left">Outstanding</span>
-                                        <span className="text-lg font-black text-white tracking-tighter text-right">₹{Number(invoice.outstanding_amount).toFixed(2)}</span>
+                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest text-left">Outstanding</span>
+                                        <span className="text-lg font-black text-slate-900 tracking-tighter text-right">₹{Number(invoice.outstanding_amount).toFixed(2)}</span>
                                     </div>
                                 </div>
                             </div>

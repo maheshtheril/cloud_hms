@@ -14,7 +14,7 @@ export function PremiumPrintFooter({
     return (
         <div className="mt-auto pt-12">
             <div className="grid grid-cols-2 gap-12 mb-12">
-                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex flex-col justify-center">
+                <div className="p-6 rounded-2xl border border-slate-200 flex flex-col justify-center">
                     <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Terms & Conditions</h3>
                     <p className="text-[10px] text-slate-500 leading-relaxed italic font-medium">
                         {note}
@@ -22,12 +22,11 @@ export function PremiumPrintFooter({
                 </div>
 
                 {showSignature && (
-                    <div className="flex flex-col items-center justify-end group">
-                        <div className="h-20 w-56 border-b-2 border-slate-900 border-dashed mb-4 flex items-center justify-center italic text-slate-200 text-[10px] uppercase tracking-widest">
-                            digital signature secure
+                    <div className="flex flex-col items-center justify-end">
+                        <div className="h-20 w-56 border-b border-slate-300 border-dashed mb-4 flex items-center justify-center italic text-slate-300 text-[9px] uppercase tracking-widest">
+                            Authorized Seal / Signature
                         </div>
                         <p className="text-[11px] font-black text-slate-900 uppercase tracking-[0.2em]">{signatureLabel}</p>
-                        <p className="text-[9px] text-slate-400 font-bold mt-1 tracking-widest uppercase">Identity Verified</p>
                     </div>
                 )}
             </div>

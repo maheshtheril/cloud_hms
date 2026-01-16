@@ -56,7 +56,7 @@ export function PremiumPrintWrapper({ children }: PremiumPrintWrapperProps) {
                 <PrintControls />
             </div>
 
-            <div id="print-area" className="hms-print-container shadow-2xl border border-slate-100 flex flex-col">
+            <div id="print-area" className="hms-print-container shadow-sm border border-slate-200 flex flex-col">
                 {children}
             </div>
 

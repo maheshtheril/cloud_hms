@@ -69,11 +69,11 @@ export function PremiumPrintHeader({ company, title, subtitle, documentNumber }:
                 </div>
 
                 <div className="text-right flex flex-col items-end">
-                    <div className="bg-slate-900 text-white px-6 py-2 rounded-lg mb-3">
+                    <div className="border-2 border-slate-900 text-slate-900 px-6 py-2 rounded-lg mb-3">
                         <h2 className="text-xl font-black tracking-widest uppercase">{title}</h2>
                     </div>
-                    <p className="text-sm font-black text-slate-900">NO: <span className="font-mono text-indigo-600">{documentNumber}</span></p>
-                    {subtitle && <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1">{subtitle}</p>}
+                    <p className="text-sm font-black text-slate-900 uppercase">NO: <span className="font-mono text-indigo-600">{documentNumber}</span></p>
+                    {subtitle && <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{subtitle}</p>}
                 </div>
             </div>
         </div>
