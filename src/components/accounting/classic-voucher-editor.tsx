@@ -107,11 +107,16 @@ export function ClassicVoucherEditor({
             // If the parent doesn't redirect or tells us we're done, clear locally
             setAmount('');
             setPartnerId(null);
+            setPartnerName('');
+            setPayeeName('');
+            setBills([]);
             setAllocations({});
             setDirectLines([{ id: '1', accountId: '', accountName: '', description: '', amount: '' }]);
             setMemo('');
             // Focus back to start
-            document.getElementById('main-ledger-search')?.focus();
+            setTimeout(() => {
+                document.getElementById('main-ledger-search')?.querySelector('input')?.focus();
+            }, 100);
         }
         setIsSubmitting(false);
     };
