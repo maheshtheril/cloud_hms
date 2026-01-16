@@ -498,6 +498,12 @@ export function ReceptionActionCenter({
                 </DialogContent>
             </Dialog>
 
+            <Dialog open={activeModal === 'expense'} onOpenChange={() => setActiveModal(null)}>
+                <DialogContent className="max-w-2xl p-0 overflow-hidden bg-white border-none shadow-2xl">
+                    <ExpenseDialog onClose={() => setActiveModal(null)} />
+                </DialogContent>
+            </Dialog>
+
             <Dialog open={activeModal === 'collection-report'} onOpenChange={() => setActiveModal(null)}>
                 <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-white dark:bg-slate-900 shadow-2xl">
                     <DialogHeader><DialogTitle className="text-2xl font-black">Daily Collection Summary</DialogTitle></DialogHeader>

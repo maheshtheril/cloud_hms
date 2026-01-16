@@ -1,4 +1,3 @@
-
 'use server'
 
 import { prisma } from "@/lib/prisma"
@@ -6,10 +5,10 @@ import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
 import { v4 as uuidv4 } from 'uuid'
 import { AccountingService } from "@/lib/services/accounting"
+import { ensureDefaultAccounts } from "@/lib/account-seeder"
 
 export type PaymentType = 'inbound' | 'outbound';
 
-// Fetch Payments (Receipts or Vendor Payments)
 // Fetch Payments (Receipts or Vendor Payments)
 export async function getPayments(type: PaymentType, search?: string, dateFilter?: string) {
     const session = await auth();
@@ -108,43 +107,18 @@ export async function getExpenseAccounts() {
 
         // Auto-seed if empty or very few accounts
         if (accounts.length < 3) {
-            const defaultExpenses = [
-                { name: 'Tea & Snacks', code: 'EXP-TEA' },
-                { name: 'Travel & Conveyance', code: 'EXP-TRAV' },
-                { name: 'Stationery & Printing', code: 'EXP-STAT' },
-                { name: 'Cleaning & Housekeeping', code: 'EXP-CLEAN' },
-                { name: 'Repair & Maintenance', code: 'EXP-REPAIR' },
-                { name: 'Fuel & Electricity', code: 'EXP-UTIL' },
-                { name: 'General / Other Expenses', code: 'EXP-GEN' }
-            ];
+            await ensureDefaultAccounts(companyId, tenantId);
 
-            const existingCodes = new Set(accounts.map(a => a.code));
-            const missing = defaultExpenses.filter(d => !existingCodes.has(d.code));
-
-            if (missing.length > 0) {
-                await prisma.accounts.createMany({
-                    data: missing.map(m => ({
-                        tenant_id: tenantId,
-                        company_id: companyId,
-                        name: m.name,
-                        code: m.code,
-                        type: 'Expense',
-                        is_active: true
-                    })),
-                    skipDuplicates: true
-                });
-
-                // Re-fetch after seeding
-                accounts = await prisma.accounts.findMany({
-                    where: {
-                        company_id: companyId,
-                        type: 'Expense',
-                        is_active: true
-                    },
-                    select: { id: true, name: true, code: true },
-                    orderBy: { name: 'asc' }
-                });
-            }
+            // Re-fetch after seeding
+            accounts = await prisma.accounts.findMany({
+                where: {
+                    company_id: companyId,
+                    type: 'Expense',
+                    is_active: true
+                },
+                select: { id: true, name: true, code: true },
+                orderBy: { name: 'asc' }
+            });
         }
 
         return { success: true, data: accounts };
@@ -223,6 +197,9 @@ export async function upsertPayment(data: {
                 // Let's keep strict prefix 'PAY' for outbound, 'RCP' for inbound like before to avoid breaking searches, but make it sequential.
                 // Actually, for Petty Cash specifically, maybe they want 'PCV'?
                 // The current type is 'outbound'.
+
+                // NOTE: expense entries are now handled by recordExpense action in expenses.ts which uses 'PV'.
+                // This upsertPayment is mainly for complex payments now.
 
                 const prefixToUse = data.type === 'inbound' ? 'RCP' : 'PAY';
 

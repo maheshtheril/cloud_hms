@@ -32,6 +32,37 @@ export function PettyCashVoucher({ payment, onClose }: PettyCashVoucherProps) {
         window.print();
     };
 
+    // Helper to safely get fields
+    const getPayee = () => {
+        if (payment.payee_name) return payment.payee_name;
+        if (payment.payeeName) return payment.payeeName;
+        if (payment.partner_name) return payment.partner_name;
+        if (payment.metadata?.payee_name) return payment.metadata.payee_name;
+        return "Bearer";
+    };
+
+    const getDate = () => {
+        if (payment.date) return new Date(payment.date);
+        if (payment.payment_date) return new Date(payment.payment_date);
+        if (payment.created_at) return new Date(payment.created_at);
+        if (payment.metadata?.date) return new Date(payment.metadata.date);
+        return new Date();
+    };
+
+    const getMemo = () => {
+        if (payment.memo) return payment.memo;
+        if (payment.description) return payment.description;
+        if (payment.metadata?.memo) return payment.metadata.memo;
+        if (payment.metadata?.description) return payment.metadata.description;
+        return "Petty Cash Expense";
+    };
+
+    const getCategory = () => {
+        if (payment.metadata?.category_name) return payment.metadata.category_name;
+        if (payment.payment_lines?.[0]?.metadata?.account_name) return payment.payment_lines[0].metadata.account_name;
+        return "General Expense";
+    };
+
     return (
         <div className="p-6 flex flex-col items-center justify-center min-h-[400px]">
             <style jsx global>{`
@@ -68,11 +99,11 @@ export function PettyCashVoucher({ payment, onClose }: PettyCashVoucherProps) {
                     <div className="text-right">
                         <div className="flex items-center gap-2 justify-end mb-1">
                             <span className="font-bold text-slate-600 uppercase text-xs">Voucher No:</span>
-                            <span className="font-mono font-bold text-lg">{payment.payment_number}</span>
+                            <span className="font-mono font-bold text-lg">{payment.payment_number || 'PENDING'}</span>
                         </div>
                         <div className="flex items-center gap-2 justify-end">
                             <span className="font-bold text-slate-600 uppercase text-xs">Date:</span>
-                            <span className="font-medium">{format(new Date(payment.date || payment.payment_date || new Date()), 'dd MMM, yyyy')}</span>
+                            <span className="font-medium">{format(getDate(), 'dd MMM, yyyy')}</span>
                         </div>
                     </div>
                 </div>
@@ -82,7 +113,7 @@ export function PettyCashVoucher({ payment, onClose }: PettyCashVoucherProps) {
                     <div className="flex gap-4 items-end">
                         <span className="font-bold text-slate-700 w-24 uppercase text-sm pb-1">Paid To:</span>
                         <div className="flex-1 border-b border-slate-400 border-dashed pb-1 font-medium text-lg px-2 text-slate-900">
-                            {payment.payee_name || payment.payeeName}
+                            {getPayee()}
                         </div>
                     </div>
 
@@ -96,7 +127,7 @@ export function PettyCashVoucher({ payment, onClose }: PettyCashVoucherProps) {
                     <div className="flex gap-4 items-end">
                         <span className="font-bold text-slate-700 w-24 uppercase text-sm pb-1">On A/C of:</span>
                         <div className="flex-1 border-b border-slate-400 border-dashed pb-1 font-medium text-lg px-2 text-slate-900">
-                            {payment.memo || payment.description || "Petty Cash Expense"}
+                            {getMemo()}
                         </div>
                     </div>
 
@@ -104,7 +135,7 @@ export function PettyCashVoucher({ payment, onClose }: PettyCashVoucherProps) {
                         <div className="border border-slate-300 rounded p-4 bg-slate-50">
                             <p className="text-xs font-bold text-slate-500 uppercase mb-1">Expense Category</p>
                             <p className="font-medium text-slate-900 capitalize">
-                                {(payment.metadata as any)?.category_name || 'General Expense'}
+                                {getCategory()}
                             </p>
                         </div>
                         <div className="flex items-center justify-end gap-3 p-4 bg-slate-100 rounded border border-slate-200">
