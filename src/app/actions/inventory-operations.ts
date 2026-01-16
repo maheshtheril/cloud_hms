@@ -236,6 +236,20 @@ export async function receiveStock(data: ReceiveStockData) {
                 }
             }
 
+            // G. AUTOMATIC ACCOUNTING POSTING
+            // In a real-time ERP, receiving stock immediately impacts the Balance Sheet.
+            // Debit: Inventory Asset (1400) | Credit: Accounts Payable (2000) or GRNI
+            try {
+                // We use dynamic import to avoid circular dependencies if any, though likely not needed here.
+                // Keeping it clean by calling the service we found.
+                const { AccountingService } = await import("@/lib/services/accounting");
+                await AccountingService.postPurchaseReceipt(receipt.id, session.user.id);
+            } catch (accError) {
+                console.error("Auto-Accounting Failed for Receipt:", receipt.id, accError);
+                // We do NOT rollback the stock receipt because physically it happened. 
+                // We just log the failure. A "Retry Posting" UI would usually handle this later.
+            }
+
             return receipt
         })
 
