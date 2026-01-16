@@ -167,7 +167,7 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                                                 <Input
                                                     type="number"
                                                     {...field}
-                                                    value={field.value || ''}
+                                                    value={(field.value as number) || ''}
                                                     className="pl-8 text-xl font-bold text-slate-900 bg-slate-50 border-slate-200 h-12 focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
                                                     placeholder="0.00"
                                                 />
@@ -233,7 +233,7 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                                         <FormLabel className="text-xs font-bold uppercase text-slate-500">Expense Category</FormLabel>
                                         <FormControl>
                                             <SearchableSelect
-                                                value={field.value}
+                                                value={field.value as string}
                                                 onChange={(val) => field.onChange(val || "")}
                                                 onSearch={async (q) => {
                                                     return accountOptions.filter(opt =>
@@ -262,6 +262,7 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                                             <Input
                                                 placeholder="e.g. Vendor Name, Staff Name"
                                                 {...field}
+                                                value={field.value as string}
                                                 className="h-10 bg-slate-50 border-slate-200 focus:bg-white transition-all"
                                             />
                                         </FormControl>
@@ -284,6 +285,7 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                                         <Textarea
                                             placeholder="Detailed description of the expense..."
                                             {...field}
+                                            value={(field.value as string) || ''}
                                             className="resize-none bg-slate-50 border-slate-200 focus:bg-white transition-all"
                                         />
                                     </FormControl>
