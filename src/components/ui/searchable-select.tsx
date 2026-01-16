@@ -36,7 +36,7 @@ interface SearchableSelectProps {
     onChange: (value: string | null, option?: Option | null) => void;
     onSearch: (query: string) => Promise<Option[]>;
     placeholder?: string;
-    defaultOptions?: Option[];
+    options?: Option[];
     onCreate?: (query: string) => Promise<Option | null>;
     label?: string;
     className?: string;
@@ -55,7 +55,7 @@ export function SearchableSelect({
     onChange,
     onSearch,
     placeholder = "Select...",
-    defaultOptions = [],
+    options: propOptions = [],
     onCreate,
     label,
     className = "",
@@ -69,7 +69,7 @@ export function SearchableSelect({
 }: SearchableSelectProps) {
     const [open, setOpen] = React.useState(false);
     const [query, setQuery] = React.useState("");
-    const [options, setOptions] = React.useState<Option[]>(defaultOptions);
+    const [options, setOptions] = React.useState<Option[]>(propOptions);
     const [loading, setLoading] = React.useState(false);
     const [creating, setCreating] = React.useState(false);
     const [selectedOption, setSelectedOption] = React.useState<Option | null>(null);
@@ -78,11 +78,11 @@ export function SearchableSelect({
 
     React.useEffect(() => {
         // Stop updating if user is searching. 
-        // We only want to sync options with defaultOptions when search is cleared/idle.
+        // We only want to sync options with propOptions when search is cleared/idle.
         if (query) return;
 
-        setOptions(defaultOptions);
-    }, [defaultOptions, query]);
+        setOptions(propOptions);
+    }, [propOptions, query]);
 
     // Reset active index when options change
     React.useEffect(() => {
@@ -105,7 +105,7 @@ export function SearchableSelect({
         }
 
         // Try finding in current options or default options
-        const found = options.find(o => o.id === value) || defaultOptions.find(o => o.id === value);
+        const found = options.find(o => o.id === value) || propOptions.find(o => o.id === value);
 
         if (found) {
             setSelectedOption(found);
@@ -121,7 +121,7 @@ export function SearchableSelect({
             if (variant === 'ghost') setQuery(valueLabel);
             else setQuery("");
         }
-    }, [value, valueLabel, options, defaultOptions, variant, open]);
+    }, [value, valueLabel, options, propOptions, variant, open]);
 
     // Calculate position for portal
     React.useEffect(() => {

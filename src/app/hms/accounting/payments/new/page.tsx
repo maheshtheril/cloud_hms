@@ -492,7 +492,12 @@ export default function NewPaymentPage() {
                                         <Wallet className="h-6 w-6 text-rose-500" />
                                         Expense Recorder
                                     </h2>
-                                    <p className="text-slate-400 text-xs mt-1 uppercase tracking-wider font-bold">Multiple receipts? No problem.</p>
+                                    <div className="flex items-center gap-4 mt-2">
+                                        <p className="text-slate-400 text-xs uppercase tracking-wider font-bold">New Batch</p>
+                                        <div className="bg-white/10 px-3 py-1 rounded text-[10px] font-mono border border-white/10 text-slate-300">
+                                            Voucher #: <span className="text-white font-bold tracking-widest">AUTO</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div className="text-right bg-white/10 px-6 py-2 rounded-2xl border border-white/10">
                                     <span className="text-[10px] uppercase font-black text-rose-300 block">Total Expenses</span>
@@ -508,7 +513,7 @@ export default function NewPaymentPage() {
                                         <thead>
                                             <tr className="bg-slate-50 dark:bg-white/5 text-[10px] uppercase font-black text-slate-500 tracking-wider">
                                                 <th className="px-4 py-3 w-12 text-center">#</th>
-                                                <th className="px-4 py-3 w-48">Expense Type (Category)</th>
+                                                <th className="px-4 py-3 w-48">Expense Ledger</th>
                                                 <th className="px-4 py-3">Description & Payee</th>
                                                 <th className="px-4 py-3 w-40">Date</th>
                                                 <th className="px-4 py-3 w-40 text-right">Amount (₹)</th>
@@ -524,7 +529,8 @@ export default function NewPaymentPage() {
                                                             value={line.accountId}
                                                             onChange={(id, opt) => updateLine(line.id, 'accountId', id || '')}
                                                             onSearch={handleAccountSearch}
-                                                            placeholder="Select Category..."
+                                                            options={accounts.map(a => ({ id: a.id, label: `${a.code} - ${a.name}`, subLabel: a.type }))}
+                                                            placeholder="Select Expense..."
                                                             className="w-full bg-transparent border-b border-transparent group-hover:bg-white group-hover:border-slate-200 text-sm py-1"
                                                             isDark
                                                         />
@@ -574,12 +580,13 @@ export default function NewPaymentPage() {
                                             </div>
 
                                             <div className="space-y-1">
-                                                <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Category</label>
+                                                <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Expense Ledger</label>
                                                 <SearchableSelect
                                                     value={line.accountId}
                                                     onChange={(id, opt) => updateLine(line.id, 'accountId', id || '')}
                                                     onSearch={handleAccountSearch}
-                                                    placeholder="Select Expense Category..."
+                                                    options={accounts.map(a => ({ id: a.id, label: `${a.code} - ${a.name}`, subLabel: a.type }))}
+                                                    placeholder="Select Expense Ledger..."
                                                     className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl"
                                                     isDark
                                                 />
