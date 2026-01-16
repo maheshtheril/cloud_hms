@@ -212,53 +212,40 @@ export default function NewPaymentPage() {
                 router.push('/hms/accounting/payments');
             }
         } else {
-            // Direct Expense (Potential Multi-Date Batch)
-            // Group lines by date
-            const groupedLines: Record<string, DirectLine[]> = {};
+            // Direct Expense (Unified Batch - One Payment Number)
+            const validLines = directLines.filter(l => l.accountId && Number(l.amount) > 0);
 
-            directLines.forEach(line => {
-                if (!line.accountId || Number(line.amount) <= 0) return;
-                // Use line date or fall back to batch date
-                const lineDate = line.date || date;
-                if (!groupedLines[lineDate]) groupedLines[lineDate] = [];
-                groupedLines[lineDate].push(line);
-            });
-
-            const dates = Object.keys(groupedLines);
-            if (dates.length === 0) {
+            if (validLines.length === 0) {
                 toast({ title: "Validation Error", description: "Please add at least one valid expense line", variant: "destructive" });
                 setIsSubmitting(false);
                 return;
             }
 
-            let successCount = 0;
-            let errors: string[] = [];
+            // Calculate Total for the Header
+            const totalAmount = validLines.reduce((sum, l) => sum + Number(l.amount), 0);
 
-            // Execute Sequentially to ensure order (optional, parallel is faster but order key is safer for logs)
-            for (const d of dates) {
-                const lines = groupedLines[d];
-                const dateTotal = lines.reduce((sum, l) => sum + Number(l.amount), 0);
-
-                const payload = {
-                    ...basePayload,
-                    amount: dateTotal,
-                    date: new Date(d),
-                    lines: lines.map(l => ({
+            const payload = {
+                ...basePayload,
+                amount: totalAmount,
+                date: new Date(date), // The Payment/Voucher Date
+                lines: validLines.map(l => {
+                    // Start description with date if specific date is set and differs from batch date
+                    const lineDate = l.date || date;
+                    const descPrefix = lineDate && lineDate !== date ? `[${lineDate}] ` : '';
+                    return {
                         accountId: l.accountId,
                         amount: Number(l.amount),
-                        description: l.description
-                    }))
-                };
+                        description: `${descPrefix}${l.description || ''}`
+                    };
+                })
+            };
 
-                const res = await handleSavePayload(payload);
-                if (res.success) successCount++;
-                else errors.push(`${d}: ${res.error}`);
-            }
+            const res = await handleSavePayload(payload);
 
-            if (errors.length > 0) {
-                toast({ title: "Partial Success", description: `Saved ${successCount} entries. Errors: ${errors.join(', ')}`, variant: "destructive" });
+            if (res.error) {
+                toast({ title: "Error", description: res.error, variant: "destructive" });
             } else {
-                toast({ title: "Success", description: `Recorded ${dates.length} separate expense entries successfully.` });
+                toast({ title: "Success", description: `Expense Voucher recorded successfully.` });
                 if (!classicMode) router.push('/hms/accounting/payments');
             }
         }
