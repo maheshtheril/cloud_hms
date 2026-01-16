@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import * as LucideIcons from 'lucide-react';
 import {
     Menu, ChevronLeft, ChevronRight, PanelLeftClose,
-    Building2, Activity, LogOut, User, Settings, Search, Sun, Moon
+    Building2, Activity, LogOut, User, Settings, Search, Sun, Moon, FileText
 } from 'lucide-react';
 import { useTheme } from '@/contexts/theme-context';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -352,7 +352,12 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                             </Link>
                         </DropdownMenuItem>
 
-
+                        <DropdownMenuItem asChild className="focus:bg-emerald-50 dark:focus:bg-emerald-900/20 focus:text-emerald-700 dark:focus:text-emerald-400 cursor-pointer rounded-lg mb-1 h-10">
+                            <a href="/api/hms/guide" target="_blank" className="flex items-center gap-3 px-2 w-full">
+                                <FileText className="h-4 w-4" />
+                                <span>Institutional Guide</span>
+                            </a>
+                        </DropdownMenuItem>
 
                         <DropdownMenuItem
                             onClick={(e) => {
