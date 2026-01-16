@@ -61,7 +61,7 @@ export default function NewPaymentPage() {
     // Load Accounts for Direct Mode
     useEffect(() => {
         if (paymentType === 'direct' && accounts.length === 0) {
-            getAccounts().then(res => {
+            getAccounts('', ['Expense', 'Cost of Goods Sold', 'Other Expense', 'Asset']).then(res => {
                 if (res.success) setAccounts(res.data || []);
             });
         }
@@ -141,7 +141,8 @@ export default function NewPaymentPage() {
     };
 
     const handleAccountSearch = async (query: string) => {
-        const res = await getAccounts(query);
+        // Filter for Expense-like accounts as per world standards for "Record Expense"
+        const res = await getAccounts(query, ['Expense', 'Cost of Goods Sold', 'Other Expense', 'Asset']);
         return res.success ? res.data?.map((a: any) => ({
             id: a.id,
             label: `${a.code} - ${a.name}`,

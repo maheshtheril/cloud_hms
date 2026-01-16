@@ -8,7 +8,7 @@ import { ensureDefaultAccounts } from "@/lib/account-seeder"
 
 export type AccountType = 'Asset' | 'Liability' | 'Equity' | 'Revenue' | 'Expense';
 
-export async function getAccounts(search?: string) {
+export async function getAccounts(search?: string, typeFilter?: string[]) {
     const session = await auth();
     if (!session?.user?.companyId) return { error: "Unauthorized" };
 
@@ -23,6 +23,10 @@ export async function getAccounts(search?: string) {
                 { name: { contains: search, mode: 'insensitive' } },
                 { code: { contains: search, mode: 'insensitive' } }
             ];
+        }
+
+        if (typeFilter && typeFilter.length > 0) {
+            where.type = { in: typeFilter };
         }
 
         const accounts = await prisma.accounts.findMany({
