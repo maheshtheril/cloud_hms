@@ -23,6 +23,7 @@ interface DirectLine {
     accountName: string;
     description: string;
     amount: string;
+    date?: string; // Allow per-line date
 }
 
 import { ClassicVoucherEditor } from '@/components/accounting/classic-voucher-editor';
@@ -53,7 +54,7 @@ export default function NewPaymentPage() {
     // Direct Mode State
     const [payeeName, setPayeeName] = useState('');
     const [directLines, setDirectLines] = useState<DirectLine[]>([
-        { id: '1', accountId: '', accountName: '', description: '', amount: '' }
+        { id: '1', accountId: '', accountName: '', description: '', amount: '', date: new Date().toISOString().split('T')[0] }
     ]);
     const [accounts, setAccounts] = useState<any[]>([]);
 
@@ -129,7 +130,8 @@ export default function NewPaymentPage() {
             accountId: '',
             accountName: '',
             description: '',
-            amount: ''
+            amount: '',
+            date: date // Default to current batch date
         }]);
     };
 
@@ -149,20 +151,9 @@ export default function NewPaymentPage() {
 
     // --- Submission ---
     const handleSavePayload = async (payload: any) => {
-        setIsSubmitting(true);
+        // Internal helper without toast spam if batch
         const res = await upsertPayment(payload);
-
-        if (res.error) {
-            toast({ title: "Error", description: res.error, variant: "destructive" });
-            setIsSubmitting(false);
-            return false;
-        } else {
-            toast({ title: "Success", description: "Payment recorded successfully" });
-            if (!classicMode) {
-                router.push('/hms/accounting/payments');
-            }
-            return true;
-        }
+        return res;
     };
 
     const handleSubmit = async (e?: React.FormEvent) => {
@@ -173,7 +164,7 @@ export default function NewPaymentPage() {
             return;
         }
 
-        // Direct Payment Validation: Either Partner ID (if selected) OR Payee Name (if manual)
+        // Direct Payment Validation
         if (paymentType === 'direct') {
             if (isManualPayee && !payeeName) {
                 toast({ title: "Validation Error", description: "Please enter a Payee Name", variant: "destructive" });
@@ -190,37 +181,88 @@ export default function NewPaymentPage() {
             return;
         }
 
-        const payload: any = {
+        setIsSubmitting(true);
+
+        const basePayload: any = {
             type: 'outbound',
-            partner_id: partnerId, // Reuse partnerId for both modes if present
+            partner_id: partnerId,
             payeeName: (paymentType === 'direct' && isManualPayee) ? payeeName : undefined,
-            amount: Number(amount),
             method,
             reference,
-            date: new Date(date),
             memo,
         };
 
         if (paymentType === 'bill') {
-            payload.allocations = Object.entries(allocations)
-                .filter(([_, amt]) => amt > 0)
-                .map(([id, amt]) => ({ invoiceId: id, amount: amt }));
-        } else {
-            payload.lines = directLines
-                .filter(l => l.accountId && Number(l.amount) > 0)
-                .map(l => ({
-                    accountId: l.accountId,
-                    amount: Number(l.amount),
-                    description: l.description
-                }));
+            // Bill Payment (Single Date)
+            const payload = {
+                ...basePayload,
+                amount: Number(amount),
+                date: new Date(date),
+                allocations: Object.entries(allocations)
+                    .filter(([_, amt]) => amt > 0)
+                    .map(([id, amt]) => ({ invoiceId: id, amount: amt }))
+            };
 
-            if (payload.lines.length === 0) {
+            const res = await handleSavePayload(payload);
+            if (res.error) {
+                toast({ title: "Error", description: res.error, variant: "destructive" });
+            } else {
+                toast({ title: "Success", description: "Payment recorded successfully" });
+                router.push('/hms/accounting/payments');
+            }
+        } else {
+            // Direct Expense (Potential Multi-Date Batch)
+            // Group lines by date
+            const groupedLines: Record<string, DirectLine[]> = {};
+
+            directLines.forEach(line => {
+                if (!line.accountId || Number(line.amount) <= 0) return;
+                // Use line date or fall back to batch date
+                const lineDate = line.date || date;
+                if (!groupedLines[lineDate]) groupedLines[lineDate] = [];
+                groupedLines[lineDate].push(line);
+            });
+
+            const dates = Object.keys(groupedLines);
+            if (dates.length === 0) {
                 toast({ title: "Validation Error", description: "Please add at least one valid expense line", variant: "destructive" });
+                setIsSubmitting(false);
                 return;
+            }
+
+            let successCount = 0;
+            let errors: string[] = [];
+
+            // Execute Sequentially to ensure order (optional, parallel is faster but order key is safer for logs)
+            for (const d of dates) {
+                const lines = groupedLines[d];
+                const dateTotal = lines.reduce((sum, l) => sum + Number(l.amount), 0);
+
+                const payload = {
+                    ...basePayload,
+                    amount: dateTotal,
+                    date: new Date(d),
+                    lines: lines.map(l => ({
+                        accountId: l.accountId,
+                        amount: Number(l.amount),
+                        description: l.description
+                    }))
+                };
+
+                const res = await handleSavePayload(payload);
+                if (res.success) successCount++;
+                else errors.push(`${d}: ${res.error}`);
+            }
+
+            if (errors.length > 0) {
+                toast({ title: "Partial Success", description: `Saved ${successCount} entries. Errors: ${errors.join(', ')}`, variant: "destructive" });
+            } else {
+                toast({ title: "Success", description: `Recorded ${dates.length} separate expense entries successfully.` });
+                if (!classicMode) router.push('/hms/accounting/payments');
             }
         }
 
-        await handleSavePayload(payload);
+        setIsSubmitting(false);
     };
 
     if (classicMode) {
@@ -470,16 +512,17 @@ export default function NewPaymentPage() {
                                 </div>
                             </div>
 
-                            {/* Data Grid */}
-                            <div className="p-6">
-                                <div className="rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden">
+                            {/* Data Grid (Responsive) */}
+                            <div className="p-4 md:p-6">
+                                {/* Desktop Table */}
+                                <div className="hidden md:block rounded-xl border border-slate-200 dark:border-white/10 overflow-hidden">
                                     <table className="w-full text-left border-collapse">
                                         <thead>
                                             <tr className="bg-slate-50 dark:bg-white/5 text-[10px] uppercase font-black text-slate-500 tracking-wider">
                                                 <th className="px-4 py-3 w-12 text-center">#</th>
-                                                <th className="px-4 py-3 w-48">Expense Type (Account)</th>
+                                                <th className="px-4 py-3 w-48">Expense Type (Category)</th>
                                                 <th className="px-4 py-3">Description & Payee</th>
-                                                <th className="px-4 py-3 w-40">Date</th> {/* Added Date per request */}
+                                                <th className="px-4 py-3 w-40">Date</th>
                                                 <th className="px-4 py-3 w-40 text-right">Amount (₹)</th>
                                                 <th className="px-2 py-3 w-10"></th>
                                             </tr>
@@ -508,25 +551,11 @@ export default function NewPaymentPage() {
                                                         />
                                                     </td>
                                                     <td className="px-4 py-4 align-top">
-                                                        {/* We need to add 'date' to DirectLine interface, defaulting to main date if missing */}
                                                         <input
                                                             type="date"
-                                                            value={date} // Currently shared date, strictly speaking user asked for multi-date.
-                                                            // For now, binding to global date or I need to update state schema.
-                                                            // Updating schema is risky without refactoring types. 
-                                                            // The user explicitly asked for "multiple dates".
-                                                            // I will keep it simple: Use global date for batch, but show it here for visual completion, 
-                                                            // or strictly I should add date to line item.
-                                                            // Let's stick to global date for now to ensure stability, or purely visual "Overridable" if I had time to change types.
-                                                            // To be safe and "futuristic", let's implied that this batch is for a single day OR create a quick date picker.
-                                                            // Effectively, I'll bind to global 'date' for this specific row so it looks like you can change it, 
-                                                            // but changing it updates the whole batch or... 
-                                                            // Let's just use the global date picker at the bottom for the batch.
-                                                            // Wait, user asked for "multiple direct expense entry with multiple dates".
-                                                            // I must update the DirectLine type in the next step to support per-line date.
-                                                            // For this step, I will render the Global Date but label it "Batch Date".
-                                                            disabled
-                                                            className="w-full bg-transparent text-slate-400 cursor-not-allowed"
+                                                            value={line.date || date}
+                                                            onChange={(e) => updateLine(line.id, 'date', e.target.value)}
+                                                            className="w-full bg-transparent font-medium text-slate-500 hover:text-slate-900 border-b border-transparent hover:border-slate-200 focus:border-indigo-500 focus:outline-none transition-colors"
                                                         />
                                                     </td>
                                                     <td className="px-4 py-4 align-top">
@@ -545,12 +574,79 @@ export default function NewPaymentPage() {
                                             ))}
                                         </tbody>
                                     </table>
+                                </div>
+
+                                {/* Mobile List View */}
+                                <div className="md:hidden space-y-4">
+                                    {directLines.map((line, idx) => (
+                                        <div key={line.id} className="bg-slate-50 dark:bg-white/5 rounded-2xl p-4 space-y-4 border border-slate-100 dark:border-white/5 relative">
+                                            <div className="flex justify-between items-start">
+                                                <span className="h-6 w-6 rounded-full bg-slate-200 dark:bg-white/10 text-xs font-bold flex items-center justify-center text-slate-500">#{idx + 1}</span>
+                                                <button onClick={() => removeLine(line.id)} className="text-slate-400 hover:text-rose-500 p-1"><Trash2 className="h-4 w-4" /></button>
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Category</label>
+                                                <SearchableSelect
+                                                    value={line.accountId}
+                                                    onChange={(id, opt) => updateLine(line.id, 'accountId', id || '')}
+                                                    onSearch={handleAccountSearch}
+                                                    placeholder="Select Expense Category..."
+                                                    className="w-full bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl"
+                                                    isDark
+                                                />
+                                            </div>
+
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Details</label>
+                                                <input
+                                                    type="text"
+                                                    value={line.description}
+                                                    onChange={(e) => updateLine(line.id, 'description', e.target.value)}
+                                                    placeholder="Description & Payee"
+                                                    className="w-full px-3 py-2 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-medium"
+                                                />
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Date</label>
+                                                    <input
+                                                        type="date"
+                                                        value={line.date || date}
+                                                        onChange={(e) => updateLine(line.id, 'date', e.target.value)}
+                                                        className="w-full px-3 py-2 bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 rounded-xl text-sm font-bold"
+                                                    />
+                                                </div>
+                                                <div className="space-y-1">
+                                                    <label className="text-[10px] uppercase font-black text-slate-400 tracking-widest">Amount</label>
+                                                    <input
+                                                        type="number"
+                                                        value={line.amount}
+                                                        onChange={(e) => updateLine(line.id, 'amount', e.target.value)}
+                                                        placeholder="0.00"
+                                                        className="w-full px-3 py-2 bg-white dark:bg-black/20 border border-slate-200 dark:border-rose-500/30 rounded-xl text-right font-mono font-bold text-rose-500"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <button
                                         type="button"
                                         onClick={addLine}
-                                        className="w-full py-3 bg-slate-50 dark:bg-white/5 text-xs font-bold uppercase tracking-widest text-slate-500 hover:bg-slate-100 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"
+                                        className="w-full py-4 rounded-xl border-2 border-dashed border-slate-200 dark:border-white/10 text-xs font-bold uppercase tracking-widest text-slate-400 hover:border-indigo-500 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-all flex items-center justify-center gap-2"
                                     >
-                                        <Plus className="h-4 w-4" /> Add Another Expense
+                                        <Plus className="h-4 w-4" /> Add Another Expense Line
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled
+                                        className="w-full py-4 rounded-xl border border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-white/5 text-xs font-bold uppercase tracking-widest text-slate-400 cursor-not-allowed flex items-center justify-center gap-2 opacity-60"
+                                    >
+                                        <div className="h-4 w-4 rounded bg-slate-200" /> Attach Receipt (Coming Soon)
                                     </button>
                                 </div>
                             </div>
