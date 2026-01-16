@@ -803,7 +803,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                             }}
                                             onSearch={searchSuppliers}
                                             onCreate={async (q) => { setSupplierName(q); setSupplierId(null); return null; }}
-                                            defaultOptions={supplierId
+                                            options={supplierId
                                                 ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }]
                                                 : []
                                             }
@@ -1036,7 +1036,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                                                 onChange={(id, opt) => handleProductSelect(index, id, opt)}
                                                                 onSearch={searchProducts}
                                                                 onCreate={createProductQuick}
-                                                                defaultOptions={item.productId ? [{ id: item.productId, label: item.productName }] : []}
+                                                                options={item.productId ? [{ id: item.productId, label: item.productName }] : []}
                                                                 placeholder="Search..."
                                                                 className="w-full text-[12px] font-bold text-foreground py-0"
                                                                 variant="ghost"

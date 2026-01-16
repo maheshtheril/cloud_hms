@@ -692,7 +692,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                             value={supplierId}
                                             onChange={(id, opt) => { setSupplierId(id); if (opt) { setSupplierName(opt.label); setSupplierMeta(opt.metadata); } }}
                                             onSearch={searchSuppliers}
-                                            defaultOptions={supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }] : []}
+                                            options={supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }] : []}
                                             placeholder="Select Source Supplier..."
                                             className="w-full bg-background border-border h-14 font-black text-foreground"
                                             variant="ghost"
@@ -867,7 +867,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess }: ReceiptEntryD
                                                                 onChange={(id, opt) => handleProductSelect(index, id, opt)}
                                                                 onSearch={searchProducts}
                                                                 onCreate={createProductQuick}
-                                                                defaultOptions={item.productId ? [{ id: item.productId, label: item.productName }] : []}
+                                                                options={item.productId ? [{ id: item.productId, label: item.productName }] : []}
                                                                 placeholder="Search..."
                                                                 className="w-full text-[12px] font-bold text-foreground py-0"
                                                                 variant="ghost"

@@ -529,7 +529,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                 <SearchableSelect
                   value={selectedPatientId}
                   valueLabel={selectedPatientLabel}
-                  defaultOptions={patientOptions.slice(0, 20)}
+                  options={patientOptions.slice(0, 20)}
                   onChange={id => setSelectedPatientId(id || '')}
                   onCreate={q => { setQuickPatientName(q); setIsQuickPatientOpen(true); return Promise.resolve(null); }}
                   onSearch={async q => {
@@ -632,7 +632,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                           inputId={index === 0 ? 'item-search-0' : `item-search-${index}`}
                           value={line.product_id}
                           valueLabel={line.description}
-                          defaultOptions={itemOptions.slice(0, 20)}
+                          options={itemOptions.slice(0, 20)}
                           onChange={v => updateLine(line.id, 'product_id', v)}
                           onSearch={async q => {
                             const search = q.toLowerCase();

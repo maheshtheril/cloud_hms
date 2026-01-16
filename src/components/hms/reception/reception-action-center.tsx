@@ -220,7 +220,7 @@ export function ReceptionActionCenter({
                                             d.subLabel?.toLowerCase().includes(lower)
                                         )
                                     }}
-                                    defaultOptions={doctorOptions}
+                                    options={doctorOptions}
                                     placeholder="Filter by Doctor..."
                                 />
                             </div>

@@ -596,7 +596,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                                                             subLabel: `${item.sku ? `[${item.sku}] ` : ''}${item.description || ''}`.trim()
                                                         }));
                                                 }}
-                                                defaultOptions={billableOptions.slice(0, 50).map(item => ({
+                                                options={billableOptions.slice(0, 50).map(item => ({
                                                     id: item.id,
                                                     label: `${item.label} - ₹${item.price}`,
                                                     subLabel: `${item.sku ? `[${item.sku}] ` : ''}${item.description || ''}`.trim()

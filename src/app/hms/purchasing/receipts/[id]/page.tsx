@@ -631,7 +631,7 @@ export default function EditPurchaseReceiptPage() {
                             <div className="group relative">
                                 <SearchableSelect
                                     value={supplierId}
-                                    defaultOptions={useMemo(() => supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin }] : [], [supplierId, supplierName, supplierMeta?.gstin])}
+                                    options={useMemo(() => supplierId ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin }] : [], [supplierId, supplierName, supplierMeta?.gstin])}
                                     onChange={(id, opt) => { setSupplierId(id); setSupplierName(opt?.label || ''); }}
                                     onSearch={searchSuppliers}
                                     placeholder="Select Vendor..."
@@ -915,7 +915,7 @@ export default function EditPurchaseReceiptPage() {
                                                         onChange={(id, opt) => handleProductSelect(index, id, opt)}
                                                         onSearch={searchProducts}
                                                         onCreate={createProductQuick}
-                                                        defaultOptions={item.productId ? [{ id: item.productId, label: item.productName }] : []}
+                                                        options={item.productId ? [{ id: item.productId, label: item.productName }] : []}
                                                         placeholder={item.productName || "Search Product..."}
                                                         variant="ghost"
                                                         className="w-full text-sm font-bold text-foreground placeholder:text-muted/30"
@@ -940,7 +940,7 @@ export default function EditPurchaseReceiptPage() {
                                                     }}
                                                     onSearch={async (q) => PACKING_OPTIONS.filter(o => o.toLowerCase().includes(q.toLowerCase())).map(o => ({ id: o, label: o }))}
                                                     onCreate={async (q) => ({ id: q, label: q })}
-                                                    defaultOptions={[
+                                                    options={[
                                                         ...PACKING_OPTIONS.map(o => ({ id: o, label: o })),
                                                         ...(item.packing && !PACKING_OPTIONS.includes(item.packing) ? [{ id: item.packing, label: item.packing }] : [])
                                                     ]}
@@ -1082,7 +1082,7 @@ export default function EditPurchaseReceiptPage() {
                                                         if (!isNaN(val)) return { id: val.toString(), label: val + '%' };
                                                         return null;
                                                     }}
-                                                    defaultOptions={[
+                                                    options={[
                                                         ...TAX_OPTIONS.map(o => ({ id: o, label: o + '%' })),
                                                         ...(item.taxRate !== undefined && !TAX_OPTIONS.includes(item.taxRate.toString()) ? [{ id: item.taxRate.toString(), label: item.taxRate + '%' }] : [])
                                                     ]}

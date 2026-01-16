@@ -250,7 +250,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                                 <SearchableSelect
                                     value={formData.roleId || null}
                                     placeholder="Search for a role..."
-                                    defaultOptions={[
+                                    options={[
                                         { id: 'no-role', label: 'No specific role (User will have no permissions)' },
                                         ...currentRoles.map(r => ({ id: r.id, label: r.name, subLabel: r.key || undefined }))
                                     ]}

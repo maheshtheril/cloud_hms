@@ -211,7 +211,7 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                                                 opt.subLabel.toLowerCase().includes(q.toLowerCase())
                                             );
                                         }}
-                                        defaultOptions={accountOptions}
+                                        options={accountOptions}
                                         placeholder="Search Expense Category..."
                                     />
                                 </FormControl>

@@ -80,7 +80,7 @@ export function PatientDoctorSelectors({
                         </div>
 
                         <SearchableSelect
-                            defaultOptions={patientOptions}
+                            options={patientOptions}
                             onSearch={async (q) => {
                                 const lower = q.toLowerCase()
                                 return patientOptions.filter(p => p.label.toLowerCase().includes(lower) || p.subLabel.toLowerCase().includes(lower))
@@ -114,7 +114,7 @@ export function PatientDoctorSelectors({
                     </label>
 
                     <SearchableSelect
-                        defaultOptions={doctorOptions}
+                        options={doctorOptions}
                         onSearch={async (q) => {
                             const lower = q.toLowerCase()
                             return doctorOptions.filter(d => d.label.toLowerCase().includes(lower) || d.subLabel.toLowerCase().includes(lower))
