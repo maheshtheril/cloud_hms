@@ -25,7 +25,7 @@ import {
 import { Calendar } from "@/components/ui/calendar"
 import { useToast } from "@/components/ui/use-toast"
 import { recordExpense } from "@/app/actions/accounting/expenses"
-import { getExpenseAccounts } from "@/app/actions/accounting/payments"
+import { getAccounts } from "@/app/actions/accounting/chart-of-accounts"
 import { cn } from "@/lib/utils"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { Badge } from "@/components/ui/badge"
@@ -51,15 +51,15 @@ interface ExpenseDialogProps {
 export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
     const { toast } = useToast()
     const [loading, setLoading] = useState(false)
-    const [accounts, setAccounts] = useState<{ id: string; name: string; code: string }[]>([])
+    const [accounts, setAccounts] = useState<{ id: string; name: string; code: string; type: string }[]>([])
     // Mock Voucher No - real one comes from backend
     const voucherNo = "Auto"
 
     useEffect(() => {
         const fetchAccounts = async () => {
-            const res = await getExpenseAccounts();
+            const res = await getAccounts('', ['Expense', 'Liability', 'Equity', 'Asset', 'Cost of Goods Sold']);
             if (res.success && res.data) {
-                setAccounts(res.data);
+                setAccounts(res.data as any);
             }
         };
         fetchAccounts();
@@ -85,11 +85,10 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
     const onSubmit = async (values: z.infer<typeof expenseSchema>) => {
         setLoading(true)
         try {
-            // Aggregate lines for simple backend recording for now
-            // To properly mimicking Tally, we record one transaction with multiple splits.
-            const primaryLine = values.lines[0]; // Fallback for single-line backend
+            const primaryLine = values.lines[0];
+            const primaryAcc = accounts.find(a => a.id === primaryLine.categoryId);
+            const payeeName = primaryAcc ? primaryAcc.name : "Payment";
 
-            // Build a rich narration if multiple lines
             const combinedMemo = values.lines.map(l => {
                 const accName = accounts.find(a => a.id === l.categoryId)?.name || 'Exp';
                 return `${accName}: ${l.amount}`;
@@ -100,7 +99,7 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
             const result = await recordExpense({
                 amount: totalAmount,
                 categoryId: primaryLine.categoryId,
-                payeeName: "Cash Expense", // Generic payee for Tally style
+                payeeName: payeeName,
                 memo: finalMemo,
                 date: values.date,
                 method: values.sourceAccount
@@ -128,7 +127,7 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
     const accountOptions = accounts.map(acc => ({
         id: acc.id,
         label: acc.name,
-        subLabel: acc.code
+        subLabel: acc.type
     }));
 
     return (
@@ -136,7 +135,7 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
             {/* Tally Header */}
             <div className="bg-teal-700 text-yellow-400 px-4 py-2 flex justify-between items-center shadow-md">
                 <div className="flex items-center gap-4">
-                    <span className="font-bold text-lg tracking-wider">Accounting Voucher Creation</span>
+                    <span className="font-bold text-lg tracking-wider">Payment / Expense Voucher</span>
                 </div>
                 <div className="text-xs text-white opacity-80">
                     SaaS ERP Gateway
@@ -181,8 +180,8 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                                     ]}
                                     onSearch={async (q) => {
                                         const opts = [
-                                            { id: "cash", label: "Cash Account", subLabel: "Cur Bal: 50,000 Dr" },
-                                            { id: "bank", label: "HDFC Bank", subLabel: "Cur Bal: 1,20,000 Dr" }
+                                            { id: "cash", label: "Cash Account", subLabel: "Asset" },
+                                            { id: "bank", label: "HDFC Bank", subLabel: "Asset" }
                                         ];
                                         return opts.filter(o => o.label.toLowerCase().includes(q.toLowerCase()));
                                     }}
@@ -213,9 +212,12 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                                                 <SearchableSelect
                                                     value={field.value}
                                                     onChange={(val) => field.onChange(val || "")}
-                                                    onSearch={async (q) => accountOptions.filter(o => o.label.toLowerCase().includes(q.toLowerCase()))}
+                                                    onSearch={async (q) => {
+                                                        const res = await getAccounts(q, ['Expense', 'Liability', 'Equity', 'Asset', 'Cost of Goods Sold']);
+                                                        return res.success && res.data ? res.data.map((a: any) => ({ id: a.id, label: a.name, subLabel: a.type })) : [];
+                                                    }}
                                                     options={accountOptions}
-                                                    placeholder="Select Ledgers (Expense)"
+                                                    placeholder="Select Ledger (Expense/Vendor)"
                                                     className="border-0 shadow-none bg-transparent hover:bg-teal-50 text-sm h-8"
                                                 />
                                             )}

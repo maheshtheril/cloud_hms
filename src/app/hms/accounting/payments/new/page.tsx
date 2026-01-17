@@ -26,7 +26,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { recordExpense } from "@/app/actions/accounting/expenses";
-import { getExpenseAccounts } from "@/app/actions/accounting/payments";
+import { getAccounts } from "@/app/actions/accounting/chart-of-accounts";
 
 // Tally Style Schema
 const lineItemSchema = z.object({
@@ -36,7 +36,7 @@ const lineItemSchema = z.object({
 
 const expenseSchema = z.object({
     date: z.date(),
-    sourceAccount: z.string().default('cash'), // Represents Cash/Bank Ledger
+    sourceAccount: z.string().default('cash'),
     lines: z.array(lineItemSchema).min(1, "Select at least one ledger"),
     narration: z.string().optional()
 })
@@ -45,15 +45,15 @@ export default function NewPaymentPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
-    const [accounts, setAccounts] = useState<{ id: string; name: string; code: string }[]>([])
-    // Mock Voucher No - real one comes from backend
+    const [accounts, setAccounts] = useState<{ id: string; name: string; code: string; type: string }[]>([])
     const voucherNo = "Auto"
 
     useEffect(() => {
         const fetchAccounts = async () => {
-            const res = await getExpenseAccounts();
+            // Broaden scope to allow Vendor Payments (Liabilities)
+            const res = await getAccounts('', ['Expense', 'Liability', 'Equity', 'Asset', 'Cost of Goods Sold']);
             if (res.success && res.data) {
-                setAccounts(res.data);
+                setAccounts(res.data as any);
             }
         };
         fetchAccounts();
@@ -79,11 +79,10 @@ export default function NewPaymentPage() {
     const onSubmit = async (values: z.infer<typeof expenseSchema>) => {
         setLoading(true)
         try {
-            // Aggregate lines for simple backend recording for now
-            // To properly mimicking Tally, we record one transaction with multiple splits.
-            const primaryLine = values.lines[0]; // Fallback for single-line backend
+            const primaryLine = values.lines[0];
+            const primaryAcc = accounts.find(a => a.id === primaryLine.categoryId);
+            const payeeName = primaryAcc ? primaryAcc.name : "Payment";
 
-            // Build a rich narration if multiple lines
             const combinedMemo = values.lines.map(l => {
                 const accName = accounts.find(a => a.id === l.categoryId)?.name || 'Exp';
                 return `${accName}: ${l.amount}`;
@@ -94,7 +93,7 @@ export default function NewPaymentPage() {
             const result = await recordExpense({
                 amount: totalAmount,
                 categoryId: primaryLine.categoryId,
-                payeeName: "Cash Expense", // Generic payee for Tally style
+                payeeName: payeeName,
                 memo: finalMemo,
                 date: values.date,
                 method: values.sourceAccount
@@ -121,7 +120,7 @@ export default function NewPaymentPage() {
     const accountOptions = accounts.map(acc => ({
         id: acc.id,
         label: acc.name,
-        subLabel: acc.code
+        subLabel: acc.type
     }));
 
     return (
@@ -134,7 +133,10 @@ export default function NewPaymentPage() {
                     <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-yellow-400 hover:text-white hover:bg-teal-600">
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
-                    <span className="font-bold text-xl tracking-wider">Accounting Voucher Creation</span>
+                    <div>
+                        <span className="font-bold text-xl tracking-wider block">Payment / Expense Voucher</span>
+                        <span className="text-[10px] text-teal-200 font-bold uppercase tracking-widest">Outbound Payments (Vendors & Expenses)</span>
+                    </div>
                 </div>
                 <div className="text-sm text-white opacity-80 font-bold">
                     SaaS ERP Gateway
@@ -179,8 +181,8 @@ export default function NewPaymentPage() {
                                     ]}
                                     onSearch={async (q) => {
                                         const opts = [
-                                            { id: "cash", label: "Cash Account", subLabel: "Cur Bal: 50,000 Dr" },
-                                            { id: "bank", label: "HDFC Bank", subLabel: "Cur Bal: 1,20,000 Dr" }
+                                            { id: "cash", label: "Cash Account", subLabel: "Asset" },
+                                            { id: "bank", label: "HDFC Bank", subLabel: "Asset" }
                                         ];
                                         return opts.filter(o => o.label.toLowerCase().includes(q.toLowerCase()));
                                     }}
@@ -211,9 +213,12 @@ export default function NewPaymentPage() {
                                                 <SearchableSelect
                                                     value={field.value}
                                                     onChange={(val) => field.onChange(val || "")}
-                                                    onSearch={async (q) => accountOptions.filter(o => o.label.toLowerCase().includes(q.toLowerCase()))}
+                                                    onSearch={async (q) => {
+                                                        const res = await getAccounts(q, ['Expense', 'Liability', 'Equity', 'Asset', 'Cost of Goods Sold']);
+                                                        return res.success && res.data ? res.data.map((a: any) => ({ id: a.id, label: a.name, subLabel: a.type })) : [];
+                                                    }}
                                                     options={accountOptions}
-                                                    placeholder="Select Ledgers (Expense)"
+                                                    placeholder="Select Ledger (Expense/Vendor)"
                                                     className="border-0 shadow-none bg-transparent hover:bg-teal-50 text-base h-10"
                                                 />
                                             )}
