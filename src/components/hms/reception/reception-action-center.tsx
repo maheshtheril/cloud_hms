@@ -118,7 +118,7 @@ export function ReceptionActionCenter({
         { id: 'register', title: 'New Patient', icon: UserPlus, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-100 dark:border-emerald-800' },
         { id: 'appointment', title: 'Schedule', icon: CalendarPlus, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-100 dark:border-blue-800' },
         { id: 'billing', title: 'Billing', icon: CreditCard, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/20', border: 'border-violet-100 dark:border-violet-800' },
-        { id: 'expense', title: 'Expenses', icon: Wallet, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-100 dark:border-amber-800' },
+        { id: 'expense', title: 'Voucher', icon: Wallet, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-100 dark:border-amber-800' },
         { id: 'shift', title: 'Cash Counter', icon: Banknote, color: 'text-slate-600', bg: 'bg-slate-50 dark:bg-slate-800/50', border: 'border-slate-200 dark:border-slate-700' },
         { id: 'attendance', title: 'My Attendance', icon: Fingerprint, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/20', border: 'border-indigo-100 dark:border-indigo-800' }
     ]
@@ -499,7 +499,8 @@ export function ReceptionActionCenter({
             </Dialog>
 
             <Dialog open={activeModal === 'expense'} onOpenChange={() => setActiveModal(null)}>
-                <DialogContent className="max-w-2xl p-0 overflow-hidden bg-white border-none shadow-2xl">
+                {/* Full Screen Dialog for Payment Voucher */}
+                <DialogContent className="w-screen h-screen max-w-none p-0 overflow-hidden bg-white border-none shadow-none rounded-none m-0">
                     <ExpenseDialog onClose={() => setActiveModal(null)} />
                 </DialogContent>
             </Dialog>
