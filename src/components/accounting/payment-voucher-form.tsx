@@ -49,9 +49,10 @@ interface PaymentVoucherFormProps {
     onClose?: () => void;
     className?: string;
     onSuccess?: () => void;
+    headerActions?: React.ReactNode; // For injecting top-right controls
 }
 
-export function PaymentVoucherForm({ onClose, className, onSuccess }: PaymentVoucherFormProps) {
+export function PaymentVoucherForm({ onClose, className, onSuccess, headerActions }: PaymentVoucherFormProps) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
 
@@ -204,11 +205,11 @@ export function PaymentVoucherForm({ onClose, className, onSuccess }: PaymentVou
     }));
 
     return (
-        <div className={cn("bg-[#fff9e6] dark:bg-slate-900 font-mono text-sm flex flex-col h-full", className)}>
+        <div className={cn("bg-[#fff9e6] dark:bg-slate-900 font-mono text-sm flex flex-col h-full overflow-hidden", className)}>
             <Toaster />
 
-            {/* Header */}
-            <div className="bg-teal-700 text-yellow-400 px-6 py-3 flex justify-between items-center shadow-md shrink-0">
+            {/* Header - Fixed Stick Top */}
+            <div className="bg-teal-700 text-yellow-400 px-6 py-3 flex justify-between items-center shadow-md shrink-0 relative z-50">
                 <div className="flex items-center gap-4">
                     {onClose && (
                         <Button variant="ghost" size="icon" onClick={onClose} className="text-yellow-400 hover:text-white hover:bg-teal-600">
@@ -223,24 +224,32 @@ export function PaymentVoucherForm({ onClose, className, onSuccess }: PaymentVou
                     </div>
                 </div>
 
-                {/* Mode Switcher */}
-                <div className="flex gap-2">
-                    <Button
-                        size="sm"
-                        variant={mode === 'GENERAL' ? 'secondary' : 'ghost'}
-                        className={`font-bold ${mode === 'GENERAL' ? 'bg-yellow-400 text-teal-900 hover:bg-yellow-300' : 'text-teal-100 hover:text-white hover:bg-teal-600'}`}
-                        onClick={() => setMode('GENERAL')}
-                    >
-                        General (F5)
-                    </Button>
-                    <Button
-                        size="sm"
-                        variant={mode === 'BILL_SETTLEMENT' ? 'secondary' : 'ghost'}
-                        className={`font-bold ${mode === 'BILL_SETTLEMENT' ? 'bg-yellow-400 text-teal-900 hover:bg-yellow-300' : 'text-teal-100 hover:text-white hover:bg-teal-600'}`}
-                        onClick={() => setMode('BILL_SETTLEMENT')}
-                    >
-                        Bill Payment (Adv)
-                    </Button>
+                {/* Right Side: Mode Switcher + Custom Actions */}
+                <div className="flex items-center gap-4">
+                    <div className="flex gap-2">
+                        <Button
+                            size="sm"
+                            variant={mode === 'GENERAL' ? 'secondary' : 'ghost'}
+                            className={`font-bold ${mode === 'GENERAL' ? 'bg-yellow-400 text-teal-900 hover:bg-yellow-300' : 'text-teal-100 hover:text-white hover:bg-teal-600'}`}
+                            onClick={() => setMode('GENERAL')}
+                        >
+                            General (F5)
+                        </Button>
+                        <Button
+                            size="sm"
+                            variant={mode === 'BILL_SETTLEMENT' ? 'secondary' : 'ghost'}
+                            className={`font-bold ${mode === 'BILL_SETTLEMENT' ? 'bg-yellow-400 text-teal-900 hover:bg-yellow-300' : 'text-teal-100 hover:text-white hover:bg-teal-600'}`}
+                            onClick={() => setMode('BILL_SETTLEMENT')}
+                        >
+                            Bill Pay (Adv)
+                        </Button>
+                    </div>
+                    {/* Injected Header Actions (like Min/Max) */}
+                    {headerActions && (
+                        <div className="border-l border-teal-600 pl-4 ml-2">
+                            {headerActions}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -265,9 +274,10 @@ export function PaymentVoucherForm({ onClose, className, onSuccess }: PaymentVou
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8 bg-[#fff9e6] dark:bg-slate-950">
+            {/* Scrollable Content Area: flex-1 ensures it takes remaining space */}
+            <div className="flex-1 overflow-y-auto p-8 bg-[#fff9e6] dark:bg-slate-950 min-h-0">
                 <Form {...form}>
-                    <form className="space-y-8 max-w-5xl mx-auto">
+                    <form className="space-y-8 max-w-5xl mx-auto pb-6">
 
                         {/* Source Account (Common) */}
                         <div className="flex items-center gap-4 py-2 border-b border-teal-700/10 pb-6 mb-6">
@@ -437,8 +447,8 @@ export function PaymentVoucherForm({ onClose, className, onSuccess }: PaymentVou
                 </Form>
             </div>
 
-            {/* Footer Actions */}
-            <div className="p-4 bg-teal-700 flex justify-end gap-6 shadow-inner shrink-0 z-50">
+            {/* Sticky Footer */}
+            <div className="p-4 bg-teal-700 flex justify-end gap-6 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] shrink-0 z-50">
                 {onClose && (
                     <Button variant="ghost" className="text-teal-100 hover:bg-teal-800 hover:text-white" onClick={onClose}>
                         Quit (Esc)

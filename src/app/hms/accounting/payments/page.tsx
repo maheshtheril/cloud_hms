@@ -263,22 +263,22 @@ export default function PaymentsPage() {
                         ? "max-w-[none] w-screen h-screen rounded-none"
                         : "max-w-[1200px] w-full h-[90vh] rounded-2xl overflow-hidden"
                 )}>
-                    {/* Floating Controls for Windowed Mode */}
-                    <div className="absolute top-4 right-20 z-50 flex gap-2">
-                        <Button
-                            size="icon"
-                            variant="secondary"
-                            className="h-8 w-8 rounded-full bg-white/20 hover:bg-white/40 shadow-sm backdrop-blur-md text-white border border-white/10"
-                            onClick={() => setIsFullScreen(!isFullScreen)}
-                        >
-                            {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                        </Button>
-                    </div>
-
+                    {/* Floating Controls for Windowed Mode - REMOVED and passed to component header */}
                     <PaymentVoucherForm
                         onClose={() => setIsVoucherOpen(false)}
                         onSuccess={() => { setIsVoucherOpen(false); loadData(); }}
                         className={isFullScreen ? "" : "rounded-2xl"}
+                        headerActions={
+                            <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-teal-100 hover:text-white hover:bg-teal-600"
+                                onClick={() => setIsFullScreen(!isFullScreen)}
+                                title={isFullScreen ? "Windowed Mode" : "Full Screen"}
+                            >
+                                {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                            </Button>
+                        }
                     />
                 </DialogContent>
             </Dialog>
