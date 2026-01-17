@@ -3353,6 +3353,7 @@ model payment_lines {
 
   @@index([invoice_id], map: "idx_payment_lines_invoice")
   @@index([payment_id], map: "idx_payment_lines_payment")
+  payments                 payments  @relation(fields: [payment_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model payment_reconciliation_details {
@@ -3394,6 +3395,7 @@ model payments {
   @@index([journal_entry_id], map: "idx_payments_journal_entry_id")
   @@index([tenant_id, payment_number_normalized], map: "idx_payments_number_norm")
   @@index([tenant_id, company_id], map: "idx_payments_tenant_company")
+  payment_lines             payment_lines[]
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
