@@ -144,9 +144,9 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                         Ex
                     </div>
                     <div>
-                        <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Expense Voucher</h2>
+                        <h2 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Record Expense</h2>
                         <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-[10px] font-normal text-slate-500 border-slate-300">New Transaction</Badge>
+                            <Badge variant="outline" className="text-[10px] font-normal text-slate-500 border-slate-300">Petty Cash / Outbound</Badge>
                         </div>
                     </div>
                 </div>
@@ -170,11 +170,11 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                                     name="payeeName"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel className="text-xs font-bold text-slate-500 uppercase">Payee / Vendor</FormLabel>
+                                            <FormLabel className="text-xs font-bold text-slate-500 uppercase">Paid To (Beneficiary)</FormLabel>
                                             <FormControl>
                                                 <div className="relative">
                                                     <User className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
-                                                    <Input placeholder="Who is this payment for?" {...field} className="pl-9 bg-slate-50 border-slate-200 focus:bg-white transition-all font-medium" />
+                                                    <Input placeholder="e.g. Tea Shop, Taxi Driver, Staff Name" {...field} className="pl-9 bg-slate-50 border-slate-200 focus:bg-white transition-all font-medium" />
                                                 </div>
                                             </FormControl>
                                             <FormMessage />
