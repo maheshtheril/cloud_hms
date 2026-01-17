@@ -48,6 +48,7 @@ export async function getPayments(type: PaymentType, search?: string, dateFilter
 
         const payments = await prisma.payments.findMany({
             where: whereClause,
+            include: { payment_lines: true },
             orderBy: { created_at: 'desc' },
             take: 100
         });

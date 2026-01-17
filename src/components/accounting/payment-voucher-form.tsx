@@ -103,10 +103,20 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
         defaultValues: {
             date: initialData?.date ? new Date(initialData.date) : (initialData?.created_at ? new Date(initialData.created_at) : new Date()),
             sourceAccount: initialData?.method || "cash",
-            lines: initialData?.metadata?.lines?.length > 0 ? initialData.metadata.lines.map((l: any) => ({
-                categoryId: l.account_id || l.categoryId, // handle different naming if any
-                amount: Number(l.amount)
-            })) : [{ categoryId: "", amount: 0 }],
+            lines: (initialData?.payment_lines?.length > 0)
+                ? initialData.payment_lines
+                    .filter((l: any) => l.metadata?.account_id) // Only take expense lines (not bill allocations)
+                    .map((l: any) => ({
+                        categoryId: l.metadata.account_id,
+                        amount: Number(l.amount)
+                    }))
+                : (initialData?.metadata?.lines?.length > 0
+                    ? initialData.metadata.lines.map((l: any) => ({
+                        categoryId: l.account_id || l.categoryId,
+                        amount: Number(l.amount)
+                    }))
+                    : [{ categoryId: "", amount: 0 }]
+                ),
             narration: initialData?.metadata?.memo || initialData?.reference || ""
         }
     })
