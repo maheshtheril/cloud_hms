@@ -179,6 +179,13 @@ export function ExpenseDialog({ onClose, onSuccess }: ExpenseDialogProps) {
                                         { id: "cash", label: "Cash Account", subLabel: "Cur Bal: 50,000 Dr" },
                                         { id: "bank", label: "HDFC Bank", subLabel: "Cur Bal: 1,20,000 Dr" }
                                     ]}
+                                    onSearch={async (q) => {
+                                        const opts = [
+                                            { id: "cash", label: "Cash Account", subLabel: "Cur Bal: 50,000 Dr" },
+                                            { id: "bank", label: "HDFC Bank", subLabel: "Cur Bal: 1,20,000 Dr" }
+                                        ];
+                                        return opts.filter(o => o.label.toLowerCase().includes(q.toLowerCase()));
+                                    }}
                                     placeholder="Select Cash/Bank"
                                     className="bg-white border-b-2 border-teal-700/20 rounded-none focus:ring-0"
                                 />
