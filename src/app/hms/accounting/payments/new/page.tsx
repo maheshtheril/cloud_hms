@@ -6,7 +6,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
-import { Loader2, Trash2, Save, ArrowLeft } from "lucide-react";
+import { Loader2, Trash2, Save, ArrowLeft, Building2, CheckCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,9 @@ import { useToast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { recordExpense } from "@/app/actions/accounting/expenses";
+import { upsertPayment } from '@/app/actions/accounting/payments';
 import { getAccounts } from "@/app/actions/accounting/chart-of-accounts";
+import { searchSuppliers, getOutstandingPurchaseBills } from "@/app/actions/accounting/helpers";
 
 // Tally Style Schema
 const lineItemSchema = z.object({
@@ -37,20 +39,33 @@ const lineItemSchema = z.object({
 const expenseSchema = z.object({
     date: z.date(),
     sourceAccount: z.string().default('cash'),
-    lines: z.array(lineItemSchema).min(1, "Select at least one ledger"),
+    lines: z.array(lineItemSchema).optional(), // Optional for Bill Mode
     narration: z.string().optional()
 })
+
+type VOUCHER_MODE = 'GENERAL' | 'BILL_SETTLEMENT';
 
 export default function NewPaymentPage() {
     const router = useRouter();
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
+
+    // Mode State
+    const [mode, setMode] = useState<VOUCHER_MODE>('GENERAL');
+
+    // General Mode State
     const [accounts, setAccounts] = useState<{ id: string; name: string; code: string; type: string }[]>([])
+
+    // Bill Mode State
+    const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
+    const [bills, setBills] = useState<any[]>([]);
+    const [allocations, setAllocations] = useState<Record<string, number>>({});
+    const [totalAllocated, setTotalAllocated] = useState(0);
+
     const voucherNo = "Auto"
 
     useEffect(() => {
         const fetchAccounts = async () => {
-            // Broaden scope to allow Vendor Payments (Liabilities)
             const res = await getAccounts('', ['Expense', 'Liability', 'Equity', 'Asset', 'Cost of Goods Sold']);
             if (res.success && res.data) {
                 setAccounts(res.data as any);
@@ -74,40 +89,99 @@ export default function NewPaymentPage() {
         name: "lines"
     })
 
-    const totalAmount = form.watch("lines").reduce((sum, line) => sum + (Number(line.amount) || 0), 0);
+    const generalTotal = form.watch("lines")?.reduce((sum, line) => sum + (Number(line.amount) || 0), 0) || 0;
 
+    // --- Bill Logic ---
+    const handleVendorChange = async (id: string | null) => {
+        setSelectedVendorId(id);
+        if (id) {
+            const res = await getOutstandingPurchaseBills(id);
+            if (res.success) {
+                setBills(res.data || []);
+                setAllocations({});
+                setTotalAllocated(0);
+            }
+        } else {
+            setBills([]);
+            setAllocations({});
+            setTotalAllocated(0);
+        }
+    };
+
+    const handleAllocationChange = (billId: string, val: string) => {
+        const num = Number(val);
+        const newAllocations = { ...allocations, [billId]: num };
+        setAllocations(newAllocations);
+        const total = (Object.values(newAllocations) as number[]).reduce((sum, a) => sum + a, 0);
+        setTotalAllocated(total);
+    };
+
+    // --- Submission ---
     const onSubmit = async (values: z.infer<typeof expenseSchema>) => {
         setLoading(true)
         try {
-            const primaryLine = values.lines[0];
-            const primaryAcc = accounts.find(a => a.id === primaryLine.categoryId);
-            const payeeName = primaryAcc ? primaryAcc.name : "Payment";
+            if (mode === 'GENERAL') {
+                // ... Existing Logic ...
+                const primaryLine = values.lines![0];
+                const primaryAcc = accounts.find(a => a.id === primaryLine.categoryId);
+                const payeeName = primaryAcc ? primaryAcc.name : "Payment";
 
-            const combinedMemo = values.lines.map(l => {
-                const accName = accounts.find(a => a.id === l.categoryId)?.name || 'Exp';
-                return `${accName}: ${l.amount}`;
-            }).join(', ');
+                const combinedMemo = values.lines!.map(l => {
+                    const accName = accounts.find(a => a.id === l.categoryId)?.name || 'Exp';
+                    return `${accName}: ${l.amount}`;
+                }).join(', ');
 
-            const finalMemo = values.narration ? `${values.narration} (${combinedMemo})` : combinedMemo;
+                const finalMemo = values.narration ? `${values.narration} (${combinedMemo})` : combinedMemo;
 
-            const result = await recordExpense({
-                amount: totalAmount,
-                categoryId: primaryLine.categoryId,
-                payeeName: payeeName,
-                memo: finalMemo,
-                date: values.date,
-                method: values.sourceAccount
-            })
+                const result = await recordExpense({
+                    amount: generalTotal,
+                    categoryId: primaryLine.categoryId,
+                    payeeName: payeeName,
+                    memo: finalMemo,
+                    date: values.date,
+                    method: values.sourceAccount
+                });
 
-            if (result.success) {
-                toast({
-                    title: "Voucher Saved",
-                    description: `Payment Voucher ${result.data?.payment_number} created.`,
-                    className: "bg-emerald-50 border-emerald-200"
-                })
-                router.push('/hms/accounting/payments');
+                if (result.success) {
+                    toast({ title: "Success", description: `Voucher ${result.data?.payment_number} Saved`, className: "bg-emerald-50 border-emerald-200" });
+                    router.push('/hms/accounting/payments');
+                } else {
+                    toast({ title: "Error", description: result.error, variant: "destructive" });
+                }
+
             } else {
-                toast({ title: "Error", description: result.error || "Failed", variant: "destructive" })
+                // BILL SETTLEMENT MODE
+                if (!selectedVendorId) {
+                    toast({ title: "Error", description: "Select a Vendor", variant: "destructive" });
+                    setLoading(false); return;
+                }
+                if (totalAllocated <= 0) {
+                    toast({ title: "Error", description: "Allocate amount to at least one bill", variant: "destructive" });
+                    setLoading(false); return;
+                }
+
+                const allocationList = Object.entries(allocations)
+                    .filter(([_, amt]) => amt > 0)
+                    .map(([id, amt]) => ({ invoiceId: id, amount: amt }));
+
+                const payload = {
+                    type: 'outbound' as const,
+                    partner_id: selectedVendorId,
+                    amount: totalAllocated,
+                    method: values.sourceAccount,
+                    date: values.date,
+                    allocations: allocationList,
+                    memo: values.narration || "Bill Settlement"
+                };
+
+                const result = await upsertPayment(payload);
+
+                if (result.success) {
+                    toast({ title: "Success", description: `Payment Voucher Saved`, className: "bg-emerald-50 border-emerald-200" });
+                    router.push('/hms/accounting/payments');
+                } else {
+                    toast({ title: "Error", description: (result as any).error, variant: "destructive" });
+                }
             }
         } catch (error) {
             console.error(error)
@@ -127,7 +201,7 @@ export default function NewPaymentPage() {
         <div className="min-h-screen bg-[#fff9e6] dark:bg-slate-900 font-mono text-sm flex flex-col">
             <Toaster />
 
-            {/* Tally Header */}
+            {/* Header */}
             <div className="bg-teal-700 text-yellow-400 px-6 py-3 flex justify-between items-center shadow-md shrink-0">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" onClick={() => router.back()} className="text-yellow-400 hover:text-white hover:bg-teal-600">
@@ -135,18 +209,37 @@ export default function NewPaymentPage() {
                     </Button>
                     <div>
                         <span className="font-bold text-xl tracking-wider block">Payment / Expense Voucher</span>
-                        <span className="text-[10px] text-teal-200 font-bold uppercase tracking-widest">Outbound Payments (Vendors & Expenses)</span>
+                        <span className="text-[10px] text-teal-200 font-bold uppercase tracking-widest">
+                            {mode === 'GENERAL' ? 'General Expenses & Direct Payments' : 'Bill-Wise Settlement (Accounts Payable)'}
+                        </span>
                     </div>
                 </div>
-                <div className="text-sm text-white opacity-80 font-bold">
-                    SaaS ERP Gateway
+
+                {/* Mode Switcher */}
+                <div className="flex gap-2">
+                    <Button
+                        size="sm"
+                        variant={mode === 'GENERAL' ? 'secondary' : 'ghost'}
+                        className={`font-bold ${mode === 'GENERAL' ? 'bg-yellow-400 text-teal-900 hover:bg-yellow-300' : 'text-teal-100 hover:text-white hover:bg-teal-600'}`}
+                        onClick={() => setMode('GENERAL')}
+                    >
+                        General (F5)
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant={mode === 'BILL_SETTLEMENT' ? 'secondary' : 'ghost'}
+                        className={`font-bold ${mode === 'BILL_SETTLEMENT' ? 'bg-yellow-400 text-teal-900 hover:bg-yellow-300' : 'text-teal-100 hover:text-white hover:bg-teal-600'}`}
+                        onClick={() => setMode('BILL_SETTLEMENT')}
+                    >
+                        Bill Payment (Adv)
+                    </Button>
                 </div>
             </div>
 
             {/* Top Info Bar */}
             <div className="bg-[#fff9e6] dark:bg-slate-900 p-6 border-b border-teal-700/20 grid grid-cols-2 gap-8 shrink-0">
                 <div className="flex items-center gap-2">
-                    <span className="font-bold text-teal-900 dark:text-teal-400 w-24">Payment No:</span>
+                    <span className="font-bold text-teal-900 dark:text-teal-400 w-24">Voucher No:</span>
                     <span className="font-bold text-black dark:text-white">{voucherNo}</span>
                 </div>
                 <div className="flex items-center gap-2 justify-end">
@@ -168,104 +261,153 @@ export default function NewPaymentPage() {
                 <Form {...form}>
                     <form className="space-y-8 max-w-5xl mx-auto">
 
-                        {/* Account Selection (Source) */}
-                        <div className="flex items-center gap-4 py-2">
-                            <span className="font-bold text-teal-900 dark:text-teal-400 w-32 text-right">Account :</span>
+                        {/* Source Account (Common) */}
+                        <div className="flex items-center gap-4 py-2 border-b border-teal-700/10 pb-6 mb-6">
+                            <span className="font-bold text-teal-900 dark:text-teal-400 w-32 text-right">Credit Account :</span>
                             <div className="w-[300px]">
                                 <SearchableSelect
                                     value={form.watch("sourceAccount")}
                                     onChange={(val) => form.setValue("sourceAccount", val || "cash")}
                                     options={[
-                                        { id: "cash", label: "Cash Account", subLabel: "Cur Bal: 50,000 Dr" },
-                                        { id: "bank", label: "HDFC Bank", subLabel: "Cur Bal: 1,20,000 Dr" }
+                                        { id: "bank_transfer", label: "HDFC Bank", subLabel: "Bank Account" },
+                                        { id: "cash", label: "Cash Account", subLabel: "Cash-in-Hand" }
                                     ]}
-                                    onSearch={async (q) => {
-                                        const opts = [
-                                            { id: "cash", label: "Cash Account", subLabel: "Asset" },
-                                            { id: "bank", label: "HDFC Bank", subLabel: "Asset" }
-                                        ];
-                                        return opts.filter(o => o.label.toLowerCase().includes(q.toLowerCase()));
+                                    onSearch={async (q) => { // Mock search for Source
+                                        return [{ id: "bank_transfer", label: "HDFC Bank" }, { id: "cash", label: "Cash Account" }]
+                                            .filter(o => o.label.toLowerCase().includes(q.toLowerCase()));
                                     }}
-                                    placeholder="Select Cash/Bank"
+                                    placeholder="Select Source (Bank/Cash)"
                                     className="bg-white border-b-2 border-teal-700/20 rounded-none focus:ring-0"
                                 />
                             </div>
-                            <span className="text-xs text-slate-500 italic">Cur Bal: 50,000.00 Dr</span>
                         </div>
 
-                        {/* Particulars Grid */}
-                        <div className="border border-teal-700/30 bg-white dark:bg-slate-900 shadow-sm">
-                            {/* Grid Header */}
-                            <div className="flex border-b border-teal-700/30 bg-teal-50 dark:bg-teal-900/20 font-bold text-teal-900 dark:text-teal-400">
-                                <div className="flex-1 p-3 border-r border-teal-700/30 text-center">Particulars</div>
-                                <div className="w-48 p-3 text-right">Amount</div>
-                                <div className="w-12"></div>
-                            </div>
+                        {mode === 'GENERAL' ? (
+                            // --- GENERAL MODE ---
+                            <div className="border border-teal-700/30 bg-white dark:bg-slate-900 shadow-sm animate-in fade-in duration-300">
+                                {/* Grid Header */}
+                                <div className="flex border-b border-teal-700/30 bg-teal-50 dark:bg-teal-900/20 font-bold text-teal-900 dark:text-teal-400">
+                                    <div className="flex-1 p-3 border-r border-teal-700/30 text-center">Particulars (Expense / Liability)</div>
+                                    <div className="w-48 p-3 text-right">Amount</div>
+                                    <div className="w-12"></div>
+                                </div>
 
-                            {/* Grid Rows */}
-                            {fields.map((field, index) => (
-                                <div key={field.id} className="flex border-b border-dashed border-slate-300 items-start">
-                                    <div className="flex-1 p-2 border-r border-slate-300">
-                                        <FormField
-                                            control={form.control}
-                                            name={`lines.${index}.categoryId`}
-                                            render={({ field }) => (
-                                                <SearchableSelect
-                                                    value={field.value}
-                                                    onChange={(val) => field.onChange(val || "")}
-                                                    onSearch={async (q) => {
-                                                        const res = await getAccounts(q, ['Expense', 'Liability', 'Equity', 'Asset', 'Cost of Goods Sold']);
-                                                        return res.success && res.data ? res.data.map((a: any) => ({ id: a.id, label: a.name, subLabel: a.type })) : [];
-                                                    }}
-                                                    options={accountOptions}
-                                                    placeholder="Select Ledger (Expense/Vendor)"
-                                                    className="border-0 shadow-none bg-transparent hover:bg-teal-50 text-base h-10"
-                                                />
-                                            )}
-                                        />
-                                        <div className="text-[10px] text-slate-400 pl-3 pb-1">Cur Bal: 0.00</div>
+                                {fields.map((field, index) => (
+                                    <div key={field.id} className="flex border-b border-dashed border-slate-300 items-start">
+                                        <div className="flex-1 p-2 border-r border-slate-300">
+                                            <FormField
+                                                control={form.control}
+                                                name={`lines.${index}.categoryId`}
+                                                render={({ field }) => (
+                                                    <SearchableSelect
+                                                        value={field.value}
+                                                        onChange={(val) => field.onChange(val || "")}
+                                                        onSearch={async (q) => {
+                                                            const res = await getAccounts(q, ['Expense', 'Liability', 'Equity', 'Asset', 'Cost of Goods Sold']);
+                                                            return res.success && res.data ? res.data.map((a: any) => ({ id: a.id, label: a.name, subLabel: a.type })) : [];
+                                                        }}
+                                                        options={accountOptions}
+                                                        placeholder="Select Ledger..."
+                                                        className="border-0 shadow-none bg-transparent hover:bg-teal-50 text-base h-10"
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+                                        <div className="w-48 p-2">
+                                            <FormField
+                                                control={form.control}
+                                                name={`lines.${index}.amount`}
+                                                render={({ field }) => (
+                                                    <Input
+                                                        type="number"
+                                                        {...field}
+                                                        value={(field.value as number) || ''}
+                                                        className="text-right border-0 shadow-none bg-transparent h-10 font-bold text-base"
+                                                        placeholder="0.00"
+                                                    />
+                                                )}
+                                            />
+                                        </div>
+                                        <div className="w-12 flex items-center justify-center">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => remove(index)}
+                                                disabled={fields.length === 1}
+                                                className="h-8 w-8 text-slate-400 hover:text-red-500"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </div>
-                                    <div className="w-48 p-2">
-                                        <FormField
-                                            control={form.control}
-                                            name={`lines.${index}.amount`}
-                                            render={({ field }) => (
-                                                <Input
-                                                    type="number"
-                                                    {...field}
-                                                    value={(field.value as number) || ''}
-                                                    className="text-right border-0 shadow-none bg-transparent h-10 font-bold text-base"
-                                                    placeholder="0.00"
-                                                />
-                                            )}
+                                ))}
+
+                                <div className="p-3 cursor-pointer hover:bg-teal-50 text-teal-700 text-xs font-bold border-t border-slate-100" onClick={() => append({ categoryId: "", amount: 0 })}>
+                                    + Add Ledger
+                                </div>
+                            </div>
+                        ) : (
+                            // --- BILL SETTLEMENT MODE ---
+                            <div className="space-y-6 animate-in fade-in duration-300">
+                                <div className="flex items-center gap-4">
+                                    <span className="font-bold text-teal-900 dark:text-teal-400 w-32 text-right">Select Vendor :</span>
+                                    <div className="w-[400px]">
+                                        <SearchableSelect
+                                            value={selectedVendorId}
+                                            onChange={handleVendorChange}
+                                            onSearch={async (q) => searchSuppliers(q)}
+                                            placeholder="Search Supplier Name..."
+                                            className="bg-white border-b-2 border-teal-700/20 rounded-none focus:ring-0"
                                         />
-                                    </div>
-                                    <div className="w-12 flex items-center justify-center">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => remove(index)}
-                                            disabled={fields.length === 1}
-                                            className="h-8 w-8 text-slate-400 hover:text-red-500"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
                                     </div>
                                 </div>
-                            ))}
 
-                            {/* Add Line Prompt */}
-                            <div className="p-3 cursor-pointer hover:bg-teal-50 text-teal-700 text-xs font-bold border-t border-slate-100" onClick={() => append({ categoryId: "", amount: 0 })}>
-                                + Add Ledger
+                                {bills.length > 0 && (
+                                    <div className="border border-teal-700/30 bg-white dark:bg-slate-900 p-0 shadow-sm">
+                                        <table className="w-full text-left">
+                                            <thead className="bg-teal-50 text-teal-900 font-bold border-b border-teal-700/30 text-xs uppercase">
+                                                <tr>
+                                                    <th className="p-3">Bill #</th>
+                                                    <th className="p-3">Date</th>
+                                                    <th className="p-3 text-right">Bill Amount</th>
+                                                    <th className="p-3 text-right">Due Amount</th>
+                                                    <th className="p-3 text-right bg-yellow-50">Payment Allocation</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="text-sm">
+                                                {bills.map(bill => (
+                                                    <tr key={bill.id} className="border-b border-dashed border-slate-200 hover:bg-slate-50">
+                                                        <td className="p-3 font-medium">{bill.number}</td>
+                                                        <td className="p-3 text-slate-500">{new Date(bill.date).toLocaleDateString()}</td>
+                                                        <td className="p-3 text-right font-mono">{bill.total.toLocaleString()}</td>
+                                                        <td className="p-3 text-right font-mono font-bold text-red-500">{bill.outstanding.toLocaleString()}</td>
+                                                        <td className="p-3 text-right bg-yellow-50/30">
+                                                            <Input
+                                                                type="number"
+                                                                value={allocations[bill.id] || ''}
+                                                                onChange={(e) => handleAllocationChange(bill.id, e.target.value)}
+                                                                className="text-right h-8 w-32 ml-auto bg-white border-slate-300 font-bold"
+                                                                placeholder="0.00"
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                                {selectedVendorId && bills.length === 0 && (
+                                    <div className="text-center p-8 text-slate-400 italic">No outstanding bills found for this vendor.</div>
+                                )}
                             </div>
-                        </div>
+                        )}
 
                         {/* Total & Narration */}
                         <div className="flex flex-col gap-6 pt-6">
                             <div className="flex justify-end gap-16 pr-16 text-xl font-bold text-teal-900 border-t border-teal-700 w-full pt-4">
-                                <span>Total</span>
-                                <span>₹ {totalAmount.toFixed(2)}</span>
+                                <span>Total Payment</span>
+                                <span>₹ {mode === 'GENERAL' ? generalTotal.toFixed(2) : totalAllocated.toLocaleString()}</span>
                             </div>
 
                             <div className="flex items-start gap-4 p-4 bg-teal-50/50 border border-teal-100 rounded-lg">
