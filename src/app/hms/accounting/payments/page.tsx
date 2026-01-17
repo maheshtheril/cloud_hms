@@ -1,16 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { getPayments } from '@/app/actions/accounting/payments';
 import {
     Plus, Search, CheckCircle2, CircleDashed,
-    FileText, ArrowUpRight, TrendingDown, Wallet, Building2, Filter
+    FileText, ArrowUpRight, TrendingDown, Wallet, Building2, Filter, Maximize2, Minimize2, X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { PaymentVoucherForm } from '@/components/accounting/payment-voucher-form';
 
 export default function PaymentsPage() {
     const [payments, setPayments] = useState<any[]>([]);
@@ -19,9 +20,15 @@ export default function PaymentsPage() {
     const [dateFilter, setDateFilter] = useState<string>(''); // YYYY-MM-DD
     const [activeTab, setActiveTab] = useState<'ALL' | 'VENDOR' | 'EXPENSE'>('ALL');
 
+    // Popup State
+    const [isVoucherOpen, setIsVoucherOpen] = useState(false);
+    const [isFullScreen, setIsFullScreen] = useState(true);
+
     useEffect(() => {
-        loadData();
-    }, [dateFilter]);
+        if (!isVoucherOpen) {
+            loadData();
+        }
+    }, [dateFilter, isVoucherOpen]);
 
     async function loadData() {
         setIsLoading(true);
@@ -107,13 +114,13 @@ export default function PaymentsPage() {
                             />
                         </div>
 
-                        <Link
-                            href="/hms/accounting/payments/new"
+                        <Button
+                            onClick={() => setIsVoucherOpen(true)}
                             className="h-10 px-5 bg-teal-600 hover:bg-teal-500 text-white text-sm font-bold rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-teal-500/20 hover:shadow-teal-500/40 active:scale-95"
                         >
                             <Plus className="h-4 w-4" />
                             <span>New Voucher</span>
-                        </Link>
+                        </Button>
                     </div>
                 </div>
             </div>
@@ -247,6 +254,34 @@ export default function PaymentsPage() {
                     )}
                 </AnimatePresence>
             </div>
+
+            {/* VOUCHER POPUP */}
+            <Dialog open={isVoucherOpen} onOpenChange={setIsVoucherOpen}>
+                <DialogContent className={cn(
+                    "p-0 gap-0 border-0 bg-transparent shadow-2xl transition-all duration-300",
+                    isFullScreen
+                        ? "max-w-[none] w-screen h-screen rounded-none"
+                        : "max-w-[1200px] w-full h-[90vh] rounded-2xl overflow-hidden"
+                )}>
+                    {/* Floating Controls for Windowed Mode */}
+                    <div className="absolute top-4 right-20 z-50 flex gap-2">
+                        <Button
+                            size="icon"
+                            variant="secondary"
+                            className="h-8 w-8 rounded-full bg-white/20 hover:bg-white/40 shadow-sm backdrop-blur-md text-white border border-white/10"
+                            onClick={() => setIsFullScreen(!isFullScreen)}
+                        >
+                            {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                        </Button>
+                    </div>
+
+                    <PaymentVoucherForm
+                        onClose={() => setIsVoucherOpen(false)}
+                        onSuccess={() => { setIsVoucherOpen(false); loadData(); }}
+                        className={isFullScreen ? "" : "rounded-2xl"}
+                    />
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
