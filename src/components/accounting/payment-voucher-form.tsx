@@ -45,30 +45,41 @@ const expenseSchema = z.object({
 
 type VOUCHER_MODE = 'GENERAL' | 'BILL_SETTLEMENT';
 
+
 interface PaymentVoucherFormProps {
     onClose?: () => void;
     className?: string;
     onSuccess?: () => void;
     headerActions?: React.ReactNode; // For injecting top-right controls
+    initialData?: any;
 }
 
-export function PaymentVoucherForm({ onClose, className, onSuccess, headerActions }: PaymentVoucherFormProps) {
+export function PaymentVoucherForm({ onClose, className, onSuccess, headerActions, initialData }: PaymentVoucherFormProps) {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
 
     // Mode State
-    const [mode, setMode] = useState<VOUCHER_MODE>('GENERAL');
+    const [mode, setMode] = useState<VOUCHER_MODE>(initialData?.metadata?.allocations?.length > 0 ? 'BILL_SETTLEMENT' : 'GENERAL');
 
     // General Mode State
     const [accounts, setAccounts] = useState<{ id: string; name: string; code: string; type: string }[]>([])
 
     // Bill Mode State
-    const [selectedVendorId, setSelectedVendorId] = useState<string | null>(null);
+    const [selectedVendorId, setSelectedVendorId] = useState<string | null>(initialData?.partner_id || null);
     const [bills, setBills] = useState<any[]>([]);
-    const [allocations, setAllocations] = useState<Record<string, number>>({});
-    const [totalAllocated, setTotalAllocated] = useState(0);
 
-    const voucherNo = "Auto"
+    // Initialize allocations from initialData if existing
+    const initialAllocations: Record<string, number> = {};
+    if (initialData?.metadata?.allocations) {
+        initialData.metadata.allocations.forEach((a: any) => {
+            initialAllocations[a.invoiceId] = Number(a.amount);
+        });
+    }
+
+    const [allocations, setAllocations] = useState<Record<string, number>>(initialAllocations);
+    const [totalAllocated, setTotalAllocated] = useState(initialData?.amount || 0);
+
+    const voucherNo = initialData?.payment_number || "Auto"
 
     useEffect(() => {
         const fetchAccounts = async () => {
@@ -78,15 +89,25 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
             }
         };
         fetchAccounts();
-    }, []);
+
+
+        // If editing in bill mode, fetch bills for the vendor
+        if (initialData?.partner_id) {
+            loadVendorBills(initialData.partner_id, true); // true to preserve allocations
+        }
+
+    }, [initialData]);
 
     const form = useForm({
         resolver: zodResolver(expenseSchema),
         defaultValues: {
-            date: new Date(),
-            sourceAccount: "cash",
-            lines: [{ categoryId: "", amount: 0 }],
-            narration: ""
+            date: initialData?.date ? new Date(initialData.date) : (initialData?.created_at ? new Date(initialData.created_at) : new Date()),
+            sourceAccount: initialData?.method || "cash",
+            lines: initialData?.metadata?.lines?.length > 0 ? initialData.metadata.lines.map((l: any) => ({
+                categoryId: l.account_id || l.categoryId, // handle different naming if any
+                amount: Number(l.amount)
+            })) : [{ categoryId: "", amount: 0 }],
+            narration: initialData?.metadata?.memo || initialData?.reference || ""
         }
     })
 
@@ -98,14 +119,17 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
     const generalTotal = form.watch("lines")?.reduce((sum, line) => sum + (Number(line.amount) || 0), 0) || 0;
 
     // --- Bill Logic ---
-    const handleVendorChange = async (id: string | null) => {
+
+    const loadVendorBills = async (id: string | null, preserveAllocations = false) => {
         setSelectedVendorId(id);
         if (id) {
             const res = await getOutstandingPurchaseBills(id);
             if (res.success) {
                 setBills(res.data || []);
-                setAllocations({});
-                setTotalAllocated(0);
+                if (!preserveAllocations) {
+                    setAllocations({});
+                    setTotalAllocated(0);
+                }
             }
         } else {
             setBills([]);
@@ -113,6 +137,10 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
             setTotalAllocated(0);
         }
     };
+
+    const handleVendorSelect = (val: string | null) => {
+        loadVendorBills(val, false);
+    }
 
     const handleAllocationChange = (billId: string, val: string) => {
         const num = Number(val);
@@ -139,6 +167,7 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                 const finalMemo = values.narration ? `${values.narration} (${combinedMemo})` : combinedMemo;
 
                 const result = await recordExpense({
+                    id: initialData?.id, // Pass ID for updating
                     amount: generalTotal,
                     categoryId: primaryLine.categoryId,
                     payeeName: payeeName,
@@ -171,6 +200,7 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                     .map(([id, amt]) => ({ invoiceId: id, amount: amt }));
 
                 const payload = {
+                    id: initialData?.id, // Pass ID for updating
                     type: 'outbound' as const,
                     partner_id: selectedVendorId,
                     amount: totalAllocated,
@@ -373,7 +403,7 @@ export function PaymentVoucherForm({ onClose, className, onSuccess, headerAction
                                     <div className="w-[400px]">
                                         <SearchableSelect
                                             value={selectedVendorId}
-                                            onChange={handleVendorChange}
+                                            onChange={handleVendorSelect}
                                             onSearch={async (q) => searchSuppliers(q)}
                                             placeholder="Search Supplier Name..."
                                             className="bg-white border-b-2 border-teal-700/20 rounded-none focus:ring-0"

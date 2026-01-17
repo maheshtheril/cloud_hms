@@ -128,6 +128,8 @@ export async function getExpenseAccounts() {
     }
 }
 
+// ... (imports remain)
+
 export async function upsertPayment(data: {
     id?: string;
     type: PaymentType;
@@ -135,23 +137,20 @@ export async function upsertPayment(data: {
     amount: number;
     method: string;
     reference?: string;
-    date: Date; // Capture date in metadata
+    date: Date;
     memo?: string;
     posted?: boolean;
     allocations?: { invoiceId: string; amount: number }[];
     lines?: { accountId: string; amount: number; description?: string }[];
-    payeeName?: string; // For direct payments
+    payeeName?: string;
 }) {
     const session = await auth();
     let companyId = session?.user?.companyId;
     const tenantId = session?.user?.tenantId;
 
     if (!tenantId) return { error: "Unauthorized: No Tenant" };
-
     if (!companyId) {
-        const defaultCompany = await prisma.company.findFirst({
-            where: { tenant_id: tenantId }
-        });
+        const defaultCompany = await prisma.company.findFirst({ where: { tenant_id: tenantId } });
         if (defaultCompany) companyId = defaultCompany.id;
         else return { error: "Unauthorized: No Company Found" };
     }
@@ -170,7 +169,7 @@ export async function upsertPayment(data: {
         const payload = {
             tenant_id: tenantId,
             company_id: companyId,
-            partner_id: data.partner_id || null, // Allow null
+            partner_id: data.partner_id || null,
             amount: data.amount,
             method: data.method,
             reference: data.reference,
@@ -178,8 +177,8 @@ export async function upsertPayment(data: {
                 type: data.type,
                 date: data.date.toISOString(),
                 memo: data.memo,
-                allocations: data.allocations, // Store original intent in metadata too
-                payee_name: data.payeeName, // Store payee name if partner_id is null
+                allocations: data.allocations,
+                payee_name: data.payeeName,
                 category_name: categoryName
             },
             created_at: data.date
@@ -188,27 +187,71 @@ export async function upsertPayment(data: {
         const result = await prisma.$transaction(async (tx) => {
             let payment;
             if (data.id) {
+                // --- UPDATE MODE ---
+                // 1. Fetch Existing Payment to cleanup old data
+                const existing = await tx.payments.findUnique({
+                    where: { id: data.id }
+                });
+
+                if (!existing) throw new Error("Payment not found");
+
+                // Get lines manually since relation might be missing in client
+                const existingLines = await tx.payment_lines.findMany({
+                    where: { payment_id: data.id }
+                });
+
+                // 2. Reverse Old Allocation Effects
+                for (const line of existingLines) {
+                    if (line.invoice_id) {
+                        if (existing.metadata && (existing.metadata as any).type === 'inbound') {
+                            // Revert Sales Invoice
+                            await tx.hms_invoice.update({
+                                where: { id: line.invoice_id },
+                                data: {
+                                    total_paid: { decrement: line.amount },
+                                    outstanding: { increment: line.amount },
+                                    status: 'posted' // Revert to 'posted' (unpaid but valid)
+                                }
+                            });
+                            await tx.hms_invoice_payments.deleteMany({
+                                where: { invoice_id: line.invoice_id, payment_reference: existing.payment_number }
+                            });
+                        } else {
+                            // Revert Purchase Invoice
+                            await tx.hms_purchase_invoice.update({
+                                where: { id: line.invoice_id },
+                                data: {
+                                    paid_amount: { decrement: line.amount },
+                                    status: 'billed' // Revert to 'billed'
+                                }
+                            });
+                        }
+                    }
+                }
+
+                // 3. Delete Old Payment Lines
+                await tx.payment_lines.deleteMany({ where: { payment_id: data.id } });
+
+                // 4. Delete Old Accounting Entries (Journal)
+                const existingJournal = await tx.journal_entries.findFirst({
+                    where: { ref: existing.payment_number, tenant_id: tenantId }
+                });
+                if (existingJournal) {
+                    await tx.journal_entry_lines.deleteMany({ where: { journal_entry_id: existingJournal.id } });
+                    await tx.journal_entries.delete({ where: { id: existingJournal.id } });
+                }
+
+                // 5. Update Payment Header
                 payment = await tx.payments.update({
                     where: { id: data.id },
                     data: payload
                 });
+
             } else {
-                const prefix = data.type === 'inbound' ? 'RCP' : 'PV'; // Changed PAY to PV (Petty/Payment Voucher) or keep PAY. User said "petty cash voucher", usually PV or PCV. Let's stick to 'PAY' or 'PV' based on standard? The code had 'PAY'. Let's switch outbound to 'PV' for Voucher? Or keep 'PAY'. The user complained about "random serial number".
-                // Let's keep strict prefix 'PAY' for outbound, 'RCP' for inbound like before to avoid breaking searches, but make it sequential.
-                // Actually, for Petty Cash specifically, maybe they want 'PCV'?
-                // The current type is 'outbound'.
-
-                // NOTE: expense entries are now handled by recordExpense action in expenses.ts which uses 'PV'.
-                // This upsertPayment is mainly for complex payments now.
-
-                const prefixToUse = data.type === 'inbound' ? 'RCP' : 'PAY';
-
-                // Find last payment number to increment
+                // --- CREATE MODE ---
+                const prefixToUse = data.type === 'inbound' ? 'RCP' : 'PV';
                 const lastPayment = await tx.payments.findFirst({
-                    where: {
-                        tenant_id: tenantId,
-                        payment_number: { startsWith: prefixToUse }
-                    },
+                    where: { tenant_id: tenantId, payment_number: { startsWith: prefixToUse } },
                     orderBy: { created_at: 'desc' },
                     select: { payment_number: true }
                 });
@@ -216,12 +259,9 @@ export async function upsertPayment(data: {
                 let nextSeq = 1;
                 if (lastPayment && lastPayment.payment_number) {
                     const parts = lastPayment.payment_number.split('-');
-                    const lastNumVal = parts[parts.length - 1]; // Get last part
-                    if (!isNaN(Number(lastNumVal))) {
-                        nextSeq = Number(lastNumVal) + 1;
-                    }
+                    const lastNumVal = parts[parts.length - 1];
+                    if (!isNaN(Number(lastNumVal))) nextSeq = Number(lastNumVal) + 1;
                 }
-
                 const num = `${prefixToUse}-${nextSeq.toString().padStart(5, '0')}`;
 
                 payment = await tx.payments.create({
@@ -234,13 +274,13 @@ export async function upsertPayment(data: {
                 });
             }
 
-            // Handle Allocation Logic
+            // --- COMMON: Create New Lines & Allocations ---
             if (data.allocations && data.allocations.length > 0) {
                 for (const alloc of data.allocations) {
                     const allocAmount = Number(alloc.amount);
                     if (allocAmount <= 0) continue;
 
-                    // 1. Create Payment Line
+                    // Create Payment Line
                     await tx.payment_lines.create({
                         data: {
                             tenant_id: (tenantId || payment.tenant_id || '') as string,
@@ -277,32 +317,22 @@ export async function upsertPayment(data: {
                             where: { id: alloc.invoiceId },
                             select: { outstanding: true }
                         });
-
                         if (updatedInvoice && Number(updatedInvoice.outstanding || 0) <= 0) {
-                            await tx.hms_invoice.update({
-                                where: { id: alloc.invoiceId },
-                                data: { status: 'paid' }
-                            });
+                            await tx.hms_invoice.update({ where: { id: alloc.invoiceId }, data: { status: 'paid' } });
                         }
                     } else {
                         // VENDOR PAYMENT: Update hms_purchase_invoice
                         await tx.hms_purchase_invoice.update({
                             where: { id: alloc.invoiceId },
-                            data: {
-                                paid_amount: { increment: allocAmount }
-                            }
+                            data: { paid_amount: { increment: allocAmount } }
                         });
 
                         const updatedBill = await tx.hms_purchase_invoice.findUnique({
                             where: { id: alloc.invoiceId },
                             select: { total_amount: true, paid_amount: true }
                         });
-
                         if (updatedBill && Number(updatedBill.paid_amount || 0) >= Number(updatedBill.total_amount || 0)) {
-                            await tx.hms_purchase_invoice.update({
-                                where: { id: alloc.invoiceId },
-                                data: { status: 'closed' } // Or 'paid' depending on standard
-                            });
+                            await tx.hms_purchase_invoice.update({ where: { id: alloc.invoiceId }, data: { status: 'closed' } });
                         }
                     }
                 }
@@ -340,7 +370,6 @@ export async function upsertPayment(data: {
 
         if (!result) return { error: "Failed to create payment" };
 
-        // Post to Accounting if marked as posted
         if (result.posted) {
             await AccountingService.postPaymentEntry(result.id, session.user.id);
         }
@@ -356,31 +385,91 @@ export async function upsertPayment(data: {
 }
 
 export async function postPayment(id: string) {
-    // Logic to Create Journal Entry
-    // Debit Bank/Cash, Credit AR/AP
-    // This is complex. We need settings to know WHICH Bank account.
-    // For now, we just mark as Posted.
     const session = await auth();
-    let companyId = session?.user?.companyId;
-    const tenantId = session?.user?.tenantId;
-
-    if (!tenantId) return { error: "Unauthorized: No Tenant" };
-
-    // We might not need companyId for posting if ID is enough, but auth check is good.
-    if (!companyId) {
-        const defaultCompany = await prisma.company.findFirst({
-            where: { tenant_id: tenantId }
-        });
-        if (defaultCompany) companyId = defaultCompany.id;
-        else return { error: "Unauthorized" };
-    }
-
+    if (!session?.user?.id) return { error: "Unauthorized" };
     try {
-        const result = await AccountingService.postPaymentEntry(id, session.user.id);
-        if (!result.success) return { error: result.error };
-
+        await AccountingService.postPaymentEntry(id, session.user.id);
         return { success: true };
     } catch (e: any) {
         return { error: e.message };
+    }
+}
+
+export async function deletePayment(id: string) {
+    const session = await auth();
+    const tenantId = session?.user?.tenantId;
+
+    if (!tenantId) return { error: "Unauthorized" };
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            // 1. Get payment 
+            const payment = await tx.payments.findUnique({
+                where: { id }
+            });
+
+            if (!payment) throw new Error("Payment not found");
+
+            // Get lines manually
+            const paymentLines = await tx.payment_lines.findMany({
+                where: { payment_id: id }
+            });
+
+            // 2. Reverse Allocation Effects
+            for (const line of paymentLines) {
+                if (line.invoice_id) {
+                    if (payment.metadata && (payment.metadata as any).type === 'inbound') {
+                        // Revert Sales Invoice
+                        await tx.hms_invoice.update({
+                            where: { id: line.invoice_id },
+                            data: {
+                                total_paid: { decrement: line.amount },
+                                outstanding: { increment: line.amount },
+                                status: 'posted'
+                            }
+                        });
+
+                        // Delete hms_invoice_payments record
+                        await tx.hms_invoice_payments.deleteMany({
+                            where: {
+                                invoice_id: line.invoice_id,
+                                payment_reference: payment.payment_number
+                            }
+                        });
+
+                    } else {
+                        // Revert Purchase Invoice (Bill)
+                        await tx.hms_purchase_invoice.update({
+                            where: { id: line.invoice_id },
+                            data: {
+                                paid_amount: { decrement: line.amount },
+                                status: 'billed'
+                            }
+                        });
+                    }
+                }
+            }
+
+            // 3. Delete Payment Lines
+            await tx.payment_lines.deleteMany({ where: { payment_id: id } });
+
+            // 4. Delete Payment 
+            await tx.payments.delete({ where: { id } });
+
+            // 5. Reverse Accounting Entry (If posted)
+            const journal = await tx.journal_entries.findFirst({
+                where: { ref: payment.payment_number, tenant_id: tenantId }
+            });
+            if (journal) {
+                await tx.journal_entry_lines.deleteMany({ where: { journal_entry_id: journal.id } });
+                await tx.journal_entries.delete({ where: { id: journal.id } });
+            }
+        });
+
+        revalidatePath('/hms/accounting/payments');
+        return { success: true };
+    } catch (error: any) {
+        console.error("Error deleting payment:", error);
+        return { error: error.message };
     }
 }
