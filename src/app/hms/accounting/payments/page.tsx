@@ -1,16 +1,27 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getPayments } from '@/app/actions/accounting/payments';
+import { getPayments, deletePayment } from '@/app/actions/accounting/payments';
 import {
     Plus, Search, CheckCircle2, CircleDashed,
-    FileText, ArrowUpRight, TrendingDown, Wallet, Building2, Filter, Maximize2, Minimize2, X
+    FileText, ArrowUpRight, TrendingDown, Wallet, Building2, Filter, Maximize2, Minimize2, X,
+    Pencil, Trash2, Eye
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { PaymentVoucherForm } from '@/components/accounting/payment-voucher-form';
 
 export default function PaymentsPage() {
@@ -23,6 +34,11 @@ export default function PaymentsPage() {
     // Popup State
     const [isVoucherOpen, setIsVoucherOpen] = useState(false);
     const [isFullScreen, setIsFullScreen] = useState(true);
+    const [selectedPayment, setSelectedPayment] = useState<any>(null);
+
+    // Delete State
+    const [deleteId, setDeleteId] = useState<string | null>(null);
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
     useEffect(() => {
         if (!isVoucherOpen) {
@@ -38,6 +54,28 @@ export default function PaymentsPage() {
         }
         setIsLoading(false);
     }
+
+    const handleDelete = async () => {
+        if (!deleteId) return;
+        const res = await deletePayment(deleteId);
+        if (res.success) {
+            setDeleteId(null);
+            setIsDeleteOpen(false);
+            loadData();
+        } else {
+            console.error(res.error);
+        }
+    };
+
+    const handleEdit = (payment: any) => {
+        setSelectedPayment(payment);
+        setIsVoucherOpen(true);
+    };
+
+    const onCloseVoucher = () => {
+        setIsVoucherOpen(false);
+        setSelectedPayment(null);
+    };
 
     const filtered = payments.filter(p => {
         const matchesSearch =
@@ -115,7 +153,7 @@ export default function PaymentsPage() {
                         </div>
 
                         <Button
-                            onClick={() => setIsVoucherOpen(true)}
+                            onClick={() => { setSelectedPayment(null); setIsVoucherOpen(true); }}
                             className="h-10 px-5 bg-teal-600 hover:bg-teal-500 text-white text-sm font-bold rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-teal-500/20 hover:shadow-teal-500/40 active:scale-95"
                         >
                             <Plus className="h-4 w-4" />
@@ -197,6 +235,7 @@ export default function PaymentsPage() {
                                         <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider">Type</th>
                                         <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider text-right">Amount</th>
                                         <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider text-center">Status</th>
+                                        <th className="px-6 py-4 text-[11px] font-bold text-slate-500 dark:text-neutral-400 uppercase tracking-wider text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 dark:divide-white/[0.05]">
@@ -245,6 +284,26 @@ export default function PaymentsPage() {
                                                         {p.posted ? 'Posted' : 'Draft'}
                                                     </span>
                                                 </td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            className="h-8 w-8 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-500/10"
+                                                            onClick={() => handleEdit(p)}
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            size="icon"
+                                                            variant="ghost"
+                                                            className="h-8 w-8 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10"
+                                                            onClick={() => { setDeleteId(p.id); setIsDeleteOpen(true); }}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </td>
                                             </motion.tr>
                                         );
                                     })}
@@ -263,25 +322,43 @@ export default function PaymentsPage() {
                         ? "max-w-[none] w-screen h-screen rounded-none"
                         : "max-w-[1200px] w-full h-[90vh] rounded-2xl overflow-hidden"
                 )}>
-                    {/* Floating Controls for Windowed Mode - REMOVED and passed to component header */}
-                    <PaymentVoucherForm
-                        onClose={() => setIsVoucherOpen(false)}
-                        onSuccess={() => { setIsVoucherOpen(false); loadData(); }}
-                        className={isFullScreen ? "" : "rounded-2xl"}
-                        headerActions={
-                            <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-teal-100 hover:text-white hover:bg-teal-600"
-                                onClick={() => setIsFullScreen(!isFullScreen)}
-                                title={isFullScreen ? "Windowed Mode" : "Full Screen"}
-                            >
-                                {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                            </Button>
-                        }
-                    />
+                    {isVoucherOpen && (
+                        <PaymentVoucherForm
+                            onClose={onCloseVoucher}
+                            onSuccess={() => { onCloseVoucher(); loadData(); }}
+                            initialData={selectedPayment}
+                            className={isFullScreen ? "" : "rounded-2xl"}
+                            headerActions={
+                                <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-teal-100 hover:text-white hover:bg-teal-600"
+                                    onClick={() => setIsFullScreen(!isFullScreen)}
+                                    title={isFullScreen ? "Windowed Mode" : "Full Screen"}
+                                >
+                                    {isFullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                                </Button>
+                            }
+                        />
+                    )}
                 </DialogContent>
             </Dialog>
+
+            {/* DELETE CONFIRMATION */}
+            <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete this payment voucher and reverse any associated accounting entries.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setDeleteId(null)}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-red-600 text-white hover:bg-red-700">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
