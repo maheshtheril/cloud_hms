@@ -16,8 +16,10 @@ export async function lockAccountingPeriod(dateStr: string | null) {
             create: {
                 tenant_id: session.user.tenantId!,
                 company_id: session.user.companyId!,
-                lock_date: lockDate
-                // Defaults will handle the rest
+                lock_date: lockDate,
+                // Required defaults for new entries
+                fiscal_year_start: new Date(new Date().getFullYear(), 0, 1), // Jan 1st 
+                fiscal_year_end: new Date(new Date().getFullYear(), 11, 31) // Dec 31st
             },
             update: {
                 lock_date: lockDate
