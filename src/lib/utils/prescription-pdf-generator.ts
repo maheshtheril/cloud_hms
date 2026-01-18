@@ -147,7 +147,7 @@ export async function generatePrescriptionPDFBase64(prescription: any, company?:
         doc.setFontSize(8);
         doc.setTextColor(153, 153, 153);
         const footerText1 = 'This is a computer generated prescription.';
-        const footerText2 = `Powered by cloud-hms.onrender.com | Generated on ${new Date().toLocaleString()}`;
+        const footerText2 = `Powered by Cloud HMS | Generated on ${new Date().toLocaleString()}`;
 
         doc.text(footerText1, pageWidth / 2, 780, { align: 'center' });
         doc.text(footerText2, pageWidth / 2, 795, { align: 'center' });

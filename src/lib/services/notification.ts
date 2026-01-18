@@ -59,7 +59,7 @@ export class NotificationService {
             const companyName = company?.name || "HealthCare Center";
 
             // Get base URL for the billing link
-            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://cloud-hms.onrender.com';
+            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://cloud-hms.onrender.com');
             const billLink = `${baseUrl}/hms/billing/${invoice.id}`;
 
             const message = `Hello *${patientName}*,\n\n` +

@@ -25,7 +25,7 @@ export async function sendInvitationEmail(email: string, token: string, name: st
                 <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
                     <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 48px 40px; text-align: center;">
                         <div style="display: inline-block; background-color: rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 12px; border-radius: 16px; margin-bottom: 24px;">
-                            <img src="https://cloud-hms.onrender.com/logo.png" alt="Cloud HMS" style="width: 48px; height: 48px;" />
+                            <img src="${appUrl}/logo.png" alt="Cloud HMS" style="width: 48px; height: 48px;" />
                         </div>
                         <h1 style="color: #ffffff; font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.02em;">Welcome to the Mission</h1>
                         <p style="color: rgba(255,255,255,0.8); font-size: 16px; margin-top: 8px; font-weight: 500;">Cloud HMS Enterprise Portal</p>

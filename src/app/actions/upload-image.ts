@@ -23,28 +23,19 @@ export async function uploadProductImage(formData: FormData) {
         return { error: "File size must be less than 5MB" };
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Create unique filename
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
-    const originalName = file.name.replace(/[^a-zA-Z0-9.-]/g, ''); // Sanitize
-    const filename = `product-${uniqueSuffix}-${originalName}`;
-
-    // Ensure directory exists
-    const uploadDir = join(process.cwd(), 'public', 'uploads', 'products');
     try {
-        await mkdir(uploadDir, { recursive: true });
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
 
-        const filepath = join(uploadDir, filename);
-        await writeFile(filepath, buffer);
+        // Convert to Base64 Data URI for serverless compatibility
+        const base64String = buffer.toString('base64');
+        const mimeType = file.type;
+        const dataUri = `data:${mimeType};base64,${base64String}`;
 
-        // Return public URL
-        const url = `/uploads/products/${filename}`;
-        return { success: true, url };
+        return { success: true, url: dataUri };
 
     } catch (error) {
         console.error("Upload error:", error);
-        return { error: "Failed to save file" };
+        return { error: "Failed to process image" };
     }
 }
