@@ -85,8 +85,8 @@ export async function updateAccountingSettings(data: any) {
                 company_id: session.user.companyId!,
 
                 // General
-                fiscal_year_start: fiscal_year_start ? new Date(fiscal_year_start) : undefined,
-                fiscal_year_end: fiscal_year_end ? new Date(fiscal_year_end) : undefined,
+                fiscal_year_start: fiscal_year_start ? new Date(fiscal_year_start) : new Date(new Date().getFullYear(), 0, 1),
+                fiscal_year_end: fiscal_year_end ? new Date(fiscal_year_end) : new Date(new Date().getFullYear(), 11, 31),
                 currency_precision: currency_precision ? parseInt(currency_precision) : 2,
                 rounding_method: rounding_method || 'ROUND_HALF_UP',
                 // lock_date: lock_date ? new Date(lock_date) : undefined, // REMOVED
