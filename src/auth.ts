@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     ...authConfig,
+    trustHost: true,
     providers: [
         Credentials({
             credentials: {
