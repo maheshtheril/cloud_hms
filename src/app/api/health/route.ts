@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { seedRoles } from '../../../prisma/seed-roles';
+// import { seedRoles } from '../../../prisma/seed-roles';
 // Note: We need to adapt seed-roles to be importable or copy logic. 
 // For simplicity, I will implement a basic seed here or ensure the seed file is safe.
 // Actually, let's just create a simple success check.
