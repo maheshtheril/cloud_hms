@@ -30,11 +30,9 @@ export async function GET() {
                     tenant_id: tenant.id,
                     name: 'Apollo Main Hospital',
                     industry: 'Healthcare',
-                    currency: 'INR',
-                    country: 'India',
-                    timezone: 'Asia/Kolkata',
-                    fiscal_year_start: new Date(new Date().getFullYear(), 3, 1),
-                    fiscal_year_end: new Date(new Date().getFullYear() + 1, 2, 31)
+                    // currency: 'INR', // Not in schema
+                    // country: 'India', // Not in schema (uses country_id relation)
+                    // timezone: 'Asia/Kolkata', // Not in schema
                 }
             });
             console.log("Created Company:", company.id);
