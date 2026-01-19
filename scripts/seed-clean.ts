@@ -23,7 +23,7 @@ async function main() {
                 }
             })
         } catch (e) {
-            console.error(`Failed to seed currency ${cur.code}:`, e.message)
+            console.error(`Failed to seed currency ${cur.code}:`, (e as any).message)
         }
     }
 
@@ -43,7 +43,7 @@ async function main() {
                 }
             })
         } catch (e) {
-            console.error(`Failed to seed country ${country.iso2}:`, e.message)
+            console.error(`Failed to seed country ${country.iso2}:`, (e as any).message)
         }
     }
 
