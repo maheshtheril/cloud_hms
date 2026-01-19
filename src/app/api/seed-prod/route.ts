@@ -109,13 +109,24 @@ export async function GET() {
             console.log("Admin User Updated.");
         }
 
+        // VERIFY IMMEDIATE
+        const verify = await prisma.$queryRaw`
+            SELECT id FROM app_user 
+            WHERE email = ${adminEmail} 
+            AND password = crypt(${password}, password)
+        ` as any[];
+
+        const verificationSuccess = verify.length > 0;
+        console.log("Password Verification Result:", verificationSuccess);
+
         return NextResponse.json({
             success: true,
             message: "Production Database Seeded Successfully!",
             details: {
                 tenantId: tenant.id,
                 companyId: company.id,
-                adminEmail
+                adminEmail,
+                verificationSuccess
             }
         });
 
