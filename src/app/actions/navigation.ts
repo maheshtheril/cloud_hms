@@ -426,7 +426,7 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
     // 5. CONFIG
     if (isAdmin) {
         items.push({
-            module: { name: 'System Configuration', module_key: 'configuration' },
+            module: { name: 'System Configuration', module_key: 'system' },
             items: [
                 { key: 'users', label: 'User Management', icon: 'Users', url: '/settings/users' },
                 { key: 'roles', label: 'RBAC & Security', icon: 'Shield', url: '/settings/roles' },
