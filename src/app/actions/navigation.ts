@@ -9,7 +9,7 @@ export async function getMenuItems() {
     const session = await auth();
     // if (!session?.user) return []; 
 
-    const isAdmin = session?.user?.isAdmin;
+    const isAdmin = session?.user?.isAdmin || (session?.user as any)?.isTenantAdmin;
     let industry = ''; // we can fetch this if needed
 
     // EMERGENCY OVERRIDE REMOVED: Now fully dynamic based on RBAC permissions and Module Subscriptions.
@@ -98,6 +98,7 @@ export async function getMenuItems() {
         // Always allow General and Configuration
         allowedModuleKeys.add('general');
         allowedModuleKeys.add('configuration');
+        allowedModuleKeys.add('system');
 
         // 3. IMPLICIT PERMISSION-BASED MODULE ACCESS (Safety Net)
         // If a user has permission to view a module, they should see its menu, 
