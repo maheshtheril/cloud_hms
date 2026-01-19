@@ -31,12 +31,14 @@ export async function GET() {
             stack: error.stack
         }, { status: 500 });
     }
-    export async function POST(req: Request) {
-        try {
-            const { password } = await req.json();
-            const email = 'admin@saaserp.com';
+}
 
-            const users = await prisma.$queryRaw`
+export async function POST(req: Request) {
+    try {
+        const { password } = await req.json();
+        const email = 'admin@saaserp.com';
+
+        const users = await prisma.$queryRaw`
             SELECT id, email, password
             FROM app_user
             WHERE LOWER(email) = ${email.toLowerCase()}
@@ -44,12 +46,12 @@ export async function GET() {
               AND password = crypt(${password}, password)
         ` as any[];
 
-            return NextResponse.json({
-                success: users.length > 0,
-                userFound: users.length > 0,
-                email
-            });
-        } catch (error: any) {
-            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-        }
+        return NextResponse.json({
+            success: users.length > 0,
+            userFound: users.length > 0,
+            email
+        });
+    } catch (error: any) {
+        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
+}
