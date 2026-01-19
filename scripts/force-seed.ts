@@ -7,15 +7,14 @@ import { randomUUID } from 'crypto'
 
 async function main() {
     const sqlPath = path.join(process.cwd(), 'seed-final.sql')
-    console.log('Generating WORLD CLASS seed-final.sql...')
+    console.log('Generating WORLD CLASS seed-final.sql with SYSTEM RESTORED...')
 
     let sql = 'BEGIN;\n\n'
 
-    // CLEANUP
-    sql += "DELETE FROM modules WHERE module_key = 'system';\n\n";
-
-    // WORLD CLASS MODULES LIST
+    // Modules (Includes SYSTEM to fix Configuration Menus)
     const modules: any[] = [
+        { key: 'system', name: 'System', desc: 'System Configuration & Admin' }, // REQUIRED for Config Menus
+
         // Core ERP
         { key: 'hms', name: 'Health Management', desc: 'Complete Hospital & Clinical Operations' },
         { key: 'crm', name: 'CRM', desc: 'Customer Relationship & Pipeline Management' },
