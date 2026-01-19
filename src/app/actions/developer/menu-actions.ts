@@ -13,10 +13,6 @@ export async function getAllMenus() {
     try {
         const menus = await prisma.menu_items.findMany({
             orderBy: { sort_order: 'asc' },
-            include: {
-                parent: true,
-                // We'll fetch module details or join them if needed, but for now raw keys are fine
-            }
         });
 
         // Also fetch modules for the dropdown
