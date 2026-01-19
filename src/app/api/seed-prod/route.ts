@@ -79,8 +79,7 @@ export async function GET() {
                     is_tenant_admin,
                     name,
                     role,
-                    created_at,
-                    updated_at
+                    created_at
                 ) VALUES (
                     ${tenant.id}::uuid,
                     ${company.id}::uuid,
@@ -91,7 +90,6 @@ export async function GET() {
                     true,
                     'System Admin',
                     'admin',
-                    NOW(),
                     NOW()
                 )
             `;
