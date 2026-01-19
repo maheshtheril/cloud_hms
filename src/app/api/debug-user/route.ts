@@ -12,12 +12,19 @@ export async function GET() {
 
         const tenantCount = await prisma.tenant.count();
         const userCount = await prisma.app_user.count();
+        const countryCount = await prisma.countries.count();
+        const sampleCountries = await prisma.countries.findMany({
+            take: 3,
+            select: { id: true, name: true, iso2: true }
+        });
 
         return NextResponse.json({
             status: 'success',
             dbCheck: {
                 tenantCount,
                 userCount,
+                countryCount,
+                sampleCountries,
                 adminUser: user || 'NOT FOUND',
             },
             env: {

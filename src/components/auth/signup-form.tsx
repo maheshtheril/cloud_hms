@@ -33,7 +33,14 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
         getModules().then(setModules)
     }, [])
 
-    const nextStep = () => setStep(s => s + 1)
+    const nextStep = () => {
+        const form = document.getElementById('signup-form') as HTMLFormElement;
+        if (form && !form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        setStep(s => s + 1)
+    }
     const prevStep = () => setStep(s => s - 1)
 
     const toggleModule = (key: string) => {
@@ -115,7 +122,7 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
 
                 {/* Form Area */}
                 <div className="p-8 flex-1 bg-white dark:bg-slate-950 relative">
-                    <form action={formAction} className="h-full flex flex-col">
+                    <form id="signup-form" action={formAction} className="h-full flex flex-col">
                         <input type="hidden" name="email" value={formData.email} />
                         <input type="hidden" name="password" value={formData.password} />
                         <input type="hidden" name="name" value={formData.name} />
