@@ -954,7 +954,7 @@ model hms_appointments {
   room_id          String?        @db.Uuid
   starts_at        DateTime       @db.Timestamptz(6)
   ends_at          DateTime       @db.Timestamptz(6)
-  duration_minutes Int?           @default(0)
+  duration_minutes Int?
   status           String         @default("scheduled")
   type             String?        @default("consultation")
   mode             String?        @default("in_person")
