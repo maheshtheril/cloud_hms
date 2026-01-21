@@ -37,7 +37,8 @@ export default async function ReceptionDashboardPage() {
             include: {
                 hms_patient: true,
                 hms_clinician: true,
-                prescription: { select: { id: true } } // Added: Check for prescription
+                prescription: { select: { id: true } },
+                hms_invoice: { select: { id: true, status: true, total_amount: true, outstanding_amount: true } }
             },
             orderBy: { starts_at: 'asc' }
         }),
@@ -97,16 +98,26 @@ export default async function ReceptionDashboardPage() {
         })
     ]);
 
-    // Fetch Vitals for these appointments
+    // Fetch Vitals & Tags
     const appointmentIds = appointmentsRaw.map(a => a.id);
-    const vitalsRaw = await prisma.hms_vitals.findMany({
-        where: {
-            encounter_id: { in: appointmentIds },
-            tenant_id: tenantId
-        },
-        select: { encounter_id: true }
-    });
+    const [vitalsRaw, tagsRaw] = await Promise.all([
+        prisma.hms_vitals.findMany({
+            where: { encounter_id: { in: appointmentIds }, tenant_id: tenantId },
+            select: { encounter_id: true }
+        }),
+        prisma.hms_appointment_tags.findMany({
+            where: { appointment_id: { in: appointmentIds }, tenant_id: tenantId },
+            select: { appointment_id: true, tag: true }
+        })
+    ]);
+
     const vitalsSet = new Set(vitalsRaw.map(v => v.encounter_id));
+
+    const tagsMap: Record<string, string[]> = {};
+    tagsRaw.forEach(t => {
+        if (!tagsMap[t.appointment_id]) tagsMap[t.appointment_id] = [];
+        tagsMap[t.appointment_id].push(t.tag);
+    });
 
     // Calculate Total Collection
     const totalCollection = todayPaymentsList.reduce((sum, p) => sum + Number(p.amount), 0);
@@ -117,18 +128,30 @@ export default async function ReceptionDashboardPage() {
     }, {} as Record<string, number>);
 
     // Transform appointments to friendly format
-    const formattedAppointments = appointmentsRaw.map(apt => ({
-        id: apt.id,
-        patient_id: apt.patient_id,
-        clinician_id: apt.clinician_id,
-        start_time: apt.starts_at,
-        status: apt.status,
-        patient: apt.hms_patient,
-        clinician: apt.hms_clinician,
-        // New Status Flags
-        hasVitals: vitalsSet.has(apt.id),
-        hasPrescription: apt.prescription && apt.prescription.length > 0
-    }));
+    const formattedAppointments = appointmentsRaw.map(apt => {
+        // Determine Invoice Status
+        // If multiple invoices, we take the most recent or check if ANY is unpaid.
+        // Simple logic: if any invoice exists and is NOT 'paid', status is 'pending_payment'.
+        const invoices = apt.hms_invoice || [];
+        const hasPendingInvoice = invoices.some(inv => inv.status !== 'paid' && inv.status !== 'cancelled');
+        const isPaid = invoices.length > 0 && invoices.every(inv => inv.status === 'paid');
+
+        return {
+            id: apt.id,
+            patient_id: apt.patient_id,
+            clinician_id: apt.clinician_id,
+            start_time: apt.starts_at,
+            status: apt.status,
+            type: apt.type, // Visit Type (consultation, emergency, etc.)
+            patient: apt.hms_patient,
+            clinician: apt.hms_clinician,
+            // Enhanced Status Flags
+            hasVitals: vitalsSet.has(apt.id),
+            hasPrescription: apt.prescription && apt.prescription.length > 0,
+            tags: tagsMap[apt.id] || [],
+            invoiceStatus: hasPendingInvoice ? 'pending' : (isPaid ? 'paid' : 'none'),
+        };
+    });
 
     const totalExpenses = todayExpensesList.reduce((sum, e) => sum + Number(e.amount), 0);
 
