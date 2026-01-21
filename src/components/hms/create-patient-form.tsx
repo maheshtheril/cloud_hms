@@ -155,8 +155,12 @@ export function CreatePatientForm({
                             </p>
                         </div>
                     </div>
-                    {onClose && (
-                        <button onClick={onClose} className="h-8 w-8 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-lg flex items-center justify-center transition-all active:scale-95">
+                    {(onClose || !isDialog) && (
+                        <button
+                            type="button"
+                            onClick={onClose || (() => router.back())}
+                            className="h-8 w-8 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                        >
                             <X className="h-4 w-4" />
                         </button>
                     )}
