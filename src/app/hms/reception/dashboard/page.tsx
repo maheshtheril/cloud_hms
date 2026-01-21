@@ -38,7 +38,7 @@ export default async function ReceptionDashboardPage() {
                 hms_patient: true,
                 hms_clinician: true,
                 prescription: { select: { id: true } },
-                hms_invoice: { select: { id: true, status: true, total_amount: true, outstanding_amount: true } }
+                hms_invoice: { select: { id: true, status: true, total: true, outstanding_amount: true } }
             },
             orderBy: { starts_at: 'asc' }
         }),
