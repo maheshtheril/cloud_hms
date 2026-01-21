@@ -126,24 +126,25 @@ export default async function NewInvoicePage({
             }
 
             // 3. Add Nurse Consumables from Stock Moves (Fallback if not already in draft invoice)
-            // Even if we have a draft, we might want to check for unposted stock moves
             const stockMoves = await prisma.hms_stock_move.findMany({
                 where: {
                     source_reference: appointmentId,
                     source: 'Nursing Consumption'
-                },
-                include: { hms_product: true }
+                }
             });
 
             stockMoves.forEach(move => {
                 const alreadyInDraft = draftInvoice?.hms_invoice_lines.some(l => l.product_id === move.product_id);
                 const alreadyInInitial = initialItems.some((i: any) => i.product_id === move.product_id);
 
-                if (!alreadyInDraft && !alreadyInInitial && move.hms_product) {
+                // Lookup product info from billableItems
+                const productInfo = billableItems.find((p: any) => p.id === move.product_id);
+
+                if (!alreadyInDraft && !alreadyInInitial && productInfo) {
                     initialItems.push({
                         id: move.product_id,
-                        name: `(Nurse) ${move.hms_product.name}`,
-                        price: Number(move.hms_product.price) || 0,
+                        name: `(Nurse) ${productInfo.label}`,
+                        price: Number(productInfo.price) || 0,
                         quantity: Number(move.qty),
                         type: 'item'
                     });
