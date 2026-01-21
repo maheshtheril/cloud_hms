@@ -224,6 +224,13 @@ export function ReceptionActionCenter({
                                 <SearchableSelect
                                     value={selectedDoctor}
                                     onChange={(val) => setSelectedDoctor(val || 'all')}
+                                    onSearch={async (q) => {
+                                        const lower = q.toLowerCase()
+                                        return doctorOptions.filter(d =>
+                                            d.label.toLowerCase().includes(lower) ||
+                                            d.subLabel?.toLowerCase().includes(lower)
+                                        )
+                                    }}
                                     options={doctorOptions}
                                     placeholder="Filter by Doctor..."
                                 />
