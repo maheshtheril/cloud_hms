@@ -47,6 +47,35 @@ export default async function PharmacyBillingPage({
     const uoms = (uomsRes as any).success ? (uomsRes as any).data : [];
     const currency = companySettings?.currencies?.symbol || '₹';
 
+    // 1. Fetch prescription if patientId is provided
+    let initialItems = [];
+    if (patientId) {
+        const latestPrescription = await prisma.prescription.findFirst({
+            where: {
+                patient_id: patientId,
+                tenant_id: tenantId
+            },
+            include: {
+                prescription_items: {
+                    include: {
+                        hms_product: true
+                    }
+                }
+            },
+            orderBy: { created_at: 'desc' }
+        });
+
+        if (latestPrescription) {
+            initialItems = latestPrescription.prescription_items.map(pi => ({
+                id: pi.medicine_id,
+                name: pi.hms_product?.name || 'Unknown Medicine',
+                price: Number(pi.hms_product?.price) || 0,
+                quantity: (pi.morning + pi.afternoon + pi.evening + pi.night) * (pi.days || 1),
+                type: 'item'
+            }));
+        }
+    }
+
     return (
         <div className="p-4 sm:p-8">
             <div className="mb-6">
@@ -60,6 +89,7 @@ export default async function PharmacyBillingPage({
                 uoms={JSON.parse(JSON.stringify(uoms))}
                 taxConfig={JSON.parse(JSON.stringify(taxConfig))}
                 initialPatientId={patientId}
+                initialItems={initialItems}
                 currency={currency}
             />
         </div>
