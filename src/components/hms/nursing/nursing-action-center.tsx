@@ -94,38 +94,36 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                 </div>
 
                 {/* Queue Summary Grid */}
+                {/* Queue Summary Grid Compact */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:border-pink-300 transition-colors" onClick={() => setActiveTab('queue')}>
-                        <div className="flex justify-between items-start mb-2">
-                            <div className="h-10 w-10 bg-pink-100 rounded-lg flex items-center justify-center text-pink-600">
-                                <HeartPulse className="h-6 w-6" />
-                            </div>
-                            <span className="bg-pink-100 text-pink-700 text-xs font-bold px-2 py-1 rounded-full">{pendingTriage.length}</span>
+                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:border-pink-300 transition-all flex items-center gap-4 group" onClick={() => setActiveTab('queue')}>
+                        <div className="h-12 w-12 bg-pink-100 dark:bg-pink-900/30 rounded-xl flex items-center justify-center text-pink-600 shrink-0 group-hover:scale-110 transition-transform">
+                            <HeartPulse className="h-6 w-6" />
                         </div>
-                        <div className={`text-xs font-medium uppercase tracking-wider ${activeTab === 'queue' ? 'text-pink-600 font-bold' : 'text-slate-500'}`}>Pending Vitals</div>
-                        <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{pendingTriage.length}</div>
+                        <div>
+                            <div className="text-2xl font-black text-slate-900 dark:text-white leading-none">{pendingTriage.length}</div>
+                            <div className={`text-xs font-bold uppercase tracking-wider mt-1 ${activeTab === 'queue' ? 'text-pink-600' : 'text-slate-500'}`}>Pending Vitals</div>
+                        </div>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:border-blue-300 transition-colors" onClick={() => setActiveTab('census')}>
-                        <div className="flex justify-between items-start mb-2">
-                            <div className="h-10 w-10 bg-blue-100 rounded-lg flex items-center justify-center text-blue-600">
-                                <Activity className="h-6 w-6" />
-                            </div>
-                            <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded-full">{allPatients.length}</span>
+                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:border-blue-300 transition-all flex items-center gap-4 group" onClick={() => setActiveTab('census')}>
+                        <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-blue-600 shrink-0 group-hover:scale-110 transition-transform">
+                            <Activity className="h-6 w-6" />
                         </div>
-                        <div className={`text-xs font-medium uppercase tracking-wider ${activeTab === 'census' ? 'text-blue-600 font-bold' : 'text-slate-500'}`}>Active Patients</div>
-                        <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{allPatients.length}</div>
+                        <div>
+                            <div className="text-2xl font-black text-slate-900 dark:text-white leading-none">{allPatients.length}</div>
+                            <div className={`text-xs font-bold uppercase tracking-wider mt-1 ${activeTab === 'census' ? 'text-blue-600' : 'text-slate-500'}`}>Active Patients</div>
+                        </div>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:border-emerald-300 transition-colors" onClick={() => setActiveTab('history')}>
-                        <div className="flex justify-between items-start mb-2">
-                            <div className="h-10 w-10 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600">
-                                <UserCheck className="h-6 w-6" />
-                            </div>
-                            <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full">{completedTriage.length}</span>
+                    <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer hover:border-emerald-300 transition-all flex items-center gap-4 group" onClick={() => setActiveTab('history')}>
+                        <div className="h-12 w-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center text-emerald-600 shrink-0 group-hover:scale-110 transition-transform">
+                            <UserCheck className="h-6 w-6" />
                         </div>
-                        <div className={`text-xs font-medium uppercase tracking-wider ${activeTab === 'history' ? 'text-emerald-600 font-bold' : 'text-slate-500'}`}>Completed Today</div>
-                        <div className="text-2xl font-black text-slate-900 dark:text-white mt-1">{completedTriage.length}</div>
+                        <div>
+                            <div className="text-2xl font-black text-slate-900 dark:text-white leading-none">{completedTriage.length}</div>
+                            <div className={`text-xs font-bold uppercase tracking-wider mt-1 ${activeTab === 'history' ? 'text-emerald-600' : 'text-slate-500'}`}>Completed Today</div>
+                        </div>
                     </div>
                 </div>
 
