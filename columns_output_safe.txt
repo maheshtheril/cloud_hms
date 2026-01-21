@@ -1,0 +1,44 @@
+--- Debugging Columns (PG) ---
+
+Table: hms_roles
+  - id (uuid)
+  - tenant_id (uuid)
+  - company_id (uuid)
+  - name (text)
+  - code (text)
+  - description (text)
+  - is_clinical (boolean)
+  - is_active (boolean)
+  - created_at (timestamp with time zone)
+  - updated_at (timestamp with time zone)
+
+Table: hms_role_permissions
+  - id (uuid)
+  - role_id (uuid)
+  - permission (text)
+
+Table: role_permission
+  - role_id (uuid)
+  - permission_code (text)
+  - tenant_id (uuid)
+  - is_granted (boolean)
+  - created_at (timestamp with time zone)
+
+Table: role
+  - id (uuid)
+  - tenant_id (uuid)
+  - key (text)
+  - name (text)
+  - permissions (ARRAY)
+  - created_at (timestamp with time zone)
+
+Table: hms_permissions
+  (Table not found or no columns)
+
+Table: permission
+  - code (text)
+  - name (text)
+  - description (text)
+  - category (text)
+  - is_deprecated (boolean)
+  - created_at (timestamp with time zone)

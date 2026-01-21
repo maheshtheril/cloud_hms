@@ -1,0 +1,143 @@
+--- Debugging Doctor Permissions (PG) - Final Safe ---
+
+Found Role (role table): Doctor (Key: doctor) ID: da205fe9-ffe2-4edc-9e44-1cd8dbfd281c
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: 2419e19d-d328-4ea3-bc3b-cd9e3b7fb926
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: d4a69f34-dd6b-4679-84f9-5fcfef965c97
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: b3811d9c-090d-43ca-910b-daf13781c614
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: 5dd82e08-d467-4190-bf8e-1f42a7c55a6a
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: c24d8ed9-c01d-4626-b689-8f1272971bbb
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: 575f37eb-0f76-474c-b7dd-fc84dbcfef34
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: 355351dd-9805-4662-ba64-7eba9f3ff663
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: 9cc9a34f-d255-44ba-9372-bf2ceb861dde
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: 1892de03-37af-49fe-9fb6-f47ce9aa8fe6
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: 89edd5d2-cf60-4719-a4a9-b27a7ee2221b
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: d607c299-aa1a-4717-a09c-677cc63b1bb8
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: daabdb5b-3ac0-45e7-8fa1-0ecd4c26fecf
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: 54fcf1c2-9473-4528-8730-c8d6cd4cd1b6
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: bc3bc340-a874-4bd1-810e-687494712a3f
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: 7f2c5d29-ca93-4d4f-89d5-091300348938
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: 1b13c911-b26b-41d7-8017-d639cce6ae69
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: c0316924-12ef-45ac-abe9-7e5ff2a15965
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: 3592710e-e796-40cc-abef-d3c558510876
+Array Permissions: ["prescriptions:view","prescriptions:create","prescriptions:edit","hms:view","vitals:view","vitals:edit","vitals:create","hms:dashboard:doctor","appointments:view"]
+Table Permissions (role_permission) [Count: 9]:
+ - prescriptions:view (Granted: true)
+ - prescriptions:create (Granted: true)
+ - prescriptions:edit (Granted: true)
+ - hms:view (Granted: true)
+ - vitals:view (Granted: true)
+ - vitals:edit (Granted: true)
+ - vitals:create (Granted: true)
+ - hms:dashboard:doctor (Granted: true)
+ - appointments:view (Granted: true)
+
+Found Role (role table): Doctor (Key: doctor) ID: d3503f62-b636-4100-88c3-dbe371a51eb6
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: f2d1d0d7-eba8-4515-af59-b6b7bbe812cb
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: 07e20a5b-3699-4a75-95bc-47bd5cd1283c
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: ba4cf25b-dc01-47ba-85da-97d768ead2df
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: 8d8760b7-f7ea-47d2-8e67-4b780e4de9a1
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: a58cf46f-aff6-4710-87c2-374f9b9cfb80
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: d362127f-b5d0-487c-ae6f-d30ed944157e
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: cde0e350-e290-44a6-9404-d24e5e5561c7
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: 602e0c91-de6a-4686-bc0d-fbe6d227d629
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: 6cb7184a-ee1f-4c32-b5f6-ecd504251bf8
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: e9e351f0-453a-46d3-9b65-d5122e060bfe
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: bd61e525-8438-4c5b-badc-252c10561328
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+Found Role (role table): Doctor (Key: doctor) ID: f48c6d79-616f-49c8-a586-d2c21504fed3
+Array Permissions: ["patients:view","patients:edit","appointments:view","appointments:create","prescriptions:view","prescriptions:create","prescriptions:edit","hms:view"]
+Table Permissions (role_permission) [Count: 0]:
+
+--- Doctor Dashboard Menu ---
+Menu: "Doctor Dashboard" (Key: hms-doctor-dash) | Perm: hms:dashboard:doctor | Module: hms
+Menu: "Doctors" (Key: hms-doctors) | Perm: hms:admin | Module: hms
+Menu: "Dashboard" (Key: hms-dashboard) | Perm: hms:admin | Module: hms
