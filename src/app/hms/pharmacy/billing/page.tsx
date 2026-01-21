@@ -48,7 +48,7 @@ export default async function PharmacyBillingPage({
     const currency = companySettings?.currencies?.symbol || '₹';
 
     // 1. Fetch prescription if patientId is provided
-    let initialItems = [];
+    let initialItems: Array<{ id: string; name: string; price: number; quantity: number; type: string }> = [];
     if (patientId) {
         const latestPrescription = await prisma.prescription.findFirst({
             where: {
@@ -89,7 +89,7 @@ export default async function PharmacyBillingPage({
                 uoms={JSON.parse(JSON.stringify(uoms))}
                 taxConfig={JSON.parse(JSON.stringify(taxConfig))}
                 initialPatientId={patientId}
-                initialItems={initialItems}
+                initialMedicines={initialItems}
                 currency={currency}
             />
         </div>
