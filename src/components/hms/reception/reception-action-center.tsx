@@ -109,7 +109,7 @@ export function ReceptionActionCenter({
         { id: 'all', label: 'All Doctors', subLabel: 'Show full schedule' },
         ...doctors.map(d => ({
             id: d.id,
-            label: `Dr. ${d.last_name}`,
+            label: `Dr. ${d.first_name} ${d.last_name || ''}`.trim(),
             subLabel: d.hms_specializations?.[0]?.name || d.role || 'General Practitioner'
         }))
     ]
@@ -276,7 +276,7 @@ export function ReceptionActionCenter({
                                                 <td className="px-6 py-5">
                                                     <div className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-400">
                                                         <Stethoscope className="h-3 w-3 text-slate-400 dark:text-slate-500" />
-                                                        Dr. {apt.clinician?.last_name}
+                                                        Dr. {apt.clinician?.first_name} {apt.clinician?.last_name}
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-5 text-right">
