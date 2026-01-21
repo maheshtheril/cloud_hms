@@ -264,6 +264,21 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                                             URGENT
                                                         </span>
                                                     )}
+                                                    {order.report_url && (
+                                                        <span className="px-2.5 py-1 rounded-full text-[10px] bg-blue-100 text-blue-700 font-bold border border-blue-200 uppercase tracking-wider flex items-center gap-1">
+                                                            <FileText className="h-3 w-3" />
+                                                            Results Ready
+                                                        </span>
+                                                    )}
+                                                    {order.invoice_status && (
+                                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider flex items-center gap-1 ${order.invoice_status === 'paid' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                                                                order.invoice_status === 'posted' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                                                    'bg-amber-100 text-amber-700 border-amber-200'
+                                                            }`}>
+                                                            <IndianRupee className="h-3 w-3" />
+                                                            {order.invoice_status === 'paid' ? 'PAID' : order.invoice_status === 'posted' ? 'INVOICE POSTED' : 'INVOICE DRAFT'}
+                                                        </span>
+                                                    )}
                                                 </div>
 
                                                 <div className="flex flex-wrap gap-2">
@@ -291,15 +306,36 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                                     {order.status === 'requested' ? 'Collect Sample' : 'Enter Results'}
                                                     <ArrowRight className="h-4 w-4" />
                                                 </button>
-                                                <button
-                                                    onClick={() => {
-                                                        setBillingOrder(order);
-                                                    }}
-                                                    className="h-12 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-xl shadow-emerald-600/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
-                                                >
-                                                    <IndianRupee className="h-4 w-4" />
-                                                    Bill Patient
-                                                </button>
+                                                {order.report_url && (
+                                                    <a
+                                                        href={`/api/lab/report/${order.id}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="h-12 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-xl shadow-blue-600/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                                                    >
+                                                        <FileText className="h-4 w-4" />
+                                                        View Results
+                                                    </a>
+                                                )}
+                                                {order.invoice_id ? (
+                                                    <button
+                                                        onClick={() => router.push(`/hms/billing?invoice=${order.invoice_id}`)}
+                                                        className="h-12 px-6 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-sm shadow-xl shadow-amber-600/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                                                    >
+                                                        <IndianRupee className="h-4 w-4" />
+                                                        View Invoice
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => {
+                                                            setBillingOrder(order);
+                                                        }}
+                                                        className="h-12 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-xl shadow-emerald-600/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                                                    >
+                                                        <IndianRupee className="h-4 w-4" />
+                                                        Bill Patient
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     </motion.div>

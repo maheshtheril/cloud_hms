@@ -44,7 +44,13 @@ export default async function LabDashboardPage() {
                 hms_patient: true,
                 hms_appointment: {
                     include: {
-                        hms_clinician: true
+                        hms_clinician: true,
+                        hms_invoice: {
+                            select: {
+                                id: true,
+                                status: true
+                            }
+                        }
                     }
                 },
                 hms_lab_order_line: {
@@ -96,6 +102,9 @@ export default async function LabDashboardPage() {
             ? `${order.hms_appointment.hms_clinician.first_name} ${order.hms_appointment.hms_clinician.last_name}`.trim()
             : 'Unknown'
 
+        // Get invoice info from appointment
+        const invoice = order.hms_appointment?.hms_invoice?.[0];
+
         return {
             id: order.id,
             order_number: order.order_number,
@@ -107,7 +116,9 @@ export default async function LabDashboardPage() {
             doctor_name: doctorName,
             tests: tests,
             report_url: order.report_url,
-            totalPrice: totalPrice
+            totalPrice: totalPrice,
+            invoice_id: invoice?.id,
+            invoice_status: invoice?.status
         }
     })
 
