@@ -113,44 +113,36 @@ export default async function AppointmentsPage() {
                 </div>
 
                 {/* Real Stats Cards */}
+                {/* Real Stats Cards Compact */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
-                                <Calendar className="h-6 w-6 text-white" />
-                            </div>
-                            <div className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">
-                                Today
-                            </div>
+                    <div className="group bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-slate-800 hover:shadow-lg hover:border-blue-300 transition-all duration-300 flex items-center gap-4">
+                        <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform shrink-0">
+                            <Calendar className="h-6 w-6 text-white" />
                         </div>
-                        <div className="text-3xl font-black text-gray-900 mb-1">{todayCount}</div>
-                        <div className="text-sm text-gray-600 font-medium">Scheduled Appointments</div>
+                        <div>
+                            <div className="text-2xl font-black text-slate-900 dark:text-white leading-none">{todayCount}</div>
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Today's Appts</div>
+                        </div>
                     </div>
 
-                    <div className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="h-12 w-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
-                                <Zap className="h-6 w-6 text-white" />
-                            </div>
-                            <div className="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full">
-                                Live
-                            </div>
+                    <div className="group bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-slate-800 hover:shadow-lg hover:border-green-300 transition-all duration-300 flex items-center gap-4">
+                        <div className="h-12 w-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform shrink-0">
+                            <Zap className="h-6 w-6 text-white" />
                         </div>
-                        <div className="text-3xl font-black text-gray-900 mb-1">{inProgressCount}</div>
-                        <div className="text-sm text-gray-600 font-medium">In Progress</div>
+                        <div>
+                            <div className="text-2xl font-black text-slate-900 dark:text-white leading-none">{inProgressCount}</div>
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">In Progress</div>
+                        </div>
                     </div>
 
-                    <div className="group bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200 hover:shadow-xl hover:scale-105 transition-all duration-300">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className="h-12 w-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
-                                <Calendar className="h-6 w-6 text-white" />
-                            </div>
-                            <div className="px-3 py-1 bg-purple-50 text-purple-600 text-xs font-bold rounded-full">
-                                Week
-                            </div>
+                    <div className="group bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-xl p-4 border border-gray-200 dark:border-slate-800 hover:shadow-lg hover:border-purple-300 transition-all duration-300 flex items-center gap-4">
+                        <div className="h-12 w-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform shrink-0">
+                            <Calendar className="h-6 w-6 text-white" />
                         </div>
-                        <div className="text-3xl font-black text-gray-900 mb-1">{weekCount}</div>
-                        <div className="text-sm text-gray-600 font-medium">This Week</div>
+                        <div>
+                            <div className="text-2xl font-black text-slate-900 dark:text-white leading-none">{weekCount}</div>
+                            <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">This Week</div>
+                        </div>
                     </div>
                 </div>
 
