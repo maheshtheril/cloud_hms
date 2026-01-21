@@ -83,6 +83,10 @@ export function ReceptionActionCenter({
             router.push('/hms/patients/new')
             return
         }
+        if (actionId === 'billing') {
+            router.push('/hms/billing')
+            return
+        }
         setActiveModal(actionId as any)
     }
 
