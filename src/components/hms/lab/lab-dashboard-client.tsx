@@ -131,48 +131,49 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                 </header>
 
                 {/* STATS GRID */}
+                {/* STATS GRID COMPACT */}
                 <motion.div
                     variants={container}
                     initial="hidden"
                     animate="show"
-                    className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                    className="grid grid-cols-1 md:grid-cols-3 gap-4"
                 >
-                    <motion.div variants={item} className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-3xl border border-white/50 shadow-sm relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <motion.div variants={item} className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-4 rounded-2xl border border-white/50 shadow-sm relative overflow-hidden group flex items-center gap-4">
+                        <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity rotate-12">
                             <TestTube2 className="h-24 w-24 text-violet-600" />
                         </div>
-                        <div className="relative z-10">
-                            <div className="h-12 w-12 bg-violet-100 dark:bg-violet-900/30 rounded-2xl flex items-center justify-center text-violet-600 mb-4">
-                                <Activity className="h-6 w-6" />
-                            </div>
-                            <h3 className="text-3xl font-black text-slate-900 dark:text-white">{stats.total}</h3>
-                            <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mt-1">Total Orders Today</p>
+                        <div className="h-12 w-12 bg-violet-100 dark:bg-violet-900/30 rounded-xl flex items-center justify-center text-violet-600 shrink-0">
+                            <Activity className="h-6 w-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white leading-none">{stats.total}</h3>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Total Orders</p>
                         </div>
                     </motion.div>
 
-                    <motion.div variants={item} className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-3xl border border-white/50 shadow-sm relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <motion.div variants={item} className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-4 rounded-2xl border border-white/50 shadow-sm relative overflow-hidden group flex items-center gap-4">
+                        <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity rotate-12">
                             <Clock className="h-24 w-24 text-amber-600" />
                         </div>
-                        <div className="relative z-10">
-                            <div className="h-12 w-12 bg-amber-100 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center text-amber-600 mb-4">
-                                <Microscope className="h-6 w-6" />
-                            </div>
-                            <h3 className="text-3xl font-black text-slate-900 dark:text-white">{stats.pending}</h3>
-                            <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mt-1">Pending / Processing</p>
+                        <div className="h-12 w-12 bg-amber-100 dark:bg-amber-900/30 rounded-xl flex items-center justify-center text-amber-600 shrink-0">
+                            <Microscope className="h-6 w-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white leading-none">{stats.pending}</h3>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Pending</p>
                         </div>
                     </motion.div>
 
-                    <motion.div variants={item} className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-6 rounded-3xl border border-white/50 shadow-sm relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <motion.div variants={item} className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl p-4 rounded-2xl border border-white/50 shadow-sm relative overflow-hidden group flex items-center gap-4">
+                        <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity rotate-12">
                             <CheckCircle2 className="h-24 w-24 text-emerald-600" />
                         </div>
-                        <div className="relative z-10">
-                            <div className="h-12 w-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center text-emerald-600 mb-4">
-                                <FileText className="h-6 w-6" />
-                            </div>
-                            <h3 className="text-3xl font-black text-slate-900 dark:text-white">{stats.completed}</h3>
-                            <p className="text-sm font-bold text-slate-500 uppercase tracking-wider mt-1">Results Released</p>
+                        <div className="h-12 w-12 bg-emerald-100 dark:bg-emerald-900/30 rounded-xl flex items-center justify-center text-emerald-600 shrink-0">
+                            <FileText className="h-6 w-6" />
+                        </div>
+                        <div>
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white leading-none">{stats.completed}</h3>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Completed</p>
                         </div>
                     </motion.div>
                 </motion.div>
