@@ -420,6 +420,23 @@ export async function createInvoice(data: any) {
                 });
             }
 
+            // [WORLD CLASS] Registration Fee Tracking
+            const hasRegistrationFee = line_items.some((l: any) => l.description === 'Registration Fee');
+            if (hasRegistrationFee && patient_id && (status === 'posted' || status === 'paid')) {
+                const patient = await tx.hms_patient.findUnique({ where: { id: patient_id as string } });
+                const currentMeta = (patient?.metadata as any) || {};
+                await tx.hms_patient.update({
+                    where: { id: patient_id as string },
+                    data: {
+                        metadata: {
+                            ...currentMeta,
+                            registration_fees_paid: true,
+                            registration_fee_date: new Date().toISOString()
+                        }
+                    }
+                });
+            }
+
             // FORCE UPDATE TOTAL: Ensure DB triggers didn't override the total to 0
             await tx.hms_invoice.update({
                 where: { id: newInvoice.id },
@@ -659,6 +676,23 @@ export async function updateInvoice(invoiceId: string, data: any) {
                 await tx.hms_appointments.update({
                     where: { id: appointment_id },
                     data: { status: 'completed' }
+                });
+            }
+
+            // [WORLD CLASS] Registration Fee Tracking
+            const hasRegistrationFee = line_items.some((l: any) => l.description === 'Registration Fee');
+            if (hasRegistrationFee && patient_id && (status === 'posted' || status === 'paid')) {
+                const patient = await tx.hms_patient.findUnique({ where: { id: patient_id as string } });
+                const currentMeta = (patient?.metadata as any) || {};
+                await tx.hms_patient.update({
+                    where: { id: patient_id as string },
+                    data: {
+                        metadata: {
+                            ...currentMeta,
+                            registration_fees_paid: true,
+                            registration_fee_date: new Date().toISOString()
+                        }
+                    }
                 });
             }
 

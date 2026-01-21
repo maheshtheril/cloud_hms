@@ -57,21 +57,33 @@ export default async function NewInvoicePage({
 
     // Standardization logic for initial items
     let initialItems = items ? JSON.parse(decodeURIComponent(items)) : (medicines ? JSON.parse(decodeURIComponent(medicines)) : []);
+    let initialInvoice = null;
 
     // IF APPOINTMENT ID IS PRESENT, ENRICH INITIAL ITEMS
     if (appointmentId) {
+        // 0. Check for EXISTING DRAFT INVOICE (e.g., from Nursing Consumption)
+        const draftInvoice = await prisma.hms_invoice.findFirst({
+            where: {
+                appointment_id: appointmentId,
+                status: 'draft'
+            },
+            include: {
+                hms_invoice_lines: {
+                    include: { hms_product: true }
+                },
+                hms_patient: true
+            }
+        });
+
+        if (draftInvoice) {
+            initialInvoice = draftInvoice;
+        }
+
         const appointment = await prisma.hms_appointments.findUnique({
             where: { id: appointmentId },
             include: {
                 hms_clinician: true,
-                hms_patient: true,
-                hms_lab_order: {
-                    include: {
-                        hms_lab_order_line: {
-                            include: { hms_lab_test: true }
-                        }
-                    }
-                }
+                hms_patient: true
             }
         });
 
@@ -79,53 +91,71 @@ export default async function NewInvoicePage({
             // 1. Add Consultation Fee if clinician has one
             const consultationFee = Number(appointment.hms_clinician?.consultation_fee) || 0;
             if (consultationFee > 0) {
-                initialItems.unshift({
-                    id: appointment.clinician_id,
-                    name: `Consultation Fee - Dr. ${appointment.hms_clinician?.first_name} ${appointment.hms_clinician?.last_name}`,
-                    price: consultationFee,
-                    quantity: 1,
-                    type: 'service'
-                });
-            }
-
-            // 2. Add Lab Tests
-            appointment.hms_lab_order.forEach(order => {
-                order.hms_lab_order_line.forEach(line => {
-                    if (line.hms_lab_test) {
-                        initialItems.push({
-                            id: line.test_id,
-                            name: `Lab: ${line.hms_lab_test.name}`,
-                            price: Number(line.price) || 0,
-                            quantity: 1,
-                            type: 'service'
-                        });
-                    }
-                });
-            });
-
-            // 3. Add Registration Fee if not paid (Check patient metadata)
-            const registrationPaid = (appointment.hms_patient?.metadata as any)?.registration_fees_paid;
-            if (!registrationPaid) {
-                // Fetch the current registration fee from hms_patient_registration_fees if available
-                const regFeeRecord = await prisma.hms_patient_registration_fees.findFirst({
-                    where: { tenant_id: tenantId, is_active: true }
-                });
-                if (regFeeRecord) {
-                    initialItems.push({
-                        id: 'reg-fee',
-                        name: 'Registration Fee',
-                        price: Number(regFeeRecord.fee_amount),
+                // Check if already in draft lines
+                const hasConsultation = draftInvoice?.hms_invoice_lines.some(l => l.description?.includes('Consultation Fee'));
+                if (!hasConsultation) {
+                    initialItems.unshift({
+                        id: appointment.clinician_id,
+                        name: `Consultation Fee - Dr. ${appointment.hms_clinician?.first_name} ${appointment.hms_clinician?.last_name}`,
+                        price: consultationFee,
                         quantity: 1,
                         type: 'service'
                     });
                 }
             }
+
+            // 2. Add Registration Fee if not paid (Check patient metadata)
+            const registrationPaid = (appointment.hms_patient?.metadata as any)?.registration_fees_paid;
+            if (!registrationPaid) {
+                const hasRegFee = draftInvoice?.hms_invoice_lines.some(l => l.description === 'Registration Fee') || initialItems.some((i: any) => i.name === 'Registration Fee');
+
+                if (!hasRegFee) {
+                    const regFeeRecord = await prisma.hms_patient_registration_fees.findFirst({
+                        where: { tenant_id: tenantId, is_active: true }
+                    });
+                    if (regFeeRecord) {
+                        initialItems.push({
+                            id: 'reg-fee',
+                            name: 'Registration Fee',
+                            price: Number(regFeeRecord.fee_amount),
+                            quantity: 1,
+                            type: 'service'
+                        });
+                    }
+                }
+            }
+
+            // 3. Add Nurse Consumables from Stock Moves (Fallback if not already in draft invoice)
+            // Even if we have a draft, we might want to check for unposted stock moves
+            const stockMoves = await prisma.hms_stock_move.findMany({
+                where: {
+                    source_reference: appointmentId,
+                    source: 'Nursing Consumption'
+                },
+                include: { hms_product: true }
+            });
+
+            stockMoves.forEach(move => {
+                const alreadyInDraft = draftInvoice?.hms_invoice_lines.some(l => l.product_id === move.product_id);
+                const alreadyInInitial = initialItems.some((i: any) => i.product_id === move.product_id);
+
+                if (!alreadyInDraft && !alreadyInInitial && move.hms_product) {
+                    initialItems.push({
+                        id: move.product_id,
+                        name: `(Nurse) ${move.hms_product.name}`,
+                        price: Number(move.hms_product.price) || 0,
+                        quantity: Number(move.qty),
+                        type: 'item'
+                    });
+                }
+            });
         }
     }
 
     let effectivePatientId = patientId;
 
-    // IF LAB ORDER ID IS PRESENT (Direct billing from Lab)
+    // IF LAB ORDER ID IS PRESENT (Direct billing from Lab - OPTIONAL/OVERRIDE)
+    // We keep this but noted that Reception usually avoids this for Bill #2
     if (labOrderId) {
         const labOrder = await prisma.hms_lab_order.findUnique({
             where: { id: labOrderId },
@@ -138,15 +168,14 @@ export default async function NewInvoicePage({
         });
 
         if (labOrder) {
-            // Pre-select patient if not already passed
             if (!effectivePatientId && labOrder.patient_id) {
                 effectivePatientId = labOrder.patient_id;
             }
 
             labOrder.hms_lab_order_line.forEach(line => {
                 if (line.hms_lab_test) {
-                    // Check if item already exists to avoid dupes if both appointmentId and labOrderId passed
-                    const exists = initialItems.some((i: any) => i.name === `Lab: ${line.hms_lab_test!.name}`);
+                    const exists = initialItems.some((i: any) => i.name === `Lab: ${line.hms_lab_test!.name}`) ||
+                        initialInvoice?.hms_invoice_lines.some((il: any) => il.description === `Lab: ${line.hms_lab_test!.name}`);
                     if (!exists) {
                         initialItems.push({
                             id: '',
@@ -170,7 +199,9 @@ export default async function NewInvoicePage({
             initialPatientId={effectivePatientId}
             initialMedicines={initialItems}
             appointmentId={appointmentId}
+            initialInvoice={initialInvoice ? JSON.parse(JSON.stringify(initialInvoice)) : null}
             currency={currency}
         />
     )
 }
+
