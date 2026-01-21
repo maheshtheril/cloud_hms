@@ -130,53 +130,62 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                     </motion.div>
                 </motion.div>
 
-                {/* MAIN CONTENT AREA */}
-                <div className="space-y-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                            <Stethoscope className="h-5 w-5 text-blue-500" />
-                            Patient Queue
-                        </h2>
+                {/* MAIN CONTENT AREA - ENHANCED FOCUS */}
+                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col h-[800px]">
 
-                        <div className="flex items-center gap-3">
-                            <div className="relative">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    {/* QUEUE HEADER */}
+                    <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-xl flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+                        <div>
+                            <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3">
+                                <div className="h-10 w-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+                                    <Stethoscope className="h-5 w-5" />
+                                </div>
+                                Patient Queue
+                            </h2>
+                            <p className="text-slate-500 font-medium ml-[3.25rem] mt-1">Manage today's consultations and flow</p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-center gap-4 w-full xl:w-auto">
+                            <div className="relative w-full sm:w-72">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                                 <input
                                     type="text"
-                                    placeholder="Search patient..."
+                                    placeholder="Search by name or ID..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-9 pr-4 py-2 text-sm font-medium rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-100 outline-none w-full sm:w-64"
+                                    className="pl-11 pr-4 py-3 text-sm font-bold rounded-xl border border-slate-200 bg-white focus:ring-4 focus:ring-blue-100 outline-none w-full shadow-sm transition-all"
                                 />
                             </div>
-                            <div className="bg-white dark:bg-slate-900 p-1 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex">
+                            <div className="bg-white dark:bg-slate-950 p-1.5 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 flex w-full sm:w-auto">
                                 <button
                                     onClick={() => setSelectedTab('queue')}
-                                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${selectedTab === 'queue' ? 'bg-blue-50 text-blue-600' : 'text-slate-500 hover:text-slate-700'}`}
+                                    className={`flex-1 sm:flex-none px-6 py-2.5 text-sm font-black rounded-lg transition-all ${selectedTab === 'queue' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
                                 >
                                     Waiting
                                 </button>
                                 <button
                                     onClick={() => setSelectedTab('history')}
-                                    className={`px-4 py-2 text-sm font-bold rounded-lg transition-all ${selectedTab === 'history' ? 'bg-emerald-50 text-emerald-600' : 'text-slate-500 hover:text-slate-700'}`}
+                                    className={`flex-1 sm:flex-none px-6 py-2.5 text-sm font-black rounded-lg transition-all ${selectedTab === 'history' ? 'bg-emerald-600 text-white shadow-md' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
                                 >
-                                    Finished
+                                    History
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div className="space-y-4">
+                    {/* SCROLLABLE LIST AREA */}
+                    <div className="flex-1 overflow-y-auto p-6 md:p-8 space-y-4 bg-slate-50/30 dark:bg-slate-900/30 scroll-smooth">
                         <AnimatePresence mode="popLayout">
                             {displayedAppointments.length === 0 ? (
                                 <motion.div
-                                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                    className="bg-white/40 dark:bg-slate-900/40 rounded-3xl p-12 text-center border-2 border-dashed border-slate-200"
+                                    initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+                                    className="h-full flex flex-col items-center justify-center text-center p-12 opacity-60"
                                 >
-                                    <div className="mx-auto w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                                        <Users className="h-8 w-8 text-slate-300" />
+                                    <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6">
+                                        <Users className="h-10 w-10 text-slate-400" />
                                     </div>
-                                    <p className="text-slate-500 font-medium">No appointments found in this list.</p>
+                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">No patients found</h3>
+                                    <p className="text-slate-500 max-w-xs mx-auto mt-2">There are no appointments matching your current filter in the queue.</p>
                                 </motion.div>
                             ) : (
                                 displayedAppointments.map((apt, index) => (
@@ -187,33 +196,39 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95 }}
                                         transition={{ delay: index * 0.05 }}
-                                        className="bg-white dark:bg-slate-900 rounded-3xl p-4 md:p-6 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-blue-200 transition-all group relative overflow-hidden"
+                                        className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl hover:border-blue-300 dark:hover:border-blue-700 transition-all group relative overflow-hidden"
                                     >
                                         {/* Status indicator bar */}
-                                        <div className={`absolute left-0 top-0 bottom-0 w-2 ${apt.status === 'in_progress' ? 'bg-blue-500' :
+                                        <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${apt.status === 'in_progress' ? 'bg-blue-500' :
                                             apt.vitals_done ? 'bg-emerald-500' : 'bg-slate-200'
                                             }`} />
 
-                                        <div className="flex flex-col lg:flex-row lg:items-center gap-6 pl-4">
+                                        <div className="flex flex-col xl:flex-row xl:items-center gap-6 pl-3">
 
                                             {/* Time & Avatar */}
-                                            <div className="flex items-center gap-6 min-w-[200px]">
-                                                <div className="text-center min-w-[60px]">
-                                                    <p className="text-2xl font-black text-slate-900 dark:text-white">
+                                            <div className="flex items-center gap-5 min-w-[180px]">
+                                                <div className="text-center min-w-[50px]">
+                                                    <p className="text-xl font-black text-slate-900 dark:text-white">
                                                         {new Date(apt.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).split(' ')[0]}
                                                     </p>
-                                                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">{new Date(apt.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).split(' ')[1]}</p>
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{new Date(apt.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }).split(' ')[1]}</p>
                                                 </div>
-                                                <div className={`h-16 w-16 rounded-2xl flex items-center justify-center text-2xl font-black shadow-inner ${apt.patient_gender === 'Female' ? 'bg-pink-50 text-pink-500' : 'bg-indigo-50 text-indigo-500'
+                                                <div className={`h-14 w-14 rounded-2xl flex items-center justify-center text-xl font-black shadow-inner ${apt.patient_gender === 'Female' ? 'bg-pink-50 text-pink-500' : 'bg-indigo-50 text-indigo-500'
                                                     }`}>
                                                     {apt.patient_name.charAt(0)}
+                                                </div>
+                                                <div className="xl:hidden">
+                                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                                                        {apt.patient_name}
+                                                    </h3>
+                                                    <p className="text-xs text-slate-500 font-bold">#{apt.patient_id || 'N/A'}</p>
                                                 </div>
                                             </div>
 
                                             {/* Patient Details */}
-                                            <div className="flex-1 space-y-2">
-                                                <div className="flex flex-wrap items-center gap-3">
-                                                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                                            <div className="flex-1 space-y-3">
+                                                <div className="hidden xl:flex flex-wrap items-center gap-3">
+                                                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                                                         {apt.patient_name}
                                                     </h3>
                                                     {apt.vitals_done ? (
@@ -237,33 +252,30 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                                                     )}
                                                 </div>
 
-                                                <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-slate-500">
-                                                    <span className="flex items-center gap-1.5"><User className="h-4 w-4 text-slate-400" /> {apt.patient_gender}, {apt.patient_age} Years</span>
-                                                    <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                                                    <span className="text-slate-400">ID: <span className="text-slate-600 font-mono">#{apt.patient_id || 'N/A'}</span></span>
+                                                <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-slate-500">
+                                                    <span className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md"><User className="h-3.5 w-3.5 text-slate-400" /> {apt.patient_gender}, {apt.patient_age} Years</span>
+                                                    <span className="hidden xl:inline text-slate-300">|</span>
+                                                    <span className="hidden xl:inline text-slate-400">ID: <span className="text-slate-600 font-mono">#{apt.patient_id || 'N/A'}</span></span>
                                                     {apt.blood_group && (
-                                                        <>
-                                                            <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                                                            <span className="text-red-500 font-black bg-red-50 px-2 py-0.5 rounded-lg text-xs">{apt.blood_group}</span>
-                                                        </>
+                                                        <span className="text-red-500 font-black bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-md text-[10px] border border-red-100 dark:border-red-900/30">{apt.blood_group}</span>
                                                     )}
                                                 </div>
 
                                                 {apt.reason && (
-                                                    <div className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 bg-slate-100/50 px-3 py-1.5 rounded-lg border border-slate-200/50 mt-1">
-                                                        <span className="text-slate-400 uppercase tracking-wider text-[10px]">Reason:</span> {apt.reason}
+                                                    <div className="flex items-start gap-2 text-xs font-medium text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800/50">
+                                                        <span className="text-slate-400 uppercase tracking-wider text-[9px] font-bold mt-0.5">Reason:</span> {apt.reason}
                                                     </div>
                                                 )}
                                             </div>
 
                                             {/* Action Button */}
-                                            <div className="flex flex-col gap-2 mt-4 lg:mt-0 lg:ml-auto w-full lg:w-auto">
+                                            <div className="flex flex-col gap-2 mt-2 xl:mt-0 xl:min-w-[200px]">
                                                 <button
                                                     onClick={() => router.push(`/hms/prescriptions/new?appointmentId=${apt.id}&patientId=${apt.patient_uuid}`)}
-                                                    className="h-10 px-6 rounded-xl bg-slate-900 hover:bg-black text-white font-bold text-xs shadow-lg shadow-slate-900/10 hover:shadow-slate-900/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                                                    className="h-11 w-full rounded-xl bg-slate-900 hover:bg-blue-600 dark:bg-white dark:text-slate-900 dark:hover:bg-blue-500 dark:hover:text-white text-white font-black text-xs shadow-xl shadow-slate-900/10 hover:shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 group-hover:ring-2 ring-blue-500/20"
                                                 >
                                                     <Stethoscope className="h-4 w-4" />
-                                                    START CONSULTATION
+                                                    START CONSULT
                                                 </button>
 
                                                 {apt.lab_status && apt.lab_status.isReady && (
@@ -271,7 +283,7 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                                                         href={`/api/lab/report/${apt.lab_status.orderId}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="h-10 px-6 rounded-xl bg-violet-50 text-violet-700 font-bold text-xs border border-violet-100 hover:bg-violet-100 hover:border-violet-200 transition-all flex items-center justify-center gap-2"
+                                                        className="h-10 w-full rounded-xl bg-violet-50 text-violet-700 font-bold text-xs border border-violet-100 hover:bg-violet-100 hover:border-violet-200 transition-all flex items-center justify-center gap-2"
                                                     >
                                                         <FileText className="h-4 w-4" />
                                                         VIEW LAB REPORT
