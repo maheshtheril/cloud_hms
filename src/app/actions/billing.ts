@@ -831,6 +831,8 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
 
         revalidatePath(`/hms/billing/${invoiceId}`);
         revalidatePath('/hms/billing');
+        revalidatePath('/hms/lab/dashboard'); // Refresh lab dashboard to show updated invoice status
+        revalidatePath('/hms/reception/dashboard'); // Refresh reception dashboard
         return { success: true, data: result };
 
     } catch (error: any) {

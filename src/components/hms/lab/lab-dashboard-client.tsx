@@ -255,10 +255,12 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                                     <span className="px-2.5 py-1 rounded-full text-[10px] bg-slate-100 text-slate-500 font-bold border border-slate-200 uppercase tracking-wider">
                                                         #{order.order_number || 'N/A'}
                                                     </span>
-                                                    <span className="flex items-center gap-0.5 px-2.5 py-1 rounded-full text-[10px] bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 uppercase tracking-wider">
-                                                        <IndianRupee className="h-3 w-3" />
-                                                        {order.totalPrice?.toFixed(2) || '0.00'}
-                                                    </span>
+                                                    {order.totalPrice > 0 && (
+                                                        <span className="flex items-center gap-0.5 px-2.5 py-1 rounded-full text-[10px] bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 uppercase tracking-wider">
+                                                            <IndianRupee className="h-3 w-3" />
+                                                            {order.totalPrice?.toFixed(2)}
+                                                        </span>
+                                                    )}
                                                     {order.priority === 'urgent' && (
                                                         <span className="px-2.5 py-1 rounded-full text-[10px] bg-red-100 text-red-700 font-bold border border-red-200 uppercase tracking-wider animate-pulse">
                                                             URGENT
@@ -272,8 +274,8 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                                     )}
                                                     {order.invoice_status && (
                                                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider flex items-center gap-1 ${order.invoice_status === 'paid' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                                                                order.invoice_status === 'posted' ? 'bg-orange-100 text-orange-700 border-orange-200' :
-                                                                    'bg-amber-100 text-amber-700 border-amber-200'
+                                                            order.invoice_status === 'posted' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                                                'bg-amber-100 text-amber-700 border-amber-200'
                                                             }`}>
                                                             <IndianRupee className="h-3 w-3" />
                                                             {order.invoice_status === 'paid' ? 'PAID' : order.invoice_status === 'posted' ? 'INVOICE POSTED' : 'INVOICE DRAFT'}
