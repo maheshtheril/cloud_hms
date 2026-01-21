@@ -28,29 +28,22 @@ export default async function ReceptionDashboardPage() {
     todayEnd.setHours(23, 59, 59, 999)
 
     // Parallel Data Fetching
-    const [appointments, patients, doctors, todayPayments, todayExpenses, draftCount] = await Promise.all([
-        // 1. Fetch Today's Appointments
+    const [appointmentsRaw, patientsList, doctorsList, todayPaymentsList, todayExpensesList, draftCountVal] = await Promise.all([
         prisma.hms_appointments.findMany({
             where: {
                 tenant_id: tenantId,
-                starts_at: {
-                    gte: todayStart,
-                    lte: todayEnd
-                }
+                starts_at: { gte: todayStart, lte: todayEnd }
             },
             include: {
                 hms_patient: true,
-                hms_clinician: true
+                hms_clinician: true,
+                prescription: { select: { id: true } } // Added: Check for prescription
             },
-            orderBy: {
-                starts_at: 'asc'
-            }
+            orderBy: { starts_at: 'asc' }
         }),
-
-        // 2. Fetch Patients (for selection)
         prisma.hms_patient.findMany({
-            where: { tenant_id: tenantId }, // STRICT TENANT SCOPE
-            take: 100, // Limit for dropdown performance
+            where: { tenant_id: tenantId },
+            take: 100,
             orderBy: { updated_at: 'desc' },
             select: {
                 id: true,
@@ -62,13 +55,8 @@ export default async function ReceptionDashboardPage() {
                 contact: true
             }
         }),
-
-        // 3. Fetch Doctors
         prisma.hms_clinicians.findMany({
-            where: {
-                is_active: true,
-                tenant_id: tenantId // STRICT TENANT SCOPE
-            },
+            where: { is_active: true, tenant_id: tenantId },
             select: {
                 id: true,
                 first_name: true,
@@ -81,93 +69,82 @@ export default async function ReceptionDashboardPage() {
             },
             orderBy: { first_name: 'asc' }
         }),
-
-        // 4. Fetch Today's Payments (Inbound)
         prisma.hms_invoice_payments.findMany({
             where: {
                 tenant_id: tenantId,
-                paid_at: {
-                    gte: todayStart,
-                    lte: todayEnd
-                }
+                paid_at: { gte: todayStart, lte: todayEnd }
             },
             include: {
                 hms_invoice: {
                     select: {
                         invoice_number: true,
-                        hms_patient: {
-                            select: {
-                                first_name: true,
-                                last_name: true
-                            }
-                        }
+                        hms_patient: { select: { first_name: true, last_name: true } }
                     }
                 }
             },
-            orderBy: {
-                paid_at: 'desc'
-            }
+            orderBy: { paid_at: 'desc' }
         }),
-
-        // 5. Fetch Today's Expenses (Petty Cash/Outbound)
         prisma.payments.findMany({
             where: {
                 tenant_id: tenantId,
-                metadata: {
-                    path: ['type'],
-                    equals: 'outbound'
-                },
-                created_at: {
-                    gte: todayStart,
-                    lte: todayEnd
-                }
+                metadata: { path: ['type'], equals: 'outbound' },
+                created_at: { gte: todayStart, lte: todayEnd }
             },
             orderBy: { created_at: 'desc' }
         }),
-
-        // 6. Fetch Pending Draft Invoices Count
         prisma.hms_invoice.count({
-            where: {
-                company_id: companyId,
-                status: 'draft'
-            }
+            where: { company_id: companyId, status: 'draft' }
         })
     ]);
 
+    // Fetch Vitals for these appointments
+    const appointmentIds = appointmentsRaw.map(a => a.id);
+    const vitalsRaw = await prisma.hms_vitals.findMany({
+        where: {
+            encounter_id: { in: appointmentIds },
+            tenant_id: tenantId
+        },
+        select: { encounter_id: true }
+    });
+    const vitalsSet = new Set(vitalsRaw.map(v => v.encounter_id));
+
     // Calculate Total Collection
-    const totalCollection = todayPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-    const collectionByMethod = todayPayments.reduce((acc, p) => {
+    const totalCollection = todayPaymentsList.reduce((sum, p) => sum + Number(p.amount), 0);
+    const collectionBreakdown = todayPaymentsList.reduce((acc, p) => {
         const method = p.method as string || 'Other';
         acc[method] = (acc[method] || 0) + Number(p.amount);
         return acc;
     }, {} as Record<string, number>);
 
     // Transform appointments to friendly format
-    const formattedAppointments = appointments.map(apt => ({
+    const formattedAppointments = appointmentsRaw.map(apt => ({
         id: apt.id,
-        patient_id: apt.patient_id, // Include raw ID
-        clinician_id: apt.clinician_id, // Include raw ID
+        patient_id: apt.patient_id,
+        clinician_id: apt.clinician_id,
         start_time: apt.starts_at,
         status: apt.status,
         patient: apt.hms_patient,
-        clinician: apt.hms_clinician
+        clinician: apt.hms_clinician,
+        // New Status Flags
+        hasVitals: vitalsSet.has(apt.id),
+        hasPrescription: apt.prescription && apt.prescription.length > 0
     }));
 
-    const totalExpenses = todayExpenses.reduce((sum, e) => sum + Number(e.amount), 0);
+    const totalExpenses = todayExpensesList.reduce((sum, e) => sum + Number(e.amount), 0);
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 max-w-7xl mx-auto space-y-6">
             {/* ShiftManager moved to Action Center */}
             <ReceptionActionCenter
                 todayAppointments={formattedAppointments}
-                patients={patients}
-                doctors={doctors}
+                patients={patientsList}
+                doctors={doctorsList}
                 dailyCollection={totalCollection}
-                collectionBreakdown={collectionByMethod}
-                todayPayments={todayPayments}
-                todayExpenses={todayExpenses}
+                collectionBreakdown={collectionBreakdown}
+                todayPayments={todayPaymentsList}
+                todayExpenses={todayExpensesList}
                 totalExpenses={totalExpenses}
-                draftCount={draftCount}
+                draftCount={draftCountVal}
             />
         </div>
     )

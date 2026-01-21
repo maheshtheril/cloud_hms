@@ -280,11 +280,11 @@ export function ReceptionActionCenter({
                                                     </div>
                                                 </td>
                                                 <td className="px-6 py-5 text-right">
-                                                    <div className="flex items-center justify-end gap-3">
+                                                    <div className="flex flex-col items-end gap-1">
                                                         {apt.status === 'scheduled' ? (
                                                             <Button
                                                                 size="sm"
-                                                                className="h-8 bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-full px-4 text-[10px] font-bold uppercase tracking-wider shadow-lg shadow-indigo-600/20"
+                                                                className="h-7 bg-indigo-600 dark:bg-indigo-500 hover:bg-indigo-700 dark:hover:bg-indigo-600 text-white rounded-full px-3 text-[10px] font-bold uppercase tracking-wider shadow-lg shadow-indigo-600/20"
                                                                 onClick={() => handleStatusUpdate(apt.id, 'arrived')}
                                                             >
                                                                 Check In
@@ -293,15 +293,32 @@ export function ReceptionActionCenter({
                                                             <Badge className={`
                                                                 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border-none
                                                                 ${apt.status === 'arrived' ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' :
-                                                                    apt.status === 'confirmed' ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}
+                                                                    apt.status === 'confirmed' ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400' :
+                                                                        apt.status === 'completed' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
+                                                                            'bg-slate-100 dark:bg-slate-800 text-slate-500'}
                                                             `}>
                                                                 {apt.status}
                                                             </Badge>
                                                         )}
+
+                                                        {/* Granular Status Indicators */}
+                                                        <div className="flex items-center gap-1">
+                                                            {apt.hasVitals && (
+                                                                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-rose-200 bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:border-rose-800 dark:text-rose-400 flex items-center gap-1">
+                                                                    <Activity className="h-3 w-3" /> Vitals
+                                                                </Badge>
+                                                            )}
+                                                            {apt.hasPrescription && (
+                                                                <Badge variant="outline" className="text-[9px] px-1.5 py-0 border-blue-200 bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:border-blue-800 dark:text-blue-400 flex items-center gap-1">
+                                                                    <Stethoscope className="h-3 w-3" /> Rx
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                    <MoreVertical className="h-4 w-4" />
+                                                                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-1/2 -translate-y-1/2">
+                                                                    <MoreVertical className="h-3.5 w-3.5" />
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
