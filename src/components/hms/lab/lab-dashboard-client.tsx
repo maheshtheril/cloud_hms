@@ -283,13 +283,22 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
                                             </div>
 
                                             {/* Actions */}
-                                            <div className="flex items-center gap-3 mt-4 lg:mt-0 lg:ml-auto">
+                                            <div className="flex items-center gap-3 mt-4 lg:mt-0 lg:ml-auto flex-wrap justify-end">
                                                 <button
                                                     onClick={() => setSelectedOrder(order)}
-                                                    className="h-12 px-8 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm shadow-xl shadow-violet-600/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2 w-full lg:w-auto justify-center"
+                                                    className="h-12 px-6 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-sm shadow-xl shadow-violet-600/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
                                                 >
                                                     {order.status === 'requested' ? 'Collect Sample' : 'Enter Results'}
                                                     <ArrowRight className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setBillingOrder(order);
+                                                    }}
+                                                    className="h-12 px-6 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-xl shadow-emerald-600/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+                                                >
+                                                    <IndianRupee className="h-4 w-4" />
+                                                    Bill Patient
                                                 </button>
                                             </div>
                                         </div>
