@@ -139,6 +139,7 @@ export function AppSidebar({ menuItems, currentCompany, user: initialUser, child
                                 isMobile={true}
                                 onLinkClick={() => setMobileMenuOpen(false)}
                                 onClose={() => setMobileMenuOpen(false)}
+                                setCollapsed={setCollapsed}
                             />
                         </motion.div>
                     </>
@@ -278,6 +279,7 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                                     item={item}
                                     collapsed={collapsed}
                                     onClick={onLinkClick}
+                                    setCollapsed={setCollapsed}
                                 />
                             ))}
                         </div>
@@ -390,7 +392,7 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
         </div>
     )
 }
-function MenuItem({ item, level = 0, collapsed, onClick }: { item: any, level?: number, collapsed: boolean, onClick?: () => void }) {
+function MenuItem({ item, level = 0, collapsed, onClick, setCollapsed }: { item: any, level?: number, collapsed: boolean, onClick?: () => void, setCollapsed?: (val: boolean) => void }) {
     const pathname = usePathname();
     const isActive = pathname === item.url;
     const hasChildren = item.other_menu_items && item.other_menu_items.length > 0;
@@ -406,6 +408,35 @@ function MenuItem({ item, level = 0, collapsed, onClick }: { item: any, level?: 
     const Icon = getIcon(item.icon);
 
     if (collapsed) {
+        if (hasChildren) {
+            return (
+                <button
+                    onClick={() => {
+                        if (setCollapsed) {
+                            setCollapsed(false);
+                            setExpanded(true);
+                        }
+                    }}
+                    className={cn(
+                        "flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all duration-300 group relative",
+                        isActive
+                            ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/40"
+                            : "text-slate-400 dark:text-zinc-500 hover:bg-slate-100 dark:hover:bg-zinc-800 hover:text-indigo-600 dark:hover:text-indigo-400"
+                    )}
+                >
+                    <div className="relative z-10">
+                        <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
+                    </div>
+
+                    {/* Tooltip */}
+                    <div className="absolute left-full ml-4 px-3 py-1.5 bg-slate-900 dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-50 shadow-xl border border-white/10 dark:border-black/5">
+                        {item.label}
+                        <div className="absolute -left-1 top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900 dark:border-r-white"></div>
+                    </div>
+                </button>
+            )
+        }
+
         return (
             <Link
                 href={item.url || '#'}
@@ -424,7 +455,6 @@ function MenuItem({ item, level = 0, collapsed, onClick }: { item: any, level?: 
                 {/* Tooltip */}
                 <div className="absolute left-full ml-4 px-3 py-1.5 bg-slate-900 dark:bg-white text-white dark:text-black text-sm font-medium rounded-lg opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all pointer-events-none whitespace-nowrap z-50 shadow-xl border border-white/10 dark:border-black/5">
                     {item.label}
-                    {/* Arrow */}
                     <div className="absolute -left-1 top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900 dark:border-r-white"></div>
                 </div>
             </Link>
@@ -464,7 +494,7 @@ function MenuItem({ item, level = 0, collapsed, onClick }: { item: any, level?: 
                         >
                             <div className="pt-1 pl-4 space-y-1 border-l-2 border-slate-100 dark:border-zinc-800 ml-5 my-1">
                                 {item.other_menu_items.map((sub: any) => (
-                                    <MenuItem key={sub.key} item={sub} level={level + 1} collapsed={collapsed} onClick={onClick} />
+                                    <MenuItem key={sub.key} item={sub} level={level + 1} collapsed={collapsed} onClick={onClick} setCollapsed={setCollapsed} />
                                 ))}
                             </div>
                         </motion.div>
@@ -488,7 +518,7 @@ function MenuItem({ item, level = 0, collapsed, onClick }: { item: any, level?: 
             {isActive && (
                 <motion.div
                     layoutId="activeLink"
-                    className="absolute inset-0 bg-indigo-100/50 dark:bg-indigo-500/10 rounded-xl"
+                    className="absolute inset-0 bg-indigo-100/50 dark:bg-indigo-500/10 rounded-xl pointer-events-none"
                     initial={false}
                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
