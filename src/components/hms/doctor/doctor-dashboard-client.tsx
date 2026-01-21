@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { differenceInYears } from "date-fns"
+import { VisitTypeBadge } from "../visit-type-badge"
 
 interface DoctorDashboardProps {
     doctorName: string
@@ -242,6 +243,8 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                                                             <Clock className="h-3 w-3" /> Waiting for Vitals
                                                         </span>
                                                     )}
+
+                                                    <VisitTypeBadge type={apt.type || 'consultation'} />
 
                                                     {apt.lab_status && apt.lab_status.hasLab && (
                                                         <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border flex items-center gap-1 uppercase tracking-wider ${apt.lab_status.isReady
