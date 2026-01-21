@@ -55,12 +55,13 @@ export function ReceptionActionCenter({
 }: ReceptionActionCenterProps) {
     const router = useRouter()
     const { toast } = useToast()
-    const [viewMode, setViewMode] = useState<'board' | 'list'>('board')
+    const [viewMode, setViewMode] = useState<'board' | 'list'>('list')
     const [isPrivacyMode, setIsPrivacyMode] = useState(false)
     const [currentTime, setCurrentTime] = useState(new Date())
     const [activeModal, setActiveModal] = useState<string | null>(null)
     const [editingAppointment, setEditingAppointment] = useState<any>(null)
     const [selectedDoctor, setSelectedDoctor] = useState<string>("all")
+    const [selectedStatus, setSelectedStatus] = useState<string>("all")
     const [searchQuery, setSearchQuery] = useState("")
     const [patientSearchQuery, setPatientSearchQuery] = useState("")
     const [statusLoading, setStatusLoading] = useState<string | null>(null)
@@ -88,10 +89,11 @@ export function ReceptionActionCenter({
     // Filter Logic for Appointments
     const filteredAppointments = todayAppointments.filter(apt => {
         const matchesDoctor = selectedDoctor === 'all' || apt.clinician?.id === selectedDoctor
+        const matchesStatus = selectedStatus === 'all' || apt.status === selectedStatus
         const matchesSearch = searchQuery === '' ||
             `${apt.patient?.first_name} ${apt.patient?.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
             apt.patient?.patient_number?.toLowerCase().includes(searchQuery.toLowerCase())
-        return matchesDoctor && matchesSearch
+        return matchesDoctor && matchesStatus && matchesSearch
     })
 
     // Filter Logic for Patients
@@ -270,6 +272,20 @@ export function ReceptionActionCenter({
                                     options={doctorOptions}
                                     placeholder="Filter by Doctor..."
                                 />
+                            </div>
+                            <div className="w-[150px] hidden md:block">
+                                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                                    <SelectTrigger className="h-9 text-xs bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-800">
+                                        <SelectValue placeholder="All Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Status</SelectItem>
+                                        <SelectItem value="scheduled">Scheduled</SelectItem>
+                                        <SelectItem value="arrived">Arrived/Waiting</SelectItem>
+                                        <SelectItem value="confirmed">In Consultation</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                     </div>
