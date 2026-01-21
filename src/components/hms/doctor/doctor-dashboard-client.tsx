@@ -274,10 +274,28 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                                             <div className="flex flex-col gap-2 mt-2 xl:mt-0 xl:min-w-[200px]">
                                                 <button
                                                     onClick={() => router.push(`/hms/prescriptions/new?appointmentId=${apt.id}&patientId=${apt.patient_uuid}`)}
-                                                    className="h-11 w-full rounded-xl bg-slate-900 hover:bg-blue-600 dark:bg-white dark:text-slate-900 dark:hover:bg-blue-500 dark:hover:text-white text-white font-black text-xs shadow-xl shadow-slate-900/10 hover:shadow-blue-600/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 group-hover:ring-2 ring-blue-500/20"
+                                                    className={`h-11 w-full rounded-xl font-black text-xs shadow-xl transition-all flex items-center justify-center gap-2 group-hover:ring-2 ring-blue-500/20 hover:scale-[1.02] active:scale-95
+                                                        ${apt.status === 'completed'
+                                                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-100 hover:bg-emerald-100 shadow-emerald-900/5'
+                                                            : 'bg-slate-900 text-white hover:bg-blue-600 dark:bg-white dark:text-slate-900 dark:hover:bg-blue-500 dark:hover:text-white shadow-slate-900/10 hover:shadow-blue-600/20'}
+                                                    `}
                                                 >
-                                                    <Stethoscope className="h-4 w-4" />
-                                                    START CONSULT
+                                                    {apt.status === 'completed' ? (
+                                                        <>
+                                                            <FileText className="h-4 w-4" />
+                                                            VIEW Rx / SUMMARY
+                                                        </>
+                                                    ) : (apt.status === 'in_progress' || apt.status === 'confirmed') ? (
+                                                        <>
+                                                            <Activity className="h-4 w-4" />
+                                                            RESUME CONSULT
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Stethoscope className="h-4 w-4" />
+                                                            START CONSULT
+                                                        </>
+                                                    )}
                                                 </button>
 
                                                 {apt.lab_status && apt.lab_status.isReady && (
