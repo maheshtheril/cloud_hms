@@ -62,9 +62,9 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                         <motion.h1
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight"
+                            className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white tracking-tight"
                         >
-                            Good Morning, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">{doctorName}</span>
+                            {new Date().getHours() < 12 ? 'Good Morning' : new Date().getHours() < 18 ? 'Good Afternoon' : 'Good Evening'}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-500">{doctorName}</span>
                         </motion.h1>
                         <p className="text-slate-500 dark:text-slate-400 font-medium mt-1 flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
