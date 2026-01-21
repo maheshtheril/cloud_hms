@@ -292,20 +292,20 @@ export function ReceptionActionCenter({
                                 </div>
                             </div>
 
-                            {/* COL 2: RUNNING */}
+                            {/* COL 2: CONSULTATION / LABS */}
                             <div className="flex flex-col gap-3 min-w-[280px]">
                                 <div className="flex items-center justify-between px-1">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-indigo-500 flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-indigo-500 animate-bounce"></div>
-                                        In Consultation
+                                        In Process
                                     </h3>
                                     <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600">
-                                        {filteredAppointments.filter(a => ['confirmed', 'in_progress'].includes(a.status)).length}
+                                        {filteredAppointments.filter(a => ['confirmed', 'in_progress'].includes(a.status) || (a.status === 'completed' && a.labStatus === 'pending')).length}
                                     </Badge>
                                 </div>
                                 <div className="flex-1 bg-indigo-50/30 dark:bg-indigo-900/10 rounded-xl border border-indigo-100 dark:border-indigo-900/30 p-2 space-y-3 overflow-y-auto max-h-[700px] custom-scrollbar">
                                     {filteredAppointments
-                                        .filter(a => ['confirmed', 'in_progress'].includes(a.status))
+                                        .filter(a => ['confirmed', 'in_progress'].includes(a.status) || (a.status === 'completed' && a.labStatus === 'pending'))
                                         .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
                                         .map(apt => (
                                             <PatientCard
@@ -323,7 +323,7 @@ export function ReceptionActionCenter({
                                 </div>
                             </div>
 
-                            {/* COL 3: BILLING */}
+                            {/* COL 3: BILLING PENDING */}
                             <div className="flex flex-col gap-3 min-w-[280px]">
                                 <div className="flex items-center justify-between px-1">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-orange-500 flex items-center gap-2">
@@ -331,12 +331,12 @@ export function ReceptionActionCenter({
                                         Billing Pending
                                     </h3>
                                     <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-orange-50 dark:bg-orange-900/30 text-orange-600">
-                                        {filteredAppointments.filter(a => a.status === 'completed' && a.invoiceStatus !== 'paid').length}
+                                        {filteredAppointments.filter(a => a.status === 'completed' && a.labStatus !== 'pending' && a.invoiceStatus !== 'paid').length}
                                     </Badge>
                                 </div>
                                 <div className="flex-1 bg-orange-50/30 dark:bg-orange-900/10 rounded-xl border border-orange-100 dark:border-orange-900/30 p-2 space-y-3 overflow-y-auto max-h-[700px] custom-scrollbar">
                                     {filteredAppointments
-                                        .filter(a => a.status === 'completed' && a.invoiceStatus !== 'paid')
+                                        .filter(a => a.status === 'completed' && a.labStatus !== 'pending' && a.invoiceStatus !== 'paid')
                                         .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
                                         .map(apt => (
                                             <PatientCard
@@ -438,11 +438,12 @@ export function ReceptionActionCenter({
                                 </table>
                             </div>
                         </Card>
-                    )}
-                </div>
+                    )
+                    }
+                </div >
 
                 {/* RIGHT SIDEBAR */}
-                <div className="w-full xl:w-96 space-y-6">
+                < div className="w-full xl:w-96 space-y-6" >
                     <Card className="p-6 bg-gradient-to-br from-indigo-600 to-indigo-800 text-white border-none shadow-2xl relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl" />
                         <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-4 text-indigo-100">Quick Actions</h3>
@@ -506,15 +507,15 @@ export function ReceptionActionCenter({
                             <div className="text-[10px] font-bold text-emerald-600/60 uppercase">Today's Total</div>
                         </div>
                     </div>
-                </div>
-            </div>
+                </div >
+            </div >
 
             {/* MODALS */}
-            <Dialog open={activeModal === 'register'} onOpenChange={() => setActiveModal(null)}>
+            < Dialog open={activeModal === 'register'} onOpenChange={() => setActiveModal(null)}>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
                     <CreatePatientForm onClose={() => setActiveModal(null)} />
                 </DialogContent>
-            </Dialog>
+            </Dialog >
 
             <Dialog open={activeModal === 'appointment' || activeModal === 'edit-appointment'} onOpenChange={() => setActiveModal(null)}>
                 <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden p-0">
@@ -550,7 +551,7 @@ export function ReceptionActionCenter({
                     {viewingPayment && <PettyCashVoucher payment={viewingPayment} onClose={() => setViewingPayment(null)} />}
                 </DialogContent>
             </Dialog>
-        </div>
+        </div >
     )
 }
 
@@ -627,6 +628,14 @@ function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, 
                 <VisitTypeBadge type={visitType} />
                 {isCritical && (
                     <Badge className="text-[9px] bg-red-600 text-white border-none animate-pulse">CRITICAL</Badge>
+                )}
+                {apt.labStatus === 'pending' && (
+                    <Badge className="text-[9px] bg-violet-600 text-white border-none flex items-center gap-1">
+                        <Syringe className="h-2 w-2" /> LAB PENDING
+                    </Badge>
+                )}
+                {apt.status === 'completed' && apt.labStatus !== 'pending' && apt.invoiceStatus !== 'paid' && (
+                    <Badge className="text-[9px] bg-orange-600 text-white border-none">BILL PENDING</Badge>
                 )}
             </div>
 

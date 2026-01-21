@@ -233,13 +233,13 @@ export async function POST(request: NextRequest) {
                 }
             }
 
-            // 5. Automate Patient Flow: Mark appointment as 'completed'
-            // This moves them from "Running" to "Billing Pending" on the dashboard
+            // 5. Automate Patient Flow: Mark appointment status
             if (appointmentId) {
+                const targetStatus = (labTests && labTests.length > 0) ? 'in_progress' : 'completed';
                 await tx.hms_appointments.update({
                     where: { id: appointmentId },
                     data: {
-                        status: 'completed',
+                        status: targetStatus,
                         updated_at: new Date()
                     }
                 })

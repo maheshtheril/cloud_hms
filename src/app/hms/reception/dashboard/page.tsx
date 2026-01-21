@@ -38,7 +38,8 @@ export default async function ReceptionDashboardPage() {
                 hms_patient: true,
                 hms_clinician: true,
                 prescription: { select: { id: true } },
-                hms_invoice: { select: { id: true, status: true, total: true, outstanding_amount: true } }
+                hms_invoice: { select: { id: true, status: true, total: true, outstanding_amount: true } },
+                hms_lab_order: { select: { id: true, status: true } }
             },
             orderBy: { starts_at: 'asc' }
         }),
@@ -129,12 +130,12 @@ export default async function ReceptionDashboardPage() {
 
     // Transform appointments to friendly format
     const formattedAppointments = appointmentsRaw.map(apt => {
-        // Determine Invoice Status
-        // If multiple invoices, we take the most recent or check if ANY is unpaid.
-        // Simple logic: if any invoice exists and is NOT 'paid', status is 'pending_payment'.
         const invoices = apt.hms_invoice || [];
+        const labs = apt.hms_lab_order || [];
+
         const hasPendingInvoice = invoices.some(inv => inv.status !== 'paid' && inv.status !== 'cancelled');
         const isPaid = invoices.length > 0 && invoices.every(inv => inv.status === 'paid');
+        const hasPendingLabs = labs.some(l => l.status !== 'completed' && l.status !== 'partial' && l.status !== 'verified');
 
         return {
             id: apt.id,
@@ -150,6 +151,7 @@ export default async function ReceptionDashboardPage() {
             hasPrescription: apt.prescription && apt.prescription.length > 0,
             tags: tagsMap[apt.id] || [],
             invoiceStatus: hasPendingInvoice ? 'pending' : (isPaid ? 'paid' : 'none'),
+            labStatus: labs.length > 0 ? (hasPendingLabs ? 'pending' : 'completed') : 'none',
         };
     });
 
