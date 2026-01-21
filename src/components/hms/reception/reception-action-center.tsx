@@ -247,11 +247,39 @@ export function ReceptionActionCenter({
                                 </button>
                             </div>
 
+                            <div className="flex items-center gap-2">
+                                <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
+                                    <SelectTrigger className="h-9 w-[180px] bg-white dark:bg-slate-800 border-none shadow-none text-xs font-bold">
+                                        <SelectValue placeholder="All Doctors" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {doctorOptions.map(d => (
+                                            <SelectItem key={d.id} value={d.id}>{d.label}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+
+                                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                                    <SelectTrigger className="h-9 w-[130px] bg-white dark:bg-slate-800 border-none shadow-none text-xs font-bold">
+                                        <SelectValue placeholder="All Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Flows</SelectItem>
+                                        <SelectItem value="scheduled">Upcoming</SelectItem>
+                                        <SelectItem value="arrived">Waiting</SelectItem>
+                                        <SelectItem value="confirmed">Sent In</SelectItem>
+                                        <SelectItem value="in_progress">Consulting</SelectItem>
+                                        <SelectItem value="completed">Completed</SelectItem>
+                                        <SelectItem value="cancelled">Cancelled</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
                             <div className="relative">
                                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                                 <Input
                                     placeholder="Quick Search..."
-                                    className="pl-9 h-9 w-[150px] text-xs bg-slate-100 dark:bg-slate-800 border-none shadow-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                                    className="pl-9 h-9 w-[180px] text-xs bg-slate-100 dark:bg-slate-800 border-none shadow-none focus-visible:ring-1 focus-visible:ring-indigo-500"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
@@ -266,7 +294,7 @@ export function ReceptionActionCenter({
                                 <div className="flex items-center justify-between px-1">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
-                                        Waiting Room
+                                        1. Waiting / Vitals
                                     </h3>
                                     <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500">
                                         {filteredAppointments.filter(a => ['scheduled', 'arrived'].includes(a.status)).length}
@@ -297,7 +325,7 @@ export function ReceptionActionCenter({
                                 <div className="flex items-center justify-between px-1">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-indigo-500 flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-indigo-500 animate-bounce"></div>
-                                        In Process
+                                        2. Doctor / Labs
                                     </h3>
                                     <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600">
                                         {filteredAppointments.filter(a => ['confirmed', 'in_progress'].includes(a.status) || (a.status === 'completed' && a.labStatus === 'pending')).length}
@@ -328,7 +356,7 @@ export function ReceptionActionCenter({
                                 <div className="flex items-center justify-between px-1">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-orange-500 flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-orange-500"></div>
-                                        Billing Pending
+                                        3. Billing / Checkout
                                     </h3>
                                     <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-orange-50 dark:bg-orange-900/30 text-orange-600">
                                         {filteredAppointments.filter(a => a.status === 'completed' && a.labStatus !== 'pending' && a.invoiceStatus !== 'paid').length}
@@ -359,7 +387,7 @@ export function ReceptionActionCenter({
                                 <div className="flex items-center justify-between px-1">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-emerald-500 flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
-                                        Completed
+                                        4. Past / Discharged
                                     </h3>
                                     <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600">
                                         {filteredAppointments.filter(a => a.status === 'completed' && a.invoiceStatus === 'paid').length}
@@ -418,7 +446,7 @@ export function ReceptionActionCenter({
                                                 </td>
                                                 <td className="px-6 py-5 text-right relative">
                                                     <div className="flex justify-end gap-2 items-center">
-                                                        <Badge className="text-[9px] uppercase">{apt.status}</Badge>
+                                                        <StatusBadge apt={apt} />
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>
                                                                 <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -555,6 +583,43 @@ export function ReceptionActionCenter({
     )
 }
 
+const getSmartStatus = (apt: any) => {
+    if (apt.status === 'cancelled') return { label: 'Cancelled', color: 'bg-red-50 text-red-600 border-red-100', icon: AlertTriangle };
+    if (apt.status === 'archived') return { label: 'Archived', color: 'bg-slate-100 text-slate-600 border-slate-200', icon: CheckCircle };
+    if (apt.status === 'scheduled') return { label: 'Upcoming', color: 'bg-slate-50 text-slate-500 border-slate-100', icon: Clock };
+
+    if (apt.status === 'arrived') {
+        if (!apt.hasVitals) return { label: 'Vitals Pending', color: 'bg-rose-50 text-rose-600 border-rose-100 animate-pulse', icon: Activity };
+        return { label: 'Waiting', color: 'bg-blue-50 text-blue-600 border-blue-100', icon: Users };
+    }
+
+    if (apt.status === 'confirmed') return { label: 'Sent In', color: 'bg-emerald-50 text-emerald-600 border-emerald-100', icon: Stethoscope };
+
+    if (apt.status === 'in_progress') {
+        if (apt.labStatus === 'pending') return { label: 'Labs / Samples', color: 'bg-violet-50 text-violet-600 border-violet-100', icon: Syringe };
+        return { label: 'Consulting', color: 'bg-indigo-50 text-indigo-600 border-indigo-100', icon: Activity };
+    }
+
+    if (apt.status === 'completed') {
+        if (apt.labStatus === 'pending') return { label: 'Lab Result Pending', color: 'bg-violet-50 text-violet-600 border-violet-100', icon: Syringe };
+        if (apt.invoiceStatus !== 'paid') return { label: 'Billing / Checkout', color: 'bg-orange-50 text-orange-600 border-orange-100', icon: CreditCard };
+        return { label: 'Discharged / Paid', color: 'bg-emerald-600 text-white border-none', icon: CheckCircle };
+    }
+
+    return { label: apt.status.toUpperCase(), color: 'bg-slate-100 text-slate-600', icon: Activity };
+};
+
+const StatusBadge = ({ apt }: { apt: any }) => {
+    const status = getSmartStatus(apt);
+    const Icon = status.icon;
+    return (
+        <Badge className={`${status.color} border py-0.5 h-auto text-[10px] font-black uppercase tracking-tighter flex items-center gap-1 shadow-none transition-all`}>
+            <Icon className="h-2.5 w-2.5" />
+            {status.label}
+        </Badge>
+    );
+};
+
 
 
 function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, router, handleStatusUpdate }: { apt: any, type: 'waiting' | 'running' | 'billing' | 'completed', onAction: () => void, onEdit: () => void, isPrivacyMode: boolean, currentTime: Date, router: any, handleStatusUpdate: (id: string, status: string) => void }) {
@@ -625,17 +690,10 @@ function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, 
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5 mb-3 relative z-10">
+                <StatusBadge apt={apt} />
                 <VisitTypeBadge type={visitType} />
                 {isCritical && (
                     <Badge className="text-[9px] bg-red-600 text-white border-none animate-pulse">CRITICAL</Badge>
-                )}
-                {apt.labStatus === 'pending' && (
-                    <Badge className="text-[9px] bg-violet-600 text-white border-none flex items-center gap-1">
-                        <Syringe className="h-2 w-2" /> LAB PENDING
-                    </Badge>
-                )}
-                {apt.status === 'completed' && apt.labStatus !== 'pending' && apt.invoiceStatus !== 'paid' && (
-                    <Badge className="text-[9px] bg-orange-600 text-white border-none">BILL PENDING</Badge>
                 )}
             </div>
 
