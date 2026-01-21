@@ -1,12 +1,12 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
     UserPlus, CalendarPlus, LogIn, CreditCard,
     PhoneIncoming, IdCard, Users, Search,
     Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone, MoreVertical, Edit, Activity, IndianRupee,
-    Wallet, Banknote, Fingerprint, LayoutDashboard, Kanban, AlertTriangle, Syringe, Zap
+    Wallet, Banknote, Fingerprint, LayoutDashboard, Kanban, AlertTriangle, Syringe, Zap, Eye, EyeOff, Wifi
 } from "lucide-react"
 import { ExpenseDialog } from "./expense-dialog"
 import { PettyCashVoucher } from "./petty-cash-voucher"
@@ -56,6 +56,8 @@ export function ReceptionActionCenter({
     const router = useRouter()
     const { toast } = useToast()
     const [viewMode, setViewMode] = useState<'board' | 'list'>('board')
+    const [isPrivacyMode, setIsPrivacyMode] = useState(false)
+    const [currentTime, setCurrentTime] = useState(new Date())
     const [activeModal, setActiveModal] = useState<string | null>(null)
     const [editingAppointment, setEditingAppointment] = useState<any>(null)
     const [selectedDoctor, setSelectedDoctor] = useState<string>("all")
@@ -63,6 +65,12 @@ export function ReceptionActionCenter({
     const [patientSearchQuery, setPatientSearchQuery] = useState("")
     const [statusLoading, setStatusLoading] = useState<string | null>(null)
     const [viewingPayment, setViewingPayment] = useState<any>(null)
+
+    // Update time every minute for aging timers
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 60000)
+        return () => clearInterval(timer)
+    }, [])
 
     const handleAction = (actionId: string) => {
         if (actionId === 'register') {
@@ -106,6 +114,12 @@ export function ReceptionActionCenter({
         }
     }
 
+    const maskName = (str: string) => {
+        if (!str || !isPrivacyMode) return str;
+        if (str.length <= 2) return str[0] + "*";
+        return str[0] + "*".repeat(str.length - 2) + str[str.length - 1];
+    };
+
     const doctorOptions = [
         { id: 'all', label: 'All Doctors', subLabel: 'Show full schedule' },
         ...doctors.map(d => ({
@@ -125,10 +139,21 @@ export function ReceptionActionCenter({
     ]
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            {/* 1. TOP PREMIUM STATS STRIP */}
+        <div className="space-y-6 animate-in fade-in duration-500 relative">
+            {/* LIVE PULSE INDICATOR (FIXED POSITION) */}
+            <div className="absolute top-0 right-0 flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 shadow-sm z-50">
+                <div className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-tighter text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                    <Wifi className="h-3 w-3" /> Live Hospital Pulse
+                </span>
+            </div>
+
+            {/* 1. TOP PREMIUM STATS STRIP (GLASSMORPHISM) */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                <Card className="p-4 bg-white dark:bg-slate-900 border-none shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+                <Card className="p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
                     <div className="space-y-1">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Expected</p>
                         <h3 className="text-xl font-black text-slate-900 dark:text-white">{todayAppointments.length}</h3>
@@ -137,8 +162,7 @@ export function ReceptionActionCenter({
                         <Users className="h-5 w-5 text-indigo-500" />
                     </div>
                 </Card>
-                {/* FINANCIAL CARDS REMOVED FOR CLEANER LAYOUT */}
-                <Card className="p-4 bg-white dark:bg-slate-900 border-none shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+                <Card className="p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
                     <div className="space-y-1">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">In Waiting</p>
                         <h3 className="text-xl font-black text-blue-600">{todayAppointments.filter(a => a.status === 'arrived').length}</h3>
@@ -148,7 +172,7 @@ export function ReceptionActionCenter({
                     </div>
                 </Card>
                 <Link href="/hms/billing?status=draft" className="block cursor-pointer">
-                    <Card className="p-4 bg-white dark:bg-slate-900 border-none shadow-sm flex items-center justify-between group hover:shadow-md transition-all hover:ring-2 hover:ring-orange-500/20">
+                    <Card className="p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800 shadow-sm flex items-center justify-between group hover:shadow-md transition-all hover:ring-2 hover:ring-orange-500/20">
                         <div className="space-y-1">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Draft Bills</p>
                             <h3 className="text-xl font-black text-orange-600">{draftCount}</h3>
@@ -165,7 +189,7 @@ export function ReceptionActionCenter({
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="bg-orange-50 dark:bg-orange-950/30 border border-orange-100 dark:border-orange-900/50 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm"
+                    className="bg-orange-50/50 dark:bg-orange-950/30 backdrop-blur-md border border-orange-100 dark:border-orange-900/50 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm"
                 >
                     <div className="flex items-center gap-4">
                         <div className="h-12 w-12 rounded-xl bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center shrink-0">
@@ -196,11 +220,23 @@ export function ReceptionActionCenter({
                                 <Clock className="h-5 w-5" />
                             </div>
                             <div>
-                                <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase italic">Today's Patient Flow</h2>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Live Monitor</p>
+                                <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase italic flex items-center gap-2">
+                                    Today's Patient Flow
+                                    <Badge className="bg-amber-500 text-white border-none text-[8px] animate-pulse">WORLD'S BEST</Badge>
+                                </h2>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Elite Monitor System</p>
                             </div>
                         </div>
                         <div className="flex gap-2">
+                            {/* Privacy Toggle */}
+                            <button
+                                onClick={() => setIsPrivacyMode(!isPrivacyMode)}
+                                className={`p-2 rounded-lg border transition-all flex items-center gap-2 ${isPrivacyMode ? 'bg-amber-50 border-amber-200 text-amber-600' : 'bg-white border-slate-200 text-slate-400'}`}
+                            >
+                                {isPrivacyMode ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                <span className="text-[10px] font-black uppercase">Privacy Mode</span>
+                            </button>
+
                             {/* View Toggle */}
                             <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-1 flex items-center">
                                 <button onClick={() => setViewMode('board')} className={`p-1.5 rounded-md transition-all ${viewMode === 'board' ? 'bg-white dark:bg-slate-700 shadow text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}>
@@ -257,6 +293,8 @@ export function ReceptionActionCenter({
                                             key={apt.id}
                                             apt={apt}
                                             type="waiting"
+                                            isPrivacyMode={isPrivacyMode}
+                                            currentTime={currentTime}
                                             onAction={() => handleStatusUpdate(apt.id, apt.status === 'scheduled' ? 'arrived' : 'confirmed')}
                                             onEdit={() => handleEditClick(apt)}
                                         />
@@ -284,6 +322,8 @@ export function ReceptionActionCenter({
                                             key={apt.id}
                                             apt={apt}
                                             type="running"
+                                            isPrivacyMode={isPrivacyMode}
+                                            currentTime={currentTime}
                                             onAction={() => { }} // Doctor controls completion usually
                                             onEdit={() => handleEditClick(apt)}
                                         />
@@ -308,6 +348,8 @@ export function ReceptionActionCenter({
                                             key={apt.id}
                                             apt={apt}
                                             type="billing"
+                                            isPrivacyMode={isPrivacyMode}
+                                            currentTime={currentTime}
                                             onAction={() => router.push(`/hms/billing/new?patientId=${apt.patient_id}&ref=${apt.id}`)}
                                             onEdit={() => handleEditClick(apt)}
                                         />
@@ -332,6 +374,8 @@ export function ReceptionActionCenter({
                                             key={apt.id}
                                             apt={apt}
                                             type="completed"
+                                            isPrivacyMode={isPrivacyMode}
+                                            currentTime={currentTime}
                                             onAction={() => { }}
                                             onEdit={() => handleEditClick(apt)}
                                         />
@@ -371,12 +415,12 @@ export function ReceptionActionCenter({
                                                         <div className="flex items-center gap-3">
                                                             <Avatar className="h-9 w-9 border-2 border-white dark:border-slate-800 shadow-sm ring-1 ring-slate-100 dark:ring-slate-800">
                                                                 <AvatarFallback className="bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300 text-xs font-bold">
-                                                                    {apt.patient?.first_name?.[0]}{apt.patient?.last_name?.[0]}
+                                                                    {isPrivacyMode ? '**' : `${apt.patient?.first_name?.[0]}${apt.patient?.last_name?.[0]}`}
                                                                 </AvatarFallback>
                                                             </Avatar>
                                                             <div>
                                                                 <div className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                                                                    {apt.patient?.first_name} {apt.patient?.last_name}
+                                                                    {maskName(apt.patient?.first_name || '')} {maskName(apt.patient?.last_name || '')}
                                                                 </div>
                                                                 <div className="text-[10px] font-bold text-slate-500 dark:text-slate-400 flex items-center gap-1">
                                                                     <Badge variant="outline" className="text-[8px] py-0 px-1 border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">{apt.patient?.patient_number}</Badge>
@@ -731,36 +775,59 @@ function VisitTypeBadge({ type }: { type: string }) {
     );
 }
 
-function PatientCard({ apt, type, onAction, onEdit }: { apt: any, type: 'waiting' | 'running' | 'billing' | 'completed', onAction: () => void, onEdit: () => void }) {
+function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime }: { apt: any, type: 'waiting' | 'running' | 'billing' | 'completed', onAction: () => void, onEdit: () => void, isPrivacyMode: boolean, currentTime: Date }) {
     const isCritical = apt.tags?.some((t: string) => ['ACCIDENT', 'SUICIDE_ATTEMPT', 'EMERGENCY', 'MLC'].includes(t)) || apt.priority === 'urgent' || apt.type === 'emergency';
     const visitType = apt.type || 'consultation';
 
+    const mask = (str: string) => {
+        if (!str || !isPrivacyMode) return str;
+        if (str.length <= 2) return str[0] + "*";
+        return str[0] + "*".repeat(str.length - 2) + str[str.length - 1];
+    };
+
+    const firstName = mask(apt.patient?.first_name || '');
+    const lastName = mask(apt.patient?.last_name || '');
+
+    // Status Aging Logic
+    const startTime = new Date(apt.start_time);
+    const diffMins = Math.max(0, Math.floor((currentTime.getTime() - startTime.getTime()) / 60000));
+    const agingColor = diffMins > 30 ? 'text-rose-600 font-black animate-pulse' : (diffMins > 15 ? 'text-amber-600 font-bold' : 'text-slate-400');
+
     return (
-        <div className={`
-            p-3 rounded-xl border bg-white dark:bg-slate-900 hover:shadow-md transition-all group relative overflow-hidden flex-shrink-0
-            ${isCritical ? 'border-l-4 border-l-red-500 shadow-red-500/10' : 'border-slate-100 dark:border-slate-800'}
-        `}>
+        <motion.div
+            layout
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            whileHover={{ y: -2, scale: 1.01 }}
+            className={`
+                p-3 rounded-xl border bg-white/80 dark:bg-slate-900/80 backdrop-blur-md hover:shadow-lg transition-all group relative overflow-hidden flex-shrink-0
+                ${isCritical ? 'border-l-4 border-l-red-500 ring-2 ring-red-500/10' : 'border-slate-100 dark:border-slate-800'}
+            `}
+        >
             {/* Critical Alert Background Effect */}
-            {isCritical && <div className="absolute inset-0 bg-red-50/10 dark:bg-red-900/5 animate-pulse pointer-events-none" />}
+            {isCritical && <div className="absolute inset-0 bg-red-50/20 dark:bg-red-900/10 animate-pulse pointer-events-none" />}
 
             {/* Header: Name & ID */}
             <div className="flex justify-between items-start mb-2 relative z-10">
                 <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8 border border-white dark:border-slate-800 shadow-sm">
                         <AvatarFallback className={`text-[10px] font-bold ${isCritical ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}`}>
-                            {apt.patient?.first_name?.[0]}{apt.patient?.last_name?.[0]}
+                            {isPrivacyMode ? '**' : `${apt.patient?.first_name?.[0]}${apt.patient?.last_name?.[0]}`}
                         </AvatarFallback>
                     </Avatar>
                     <div>
                         <h4 className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
-                            {apt.patient?.first_name} {apt.patient?.last_name}
+                            {firstName} {lastName}
                         </h4>
                         <span className="text-[9px] font-mono text-slate-400">{apt.patient?.patient_number}</span>
                     </div>
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                    <span className="text-[9px] font-bold text-slate-400">{new Date(apt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="text-slate-300 hover:text-indigo-500 transition-colors">
+                <div className="flex flex-col items-end">
+                    <div className={`text-[10px] flex items-center gap-1 ${agingColor}`}>
+                        <Clock className="h-2.5 w-2.5" />
+                        {diffMins}m
+                    </div>
+                    <button onClick={(e) => { e.stopPropagation(); onEdit(); }} className="text-slate-300 hover:text-indigo-500 transition-colors mt-1">
                         <MoreVertical className="h-3.5 w-3.5" />
                     </button>
                 </div>
@@ -770,7 +837,7 @@ function PatientCard({ apt, type, onAction, onEdit }: { apt: any, type: 'waiting
             <div className="flex flex-wrap items-center gap-1.5 mb-3 relative z-10">
                 <VisitTypeBadge type={visitType} />
                 {isCritical && (
-                    <Badge className="text-[9px] px-1.5 py-0 bg-red-600 text-white border-none animate-pulse flex items-center gap-1">
+                    <Badge className="text-[9px] px-1.5 py-0 bg-red-600 text-white border-none animate-pulse flex items-center gap-1 translate-z-0">
                         <AlertTriangle className="h-3 w-3" /> CRITICAL
                     </Badge>
                 )}
@@ -826,6 +893,6 @@ function PatientCard({ apt, type, onAction, onEdit }: { apt: any, type: 'waiting
                     </Button>
                 )}
             </div>
-        </div>
+        </motion.div>
     );
 }
