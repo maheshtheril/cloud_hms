@@ -219,6 +219,15 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     }
   }, [selectedPatientId]);
 
+  // World Class Focus Management: Clear any active focus when loading starts
+  useEffect(() => {
+    if (loading && typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'SELECT') {
+        document.activeElement.blur();
+      }
+    }
+  }, [loading]);
+
   const handleQuickPatientCreate = async () => {
     if (!quickPatientName || !quickPatientPhone) return;
     setIsCreatingPatient(true);
