@@ -32,7 +32,10 @@ export default async function NursingDashboardPage() {
             },
             include: {
                 hms_patient: true,
-                hms_clinician: true
+                hms_clinician: true,
+                hms_invoice: {
+                    select: { status: true }
+                }
             },
             orderBy: {
                 starts_at: 'asc'
@@ -92,7 +95,10 @@ export default async function NursingDashboardPage() {
         status: apt.status,
         priority: apt.priority,
         reason: apt.notes || apt.type,
-        tenant_id: apt.tenant_id
+        tenant_id: apt.tenant_id,
+        invoiceStatus: apt.hms_invoice?.length > 0
+            ? (apt.hms_invoice.every((i: any) => i.status === 'paid') ? 'paid' : 'pending')
+            : 'none'
     })
 
     const formattedPendingTriage = pendingTriage.map(formatAppointment)

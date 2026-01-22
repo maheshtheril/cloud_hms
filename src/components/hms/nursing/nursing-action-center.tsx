@@ -197,7 +197,11 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                                 const isHighPriority = isEmergency || isUrgent || isHigh;
 
                                 let rowColor = 'hover:bg-slate-50 dark:hover:bg-slate-800/50';
-                                if (activeTab === 'history') rowColor = 'border-emerald-500 bg-emerald-50/5 hover:bg-emerald-50/10';
+                                if (activeTab === 'history') {
+                                    if (task.invoiceStatus === 'paid') rowColor = 'border-emerald-500 bg-emerald-50/5 hover:bg-emerald-50/10 border-l-4 border-l-emerald-500';
+                                    else if (task.invoiceStatus === 'pending') rowColor = 'border-amber-500 bg-amber-50/5 hover:bg-amber-50/10 border-l-4 border-l-amber-500';
+                                    else rowColor = 'border-slate-200 bg-slate-50/5 hover:bg-slate-100/10 border-l-4 border-l-slate-300';
+                                }
                                 else if (activeTab === 'census') rowColor = 'border-blue-500 bg-blue-50/5 hover:bg-blue-50/10';
                                 else if (isEmergency) rowColor = 'bg-red-100/60 hover:bg-red-200/60 dark:bg-red-950/40 dark:hover:bg-red-900/40 border-l-4 border-l-red-600';
                                 else if (isUrgent) rowColor = 'bg-orange-50/60 hover:bg-orange-100/60 dark:bg-orange-950/20 dark:hover:bg-orange-900/20 border-l-4 border-l-orange-500';
@@ -220,7 +224,15 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                                                     {isEmergency && activeTab === 'queue' && <span className="text-[9px] font-black bg-red-600 text-white px-2 py-0.5 rounded-full uppercase flex items-center gap-1 animate-pulse shadow-sm shadow-red-200">Critical</span>}
                                                     {isUrgent && activeTab === 'queue' && <span className="text-[9px] font-black bg-orange-500 text-white px-2 py-0.5 rounded-full uppercase flex items-center gap-1">Urgent</span>}
                                                     {isHigh && activeTab === 'queue' && <span className="text-[9px] font-black bg-amber-500 text-white px-2 py-0.5 rounded-full uppercase flex items-center gap-1">High</span>}
-                                                    {activeTab === 'history' && <span className="text-[9px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-full uppercase flex items-center gap-1">Processed</span>}
+                                                    {activeTab === 'history' && (
+                                                        task.invoiceStatus === 'paid' ? (
+                                                            <span className="text-[9px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-full uppercase flex items-center gap-1 shadow-sm shadow-emerald-200">Discharged / Paid</span>
+                                                        ) : task.invoiceStatus === 'pending' ? (
+                                                            <span className="text-[9px] font-black bg-amber-500 text-white px-2 py-0.5 rounded-full uppercase flex items-center gap-1 shadow-sm shadow-amber-200">Billing / Draft</span>
+                                                        ) : (
+                                                            <span className="text-[9px] font-black bg-slate-500 text-white px-2 py-0.5 rounded-full uppercase flex items-center gap-1">Processed</span>
+                                                        )
+                                                    )}
                                                 </div>
                                                 <p className="text-xs text-slate-500 mt-0.5 font-medium flex items-center gap-2">
                                                     <span className="capitalize">{task.patient_gender || 'Unknown'}</span>
