@@ -14,6 +14,7 @@ export default async function NewInvoicePage({
         items?: string
         appointmentId?: string
         labOrderId?: string
+        ref?: string
     }>
 }) {
     const session = await auth();
@@ -156,14 +157,33 @@ export default async function NewInvoicePage({
             });
 
             // 4. Add Doctor Prescribed Medicines
-            const doctorPrescription = await (prisma as any).prescription.findFirst({
+            // Try by appointmentId first, then fallback to latest for patient if not found
+            let doctorPrescription = await (prisma as any).prescription.findFirst({
                 where: { appointment_id: appointmentId },
                 include: {
                     prescription_items: {
                         include: { hms_product: true }
                     }
-                }
+                },
+                orderBy: { created_at: 'desc' }
             });
+
+            if (!doctorPrescription && patientId) {
+                doctorPrescription = await (prisma as any).prescription.findFirst({
+                    where: {
+                        patient_id: patientId,
+                        created_at: {
+                            gte: new Date(new Date().setHours(0, 0, 0, 0)) // Recorded Today
+                        }
+                    },
+                    include: {
+                        prescription_items: {
+                            include: { hms_product: true }
+                        }
+                    },
+                    orderBy: { created_at: 'desc' }
+                });
+            }
 
             if (doctorPrescription) {
                 doctorPrescription.prescription_items.forEach((item: any) => {
@@ -200,6 +220,7 @@ export default async function NewInvoicePage({
 
     return (
         <CompactInvoiceEditor
+            key={`${appointmentId || 'no-apt'}-${patientId || 'no-pat'}`}
             patients={JSON.parse(JSON.stringify(patients))}
             billableItems={JSON.parse(JSON.stringify(billableItems))}
             uoms={JSON.parse(JSON.stringify(uoms))}
