@@ -141,7 +141,17 @@ export default async function DoctorDashboardPage() {
         }
     })
 
-    // 4. Transform Data
+    // 5. Fetch Tags
+    const tags = await prisma.hms_appointment_tags.findMany({
+        where: { appointment_id: { in: appointmentIds } }
+    })
+    const tagsMap: Record<string, string[]> = {}
+    tags.forEach(t => {
+        if (!tagsMap[t.appointment_id]) tagsMap[t.appointment_id] = []
+        tagsMap[t.appointment_id].push(t.tag)
+    })
+
+    // 6. Transform Data
     const formattedAppointments = appointments.map(apt => {
         const isVitalsDone = vitalsSet.has(apt.id)
 
@@ -158,6 +168,9 @@ export default async function DoctorDashboardPage() {
                 : 0,
             blood_group: (apt.hms_patient as any).blood_group, // Cast as any if simple typing misses it
             reason: apt.notes || apt.type,
+            priority: apt.priority,
+            type: apt.type,
+            tags: tagsMap[apt.id] || [],
             vitals_done: isVitalsDone,
             lab_status: labMap.get(apt.id) || null
         }
