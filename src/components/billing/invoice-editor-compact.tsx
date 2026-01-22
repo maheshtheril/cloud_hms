@@ -141,7 +141,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
         return {
           id: Math.random(),
-          product_id: billable?.id || m.id || '',
+          product_id: billable?.id || '',
           description: m.name || m.description || '',
           quantity: Number(m.quantity || 1),
           uom: m.uom || 'PCS',
