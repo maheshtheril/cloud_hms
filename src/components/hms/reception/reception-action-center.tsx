@@ -55,7 +55,7 @@ export function ReceptionActionCenter({
 }: ReceptionActionCenterProps) {
     const router = useRouter()
     const { toast } = useToast()
-    const [viewMode, setViewMode] = useState<'board' | 'list'>('board')
+    const [viewMode, setViewMode] = useState<'board' | 'list'>('list')
     const [isPrivacyMode, setIsPrivacyMode] = useState(false)
     const [currentTime, setCurrentTime] = useState(new Date())
     const [activeModal, setActiveModal] = useState<string | null>(null)
