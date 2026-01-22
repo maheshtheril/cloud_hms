@@ -305,6 +305,11 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
       return toast({ title: "Payment Required", description: "Apply at least one payment method to mark as paid.", variant: "destructive" });
     }
 
+    // Focus cleanup on sync
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     setLoading(true)
     const payload = {
       patient_id: isWalkIn ? null : selectedPatientId,
@@ -781,6 +786,10 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     type="button"
                     onClick={(e) => {
                       e.preventDefault();
+                      // World Class Focus Management: Clear cursor and lists before overlaying
+                      if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+                        document.activeElement.blur();
+                      }
                       setActivePaymentAmount(grandTotal.toFixed(2));
                       setIsPaymentModalOpen(true);
                     }}

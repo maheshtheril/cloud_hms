@@ -123,6 +123,13 @@ export function SearchableSelect({
         }
     }, [value, valueLabel, options, propOptions, variant, open]);
 
+    // Close on disable
+    React.useEffect(() => {
+        if (disabled && open) {
+            setOpen(false);
+        }
+    }, [disabled, open]);
+
     // Calculate position for portal
     React.useEffect(() => {
         if (usePortal && open && containerRef.current) {
