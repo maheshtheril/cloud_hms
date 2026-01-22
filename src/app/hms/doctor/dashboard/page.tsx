@@ -91,7 +91,10 @@ export default async function DoctorDashboardPage() {
             status: { not: 'cancelled' } // viewing active ones
         },
         include: {
-            hms_patient: true
+            hms_patient: true,
+            hms_invoice: {
+                select: { status: true }
+            }
         },
         orderBy: {
             starts_at: 'asc'
@@ -172,7 +175,10 @@ export default async function DoctorDashboardPage() {
             type: apt.type,
             tags: tagsMap[apt.id] || [],
             vitals_done: isVitalsDone,
-            lab_status: labMap.get(apt.id) || null
+            lab_status: labMap.get(apt.id) || null,
+            invoiceStatus: apt.hms_invoice?.length > 0
+                ? (apt.hms_invoice.every((i: any) => i.status === 'paid') ? 'paid' : 'pending')
+                : 'none'
         }
     })
 

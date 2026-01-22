@@ -209,6 +209,10 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                                     } else if (isHigh) {
                                         cardColor = 'bg-amber-50/90 dark:bg-amber-950/10 border-amber-200 dark:border-amber-900';
                                         borderL = 'border-l-4 border-l-amber-400';
+                                    } else if (selectedTab === 'history') {
+                                        if (apt.invoiceStatus === 'paid') borderL = 'border-l-4 border-l-emerald-500';
+                                        else if (apt.invoiceStatus === 'pending') borderL = 'border-l-4 border-l-amber-500';
+                                        else borderL = 'border-l-4 border-l-slate-300';
                                     } else if (apt.status === 'in_progress') {
                                         borderL = 'border-l-4 border-l-blue-500';
                                     } else if (apt.vitals_done) {
@@ -279,6 +283,17 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                                                                 <FileText className="h-3 w-3" />
                                                                 {apt.lab_status.isReady ? 'Lab Result Ready' : 'Lab In Progress'}
                                                             </span>
+                                                        )}
+
+                                                        {/* Dynamic Billing Status Badges */}
+                                                        {apt.invoiceStatus === 'paid' ? (
+                                                            <span className="px-2.5 py-1 rounded-full text-[9px] bg-emerald-500 text-white font-black uppercase tracking-wider shadow-sm shadow-emerald-200">Discharged / Paid</span>
+                                                        ) : apt.invoiceStatus === 'pending' ? (
+                                                            <span className="px-2.5 py-1 rounded-full text-[9px] bg-amber-500 text-white font-black uppercase tracking-wider shadow-sm shadow-amber-200">Billing / Draft</span>
+                                                        ) : (
+                                                            selectedTab === 'history' && (
+                                                                <span className="px-2.5 py-1 rounded-full text-[9px] bg-slate-500 text-white font-black uppercase tracking-wider">Processed</span>
+                                                            )
                                                         )}
                                                     </div>
 
