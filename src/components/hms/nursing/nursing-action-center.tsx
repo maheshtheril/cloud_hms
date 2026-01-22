@@ -191,25 +191,36 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                             </div>
                         ) : (
                             displayedTasks.map((task) => {
-                                const isHighPriority = ['high', 'urgent', 'emergency'].includes(task.priority?.toLowerCase());
+                                const isEmergency = task.priority?.toLowerCase() === 'emergency';
+                                const isUrgent = task.priority?.toLowerCase() === 'urgent';
+                                const isHigh = task.priority?.toLowerCase() === 'high';
+                                const isHighPriority = isEmergency || isUrgent || isHigh;
+
+                                let rowColor = 'hover:bg-slate-50 dark:hover:bg-slate-800/50';
+                                if (activeTab === 'history') rowColor = 'border-emerald-500 bg-emerald-50/5 hover:bg-emerald-50/10';
+                                else if (activeTab === 'census') rowColor = 'border-blue-500 bg-blue-50/5 hover:bg-blue-50/10';
+                                else if (isEmergency) rowColor = 'bg-red-100/60 hover:bg-red-200/60 dark:bg-red-950/40 dark:hover:bg-red-900/40 border-l-4 border-l-red-600';
+                                else if (isUrgent) rowColor = 'bg-orange-50/60 hover:bg-orange-100/60 dark:bg-orange-950/20 dark:hover:bg-orange-900/20 border-l-4 border-l-orange-500';
+                                else if (isHigh) rowColor = 'bg-amber-50/40 hover:bg-amber-100/40 dark:bg-amber-950/10 dark:hover:bg-amber-900/10 border-l-4 border-l-amber-400';
+                                else rowColor = 'border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50';
+
                                 return (
                                     <div
                                         key={task.id}
-                                        className={`p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-center justify-between cursor-pointer border-l-4 ${activeTab === 'history' ? 'border-emerald-500 bg-emerald-50/5' :
-                                            activeTab === 'census' ? 'border-blue-500 bg-blue-50/5' :
-                                                isHighPriority ? 'border-red-500 bg-red-50/10' : 'border-transparent'
-                                            }`}
+                                        className={`p-4 transition-all duration-300 flex items-center justify-between cursor-pointer ${rowColor}`}
                                         onClick={() => setSelectedTask(task)}
                                     >
                                         <div className="flex items-center gap-4">
-                                            <div className={`h-12 w-12 rounded-full flex items-center justify-center text-lg font-bold shadow-sm ${task.patient_gender?.toLowerCase() === 'female' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
+                                            <div className={`h-12 w-12 rounded-2xl flex items-center justify-center text-lg font-bold shadow-sm transition-transform group-hover:scale-105 ${task.patient_gender?.toLowerCase() === 'female' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
                                                 {task.patient_name.charAt(0)}
                                             </div>
                                             <div>
                                                 <div className="flex items-center gap-2">
-                                                    <h4 className="font-bold text-sm text-slate-900 dark:text-white">{task.patient_name}</h4>
-                                                    {isHighPriority && activeTab === 'queue' && <span className="text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded uppercase flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Urgent</span>}
-                                                    {activeTab === 'history' && <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-1.5 py-0.5 rounded uppercase flex items-center gap-1">Done</span>}
+                                                    <h4 className="font-black text-sm text-slate-900 dark:text-white uppercase tracking-tight">{task.patient_name}</h4>
+                                                    {isEmergency && activeTab === 'queue' && <span className="text-[9px] font-black bg-red-600 text-white px-2 py-0.5 rounded-full uppercase flex items-center gap-1 animate-pulse shadow-sm shadow-red-200">Critical</span>}
+                                                    {isUrgent && activeTab === 'queue' && <span className="text-[9px] font-black bg-orange-500 text-white px-2 py-0.5 rounded-full uppercase flex items-center gap-1">Urgent</span>}
+                                                    {isHigh && activeTab === 'queue' && <span className="text-[9px] font-black bg-amber-500 text-white px-2 py-0.5 rounded-full uppercase flex items-center gap-1">High</span>}
+                                                    {activeTab === 'history' && <span className="text-[9px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-full uppercase flex items-center gap-1">Processed</span>}
                                                 </div>
                                                 <p className="text-xs text-slate-500 mt-0.5 font-medium flex items-center gap-2">
                                                     <span className="capitalize">{task.patient_gender || 'Unknown'}</span>
