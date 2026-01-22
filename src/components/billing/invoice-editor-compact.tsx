@@ -528,8 +528,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             <div className="w-[450px]">
               {isWalkIn ? (
                 <div className="flex gap-2 animate-in slide-in-from-right-4">
-                  <Input value={walkInPhone} onChange={e => setWalkInPhone(e.target.value)} placeholder="MOBILE..." className="h-10 bg-white dark:bg-slate-950 border-transparent focus:border-pink-500 rounded-xl text-[10px] font-black tracking-widest uppercase" />
-                  <Input value={walkInName} onChange={e => setWalkInName(e.target.value)} placeholder="NAME..." className="h-10 bg-white dark:bg-slate-950 border-transparent focus:border-pink-500 rounded-xl text-[10px] font-black tracking-widest uppercase" />
+                  <Input value={walkInPhone} onChange={e => setWalkInPhone(e.target.value)} disabled={isPaymentModalOpen || loading} placeholder="MOBILE..." className="h-10 bg-white dark:bg-slate-950 border-transparent focus:border-pink-500 rounded-xl text-[10px] font-black tracking-widest uppercase" />
+                  <Input value={walkInName} onChange={e => setWalkInName(e.target.value)} disabled={isPaymentModalOpen || loading} placeholder="NAME..." className="h-10 bg-white dark:bg-slate-950 border-transparent focus:border-pink-500 rounded-xl text-[10px] font-black tracking-widest uppercase" />
                 </div>
               ) : (
                 <SearchableSelect
@@ -547,6 +547,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                   }}
                   placeholder="IDENTIFY PATIENT..."
                   autoFocus={!initialInvoice}
+                  disabled={isPaymentModalOpen || loading}
                 />
               )}
             </div>
@@ -640,6 +641,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                           valueLabel={line.description}
                           options={itemOptions.slice(0, 20)}
                           onChange={v => updateLine(line.id, 'product_id', v)}
+                          disabled={isPaymentModalOpen || loading}
                           onSearch={async q => {
                             const search = q.toLowerCase();
                             return itemOptions.filter(i =>
@@ -664,6 +666,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                       <td className="px-4 py-3">
                         <button
                           type="button"
+                          disabled={isPaymentModalOpen || loading}
                           onClick={() => {
                             const newType = line.item_type === 'service' ? 'item' : 'service';
                             setLines(prev => prev.map(l => l.id === line.id ? {
@@ -696,33 +699,34 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                             }
                           }}
                           onChange={e => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
+                          disabled={isPaymentModalOpen || loading}
                           className="h-10 bg-transparent border-none text-center font-black text-base focus:ring-0"
                         />
                       </td>
                       <td className="px-4 py-3">
-                        <select className="w-full h-10 bg-slate-50 dark:bg-slate-900 border-none rounded-lg px-2 text-[9px] font-black tracking-widest outline-none focus:ring-1 focus:ring-indigo-500" value={line.uom || ''} onChange={e => updateLine(line.id, 'uom', e.target.value)}>
+                        <select className="w-full h-10 bg-slate-50 dark:bg-slate-900 border-none rounded-lg px-2 text-[9px] font-black tracking-widest outline-none focus:ring-1 focus:ring-indigo-500" value={line.uom || ''} onChange={e => updateLine(line.id, 'uom', e.target.value)} disabled={isPaymentModalOpen || loading}>
                           {getUomOptions(line.item_type, line.uom).map(u => (
                             <option key={u} value={u}>{u}</option>
                           ))}
                         </select>
                       </td>
-                      <td className="px-4 py-3"><Input type="number" value={line.unit_price} onChange={e => updateLine(line.id, 'unit_price', parseFloat(e.target.value) || 0)} className="h-10 bg-transparent border-none font-mono font-black text-slate-400 text-sm focus:ring-0" /></td>
+                      <td className="px-4 py-3"><Input type="number" value={line.unit_price} onChange={e => updateLine(line.id, 'unit_price', parseFloat(e.target.value) || 0)} disabled={isPaymentModalOpen || loading} className="h-10 bg-transparent border-none font-mono font-black text-slate-400 text-sm focus:ring-0" /></td>
                       <td className="px-4 py-3">
-                        <select className="w-full h-10 bg-transparent border border-slate-100 dark:border-slate-800 rounded-lg px-2 text-[8px] font-black outline-none" value={line.tax_rate_id || ''} onChange={e => updateLine(line.id, 'tax_rate_id', e.target.value)}>
+                        <select className="w-full h-10 bg-transparent border border-slate-100 dark:border-slate-800 rounded-lg px-2 text-[8px] font-black outline-none" value={line.tax_rate_id || ''} onChange={e => updateLine(line.id, 'tax_rate_id', e.target.value)} disabled={isPaymentModalOpen || loading}>
                           <option value="">NO_TAX</option>
                           {taxConfig.taxRates.map((t: any) => <option key={t.id} value={t.id}>{t.name} ({t.rate}%)</option>)}
                         </select>
                       </td>
                       <td className="px-8 py-3 text-right font-black text-lg italic tracking-tighter text-slate-800 dark:text-white">{currency}{(line.quantity * line.unit_price).toFixed(2)}</td>
                       <td className="px-4 py-3">
-                        <button onClick={() => handleRemoveItem(line.id)} className="text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={() => handleRemoveItem(line.id)} disabled={isPaymentModalOpen || loading} className="text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 className="h-4 w-4" /></button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-900">
-                <button onClick={handleAddItem} className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.3em] text-indigo-600 hover:text-indigo-800 transition-all group">
+                <button onClick={handleAddItem} disabled={isPaymentModalOpen || loading} className="flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.3em] text-indigo-600 hover:text-indigo-800 transition-all group disabled:opacity-50 disabled:cursor-not-allowed">
                   <div className="bg-white dark:bg-slate-800 p-1.5 rounded-lg border border-indigo-200 dark:border-indigo-900/40 shadow-sm group-hover:rotate-90 transition-transform"><Plus className="h-4 w-4" /></div>
                   ADD LINE
                 </button>
