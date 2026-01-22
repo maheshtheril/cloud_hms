@@ -438,10 +438,15 @@ export function ReceptionActionCenter({
                                             const isHigh = apt.priority === 'high';
                                             const isCritical = isEmergency || isUrgent || isHigh || apt.tags?.some((t: string) => ['ACCIDENT', 'SUICIDE_ATTEMPT', 'MLC'].includes(t));
 
+                                            const isPendingBilling = apt.status === 'completed' && apt.invoiceStatus !== 'paid';
+                                            const isPaid = apt.invoiceStatus === 'paid';
+
                                             let rowColor = 'hover:bg-slate-50/50 dark:hover:bg-slate-800/50';
                                             if (isEmergency) rowColor = 'bg-red-100/60 hover:bg-red-200/60 dark:bg-red-950/40 dark:hover:bg-red-900/40 border-l-4 border-l-red-600';
                                             else if (isUrgent) rowColor = 'bg-orange-50/60 hover:bg-orange-100/60 dark:bg-orange-950/20 dark:hover:bg-orange-900/20 border-l-4 border-l-orange-500';
                                             else if (isHigh) rowColor = 'bg-amber-50/40 hover:bg-amber-100/40 dark:bg-amber-950/10 dark:hover:bg-amber-900/10 border-l-4 border-l-amber-400';
+                                            else if (isPendingBilling) rowColor = 'bg-yellow-50/80 hover:bg-yellow-100/80 dark:bg-amber-900/20 dark:hover:bg-amber-800/30 border-l-4 border-l-yellow-500';
+                                            else if (isPaid) rowColor = 'bg-emerald-50/60 hover:bg-emerald-100/60 dark:bg-emerald-950/20 dark:hover:bg-emerald-900/20 border-l-4 border-l-emerald-500';
 
                                             return (
                                                 <tr key={apt.id} className={`group transition-colors ${rowColor}`}>
@@ -681,6 +686,9 @@ function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, 
         return str[0] + "*".repeat(str.length - 2) + str[str.length - 1];
     };
 
+    const isPendingBilling = apt.status === 'completed' && apt.invoiceStatus !== 'paid';
+    const isPaid = apt.invoiceStatus === 'paid';
+
     const startTime = new Date(apt.start_time);
     const diffMins = Math.max(0, Math.floor((currentTime.getTime() - startTime.getTime()) / 60000));
     const isOverdue = type === 'billing' && diffMins > 10;
@@ -697,7 +705,9 @@ function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, 
                 ${isEmergency ? 'bg-red-50/90 dark:bg-red-950/30 border-red-200 dark:border-red-900 border-l-4 border-l-red-600' :
                     isUrgent ? 'bg-orange-50/90 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900 border-l-4 border-l-orange-500' :
                         isHigh ? 'bg-amber-50/90 dark:bg-amber-950/10 border-amber-200 dark:border-amber-900 border-l-4 border-l-amber-400' :
-                            'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-slate-100 dark:border-slate-800'}
+                            isPendingBilling ? 'bg-yellow-50/90 dark:bg-amber-950/30 border-yellow-200 dark:border-amber-900 border-l-4 border-l-yellow-500' :
+                                isPaid ? 'bg-emerald-50/90 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900 border-l-4 border-l-emerald-500' :
+                                    'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-slate-100 dark:border-slate-800'}
                 ${isOverdue ? 'ring-2 ring-rose-500 border-rose-200' : isWarning ? 'ring-2 ring-amber-500 border-amber-200' : ''}
             `}
         >
