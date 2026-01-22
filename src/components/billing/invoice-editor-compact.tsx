@@ -187,16 +187,16 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [globalDiscount, setGlobalDiscount] = useState(Number(initialInvoice?.total_discount || 0))
 
   // Totals
-  const subtotal = lines.reduce((sum, line) => sum + ((line.quantity * line.unit_price) - (line.discount_amount || 0)), 0)
-  const totalTax = lines.reduce((sum, line) => sum + (line.tax_amount || 0), 0)
-  const grandTotal = Math.max(0, subtotal + totalTax - globalDiscount)
-  const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0)
-  const balanceDue = Math.max(0, grandTotal - totalPaid)
+  const subtotal = Number(lines.reduce((sum, line) => sum + ((line.quantity * line.unit_price) - (line.discount_amount || 0)), 0).toFixed(2))
+  const totalTax = Number(lines.reduce((sum, line) => sum + (line.tax_amount || 0), 0).toFixed(2))
+  const grandTotal = Number(Math.max(0, subtotal + totalTax - globalDiscount).toFixed(2))
+  const totalPaid = Number(payments.reduce((sum, p) => sum + (p.amount || 0), 0).toFixed(2))
+  const balanceDue = Number(Math.max(0, grandTotal - totalPaid).toFixed(2))
 
   // Reliable Settlement Flags (handles floating point precision for currency)
-  const settlementTarget = grandTotal + (includePrevBalance ? patientBalance : 0)
-  const isSurplus = (totalPaid - settlementTarget) > 0.01
-  const isDeficit = (settlementTarget - totalPaid) > 0.01
+  const settlementTarget = Number((grandTotal + (includePrevBalance ? patientBalance : 0)).toFixed(2))
+  const isSurplus = (totalPaid - settlementTarget) > 0.005
+  const isDeficit = (settlementTarget - totalPaid) > 0.005
   const isBalanced = !isSurplus && !isDeficit
 
   // World Class Ledger Sync: Fetch previous balance for selected patient
