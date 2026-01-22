@@ -115,9 +115,11 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
   // Robust Line Item State
   const [lines, setLines] = useState<any[]>(() => {
-    // 1. If we are editing an existing invoice, use those lines
+    let combinedLines: any[] = []
+
+    // 1. If we are editing an existing invoice (or draft), load those lines first
     if (initialInvoice?.hms_invoice_lines) {
-      return initialInvoice.hms_invoice_lines.map((l: any) => ({
+      combinedLines = initialInvoice.hms_invoice_lines.map((l: any) => ({
         id: l.id || Date.now() + Math.random(),
         product_id: l.product_id || '',
         description: l.description,
@@ -128,32 +130,46 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         tax_amount: Number(l.tax_amount),
         discount_amount: Number(l.discount_amount),
         base_price: l.unit_price,
-        item_type: l.product_id ? (billableItems.find(bi => bi.id === l.product_id)?.type || 'item') : 'item'
+        item_type: l.product_id ? (billableItems.find(bi => bi.id === l.product_id)?.type || 'item') : 'item',
+        isFromInvoice: true
       }))
     }
 
-    // 2. If we have initial items passed (e.g., from an appointment or prescription)
+    // 2. If we have initial items passed (doctor prescriptions, nurse items, cons. fees)
     if (initialMedicines && initialMedicines.length > 0) {
-      return initialMedicines.map((m: any) => {
+      const initialMapped = initialMedicines.map((m: any) => {
         const billable = billableItems.find(bi => bi.id === m.id || bi.label === m.name);
-        // SERVICES (Consultation, etc.) should default to 0% tax if no specific tax ID is set
         const taxId = billable?.categoryTaxId !== undefined ? billable.categoryTaxId : (m.type === 'service' ? null : defaultTaxId);
 
         return {
-          id: Math.random(),
+          id: Math.random() + Date.now(),
           product_id: billable?.id || '',
           description: m.name || m.description || '',
           quantity: Number(m.quantity || 1),
           uom: m.uom || 'PCS',
           unit_price: Number(m.price || 0),
           tax_rate_id: taxId,
-          tax_amount: 0, // Recalculated in useEffect
+          tax_amount: 0,
           discount_amount: 0,
           base_price: Number(m.price || 0),
           item_type: m.type || 'item'
         }
-      })
+      });
+
+      // Merge: Add if not already in the draft invoice
+      initialMapped.forEach(m => {
+        const exists = combinedLines.some(cl => {
+          const productMatch = cl.product_id && m.product_id && cl.product_id === m.product_id;
+          const descMatch = cl.description?.toLowerCase().trim() === m.description?.toLowerCase().trim();
+          return productMatch || descMatch;
+        });
+        if (!exists) {
+          combinedLines.push(m);
+        }
+      });
     }
+
+    if (combinedLines.length > 0) return combinedLines;
 
     // 3. Absolute Default: Single empty line
     return [

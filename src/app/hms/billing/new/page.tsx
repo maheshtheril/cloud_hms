@@ -28,6 +28,22 @@ export default async function NewInvoicePage({
     const labOrderId = params.labOrderId;
     const tenantId = session.user.tenantId;
 
+    let effectivePatientId = patientId;
+    let appointment = null;
+
+    if (appointmentId) {
+        appointment = await prisma.hms_appointments.findUnique({
+            where: { id: appointmentId },
+            include: {
+                hms_clinician: true,
+                hms_patient: true
+            }
+        });
+        if (appointment && !effectivePatientId) {
+            effectivePatientId = appointment.patient_id;
+        }
+    }
+
     // Parallel data fetching
     const [patients, itemsRes, taxRes, uomsRes, companySettings] = await Promise.all([
         prisma.hms_patient.findMany({
@@ -84,14 +100,6 @@ export default async function NewInvoicePage({
         if (draftInvoice) {
             initialInvoice = draftInvoice;
         }
-
-        const appointment = await prisma.hms_appointments.findUnique({
-            where: { id: appointmentId },
-            include: {
-                hms_clinician: true,
-                hms_patient: true
-            }
-        });
 
         if (appointment) {
             // 1. Add Consultation Fee if clinician has one
@@ -168,10 +176,10 @@ export default async function NewInvoicePage({
                 orderBy: { created_at: 'desc' }
             });
 
-            if (!doctorPrescription && patientId) {
+            if (!doctorPrescription && effectivePatientId) {
                 doctorPrescription = await (prisma as any).prescription.findFirst({
                     where: {
-                        patient_id: patientId,
+                        patient_id: effectivePatientId,
                         created_at: {
                             gte: new Date(new Date().setHours(0, 0, 0, 0)) // Recorded Today
                         }
@@ -191,7 +199,7 @@ export default async function NewInvoicePage({
                     const alreadyInInitial = initialItems.some((i: any) => i.id === item.medicine_id);
 
                     if (!alreadyInDraft && !alreadyInInitial && item.hms_product) {
-                        const totalQty = (item.morning + item.afternoon + item.evening + item.night) * item.days;
+                        const totalQty = (Number(item.morning || 0) + Number(item.afternoon || 0) + Number(item.evening || 0) + Number(item.night || 0)) * Number(item.days || 1);
                         if (totalQty > 0) {
                             initialItems.push({
                                 id: item.medicine_id,
@@ -208,8 +216,6 @@ export default async function NewInvoicePage({
             // 5. [EXCLUDED] Lab Orders for this Encounter (Removed as per Reception Final Bill Standard)
         }
     }
-
-    let effectivePatientId = patientId;
 
     // [EXCLUDED] Direct Lab Order Billing (Reception skips this for Final Bill #2)
     /*
