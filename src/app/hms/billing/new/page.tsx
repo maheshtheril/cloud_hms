@@ -170,7 +170,16 @@ export default async function NewInvoicePage({
                 where: { appointment_id: appointmentId },
                 include: {
                     prescription_items: {
-                        include: { hms_product: true }
+                        include: {
+                            hms_product: {
+                                include: {
+                                    hms_product_price_history: {
+                                        orderBy: { valid_from: 'desc' },
+                                        take: 1
+                                    }
+                                }
+                            }
+                        }
                     }
                 },
                 orderBy: { created_at: 'desc' }
@@ -186,7 +195,16 @@ export default async function NewInvoicePage({
                     },
                     include: {
                         prescription_items: {
-                            include: { hms_product: true }
+                            include: {
+                                hms_product: {
+                                    include: {
+                                        hms_product_price_history: {
+                                            orderBy: { valid_from: 'desc' },
+                                            take: 1
+                                        }
+                                    }
+                                }
+                            }
                         }
                     },
                     orderBy: { created_at: 'desc' }
@@ -199,12 +217,25 @@ export default async function NewInvoicePage({
                     const alreadyInInitial = initialItems.some((i: any) => i.id === item.medicine_id);
 
                     if (!alreadyInDraft && !alreadyInInitial && item.hms_product) {
-                        const totalQty = (Number(item.morning || 0) + Number(item.afternoon || 0) + Number(item.evening || 0) + Number(item.night || 0)) * Number(item.days || 1);
+                        // ROBUST QUANTITY: Handle nulls or zeros by defaulting to 1 where logical
+                        const morning = Number(item.morning || 0);
+                        const afternoon = Number(item.afternoon || 0);
+                        const evening = Number(item.evening || 0);
+                        const night = Number(item.night || 0);
+                        const days = Number(item.days || 1);
+
+                        const dailyQty = morning + afternoon + evening + night;
+                        const totalQty = (dailyQty > 0 ? dailyQty : 1) * days;
+
+                        // ROBUST PRICE: Check history first, then base price
+                        const historyPrice = item.hms_product.hms_product_price_history?.[0]?.price;
+                        const price = historyPrice ? Number(historyPrice) : (Number(item.hms_product.price) || 0);
+
                         if (totalQty > 0) {
                             initialItems.push({
                                 id: item.medicine_id,
                                 name: item.hms_product.name,
-                                price: Number(item.hms_product.price) || 0,
+                                price: price,
                                 quantity: totalQty,
                                 type: 'item'
                             });

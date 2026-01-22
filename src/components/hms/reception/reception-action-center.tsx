@@ -383,7 +383,7 @@ export function ReceptionActionCenter({
                                                 currentTime={currentTime}
                                                 router={router}
                                                 handleStatusUpdate={handleStatusUpdate}
-                                                onAction={() => router.push(`/hms/billing/new?patientId=${apt.patient_id}&ref=${apt.id}`)}
+                                                onAction={() => router.push(`/hms/billing/new?patientId=${apt.patient_id}&appointmentId=${apt.id}`)}
                                                 onEdit={() => handleEditClick(apt)}
                                             />
                                         ))}
