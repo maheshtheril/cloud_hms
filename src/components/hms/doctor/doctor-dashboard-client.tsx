@@ -340,7 +340,8 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                                                 </div>
                                             </div>
                                         </motion.div>
-                                    })
+                                    )
+                                })
                             )}
                         </AnimatePresence>
                     </div>
