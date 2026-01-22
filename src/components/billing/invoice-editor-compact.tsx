@@ -193,6 +193,12 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const totalPaid = payments.reduce((sum, p) => sum + (p.amount || 0), 0)
   const balanceDue = Math.max(0, grandTotal - totalPaid)
 
+  // Reliable Settlement Flags (handles floating point precision for currency)
+  const settlementTarget = grandTotal + (includePrevBalance ? patientBalance : 0)
+  const isSurplus = (totalPaid - settlementTarget) > 0.01
+  const isDeficit = (settlementTarget - totalPaid) > 0.01
+  const isBalanced = !isSurplus && !isDeficit
+
   // World Class Ledger Sync: Fetch previous balance for selected patient
   useEffect(() => {
     if (selectedPatientId) {
@@ -871,15 +877,15 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                 )}
 
                 {/* Tally Summary Overlay Moved here */}
-                <div className={`mt-auto p-6 rounded-3xl border transition-all duration-500 ${totalPaid !== (grandTotal + (includePrevBalance ? patientBalance : 0)) ? 'bg-amber-500/10 border-amber-500/30 animate-pulse' : 'bg-slate-200/50 dark:bg-slate-800/50 border-white/5'}`}>
-                  <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${(totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0))) ? 'bg-amber-100 text-amber-700' : totalPaid > (grandTotal + (includePrevBalance ? patientBalance : 0)) ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}`}>
-                    {(totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0))) ? 'Partial / Credit' : totalPaid > (grandTotal + (includePrevBalance ? patientBalance : 0)) ? 'Advance / Excess' : 'Balanced'}
+                <div className={`mt-auto p-6 rounded-3xl border transition-all duration-500 ${!isBalanced ? 'bg-amber-500/10 border-amber-500/30 animate-pulse' : 'bg-slate-200/50 dark:bg-slate-800/50 border-white/5'}`}>
+                  <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${isDeficit ? 'bg-amber-100 text-amber-700' : isSurplus ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}`}>
+                    {isDeficit ? 'Partial / Credit' : isSurplus ? 'Advance / Excess' : 'Balanced'}
                   </span>
                   <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-4 leading-relaxed tracking-tight underline-offset-4 decoration-dotted decoration-slate-300">
-                    {(totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0))) ?
-                      `Deficit: ${currency}${(Math.max(0, (grandTotal + (includePrevBalance ? patientBalance : 0)) - totalPaid)).toFixed(2)} to be carried as debt.` :
-                      totalPaid > (grandTotal + (includePrevBalance ? patientBalance : 0)) ?
-                        `Surplus: ${currency}${(totalPaid - (grandTotal + (includePrevBalance ? patientBalance : 0))).toFixed(2)} will be credited.` :
+                    {isDeficit ?
+                      `Deficit: ${currency}${(Math.max(0, settlementTarget - totalPaid)).toFixed(2)} to be carried as debt.` :
+                      isSurplus ?
+                        `Surplus: ${currency}${(totalPaid - settlementTarget).toFixed(2)} will be credited.` :
                         `Transaction perfectly tallied. Ready for sync.`
                     }
                   </p>
@@ -1011,28 +1017,27 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                       }
 
                       // World Class Confirmation Node
-                      const target = grandTotal + (includePrevBalance ? patientBalance : 0);
-                      if (totalPaid > target) {
-                        const confirmed = window.confirm(`AUDIT ALERT: Surplus of ${currency}${(totalPaid - target).toFixed(2)} detected. This will be recorded as an ADVANCE deposit in the patient's internal wallet. Proceed with Ledger Entry?`);
+                      if (isSurplus) {
+                        const confirmed = window.confirm(`AUDIT ALERT: Surplus of ${currency}${(totalPaid - settlementTarget).toFixed(2)} detected. This will be recorded as an ADVANCE deposit in the patient's internal wallet. Proceed with Ledger Entry?`);
                         if (!confirmed) return;
-                      } else if (totalPaid < target && totalPaid > 0) {
-                        const confirmed = window.confirm(`AUDIT ALERT: Partial payment detected. ${currency}${(target - totalPaid).toFixed(2)} will be carried forward as OUTSTANDING DEBT. Proceed?`);
+                      } else if (isDeficit && totalPaid > 0) {
+                        const confirmed = window.confirm(`AUDIT ALERT: Partial payment detected. ${currency}${(settlementTarget - totalPaid).toFixed(2)} will be carried forward as OUTSTANDING DEBT. Proceed?`);
                         if (!confirmed) return;
                       }
 
                       handleSave('paid');
                     }}
                     disabled={loading || (payments.length === 0 && (parseFloat(activePaymentAmount) || 0) === 0)}
-                    className={`flex-1 h-16 rounded-2xl text-white font-black text-[10px] uppercase tracking-[0.3em] transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-3 col-span-1 ${totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0)) ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20' :
-                      totalPaid > (grandTotal + (includePrevBalance ? patientBalance : 0)) ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' :
+                    className={`flex-1 h-16 rounded-2xl text-white font-black text-[10px] uppercase tracking-[0.3em] transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-3 col-span-1 ${isDeficit ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20' :
+                      isSurplus ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20' :
                         'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/20'
                       }`}
                   >
                     {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : (
                       <>
-                        {totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0)) ? (
+                        {isDeficit ? (
                           <>POST AS CREDIT <ArrowRight className="h-4 w-4" /></>
-                        ) : totalPaid > (grandTotal + (includePrevBalance ? patientBalance : 0)) ? (
+                        ) : isSurplus ? (
                           <>RECEIVE ADVANCE <Plus className="h-4 w-4" /></>
                         ) : (
                           <>FINALIZE SETTLEMENT <Check className="h-5 w-5" /></>
