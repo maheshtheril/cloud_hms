@@ -428,45 +428,48 @@ export function ReceptionActionCenter({
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                                        {filteredAppointments.map((apt) => (
-                                            <tr key={apt.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
-                                                <td className="px-6 py-5 text-sm font-black text-indigo-600 dark:text-indigo-400 font-mono">
-                                                    {new Date(apt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </td>
-                                                <td className="px-6 py-5">
-                                                    <div className="flex items-center gap-3">
-                                                        <Avatar className="h-9 w-9 border-2 border-white dark:border-slate-800">
-                                                            <AvatarFallback className="text-xs font-bold">
-                                                                {isPrivacyMode ? '**' : `${apt.patient?.first_name?.[0]}${apt.patient?.last_name?.[0]}`}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                        <div>
-                                                            <div className="text-sm font-bold">{maskName(apt.patient?.first_name)} {maskName(apt.patient?.last_name)}</div>
-                                                            <div className="text-[10px] text-slate-500">{apt.patient?.patient_number}</div>
+                                        {filteredAppointments.map((apt) => {
+                                            const isCritical = apt.tags?.some((t: string) => ['ACCIDENT', 'SUICIDE_ATTEMPT', 'EMERGENCY', 'MLC'].includes(t)) || apt.priority === 'urgent' || apt.type === 'emergency';
+                                            return (
+                                                <tr key={apt.id} className={`group ${isCritical ? 'bg-red-50/50 hover:bg-red-100/50 dark:bg-red-950/20 dark:hover:bg-red-900/30' : 'hover:bg-slate-50/50 dark:hover:bg-slate-800/50'}`}>
+                                                    <td className="px-6 py-5 text-sm font-black text-indigo-600 dark:text-indigo-400 font-mono">
+                                                        {new Date(apt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    </td>
+                                                    <td className="px-6 py-5">
+                                                        <div className="flex items-center gap-3">
+                                                            <Avatar className="h-9 w-9 border-2 border-white dark:border-slate-800">
+                                                                <AvatarFallback className="text-xs font-bold">
+                                                                    {isPrivacyMode ? '**' : `${apt.patient?.first_name?.[0]}${apt.patient?.last_name?.[0]}`}
+                                                                </AvatarFallback>
+                                                            </Avatar>
+                                                            <div>
+                                                                <div className="text-sm font-bold">{maskName(apt.patient?.first_name)} {maskName(apt.patient?.last_name)}</div>
+                                                                <div className="text-[10px] text-slate-500">{apt.patient?.patient_number}</div>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-5 text-xs font-bold text-slate-600">
-                                                    Dr. {apt.clinician?.first_name} {apt.clinician?.last_name}
-                                                </td>
-                                                <td className="px-6 py-5 text-right relative">
-                                                    <div className="flex justify-end gap-2 items-center">
-                                                        <StatusBadge apt={apt} />
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                                    <MoreVertical className="h-4 w-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onClick={() => handleEditClick(apt)}>Edit</DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => handleStatusUpdate(apt.id, 'cancelled')} className="text-red-600">Cancel</DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                                    </td>
+                                                    <td className="px-6 py-5 text-xs font-bold text-slate-600">
+                                                        Dr. {apt.clinician?.first_name} {apt.clinician?.last_name}
+                                                    </td>
+                                                    <td className="px-6 py-5 text-right relative">
+                                                        <div className="flex justify-end gap-2 items-center">
+                                                            <StatusBadge apt={apt} />
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                                        <MoreVertical className="h-4 w-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem onClick={() => handleEditClick(apt)}>Edit</DropdownMenuItem>
+                                                                    <DropdownMenuItem onClick={() => handleStatusUpdate(apt.id, 'cancelled')} className="text-red-600">Cancel</DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
@@ -649,8 +652,8 @@ function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, 
             animate={{ opacity: 1, scale: 1 }}
             whileHover={{ y: -2 }}
             className={`
-                p-3 rounded-xl border bg-white/80 dark:bg-slate-900/80 backdrop-blur-md transition-all group relative overflow-hidden flex-shrink-0
-                ${isCritical ? 'border-l-4 border-l-red-500' : 'border-slate-100 dark:border-slate-800'}
+                p-3 rounded-xl border transition-all group relative overflow-hidden flex-shrink-0
+                ${isCritical ? 'bg-red-50/80 dark:bg-red-950/20 border-red-200 dark:border-red-900/50 border-l-4 border-l-red-600' : 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-slate-100 dark:border-slate-800'}
                 ${isOverdue ? 'ring-2 ring-rose-500 border-rose-200' : isWarning ? 'ring-2 ring-amber-500 border-amber-200' : ''}
             `}
         >

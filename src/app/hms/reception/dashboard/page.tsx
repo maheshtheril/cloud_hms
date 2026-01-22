@@ -4,6 +4,8 @@ import { ReceptionActionCenter } from "@/components/hms/reception/reception-acti
 import { redirect } from "next/navigation"
 import { ShiftManager } from "@/components/hms/reception/shift-manager"
 
+export const dynamic = 'force-dynamic'
+
 export default async function ReceptionDashboardPage() {
     const session = await auth()
 

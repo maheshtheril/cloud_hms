@@ -4,6 +4,8 @@ import Link from "next/link"
 import { format } from "date-fns"
 import { Activity, Clock, User, HeartPulse, CheckCircle2, ChevronRight, Search } from "lucide-react"
 
+export const dynamic = 'force-dynamic'
+
 export default async function NursingStationPage() {
     const session = await auth()
     const tenantId = session?.user?.tenantId
