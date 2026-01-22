@@ -124,7 +124,6 @@ export default async function NewInvoicePage({
                     }
                 }
             }
-
             // 3. Add Nurse Consumables from Stock Moves (Fallback if not already in draft invoice)
             const stockMoves = await prisma.hms_stock_move.findMany({
                 where: {
@@ -150,6 +149,36 @@ export default async function NewInvoicePage({
                     });
                 }
             });
+
+            // 4. Add Doctor Prescribed Medicines
+            const doctorPrescription = await (prisma as any).prescription.findFirst({
+                where: { appointment_id: appointmentId },
+                include: {
+                    prescription_items: {
+                        include: { hms_product: true }
+                    }
+                }
+            });
+
+            if (doctorPrescription) {
+                doctorPrescription.prescription_items.forEach((item: any) => {
+                    const alreadyInDraft = draftInvoice?.hms_invoice_lines.some(l => l.product_id === item.medicine_id);
+                    const alreadyInInitial = initialItems.some((i: any) => i.id === item.medicine_id);
+
+                    if (!alreadyInDraft && !alreadyInInitial && item.hms_product) {
+                        const totalQty = (item.morning + item.afternoon + item.evening + item.night) * item.days;
+                        if (totalQty > 0) {
+                            initialItems.push({
+                                id: item.medicine_id,
+                                name: item.hms_product.name,
+                                price: Number(item.hms_product.price) || 0,
+                                quantity: totalQty,
+                                type: 'item'
+                            });
+                        }
+                    }
+                });
+            }
         }
     }
 
