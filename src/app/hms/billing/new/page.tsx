@@ -134,7 +134,7 @@ export default async function NewInvoicePage({
 
             stockMoves.forEach(move => {
                 const alreadyInDraft = draftInvoice?.hms_invoice_lines.some(l => l.product_id === move.product_id);
-                const alreadyInInitial = initialItems.some((i: any) => i.product_id === move.product_id);
+                const alreadyInInitial = initialItems.some((i: any) => i.id === move.product_id);
 
                 // Lookup product info from billableItems
                 const productInfo = billableItems.find((p: any) => p.id === move.product_id);
@@ -179,46 +179,19 @@ export default async function NewInvoicePage({
                     }
                 });
             }
+
+            // 5. [EXCLUDED] Lab Orders for this Encounter (Removed as per Reception Final Bill Standard)
         }
     }
 
     let effectivePatientId = patientId;
 
-    // IF LAB ORDER ID IS PRESENT (Direct billing from Lab - OPTIONAL/OVERRIDE)
-    // We keep this but noted that Reception usually avoids this for Bill #2
+    // [EXCLUDED] Direct Lab Order Billing (Reception skips this for Final Bill #2)
+    /*
     if (labOrderId) {
-        const labOrder = await prisma.hms_lab_order.findUnique({
-            where: { id: labOrderId },
-            include: {
-                hms_patient: true,
-                hms_lab_order_line: {
-                    include: { hms_lab_test: true }
-                }
-            }
-        });
-
-        if (labOrder) {
-            if (!effectivePatientId && labOrder.patient_id) {
-                effectivePatientId = labOrder.patient_id;
-            }
-
-            labOrder.hms_lab_order_line.forEach(line => {
-                if (line.hms_lab_test) {
-                    const exists = initialItems.some((i: any) => i.name === `Lab: ${line.hms_lab_test!.name}`) ||
-                        initialInvoice?.hms_invoice_lines.some((il: any) => il.description === `Lab: ${line.hms_lab_test!.name}`);
-                    if (!exists) {
-                        initialItems.push({
-                            id: '',
-                            name: `Lab: ${line.hms_lab_test.name}`,
-                            price: Number(line.price) || 0,
-                            quantity: 1,
-                            type: 'service'
-                        });
-                    }
-                }
-            });
-        }
+        ... (rest omitted for brevity or just remove it)
     }
+    */
 
     return (
         <CompactInvoiceEditor
