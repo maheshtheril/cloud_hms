@@ -19,7 +19,12 @@ export default async function NewInvoicePage({
     const session = await auth();
     if (!session?.user?.tenantId) return <div>Unauthorized</div>;
 
-    const { patientId, medicines, items, appointmentId, labOrderId } = await searchParams;
+    const params = await searchParams;
+    const patientId = params.patientId;
+    const medicines = params.medicines;
+    const items = params.items;
+    const appointmentId = params.appointmentId || params.ref;
+    const labOrderId = params.labOrderId;
     const tenantId = session.user.tenantId;
 
     // Parallel data fetching
