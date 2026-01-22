@@ -473,7 +473,19 @@ export function ReceptionActionCenter({
                                                     </td>
                                                     <td className="px-6 py-5 text-right relative">
                                                         <div className="flex justify-end gap-2 items-center">
-                                                            <StatusBadge apt={apt} />
+                                                            <div className="flex items-center gap-2">
+                                                                <StatusBadge apt={apt} />
+                                                                {getSmartStatus(apt).label === 'Billing / Checkout' && (
+                                                                    <Button
+                                                                        size="sm"
+                                                                        onClick={() => router.push(`/hms/billing/new?appointmentId=${apt.id}&patientId=${apt.patient.id}`)}
+                                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-black h-8 px-4 text-[10px] rounded-lg shadow-lg flex items-center gap-1"
+                                                                    >
+                                                                        <CreditCard className="h-3 w-3" />
+                                                                        COLLECT
+                                                                    </Button>
+                                                                )}
+                                                            </div>
                                                             <DropdownMenu>
                                                                 <DropdownMenuTrigger asChild>
                                                                     <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -482,6 +494,11 @@ export function ReceptionActionCenter({
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end">
                                                                     <DropdownMenuItem onClick={() => handleEditClick(apt)}>Edit</DropdownMenuItem>
+                                                                    {getSmartStatus(apt).label === 'Billing / Checkout' && (
+                                                                        <DropdownMenuItem onClick={() => router.push(`/hms/billing/new?appointmentId=${apt.id}&patientId=${apt.patient.id}`)}>
+                                                                            Process Billing
+                                                                        </DropdownMenuItem>
+                                                                    )}
                                                                     <DropdownMenuItem onClick={() => handleStatusUpdate(apt.id, 'cancelled')} className="text-red-600">Cancel</DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
