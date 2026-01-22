@@ -182,6 +182,8 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     // Use `handleSubmit` that calls the action.
     // We must handle the case where the server action returns an error object.
 
+    const [selectedPriority, setSelectedPriority] = useState(editingAppointment?.priority || 'normal')
+
     return (
         <div className="h-full">
             <form action={async (formData) => {
@@ -427,21 +429,25 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                             </div>
 
                             <div className="grid grid-cols-2 gap-2">
-                                <label className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg cursor-pointer transition-all hover:shadow-sm">
-                                    <input type="radio" name="priority" value="low" defaultChecked={editingAppointment?.priority === 'low'} className="text-green-600 focus:ring-green-500" />
-                                    <span className="text-xs font-bold text-green-700 dark:text-green-400">Low</span>
+                                <label className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer shadow-sm ${selectedPriority === 'low' ? 'bg-green-100 border-green-500 scale-[1.02]' : 'bg-green-50/50 border-green-100 dark:bg-green-900/10 dark:border-green-800/30'}`} onClick={() => setSelectedPriority('low')}>
+                                    <input type="radio" name="priority" value="low" className="hidden" checked={selectedPriority === 'low'} onChange={() => { }} />
+                                    <div className={`h-3 w-3 rounded-full border-2 ${selectedPriority === 'low' ? 'bg-green-600 border-green-600' : 'border-green-300'}`} />
+                                    <span className={`text-xs font-black uppercase tracking-wider ${selectedPriority === 'low' ? 'text-green-700' : 'text-green-600/40'}`}>Low</span>
                                 </label>
-                                <label className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg cursor-pointer transition-all hover:shadow-sm">
-                                    <input type="radio" name="priority" value="normal" defaultChecked={!editingAppointment || editingAppointment.priority === 'normal'} className="text-blue-600 focus:ring-blue-500" />
-                                    <span className="text-xs font-bold text-blue-700 dark:text-blue-400">Normal</span>
+                                <label className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer shadow-sm ${selectedPriority === 'normal' ? 'bg-blue-100 border-blue-500 scale-[1.02]' : 'bg-blue-50/50 border-blue-100 dark:bg-blue-900/10 dark:border-blue-800/30'}`} onClick={() => setSelectedPriority('normal')}>
+                                    <input type="radio" name="priority" value="normal" className="hidden" checked={selectedPriority === 'normal'} onChange={() => { }} />
+                                    <div className={`h-3 w-3 rounded-full border-2 ${selectedPriority === 'normal' ? 'bg-blue-600 border-blue-600' : 'border-blue-300'}`} />
+                                    <span className={`text-xs font-black uppercase tracking-wider ${selectedPriority === 'normal' ? 'text-blue-700' : 'text-blue-600/40'}`}>Normal</span>
                                 </label>
-                                <label className="flex items-center gap-2 p-2 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg cursor-pointer transition-all hover:shadow-sm">
-                                    <input type="radio" name="priority" value="high" defaultChecked={editingAppointment?.priority === 'high'} className="text-orange-600 focus:ring-orange-500" />
-                                    <span className="text-xs font-bold text-orange-700 dark:text-orange-400">High</span>
+                                <label className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer shadow-sm ${selectedPriority === 'high' ? 'bg-orange-100 border-orange-500 scale-[1.02]' : 'bg-orange-50/50 border-orange-100 dark:bg-orange-900/10 dark:border-orange-800/30'}`} onClick={() => setSelectedPriority('high')}>
+                                    <input type="radio" name="priority" value="high" className="hidden" checked={selectedPriority === 'high'} onChange={() => { }} />
+                                    <div className={`h-3 w-3 rounded-full border-2 ${selectedPriority === 'high' ? 'bg-orange-600 border-orange-600' : 'border-orange-300'}`} />
+                                    <span className={`text-xs font-black uppercase tracking-wider ${selectedPriority === 'high' ? 'text-orange-700' : 'text-orange-600/40'}`}>High</span>
                                 </label>
-                                <label className="flex items-center gap-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg cursor-pointer transition-all hover:shadow-sm">
-                                    <input type="radio" name="priority" value="urgent" defaultChecked={editingAppointment?.priority === 'urgent'} className="text-red-600 focus:ring-red-500" />
-                                    <span className="text-xs font-bold text-red-700 dark:text-red-400">Urgent</span>
+                                <label className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer shadow-sm ${selectedPriority === 'urgent' ? 'bg-red-100 border-red-500 scale-[1.02]' : 'bg-red-50/50 border-red-100 dark:bg-red-900/10 dark:border-red-800/30'}`} onClick={() => setSelectedPriority('urgent')}>
+                                    <input type="radio" name="priority" value="urgent" className="hidden" checked={selectedPriority === 'urgent'} onChange={() => { }} />
+                                    <div className={`h-3 w-3 rounded-full border-2 animate-pulse ${selectedPriority === 'urgent' ? 'bg-red-600 border-red-600' : 'border-red-300'}`} />
+                                    <span className={`text-xs font-black uppercase tracking-wider ${selectedPriority === 'urgent' ? 'text-red-700' : 'text-red-600/40'}`}>Urgent</span>
                                 </label>
                             </div>
                         </div>

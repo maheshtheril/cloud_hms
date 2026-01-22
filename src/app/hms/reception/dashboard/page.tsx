@@ -145,6 +145,7 @@ export default async function ReceptionDashboardPage() {
             clinician_id: apt.clinician_id,
             start_time: apt.starts_at,
             status: apt.status,
+            priority: apt.priority, // Important for highlighting
             type: apt.type, // Visit Type (consultation, emergency, etc.)
             patient: apt.hms_patient,
             clinician: apt.hms_clinician,

@@ -426,15 +426,25 @@ export function ReceptionActionCenter({
                                         <tr className="text-[10px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-widest border-b border-slate-100 dark:border-slate-800">
                                             <th className="px-6 py-4">Time</th>
                                             <th className="px-6 py-4">Patient</th>
+                                            <th className="px-6 py-4">Type</th>
                                             <th className="px-6 py-4">Doctor</th>
                                             <th className="px-6 py-4 text-right">Status</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                                         {filteredAppointments.map((apt) => {
-                                            const isCritical = apt.tags?.some((t: string) => ['ACCIDENT', 'SUICIDE_ATTEMPT', 'EMERGENCY', 'MLC'].includes(t)) || apt.priority === 'urgent' || apt.type === 'emergency';
+                                            const isEmergency = apt.type === 'emergency' || apt.tags?.includes('EMERGENCY');
+                                            const isUrgent = apt.priority === 'urgent';
+                                            const isHigh = apt.priority === 'high';
+                                            const isCritical = isEmergency || isUrgent || isHigh || apt.tags?.some((t: string) => ['ACCIDENT', 'SUICIDE_ATTEMPT', 'MLC'].includes(t));
+
+                                            let rowColor = 'hover:bg-slate-50/50 dark:hover:bg-slate-800/50';
+                                            if (isEmergency) rowColor = 'bg-red-100/60 hover:bg-red-200/60 dark:bg-red-950/40 dark:hover:bg-red-900/40 border-l-4 border-l-red-600';
+                                            else if (isUrgent) rowColor = 'bg-orange-50/60 hover:bg-orange-100/60 dark:bg-orange-950/20 dark:hover:bg-orange-900/20 border-l-4 border-l-orange-500';
+                                            else if (isHigh) rowColor = 'bg-amber-50/40 hover:bg-amber-100/40 dark:bg-amber-950/10 dark:hover:bg-amber-900/10 border-l-4 border-l-amber-400';
+
                                             return (
-                                                <tr key={apt.id} className={`group ${isCritical ? 'bg-red-50/50 hover:bg-red-100/50 dark:bg-red-950/20 dark:hover:bg-red-900/30' : 'hover:bg-slate-50/50 dark:hover:bg-slate-800/50'}`}>
+                                                <tr key={apt.id} className={`group transition-colors ${rowColor}`}>
                                                     <td className="px-6 py-5 text-sm font-black text-indigo-600 dark:text-indigo-400 font-mono">
                                                         {new Date(apt.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </td>
@@ -449,6 +459,13 @@ export function ReceptionActionCenter({
                                                                 <div className="text-sm font-bold">{maskName(apt.patient?.first_name)} {maskName(apt.patient?.last_name)}</div>
                                                                 <div className="text-[10px] text-slate-500">{apt.patient?.patient_number}</div>
                                                             </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-5">
+                                                        <div className="flex flex-col gap-1">
+                                                            <VisitTypeBadge type={apt.type || 'consultation'} />
+                                                            {isUrgent && <Badge className="text-[8px] bg-orange-500 text-white w-fit px-1 h-3 label uppercase">Urgent</Badge>}
+                                                            {isHigh && <Badge className="text-[8px] bg-amber-500 text-white w-fit px-1 h-3 label uppercase">High</Badge>}
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-5 text-xs font-bold text-slate-600">
@@ -635,7 +652,10 @@ const StatusBadge = ({ apt }: { apt: any }) => {
 
 
 function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, router, handleStatusUpdate }: { apt: any, type: 'waiting' | 'running' | 'billing' | 'completed', onAction: () => void, onEdit: () => void, isPrivacyMode: boolean, currentTime: Date, router: any, handleStatusUpdate: (id: string, status: string) => void }) {
-    const isCritical = apt.tags?.some((t: string) => ['ACCIDENT', 'SUICIDE_ATTEMPT', 'EMERGENCY', 'MLC'].includes(t)) || apt.priority === 'urgent' || apt.type === 'emergency';
+    const isEmergency = apt.type === 'emergency' || apt.tags?.includes('EMERGENCY');
+    const isUrgent = apt.priority === 'urgent';
+    const isHigh = apt.priority === 'high';
+    const isCritical = isEmergency || isUrgent || isHigh || apt.tags?.some((t: string) => ['ACCIDENT', 'SUICIDE_ATTEMPT', 'EMERGENCY', 'MLC'].includes(t));
     const visitType = apt.type || 'consultation';
 
     const mask = (str: string) => {
@@ -657,7 +677,10 @@ function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, 
             whileHover={{ y: -2 }}
             className={`
                 p-3 rounded-xl border transition-all group relative overflow-hidden flex-shrink-0
-                ${isCritical ? 'bg-red-50/80 dark:bg-red-950/20 border-red-200 dark:border-red-900/50 border-l-4 border-l-red-600' : 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-slate-100 dark:border-slate-800'}
+                ${isEmergency ? 'bg-red-50/90 dark:bg-red-950/30 border-red-200 dark:border-red-900 border-l-4 border-l-red-600' :
+                    isUrgent ? 'bg-orange-50/90 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900 border-l-4 border-l-orange-500' :
+                        isHigh ? 'bg-amber-50/90 dark:bg-amber-950/10 border-amber-200 dark:border-amber-900 border-l-4 border-l-amber-400' :
+                            'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-slate-100 dark:border-slate-800'}
                 ${isOverdue ? 'ring-2 ring-rose-500 border-rose-200' : isWarning ? 'ring-2 ring-amber-500 border-amber-200' : ''}
             `}
         >
