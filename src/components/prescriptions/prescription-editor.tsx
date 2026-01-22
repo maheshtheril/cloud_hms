@@ -554,6 +554,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                         title: "Prescription Saved",
                         description: "Your changes have been saved successfully.",
                     })
+                    router.refresh()
                 } else {
                     // Trigger Print
                     window.print();

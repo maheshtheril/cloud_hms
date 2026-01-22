@@ -243,6 +243,13 @@ export async function POST(request: NextRequest) {
                         updated_at: new Date()
                     }
                 })
+
+                // Use Next.js revalidation to update all dashboards
+                const { revalidatePath } = await import('next/cache')
+                revalidatePath('/hms/doctor/dashboard')
+                revalidatePath('/hms/reception/dashboard')
+                revalidatePath('/hms/nursing')
+                revalidatePath('/hms/patients/[id]', 'page')
             }
 
             return pr
