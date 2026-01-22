@@ -166,7 +166,7 @@ export default async function DoctorDashboardPage() {
     // 5. Calculate Stats
     const stats = {
         total: appointments.length,
-        waiting: formattedAppointments.filter(a => a.status === 'confirmed' || a.status === 'checked_in').length,
+        waiting: formattedAppointments.filter(a => a.status === 'confirmed' || a.status === 'checked_in' || a.status === 'arrived').length,
         completed: formattedAppointments.filter(a => a.status === 'completed').length
     }
 

@@ -170,6 +170,10 @@ export async function updateAppointmentStatus(id: string, status: string) {
             }
         });
 
+        revalidatePath("/hms/reception/dashboard")
+        revalidatePath("/hms/nursing")
+        revalidatePath("/hms/doctor/dashboard")
+
         return { success: true };
     } catch (error) {
         console.error("Failed to update status:", error);

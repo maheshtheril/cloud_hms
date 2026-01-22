@@ -23,7 +23,7 @@ export default async function NursingStationPage() {
                 lt: tomorrow
             },
             status: {
-                in: ['confirmed', 'checked_in', 'in_progress']
+                in: ['confirmed', 'arrived', 'checked_in', 'in_progress']
             }
         },
         include: {

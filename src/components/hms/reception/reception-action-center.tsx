@@ -171,7 +171,7 @@ export function ReceptionActionCenter({
                 <Card className="p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
                     <div className="space-y-1">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">In Waiting</p>
-                        <h3 className="text-xl font-black text-blue-600">{todayAppointments.filter(a => a.status === 'arrived').length}</h3>
+                        <h3 className="text-xl font-black text-blue-600">{todayAppointments.filter(a => ['arrived', 'checked_in'].includes(a.status)).length}</h3>
                     </div>
                     <div className="h-10 w-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
                         <Clock className="h-5 w-5 text-blue-500" />
@@ -271,6 +271,7 @@ export function ReceptionActionCenter({
                                         <SelectItem value="all">All Flows</SelectItem>
                                         <SelectItem value="scheduled">Upcoming</SelectItem>
                                         <SelectItem value="arrived">Waiting</SelectItem>
+                                        <SelectItem value="checked_in">Checked In</SelectItem>
                                         <SelectItem value="confirmed">Sent In</SelectItem>
                                         <SelectItem value="in_progress">Consulting</SelectItem>
                                         <SelectItem value="completed">Completed</SelectItem>
@@ -301,12 +302,12 @@ export function ReceptionActionCenter({
                                         1. Waiting / Vitals
                                     </h3>
                                     <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500">
-                                        {filteredAppointments.filter(a => ['scheduled', 'arrived'].includes(a.status)).length}
+                                        {filteredAppointments.filter(a => ['scheduled', 'arrived', 'checked_in'].includes(a.status)).length}
                                     </Badge>
                                 </div>
                                 <div className="flex-1 bg-slate-50/50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-2 space-y-3 overflow-y-auto max-h-[700px] custom-scrollbar">
                                     {filteredAppointments
-                                        .filter(a => ['scheduled', 'arrived'].includes(a.status))
+                                        .filter(a => ['scheduled', 'arrived', 'checked_in'].includes(a.status))
                                         .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
                                         .map(apt => (
                                             <PatientCard
@@ -592,7 +593,7 @@ const getSmartStatus = (apt: any) => {
     if (apt.status === 'archived') return { label: 'Archived', color: 'bg-slate-100 text-slate-600 border-slate-200', icon: CheckCircle };
     if (apt.status === 'scheduled') return { label: 'Upcoming', color: 'bg-slate-50 text-slate-500 border-slate-100', icon: Clock };
 
-    if (apt.status === 'arrived') {
+    if (apt.status === 'arrived' || apt.status === 'checked_in') {
         if (!apt.hasVitals) return { label: 'Vitals Pending', color: 'bg-rose-50 text-rose-600 border-rose-100 animate-pulse', icon: Activity };
         return { label: 'Waiting', color: 'bg-blue-50 text-blue-600 border-blue-100', icon: Users };
     }

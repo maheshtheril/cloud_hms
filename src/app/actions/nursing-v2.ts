@@ -78,9 +78,24 @@ export async function saveVitals(data: {
             })
         }
 
+        // Auto-update appointment status if it's currently 'scheduled'
+        // This ensures the reception dashboard shows "Waiting" instead of "Upcoming"
+        const appointment = await prisma.hms_appointments.findUnique({
+            where: { id: encounterId },
+            select: { status: true }
+        })
+
+        if (appointment && appointment.status === 'scheduled') {
+            await prisma.hms_appointments.update({
+                where: { id: encounterId },
+                data: { status: 'arrived' }
+            })
+        }
+
         revalidatePath('/hms/nursing')
         revalidatePath(`/hms/nursing/` + encounterId)
-        revalidatePath('/hms/doctor/dashboard') // Ensure doctor sees vitals immediately
+        revalidatePath('/hms/doctor/dashboard')
+        revalidatePath('/hms/reception/dashboard')
 
         return { success: true }
     } catch (error) {
