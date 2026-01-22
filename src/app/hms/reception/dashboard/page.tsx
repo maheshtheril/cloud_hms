@@ -43,7 +43,7 @@ export default async function ReceptionDashboardPage() {
                 hms_invoice: { select: { id: true, status: true, total: true, outstanding_amount: true } },
                 hms_lab_order: { select: { id: true, status: true } }
             },
-            orderBy: { starts_at: 'asc' }
+            orderBy: { created_at: 'desc' }
         }),
         prisma.hms_patient.findMany({
             where: { tenant_id: tenantId },
