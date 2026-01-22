@@ -871,8 +871,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                 )}
 
                 {/* Tally Summary Overlay Moved here */}
-                <div className="mt-auto bg-slate-200/50 dark:bg-slate-800/50 p-6 rounded-3xl border border-white/5">
-                  <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${(totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0))) ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                <div className={`mt-auto p-6 rounded-3xl border transition-all duration-500 ${totalPaid !== (grandTotal + (includePrevBalance ? patientBalance : 0)) ? 'bg-amber-500/10 border-amber-500/30 animate-pulse' : 'bg-slate-200/50 dark:bg-slate-800/50 border-white/5'}`}>
+                  <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${(totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0))) ? 'bg-amber-100 text-amber-700' : totalPaid > (grandTotal + (includePrevBalance ? patientBalance : 0)) ? 'bg-emerald-100 text-emerald-700' : 'bg-indigo-100 text-indigo-700'}`}>
                     {(totalPaid < (grandTotal + (includePrevBalance ? patientBalance : 0))) ? 'Partial / Credit' : totalPaid > (grandTotal + (includePrevBalance ? patientBalance : 0)) ? 'Advance / Excess' : 'Balanced'}
                   </span>
                   <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400 mt-4 leading-relaxed tracking-tight underline-offset-4 decoration-dotted decoration-slate-300">
@@ -1008,6 +1008,16 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                           description: `You have ${currency}${floatingAmt} typed in the amount box that hasn't been ledgered. Please click a payment method (Cash/Card/etc) to apply it, or clear the box before finalizing.`,
                           variant: "destructive"
                         });
+                      }
+
+                      // World Class Confirmation Node
+                      const target = grandTotal + (includePrevBalance ? patientBalance : 0);
+                      if (totalPaid > target) {
+                        const confirmed = window.confirm(`AUDIT ALERT: Surplus of ${currency}${(totalPaid - target).toFixed(2)} detected. This will be recorded as an ADVANCE deposit in the patient's internal wallet. Proceed with Ledger Entry?`);
+                        if (!confirmed) return;
+                      } else if (totalPaid < target && totalPaid > 0) {
+                        const confirmed = window.confirm(`AUDIT ALERT: Partial payment detected. ${currency}${(target - totalPaid).toFixed(2)} will be carried forward as OUTSTANDING DEBT. Proceed?`);
+                        if (!confirmed) return;
                       }
 
                       handleSave('paid');
