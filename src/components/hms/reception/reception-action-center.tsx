@@ -87,6 +87,9 @@ export function ReceptionActionCenter({
             router.push('/hms/billing')
             return
         }
+        if (actionId === 'appointment') {
+            setEditingAppointment(null)
+        }
         setActiveModal(actionId as any)
     }
 
@@ -553,9 +556,10 @@ export function ReceptionActionCenter({
                 </DialogContent>
             </Dialog >
 
-            <Dialog open={activeModal === 'appointment' || activeModal === 'edit-appointment'} onOpenChange={() => setActiveModal(null)}>
+            <Dialog open={activeModal === 'appointment' || activeModal === 'edit-appointment'} onOpenChange={(open) => { if (!open) { setActiveModal(null); setEditingAppointment(null); } }}>
                 <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden p-0">
                     <AppointmentForm
+                        key={activeModal + (editingAppointment?.id || 'new')}
                         onClose={() => setActiveModal(null)}
                         patients={patients}
                         doctors={doctors}

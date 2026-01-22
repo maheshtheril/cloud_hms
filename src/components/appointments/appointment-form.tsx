@@ -63,15 +63,9 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
             }
         } else {
             // Reset to defaults if switching to "New Appointment" mode within same instance (rare but possible) or if initialData changes
-            // Only update if current state differs from intention? 
-            // Actually, if we just rely on deps, we are safe if deps are stable.
-            // Using primitives avoids the "new object every render" issue.
-            if (initialPatientId) setSelectedPatientId(initialPatientId)
-            if (initialTime) setSuggestedTime(initialTime)
-            // if initialData is empty, we DON'T want to aggressively clear user selection on every random re-render.
-            // But if we are mounting, we want to set it.
-            // Since we use primitives in dependency array, this effect runs only when they change.
-            // If they are undefined -> undefined (no change), effect doesn't run. Safe.
+            setSelectedPatientId(initialPatientId || '')
+            setSelectedClinicianId('')
+            setSuggestedTime(initialTime || '')
         }
     }, [editingAppointment, initialPatientId, initialDate, initialTime])
 
