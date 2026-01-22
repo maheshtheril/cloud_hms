@@ -420,6 +420,10 @@ export function SearchableSelect({
                                 }}
                                 autoFocus={autoFocus}
                                 disabled={disabled}
+                                onBlur={() => {
+                                    // Delay closing to allow clicks on dropdown to register
+                                    setTimeout(() => setOpen(false), 200);
+                                }}
                                 autoComplete="off"
                             />
                         )}

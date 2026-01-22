@@ -206,14 +206,6 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
       getPatientOutstandingBalance(selectedPatientId).then(res => {
         if (res.success) setPatientBalance(res.balance || 0);
       });
-
-      // World Class UX: After selecting patient, move focus to first item search (ONLY for NEW bills)
-      if (!initialInvoice) {
-        setTimeout(() => {
-          const firstItemSearch = document.getElementById('item-search-0');
-          if (firstItemSearch) firstItemSearch.focus();
-        }, 100);
-      }
     } else {
       setPatientBalance(0);
     }
@@ -560,7 +552,6 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     );
                   }}
                   placeholder="IDENTIFY PATIENT..."
-                  autoFocus={!initialInvoice}
                   disabled={isPaymentModalOpen || loading}
                 />
               )}
