@@ -653,97 +653,112 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-900 border-b border-slate-100 dark:border-slate-900">
-                  {lines.map((line, index) => (
-                    <tr key={line.id} className="group hover:bg-slate-50/50 dark:hover:bg-slate-900/50 transition-all">
-                      <td className="px-8 py-3">
-                        <SearchableSelect
-                          inputId={index === 0 ? 'item-search-0' : `item-search-${index}`}
-                          value={line.product_id}
-                          valueLabel={line.description}
-                          options={itemOptions.slice(0, 20)}
-                          onChange={v => updateLine(line.id, 'product_id', v)}
-                          disabled={isPaymentModalOpen || loading}
-                          onSearch={async q => {
-                            const search = q.toLowerCase();
-                            return itemOptions.filter(i =>
-                              i.label.toLowerCase().includes(search) ||
-                              i.subLabel.toLowerCase().includes(search)
-                            );
-                          }}
-                          placeholder="SEARCH..."
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !line.product_id && lines.some(l => l.product_id)) {
-                              e.preventDefault();
-                              // Automate cleanup: Remove the empty line before settling
-                              handleRemoveItem(line.id);
-                              setTimeout(() => {
-                                const settleBtn = document.getElementById('settle-button');
-                                if (settleBtn) settleBtn.focus();
-                              }, 100);
-                            }
-                          }}
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          disabled={isPaymentModalOpen || loading}
-                          onClick={() => {
-                            const newType = line.item_type === 'service' ? 'item' : 'service';
-                            setLines(prev => prev.map(l => l.id === line.id ? {
-                              ...l,
-                              item_type: newType,
-                              // Auto-exempt services from tax when toggled manually
-                              tax_rate_id: newType === 'service' ? null : (l.tax_rate_id || defaultTaxId)
-                            } : l));
-                          }}
-                          className={`text-[8px] font-black px-1.5 py-0.5 rounded-md transition-all active:scale-95 ${line.item_type === 'service' ? 'bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20' : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'}`}
-                        >
-                          {(line.item_type || 'ITEM').toUpperCase()}
-                        </button>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Input
-                          id={`qty-input-${index}`}
-                          type="number"
-                          value={line.quantity}
-                          onFocus={(e) => e.target.select()}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              handleAddItem();
-                              // Wait for state update to focus the new search terminal
-                              setTimeout(() => {
-                                const nextItemSearch = document.getElementById(`item-search-${index + 1}`);
-                                if (nextItemSearch) nextItemSearch.focus();
-                              }, 150);
-                            }
-                          }}
-                          onChange={e => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
-                          disabled={isPaymentModalOpen || loading}
-                          className="h-10 bg-transparent border-none text-center font-black text-base focus:ring-0"
-                        />
-                      </td>
-                      <td className="px-4 py-3">
-                        <select className="w-full h-10 bg-slate-50 dark:bg-slate-900 border-none rounded-lg px-2 text-[9px] font-black tracking-widest outline-none focus:ring-1 focus:ring-indigo-500" value={line.uom || ''} onChange={e => updateLine(line.id, 'uom', e.target.value)} disabled={isPaymentModalOpen || loading}>
-                          {getUomOptions(line.item_type, line.uom).map(u => (
-                            <option key={u} value={u}>{u}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="px-4 py-3"><Input type="number" value={line.unit_price} onChange={e => updateLine(line.id, 'unit_price', parseFloat(e.target.value) || 0)} disabled={isPaymentModalOpen || loading} className="h-10 bg-transparent border-none font-mono font-black text-slate-400 text-sm focus:ring-0" /></td>
-                      <td className="px-4 py-3">
-                        <select className="w-full h-10 bg-transparent border border-slate-100 dark:border-slate-800 rounded-lg px-2 text-[8px] font-black outline-none" value={line.tax_rate_id || ''} onChange={e => updateLine(line.id, 'tax_rate_id', e.target.value)} disabled={isPaymentModalOpen || loading}>
-                          <option value="">NO_TAX</option>
-                          {taxConfig.taxRates.map((t: any) => <option key={t.id} value={t.id}>{t.name} ({t.rate}%)</option>)}
-                        </select>
-                      </td>
-                      <td className="px-8 py-3 text-right font-black text-lg italic tracking-tighter text-slate-800 dark:text-white">{currency}{(line.quantity * line.unit_price).toFixed(2)}</td>
-                      <td className="px-4 py-3">
-                        <button onClick={() => handleRemoveItem(line.id)} disabled={isPaymentModalOpen || loading} className="text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 className="h-4 w-4" /></button>
-                      </td>
-                    </tr>
-                  ))}
+                  {lines.map((line, index) => {
+                    const lineTotal = (line.quantity * line.unit_price);
+                    const isZeroLine = (line.product_id || line.description) && lineTotal === 0;
+
+                    return (
+                      <tr
+                        key={line.id}
+                        className={`group transition-all relative ${isZeroLine ? 'bg-rose-500/[0.03] dark:bg-rose-500/[0.05]' : 'hover:bg-slate-50/50 dark:hover:bg-slate-900/50'}`}
+                      >
+                        {isZeroLine && (
+                          <div className="absolute left-0 top-0 bottom-0 w-1 bg-rose-500 animate-pulse z-10" />
+                        )}
+                        <td className="px-8 py-3">
+                          <SearchableSelect
+                            inputId={index === 0 ? 'item-search-0' : `item-search-${index}`}
+                            value={line.product_id}
+                            valueLabel={line.description}
+                            options={itemOptions.slice(0, 20)}
+                            onChange={v => updateLine(line.id, 'product_id', v)}
+                            disabled={isPaymentModalOpen || loading}
+                            onSearch={async q => {
+                              const search = q.toLowerCase();
+                              return itemOptions.filter(i =>
+                                i.label.toLowerCase().includes(search) ||
+                                i.subLabel.toLowerCase().includes(search)
+                              );
+                            }}
+                            placeholder="SEARCH..."
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !line.product_id && lines.some(l => l.product_id)) {
+                                e.preventDefault();
+                                // Automate cleanup: Remove the empty line before settling
+                                handleRemoveItem(line.id);
+                                setTimeout(() => {
+                                  const settleBtn = document.getElementById('settle-button');
+                                  if (settleBtn) settleBtn.focus();
+                                }, 100);
+                              }
+                            }}
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <button
+                            type="button"
+                            disabled={isPaymentModalOpen || loading}
+                            onClick={() => {
+                              const newType = line.item_type === 'service' ? 'item' : 'service';
+                              setLines(prev => prev.map(l => l.id === line.id ? {
+                                ...l,
+                                item_type: newType,
+                                // Auto-exempt services from tax when toggled manually
+                                tax_rate_id: newType === 'service' ? null : (l.tax_rate_id || defaultTaxId)
+                              } : l));
+                            }}
+                            className={`text-[8px] font-black px-1.5 py-0.5 rounded-md transition-all active:scale-95 ${line.item_type === 'service' ? 'bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20' : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'}`}
+                          >
+                            {(line.item_type || 'ITEM').toUpperCase()}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Input
+                            id={`qty-input-${index}`}
+                            type="number"
+                            value={line.quantity}
+                            onFocus={(e) => e.target.select()}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleAddItem();
+                                // Wait for state update to focus the new search terminal
+                                setTimeout(() => {
+                                  const nextItemSearch = document.getElementById(`item-search-${index + 1}`);
+                                  if (nextItemSearch) nextItemSearch.focus();
+                                }, 150);
+                              }
+                            }}
+                            onChange={e => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
+                            disabled={isPaymentModalOpen || loading}
+                            className="h-10 bg-transparent border-none text-center font-black text-base focus:ring-0"
+                          />
+                        </td>
+                        <td className="px-4 py-3">
+                          <select className="w-full h-10 bg-slate-50 dark:bg-slate-900 border-none rounded-lg px-2 text-[9px] font-black tracking-widest outline-none focus:ring-1 focus:ring-indigo-500" value={line.uom || ''} onChange={e => updateLine(line.id, 'uom', e.target.value)} disabled={isPaymentModalOpen || loading}>
+                            {getUomOptions(line.item_type, line.uom).map(u => (
+                              <option key={u} value={u}>{u}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="px-4 py-3"><Input type="number" value={line.unit_price} onChange={e => updateLine(line.id, 'unit_price', parseFloat(e.target.value) || 0)} disabled={isPaymentModalOpen || loading} className="h-10 bg-transparent border-none font-mono font-black text-slate-400 text-sm focus:ring-0" /></td>
+                        <td className="px-4 py-3">
+                          <select className="w-full h-10 bg-transparent border border-slate-100 dark:border-slate-800 rounded-lg px-2 text-[8px] font-black outline-none" value={line.tax_rate_id || ''} onChange={e => updateLine(line.id, 'tax_rate_id', e.target.value)} disabled={isPaymentModalOpen || loading}>
+                            <option value="">NO_TAX</option>
+                            {taxConfig.taxRates.map((t: any) => <option key={t.id} value={t.id}>{t.name} ({t.rate}%)</option>)}
+                          </select>
+                        </td>
+                        <td className="px-8 py-3 text-right font-black text-lg italic tracking-tighter text-slate-800 dark:text-white">
+                          <span className={isZeroLine ? 'text-rose-500 animate-pulse' : ''}>
+                            {currency}{lineTotal.toFixed(2)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <button onClick={() => handleRemoveItem(line.id)} disabled={isPaymentModalOpen || loading} className="text-slate-300 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"><Trash2 className="h-4 w-4" /></button>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
               <div className="p-6 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-900">
@@ -802,6 +817,17 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     type="button"
                     onClick={(e) => {
                       e.preventDefault();
+
+                      // WORLD STANDARD VALIDATION: Prevent settlement if zero-price items exist
+                      const zeroLines = lines.filter(l => (l.product_id || l.description) && (l.quantity * l.unit_price) === 0);
+                      if (zeroLines.length > 0) {
+                        return toast({
+                          title: "Settlement Blocked",
+                          description: `You have ${zeroLines.length} item(s) with zero total. Please update the price/quantity or remove them before proceeding.`,
+                          variant: "destructive"
+                        });
+                      }
+
                       // World Class Focus Management: Clear cursor and lists before overlaying
                       if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
                         document.activeElement.blur();

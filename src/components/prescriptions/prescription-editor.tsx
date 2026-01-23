@@ -65,6 +65,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     })
 
     const [drawings, setDrawings] = useState<{ [key: string]: string }>({})
+    const [typingSections, setTypingSections] = useState<{ [key: string]: boolean }>({})
 
 
     // Structured Vitals State
@@ -274,68 +275,67 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
         }
     }, [scribbleModalOpen])
 
-    const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const startDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
         const canvas = scribbleCanvasRef.current
         if (!canvas) return
         const ctx = canvas.getContext('2d')
         if (!ctx) return
+
+        // Set pointer capture to handle drawing outside the canvas
+        canvas.setPointerCapture(e.pointerId)
+
         setIsDrawing(true)
         const rect = canvas.getBoundingClientRect()
         const scaleX = canvas.width / rect.width
         const scaleY = canvas.height / rect.height
 
+        const x = (e.clientX - rect.left) * scaleX
+        const y = (e.clientY - rect.top) * scaleY
+
         ctx.beginPath()
-        ctx.moveTo((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY)
+        ctx.moveTo(x, y)
         ctx.lineWidth = 4
         ctx.lineCap = 'round'
+        ctx.lineJoin = 'round'
         ctx.strokeStyle = '#000'
+
+            // Save initial point
+            ; (canvas as any).lastLineX = x
+            ; (canvas as any).lastLineY = y
     }
 
-    const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const draw = (e: React.PointerEvent<HTMLCanvasElement>) => {
         if (!isDrawing || !scribbleCanvasRef.current) return
-        const ctx = scribbleCanvasRef.current.getContext('2d')
+        const canvas = scribbleCanvasRef.current
+        const ctx = canvas.getContext('2d')
         if (!ctx) return
-        const rect = scribbleCanvasRef.current.getBoundingClientRect()
-        const scaleX = scribbleCanvasRef.current.width / rect.width
-        const scaleY = scribbleCanvasRef.current.height / rect.height
+        const rect = canvas.getBoundingClientRect()
+        const scaleX = canvas.width / rect.width
+        const scaleY = canvas.height / rect.height
 
-        ctx.lineTo((e.clientX - rect.left) * scaleX, (e.clientY - rect.top) * scaleY)
+        const x = (e.clientX - rect.left) * scaleX
+        const y = (e.clientY - rect.top) * scaleY
+
+        // Use quadratic curve for smoothing
+        const lastX = (canvas as any).lastLineX
+        const lastY = (canvas as any).lastLineY
+
+        const midX = (lastX + x) / 2
+        const midY = (lastY + y) / 2
+
+        ctx.quadraticCurveTo(lastX, lastY, midX, midY)
         ctx.stroke()
+
+            ; (canvas as any).lastLineX = x
+            ; (canvas as any).lastLineY = y
     }
 
-    const stopDrawing = () => {
+    const stopDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        if (!isDrawing) return
         setIsDrawing(false)
-    }
-
-    const startDrawingTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
-        const canvas = scribbleCanvasRef.current
-        if (!canvas) return
-        const ctx = canvas.getContext('2d')
-        if (!ctx) return
-        setIsDrawing(true)
-        const rect = canvas.getBoundingClientRect()
-        const scaleX = canvas.width / rect.width
-        const scaleY = canvas.height / rect.height
-
-        const touch = e.touches[0]
-        ctx.beginPath()
-        ctx.moveTo((touch.clientX - rect.left) * scaleX, (touch.clientY - rect.top) * scaleY)
-        ctx.lineWidth = 4
-        ctx.lineCap = 'round'
-        ctx.strokeStyle = '#000'
-    }
-
-    const drawTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
-        if (!isDrawing || !scribbleCanvasRef.current) return
-        const ctx = scribbleCanvasRef.current.getContext('2d')
-        if (!ctx) return
-        const rect = scribbleCanvasRef.current.getBoundingClientRect()
-        const scaleX = scribbleCanvasRef.current.width / rect.width
-        const scaleY = scribbleCanvasRef.current.height / rect.height
-
-        const touch = e.touches[0]
-        ctx.lineTo((touch.clientX - rect.left) * scaleX, (touch.clientY - rect.top) * scaleY)
-        ctx.stroke()
+        if (scribbleCanvasRef.current) {
+            scribbleCanvasRef.current.releasePointerCapture(e.pointerId)
+        }
     }
 
     const clearScribbleCanvas = () => {
@@ -800,32 +800,55 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                                             <section.icon className="h-3 w-3 text-slate-400" />
                                             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{section.title}</h3>
                                         </div>
-                                        <button
-                                            onClick={() => openScribbleModal(section.key)}
-                                            className="bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 p-1.5 rounded-lg text-xs font-bold flex items-center gap-1"
-                                            title="Click to Scribble"
-                                        >
-                                            <PenTool className="h-3 w-3" /> Scribble
-                                        </button>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => setTypingSections(prev => ({ ...prev, [section.key]: !prev[section.key] }))}
+                                                className={`p-1.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-colors ${typingSections[section.key] ? 'bg-blue-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-600'}`}
+                                                title={typingSections[section.key] ? "Switch to Scribble" : "Switch to Typing"}
+                                            >
+                                                <Edit3 className="h-3 w-3" /> {typingSections[section.key] ? 'Scribble Mode' : 'Type'}
+                                            </button>
+                                            {!typingSections[section.key] && (
+                                                <button
+                                                    onClick={() => openScribbleModal(section.key)}
+                                                    className="bg-slate-100 hover:bg-blue-50 text-slate-400 hover:text-blue-600 p-1.5 rounded-lg text-xs font-bold flex items-center gap-1"
+                                                    title="Click to Scribble"
+                                                >
+                                                    <PenTool className="h-3 w-3" /> Scribble
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
 
-                                    {/* Read-only div that acts as trigger */}
-                                    <div
-                                        onClick={() => openScribbleModal(section.key)}
-                                        className="w-full min-h-[80px] p-4 bg-transparent cursor-pointer text-slate-700 text-sm leading-relaxed font-medium hover:bg-slate-50/50 transition-colors rounded-b-2xl"
-                                        style={{ minHeight: section.height }}
-                                    >
-                                        {drawings[section.key] ? (
-                                            <div className="relative w-full h-full">
-                                                <img src={drawings[section.key]} alt="Handwritten notes" className="max-w-full h-auto max-h-[120px] object-contain mix-blend-multiply opacity-80" />
-                                                <div className="absolute top-0 right-0 bg-yellow-100 text-yellow-800 text-[9px] px-1.5 py-0.5 rounded font-bold border border-yellow-200">
-                                                    PENDING CONVERSION
-                                                </div>
-                                            </div>
-                                        ) : convertedText[section.key] ? (
-                                            convertedText[section.key]
+                                    {/* Content Area: Either Textarea or Scribble Trigger */}
+                                    <div className="rounded-b-2xl overflow-hidden">
+                                        {typingSections[section.key] ? (
+                                            <textarea
+                                                value={convertedText[section.key]}
+                                                onChange={(e) => setConvertedText(prev => ({ ...prev, [section.key]: e.target.value }))}
+                                                placeholder={`Type ${section.title.toLowerCase()}...`}
+                                                className="w-full p-4 bg-transparent outline-none text-slate-700 text-sm leading-relaxed font-medium resize-none border-0 focus:ring-0"
+                                                style={{ minHeight: section.height }}
+                                            />
                                         ) : (
-                                            <span className="text-slate-400 italic">Tap to write {section.title.toLowerCase()}...</span>
+                                            <div
+                                                onClick={() => openScribbleModal(section.key)}
+                                                className="w-full min-h-[80px] p-4 bg-transparent cursor-pointer text-slate-700 text-sm leading-relaxed font-medium hover:bg-slate-50/50 transition-colors"
+                                                style={{ minHeight: section.height }}
+                                            >
+                                                {drawings[section.key] ? (
+                                                    <div className="relative w-full h-full">
+                                                        <img src={drawings[section.key]} alt="Handwritten notes" className="max-w-full h-auto max-h-[120px] object-contain mix-blend-multiply opacity-80" />
+                                                        <div className="absolute top-0 right-0 bg-yellow-100 text-yellow-800 text-[9px] px-1.5 py-0.5 rounded font-bold border border-yellow-200">
+                                                            PENDING CONVERSION
+                                                        </div>
+                                                    </div>
+                                                ) : convertedText[section.key] ? (
+                                                    convertedText[section.key]
+                                                ) : (
+                                                    <span className="text-slate-400 italic">Tap to write {section.title.toLowerCase()}...</span>
+                                                )}
+                                            </div>
                                         )}
                                     </div>
                                 </div>
@@ -1060,13 +1083,11 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                                     width={1000}
                                     height={600}
                                     className="w-full h-full touch-none"
-                                    onMouseDown={(e) => startDrawing(e)}
-                                    onMouseMove={draw}
-                                    onMouseUp={stopDrawing}
-                                    onMouseLeave={stopDrawing}
-                                    onTouchStart={startDrawingTouch}
-                                    onTouchMove={drawTouch}
-                                    onTouchEnd={stopDrawing}
+                                    onPointerDown={(e) => startDrawing(e)}
+                                    onPointerMove={draw}
+                                    onPointerUp={stopDrawing}
+                                    onPointerLeave={stopDrawing}
+                                    onPointerCancel={stopDrawing}
                                 />
                                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none opacity-50 text-xs font-medium text-slate-400 bg-white/80 px-3 py-1 rounded-full border border-slate-100 shadow-sm">
                                     Draw your thoughts freely
