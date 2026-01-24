@@ -51,6 +51,7 @@ export function ShiftManager() {
     const [loading, setLoading] = useState(true);
     const [isStartOpen, setIsStartOpen] = useState(false);
     const [isEndOpen, setIsEndOpen] = useState(false);
+    const [isReportOpen, setIsReportOpen] = useState(false);
     const [openingBalance, setOpeningBalance] = useState("0");
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [history, setHistory] = useState<any[]>([]);
