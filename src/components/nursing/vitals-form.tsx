@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import {
     Activity, Thermometer, Heart, Wind, PersonStanding,
     Weight, Ruler, Save, Loader2, Calculator, Info,
-    X
+    X, ClipboardList
 } from "lucide-react"
 import { saveVitals, getVitals } from "@/app/actions/nursing-v2"
 import { useToast } from "@/components/ui/use-toast"
@@ -157,212 +157,188 @@ export default function NursingVitalsForm({ patientId, encounterId, tenantId, in
     }
 
     return (
-        <form id="nursing-vitals-form" onSubmit={handleSubmit}>
+        <form id="nursing-vitals-form" onSubmit={handleSubmit} className="h-full flex flex-col">
             <motion.div
                 variants={container}
                 initial="hidden"
                 animate="show"
-                className={`grid grid-cols-1 md:grid-cols-12 gap-6 ${isModal ? '' : 'pb-24'}`}
+                className={`flex-1 flex flex-col gap-4 ${isModal ? '' : 'pb-24'} p-1`}
             >
-                {/* ANTHROPOMETRY SECTION */}
-                <motion.div variants={item} className="md:col-span-12 lg:col-span-4 space-y-6">
-                    <div className="bg-white/50 backdrop-blur-sm rounded-3xl p-6 border border-white/60 shadow-xl shadow-slate-200/50 h-full relative overflow-hidden group">
-                        {/* Gradient BG */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/40 to-purple-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                {/* TOP ROW: ANTHROPOMETRY & KEY VITALS */}
+                <div className="grid grid-cols-12 gap-4 flex-none">
 
-                        <div className="relative z-10">
-                            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-6">
-                                <Ruler className="h-4 w-4" /> Body Metrics
+                    {/* BODY METRICS CARD */}
+                    <motion.div variants={item} className="col-span-12 lg:col-span-12 xl:col-span-3">
+                        <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-4 border border-white/60 shadow-sm h-full flex flex-col justify-between relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/40 to-purple-50/40 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 mb-3 relative z-10">
+                                <Ruler className="h-3.5 w-3.5" /> Body Metrics
                             </h3>
 
-                            <div className="grid grid-cols-2 gap-4 mb-6">
-                                <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 ring-1 ring-slate-200/50 focus-within:ring-indigo-500 transition-all">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Height (cm)</label>
+                            <div className="flex gap-3 relative z-10">
+                                <div className="flex-1">
+                                    <label className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Height (cm)</label>
                                     <input
                                         type="number"
                                         value={height}
                                         onChange={e => setHeight(e.target.value)}
-                                        className="w-full text-2xl font-black text-slate-900 outline-none bg-transparent placeholder-slate-200"
+                                        className="w-full text-xl font-black text-slate-900 outline-none bg-slate-50/50 rounded-lg px-2 py-1 border border-slate-100 focus:border-indigo-300 transition-colors"
                                         placeholder="0"
                                     />
                                 </div>
-                                <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 ring-1 ring-slate-200/50 focus-within:ring-indigo-500 transition-all">
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase">Weight (kg)</label>
+                                <div className="flex-1">
+                                    <label className="text-[9px] font-bold text-slate-400 uppercase block mb-1">Weight (kg)</label>
                                     <input
                                         type="number"
                                         value={weight}
                                         onChange={e => setWeight(e.target.value)}
-                                        className="w-full text-2xl font-black text-slate-900 outline-none bg-transparent placeholder-slate-200"
+                                        className="w-full text-xl font-black text-slate-900 outline-none bg-slate-50/50 rounded-lg px-2 py-1 border border-slate-100 focus:border-indigo-300 transition-colors"
                                         placeholder="0"
                                     />
                                 </div>
                             </div>
 
-                            {/* BMI Widget */}
-                            <div className="bg-slate-900 rounded-2xl p-5 text-white relative overflow-hidden shadow-lg shadow-slate-900/10">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500 rounded-full blur-3xl opacity-20 -translate-y-1/2 translate-x-1/2" />
-                                <div className="flex justify-between items-end relative z-10">
-                                    <div>
-                                        <p className="text-xs font-medium text-slate-400">BMI Score</p>
-                                        <p className="text-4xl font-black tracking-tight">{bmi || '--.-'}</p>
-                                    </div>
-                                    <div className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${bmiStatus === 'Normal' ? 'bg-green-500/20 text-green-300' :
-                                        bmiStatus === 'Overweight' ? 'bg-orange-500/20 text-orange-300' :
-                                            bmiStatus === 'Obese' ? 'bg-red-500/20 text-red-300' : 'bg-slate-800 text-slate-500'
-                                        }`}>
-                                        {bmiStatus || 'Waiting'}
-                                    </div>
+                            {/* Compact BMI Strip */}
+                            <div className="mt-3 bg-slate-100 rounded-lg p-2 flex items-center justify-between relative z-10">
+                                <div>
+                                    <span className="text-[10px] text-slate-500 font-bold uppercase">BMI</span>
+                                    <div className="text-lg font-black text-slate-700 leading-none">{bmi || '--'}</div>
                                 </div>
-                                {/* Visual Bar */}
-                                <div className="mt-4 h-1.5 w-full bg-slate-800 rounded-full overflow-hidden flex">
-                                    <div className="h-full bg-blue-500 w-[18.5%]" />
-                                    <div className="h-full bg-green-500 w-[24.9%]" />
-                                    <div className="h-full bg-orange-500 w-[15%]" />
-                                    <div className="h-full bg-red-500 flex-1" />
+                                <div className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${bmiStatus === 'Normal' ? 'bg-green-100 text-green-700' :
+                                    bmiStatus === 'Overweight' ? 'bg-orange-100 text-orange-700' :
+                                        bmiStatus === 'Obese' ? 'bg-red-100 text-red-700' : 'bg-slate-200 text-slate-500'
+                                    }`}>
+                                    {bmiStatus || '-'}
                                 </div>
-                                {bmi && (
-                                    <div className="w-1 h-3 bg-white absolute bottom-[26px] transition-all duration-500 shadow-[0_0_10px_rgba(255,255,255,0.8)]"
-                                        style={{ left: `${Math.min(Math.max((parseFloat(bmi) / 40) * 100, 0), 100)}%` }} />
-                                )}
                             </div>
                         </div>
-                    </div>
-                </motion.div>
+                    </motion.div>
 
-                {/* VITALS GRID */}
-                <motion.div variants={item} className="md:col-span-12 lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    {/* MAIN VITALS GRID - NOW COMPACT */}
+                    <motion.div variants={item} className="col-span-12 lg:col-span-12 xl:col-span-9 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
 
-                    {/* Heart Rate */}
-                    <div className="bg-white/50 backdrop-blur-md rounded-3xl p-6 border border-white/60 shadow-xl shadow-red-100/20 hover:shadow-red-200/40 transition-shadow">
-                        <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-between">
-                            <span className="flex items-center gap-2"><Heart className="h-4 w-4 text-rose-500/80 animate-pulse" /> Heart Rate</span>
-                            <span className="text-[10px] text-slate-400">Normal: 60-100</span>
-                        </h4>
-                        <div className="flex items-baseline gap-2">
-                            <input
-                                type="number"
-                                value={pulse}
-                                onChange={e => setPulse(e.target.value)}
-                                className="w-full text-5xl font-black text-slate-900 outline-none bg-transparent placeholder-slate-200"
-                                placeholder="--"
-                            />
-                            <span className="text-sm font-bold text-slate-400">bpm</span>
+                        {/* BP - Spans 2 cols */}
+                        <div className="col-span-2 bg-gradient-to-br from-indigo-50/50 to-white/50 rounded-2xl p-4 border border-white/60 shadow-sm relative overflow-hidden">
+                            <div className="flex justify-between items-center mb-3">
+                                <h4 className="text-xs font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+                                    <Activity className="h-3.5 w-3.5" /> BP
+                                </h4>
+                                {map && <span className="text-[9px] font-bold text-indigo-600 bg-white/50 px-1.5 py-0.5 rounded border border-indigo-100">MAP: {map}</span>}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="flex-1">
+                                    <div className="flex justify-between mb-1">
+                                        <label className="text-[9px] font-bold text-indigo-300 uppercase">SYS</label>
+                                    </div>
+                                    <input
+                                        type="number"
+                                        value={bpSys}
+                                        onChange={e => setBpSys(e.target.value)}
+                                        className="w-full text-3xl font-black text-indigo-900 outline-none bg-white/60 rounded-lg px-2 py-1 border border-indigo-100 focus:border-indigo-300 transition-colors placeholder-indigo-100"
+                                        placeholder="120"
+                                    />
+                                </div>
+                                <span className="text-xl font-black text-indigo-200 mt-4">/</span>
+                                <div className="flex-1">
+                                    <div className="flex justify-between mb-1">
+                                        <label className="text-[9px] font-bold text-indigo-300 uppercase">DIA</label>
+                                    </div>
+                                    <input
+                                        type="number"
+                                        value={bpDia}
+                                        onChange={e => setBpDia(e.target.value)}
+                                        className="w-full text-3xl font-black text-indigo-900 outline-none bg-white/60 rounded-lg px-2 py-1 border border-indigo-100 focus:border-indigo-300 transition-colors placeholder-indigo-100"
+                                        placeholder="80"
+                                    />
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* SpO2 */}
-                    <div className="bg-white/50 backdrop-blur-md rounded-3xl p-6 border border-white/60 shadow-xl shadow-cyan-100/20 hover:shadow-cyan-200/40 transition-shadow">
-                        <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-between">
-                            <span className="flex items-center gap-2"><Wind className="h-4 w-4 text-cyan-500/80" /> SpO2</span>
-                            <span className="text-[10px] text-slate-400">Normal: 95-100%</span>
-                        </h4>
-                        <div className="flex items-baseline gap-2">
-                            <input
-                                type="number"
-                                value={spo2}
-                                onChange={e => setSpo2(e.target.value)}
-                                className="w-full text-5xl font-black text-slate-900 outline-none bg-transparent placeholder-slate-200"
-                                placeholder="--"
-                            />
-                            <span className="text-sm font-bold text-slate-400">%</span>
-                        </div>
-                    </div>
-
-                    {/* Blood Pressure */}
-                    <div className="sm:col-span-2 bg-gradient-to-br from-indigo-50/50 to-white/50 rounded-3xl p-6 border border-white/60 shadow-xl shadow-indigo-100/20">
-                        <div className="flex items-center justify-between mb-4">
-                            <h4 className="text-sm font-bold text-indigo-400 uppercase tracking-widest flex items-center gap-2">
-                                <Activity className="h-4 w-4" /> Blood Pressure
+                        {/* Heart Rate */}
+                        <div className="bg-white/50 backdrop-blur-md rounded-2xl p-4 border border-white/60 shadow-sm hover:shadow-md transition-all group">
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-between">
+                                <span className="flex items-center gap-1"><Heart className="h-3.5 w-3.5 text-rose-500/80 group-hover:animate-pulse" /> HR</span>
                             </h4>
-                            {map && <span className="text-xs font-bold text-indigo-600 bg-white/50 px-2 py-1 rounded-lg border border-indigo-100">MAP: {map}</span>}
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                            <div className="flex-1 bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200/50 focus-within:ring-indigo-500">
-                                <div className="flex justify-between">
-                                    <label className="text-[10px] font-bold text-indigo-300 uppercase">Systolic</label>
-                                    <span className="text-[10px] text-indigo-200">90-120</span>
-                                </div>
+                            <div className="flex items-baseline gap-1">
                                 <input
                                     type="number"
-                                    value={bpSys}
-                                    onChange={e => setBpSys(e.target.value)}
-                                    className="w-full text-4xl font-black text-indigo-900 outline-none bg-transparent placeholder-indigo-100"
-                                    placeholder="120"
+                                    value={pulse}
+                                    onChange={e => setPulse(e.target.value)}
+                                    className="w-full text-4xl font-black text-slate-900 outline-none bg-transparent placeholder-slate-200"
+                                    placeholder="--"
                                 />
+                                <span className="text-[10px] font-bold text-slate-400">bpm</span>
                             </div>
-                            <span className="text-2xl font-black text-indigo-200">/</span>
-                            <div className="flex-1 bg-white rounded-2xl p-4 shadow-sm ring-1 ring-slate-200/50 focus-within:ring-indigo-500">
-                                <div className="flex justify-between">
-                                    <label className="text-[10px] font-bold text-indigo-300 uppercase">Diastolic</label>
-                                    <span className="text-[10px] text-indigo-200">60-80</span>
-                                </div>
+                        </div>
+
+                        {/* SpO2 */}
+                        <div className="bg-white/50 backdrop-blur-md rounded-2xl p-4 border border-white/60 shadow-sm hover:shadow-md transition-all">
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-between">
+                                <span className="flex items-center gap-1"><Wind className="h-3.5 w-3.5 text-cyan-500/80" /> SpO2</span>
+                            </h4>
+                            <div className="flex items-baseline gap-1">
                                 <input
                                     type="number"
-                                    value={bpDia}
-                                    onChange={e => setBpDia(e.target.value)}
-                                    className="w-full text-4xl font-black text-indigo-900 outline-none bg-transparent placeholder-indigo-100"
-                                    placeholder="80"
+                                    value={spo2}
+                                    onChange={e => setSpo2(e.target.value)}
+                                    className="w-full text-4xl font-black text-slate-900 outline-none bg-transparent placeholder-slate-200"
+                                    placeholder="--"
                                 />
+                                <span className="text-[10px] font-bold text-slate-400">%</span>
                             </div>
                         </div>
-                    </div>
 
-                    {/* Temperature */}
-                    <div className="bg-white/50 backdrop-blur-md rounded-3xl p-6 border border-white/60 shadow-xl shadow-orange-100/20 hover:shadow-orange-200/40 transition-shadow">
-                        <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-between">
-                            <span className="flex items-center gap-2"><Thermometer className="h-4 w-4 text-orange-500" /> Temp</span>
-                            <span className="text-[10px] text-slate-400">Normal: 97-99</span>
-                        </h4>
-                        <div className="flex items-baseline gap-2">
-                            <input
-                                type="number"
-                                value={temp}
-                                onChange={e => setTemp(e.target.value)}
-                                className="w-full text-5xl font-black text-slate-900 outline-none bg-transparent placeholder-slate-200"
-                                placeholder="--"
-                            />
-                            <span className="text-sm font-bold text-slate-400">°F</span>
+                        {/* Temp */}
+                        <div className="bg-white/50 backdrop-blur-md rounded-2xl p-4 border border-white/60 shadow-sm hover:shadow-md transition-all">
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-between">
+                                <span className="flex items-center gap-1"><Thermometer className="h-3.5 w-3.5 text-orange-500" /> Temp</span>
+                            </h4>
+                            <div className="flex items-baseline gap-1">
+                                <input
+                                    type="number"
+                                    value={temp}
+                                    onChange={e => setTemp(e.target.value)}
+                                    className="w-full text-4xl font-black text-slate-900 outline-none bg-transparent placeholder-slate-200"
+                                    placeholder="--"
+                                />
+                                <span className="text-[10px] font-bold text-slate-400">°F</span>
+                            </div>
                         </div>
-                    </div>
 
-                    {/* Respiration */}
-                    <div className="bg-white/50 backdrop-blur-md rounded-3xl p-6 border border-white/60 shadow-xl shadow-teal-100/20 hover:shadow-teal-200/40 transition-shadow">
-                        <h4 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-between">
-                            <span className="flex items-center gap-2"><Activity className="h-4 w-4 text-teal-500" /> Respiration</span>
-                            <span className="text-[10px] text-slate-400">Normal: 12-20</span>
-                        </h4>
-                        <div className="flex items-baseline gap-2">
-                            <input
-                                type="number"
-                                value={resp}
-                                onChange={e => setResp(e.target.value)}
-                                className="w-full text-5xl font-black text-slate-900 outline-none bg-transparent placeholder-slate-200"
-                                placeholder="--"
-                            />
-                            <span className="text-sm font-bold text-slate-400">bpm</span>
+                        {/* Resp (Hidden on very small screens or stacked) */}
+                        <div className="bg-white/50 backdrop-blur-md rounded-2xl p-4 border border-white/60 shadow-sm hover:shadow-md transition-all">
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-between">
+                                <span className="flex items-center gap-1"><Activity className="h-3.5 w-3.5 text-teal-500" /> Resp</span>
+                            </h4>
+                            <div className="flex items-baseline gap-1">
+                                <input
+                                    type="number"
+                                    value={resp}
+                                    onChange={e => setResp(e.target.value)}
+                                    className="w-full text-4xl font-black text-slate-900 outline-none bg-transparent placeholder-slate-200"
+                                    placeholder="--"
+                                />
+                                <span className="text-[10px] font-bold text-slate-400">/min</span>
+                            </div>
                         </div>
-                    </div>
 
+                    </motion.div>
+                </div>
+
+                {/* NOTES SECTION - Flex Grow to fill rest of space */}
+                <motion.div variants={item} className="flex-1 min-h-[150px] bg-white/50 backdrop-blur-md rounded-2xl p-4 border border-white/60 shadow-sm flex flex-col">
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 block flex items-center gap-2">
+                        <ClipboardList className="h-4 w-4" /> Observations & Clinical Notes
+                    </label>
+                    <textarea
+                        value={notes}
+                        onChange={e => setNotes(e.target.value)}
+                        className="flex-1 w-full bg-white/50 border border-slate-200 rounded-xl p-4 text-base font-medium outline-none focus:ring-2 focus:ring-indigo-100 transition-all font-sans resize-none"
+                        placeholder="Type observation notes here..."
+                    />
                 </motion.div>
 
-                {/* NOTES */}
-                <motion.div variants={item} className="md:col-span-12 space-y-6">
-                    <div className="bg-white/50 backdrop-blur-md rounded-3xl p-6 border border-white/60 shadow-sm">
-                        <label className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-2 block">Observations & Notes</label>
-                        <textarea
-                            value={notes}
-                            onChange={e => setNotes(e.target.value)}
-                            className="w-full min-h-[100px] bg-white/50 border border-slate-200 rounded-2xl p-4 text-lg font-medium outline-none focus:ring-2 focus:ring-indigo-100 transition-all font-sans"
-                            placeholder="Clinical notes..."
-                        />
-                    </div>
-                </motion.div>
-
-                {/* ACTION BAR - Floating if NOT modal, Inline if Modal?
-                Actually nice floating bar works well in Modal too if using relative positioning or if modal is large enough.
-                Let's use Sticky Bottom if in modal, or Fixed Bottom if page.
-            */}
+                {/* ACTION BAR - Floating if NOT modal, Inline if Modal? */}
                 {isModal ? null : (
                     <motion.div
                         initial={{ y: 100 }}
@@ -389,7 +365,6 @@ export default function NursingVitalsForm({ patientId, encounterId, tenantId, in
                         </div>
                     </motion.div>
                 )}
-
             </motion.div>
         </form>
     )

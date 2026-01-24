@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import {
     Activity, HeartPulse, UserCheck, Syringe,
     ClipboardList, BedDouble, TestTube2, AlertCircle,
-    Clock, Search, Filter, ChevronRight
+    Clock, Search, Filter, ChevronRight, X
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { differenceInYears } from "date-fns"
@@ -328,7 +328,7 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
             <Dialog open={!!selectedTask} onOpenChange={(open) => !open && setSelectedTask(null)}>
                 <DialogContent className="max-w-[95vw] h-[95vh] flex flex-col p-0 overflow-hidden bg-slate-50/95 backdrop-blur-xl border-slate-200 focus:outline-none">
                     {/* Sticky Header inside Modal */}
-                    <div className="flex items-center gap-4 px-6 py-4 bg-white/50 backdrop-blur-md border-b border-slate-100 flex-none z-10">
+                    <div className="flex items-center gap-4 px-6 py-4 bg-white/50 backdrop-blur-md border-b border-slate-100 flex-none z-10 relative">
                         <div className={`h-12 w-12 rounded-full flex items-center justify-center text-lg font-bold ${selectedTask?.patient_gender?.toLowerCase() === 'female' ? 'bg-pink-100 text-pink-600' : 'bg-blue-100 text-blue-600'}`}>
                             {selectedTask?.patient_name?.charAt(0)}
                         </div>
@@ -352,16 +352,25 @@ export function NursingActionCenter({ pendingTriage, completedTriage = [], activ
                                 <span className="text-indigo-600 font-medium">#{selectedTask?.patient_id}</span>
                             </p>
                         </div>
-                        {selectedTask?.reason && (
-                            <div className="hidden sm:block text-right">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Chief Complaint</span>
-                                <span className="text-sm font-bold text-slate-700">{selectedTask.reason}</span>
-                            </div>
-                        )}
+
+                        <div className="flex items-center gap-4">
+                            {selectedTask?.reason && (
+                                <div className="hidden sm:block text-right mr-4">
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Chief Complaint</span>
+                                    <span className="text-sm font-bold text-slate-700">{selectedTask.reason}</span>
+                                </div>
+                            )}
+                            <button
+                                onClick={() => setSelectedTask(null)}
+                                className="h-8 w-8 bg-slate-100 hover:bg-red-100 text-slate-500 hover:text-red-600 rounded-full flex items-center justify-center transition-all"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
                     </div>
 
-                    {/* Scrollable Form Content */}
-                    <div className="flex-1 overflow-y-auto p-6 scroll-smooth">
+                    {/* Scrollable Form Content - Compact to avoid scroll */}
+                    <div className="flex-1 overflow-y-auto p-2 scroll-smooth bg-slate-50/50">
                         {selectedTask && (
                             <NursingVitalsForm
                                 patientId={selectedTask.patient_uuid}
