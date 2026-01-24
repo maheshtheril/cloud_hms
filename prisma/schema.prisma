@@ -212,6 +212,7 @@ model app_user {
   id                        String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id                 String                      @db.Uuid
   company_id                String?                     @db.Uuid
+  current_branch_id         String?                     @db.Uuid
   email                     String
   name                      String?
   password                  String?
@@ -231,6 +232,7 @@ model app_user {
   hms_user_roles            hms_user_roles[]
   user_permission           user_permission[]
   doctor_notes              doctor_note[]
+  user_branches             user_branch[]
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -275,6 +277,12 @@ model business_partners {
   phone            String?
   website          String?
   gstin            String?
+  city             String?
+  state            String?
+  country          String?
+  zip              String?
+  branch_id        String?  @db.Uuid
+  branch           hms_branch? @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   pan              String?
   billing_address  Json?
   shipping_address Json?
@@ -319,6 +327,60 @@ model company {
   sessions               sessions[]
 
   @@index([tenant_id], map: "idx_company_tenant_id")
+  branches               hms_branch[]
+}
+
+model hms_branch {
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  company_id      String      @db.Uuid
+  tenant_id       String      @db.Uuid
+  name            String
+  code            String?     @db.VarChar(50)
+  is_active       Boolean     @default(true)
+  type            String?     @default("clinic")
+  phone           String?
+  email           String?
+  address         String?     @db.Text
+  city            String?
+  state           String?
+  pincode         String?
+  metadata        Json?       @default("{}")
+  created_at      DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime    @default(now()) @db.Timestamptz(6)
+
+  company         company     @relation(fields: [company_id], references: [id], onDelete: Cascade)
+  
+  users           user_branch[]
+  appointments    hms_appointments[]
+  patients        hms_patient[]
+  stock_locations global_stock_location[]
+  invoices        hms_invoice[]
+  leads           crm_leads[]
+  encounters      hms_encounter[]
+  admissions      hms_admission[]
+  wards           hms_ward[]
+  journals        journals[]
+  doctor_notes    doctor_note[]
+  business_partners business_partners[]
+  modules         modules[]
+  crm_accounts    crm_accounts[]
+  crm_contacts    crm_contacts[]
+  crm_deals       crm_deals[]
+
+  @@index([company_id])
+  @@index([tenant_id])
+}
+
+model user_branch {
+  user_id    String    @db.Uuid
+  branch_id  String    @db.Uuid
+  is_default Boolean   @default(false)
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+
+  user       app_user   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  branch     hms_branch @relation(fields: [branch_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, branch_id])
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
@@ -804,11 +866,13 @@ model global_stock_location {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id     String    @db.Uuid
   company_id    String    @db.Uuid
+  branch_id     String?   @db.Uuid
   code          String?
   name          String
   location_type String?
   is_active     Boolean?  @default(true)
   created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  branch        hms_branch? @relation(fields: [branch_id], references: [id])
 }
 
 model global_stock_lot {
@@ -845,6 +909,7 @@ model hms_admission {
   id               String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id        String         @db.Uuid
   company_id       String         @db.Uuid
+  branch_id        String?        @db.Uuid
   patient_id       String         @db.Uuid
   encounter_id     String?        @db.Uuid
   admitted_at      DateTime       @default(now()) @db.Timestamptz(6)
@@ -855,6 +920,7 @@ model hms_admission {
   status           String?        @default("admitted")
   metadata         Json?          @default("{}")
   created_at       DateTime       @default(now()) @db.Timestamptz(6)
+  branch           hms_branch?    @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_encounter    hms_encounter? @relation(fields: [encounter_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_patient      hms_patient    @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
@@ -947,6 +1013,7 @@ model hms_appointments {
   id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id         String              @db.Uuid
   company_id        String?             @db.Uuid
+  branch_id         String?             @db.Uuid
   patient_id        String              @db.Uuid
   clinician_id      String              @db.Uuid
   department_id     String?             @db.Uuid
@@ -968,6 +1035,7 @@ model hms_appointments {
   created_by        String?             @db.Uuid
   updated_by        String?             @db.Uuid
   deleted_at        DateTime?           @db.Timestamptz(6)
+  branch            hms_branch?         @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_clinician     hms_clinicians      @relation(fields: [clinician_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   hms_patient       hms_patient         @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   hms_imaging_order hms_imaging_order[]
@@ -982,13 +1050,14 @@ model hms_appointments {
 }
 
 model hms_bed {
-  id         String   @id @db.Uuid
-  tenant_id  String   @db.Uuid
-  company_id String   @db.Uuid
-  ward_id    String   @db.Uuid
+  id         String     @id @db.Uuid
+  tenant_id  String     @db.Uuid
+  company_id String     @db.Uuid
+  branch_id  String?    @db.Uuid
+  ward_id    String     @db.Uuid
   bed_no     String
-  status     String   @default("available")
-  hms_ward   hms_ward @relation(fields: [ward_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  status     String     @default("available")
+  hms_ward   hms_ward   @relation(fields: [ward_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 }
 
 model hms_billing_rule {
@@ -1117,6 +1186,7 @@ model hms_encounter {
   id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id      String          @db.Uuid
   company_id     String          @db.Uuid
+  branch_id      String?         @db.Uuid
   patient_id     String          @db.Uuid
   encounter_type String          @default("visit")
   started_at     DateTime        @default(now()) @db.Timestamptz(6)
@@ -1129,6 +1199,7 @@ model hms_encounter {
   hms_admission  hms_admission[]
   hms_patient    hms_patient     @relation(fields: [patient_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   hms_invoice    hms_invoice[]
+  branch         hms_branch?     @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([clinician_id])
   @@index([metadata], map: "hms_encounter_metadata_gin", type: Gin)
@@ -1223,6 +1294,7 @@ model hms_invoice {
   id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id               String                    @db.Uuid
   company_id              String                    @db.Uuid
+  branch_id               String?                   @db.Uuid
   patient_id              String?                   @db.Uuid
   encounter_id            String?                   @db.Uuid
   invoice_number          String
@@ -1257,6 +1329,7 @@ model hms_invoice {
   hms_payment_allocations hms_payment_allocations[]
   hms_sales_return        hms_sales_return[]
   journal_entries         journal_entries[]
+  branch                  hms_branch?               @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@unique([tenant_id, company_id, invoice_number], map: "ux_hms_invoice_company_number")
   @@index([tenant_id, company_id, issued_at(sort: Desc)], map: "ix_hms_invoice_tenant_company_issued_desc")
@@ -1386,6 +1459,7 @@ model hms_lab_order_lines {
   price          Decimal?         @default(0) @db.Decimal(18, 4)
   status         String?          @default("pending")
   result_id      String?          @db.Uuid
+  updated_at     DateTime?            @default(now()) @db.Timestamptz(6)
   created_at     DateTime?        @default(now()) @db.Timestamptz(6)
   hms_lab_order  hms_lab_order    @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   hms_lab_sample hms_lab_sample?  @relation(fields: [sample_id], references: [id], onUpdate: NoAction)
@@ -1560,6 +1634,7 @@ model hms_patient {
   id                String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id         String              @db.Uuid
   company_id        String?             @db.Uuid
+  branch_id         String?             @db.Uuid
   patient_number    String?
   first_name        String
   last_name         String?
@@ -1588,6 +1663,7 @@ model hms_patient {
   hms_sales_return  hms_sales_return[]
   hms_vitals        hms_vitals[]
   prescription      prescription[]
+  branch            hms_branch?         @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([contact], map: "hms_patient_contact_gin_idx", type: Gin)
   @@index([identifiers], map: "hms_patient_identifiers_gin_idx", type: Gin)
@@ -2533,11 +2609,13 @@ model hms_vitals {
 }
 
 model hms_ward {
-  id         String    @id @db.Uuid
-  tenant_id  String    @db.Uuid
-  company_id String    @db.Uuid
+  id         String     @id @db.Uuid
+  tenant_id  String     @db.Uuid
+  company_id String     @db.Uuid
+  branch_id  String?    @db.Uuid
   name       String
-  is_active  Boolean?  @default(true)
+  is_active  Boolean?   @default(true)
+  branch     hms_branch? @relation(fields: [branch_id], references: [id])
   hms_bed    hms_bed[]
 
   @@unique([company_id, name], map: "hms_ward_company_name_unique")
@@ -2677,6 +2755,7 @@ model journals {
   id                                                                                    String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id                                                                             String                        @db.Uuid
   company_id                                                                            String                        @db.Uuid
+  branch_id                                                                             String?                       @db.Uuid
   code                                                                                  String
   name                                                                                  String
   type                                                                                  String
@@ -2692,6 +2771,7 @@ model journals {
   journal_sequences                                                                     journal_sequences?
   accounts_journals_default_credit_account_idToaccounts                                 accounts?                     @relation("journals_default_credit_account_idToaccounts", fields: [default_credit_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   accounts_journals_default_debit_account_idToaccounts                                  accounts?                     @relation("journals_default_debit_account_idToaccounts", fields: [default_debit_account_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  branch                                                                                hms_branch?                   @relation(fields: [branch_id], references: [id])
 
   @@index([company_id], map: "idx_journals_company")
 }
@@ -3304,6 +3384,8 @@ model modules {
   is_active       Boolean           @default(true)
   created_at      DateTime?         @default(now()) @db.Timestamptz(6)
   updated_at      DateTime?         @default(now()) @db.Timestamptz(6)
+  branch_id       String?           @db.Uuid
+  branch          hms_branch?       @relation(fields: [branch_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   module_menu_map module_menu_map[]
   tenant_module   tenant_module[]
 }
@@ -3427,6 +3509,7 @@ model crm_leads {
   id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id          String            @db.Uuid
   company_id         String?           @db.Uuid
+  branch_id          String?           @db.Uuid
   /// Link to app_user
   owner_id           String?           @db.Uuid
   pipeline_id        String?           @db.Uuid
@@ -3454,6 +3537,7 @@ model crm_leads {
   metadata           Json?             @default("{}")
   created_at         DateTime          @default(now()) @db.Timestamptz(6)
   updated_at         DateTime          @default(now()) @db.Timestamptz(6)
+  branch             hms_branch?       @relation(fields: [branch_id], references: [id])
   currency           String?           @default("INR")
   target_type_id     String?           @db.Uuid
   activities         crm_activities[]
@@ -3472,6 +3556,7 @@ model crm_contacts {
   id         String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id  String        @db.Uuid
   company_id String?       @db.Uuid
+  branch_id  String?       @db.Uuid
   owner_id   String?       @db.Uuid
   first_name String
   last_name  String?
@@ -3484,11 +3569,14 @@ model crm_contacts {
   updated_at DateTime      @default(now()) @db.Timestamptz(6)
   account    crm_accounts? @relation(fields: [account_id], references: [id])
   owner      app_user?     @relation(fields: [owner_id], references: [id])
+  branch     hms_branch?   @relation(fields: [branch_id], references: [id])
 }
 
 model crm_accounts {
   id         String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id  String         @db.Uuid
+  company_id String?        @db.Uuid
+  branch_id  String?        @db.Uuid
   owner_id   String?        @db.Uuid
   name       String
   industry   String?
@@ -3500,11 +3588,14 @@ model crm_accounts {
   owner      app_user?      @relation(fields: [owner_id], references: [id])
   contacts   crm_contacts[]
   deals      crm_deals[]
+  branch     hms_branch?    @relation(fields: [branch_id], references: [id])
 }
 
 model crm_deals {
   id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id           String            @db.Uuid
+  company_id          String?           @db.Uuid
+  branch_id           String?           @db.Uuid
   owner_id            String?           @db.Uuid
   title               String
   value               Decimal           @default(0) @db.Decimal(18, 2)
@@ -3528,6 +3619,7 @@ model crm_deals {
   owner               app_user?         @relation(fields: [owner_id], references: [id])
   pipeline            crm_pipelines?    @relation(fields: [pipeline_id], references: [id])
   stage               crm_stages?       @relation(fields: [stage_id], references: [id])
+  branch              hms_branch?       @relation(fields: [branch_id], references: [id])
 }
 
 model crm_pipelines {
@@ -3725,6 +3817,15 @@ model crm_custom_values {
   field         crm_custom_fields @relation(fields: [field_id], references: [id], onDelete: Cascade)
 
   @@unique([field_id, record_id])
+}
+
+model crm_target_types {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id  String      @db.Uuid
+  name       String
+  deleted_at DateTime?   @db.Timestamptz(6)
+  created_at DateTime    @default(now()) @db.Timestamptz(6)
+  leads      crm_leads[]
 }
 
 model pos_payment_method {
@@ -4298,6 +4399,7 @@ model prescription {
   id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id          String               @db.Uuid
   company_id         String?              @db.Uuid
+  branch_id          String?              @db.Uuid
   patient_id         String               @db.Uuid
   doctor_id          String?              @db.Uuid
   visit_date         DateTime             @default(now()) @db.Timestamptz(6)
@@ -4364,19 +4466,6 @@ model crm_contact_roles {
   @@index([tenant_id], map: "idx_crm_contact_roles_tenant")
 }
 
-model crm_target_types {
-  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id   String      @db.Uuid
-  name        String
-  description String?
-  is_active   Boolean?    @default(true)
-  created_at  DateTime?   @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime?   @default(now()) @db.Timestamptz(6)
-  deleted_at  DateTime?   @db.Timestamptz(6)
-  leads       crm_leads[]
-
-  @@index([tenant_id])
-}
 
 model hms_staff_attendance {
   id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -4557,12 +4646,14 @@ model doctor_note {
   doctor_id      String   @db.Uuid
   patient_id     String?  @db.Uuid
   appointment_id String?  @db.Uuid
+  branch_id      String?  @db.Uuid
   title          String?
   content        String?  @db.Text
   pdf_data       String?  @db.Text
   created_at     DateTime @default(now()) @db.Timestamptz(6)
   updated_at     DateTime @default(now()) @db.Timestamptz(6)
   doctor         app_user @relation(fields: [doctor_id], references: [id], onDelete: Cascade)
+  branch         hms_branch? @relation(fields: [branch_id], references: [id])
 
   @@index([doctor_id])
   @@index([patient_id])

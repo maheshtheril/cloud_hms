@@ -74,9 +74,9 @@ export async function switchCompany(companyId: string) {
 
         if (!user) return { error: "User not found" };
 
-        // Verify company belongs to tenant
         const company = await prisma.company.findUnique({
-            where: { id: companyId }
+            where: { id: companyId },
+            include: { branches: { where: { is_active: true }, take: 1 } }
         });
 
         if (!company || company.tenant_id !== user.tenant_id) {
@@ -87,17 +87,75 @@ export async function switchCompany(companyId: string) {
             return { error: "Company is inactive" };
         }
 
-        // Update user's current company
+        // When switching company, auto-switch to the first/default branch
+        const defaultBranchId = company.branches[0]?.id;
+
         await prisma.app_user.update({
             where: { id: session.user.id },
-            data: { company_id: companyId }
+            data: {
+                company_id: companyId,
+                current_branch_id: defaultBranchId || null
+            }
         });
 
-        revalidatePath('/'); // Revalidate everything to reflect new context
+        revalidatePath('/');
         return { success: true };
     } catch (error) {
         console.error("Failed to switch company:", error);
         return { error: "Failed to switch company" };
+    }
+}
+
+export async function getBranches(companyId?: string) {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
+
+    try {
+        const cid = companyId || session.user.companyId;
+        if (!cid) return { data: [] };
+
+        const branches = await prisma.hms_branch.findMany({
+            where: {
+                company_id: cid,
+                is_active: true
+            },
+            orderBy: { name: 'asc' }
+        });
+
+        return { success: true, data: branches };
+    } catch (error) {
+        return { error: "Failed to fetch branches" };
+    }
+}
+
+export async function switchBranch(branchId: string) {
+    const session = await auth();
+    if (!session?.user?.id) return { error: "Unauthorized" };
+
+    try {
+        // Verify user has access to this branch
+        const access = await prisma.user_branch.findUnique({
+            where: {
+                user_id_branch_id: {
+                    user_id: session.user.id,
+                    branch_id: branchId
+                }
+            }
+        });
+
+        if (!access && !session.user.isAdmin) {
+            return { error: "Access denied to this branch" };
+        }
+
+        await prisma.app_user.update({
+            where: { id: session.user.id },
+            data: { current_branch_id: branchId }
+        });
+
+        revalidatePath('/');
+        return { success: true };
+    } catch (error) {
+        return { error: "Failed to switch branch" };
     }
 }
 
