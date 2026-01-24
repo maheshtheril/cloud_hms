@@ -239,6 +239,9 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
         setSelectedLabs(selectedLabs.filter(l => l.id !== id))
     }
 
+    // Keyboard Navigation State
+    const [selectedIndex, setSelectedIndex] = useState(0)
+
     // Filter medicines as user types
     useEffect(() => {
         if (medicineSearch.length >= 1) {
@@ -247,10 +250,34 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             ).slice(0, 10)
             setFilteredMedicines(filtered)
             setShowMedicineDropdown(true)
+            setSelectedIndex(0) // Reset selection
         } else {
             setShowMedicineDropdown(false)
+            setSelectedIndex(0)
         }
     }, [medicineSearch, medicines])
+
+    const handleMedicineKeyDown = (e: React.KeyboardEvent) => {
+        if (!showMedicineDropdown) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setSelectedIndex(prev => (prev < filteredMedicines.length + (medicineSearch ? 1 : 0) - 1 ? prev + 1 : prev));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setSelectedIndex(prev => (prev > 0 ? prev - 1 : 0));
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (filteredMedicines.length > 0 && selectedIndex < filteredMedicines.length) {
+                openMedicineModal(filteredMedicines[selectedIndex]);
+            } else if (medicineSearch.trim()) {
+                // If Custom is selected (last index usually) or just enter in general
+                openMedicineModal({ name: medicineSearch.trim() });
+            }
+        } else if (e.key === 'Escape') {
+            setShowMedicineDropdown(false);
+        }
+    }
 
 
     // ------------------------------------------------------------------------
@@ -865,38 +892,58 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                                 <Pill className="h-3 w-3" /> Prescription
                             </h3>
 
-                            {/* Search */}
-                            <div className="relative print:hidden group mb-4">
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                                    <Search className="h-4 w-4" />
+                            {/* Search - Enhanced & Prominent */}
+                            <div className="relative print:hidden group mb-6 z-50">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-blue-500">
+                                    <Search className="h-6 w-6" />
                                 </div>
                                 <input
                                     type="text"
                                     value={medicineSearch}
                                     onChange={(e) => setMedicineSearch(e.target.value)}
-                                    placeholder="Add Medicine..."
-                                    className="w-full pl-9 pr-3 py-3 text-sm font-bold border border-slate-200 rounded-xl focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all shadow-sm"
+                                    onKeyDown={handleMedicineKeyDown}
+                                    placeholder="Search medicine (e.g. Paracetamol)..."
+                                    className="w-full pl-12 pr-4 py-4 text-lg font-bold border-2 border-slate-200 rounded-2xl focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all shadow-sm placeholder-slate-300 text-slate-800"
+                                    autoComplete="off"
                                 />
                                 {showMedicineDropdown && (
-                                    <div className="absolute z-[60] w-full mt-2 bg-white border border-slate-200 rounded-2xl shadow-xl max-h-60 overflow-y-auto p-2">
+                                    <div className="absolute top-[calc(100%+8px)] left-0 z-[60] w-full bg-white border border-slate-200 rounded-2xl shadow-2xl max-h-[350px] overflow-y-auto p-2 animate-in fade-in zoom-in-95 duration-100">
+                                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-3 py-2">
+                                            Found {filteredMedicines.length} results
+                                        </div>
                                         {filteredMedicines.map((med, idx) => (
                                             <div
                                                 key={idx}
                                                 onClick={() => openMedicineModal(med)}
-                                                className="p-2.5 hover:bg-blue-50 cursor-pointer rounded-xl flex items-center justify-between text-sm"
+                                                onMouseEnter={() => setSelectedIndex(idx)}
+                                                className={`p-3.5 cursor-pointer rounded-xl flex items-center justify-between transition-all group ${selectedIndex === idx ? 'bg-blue-600 shadow-md shadow-blue-200 scale-[1.01]' : 'hover:bg-slate-50'}`}
                                             >
-                                                <span className="font-bold text-slate-700">{med.name}</span>
-                                                <Plus className="h-3 w-3 text-slate-300" />
+                                                <div className="flex flex-col">
+                                                    <span className={`font-black text-base ${selectedIndex === idx ? 'text-white' : 'text-slate-800'}`}>{med.name}</span>
+                                                    {med.genericName && (
+                                                        <span className={`text-xs ${selectedIndex === idx ? 'text-blue-200' : 'text-slate-400'}`}>{med.genericName}</span>
+                                                    )}
+                                                </div>
+                                                <Plus className={`h-5 w-5 ${selectedIndex === idx ? 'text-white' : 'text-slate-300'}`} />
                                             </div>
                                         ))}
                                         {medicineSearch.trim() && (
-                                            <div
-                                                onClick={() => openMedicineModal({ name: medicineSearch.trim() })}
-                                                className="p-2.5 bg-blue-50/50 hover:bg-blue-100 cursor-pointer rounded-xl flex items-center gap-2 mt-1"
-                                            >
-                                                <Plus className="h-3 w-3 text-blue-600" />
-                                                <span className="font-bold text-blue-700 text-xs">Custom: {medicineSearch}</span>
-                                            </div>
+                                            <>
+                                                <div className="h-px bg-slate-100 my-2" />
+                                                <div
+                                                    onClick={() => openMedicineModal({ name: medicineSearch.trim() })}
+                                                    onMouseEnter={() => setSelectedIndex(filteredMedicines.length)}
+                                                    className={`p-3.5 cursor-pointer rounded-xl flex items-center gap-3 transition-colors ${selectedIndex === filteredMedicines.length ? 'bg-indigo-600 shadow-md shadow-indigo-200' : 'bg-indigo-50/50 hover:bg-indigo-100'}`}
+                                                >
+                                                    <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${selectedIndex === filteredMedicines.length ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-600'}`}>
+                                                        <Plus className="h-5 w-5" />
+                                                    </div>
+                                                    <div>
+                                                        <span className={`font-bold block ${selectedIndex === filteredMedicines.length ? 'text-white' : 'text-indigo-900'}`}>Add Custom Medicine</span>
+                                                        <span className={`text-xs font-semibold ${selectedIndex === filteredMedicines.length ? 'text-indigo-200' : 'text-indigo-600'}`}>"{medicineSearch}"</span>
+                                                    </div>
+                                                </div>
+                                            </>
                                         )}
                                     </div>
                                 )}
