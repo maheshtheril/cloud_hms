@@ -1162,72 +1162,148 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                 )}
             </AnimatePresence>
 
-            {/* Medicine Modal */}
+            {/* Medicine Modal - Maximized */}
             <AnimatePresence>
                 {showMedicineModal && (
-                    <div className="absolute inset-0 z-[60] bg-black/20 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="absolute inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
                         <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white rounded-3xl w-full max-w-md p-6 shadow-2xl border border-slate-100"
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white rounded-3xl w-full max-w-6xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]"
                         >
-                            <h3 className="text-xl font-black text-slate-900 mb-1">{currentMedicine?.name || 'Add Medicine'}</h3>
-                            <p className="text-sm text-slate-500 font-bold mb-6">Configure dosage and duration</p>
-
-                            <div className="space-y-4">
+                            {/* Modal Header */}
+                            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                                 <div>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Frequency (M-A-E-N)</label>
-                                    <div className="flex gap-2 flex-wrap">
-                                        {['1-0-0-1', '1-0-1-0', '1-1-1-0', '1-0-1', '0-0-1', '1-0-0'].map(d => (
-                                            <button
-                                                key={d}
-                                                onClick={() => setModalDosage(d)}
-                                                className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all ${modalDosage === d ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-200' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'}`}
-                                            >
-                                                {d}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <input
-                                        value={modalDosage}
-                                        onChange={e => setModalDosage(e.target.value)}
-                                        className="w-full mt-3 p-4 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 text-center tracking-widest outline-none focus:ring-2 focus:ring-blue-100 transition-all text-lg"
-                                        placeholder="1-0-1"
-                                    />
+                                    <h3 className="text-2xl font-black text-slate-900 flex items-center gap-3">
+                                        <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
+                                            <Pill className="h-6 w-6" />
+                                        </div>
+                                        {currentMedicine?.name || 'Add Medicine'}
+                                    </h3>
+                                    <p className="text-sm text-slate-500 font-medium ml-[52px]">Configure dosage regimen and instructions</p>
                                 </div>
+                                <button
+                                    onClick={() => setShowMedicineModal(false)}
+                                    className="h-10 w-10 hover:bg-slate-200 rounded-full flex items-center justify-center transition-colors"
+                                >
+                                    <X className="h-6 w-6 text-slate-400" />
+                                </button>
+                            </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Duration (Days)</label>
-                                        <input
-                                            type="number"
-                                            value={modalDays}
-                                            onChange={e => setModalDays(e.target.value)}
-                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-100 transition-all"
-                                        />
+                            {/* Modal Body - Scrollable */}
+                            <div className="flex-1 overflow-y-auto p-8">
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+
+                                    {/* LEFT COLUMN: DOSAGE & FREQUENCY */}
+                                    <div className="lg:col-span-7 space-y-8">
+
+                                        {/* Standard Frequencies */}
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-4 flex items-center gap-2">
+                                                <ActivityIcon className="h-4 w-4" /> Standard Regimens (Morning - Afternoon - Evening - Night)
+                                            </label>
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                                {['1-0-1', '1-0-0', '0-0-1', '1-1-1', '1-0-0-1', '1-1-1-1'].map(d => (
+                                                    <button
+                                                        key={d}
+                                                        onClick={() => setModalDosage(d)}
+                                                        className={`h-16 rounded-2xl text-lg font-black border-2 transition-all flex items-center justify-center gap-2 ${modalDosage === d
+                                                            ? 'bg-blue-600 text-white border-blue-600 shadow-xl shadow-blue-200 scale-105'
+                                                            : 'bg-white text-slate-600 border-slate-100 hover:border-blue-200 hover:bg-blue-50'}`}
+                                                    >
+                                                        {d.split('-').map((val, i) => (
+                                                            <span key={i} className={`flex flex-col items-center ${val === '1' ? 'opacity-100' : 'opacity-30'}`}>
+                                                                <span className="text-[8px] uppercase font-bold text-current opacity-60">
+                                                                    {['M', 'A', 'E', 'N'][i]}
+                                                                </span>
+                                                                <span className="text-xl leading-none">{val}</span>
+                                                            </span>
+                                                        ))}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Manual Input */}
+                                        <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-3">Custom Pattern</label>
+                                            <div className="flex items-center gap-4">
+                                                <input
+                                                    value={modalDosage}
+                                                    onChange={e => setModalDosage(e.target.value)}
+                                                    className="flex-1 p-5 bg-white border-2 border-slate-200 rounded-2xl font-black text-slate-900 text-center tracking-[0.5em] outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-3xl"
+                                                    placeholder="0-0-0-0"
+                                                />
+                                                <div className="text-slate-400 text-sm font-medium max-w-[150px] leading-tight">
+                                                    Enter dosage format like <strong>1-0-1</strong> or <strong>1/2-0-1/2</strong>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Timing</label>
-                                        <select
-                                            value={modalTiming}
-                                            onChange={e => setModalTiming(e.target.value)}
-                                            className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-100 transition-all appearance-none"
-                                        >
-                                            <option value="After Food">After Food</option>
-                                            <option value="Before Food">Before Food</option>
-                                            <option value="With Food">With Food</option>
-                                        </select>
+
+                                    {/* RIGHT COLUMN: TIMING & DURATION */}
+                                    <div className="lg:col-span-5 space-y-8">
+
+                                        {/* Duration */}
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-4 flex items-center gap-2">
+                                                <Clock className="h-4 w-4" /> Duration
+                                            </label>
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex-1 relative">
+                                                    <input
+                                                        type="number"
+                                                        value={modalDays}
+                                                        onChange={e => setModalDays(e.target.value)}
+                                                        className="w-full p-5 bg-white border-2 border-slate-200 rounded-2xl font-black text-slate-900 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all text-3xl pl-6"
+                                                    />
+                                                    <span className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">Days</span>
+                                                </div>
+                                                <div className="flex flex-col gap-2">
+                                                    <button onClick={() => setModalDays('3')} className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-slate-600 text-sm">3 D</button>
+                                                    <button onClick={() => setModalDays('5')} className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-slate-600 text-sm">5 D</button>
+                                                </div>
+                                                <div className="flex flex-col gap-2">
+                                                    <button onClick={() => setModalDays('7')} className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-slate-600 text-sm">1 W</button>
+                                                    <button onClick={() => setModalDays('30')} className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 font-bold text-slate-600 text-sm">1 M</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Timing */}
+                                        <div>
+                                            <label className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-4 flex items-center gap-2">
+                                                <Zap className="h-4 w-4" /> Instruction / Timing
+                                            </label>
+                                            <div className="grid grid-cols-1 gap-3">
+                                                {['After Food', 'Before Food', 'With Food', 'Bedtime'].map(t => (
+                                                    <button
+                                                        key={t}
+                                                        onClick={() => setModalTiming(t)}
+                                                        className={`p-4 rounded-xl text-left font-bold border-2 transition-all flex items-center justify-between group ${modalTiming === t
+                                                            ? 'bg-indigo-50 border-indigo-500 text-indigo-700'
+                                                            : 'bg-white border-slate-100 text-slate-600 hover:border-indigo-200'}`}
+                                                    >
+                                                        <span>{t}</span>
+                                                        {modalTiming === t && <CheckCircle2 className="h-5 w-5 text-indigo-600" />}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex gap-3 mt-8">
-                                <Button onClick={() => setShowMedicineModal(false)} variant="ghost" className="flex-1 rounded-xl font-bold text-slate-500 hover:bg-slate-100">Cancel</Button>
-                                <Button onClick={saveMedicineFromModal} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200">
-                                    <CheckCircle2 className="mr-2 h-4 w-4" /> Save
+                            {/* Footer Actions */}
+                            <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-4">
+                                <Button onClick={() => setShowMedicineModal(false)} variant="ghost" className="h-14 px-8 rounded-2xl font-bold text-slate-500 hover:bg-slate-200 text-base">Cancel</Button>
+                                <Button onClick={saveMedicineFromModal} className="h-14 px-10 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black shadow-xl shadow-blue-200 text-lg flex items-center gap-3">
+                                    <CheckCircle2 className="h-6 w-6" /> Save Medicine
                                 </Button>
                             </div>
+
                         </motion.div>
                     </div>
                 )}
