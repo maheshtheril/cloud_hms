@@ -5,14 +5,16 @@ import { motion, AnimatePresence } from "framer-motion"
 import {
     Activity, Stethoscope, Users, Clock, Calendar,
     ChevronRight, Search, Bell, FileText, Pill,
-    CheckCircle2, AlertCircle, TrendingUp, User
+    CheckCircle2, AlertCircle, TrendingUp, User, Smartphone
 } from "lucide-react"
+import { ScannerModal } from "./scanner-modal"
 import { useRouter } from "next/navigation"
 import { differenceInYears } from "date-fns"
 import { VisitTypeBadge } from "../visit-type-badge"
 
 interface DoctorDashboardProps {
     doctorName: string
+    doctorId: string
     appointments: any[]
     stats: {
         total: number
@@ -21,10 +23,19 @@ interface DoctorDashboardProps {
     }
 }
 
-export function DoctorDashboardClient({ doctorName, appointments, stats }: DoctorDashboardProps) {
+export function DoctorDashboardClient({ doctorName, doctorId, appointments, stats }: DoctorDashboardProps) {
     const router = useRouter()
     const [selectedTab, setSelectedTab] = useState<'queue' | 'history'>('queue')
     const [searchQuery, setSearchQuery] = useState("")
+
+    // Scanner State
+    const [isScannerOpen, setIsScannerOpen] = useState(false)
+    const [selectedPatientForScan, setSelectedPatientForScan] = useState<{ id: string, name: string, appointmentId: string } | null>(null)
+
+    const openScanner = (patientId: string, name: string, appointmentId: string) => {
+        setSelectedPatientForScan({ id: patientId, name, appointmentId })
+        setIsScannerOpen(true)
+    }
 
     // Filter appointments based on tab and search
     const displayedAppointments = appointments.filter(a => {
@@ -341,6 +352,17 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                                                         )}
                                                     </button>
 
+                                                    {/* NEW: Scan Rx Button */}
+                                                    {apt.status !== 'completed' && (
+                                                        <button
+                                                            onClick={() => openScanner(apt.patient_uuid, apt.patient_name, apt.id)}
+                                                            className="h-10 w-full rounded-xl border-2 border-slate-200 dark:border-slate-700 text-slate-500 font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-800 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all flex items-center justify-center gap-2"
+                                                        >
+                                                            <Smartphone className="h-4 w-4" />
+                                                            SCAN RX (AiScanner)
+                                                        </button>
+                                                    )}
+
                                                     {apt.lab_status && apt.lab_status.isReady && (
                                                         <a
                                                             href={`/api/lab/report/${apt.lab_status.orderId}`}
@@ -362,6 +384,22 @@ export function DoctorDashboardClient({ doctorName, appointments, stats }: Docto
                     </div>
                 </div>
             </div>
-        </div>
+
+
+            {/* Scanner Modal */}
+            {
+                selectedPatientForScan && (
+                    <ScannerModal
+                        isOpen={isScannerOpen}
+                        onClose={() => setIsScannerOpen(false)}
+                        doctorName={doctorName}
+                        doctorId={doctorId}
+                        patientId={selectedPatientForScan.id}
+                        patientName={selectedPatientForScan.name}
+                        appointmentId={selectedPatientForScan.appointmentId}
+                    />
+                )
+            }
+        </div >
     )
 }

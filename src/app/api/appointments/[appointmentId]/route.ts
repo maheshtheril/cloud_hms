@@ -44,7 +44,7 @@ export async function GET(
                 service_id: true,
                 qty: true,
                 unit_price: true,
-                total_price: true,
+                // total_price: true, // Generated column, ignored in schema
                 notes: true
             }
         })
@@ -215,7 +215,7 @@ export async function GET(
                 description: s.notes || 'Service',
                 qty: Number(s.qty || 1),
                 unit_price: Number(s.unit_price || 0),
-                total_price: Number(s.total_price || 0)
+                total_price: Number(s.qty || 1) * Number(s.unit_price || 0)
             })),
             lab_tests: lab_tests.map(t => ({
                 id: t.id,

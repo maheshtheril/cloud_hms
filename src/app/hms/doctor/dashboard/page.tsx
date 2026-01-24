@@ -192,6 +192,7 @@ export default async function DoctorDashboardPage() {
     return (
         <DoctorDashboardClient
             doctorName={`Dr. ${clinician.first_name} ${clinician.last_name}`}
+            doctorId={session.user.id}
             appointments={formattedAppointments}
             stats={stats}
         />
