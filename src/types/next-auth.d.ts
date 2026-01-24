@@ -12,6 +12,7 @@ declare module "next-auth" {
             hasCRM: boolean
             hasHMS: boolean
             role?: string | null
+            current_branch_id?: string | null
         } & DefaultSession["user"]
     }
 
@@ -25,6 +26,7 @@ declare module "next-auth" {
         hasCRM: boolean
         hasHMS: boolean
         role?: string | null
+        current_branch_id?: string | null
     }
 }
 
@@ -39,5 +41,6 @@ declare module "next-auth/jwt" {
         hasCRM: boolean
         hasHMS: boolean
         role?: string | null
+        current_branch_id?: string | null
     }
 }

@@ -21,7 +21,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                     // Use raw query to verify password with pgcrypto (Case Insensitive Email)
                     const users = await prisma.$queryRaw`
-                        SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, password, role, metadata
+                        SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, current_branch_id, password, role, metadata
                         FROM app_user
                         WHERE LOWER(email) = ${email}
                           AND is_active = true
@@ -57,6 +57,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 hasCRM: moduleKeys.includes('crm'),
                                 hasHMS: moduleKeys.includes('hms'),
                                 role: user.role,
+                                current_branch_id: user.current_branch_id,
                                 image: safeImage
                             };
                         } catch (dbError) {
@@ -94,6 +95,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 token.hasCRM = user.hasCRM;
                 token.hasHMS = user.hasHMS;
                 token.role = user.role;
+                token.current_branch_id = user.current_branch_id;
                 // ONLY store real URLs in the token, NOT base64 data URIs
                 token.image = user.image?.startsWith('data:') ? null : user.image;
             }
@@ -102,6 +104,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (trigger === "update" && session) {
                 if (session.name) token.name = session.name;
                 if (session.companyId) token.companyId = session.companyId;
+                if (session.current_branch_id) token.current_branch_id = session.current_branch_id;
                 // Same here: avoid base64 in session
                 if (session.image) {
                     token.image = session.image.startsWith('data:') ? null : session.image;
@@ -122,6 +125,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 session.user.industry = token.industry;
                 session.user.hasCRM = token.hasCRM;
                 session.user.hasHMS = token.hasHMS;
+                session.user.current_branch_id = token.current_branch_id;
                 session.user.image = token.image;
             }
             return session;

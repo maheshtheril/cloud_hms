@@ -1,7 +1,6 @@
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
-import { auth } from '@/auth';
 
 const globalForPrisma = global as unknown as { prisma: any };
 
@@ -34,10 +33,15 @@ export const prisma = basePrisma.$extends({
         if (modelsWithBranch.includes(model.toLowerCase())) {
 
           // Get session for branch context
-          // Note: In server actions/routes we can get this. 
-          // For now, we'll try to get it if available.
-          const session = await auth();
-          const activeBranchId = session?.user?.current_branch_id;
+          let activeBranchId = null;
+          try {
+            // Using dynamic import to avoid circular dependency: prisma -> auth -> prisma
+            const { auth } = await import('@/auth');
+            const session = await auth();
+            activeBranchId = session?.user?.current_branch_id;
+          } catch (e) {
+            // Context where session is unavailable (e.g. background job, build time)
+          }
 
           if (activeBranchId) {
             // Apply filtering for read operations
