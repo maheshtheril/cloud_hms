@@ -63,33 +63,87 @@ export async function getShiftSummary(shiftId: string) {
     const shift = await prisma.hms_cash_shift.findUnique({ where: { id: shiftId } });
     if (!shift) return { error: "Shift not found" };
 
-    const payments = await prisma.hms_invoice_payments.groupBy({
-        by: ['method'],
+    // 1. Fetch Collections (Inbound)
+    const collections = await prisma.hms_invoice_payments.findMany({
         where: {
             created_by: session.user.id,
             created_at: { gte: shift.start_time },
         },
-        _sum: { amount: true }
+        include: {
+            hms_invoice: { select: { invoice_number: true, hms_patient: { select: { first_name: true, last_name: true } } } }
+        },
+        orderBy: { created_at: 'desc' }
     });
 
+    // 2. Fetch Expenses (Outbound)
+    const expenses = await prisma.payments.findMany({
+        where: {
+            created_by: session.user.id,
+            metadata: { path: ['type'], equals: 'outbound' },
+            created_at: { gte: shift.start_time }
+        },
+        orderBy: { created_at: 'desc' }
+    });
+
+    // 3. Calculate Summaries
     const summary = {
-        cash: 0,
+        cashCollected: 0,
+        cashExpenses: 0,
         card: 0,
         upi: 0,
         other: 0,
-        total: 0
+        totalIn: 0,
+        totalOut: 0,
+        netCash: 0 // (Opening + CashIn) - CashOut
     };
 
-    payments.forEach(p => {
-        const amt = Number(p._sum.amount || 0);
-        summary.total += amt;
-        if (p.method === 'cash') summary.cash += amt;
+    // Process Collections
+    collections.forEach(p => {
+        const amt = Number(p.amount || 0);
+        summary.totalIn += amt;
+        if (p.method === 'cash') summary.cashCollected += amt;
         else if (p.method === 'card') summary.card += amt;
         else if (p.method === 'upi') summary.upi += amt;
         else summary.other += amt;
     });
 
-    return { success: true, summary, shift };
+    // Process Expenses (Assuming mostly cash for petty cash, but tracking method if available)
+    expenses.forEach(e => {
+        const amt = Number(e.amount || 0);
+        summary.totalOut += amt;
+        // Defaulting to cash for expenses unless method specifies otherwise (which is typical for petty cash)
+        // Adjust if your expense model has methods. For now assuming all outbound user expenses are cash drawer.
+        summary.cashExpenses += amt;
+    });
+
+    // Net Cash in Drawer = Cash Collected - Cash Expenses
+    // Note: Opening balance is added in the UI/Final calc usually, but here we provide the movement.
+    summary.netCash = summary.cashCollected - summary.cashExpenses;
+
+    // 4. Generate Unified Ledger
+    const ledger = [
+        ...collections.map(c => ({
+            id: c.id,
+            time: c.created_at,
+            type: 'IN', // INCOME
+            method: c.method,
+            amount: Number(c.amount),
+            description: `Inv #${c.hms_invoice?.invoice_number} - ${c.hms_invoice?.hms_patient?.first_name} ${c.hms_invoice?.hms_patient?.last_name}`,
+            category: 'Collection'
+        })),
+        ...expenses.map(e => ({
+            id: e.id,
+            time: e.created_at,
+            type: 'OUT', // EXPENSE
+            method: 'cash', // Assumed for now
+            amount: Number(e.amount),
+            description: (e.metadata as any)?.description || (e.metadata as any)?.notes || 'Expense',
+            category: (e.metadata as any)?.category || 'Petty Cash'
+        }))
+    ].sort((a, b) => new Date(b.time || 0).getTime() - new Date(a.time || 0).getTime());
+
+
+    return { success: true, summary, shift, ledger };
 }
 
 export async function closeShift(shiftId: string, closingCash: number, denominations: any) {
@@ -102,7 +156,7 @@ export async function closeShift(shiftId: string, closingCash: number, denominat
     const shift = await prisma.hms_cash_shift.findUnique({ where: { id: shiftId } });
     if (!shift) return { error: "Shift not found" };
 
-    const systemCash = Number(shift.opening_balance) + summary.cash;
+    const systemCash = Number(shift.opening_balance) + summary.netCash;
     const diff = closingCash - systemCash;
 
     await prisma.hms_cash_shift.update({

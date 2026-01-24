@@ -344,11 +344,16 @@ export function ShiftManager() {
                                         </div>
                                         <div className="flex justify-between text-sm">
                                             <span>Cash Collected</span>
-                                            <span className="font-bold text-green-600">+ ₹{summary.cash.toLocaleString()}</span>
+                                            <span className="font-bold text-green-600">+ ₹{summary.cashCollected.toLocaleString()}</span>
                                         </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span>Expenses (Cash)</span>
+                                            <span className="font-bold text-red-600">- ₹{summary.cashExpenses.toLocaleString()}</span>
+                                        </div>
+
                                         <div className="flex justify-between text-lg border-t-2 pt-2 font-black">
-                                            <span>Expected Cash</span>
-                                            <span>₹{(Number(shift?.opening_balance || 0) + summary.cash).toLocaleString()}</span>
+                                            <span>Expected In Drawer</span>
+                                            <span>₹{(Number(shift?.opening_balance || 0) + summary.netCash).toLocaleString()}</span>
                                         </div>
 
                                         <div className="pt-6">
@@ -374,19 +379,19 @@ export function ShiftManager() {
 
                             {/* Variance Section */}
                             {!summaryLoading && summary && (
-                                <div className={`p-4 rounded-lg border-2 flex flex-col items-center justify-center space-y-2 ${totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.cash) === 0
+                                <div className={`p-4 rounded-lg border-2 flex flex-col items-center justify-center space-y-2 ${totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.netCash) === 0
                                     ? "bg-green-50 border-green-200 text-green-700"
-                                    : Math.abs(totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.cash)) < 0.1
+                                    : Math.abs(totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.netCash)) < 0.1
                                         ? "bg-green-50 border-green-200 text-green-700"
                                         : "bg-red-50 border-red-200 text-red-700"
                                     }`}>
                                     <div className="text-sm font-bold uppercase tracking-wider">Cash Variance</div>
                                     <div className="text-3xl font-black">
-                                        {totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.cash) > 0 ? "+" : ""}
-                                        ₹{(totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.cash)).toLocaleString()}
+                                        {totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.netCash) > 0 ? "+" : ""}
+                                        ₹{(totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.netCash)).toLocaleString()}
                                     </div>
                                     <div className="flex items-center gap-1 text-xs">
-                                        {totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.cash) === 0 ? (
+                                        {Math.abs(totalCashPhysical - (Number(shift?.opening_balance || 0) + summary.netCash)) < 0.1 ? (
                                             <><CheckCircle2 className="h-3 w-3" /> Balanced Shift</>
                                         ) : (
                                             <><AlertCircle className="h-3 w-3" /> Discrepancy Found</>
@@ -419,6 +424,49 @@ export function ShiftManager() {
                             </div>
                         </div>
                     </div>
+
+                    {/* LEDGER SECTION */}
+                    {summary?.ledger && (
+                        <div className="border-t pt-6">
+                            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                                <History className="h-4 w-4" />
+                                Transaction Ledger (Money with all bills)
+                            </h3>
+                            <div className="rounded-xl border overflow-hidden">
+                                <Table>
+                                    <TableHeader className="bg-slate-50">
+                                        <TableRow>
+                                            <TableHead>Time</TableHead>
+                                            <TableHead>Description</TableHead>
+                                            <TableHead>Type</TableHead>
+                                            <TableHead className="text-right">Amount</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {summary.ledger.map((tx: any) => (
+                                            <TableRow key={tx.id}>
+                                                <TableCell className="text-xs text-muted-foreground">
+                                                    {format(new Date(tx.time), 'hh:mm aa')}
+                                                </TableCell>
+                                                <TableCell className="font-medium">
+                                                    {tx.description}
+                                                    <div className="text-[10px] text-muted-foreground">{tx.category} • {tx.method}</div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className={tx.type === 'IN' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-700 border-red-200'}>
+                                                        {tx.type}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className={`text-right font-bold ${tx.type === 'IN' ? 'text-green-600' : 'text-red-600'}`}>
+                                                    {tx.type === 'IN' ? '+' : '-'} ₹{tx.amount.toLocaleString()}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </div>
+                    )}
                 </DialogContent>
             </Dialog>
         </div>
