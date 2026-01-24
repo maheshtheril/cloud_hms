@@ -44,18 +44,19 @@ export const prisma = basePrisma.$extends({
           }
 
           if (activeBranchId) {
+            const anyArgs = args as any;
             // Apply filtering for read operations
             if (['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'groupBy'].includes(operation)) {
-              args.where = { ...args.where, branch_id: activeBranchId };
+              anyArgs.where = { ...anyArgs.where, branch_id: activeBranchId };
             }
 
             // Apply auto-injection for write operations
             if (['create', 'createMany'].includes(operation)) {
-              if (args.data) {
-                if (Array.isArray(args.data)) {
-                  args.data = args.data.map((item: any) => ({ ...item, branch_id: activeBranchId }));
+              if (anyArgs.data) {
+                if (Array.isArray(anyArgs.data)) {
+                  anyArgs.data = anyArgs.data.map((item: any) => ({ ...item, branch_id: activeBranchId }));
                 } else {
-                  args.data = { ...args.data, branch_id: activeBranchId };
+                  anyArgs.data = { ...anyArgs.data, branch_id: activeBranchId };
                 }
               }
             }
