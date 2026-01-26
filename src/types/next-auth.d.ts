@@ -13,6 +13,7 @@ declare module "next-auth" {
             hasHMS: boolean
             role?: string | null
             current_branch_id?: string | null
+            dbUrl?: string | null
         } & DefaultSession["user"]
     }
 
@@ -27,6 +28,7 @@ declare module "next-auth" {
         hasHMS: boolean
         role?: string | null
         current_branch_id?: string | null
+        dbUrl?: string | null
     }
 }
 
@@ -42,5 +44,6 @@ declare module "next-auth/jwt" {
         hasHMS: boolean
         role?: string | null
         current_branch_id?: string | null
+        dbUrl?: string | null
     }
 }

@@ -34,7 +34,7 @@ const getIcon = (iconName: string) => {
     return Icon || Activity; // Default to Activity if not found
 };
 
-export function AppSidebar({ menuItems, currentCompany, user: initialUser, children }: { menuItems: any[], currentCompany: any, user?: any, children: React.ReactNode }) {
+export function AppSidebar({ menuItems, currentCompany, tenant, user: initialUser, children }: { menuItems: any[], currentCompany: any, tenant?: any, user?: any, children: React.ReactNode }) {
     const { data: session } = useSession();
     const [freshAvatar, setFreshAvatar] = useState<string | null>(null);
 
@@ -106,6 +106,7 @@ export function AppSidebar({ menuItems, currentCompany, user: initialUser, child
                 <SidebarContent
                     menuItems={menuItems}
                     currentCompany={currentCompany}
+                    tenant={tenant}
                     user={user}
                     collapsed={collapsed}
                     setCollapsed={toggleCollapse}
@@ -134,6 +135,7 @@ export function AppSidebar({ menuItems, currentCompany, user: initialUser, child
                             <SidebarContent
                                 menuItems={menuItems}
                                 currentCompany={currentCompany}
+                                tenant={tenant}
                                 user={user}
                                 collapsed={false}
                                 isMobile={true}
@@ -158,10 +160,16 @@ export function AppSidebar({ menuItems, currentCompany, user: initialUser, child
                             <Menu className="h-6 w-6" />
                         </button>
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                                <Activity className="text-white h-5 w-5" />
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 overflow-hidden">
+                                {tenant?.logo_url ? (
+                                    <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-cover" />
+                                ) : (
+                                    <Activity className="text-white h-5 w-5" />
+                                )}
                             </div>
-                            <span className="font-bold text-slate-900 dark:text-white text-lg tracking-tight">HMS Core</span>
+                            <span className="font-bold text-slate-900 dark:text-white text-lg tracking-tight">
+                                {tenant?.app_name || "HMS Core"}
+                            </span>
                         </div>
                     </div>
                     <Avatar className="h-9 w-9 border-2 border-white dark:border-zinc-800 shadow-sm">
@@ -182,7 +190,7 @@ export function AppSidebar({ menuItems, currentCompany, user: initialUser, child
 
 
 
-function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollapsed, isMobile, onLinkClick, onClose }: any) {
+function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, setCollapsed, isMobile, onLinkClick, onClose }: any) {
     const canSwitchCompany = user?.isAdmin || user?.isTenantAdmin;
     const [searchText, setSearchText] = useState('');
     const { theme, toggleTheme } = useTheme();
@@ -238,8 +246,12 @@ function SidebarContent({ menuItems, currentCompany, user, collapsed, setCollaps
                         )}
                     </div>
                 ) : (
-                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-600 shadow-lg shadow-indigo-500/30 text-white font-bold text-sm">
-                        {currentCompany?.name?.substring(0, 1).toUpperCase() || "H"}
+                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-600 shadow-lg shadow-indigo-500/30 text-white font-bold text-sm overflow-hidden">
+                        {tenant?.logo_url ? (
+                            <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-cover" />
+                        ) : (
+                            currentCompany?.name?.substring(0, 1).toUpperCase() || "H"
+                        )}
                     </div>
                 )}
             </div>

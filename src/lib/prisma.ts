@@ -17,7 +17,6 @@ const basePrisma = new PrismaClient({
   log: ['query', 'error', 'warn'],
 });
 
-// Models that support branch_id
 const modelsWithBranch = [
   'hms_appointments', 'hms_patient', 'global_stock_location', 'hms_invoice',
   'crm_leads', 'hms_encounter', 'hms_admission', 'hms_ward', 'journals',
@@ -25,43 +24,60 @@ const modelsWithBranch = [
   'crm_deals', 'prescription', 'hms_bed'
 ];
 
+// Models that MUST stay in the main shared database (Shard Manager)
+const globalModels = [
+  'tenant', 'app_user', 'modules', 'tenant_module', 'company', 'country', 'currencies'
+];
+
 export const prisma = basePrisma.$extends({
   query: {
     $allModels: {
       async $allOperations({ model, operation, args, query }) {
-        // Only run on models we've tagged as Branch-Aware
-        if (modelsWithBranch.includes(model.toLowerCase())) {
+        const modelLower = model.toLowerCase();
 
-          // Get session for branch context
-          let activeBranchId = null;
-          try {
-            // Using dynamic import to avoid circular dependency: prisma -> auth -> prisma
-            const { auth } = await import('@/auth');
-            const session = await auth();
-            activeBranchId = session?.user?.current_branch_id;
-          } catch (e) {
-            // Context where session is unavailable (e.g. background job, build time)
+        // 1. Resolve Context (Tenant & Branch)
+        let activeBranchId = null;
+        let customDbUrl = null;
+        let tenantId = null;
+
+        try {
+          const { auth } = await import('@/auth');
+          const session = await auth();
+          activeBranchId = session?.user?.current_branch_id;
+          customDbUrl = session?.user?.dbUrl;
+          tenantId = session?.user?.tenantId;
+        } catch (e) { }
+
+        // 2. Handle 'Bring Your Own Database' (BYOB)
+        // If the tenant has a custom DB and the model is NOT a global system model
+        if (customDbUrl && tenantId && !globalModels.includes(modelLower)) {
+          const { getClientForTenant } = await import('./db-manager');
+          const tenantClient = await getClientForTenant(tenantId, customDbUrl);
+
+          if (tenantClient) {
+            // Forward the query to the tenant-specific Prisma Client
+            return (tenantClient as any)[model][operation](args);
+          }
+        }
+
+        // 3. Handle Multi-Branch Filtering (Standard HMS Logic)
+        if (modelsWithBranch.includes(modelLower) && activeBranchId) {
+          const anyArgs = args as any;
+          if (['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'groupBy'].includes(operation)) {
+            anyArgs.where = { ...anyArgs.where, branch_id: activeBranchId };
           }
 
-          if (activeBranchId) {
-            const anyArgs = args as any;
-            // Apply filtering for read operations
-            if (['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'groupBy'].includes(operation)) {
-              anyArgs.where = { ...anyArgs.where, branch_id: activeBranchId };
-            }
-
-            // Apply auto-injection for write operations
-            if (['create', 'createMany'].includes(operation)) {
-              if (anyArgs.data) {
-                if (Array.isArray(anyArgs.data)) {
-                  anyArgs.data = anyArgs.data.map((item: any) => ({ ...item, branch_id: activeBranchId }));
-                } else {
-                  anyArgs.data = { ...anyArgs.data, branch_id: activeBranchId };
-                }
+          if (['create', 'createMany'].includes(operation)) {
+            if (anyArgs.data) {
+              if (Array.isArray(anyArgs.data)) {
+                anyArgs.data = anyArgs.data.map((item: any) => ({ ...item, branch_id: activeBranchId }));
+              } else {
+                anyArgs.data = { ...anyArgs.data, branch_id: activeBranchId };
               }
             }
           }
         }
+
         return query(args);
       },
     },

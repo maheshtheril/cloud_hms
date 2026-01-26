@@ -34,9 +34,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         try {
                             // Fetch Company & Modules
                             const company = user.company_id ? await prisma.company.findFirst({ where: { id: user.company_id } }) : null;
-                            const tenantModules = await prisma.tenant_module.findMany({
-                                where: { tenant_id: user.tenant_id, enabled: true },
-                                select: { module_key: true }
+                            const tenantInfo = await prisma.tenant.findUnique({
+                                where: { id: user.tenant_id },
+                                select: { db_url: true }
                             });
                             const moduleKeys = tenantModules.map(m => m.module_key);
 
@@ -58,6 +58,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 hasHMS: moduleKeys.includes('hms'),
                                 role: user.role,
                                 current_branch_id: user.current_branch_id,
+                                dbUrl: tenantInfo?.db_url || null,
                                 image: safeImage
                             };
                         } catch (dbError) {
@@ -96,6 +97,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 token.hasHMS = user.hasHMS;
                 token.role = user.role;
                 token.current_branch_id = user.current_branch_id;
+                token.dbUrl = user.dbUrl;
                 // ONLY store real URLs in the token, NOT base64 data URIs
                 token.image = user.image?.startsWith('data:') ? null : user.image;
             }
@@ -126,6 +128,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 session.user.hasCRM = token.hasCRM;
                 session.user.hasHMS = token.hasHMS;
                 session.user.current_branch_id = token.current_branch_id;
+                session.user.dbUrl = token.dbUrl;
                 session.user.image = token.image;
             }
             return session;

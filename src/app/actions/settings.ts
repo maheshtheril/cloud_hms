@@ -177,6 +177,37 @@ export async function updateGlobalSettings(data: {
     }
 }
 
+export async function updateTenantSettings(data: {
+    tenantId: string,
+    appName: string,
+    logoUrl?: string,
+    dbUrl?: string
+}) {
+    const session = await auth();
+    if (!session?.user?.id || !session.user.isTenantAdmin) {
+        return { error: "Unauthorized. Tenant Admin access required." };
+    }
+
+    try {
+        await prisma.tenant.update({
+            where: { id: data.tenantId },
+            data: {
+                app_name: data.appName,
+                logo_url: data.logoUrl,
+                db_url: data.dbUrl
+            }
+        });
+
+        revalidatePath('/settings/global');
+        revalidatePath('/', 'layout');
+
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update tenant settings:", error);
+        return { error: "Failed to update tenant settings. Please check your DB connection string format." };
+    }
+}
+
 // === HMS SETTINGS LOGIC ===
 
 export async function getHMSSettings() {

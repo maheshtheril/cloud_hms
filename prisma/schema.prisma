@@ -233,6 +233,7 @@ model app_user {
   user_permission           user_permission[]
   doctor_notes              doctor_note[]
   user_branches             user_branch[]
+  crm_employee              crm_employee?
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -366,6 +367,7 @@ model hms_branch {
   crm_accounts    crm_accounts[]
   crm_contacts    crm_contacts[]
   crm_deals       crm_deals[]
+  crm_employees   crm_employee[]
 
   @@index([company_id])
   @@index([tenant_id])
@@ -1158,6 +1160,7 @@ model hms_departments {
   deleted_at            DateTime?         @db.Timestamptz(6)
   hms_departments       hms_departments?  @relation("hms_departmentsTohms_departments", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_parent_company")
   other_hms_departments hms_departments[] @relation("hms_departmentsTohms_departments")
+  crm_employees         crm_employee[]
 
   @@unique([company_id, name], map: "hms_departments_company_id_name_unique")
   @@unique([company_id, code], map: "unique_company_code")
@@ -3589,6 +3592,9 @@ model crm_accounts {
   contacts   crm_contacts[]
   deals      crm_deals[]
   branch     hms_branch?    @relation(fields: [branch_id], references: [id])
+  parent_id  String?        @db.Uuid
+  parent     crm_accounts?  @relation("crm_accountsTocrm_accounts", fields: [parent_id], references: [id])
+  branches   crm_accounts[] @relation("crm_accountsTocrm_accounts")
 }
 
 model crm_deals {
@@ -3751,6 +3757,69 @@ model crm_target_milestones {
   target         crm_targets @relation(fields: [target_id], references: [id], onDelete: Cascade)
 
   @@index([target_id])
+}
+
+model crm_designation {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id   String   @db.Uuid
+  name        String
+  description String?
+  is_active   Boolean? @default(true)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
+  employees   crm_employee[]
+
+  @@unique([tenant_id, name])
+}
+
+model crm_employee {
+  id                    String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id             String           @db.Uuid
+  company_id            String?          @db.Uuid
+  branch_id             String?          @db.Uuid
+  user_id               String?          @db.Uuid @unique
+  employee_id           String?          @unique
+  first_name            String
+  last_name             String?
+  email                 String?          @unique
+  phone                 String?
+  dob                   DateTime?        @db.Date
+  gender                String?          @db.VarChar(20)
+  blood_group           String?          @db.VarChar(10)
+  designation_id        String?          @db.Uuid
+  department_id         String?          @db.Uuid
+  joining_date          DateTime?        @db.Date
+  exit_date             DateTime?        @db.Date
+  status                String?          @default("active") // active, inactive, resigned, terminated
+  
+  // Financial info
+  salary_basis          String?          @default("monthly")
+  base_salary           Decimal?         @db.Decimal(18, 2)
+  bank_name             String?
+  account_no            String?
+  ifsc_code             String?
+  
+  // Identity
+  pan_no                String?
+  aadhar_no             String?          @db.VarChar(20)
+  passport_no           String?
+  
+  // Addresses
+  present_address       String?          @db.Text
+  permanent_address     String?          @db.Text
+  
+  // Emergency
+  emergency_contact_name  String?
+  emergency_contact_phone String?
+  
+  metadata              Json?            @default("{}")
+  created_at            DateTime         @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime         @default(now()) @db.Timestamptz(6)
+
+  designation           crm_designation? @relation(fields: [designation_id], references: [id])
+  department            hms_departments? @relation(fields: [department_id], references: [id])
+  branch                hms_branch?      @relation(fields: [branch_id], references: [id])
+  user                  app_user?        @relation(fields: [user_id], references: [id])
 }
 
 model crm_commission_rules {
@@ -4289,6 +4358,9 @@ model tenant {
   id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   slug                  String
   name                  String
+  app_name              String?                 @default("Cloud HMS")
+  logo_url              String?
+  db_url                String?                 // For 'Bring Your Own Database' tenants
   billing_plan          String?
   metadata              Json?                   @default("{}")
   created_at            DateTime?               @default(now()) @db.Timestamptz(6)

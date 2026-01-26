@@ -5,6 +5,8 @@ import { signIn } from "next-auth/react"
 import { Layers, Mail, Lock, ArrowRight, Loader2 } from "lucide-react"
 import { SignupForm } from "@/components/auth/signup-form"
 import { motion, AnimatePresence } from "framer-motion"
+import { getTenantBrandingByHost } from "../actions/branding"
+import { useEffect } from "react"
 
 export default function LoginPage() {
     const [isLogin, setIsLogin] = useState(true)
@@ -15,6 +17,11 @@ export default function LoginPage() {
         email: '',
         password: '',
     })
+    const [branding, setBranding] = useState<{ app_name: string | null, logo_url: string | null } | null>(null)
+
+    useEffect(() => {
+        getTenantBrandingByHost().then(setBranding)
+    }, [])
 
     async function handleLogin(e: React.FormEvent) {
         e.preventDefault()
@@ -51,12 +58,20 @@ export default function LoginPage() {
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
                                 transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-                                className="bg-gradient-to-br from-indigo-600 to-violet-600 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-500/30"
+                                className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg shadow-indigo-500/30 overflow-hidden bg-gradient-to-br from-indigo-600 to-violet-600"
                             >
-                                <Layers className="text-white h-7 w-7" />
+                                {branding?.logo_url ? (
+                                    <img src={branding.logo_url} alt={branding.app_name || 'Logo'} className="h-full w-full object-cover" />
+                                ) : (
+                                    <Layers className="text-white h-7 w-7" />
+                                )}
                             </motion.div>
-                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Welcome Back</h1>
-                            <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">Enter your credentials to access your workspace</p>
+                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+                                {branding?.app_name || "Welcome Back"}
+                            </h1>
+                            <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
+                                {branding?.app_name ? `Sign in to ${branding.app_name}` : "Enter your credentials to access your workspace"}
+                            </p>
                         </div>
 
                         <form onSubmit={handleLogin} className="space-y-5">
@@ -124,7 +139,9 @@ export default function LoginPage() {
                                     <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
                                 </div>
                                 <div className="relative flex justify-center text-sm">
-                                    <span className="px-2 bg-white/0 text-slate-500 dark:text-slate-400 backdrop-blur-sm">New to Cloud HMS?</span>
+                                    <span className="px-2 bg-white/0 text-slate-500 dark:text-slate-400 backdrop-blur-sm">
+                                        {branding?.app_name ? `New to ${branding.app_name}?` : "New to Cloud HMS?"}
+                                    </span>
                                 </div>
                             </div>
 

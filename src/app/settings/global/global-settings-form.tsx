@@ -6,23 +6,31 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { updateGlobalSettings } from '@/app/actions/settings'
-import { Loader2, Save, Building2, Coins } from 'lucide-react'
+import { updateGlobalSettings, updateTenantSettings } from '@/app/actions/settings'
+import { Loader2, Save, Building2, Coins, ShieldCheck, Database, Layout } from 'lucide-react'
 import { toast } from '@/components/ui/use-toast'
 import { FileUpload } from '@/components/ui/file-upload'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 
 interface Props {
     company: any
+    tenant: any
     currencies: any[]
+    isTenantAdmin: boolean
 }
 
-export function GlobalSettingsForm({ company, currencies }: Props) {
+export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin }: Props) {
     const [loading, setLoading] = useState(false)
     const [name, setName] = useState(company.name)
     const [industry, setIndustry] = useState(company.industry || '')
     const [logoUrl, setLogoUrl] = useState(company.logo_url || '')
     const [currencyId, setCurrencyId] = useState(company.company_settings?.currency_id || '')
     const [invoicePrefix, setInvoicePrefix] = useState(company.company_settings?.numbering_prefix || 'INV')
+
+    // Tenant Branding
+    const [appName, setAppName] = useState(tenant?.app_name || 'Cloud HMS')
+    const [tenantLogoUrl, setTenantLogoUrl] = useState(tenant?.logo_url || '')
+    const [dbUrl, setDbUrl] = useState(tenant?.db_url || '')
 
     // Contact Info (stored in metadata)
     const meta = (company.metadata as any) || {}
@@ -48,23 +56,36 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
             invoicePrefix
         })
 
-        if (result.success) {
+        let tenantResult = { success: true, error: null as string | null };
+        if (isTenantAdmin) {
+            const res = await updateTenantSettings({
+                tenantId: tenant.id,
+                appName,
+                logoUrl: tenantLogoUrl,
+                dbUrl: dbUrl || undefined
+            });
+            if (!res.success) {
+                tenantResult = { success: false, error: res.error || 'Failed to update tenant branding' };
+            }
+        }
+
+        if (result.success && tenantResult.success) {
             toast({
                 title: "Settings saved",
-                description: "Your organization profile has been updated.",
+                description: "Your organization and branding settings have been updated.",
             })
         } else {
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: result.error || "Failed to update settings"
+                description: tenantResult.error || result.error || "Failed to update settings"
             })
         }
         setLoading(false)
     }
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl">
+        <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl pb-20">
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -79,7 +100,6 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
                     <div className="space-y-4">
                         <Label>Company Logo</Label>
                         <div className="flex flex-col gap-4">
-                            {/* Integration with FileUpload component */}
                             <FileUpload
                                 label="Upload Company Logo"
                                 folder="logos"
@@ -87,14 +107,6 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
                                 currentFileUrl={logoUrl}
                                 onUploadComplete={(url) => setLogoUrl(url)}
                             />
-                            {/* Fallback URL input if they really want to paste one */}
-                            {!logoUrl && (
-                                <div className="flex items-center gap-2">
-                                    <div className="h-px flex-1 bg-border" />
-                                    <span className="text-xs text-muted-foreground">OR enter URL manually</span>
-                                    <div className="h-px flex-1 bg-border" />
-                                </div>
-                            )}
                             {!logoUrl && (
                                 <Input
                                     placeholder="https://..."
@@ -185,7 +197,7 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
                         Financial Settings
                     </CardTitle>
                     <CardDescription>
-                        Set your default reporting currency. This will be used for dashboards and reports.
+                        Set your default reporting currency and invoice formatting.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -203,9 +215,6 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
                                 ))}
                             </SelectContent>
                         </Select>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            Note: Changing currency may affect how historical data is displayed in reports.
-                        </p>
                     </div>
 
                     <div className="space-y-2">
@@ -216,15 +225,80 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
                             placeholder="INV"
                             maxLength={5}
                         />
-                        <p className="text-xs text-muted-foreground">
-                            Format will be: <span className="font-mono font-bold text-slate-700">{invoicePrefix || 'INV'}-{new Date().getFullYear().toString().slice(-2)}-{(new Date().getFullYear() + 1).toString().slice(-2)}-00001</span>
-                        </p>
                     </div>
                 </CardContent>
             </Card>
 
-            <div className="flex justify-end">
-                <Button type="submit" disabled={loading} className="w-full sm:w-auto min-w-[150px]">
+            {isTenantAdmin && (
+                <>
+                    <Card className="border-indigo-100 shadow-sm">
+                        <CardHeader className="bg-indigo-50/30">
+                            <CardTitle className="flex items-center gap-2 text-indigo-900">
+                                <Layout className="h-5 w-5 text-indigo-600" />
+                                Software White-Labeling
+                            </CardTitle>
+                            <CardDescription>
+                                Customize the application name and logo displayed on login and sidebar.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6 pt-6">
+                            <div className="space-y-2">
+                                <Label>Application Display Name</Label>
+                                <Input
+                                    value={appName}
+                                    onChange={e => setAppName(e.target.value)}
+                                    placeholder="e.g. Grand City Healthcare"
+                                />
+                            </div>
+
+                            <div className="space-y-4">
+                                <Label>Software Logo (White-Label)</Label>
+                                <FileUpload
+                                    label="Upload Organization Logo"
+                                    folder="tenant-logos"
+                                    accept="image/*"
+                                    currentFileUrl={tenantLogoUrl}
+                                    onUploadComplete={(url) => setTenantLogoUrl(url)}
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-amber-100 shadow-sm overflow-hidden">
+                        <CardHeader className="bg-amber-50/30">
+                            <CardTitle className="flex items-center gap-2 text-amber-900">
+                                <Database className="h-5 w-5 text-amber-600" />
+                                Bring Your Own Database (BYOB)
+                            </CardTitle>
+                            <CardDescription>
+                                Connect your own PostgreSQL instance (e.g., from Render or Neon).
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6 pt-6">
+                            <Alert className="bg-amber-50 border-amber-200">
+                                <ShieldCheck className="h-4 w-4 text-amber-600" />
+                                <AlertTitle className="text-amber-800 font-bold">Important</AlertTitle>
+                                <AlertDescription className="text-amber-700">
+                                    Entering a connection string will move your organization's data to the private database.
+                                </AlertDescription>
+                            </Alert>
+
+                            <div className="space-y-2">
+                                <Label>Private PostgreSQL URL</Label>
+                                <Input
+                                    type="password"
+                                    value={dbUrl}
+                                    onChange={e => setDbUrl(e.target.value)}
+                                    placeholder="postgresql://user:pass@host:5432/dbname"
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </>
+            )}
+
+            <div className="flex justify-end sticky bottom-6 z-10">
+                <Button type="submit" disabled={loading} className="w-full sm:w-auto min-w-[150px] shadow-lg">
                     {loading ? (
                         <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -233,11 +307,11 @@ export function GlobalSettingsForm({ company, currencies }: Props) {
                     ) : (
                         <>
                             <Save className="mr-2 h-4 w-4" />
-                            Save Changes
+                            Save All Settings
                         </>
                     )}
                 </Button>
             </div>
-        </form >
+        </form>
     )
 }

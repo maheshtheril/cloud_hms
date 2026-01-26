@@ -27,6 +27,10 @@ export default async function GlobalSettingsPage() {
     // Serialize to handle Date objects before passing to Client Component
     const company = JSON.parse(JSON.stringify(rawCompany));
 
+    const tenant = await prisma.tenant.findUnique({
+        where: { id: session.user.tenantId }
+    })
+
     console.log("Global Settings: Company Fetched", company?.id);
 
     const currencies = await prisma.currencies.findMany({
@@ -45,7 +49,12 @@ export default async function GlobalSettingsPage() {
                 <p className="text-slate-500 mt-1">Configure your organization's core profile and preferences.</p>
             </header>
 
-            <GlobalSettingsForm company={company} currencies={currencies} />
+            <GlobalSettingsForm
+                company={company}
+                tenant={JSON.parse(JSON.stringify(tenant))}
+                currencies={currencies}
+                isTenantAdmin={session.user.isTenantAdmin}
+            />
         </div>
     )
 }

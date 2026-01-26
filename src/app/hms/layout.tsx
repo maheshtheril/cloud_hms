@@ -4,6 +4,7 @@ import { signOut, auth } from '@/auth'
 import { getMenuItems } from '../actions/navigation'
 import { CompanySwitcher } from '@/components/company-switcher'
 import { getCurrentCompany } from '../actions/company'
+import { getTenant } from '../actions/tenant'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 
 // Map icon strings to components
@@ -20,10 +21,16 @@ export default async function HMSLayout({
 }) {
     const menuItems = await getMenuItems();
     const currentCompany = await getCurrentCompany();
+    const tenant = await getTenant();
     const session = await auth();
 
     return (
-        <AppSidebar menuItems={menuItems} currentCompany={currentCompany} user={session?.user}>
+        <AppSidebar
+            menuItems={menuItems}
+            currentCompany={currentCompany}
+            tenant={tenant}
+            user={session?.user}
+        >
             {children}
             {modal}
         </AppSidebar>
