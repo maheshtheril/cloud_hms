@@ -38,6 +38,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 where: { id: user.tenant_id },
                                 select: { db_url: true }
                             });
+                            const tenantModules = await prisma.tenant_module.findMany({
+                                where: { tenant_id: user.tenant_id, enabled: true },
+                                select: { module_key: true }
+                            });
                             const moduleKeys = tenantModules.map(m => m.module_key);
 
                             // Extract Avatar from metadata
