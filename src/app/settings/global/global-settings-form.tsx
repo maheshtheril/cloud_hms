@@ -275,7 +275,7 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin 
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6 pt-6">
-                            <Alert className="bg-amber-50 border-amber-200">
+                            <Alert variant="warning" className="bg-amber-50 border-amber-200">
                                 <ShieldCheck className="h-4 w-4 text-amber-600" />
                                 <AlertTitle className="text-amber-800 font-bold">Important</AlertTitle>
                                 <AlertDescription className="text-amber-700">
