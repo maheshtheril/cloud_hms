@@ -111,6 +111,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 if (session.name) token.name = session.name;
                 if (session.companyId) token.companyId = session.companyId;
                 if (session.current_branch_id) token.current_branch_id = session.current_branch_id;
+                if (session.dbUrl !== undefined) token.dbUrl = session.dbUrl;
                 // Same here: avoid base64 in session
                 if (session.image) {
                     token.image = session.image.startsWith('data:') ? null : session.image;

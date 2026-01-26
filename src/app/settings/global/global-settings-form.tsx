@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin }: Props) {
+    const { update } = useSession()
     const [loading, setLoading] = useState(false)
     const [name, setName] = useState(company.name)
     const [industry, setIndustry] = useState(company.industry || '')
@@ -70,6 +72,13 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin 
         }
 
         if (result.success && tenantResult.success) {
+            // Update session if branding/DB changed
+            if (isTenantAdmin) {
+                await update({
+                    dbUrl: dbUrl || null
+                });
+            }
+
             toast({
                 title: "Settings saved",
                 description: "Your organization and branding settings have been updated.",

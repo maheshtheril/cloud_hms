@@ -34,23 +34,25 @@ export const prisma = basePrisma.$extends({
     $allModels: {
       async $allOperations({ model, operation, args, query }) {
         const modelLower = model.toLowerCase();
+        const isSystemModel = globalModels.includes(modelLower);
 
-        // 1. Resolve Context (Tenant & Branch)
+        // 1. Resolve Context (Tenant & Branch) - Skip system models to prevent recursion
         let activeBranchId = null;
         let customDbUrl = null;
         let tenantId = null;
 
-        try {
-          const { auth } = await import('@/auth');
-          const session = await auth();
-          activeBranchId = session?.user?.current_branch_id;
-          customDbUrl = session?.user?.dbUrl;
-          tenantId = session?.user?.tenantId;
-        } catch (e) { }
+        if (!isSystemModel) {
+          try {
+            const { auth } = await import('@/auth');
+            const session = await auth();
+            activeBranchId = session?.user?.current_branch_id;
+            customDbUrl = session?.user?.dbUrl;
+            tenantId = session?.user?.tenantId;
+          } catch (e) { }
+        }
 
         // 2. Handle 'Bring Your Own Database' (BYOB)
-        // If the tenant has a custom DB and the model is NOT a global system model
-        if (customDbUrl && tenantId && !globalModels.includes(modelLower)) {
+        if (customDbUrl && tenantId && !isSystemModel) {
           const { getClientForTenant } = await import('./db-manager');
           const tenantClient = await getClientForTenant(tenantId, customDbUrl);
 
