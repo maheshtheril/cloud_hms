@@ -14,9 +14,10 @@ const adapter = new PrismaPg(pool);
 
 const basePrisma = new PrismaClient({
   adapter,
-  log: ['query', 'error', 'warn'],
+  log: ['error', 'warn'],
 });
 
+// Models that support branch_id
 const modelsWithBranch = [
   'hms_appointments', 'hms_patient', 'global_stock_location', 'hms_invoice',
   'crm_leads', 'hms_encounter', 'hms_admission', 'hms_ward', 'journals',
@@ -24,9 +25,9 @@ const modelsWithBranch = [
   'crm_deals', 'prescription', 'hms_bed'
 ];
 
-// Models that MUST stay in the main shared database (Shard Manager)
+// Models that MUST stay in the main shared database (Platform Level)
 const globalModels = [
-  'tenant', 'app_user', 'modules', 'tenant_module', 'company', 'country', 'currencies'
+  'tenant', 'app_user', 'modules', 'tenant_module', 'company', 'country', 'currencies', 'menu_items', 'hms_settings'
 ];
 
 export const prisma = basePrisma.$extends({
@@ -48,7 +49,9 @@ export const prisma = basePrisma.$extends({
             activeBranchId = session?.user?.current_branch_id;
             customDbUrl = session?.user?.dbUrl;
             tenantId = session?.user?.tenantId;
-          } catch (e) { }
+          } catch (e) {
+            // Background contexts where auth is unavailable
+          }
         }
 
         // 2. Handle 'Bring Your Own Database' (BYOB)
@@ -57,12 +60,13 @@ export const prisma = basePrisma.$extends({
             const { getClientForTenant } = await import('./db-manager');
             const tenantClient = await getClientForTenant(tenantId, customDbUrl);
 
-            if (tenantClient) {
+            if (tenantClient && (tenantClient as any)[model]) {
               // Forward the query to the tenant-specific Prisma Client
               return (tenantClient as any)[model][operation](args);
             }
           } catch (err) {
             console.error(`[Prisma Extension] CRITICAL: DB Switch failed for tenant ${tenantId}. Falling back to main DB.`, err);
+            // Fallback: system continues and uses basePrisma below
           }
         }
 
