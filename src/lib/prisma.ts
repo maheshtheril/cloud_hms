@@ -53,12 +53,16 @@ export const prisma = basePrisma.$extends({
 
         // 2. Handle 'Bring Your Own Database' (BYOB)
         if (customDbUrl && tenantId && !isSystemModel) {
-          const { getClientForTenant } = await import('./db-manager');
-          const tenantClient = await getClientForTenant(tenantId, customDbUrl);
+          try {
+            const { getClientForTenant } = await import('./db-manager');
+            const tenantClient = await getClientForTenant(tenantId, customDbUrl);
 
-          if (tenantClient) {
-            // Forward the query to the tenant-specific Prisma Client
-            return (tenantClient as any)[model][operation](args);
+            if (tenantClient) {
+              // Forward the query to the tenant-specific Prisma Client
+              return (tenantClient as any)[model][operation](args);
+            }
+          } catch (err) {
+            console.error(`[Prisma Extension] CRITICAL: DB Switch failed for tenant ${tenantId}. Falling back to main DB.`, err);
           }
         }
 

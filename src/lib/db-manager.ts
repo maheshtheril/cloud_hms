@@ -12,7 +12,13 @@ export async function getClientForTenant(tenantId: string, dbUrl?: string) {
         return clientCache.get(cacheKey);
     }
 
-    console.log(`[DB Manager] Initializing custom connection for tenant: ${tenantId}`);
+    // Sanity check for the URL
+    if (!dbUrl.startsWith('postgresql://') && !dbUrl.startsWith('postgres://')) {
+        console.error(`[DB Manager] Invalid DB URL provided for tenant ${tenantId}: ${dbUrl.substring(0, 10)}...`);
+        return null;
+    }
+
+    console.log(`[DB Manager] 🚀 Connecting Tenant: ${tenantId} to ${dbUrl.split('@')[1]}`);
 
     const pool = new Pool({
         connectionString: dbUrl,
