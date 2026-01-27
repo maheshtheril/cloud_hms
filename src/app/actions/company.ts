@@ -25,7 +25,7 @@ export async function getTenantCompanies() {
                 name: true,
                 industry: true,
                 enabled: true,
-                // Add logo/address details if schema supports
+                logo_url: true,
             }
         });
 

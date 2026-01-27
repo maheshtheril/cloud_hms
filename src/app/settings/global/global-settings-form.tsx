@@ -12,6 +12,8 @@ import { Loader2, Save, Building2, Coins, ShieldCheck, Database, Layout } from '
 import { toast } from '@/components/ui/use-toast'
 import { FileUpload } from '@/components/ui/file-upload'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 interface Props {
     company: any
@@ -22,6 +24,7 @@ interface Props {
 
 export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin }: Props) {
     const { update } = useSession()
+    const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [name, setName] = useState(company.name)
     const [industry, setIndustry] = useState(company.industry || '')
@@ -40,6 +43,24 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin 
     const [phone, setPhone] = useState(meta.phone || '')
     const [email, setEmail] = useState(meta.email || '')
     const [gstin, setGstin] = useState(meta.gstin || '')
+
+    // Sync state with props when they change from server
+    useEffect(() => {
+        setName(company.name)
+        setIndustry(company.industry || '')
+        setLogoUrl(company.logo_url || '')
+        setCurrencyId(company.company_settings?.currency_id || '')
+        setInvoicePrefix(company.company_settings?.numbering_prefix || 'INV')
+        setAppName(tenant?.app_name || 'Cloud HMS')
+        setTenantLogoUrl(tenant?.logo_url || '')
+        setDbUrl(tenant?.db_url || '')
+
+        const m = (company.metadata as any) || {}
+        setAddress(m.address || '')
+        setPhone(m.phone || '')
+        setEmail(m.email || '')
+        setGstin(m.gstin || '')
+    }, [company, tenant])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -83,6 +104,7 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin 
                 title: "Settings saved",
                 description: "Your organization and branding settings have been updated.",
             })
+            router.refresh()
         } else {
             toast({
                 variant: "destructive",
