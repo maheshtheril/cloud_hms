@@ -168,7 +168,7 @@ export function AppSidebar({ menuItems, currentCompany, tenant, user: initialUse
                                 )}
                             </div>
                             <span className="font-bold text-slate-900 dark:text-white text-lg tracking-tight">
-                                {tenant?.app_name || "HMS Core"}
+                                {tenant?.app_name || "Cloud HMS"}
                             </span>
                         </div>
                     </div>
@@ -219,9 +219,13 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                                         {currentCompany?.logo_url ? (
                                             <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-9 w-9 object-contain rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200 dark:ring-zinc-800" />
                                         ) : (
-                                            <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20">
-                                                <Building2 size={16} />
-                                            </div>
+                                            tenant?.logo_url ? (
+                                                <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-9 w-9 object-contain rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200 dark:ring-zinc-800" />
+                                            ) : (
+                                                <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20">
+                                                    <Building2 size={16} />
+                                                </div>
+                                            )
                                         )}
                                     </div>
                                     <div className="flex-1">
@@ -234,7 +238,7 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                                         <Building2 size={18} />
                                     </div>
                                     <div className="font-bold text-lg tracking-tight text-slate-900 dark:text-white truncate">
-                                        {currentCompany?.name}
+                                        {currentCompany?.name || tenant?.app_name || "Cloud HMS"}
                                     </div>
                                 </div>
                             )}
@@ -250,7 +254,11 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                         {tenant?.logo_url ? (
                             <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-cover" />
                         ) : (
-                            currentCompany?.name?.substring(0, 1).toUpperCase() || "H"
+                            currentCompany?.logo_url ? (
+                                <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-full w-full object-cover" />
+                            ) : (
+                                currentCompany?.name?.substring(0, 1).toUpperCase() || "H"
+                            )
                         )}
                     </div>
                 )}

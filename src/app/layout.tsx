@@ -17,10 +17,17 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Cloud HMS - Enterprise ERP",
-  description: "World-class Hospital Management & ERP System",
-};
+import { getTenantBrandingByHost } from "./actions/branding";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const branding = await getTenantBrandingByHost();
+  const appName = branding?.app_name || "Cloud HMS";
+
+  return {
+    title: `${appName} - Enterprise ERP`,
+    description: `World-class ${appName} Management & ERP System`,
+  };
+}
 
 import { AuthProvider } from "@/components/auth-provider";
 
