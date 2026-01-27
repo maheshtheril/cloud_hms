@@ -4,6 +4,7 @@ import { signOut, auth } from '@/auth'
 import { getMenuItems } from '../actions/navigation'
 import { CompanySwitcher } from '@/components/company-switcher'
 import { getCurrentCompany } from '../actions/company'
+import { getTenant } from '../actions/tenant'
 import { checkCrmLoginStatus } from '@/app/actions/crm/auth'
 import { LoginWorkflowWrapper } from '@/components/crm/login-workflow/wrapper'
 import { AppSidebar } from '@/components/layout/app-sidebar'
@@ -18,6 +19,7 @@ export default async function CRMLayout({
 }) {
     const menuItems = await getMenuItems();
     const currentCompany = await getCurrentCompany();
+    const tenant = await getTenant();
     const loginStatus = await checkCrmLoginStatus();
     const session = await auth();
     const headersList = await headers();
@@ -34,7 +36,7 @@ export default async function CRMLayout({
     const shouldShowLock = compliance.isBlocked && !isTargetPage;
 
     return (
-        <AppSidebar menuItems={menuItems} currentCompany={currentCompany} user={session?.user}>
+        <AppSidebar menuItems={menuItems} currentCompany={currentCompany} tenant={tenant} user={session?.user}>
             <div className="flex-1 bg-slate-50 dark:bg-slate-950 min-h-screen relative">
                 {shouldShowLock && (
                     <GatedComplianceLock
