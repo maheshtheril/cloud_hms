@@ -33,7 +33,7 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin 
     const [invoicePrefix, setInvoicePrefix] = useState(company.company_settings?.numbering_prefix || 'INV')
 
     // Tenant Branding
-    const [appName, setAppName] = useState(tenant?.app_name || 'Cloud HMS')
+    const [appName, setAppName] = useState(tenant?.app_name || tenant?.name || '')
     const [tenantLogoUrl, setTenantLogoUrl] = useState(tenant?.logo_url || '')
     const [dbUrl, setDbUrl] = useState(tenant?.db_url || '')
 
@@ -51,7 +51,7 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin 
         setLogoUrl(company.logo_url || '')
         setCurrencyId(company.company_settings?.currency_id || '')
         setInvoicePrefix(company.company_settings?.numbering_prefix || 'INV')
-        setAppName(tenant?.app_name || 'Cloud HMS')
+        setAppName(tenant?.app_name || tenant?.name || '')
         setTenantLogoUrl(tenant?.logo_url || '')
         setDbUrl(tenant?.db_url || '')
 

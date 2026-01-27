@@ -67,10 +67,10 @@ export default function LoginPage() {
                                 )}
                             </motion.div>
                             <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-                                {branding?.app_name || "Welcome Back"}
+                                {branding?.app_name || branding?.name || "Sign In"}
                             </h1>
                             <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
-                                {branding?.app_name ? `Sign in to ${branding.app_name}` : "Enter your credentials to access your workspace"}
+                                {branding?.app_name || branding?.name ? `Sign in to stay connected` : "Enter your credentials to access your workspace"}
                             </p>
                         </div>
 
@@ -140,7 +140,7 @@ export default function LoginPage() {
                                 </div>
                                 <div className="relative flex justify-center text-sm">
                                     <span className="px-2 bg-white/0 text-slate-500 dark:text-slate-400 backdrop-blur-sm">
-                                        {branding?.app_name ? `New to ${branding.app_name}?` : "New to Cloud HMS?"}
+                                        {branding?.app_name || branding?.name ? `Access ${branding?.app_name || branding?.name}` : "Welcome Back"}
                                     </span>
                                 </div>
                             </div>

@@ -18,9 +18,9 @@ export async function sendInvitationEmail(email: string, token: string, name: st
 
     try {
         const { data, error } = await resend.emails.send({
-            from: `Cloud HMS <${fromEmail}>`,
+            from: `HMS Operations <${fromEmail}>`,
             to: email,
-            subject: 'Invitation to join Cloud HMS Operations',
+            subject: 'Invitation to join the ecosystem',
             html: `
                 <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 40px auto; background-color: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
                     <div style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); padding: 48px 40px; text-align: center;">
@@ -28,13 +28,13 @@ export async function sendInvitationEmail(email: string, token: string, name: st
                             <img src="${appUrl}/logo.png" alt="Cloud HMS" style="width: 48px; height: 48px;" />
                         </div>
                         <h1 style="color: #ffffff; font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.02em;">Welcome to the Mission</h1>
-                        <p style="color: rgba(255,255,255,0.8); font-size: 16px; margin-top: 8px; font-weight: 500;">Cloud HMS Enterprise Portal</p>
+                        <p style="color: rgba(255,255,255,0.8); font-size: 16px; margin-top: 8px; font-weight: 500;">Secure Enterprise Portal</p>
                     </div>
                     
                     <div style="padding: 40px;">
                         <p style="color: #1e293b; font-size: 18px; font-weight: 600; margin-bottom: 16px;">Hello ${name},</p>
                         <p style="color: #64748b; font-size: 16px; line-height: 1.6; margin-bottom: 32px;">
-                            You have been invited to join the <strong>Cloud HMS</strong> ecosystem. Your professional profile has been initialized and is awaiting activation.
+                            You have been invited to join the professional ecosystem. Your profile has been initialized and is awaiting activation.
                         </p>
                         
                         <div style="background-color: #f8fafc; border-radius: 20px; padding: 32px; text-align: center; border: 1px dashed #e2e8f0; margin-bottom: 40px;">
@@ -54,7 +54,7 @@ export async function sendInvitationEmail(email: string, token: string, name: st
                     </div>
                     
                     <div style="background-color: #f1f5f9; padding: 24px 40px; text-align: center;">
-                        <p style="color: #94a3b8; font-size: 12px; margin: 0;">© 2035 Cloud HMS • Hospital Management Intelligence</p>
+                        <p style="color: #94a3b8; font-size: 12px; margin: 0;">© 2035 • Hospital Management Intelligence</p>
                     </div>
                 </div>
             `

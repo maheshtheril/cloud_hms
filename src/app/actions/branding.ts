@@ -11,7 +11,7 @@ export async function getTenantBrandingByHost() {
     // In production, we'd lookup by host
 
     try {
-        const tenant = await prisma.tenant.findFirst({
+        let tenant = await prisma.tenant.findFirst({
             where: {
                 OR: [
                     { domain: host },
@@ -24,6 +24,18 @@ export async function getTenantBrandingByHost() {
                 name: true
             }
         });
+
+        // Fallback for temporary domains (like Render) or initial setup
+        if (!tenant) {
+            tenant = await prisma.tenant.findFirst({
+                orderBy: { created_at: 'asc' },
+                select: {
+                    app_name: true,
+                    logo_url: true,
+                    name: true
+                }
+            });
+        }
 
         return tenant;
     } catch (error) {
