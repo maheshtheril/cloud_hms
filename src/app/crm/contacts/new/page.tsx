@@ -3,7 +3,7 @@ import { Metadata } from 'next'
 import { ContactForm } from '@/components/crm/contacts/contact-form'
 
 export const metadata: Metadata = {
-    title: 'New Contact | SAAS ERP',
+    title: 'New Contact',
     description: 'Create a new CRM contact',
 }
 

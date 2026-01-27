@@ -17,7 +17,7 @@ export default function LoginPage() {
         email: '',
         password: '',
     })
-    const [branding, setBranding] = useState<{ app_name: string | null, logo_url: string | null, name: string | null } | null>(null)
+    const [branding, setBranding] = useState<{ app_name: string | null, logo_url: string | null, name: string | null, isPublic?: boolean } | null>(null)
 
     useEffect(() => {
         getTenantBrandingByHost().then(setBranding)
@@ -133,25 +133,27 @@ export default function LoginPage() {
                             </button>
                         </form>
 
-                        <div className="mt-8 text-center">
-                            <div className="relative mb-6">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
+                        {branding?.isPublic && (
+                            <div className="mt-8 text-center">
+                                <div className="relative mb-6">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-slate-200 dark:border-slate-800"></div>
+                                    </div>
+                                    <div className="relative flex justify-center text-sm">
+                                        <span className="px-2 bg-white/0 text-slate-500 dark:text-slate-400 backdrop-blur-sm">
+                                            {branding?.app_name || branding?.name ? `New to ${branding.app_name || branding.name}?` : "Welcome Back"}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="relative flex justify-center text-sm">
-                                    <span className="px-2 bg-white/0 text-slate-500 dark:text-slate-400 backdrop-blur-sm">
-                                        {branding?.app_name || branding?.name ? `Access ${branding?.app_name || branding?.name}` : "Welcome Back"}
-                                    </span>
-                                </div>
-                            </div>
 
-                            <button
-                                onClick={() => setIsLogin(false)}
-                                className="w-full py-3 rounded-xl border-2 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all"
-                            >
-                                Create Free Account
-                            </button>
-                        </div>
+                                <button
+                                    onClick={() => setIsLogin(false)}
+                                    className="w-full py-3 rounded-xl border-2 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all"
+                                >
+                                    Create Free Account
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </motion.div>
             </div>

@@ -116,7 +116,7 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
                     </div>
 
                     <div className="text-xs text-slate-500">
-                        © 2024 SAAS ERP
+                        © {new Date().getFullYear()} Enterprise
                     </div>
                 </div>
 

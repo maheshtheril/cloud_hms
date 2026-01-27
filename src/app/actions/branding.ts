@@ -37,7 +37,12 @@ export async function getTenantBrandingByHost() {
             });
         }
 
-        return tenant;
+        const isPublic = host === 'cloud-hms.onrender.com' || host === 'localhost:3000' || !host;
+
+        return {
+            ...tenant,
+            isPublic
+        };
     } catch (error) {
         console.error("Failed to fetch tenant branding:", error);
         return null;
