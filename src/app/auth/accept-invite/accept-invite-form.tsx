@@ -116,7 +116,7 @@ export default function AcceptInviteForm({ token, email }: { token: string, emai
                                     <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
                                         <div
                                             className={`h-full transition-all duration-500 ${password.length >= 12 ? 'w-full bg-emerald-500' :
-                                                    password.length >= 8 ? 'w-2/3 bg-indigo-500' : 'w-1/3 bg-amber-500'
+                                                password.length >= 8 ? 'w-2/3 bg-indigo-500' : 'w-1/3 bg-amber-500'
                                                 }`}
                                         />
                                     </div>
@@ -142,7 +142,7 @@ export default function AcceptInviteForm({ token, email }: { token: string, emai
                 </Card>
 
                 <p className="text-center text-slate-500 text-[10px] mt-8 uppercase tracking-[0.2em] font-medium">
-                    Secure Enterprise Channel • Cloud HMS Operations
+                    Secure Enterprise Channel • Operations
                 </p>
             </div>
         </div>

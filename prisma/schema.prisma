@@ -4358,7 +4358,7 @@ model tenant {
   id                    String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   slug                  String
   name                  String
-  app_name              String?                 @default("Cloud HMS")
+  app_name              String?
   logo_url              String?
   db_url                String?                 // For 'Bring Your Own Database' tenants
   billing_plan          String?

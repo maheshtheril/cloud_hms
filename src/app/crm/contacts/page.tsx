@@ -7,7 +7,7 @@ import { Metadata } from 'next'
 import { Badge } from '@/components/ui/badge'
 
 export const metadata: Metadata = {
-    title: 'Contacts | Cloud HMS',
+    title: 'Contacts',
     description: 'Manage your CRM contacts with AI intelligence',
 }
 

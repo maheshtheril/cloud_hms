@@ -11,8 +11,8 @@ export async function GET() {
         if (!tenant) {
             tenant = await prisma.tenant.create({
                 data: {
-                    name: 'Cloud HMS Prod',
-                    slug: 'cloud-hms-prod',
+                    name: 'Enterprise Prod',
+                    slug: 'enterprise-prod',
                     mode: 'production',
                     billing_plan: 'enterprise'
                 }

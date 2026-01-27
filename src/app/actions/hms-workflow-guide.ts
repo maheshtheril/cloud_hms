@@ -28,7 +28,7 @@ export async function generateHMSWorkflowGuidePDF() {
     doc.setFontSize(40)
     doc.text('TACTICAL MANUAL', 50, 300)
     doc.setFontSize(24)
-    doc.text('Cloud HMS & ERP Ecosystem', 50, 340)
+    doc.text('Enterprise ERP Ecosystem', 50, 340)
 
     doc.setDrawColor(accent[0], accent[1], accent[2])
     doc.setLineWidth(5)
@@ -52,7 +52,7 @@ export async function generateHMSWorkflowGuidePDF() {
         doc.rect(0, 0, 595, 40, 'F')
         doc.setTextColor(255, 255, 255)
         doc.setFontSize(10)
-        doc.text('CLOUD HMS OPERATIONAL STANDARDS', margin, 25)
+        doc.text('ENTERPRISE OPERATIONAL STANDARDS', margin, 25)
 
         y = 80
     }

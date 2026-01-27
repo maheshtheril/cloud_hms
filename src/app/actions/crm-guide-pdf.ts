@@ -44,7 +44,7 @@ export async function generateCRMGuidePDF() {
     const sections = [
         {
             title: '1. Introduction: The Strategic Edge',
-            content: 'Welcome to the CRM module of the Cloud HMS & ERP ecosystem. This is not just a database; it is a Revenue Engine. Designed to provide a 360-degree view of your customer journey, our CRM empowers your team to move from reactive selling to proactive relationship management.'
+            content: 'Welcome to the CRM module of the Enterprise ecosystem. This is not just a database; it is a Revenue Engine. Designed to provide a 360-degree view of your customer journey, our CRM empowers your team to move from reactive selling to proactive relationship management.'
         },
         {
             title: '2. Lead Management: Your Growth Pipeline',
@@ -112,7 +112,7 @@ export async function generateCRMGuidePDF() {
     // --- FOOTER ---
     doc.setFontSize(8)
     doc.setTextColor(lightText[0], lightText[1], lightText[2])
-    doc.text('© 2026 HMS CLOUD - ENTERPRISE CRM CONFIDENTIAL', 306, 800, { align: 'center' })
+    doc.text('© 2026 HMS - ENTERPRISE CRM CONFIDENTIAL', 306, 800, { align: 'center' })
 
     // Return as Buffer
     const pdfOutput = doc.output('arraybuffer')

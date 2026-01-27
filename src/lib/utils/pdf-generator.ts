@@ -142,7 +142,7 @@ export async function generateInvoicePDFBase64(invoice: any, company?: any): Pro
         doc.setFontSize(8);
         doc.setTextColor(153, 153, 153);
         const footerText1 = 'This is a computer generated invoice and does not require a signature.';
-        const footerText2 = `Powered by Cloud HMS | Generated on ${new Date().toLocaleString()}`;
+        const footerText2 = `Generated on ${new Date().toLocaleString()}`;
 
         doc.text(footerText1, pageWidth / 2, 780, { align: 'center' });
         doc.text(footerText2, pageWidth / 2, 795, { align: 'center' });
