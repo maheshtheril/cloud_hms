@@ -17,7 +17,7 @@ export default function LoginPage() {
         email: '',
         password: '',
     })
-    const [branding, setBranding] = useState<{ app_name: string | null, logo_url: string | null } | null>(null)
+    const [branding, setBranding] = useState<{ app_name: string | null, logo_url: string | null, name: string | null } | null>(null)
 
     useEffect(() => {
         getTenantBrandingByHost().then(setBranding)
