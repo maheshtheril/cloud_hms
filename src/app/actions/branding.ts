@@ -40,7 +40,9 @@ export async function getTenantBrandingByHost() {
         const isPublic = host === 'cloud-hms.onrender.com' || host === 'localhost:3000' || !host;
 
         return {
-            ...tenant,
+            app_name: tenant?.app_name || null,
+            logo_url: tenant?.logo_url || null,
+            name: tenant?.name || null,
             isPublic
         };
     } catch (error) {
