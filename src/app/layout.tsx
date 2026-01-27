@@ -22,7 +22,7 @@ import { getTenantBrandingByHost } from "./actions/branding";
 
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await getTenantBrandingByHost();
-  const appName = branding?.app_name || "Cloud HMS";
+  const appName = branding?.app_name || branding?.name || "HMS";
 
   return {
     title: `${appName} - Enterprise ERP`,
