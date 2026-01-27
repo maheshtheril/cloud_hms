@@ -17,6 +17,13 @@ export async function getTenant() {
 
         const tenant = await prisma.tenant.findUnique({
             where: { id: user.tenant_id }
+        }) || await prisma.tenant.findFirst({
+            where: {
+                OR: [
+                    { id: user.tenant_id },
+                    { tenant_id: user.tenant_id }
+                ]
+            }
         });
 
         return tenant;

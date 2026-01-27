@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+// Version 1.0.4 - Triggering Redeploy
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";

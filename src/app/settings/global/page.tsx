@@ -29,6 +29,13 @@ export default async function GlobalSettingsPage() {
 
     const tenant = await prisma.tenant.findUnique({
         where: { id: session.user.tenantId }
+    }) || await prisma.tenant.findFirst({
+        where: {
+            OR: [
+                { id: session.user.tenantId },
+                { tenant_id: session.user.tenantId }
+            ]
+        }
     })
 
     console.log("Global Settings: Company Fetched", company?.id);

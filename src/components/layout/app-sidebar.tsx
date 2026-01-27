@@ -164,11 +164,13 @@ export function AppSidebar({ menuItems, currentCompany, tenant, user: initialUse
                                 {tenant?.logo_url ? (
                                     <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-cover" />
                                 ) : (
-                                    <Activity className="text-white h-5 w-5" />
+                                    <div className="bg-white/10 p-1.5 rounded-lg">
+                                        <Activity className="text-white h-5 w-5" />
+                                    </div>
                                 )}
                             </div>
                             <span className="font-bold text-slate-900 dark:text-white text-lg tracking-tight">
-                                {tenant?.app_name || "Cloud HMS"}
+                                {tenant?.app_name || tenant?.name || "HMS"}
                             </span>
                         </div>
                     </div>
@@ -238,7 +240,7 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                                         <Building2 size={18} />
                                     </div>
                                     <div className="font-bold text-lg tracking-tight text-slate-900 dark:text-white truncate">
-                                        {currentCompany?.name || tenant?.app_name || "Cloud HMS"}
+                                        {currentCompany?.name || tenant?.app_name || tenant?.name || "HMS"}
                                     </div>
                                 </div>
                             )}
@@ -257,7 +259,9 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                             currentCompany?.logo_url ? (
                                 <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-full w-full object-cover" />
                             ) : (
-                                currentCompany?.name?.substring(0, 1).toUpperCase() || "H"
+                                <div className="h-full w-full flex items-center justify-center bg-indigo-600 text-white font-bold">
+                                    {tenant?.app_name?.substring(0, 1).toUpperCase() || currentCompany?.name?.substring(0, 1).toUpperCase() || "H"}
+                                </div>
                             )
                         )}
                     </div>
