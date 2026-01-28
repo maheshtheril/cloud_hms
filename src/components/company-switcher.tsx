@@ -51,7 +51,7 @@ export function CompanySwitcher({
         setLoading(false)
     }
 
-    const activeCompany = initialActiveCompany || { name: 'Select Company' }
+    const activeCompany = initialActiveCompany || { name: 'Select Company', logo_url: null }
 
     return (
         <div className="relative">
