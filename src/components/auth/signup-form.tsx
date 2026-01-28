@@ -6,7 +6,7 @@ import { signup } from "@/app/actions/auth"
 import { getCountries, getCurrencies, getModules } from "@/app/actions/public"
 import { Check, ChevronRight, Building, Layers } from "lucide-react"
 
-export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void }) {
+export function SignupForm({ setIsLogin, branding }: { setIsLogin: (v: boolean) => void, branding?: any }) {
     const [step, setStep] = useState(1)
     const [state, formAction, isPending] = useActionState(signup, null)
 
@@ -93,10 +93,14 @@ export function SignupForm({ setIsLogin }: { setIsLogin: (v: boolean) => void })
                 {/* Sidebar Progress */}
                 <div className="bg-slate-900 p-8 md:w-1/3 flex flex-col justify-between text-white">
                     <div>
-                        <div className="bg-blue-500/20 w-10 h-10 rounded-lg flex items-center justify-center mb-6">
-                            <Layers className="text-blue-400 h-6 w-6" />
+                        <div className="bg-blue-500/20 w-10 h-10 rounded-lg flex items-center justify-center mb-6 overflow-hidden">
+                            {branding?.logo_url ? (
+                                <img src={branding.logo_url} alt={branding.app_name || 'Logo'} className="h-full w-full object-cover" />
+                            ) : (
+                                <Layers className="text-blue-400 h-6 w-6" />
+                            )}
                         </div>
-                        <h2 className="text-xl font-bold mb-2">Setup Organization</h2>
+                        <h2 className="text-xl font-bold mb-2">Join {branding?.app_name || branding?.name || 'Organization'}</h2>
                         <p className="text-slate-400 text-sm">Create your world-class workspace in minutes.</p>
                     </div>
 

@@ -167,7 +167,7 @@ export default function LoginPage() {
 
     return (
         <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-100 via-slate-50 to-white dark:from-slate-900 dark:via-slate-950 dark:to-black">
-            <SignupForm setIsLogin={setIsLogin} />
+            <SignupForm setIsLogin={setIsLogin} branding={branding} />
         </div>
     )
 }
