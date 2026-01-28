@@ -28,7 +28,7 @@ export async function getTenantBrandingByHost() {
         // Fallback for temporary domains (like Render) or initial setup
         if (!tenant) {
             tenant = await prisma.tenant.findFirst({
-                orderBy: { created_at: 'asc' },
+                orderBy: { created_at: 'desc' },
                 select: {
                     app_name: true,
                     logo_url: true,
