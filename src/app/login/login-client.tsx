@@ -67,7 +67,7 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                 )}
                             </motion.div>
                             <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-                                {branding?.app_name || branding?.name || "Sign In"}
+                                {branding?.app_name || branding?.name || "Cloud HMS"}
                             </h1>
                             <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">
                                 {branding?.app_name || branding?.name ? `Sign in to stay connected` : "Enter your credentials to access your workspace"}

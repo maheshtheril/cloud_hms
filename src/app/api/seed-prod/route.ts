@@ -14,7 +14,9 @@ export async function GET() {
                     name: 'Enterprise Prod',
                     slug: 'enterprise-prod',
                     mode: 'production',
-                    billing_plan: 'enterprise'
+                    billing_plan: 'enterprise',
+                    app_name: 'Cloud HMS Enterprise',
+                    logo_url: 'https://cdn-icons-png.flaticon.com/512/3063/3063823.png'
                 }
             });
             console.log("Created Tenant:", tenant.id);
