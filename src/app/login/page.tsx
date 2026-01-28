@@ -4,8 +4,13 @@ import { getTenantBrandingByHost } from "../actions/branding"
 
 export const dynamic = 'force-dynamic'
 
-export default async function LoginPage() {
-    const branding = await getTenantBrandingByHost();
+export default async function LoginPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ org?: string }>
+}) {
+    const params = await searchParams;
+    const branding = await getTenantBrandingByHost(params?.org);
 
     return <LoginClient branding={branding} />
 }
