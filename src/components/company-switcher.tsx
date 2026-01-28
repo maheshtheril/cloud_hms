@@ -7,11 +7,17 @@ import { getTenantCompanies, switchCompany } from '@/app/actions/company'
 import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 
+interface CompanyBasic {
+    id?: string
+    name: string
+    logo_url?: string | null
+}
+
 export function CompanySwitcher({
     initialActiveCompany,
     tenant
 }: {
-    initialActiveCompany?: { id: string, name: string, logo_url?: string | null } | null,
+    initialActiveCompany?: CompanyBasic | null,
     tenant?: any
 }) {
     const [isOpen, setIsOpen] = useState(false)
@@ -51,7 +57,7 @@ export function CompanySwitcher({
         setLoading(false)
     }
 
-    const activeCompany = initialActiveCompany || { name: 'Select Company', logo_url: null }
+    const activeCompany: CompanyBasic = initialActiveCompany || { name: 'Select Company', logo_url: null }
 
     return (
         <div className="relative">
