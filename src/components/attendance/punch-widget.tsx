@@ -207,7 +207,7 @@ export default function PunchWidget() {
                     </div>
                     <div className="flex items-center gap-1">
                         <Info className="h-3 w-3" />
-                        SYS-OP-HMS-v2.1
+                        SYS-OP-PLATFORM-v2.1
                     </div>
                 </div>
             </div>

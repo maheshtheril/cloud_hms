@@ -160,17 +160,19 @@ export function AppSidebar({ menuItems, currentCompany, tenant, user: initialUse
                             <Menu className="h-6 w-6" />
                         </button>
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 overflow-hidden">
-                                {tenant?.logo_url ? (
-                                    <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-cover" />
+                            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-lg shadow-indigo-500/10 overflow-hidden ring-1 ring-slate-200 dark:ring-zinc-800 shrink-0">
+                                {currentCompany?.logo_url ? (
+                                    <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-full w-full object-contain p-1" />
+                                ) : tenant?.logo_url ? (
+                                    <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-contain p-1" />
                                 ) : (
-                                    <div className="bg-white/10 p-1.5 rounded-lg">
-                                        <Activity className="text-white h-5 w-5" />
+                                    <div className="bg-gradient-to-tr from-indigo-600 to-violet-600 w-full h-full flex items-center justify-center">
+                                        <Activity className="text-white h-4 w-4" />
                                     </div>
                                 )}
                             </div>
                             <span className="font-bold text-slate-900 dark:text-white text-lg tracking-tight">
-                                {tenant?.app_name || tenant?.name || "HMS"}
+                                {tenant?.app_name || tenant?.name || "Enterprise"}
                             </span>
                         </div>
                     </div>
@@ -216,31 +218,24 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                     <div className="flex items-center justify-between w-full">
                         <div className="flex-1 min-w-0 mr-4">
                             {canSwitchCompany ? (
+                                <CompanySwitcher initialActiveCompany={currentCompany} tenant={tenant} />
+                            ) : (
                                 <div className="flex items-center gap-3">
-                                    <div className="relative">
+                                    <div className="h-9 w-9 rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200 dark:ring-zinc-800 overflow-hidden shrink-0 flex items-center justify-center">
                                         {currentCompany?.logo_url ? (
-                                            <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-9 w-9 object-contain rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200 dark:ring-zinc-800" />
+                                            <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-full w-full object-contain" />
                                         ) : (
                                             tenant?.logo_url ? (
-                                                <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-9 w-9 object-contain rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200 dark:ring-zinc-800" />
+                                                <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-contain" />
                                             ) : (
-                                                <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/20">
+                                                <div className="h-full w-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
                                                     <Building2 size={16} />
                                                 </div>
                                             )
                                         )}
                                     </div>
-                                    <div className="flex-1">
-                                        <CompanySwitcher initialActiveCompany={currentCompany} />
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="flex items-center gap-3">
-                                    <div className="h-9 w-9 rounded-lg bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-                                        <Building2 size={18} />
-                                    </div>
                                     <div className="font-bold text-lg tracking-tight text-slate-900 dark:text-white truncate">
-                                        {currentCompany?.name || tenant?.app_name || tenant?.name || "HMS"}
+                                        {currentCompany?.name || tenant?.app_name || tenant?.name || "Enterprise"}
                                     </div>
                                 </div>
                             )}
@@ -260,7 +255,7 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                                 <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-full w-full object-cover" />
                             ) : (
                                 <div className="h-full w-full flex items-center justify-center bg-indigo-600 text-white font-bold">
-                                    {tenant?.app_name?.substring(0, 1).toUpperCase() || currentCompany?.name?.substring(0, 1).toUpperCase() || "H"}
+                                    {tenant?.app_name?.substring(0, 1).toUpperCase() || currentCompany?.name?.substring(0, 1).toUpperCase() || "E"}
                                 </div>
                             )
                         )}

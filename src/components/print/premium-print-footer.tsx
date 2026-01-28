@@ -9,7 +9,7 @@ export function PremiumPrintFooter({
     note = "Thank you for choosing our services. We value your trust.",
     showSignature = true,
     signatureLabel = "Authorized Signatory",
-    systemInfo = "HMS Enterprise Intelligence"
+    systemInfo = "Enterprise Business Intelligence"
 }: PremiumPrintFooterProps) {
     return (
         <div className="mt-auto pt-12">

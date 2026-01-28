@@ -21,13 +21,16 @@ interface DashboardClientProps {
     appointments: any[]
     patients: any[]
     doctors: any[]
+    tenant?: any
+    company?: any
 }
 
-export function DashboardClient({ user, stats, appointments, patients, doctors }: DashboardClientProps) {
+export function DashboardClient({ user, stats, appointments, patients, doctors, tenant, company }: DashboardClientProps) {
     const [showAppointmentModal, setShowAppointmentModal] = useState(false)
     const [showPatientModal, setShowPatientModal] = useState(false)
 
     const pendingApts = appointments.filter(a => a.status.toLowerCase() === 'scheduled' || a.status.toLowerCase() === 'pending').length
+    const dashboardTitle = company?.name || tenant?.app_name || 'Dashboard'
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20">
@@ -37,10 +40,10 @@ export function DashboardClient({ user, stats, appointments, patients, doctors }
                     <div className="flex items-center justify-between h-16">
                         <div>
                             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-                                HMS Dashboard
+                                {dashboardTitle}
                             </h1>
                             <p className="text-xs text-gray-500 dark:text-slate-400 font-medium">
-                                Welcome back, {user?.name || 'Doctor'}
+                                Welcome back, {user?.name || 'User'}
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -174,7 +177,7 @@ export function DashboardClient({ user, stats, appointments, patients, doctors }
                                             </td>
                                         </tr>
                                     ) : (
-                                        appointments.map((apt) => (
+                                        appointments.map((apt: any) => (
                                             <tr
                                                 key={apt.id}
                                                 className="group hover:bg-blue-50/50 dark:hover:bg-indigo-900/10 transition-colors"
@@ -298,7 +301,10 @@ export function DashboardClient({ user, stats, appointments, patients, doctors }
             )}
 
             {showPatientModal && (
-                <CreatePatientForm onClose={() => setShowPatientModal(false)} />
+                <CreatePatientForm
+                    onClose={() => setShowPatientModal(false)}
+                    appName={dashboardTitle}
+                />
             )}
         </div>
     )

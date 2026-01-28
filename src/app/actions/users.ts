@@ -185,7 +185,18 @@ export async function inviteUser(data: InviteUserData) {
                 }
             })
 
-            const emailResult = await sendInvitationEmail(user.email, token, user.full_name || user.name || 'User')
+            const tenant = await prisma.tenant.findUnique({
+                where: { id: session.user.tenantId },
+                select: { logo_url: true, app_name: true }
+            })
+
+            const emailResult = await sendInvitationEmail(
+                user.email,
+                token,
+                user.full_name || user.name || 'User',
+                tenant?.logo_url,
+                tenant?.app_name || undefined
+            )
             if (!emailResult.success) {
                 console.error("Resend Error:", emailResult.error)
                 emailError = typeof emailResult.error === 'string' ? emailResult.error : 'API Key missing or Sandbox restriction';
@@ -286,7 +297,18 @@ export async function resendInvitation(userId: string) {
             }
         })
 
-        const emailResult = await sendInvitationEmail(user.email, token, user.full_name || user.name || 'User')
+        const tenant = await prisma.tenant.findUnique({
+            where: { id: session.user.tenantId },
+            select: { logo_url: true, app_name: true }
+        })
+
+        const emailResult = await sendInvitationEmail(
+            user.email,
+            token,
+            user.full_name || user.name || 'User',
+            tenant?.logo_url,
+            tenant?.app_name || undefined
+        )
 
         if (!emailResult.success) {
             emailError = typeof emailResult.error === 'string' ? emailResult.error : 'Mail delivery failed (Check API Key/Sandbox)';

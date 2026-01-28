@@ -41,7 +41,7 @@ export default function SettingsHubPage() {
         <div className="p-8 max-w-6xl mx-auto space-y-8">
             <div className="flex flex-col gap-2">
                 <h1 className="text-4xl font-black text-slate-900 tracking-tight">System Settings</h1>
-                <p className="text-slate-500 font-medium">Configure your HMS environment and clinical workflows.</p>
+                <p className="text-slate-500 font-medium">Configure your platform environment and clinical workflows.</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">

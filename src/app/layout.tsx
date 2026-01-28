@@ -22,11 +22,12 @@ import { getTenantBrandingByHost } from "./actions/branding";
 
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await getTenantBrandingByHost();
-  const appName = branding?.app_name || branding?.name || "HMS";
+  const appName = branding?.app_name || branding?.name || "Enterprise";
 
   return {
     title: `${appName} - Enterprise ERP`,
     description: `World-class ${appName} Management & ERP System`,
+    icons: branding?.logo_url ? { icon: branding.logo_url } : undefined
   };
 }
 

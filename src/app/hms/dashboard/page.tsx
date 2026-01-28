@@ -2,15 +2,21 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { DashboardClient } from "@/components/hms/dashboard-client"
 import { ensureHmsMenus } from "@/lib/menu-seeder"
+import { getTenant } from "../../actions/tenant"
+import { getCurrentCompany } from "../../actions/company"
+import { redirect } from 'next/navigation'
 
 export default async function DashboardPage() {
     await ensureHmsMenus()
     const session = await auth()
 
+    if (!session?.user) {
+        redirect('/login')
+    }
+
     // SECURITY: Redirect Receptionists to their dedicated dashboard
     // This prevents them from "landing" on the Admin dashboard even if they have hms:view permission
     if (session?.user?.role === 'receptionist' || session?.user?.name?.toLowerCase().includes('reception')) {
-        const { redirect } = await import('next/navigation');
         redirect('/hms/reception/dashboard');
     }
 
@@ -20,13 +26,11 @@ export default async function DashboardPage() {
     const email = session?.user?.email?.toLowerCase() || '';
 
     if (role === 'lab_technician' || role === 'lab technician' || role.includes('lab') || name.includes('lab') || email.includes('laab')) {
-        const { redirect } = await import('next/navigation');
         redirect('/hms/lab/dashboard');
     }
 
     // SECURITY: Redirect Accountants to Financial Dashboard
     if (role === 'accountant' || role === 'finance' || name.includes('account') || email.includes('acc')) {
-        const { redirect } = await import('next/navigation');
         redirect('/hms/accounting');
     }
 
@@ -35,9 +39,7 @@ export default async function DashboardPage() {
 
     if (!tenantId || !companyId) {
         // Fallback for Receptionists who might be routed here but belong at /hms/reception/dashboard
-        // and might not have a CompanyID assigned yet (Receptionists often work at Tenant Level).
         if (session?.user?.role === 'receptionist') {
-            const { redirect } = await import('next/navigation');
             redirect('/hms/reception/dashboard');
         }
 
@@ -62,7 +64,9 @@ export default async function DashboardPage() {
         rawAppointments,
         totalPatientsCount,
         pendingBillsCount,
-        revenueAggregate
+        revenueAggregate,
+        tenant,
+        currentCompany
     ] = await Promise.all([
         // 1. Patients for modal (limit to recent/active)
         prisma.hms_patient.findMany({
@@ -98,55 +102,50 @@ export default async function DashboardPage() {
             orderBy: { first_name: 'asc' }
         }),
 
-        // 3. Today's Appointments (Manual Fetch without include)
+        // 3. Appointments for today
         prisma.hms_appointments.findMany({
             where: {
+                tenant_id: tenantId,
                 company_id: companyId,
                 starts_at: {
                     gte: today,
                     lt: tomorrow
-                },
-                deleted_at: null
-            },
-            orderBy: {
-                starts_at: 'asc'
-            },
-            include: {
-                prescription: {
-                    select: { id: true }
-                },
-                hms_invoice: {
-                    select: { id: true, status: true }
                 }
-            }
+            },
+            orderBy: { starts_at: 'asc' }
         }),
 
         // 4. Stats: Total Patients
-        prisma.hms_patient.count({
-            where: { tenant_id: tenantId }
-        }),
+        prisma.hms_patient.count({ where: { tenant_id: tenantId } }),
 
         // 5. Stats: Pending Bills
         prisma.hms_invoice.count({
             where: {
-                company_id: companyId,
-                status: { in: ['draft', 'posted'] }
+                tenant_id: tenantId,
+                status: 'draft'
             }
         }),
 
-        // 6. Stats: Revenue (This Month)
+        // 6. Stats: Revenue (Today)
         prisma.hms_invoice.aggregate({
             where: {
-                company_id: companyId,
+                tenant_id: tenantId,
                 status: 'paid',
-                issued_at: {
-                    gte: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+                created_at: {
+                    gte: today,
+                    lt: tomorrow
                 }
             },
             _sum: {
                 total: true
             }
-        })
+        }),
+
+        // 7. Tenant Branding
+        getTenant(),
+
+        // 8. Company Branding
+        getCurrentCompany()
     ])
 
     // Manual enrichment of appointments
@@ -187,6 +186,8 @@ export default async function DashboardPage() {
             appointments={JSON.parse(JSON.stringify(appointments))}
             patients={JSON.parse(JSON.stringify(patients))}
             doctors={JSON.parse(JSON.stringify(doctors))}
+            tenant={tenant}
+            company={currentCompany}
         />
     )
 }

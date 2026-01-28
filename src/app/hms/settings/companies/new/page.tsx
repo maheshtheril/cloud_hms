@@ -179,7 +179,7 @@ export default function NewCompanyPage() {
                                                                 value={formData.name}
                                                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                                                 className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-slate-800 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold text-slate-900 dark:text-white"
-                                                                placeholder="e.g. Apollo Healthcare Ltd."
+                                                                placeholder="e.g. Grand City Healthcare"
                                                                 autoFocus
                                                             />
                                                         </div>
@@ -222,7 +222,7 @@ export default function NewCompanyPage() {
                                                                 value={formData.email}
                                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                                                 className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-slate-800 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold"
-                                                                placeholder="contact@apollo.com"
+                                                                placeholder="contact@company.com"
                                                             />
                                                         </div>
                                                     </div>
@@ -248,7 +248,7 @@ export default function NewCompanyPage() {
                                                                 value={formData.website}
                                                                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                                                                 className="w-full pl-12 pr-4 py-4 rounded-2xl bg-slate-50 dark:bg-black/20 border border-slate-100 dark:border-slate-800 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none transition-all font-bold uppercase tracking-tight text-xs"
-                                                                placeholder="WWW.APOLLOHEALTH.COM"
+                                                                placeholder="WWW.COMPANY.COM"
                                                             />
                                                         </div>
                                                     </div>

@@ -22,8 +22,22 @@ export default async function TenantLayout({
         <div className="flex h-screen bg-gray-50">
             {/* Sidebar */}
             <aside className="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col">
-                <div className="p-4 border-b border-gray-100">
-                    <CompanySwitcher initialActiveCompany={currentCompany} />
+                <div className="p-6 border-b border-gray-100 bg-white flex flex-col gap-4">
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-slate-200 overflow-hidden flex items-center justify-center shrink-0">
+                            {tenant?.logo_url ? (
+                                <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-contain" />
+                            ) : (
+                                <div className="h-full w-full bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white">
+                                    <Building2 size={20} />
+                                </div>
+                            )}
+                        </div>
+                        <span className="font-bold text-gray-900 truncate">
+                            {tenant?.app_name || tenant?.name || "Tenant Admin"}
+                        </span>
+                    </div>
+                    <CompanySwitcher initialActiveCompany={currentCompany} tenant={tenant} />
                 </div>
 
                 <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
@@ -67,9 +81,15 @@ export default async function TenantLayout({
             {/* Main Content */}
             <main className="flex-1 overflow-auto">
                 <header className="bg-white p-4 shadow-sm md:hidden flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        <Activity className="text-blue-600 h-6 w-6" />
-                        <span className="font-bold text-gray-800">Tenant Portal</span>
+                    <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200 overflow-hidden flex items-center justify-center">
+                            {tenant?.logo_url ? (
+                                <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-contain" />
+                            ) : (
+                                <Activity className="text-blue-600 h-5 w-5" />
+                            )}
+                        </div>
+                        <span className="font-bold text-gray-800">{tenant?.app_name || tenant?.name || "Tenant Portal"}</span>
                     </div>
                     {/* Mobile Actions */}
                     <div className="flex gap-2">

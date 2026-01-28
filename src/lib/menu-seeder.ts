@@ -207,7 +207,7 @@ export async function ensureAdminMenus() {
             { key: 'general-settings', label: 'Global Settings', url: '/settings/global', icon: 'Settings', sort: 99, permission: 'settings:view' },
             { key: 'crm-masters', label: 'CRM Masters', url: '/settings/crm', icon: 'Database', sort: 92, permission: 'settings:view' },
             { key: 'import-leads', label: 'Import Leads', url: '/crm/import/leads', icon: 'UploadCloud', sort: 93, permission: 'crm:create_leads' },
-            { key: 'hms-config', label: 'HMS Configuration', url: '/settings/hms', icon: 'Stethoscope', sort: 96, permission: 'hms:admin' },
+            { key: 'hms-config', label: 'Clinical Config', url: '/settings/hms', icon: 'Stethoscope', sort: 96, permission: 'hms:admin' },
             { key: 'custom-fields', label: 'Custom Fields', url: '/settings/custom-fields', icon: 'FileText', sort: 95, permission: 'settings:view' },
         ];
 

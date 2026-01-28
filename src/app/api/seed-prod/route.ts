@@ -28,7 +28,7 @@ export async function GET() {
             company = await prisma.company.create({
                 data: {
                     tenant_id: tenant.id,
-                    name: 'Apollo Main Hospital',
+                    name: `${tenant.name} Hospital`, // Replaced hardcoded 'Main Hospital'
                     industry: 'Healthcare',
                     // currency: 'INR', // Not in schema
                     // country: 'India', // Not in schema (uses country_id relation)

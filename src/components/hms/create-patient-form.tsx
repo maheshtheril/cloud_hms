@@ -6,7 +6,6 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { FileUpload } from "@/components/ui/file-upload"
 import { VoiceWrapper } from "@/components/ui/voice-wrapper"
-
 import { getHMSSettings } from "@/app/actions/settings"
 
 interface CreatePatientFormProps {
@@ -19,6 +18,7 @@ interface CreatePatientFormProps {
     registrationProductId?: string | null
     registrationProductName?: string
     registrationProductDescription?: string
+    appName?: string
 }
 
 export function CreatePatientForm({
@@ -30,14 +30,15 @@ export function CreatePatientForm({
     registrationFee: propFee,
     registrationProductId: propId = null,
     registrationProductName: propName = 'Patient Registration Fee',
-    registrationProductDescription: propDesc = 'Standard Service'
+    registrationProductDescription: propDesc = 'Standard Service',
+    appName = 'Health Registry'
 }: CreatePatientFormProps) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'basic' | 'residency' | 'vault'>('basic');
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [isPending, setIsPending] = useState(false);
 
-    // Dynamic Settings State (World Standard: Component handles its own critical data sync)
+    // Dynamic Settings State
     const [registrationFee, setRegistrationFee] = useState(propFee ?? 100);
     const [registrationProductId, setRegistrationProductId] = useState(propId);
     const [registrationProductName, setRegistrationProductName] = useState(propName);
@@ -58,7 +59,7 @@ export function CreatePatientForm({
             }
         };
         syncSettings();
-    }, [propFee]); // Sync if prop changes, or on mount
+    }, [propFee]);
 
     // State for Vault
     const [profileImageUrl, setProfileImageUrl] = useState(initialData?.profile_image_url || initialData?.metadata?.profile_image_url || '');
@@ -83,16 +84,12 @@ export function CreatePatientForm({
     const [gender, setGender] = useState(initialData?.gender || 'male');
 
     // Billing Options State
-    // Billing Options State
     const checkRegistrationStatus = () => {
         if (!initialData) return { shouldCharge: true, status: 'new' };
-
         const expiry = initialData.metadata?.registration_expiry;
-        if (!expiry) return { shouldCharge: true, status: 'expired' }; // Treat missing as expired/never paid
-
+        if (!expiry) return { shouldCharge: true, status: 'expired' };
         const expiryDate = new Date(expiry);
         const today = new Date();
-
         if (expiryDate < today) return { shouldCharge: true, status: 'expired' };
         return { shouldCharge: false, status: 'valid', expiryDate };
     };
@@ -151,7 +148,7 @@ export function CreatePatientForm({
                             </h2>
                             <p className="text-xs font-medium text-slate-500 flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                Institutional Health Registry • v3.0 Pro
+                                {appName} • Trusted Digital Registry
                             </p>
                         </div>
                     </div>
@@ -190,11 +187,8 @@ export function CreatePatientForm({
                     </div>
                 </div>
 
-                {/* Scrollable Form Body */}
                 <form noValidate onSubmit={async (e) => {
                     e.preventDefault();
-                    // ... (Keeping logic same, just improving layout) ...
-                    // Smart Tab Validation Interceptor
                     const formData = new FormData(e.currentTarget);
                     const requiredFields = [
                         { name: 'first_name', tab: 'basic' },
@@ -204,16 +198,15 @@ export function CreatePatientForm({
 
                     for (const field of requiredFields) {
                         const value = formData.get(field.name);
-                        // Phone is special: Check if we are in 'noPhoneMode'
                         if (field.name === 'phone' && !value && !noPhoneMode) {
                             setShowPhonePrompt(true);
                             return;
                         }
 
-                        if ((!value || value.toString().trim() === '') && field.name !== 'phone') { // Strict check for others
+                        if ((!value || value.toString().trim() === '') && field.name !== 'phone') {
                             if (activeTab !== field.tab) {
                                 setActiveTab(field.tab as any);
-                                await new Promise(resolve => setTimeout(resolve, 100)); // Allow render
+                                await new Promise(resolve => setTimeout(resolve, 100));
                             }
                             setMessage({ type: 'error', text: `Missing mandatory field: ${field.name.replace('_', ' ')}` });
                             setTimeout(() => {
@@ -221,14 +214,6 @@ export function CreatePatientForm({
                                 element?.focus();
                             }, 150);
                             return;
-                        }
-                        if (field.name === 'phone' && !noPhoneMode) {
-                            const phoneRegex = /^\d{10}$/;
-                            const cleanPhone = (value || '').toString().replace(/\D/g, '');
-                            if (!phoneRegex.test(cleanPhone)) {
-                                setShowPhonePrompt(true);
-                                return;
-                            }
                         }
                     }
 
@@ -240,24 +225,12 @@ export function CreatePatientForm({
                             setMessage({ type: 'error', text: (res as any).error });
                         } else {
                             if ((res as any).invoiceId) {
-                                // REDIRECT TO BILLING
-                                const warning = (res as any).warning;
-                                if (warning) {
-                                    setMessage({ type: 'error', text: `Registration done, but: ${warning}` });
-                                } else {
-                                    setMessage({ type: 'success', text: "Registration complete. Redirecting..." });
-                                }
                                 setTimeout(() => {
                                     router.push(`/hms/billing/${(res as any).invoiceId}`);
                                 }, 800);
                                 if (onSuccess) onSuccess(res);
                                 return;
-                            } else if ((res as any).billingError) {
-                                setMessage({ type: 'error', text: `Registration done, but Billing Failed: ${(res as any).billingError}` });
-                                if (onSuccess) onSuccess(res);
-                                return;
                             }
-
                             if (onSuccess) onSuccess(res);
                             else {
                                 setMessage({ type: 'success', text: "Patient profile created successfully." });
@@ -273,8 +246,7 @@ export function CreatePatientForm({
 
                     <div className="flex-1 overflow-y-auto px-5 py-4 scrollbar-thin scrollbar-thumb-indigo-100 dark:scrollbar-thumb-slate-800">
                         {message && (
-                            <div className={`mb-4 p-3 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-4 shadow-lg ${message.type === 'success' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' : 'bg-gradient-to-r from-rose-500 to-red-500 text-white'
-                                }`}>
+                            <div className={`mb-4 p-3 rounded-xl flex items-center gap-3 animate-in slide-in-from-top-4 shadow-lg ${message.type === 'success' ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white' : 'bg-gradient-to-r from-rose-500 to-red-500 text-white'}`}>
                                 <div className="h-6 w-6 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
                                     {message.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
                                 </div>
@@ -283,12 +255,10 @@ export function CreatePatientForm({
                         )}
 
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
-
                             {/* TAB 1: IDENTITY */}
                             <div className={activeTab === 'basic' ? 'block' : 'hidden'}>
                                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
                                     <div className="lg:col-span-8 space-y-4">
-                                        {/* Name Section */}
                                         <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
                                             <h3 className="text-xs font-black text-indigo-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                                                 <User className="h-4 w-4" /> Personal Details
@@ -320,7 +290,6 @@ export function CreatePatientForm({
                                             </div>
                                         </div>
 
-                                        {/* Demographics */}
                                         <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
                                             <h3 className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                                                 <Activity className="h-4 w-4" /> Vitals & Demographics
@@ -370,7 +339,6 @@ export function CreatePatientForm({
                                         </div>
                                     </div>
 
-                                    {/* Sidebar for ID */}
                                     <div className="lg:col-span-4 space-y-6">
                                         <div className="bg-gradient-to-br from-slate-900 to-indigo-950 p-4 rounded-2xl text-white shadow-xl shadow-indigo-900/20 relative overflow-hidden group">
                                             <div className="absolute top-0 right-0 p-32 bg-indigo-500 rounded-full blur-[60px] opacity-20 group-hover:opacity-30 transition-opacity"></div>
@@ -464,19 +432,17 @@ export function CreatePatientForm({
                                         <h3 className="text-2xl font-black text-slate-800">Secure Fiscal Vault</h3>
                                         <p className="text-slate-500 max-w-md mx-auto mt-2">
                                             All financial transactions and privacy records are encrypted and stored in our secure ledger.
-                                            <br /><span className="text-xs uppercase tracking-widest font-bold text-indigo-500 mt-2 block">Powered by Blockchain Ledger v4</span>
+                                            <br /><span className="text-xs uppercase tracking-widest font-bold text-indigo-500 mt-2 block">Enterprise Standard Security</span>
                                         </p>
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     </div>
 
-                    {/* Premium Footer with Gradient Visuals */}
+                    {/* Premium Footer */}
                     <div className="px-5 py-4 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between z-10 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] shrink-0">
                         <div className="flex items-center gap-6">
-                            {/* Stylish Checkbox Card */}
                             <label className="group flex items-center gap-3 cursor-pointer p-1 pr-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
                                 <div className="relative">
                                     <input
@@ -498,45 +464,9 @@ export function CreatePatientForm({
                                             Fee: <span className={chargeRegistration && !waiveFee ? "text-emerald-500" : "text-slate-300 decoration-slate-400 line-through"}>₹{registrationFee.toFixed(2)}</span>
                                             {waiveFee && <span className="text-amber-500 ml-1 font-black uppercase text-[9px]">(Waived)</span>}
                                         </span>
-                                        {regStatus.status === 'valid' && !chargeRegistration && (
-                                            <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5">
-                                                <Shield className="h-3 w-3" /> Valid till {regStatus.expiryDate?.toLocaleDateString()}
-                                            </span>
-                                        )}
-                                        {regStatus.status === 'expired' && chargeRegistration && initialData && (
-                                            <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 mt-0.5">
-                                                Previous reg. expired
-                                            </span>
-                                        )}
                                     </div>
                                 </div>
                             </label>
-
-                            {/* Waive Fee Toggle & Remarks */}
-                            {chargeRegistration && (
-                                <div className="flex flex-col gap-2 animate-in slide-in-from-left-2 fade-in duration-300 border-l pl-4 border-slate-200 dark:border-slate-700">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={waiveFee}
-                                            onChange={(e) => setWaiveFee(e.target.checked)}
-                                            name="waive_fee"
-                                            className="w-3 h-3 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                                        />
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Waive Fee</span>
-                                    </label>
-
-                                    {waiveFee && (
-                                        <input
-                                            type="text"
-                                            name="waive_reason"
-                                            placeholder="Reason for waiver (Required)"
-                                            required={waiveFee}
-                                            className="h-7 w-48 bg-slate-50 dark:bg-slate-800 border-0 border-b border-slate-300 dark:border-slate-600 text-xs focus:ring-0 focus:border-indigo-500 px-1 bg-transparent transition-all placeholder:text-slate-400"
-                                        />
-                                    )}
-                                </div>
-                            )}
                         </div>
 
                         <div className="flex items-center gap-4">
@@ -559,76 +489,52 @@ export function CreatePatientForm({
                             </button>
                         </div>
                     </div>
-                </form >
-            </div >
+                </form>
+            </div>
 
-            {/* Global Phone Prompt Overlay (Placed here to ensure visibility over tabs) */}
-            {
-                showPhonePrompt && (
-                    <div className="absolute inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
-                        <div className="bg-white dark:bg-slate-900 w-full max-w-sm p-8 rounded-3xl shadow-2xl border border-white/20 animate-in zoom-in-95 scale-100 ring-4 ring-indigo-500/20">
-                            <div className="flex flex-col items-center text-center mb-8">
-                                <div className="h-16 w-16 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-4 shadow-inner">
-                                    <Phone className="h-8 w-8" />
-                                </div>
-                                <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Mobile Required</h3>
-                                <p className="text-slate-500 font-medium text-sm">Please enter the patient's WhatsApp-enabled mobile number to proceed.</p>
+            {showPhonePrompt && (
+                <div className="absolute inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-sm p-8 rounded-3xl shadow-2xl border border-white/20 animate-in zoom-in-95 scale-100 ring-4 ring-indigo-500/20">
+                        <div className="flex flex-col items-center text-center mb-8">
+                            <div className="h-16 w-16 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-4 shadow-inner">
+                                <Phone className="h-8 w-8" />
                             </div>
-                            <div className="space-y-6">
-                                <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">+91</span>
-                                    <input
-                                        autoFocus
-                                        value={phone}
-                                        onChange={(e) => {
-                                            const val = e.target.value.replace(/\D/g, '');
-                                            if (val.length <= 10) setPhone(val);
-                                        }}
-                                        placeholder="Mobile Number"
-                                        className="w-full h-16 pl-14 pr-6 text-2xl bg-slate-50 border-2 border-indigo-100 focus:border-indigo-500 rounded-2xl font-black text-slate-800 outline-none tracking-widest text-center transition-all shadow-sm focus:shadow-md"
-                                    />
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        if (phone && phone.length === 10) {
-                                            setShowPhonePrompt(false);
-                                            const form = document.querySelector('form#patient-master-form') as HTMLFormElement;
-                                            if (form) form.requestSubmit();
-                                        } else {
-                                            setMessage({ type: 'error', text: 'Please enter a valid 10-digit number' });
-                                        }
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Mobile Required</h3>
+                            <p className="text-slate-500 font-medium text-sm">Please enter the patient's WhatsApp-enabled mobile number to proceed.</p>
+                        </div>
+                        <div className="space-y-6">
+                            <div className="relative">
+                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">+91</span>
+                                <input
+                                    autoFocus
+                                    value={phone}
+                                    onChange={(e) => {
+                                        const val = e.target.value.replace(/\D/g, '');
+                                        if (val.length <= 10) setPhone(val);
                                     }}
-                                    className="w-full h-16 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:scale-[1.02] shadow-xl shadow-indigo-500/30 flex items-center justify-center gap-2"
-                                >
-                                    <CheckCircle2 className="h-5 w-5" />
-                                    Save & Continue
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        setNoPhoneMode(true);
+                                    placeholder="Mobile Number"
+                                    className="w-full h-16 pl-14 pr-6 text-2xl bg-slate-50 border-2 border-indigo-100 focus:border-indigo-500 rounded-2xl font-black text-slate-800 outline-none tracking-widest text-center transition-all shadow-sm focus:shadow-md"
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    if (phone && phone.length === 10) {
                                         setShowPhonePrompt(false);
-                                        // Wait a tick for state to update, then submit
-                                        setTimeout(() => {
-                                            const form = document.querySelector('form') as HTMLFormElement; // Using generic form selector as ID might be missing or dynamic
-                                            if (form) form.requestSubmit();
-                                        }, 100);
-                                    }}
-                                    className="w-full py-2 text-slate-400 hover:text-slate-600 font-bold text-xs uppercase tracking-widest hover:underline transition-all"
-                                >
-                                    Proceed without Number
-                                </button>
-                            </div>
+                                        const form = document.querySelector('form#patient-master-form') as HTMLFormElement;
+                                        if (form) form.requestSubmit();
+                                    }
+                                }}
+                                className="w-full h-16 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:scale-[1.02] shadow-xl shadow-indigo-500/30 flex items-center justify-center gap-2"
+                            >
+                                <CheckCircle2 className="h-5 w-5" />
+                                Save & Continue
+                            </button>
                         </div>
                     </div>
-                )
-            }
-        </div >
-
+                </div>
+            )}
+        </div>
     );
 }

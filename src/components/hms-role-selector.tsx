@@ -38,7 +38,7 @@ export default function HMSRoleSelector({ userId, allRoles, currentRoleIds }: {
     return (
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 space-y-4">
             <div className="flex justify-between items-center">
-                <h3 className="font-semibold text-gray-800">Assigned HMS Roles</h3>
+                <h3 className="font-semibold text-gray-800">Assigned Platform Roles</h3>
                 <button
                     onClick={handleSave}
                     disabled={isSaving}
@@ -57,8 +57,8 @@ export default function HMSRoleSelector({ userId, allRoles, currentRoleIds }: {
                             key={role.id}
                             onClick={() => toggleRole(role.id)}
                             className={`cursor-pointer border rounded-lg p-3 transition-all ${isSelected
-                                    ? 'border-blue-500 bg-blue-50'
-                                    : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                ? 'border-blue-500 bg-blue-50'
+                                : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
                                 }`}
                         >
                             <div className="flex items-start gap-3">

@@ -200,7 +200,7 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
                                     System Role
                                 </th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                    HMS Roles
+                                    Module Roles
                                 </th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                     Status
@@ -245,14 +245,14 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
                                             {user.hms_user_roles && user.hms_user_roles.length > 0 ? (
                                                 user.hms_user_roles.map((ur) => (
                                                     <span
-                                                        key={ur.id}
+                                                        key={ur.hms_role.id}
                                                         className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded-md border border-blue-100 font-medium"
                                                     >
                                                         {ur.hms_role.name}
                                                     </span>
                                                 ))
                                             ) : (
-                                                <span className="text-gray-400 text-sm italic">No HMS roles assigned</span>
+                                                <span className="text-gray-400 text-sm italic">No specialized roles assigned</span>
                                             )}
                                         </div>
                                     </td>

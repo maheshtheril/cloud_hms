@@ -150,7 +150,7 @@ export function ClassicVoucherEditor({
                     <span className="text-[#ffffcc]">No. 1</span>
                 </div>
                 <div className="flex items-center gap-4">
-                    <span className="text-[#64ffff]">SAAS HMS ERP</span>
+                    <span className="text-[#64ffff]">Enterprise ERP</span>
                     <span className="text-[#ffffcc]">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' })}</span>
                 </div>
             </div>
@@ -391,7 +391,7 @@ export function ClassicVoucherEditor({
                     <div className="bg-[#004d4d] flex flex-col items-center py-4 border border-[#006666]">
                         <span className="text-[12px] font-black text-[#ffffcc]">GATEWAY of TALLY</span>
                         <div className="h-px w-full bg-[#006666] my-2" />
-                        <span className="text-[10px] text-[#64ffff]">HMS INSTITUTIONAL</span>
+                        <span className="text-[10px] text-[#64ffff]">Platform Operations</span>
                     </div>
 
                     <div className="flex-1 space-y-1">

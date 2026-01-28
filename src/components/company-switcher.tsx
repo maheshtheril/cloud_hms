@@ -8,9 +8,11 @@ import Link from 'next/link'
 import { useSession } from 'next-auth/react'
 
 export function CompanySwitcher({
-    initialActiveCompany
+    initialActiveCompany,
+    tenant
 }: {
-    initialActiveCompany?: { id: string, name: string } | null
+    initialActiveCompany?: { id: string, name: string, logo_url?: string | null } | null,
+    tenant?: any
 }) {
     const [isOpen, setIsOpen] = useState(false)
     const [companies, setCompanies] = useState<any[]>([])
@@ -63,8 +65,16 @@ export function CompanySwitcher({
                     color: '#e2e8f0'
                 }}
             >
-                <div className="flex items-center justify-center h-8 w-8 rounded" style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa' }}>
-                    <Building2 size={16} />
+                <div className="flex items-center justify-center h-8 w-8 rounded overflow-hidden bg-white shadow-sm ring-1 ring-slate-200 dark:ring-zinc-800 shrink-0">
+                    {activeCompany.logo_url ? (
+                        <img src={activeCompany.logo_url} alt={activeCompany.name} className="h-full w-full object-contain p-1" />
+                    ) : tenant?.logo_url ? (
+                        <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-contain p-1" />
+                    ) : (
+                        <div className="flex items-center justify-center h-full w-full bg-indigo-500/10 text-indigo-500 font-bold text-xs">
+                            {activeCompany.name?.substring(0, 1).toUpperCase()}
+                        </div>
+                    )}
                 </div>
                 <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate" style={{ color: '#f1f5f9' }}>
@@ -92,8 +102,16 @@ export function CompanySwitcher({
                                 disabled={loading}
                                 className="w-full text-left px-3 py-2 hover:bg-gray-50 flex items-center gap-2 group"
                             >
-                                <div className="flex items-center justify-center h-6 w-6 rounded bg-gray-100 text-gray-500 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
-                                    <Building2 size={12} />
+                                <div className="flex items-center justify-center h-7 w-7 rounded overflow-hidden bg-white shadow-sm ring-1 ring-slate-100 group-hover:ring-blue-200 transition-all shrink-0">
+                                    {company.logo_url ? (
+                                        <img src={company.logo_url} alt={company.name} className="h-full w-full object-contain p-1" />
+                                    ) : tenant?.logo_url ? (
+                                        <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-contain p-1" />
+                                    ) : (
+                                        <div className="flex items-center justify-center h-full w-full bg-slate-50 text-slate-400 font-bold text-[10px] group-hover:bg-blue-50 group-hover:text-blue-500">
+                                            {company.name?.substring(0, 1).toUpperCase()}
+                                        </div>
+                                    )}
                                 </div>
                                 <span className={`flex-1 text-sm ${company.enabled ? 'text-gray-700' : 'text-gray-400'}`}>
                                     {company.name}
