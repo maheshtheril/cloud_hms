@@ -4,6 +4,7 @@ import { signOut } from '@/auth'
 import { getMenuItems } from '../actions/navigation'
 import { CompanySwitcher } from '@/components/company-switcher'
 import { getCurrentCompany } from '../actions/company'
+import { getTenant } from '../actions/tenant'
 
 // Map icon strings to components
 const IconMap: any = {
@@ -17,6 +18,7 @@ export default async function TenantLayout({
 }) {
     const menuItems = await getMenuItems();
     const currentCompany = await getCurrentCompany();
+    const tenant = await getTenant();
 
     return (
         <div className="flex h-screen bg-gray-50">
