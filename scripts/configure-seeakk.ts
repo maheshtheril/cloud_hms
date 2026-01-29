@@ -71,40 +71,43 @@ async function main() {
     const adminEmail = "admin@seeakk.com";
     const defaultPass = "password123";
 
-    await prisma.$executeRaw`
-        INSERT INTO app_user (
-            tenant_id, 
-            email, 
-            password, 
-            is_active, 
-            is_admin, 
-            is_tenant_admin,
-            name,
-            role,
-            created_at
-        ) VALUES (
-            ${tenant.id}::uuid,
-            ${adminEmail}, 
-            crypt(${defaultPass}, gen_salt('bf')), 
-            true, 
-            true, 
-            true, 
-            'Seeakk Admin',
-            'admin',
-            NOW()
-        )
-        ON CONFLICT (email) DO NOTHING;
-    `;
+    const existingUser = await prisma.app_user.findFirst({ where: { email: adminEmail } });
+    if (!existingUser) {
+        console.log("Creating Admin User...");
+        await prisma.$executeRaw`
+            INSERT INTO app_user (id, tenant_id, email, password, name, is_admin, is_tenant_admin, is_active, role)
+            VALUES (gen_random_uuid(), ${tenant.id}::uuid, ${adminEmail}, crypt(${defaultPass}, gen_salt('bf')), 'Seeakk Admin', true, true, true, 'admin')
+        `;
+    } else {
+        console.log("Admin user already exists.");
+    }
 
     console.log("✅ Admin User Ready:");
     console.log(`   Email: ${adminEmail}`);
     console.log(`   Pass:  ${defaultPass}`);
+
+    // 4. CRITICAL: Cleanup CRM Menus (Remove Sales Orders)
+    console.log("🧹 Cleaning up CRM menus...");
+    const movedItems = await prisma.menu_items.updateMany({
+        where: {
+            OR: [
+                { label: { contains: 'Sales Order', mode: 'insensitive' } },
+                { key: { contains: 'sales-order', mode: 'insensitive' } }
+            ],
+            module_key: 'crm'
+        },
+        data: {
+            module_key: 'sales' // Hide from CRM
+        }
+    });
+    console.log(`✅ Relocated ${movedItems.count} rogue sales items out of CRM.`);
+
     console.log("-----------------------------------------");
     console.log("👉 ONCE DNS IS READY:");
     console.log("   Go to https://seeakk.com");
     console.log("   You will see 'Seeakk CRM' branding.");
     console.log("   Login with above credentials.");
-    console.log("   You will ONLY see CRM features.");
+    console.log("   You will ONLY see CRM features and Settings.");
     console.log("-----------------------------------------");
 }
 

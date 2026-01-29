@@ -38,9 +38,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // SELF-HEALING: Disabled because it's too expensive (100+ DB writes per request) 
-  // and causes hanging/performance issues. 
-  // await auditAndFixMenuPermissions();
+  // SELF-HEALING: Re-enabled to fix rogue menu items like "Sales Orders" in CRM.
+  // Performance is mitigated by internal 'hasAudited' flag in the action.
+  await auditAndFixMenuPermissions();
 
   return (
     <html lang="en" suppressHydrationWarning className="dark">

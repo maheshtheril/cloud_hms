@@ -95,7 +95,9 @@ export async function getMenuItems() {
             globalActiveModules.forEach(m => allowedModuleKeys.add(m.module_key));
         }
 
-        // Always allow General and Configuration
+        // Always allow General and Configuration (Base UI)
+        allowedModuleKeys.add('general');
+        allowedModuleKeys.add('configuration');
         allowedModuleKeys.add('system');
         allowedModuleKeys.add('settings');
 
@@ -213,7 +215,7 @@ export async function getMenuItems() {
 
             // SMART CONFIG FILTER: Hide module-specific settings if module is disabled
             // e.g. Hide 'hms-config' if 'hms' module is not allowed.
-            if ((modKey === 'system' || modKey === 'configuration' || modKey === 'settings')) {
+            if ((modKey === 'system' || modKey === 'configuration' || modKey === 'settings' || modKey === 'general')) {
                 const itemKey = (item.key || '').toLowerCase();
                 if (itemKey.includes('hms') && !allowedModuleKeys.has('hms')) continue;
                 if (itemKey.includes('accounting') && !allowedModuleKeys.has('accounting') && !allowedModuleKeys.has('finance')) continue;
