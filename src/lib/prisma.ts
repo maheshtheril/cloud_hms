@@ -1,23 +1,21 @@
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
 
-const globalForPrisma = global as unknown as { prisma: any };
+import { PrismaClient } from '@prisma/client'
 
-const connectionString = `${process.env.DATABASE_URL}`;
+const prismaClientSingleton = () => {
+  return new PrismaClient({
+    log: ['error', 'warn'],
+  })
+}
 
-const pool = new Pool({
-  connectionString,
-  ssl: { rejectUnauthorized: false }
-});
-const adapter = new PrismaPg(pool);
+declare global {
+  var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>
+}
 
-const basePrisma = new PrismaClient({
-  adapter,
-  log: ['error', 'warn'],
-});
+const basePrisma = globalThis.prismaGlobal ?? prismaClientSingleton()
 
-// Models that support branch_id
+if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = basePrisma
+
+// Models that support branch_id filtering
 const modelsWithBranch = [
   'hms_appointments', 'hms_patient', 'global_stock_location', 'hms_invoice',
   'crm_leads', 'hms_encounter', 'hms_admission', 'hms_ward', 'journals',
@@ -37,13 +35,14 @@ export const prisma = basePrisma.$extends({
         const modelLower = model.toLowerCase();
         const isSystemModel = globalModels.includes(modelLower);
 
-        // 1. Resolve Context (Tenant & Branch) - Skip system models to prevent recursion
+        // 1. Resolve Context (Tenant & Branch)
         let activeBranchId = null;
         let customDbUrl = null;
         let tenantId = null;
 
         if (!isSystemModel) {
           try {
+            // Use the established auth pattern to get session context
             const { auth } = await import('@/auth');
             const session = await auth();
             activeBranchId = session?.user?.current_branch_id;
@@ -54,23 +53,21 @@ export const prisma = basePrisma.$extends({
           }
         }
 
-        // 2. Handle 'Bring Your Own Database' (BYOB)
+        // 2. Handle 'Bring Your Own Database' (BYOB) for external tenants
         if (customDbUrl && tenantId && !isSystemModel) {
           try {
             const { getClientForTenant } = await import('./db-manager');
             const tenantClient = await getClientForTenant(tenantId, customDbUrl);
 
             if (tenantClient && (tenantClient as any)[model]) {
-              // Forward the query to the tenant-specific Prisma Client
               return (tenantClient as any)[model][operation](args);
             }
           } catch (err) {
-            console.error(`[Prisma Extension] CRITICAL: DB Switch failed for tenant ${tenantId}. Falling back to main DB.`, err);
-            // Fallback: system continues and uses basePrisma below
+            console.error(`[Prisma Extension] DB Switch failed for tenant ${tenantId}. Falling back to main.`, err);
           }
         }
 
-        // 3. Handle Multi-Branch Filtering (Standard HMS Logic)
+        // 3. Automated Multi-Branch Filtering
         if (modelsWithBranch.includes(modelLower) && activeBranchId) {
           const anyArgs = args as any;
           if (['findMany', 'findFirst', 'findUnique', 'count', 'aggregate', 'groupBy'].includes(operation)) {
@@ -93,5 +90,3 @@ export const prisma = basePrisma.$extends({
     },
   },
 });
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
