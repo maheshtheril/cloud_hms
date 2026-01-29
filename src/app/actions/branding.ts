@@ -19,7 +19,16 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
                     app_name: true,
                     logo_url: true,
                     name: true,
-                    metadata: true
+                    metadata: true,
+                    company_settings: {
+                        select: {
+                            company: {
+                                select: {
+                                    logo_url: true
+                                }
+                            }
+                        }
+                    }
                 }
             });
         }
@@ -44,7 +53,16 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
                     app_name: true,
                     logo_url: true,
                     name: true,
-                    metadata: true
+                    metadata: true,
+                    company_settings: {
+                        select: {
+                            company: {
+                                select: {
+                                    logo_url: true
+                                }
+                            }
+                        }
+                    }
                 }
             });
         }
@@ -58,7 +76,16 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
                     app_name: true,
                     logo_url: true,
                     name: true,
-                    metadata: true
+                    metadata: true,
+                    company_settings: {
+                        select: {
+                            company: {
+                                select: {
+                                    logo_url: true
+                                }
+                            }
+                        }
+                    }
                 }
             });
         }
@@ -90,7 +117,7 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
 
         return {
             app_name: tenant?.app_name || null,
-            logo_url: tenant?.logo_url || null,
+            logo_url: tenant?.logo_url || (tenant?.company_settings?.[0]?.company?.logo_url) || null,
             name: tenant?.name || null,
             isPublic
         };
