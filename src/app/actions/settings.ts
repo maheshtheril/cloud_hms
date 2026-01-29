@@ -197,16 +197,19 @@ export async function updateTenantSettings(data: {
 
         const currentMeta = (currentTenant?.metadata as any) || {};
 
+        // Only allow updating registration_enabled if the user is a Global Admin (Developer)
+        const updatedMeta = { ...currentMeta };
+        if (session.user.isAdmin && data.registrationEnabled !== undefined) {
+            updatedMeta.registration_enabled = data.registrationEnabled;
+        }
+
         await prisma.tenant.update({
             where: { id: data.tenantId },
             data: {
                 app_name: data.appName,
                 logo_url: data.logoUrl,
                 db_url: data.dbUrl,
-                metadata: {
-                    ...currentMeta,
-                    registration_enabled: data.registrationEnabled
-                }
+                metadata: updatedMeta
             }
         });
 

@@ -61,6 +61,7 @@ export default async function GlobalSettingsPage() {
                 tenant={JSON.parse(JSON.stringify(tenant))}
                 currencies={currencies}
                 isTenantAdmin={session.user.isTenantAdmin}
+                isAdmin={session.user.isAdmin}
             />
         </div>
     )
