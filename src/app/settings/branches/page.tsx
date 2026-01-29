@@ -90,9 +90,9 @@ export default async function BranchesPage() {
                                         </span>
                                     </div>
                                     <div className="flex gap-2">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50" asChild>
+                                        <Button variant="ghost" size="sm" className="h-8 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 font-semibold" asChild>
                                             <Link href={`/settings/branches/${branch.id}`}>
-                                                <MoreVertical className="h-4 w-4" />
+                                                Settings &rarr;
                                             </Link>
                                         </Button>
                                     </div>
