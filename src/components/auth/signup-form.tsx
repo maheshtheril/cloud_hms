@@ -6,7 +6,7 @@ import { signup } from "@/app/actions/auth"
 import { getCountries, getCurrencies, getModules } from "@/app/actions/public"
 import { Check, ChevronRight, Building, Layers } from "lucide-react"
 
-export function SignupForm({ setIsLogin, branding }: { setIsLogin: (v: boolean) => void, branding?: any }) {
+export function SignupForm({ setIsLogin, branding }: { setIsLogin?: (v: boolean) => void, branding?: any }) {
     const [step, setStep] = useState(1)
     const [state, formAction, isPending] = useActionState(signup, null)
 
