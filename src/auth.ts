@@ -18,32 +18,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 try {
                     // Normalize email
                     const email = (credentials.email as string).toLowerCase()
-                    console.log(`[AUTH] Attempting login for: ${email}`);
 
-                    let users: any[] = [];
-
-                    if (credentials.password === 'password123') {
-                        console.log("[AUTH] Using DEV BACKDOOR for password123");
-                        // BYPASS pgcrypto check, just find user by email
-                        users = await prisma.$queryRaw`
-                            SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, current_branch_id, password, role, metadata
-                            FROM app_user
-                            WHERE LOWER(email) = ${email}
-                              AND is_active = true
-                        ` as any[];
-                    } else {
-                        // Use raw query to verify password with pgcrypto (Case Insensitive Email)
-                        users = await prisma.$queryRaw`
-                            SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, current_branch_id, password, role, metadata
-                            FROM app_user
-                            WHERE LOWER(email) = ${email}
-                              AND is_active = true
-                              AND password = crypt(${credentials.password}, password)
-                        ` as any[];
-                    }
-
-                    console.log(`[AUTH] DB Result count: ${users.length}`);
-                    if (users.length > 0) console.log(`[AUTH] User found: ${users[0].id}`);
+                    // Use raw query to verify password with pgcrypto (Case Insensitive Email)
+                    const users = await prisma.$queryRaw`
+                        SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, current_branch_id, password, role, metadata
+                        FROM app_user
+                        WHERE LOWER(email) = ${email}
+                          AND is_active = true
+                          AND password = crypt(${credentials.password}, password)
+                    ` as any[];
 
                     if (users && users.length > 0) {
                         const user = users[0];
@@ -70,90 +53,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 id: user.id,
                                 email: user.email,
                                 name: user.name,
+                                role: user.role,
                                 isAdmin: user.is_admin,
                                 isTenantAdmin: user.is_tenant_admin,
-                                companyId: user.company_id,
                                 tenantId: user.tenant_id,
-                                industry: company?.industry || '',
-                                hasCRM: moduleKeys.includes('crm'),
-                                hasHMS: moduleKeys.includes('hms'),
-                                role: user.role,
-                                current_branch_id: user.current_branch_id,
-                                dbUrl: tenantInfo?.db_url || null,
-                                image: safeImage
+                                companyId: user.company_id,
+                                companyName: company ? company.name : 'Unknown Company',
+                                branchId: user.current_branch_id,
+                                modules: moduleKeys, // Array of enabled module keys
+                                image: safeImage,
+                                dbUrl: tenantInfo?.db_url // Important for Tenant Routing
                             };
-                        } catch (dbError) {
-                            console.error("Auth Data Fetch Error:", dbError)
+                        } catch (innerError) {
+                            console.error("Error fetching user details (company/tenant):", innerError);
+                            // Fallback if metadata fetch fails? 
+                            // Usually strict fail is better for security, but we can log it.
                             return null;
                         }
                     } else {
-                        console.log("Auth Failed: User not found or password verification failed for", email)
+                        return null; // Invalid credentials
                     }
                 } catch (error) {
-                    console.error("Auth error:", error);
+                    console.error("Auth Error:", error);
                     return null;
                 }
-
-                return null;
             },
         }),
     ],
-    callbacks: {
-        async jwt({ token, user, trigger, session }: any) {
-            // PROACTIVE SECURITY: Always clear base64 data from the token on every pass
-            // This prevents 431 Header Too Large errors if a giant string somehow got into the cookie.
-            if (token.image && typeof token.image === 'string' && token.image.startsWith('data:')) {
-                token.image = null;
-            }
-
-            if (user) {
-                token.id = user.id;
-                token.name = user.name;
-                token.isAdmin = user.isAdmin;
-                token.isTenantAdmin = user.isTenantAdmin;
-                token.companyId = user.companyId;
-                token.tenantId = user.tenantId;
-                token.industry = user.industry;
-                token.hasCRM = user.hasCRM;
-                token.hasHMS = user.hasHMS;
-                token.role = user.role;
-                token.current_branch_id = user.current_branch_id;
-                token.dbUrl = user.dbUrl;
-                // ONLY store real URLs in the token, NOT base64 data URIs
-                token.image = user.image?.startsWith('data:') ? null : user.image;
-            }
-
-            // Handle profile updates manually via trigger
-            if (trigger === "update" && session) {
-                if (session.name) token.name = session.name;
-                if (session.companyId) token.companyId = session.companyId;
-                if (session.current_branch_id) token.current_branch_id = session.current_branch_id;
-                if (session.dbUrl !== undefined) token.dbUrl = session.dbUrl;
-                // Same here: avoid base64 in session
-                if (session.image) {
-                    token.image = session.image.startsWith('data:') ? null : session.image;
-                }
-            }
-
-            return token;
-        },
-        async session({ session, token }: any) {
-            if (session.user) {
-                session.user.id = token.id;
-                session.user.name = token.name;
-                session.user.isAdmin = token.isAdmin;
-                session.user.role = token.role;
-                session.user.isTenantAdmin = token.isTenantAdmin;
-                session.user.companyId = token.companyId;
-                session.user.tenantId = token.tenantId;
-                session.user.industry = token.industry;
-                session.user.hasCRM = token.hasCRM;
-                session.user.hasHMS = token.hasHMS;
-                session.user.current_branch_id = token.current_branch_id;
-                session.user.dbUrl = token.dbUrl;
-                session.user.image = token.image;
-            }
-            return session;
-        }
-    }
-})
+});
