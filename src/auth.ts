@@ -18,6 +18,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 try {
                     // Normalize email
                     const email = (credentials.email as string).toLowerCase()
+                    console.log(`[AUTH] Attempting login for: ${email}`);
 
                     // Use raw query to verify password with pgcrypto (Case Insensitive Email)
                     const users = await prisma.$queryRaw`
@@ -27,6 +28,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                           AND is_active = true
                           AND password = crypt(${credentials.password}, password)
                     ` as any[];
+
+                    console.log(`[AUTH] DB Result count: ${users.length}`);
+                    if (users.length > 0) console.log(`[AUTH] User found: ${users[0].id}`);
 
                     if (users && users.length > 0) {
                         const user = users[0];
