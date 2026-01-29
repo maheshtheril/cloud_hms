@@ -9,7 +9,7 @@ async function main() {
     const targetDomain = "seeakk.com";
 
     // A. Identify Conflicts
-    const slugTenant = await prisma.tenant.findUnique({ where: { slug: targetSlug } });
+    const slugTenant = await prisma.tenant.findFirst({ where: { slug: targetSlug } });
     const domainTenant = await prisma.tenant.findFirst({ where: { domain: targetDomain } });
 
     let finalTenantId = null;
