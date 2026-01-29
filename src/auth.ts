@@ -118,4 +118,41 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             },
         }),
     ],
+    callbacks: {
+        ...authConfig.callbacks,
+        async jwt({ token, user }) {
+            if (user) {
+                const u = user as any;
+                token.id = u.id;
+                token.tenantId = u.tenantId;
+                token.companyId = u.companyId;
+                token.role = u.role;
+                token.modules = u.modules;
+                token.isAdmin = u.isAdmin;
+                token.isTenantAdmin = u.isTenantAdmin;
+                token.industry = u.industry;
+                token.hasCRM = u.hasCRM;
+                token.hasHMS = u.hasHMS;
+                token.dbUrl = u.dbUrl;
+            }
+            return token;
+        },
+        async session({ session, token }) {
+            if (token && session.user) {
+                session.user.id = token.id as string;
+                const u = session.user as any;
+                u.tenantId = token.tenantId;
+                u.companyId = token.companyId;
+                u.role = token.role;
+                u.modules = token.modules;
+                u.isAdmin = token.isAdmin;
+                u.isTenantAdmin = token.isTenantAdmin;
+                u.industry = token.industry;
+                u.hasCRM = token.hasCRM;
+                u.hasHMS = token.hasHMS;
+                u.dbUrl = token.dbUrl;
+            }
+            return session;
+        }
+    }
 });
