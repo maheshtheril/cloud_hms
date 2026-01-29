@@ -400,6 +400,45 @@ export async function createBranch(data: {
     }
 }
 
+export async function updateBranch(id: string, data: {
+    name: string;
+    code: string;
+    type: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+    is_active?: boolean;
+}) {
+    const session = await auth();
+    if (!session?.user?.id || !session.user.companyId || !session.user.tenantId) {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        await prisma.hms_branch.update({
+            where: {
+                id,
+                company_id: session.user.companyId // Security: Ensure it belongs to current company
+            },
+            data: {
+                name: data.name,
+                code: data.code.toUpperCase(),
+                type: data.type,
+                phone: data.phone,
+                email: data.email,
+                address: data.address,
+                is_active: data.is_active ?? true
+            }
+        });
+
+        revalidatePath('/settings/branches');
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update branch:", error);
+        return { error: "Failed to update branch." };
+    }
+}
+
 export async function createDesignation(data: {
     name: string;
     description?: string;

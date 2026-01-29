@@ -8,42 +8,43 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Loader2, Save, X, Building2, MapPin, Phone, Hash, Tag } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
+import { Loader2, Save, X, Building2, MapPin, Phone, MessageSquare } from 'lucide-react'
 import { toast } from '@/components/ui/use-toast'
 import { Badge } from '@/components/ui/badge'
-import { prisma } from '@/lib/prisma'
-// Using a generic action for now since we need to create the action file
-import { createBranch } from '@/app/actions/settings'
+import { updateBranch } from '@/app/actions/settings'
 
-export default function NewBranchPage() {
+export default function EditBranchForm({ branch }: { branch: any }) {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [formData, setFormData] = useState({
-        name: '',
-        code: '',
-        type: 'office',
-        phone: '',
-        email: '',
-        address: '',
+        name: branch.name || '',
+        code: branch.code || '',
+        type: branch.type || 'office',
+        phone: branch.phone || '',
+        email: branch.email || '',
+        address: branch.address || '',
+        is_active: branch.is_active ?? true
     })
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
 
-        const result = await createBranch(formData)
+        const result = await updateBranch(branch.id, formData)
 
         if (result.success) {
             toast({
-                title: "Branch created",
-                description: `${formData.name} has been successfully added to your organization.`,
+                title: "Branch updated",
+                description: `${formData.name} settings have been saved.`,
             })
             router.push('/settings/branches')
+            router.refresh()
         } else {
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: result.error || "Failed to create branch"
+                description: result.error || "Failed to update branch"
             })
         }
         setLoading(false)
@@ -57,19 +58,24 @@ export default function NewBranchPage() {
                         <X className="h-5 w-5" />
                     </Button>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">New Branch</h1>
-                        <p className="text-slate-500">Add a new physical location to your company profile.</p>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Edit Branch</h1>
+                            <Badge variant={formData.is_active ? "success" : "secondary"}>
+                                {formData.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                        </div>
+                        <p className="text-slate-500">Modify configuration and contact details for {branch.name}.</p>
                     </div>
                 </div>
             </header>
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-10">
                 <div className="md:col-span-2 space-y-6">
-                    <Card className="border-slate-200">
+                    <Card className="border-slate-200 shadow-sm">
                         <CardHeader className="bg-slate-50/50">
                             <CardTitle className="text-lg flex items-center gap-2">
                                 <Building2 className="h-4 w-4 text-indigo-600" />
-                                Basic Information
+                                Branch Configuration
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-6 space-y-4">
@@ -77,7 +83,6 @@ export default function NewBranchPage() {
                                 <Label htmlFor="name">Branch Name</Label>
                                 <Input
                                     id="name"
-                                    placeholder="e.g. Downtown Office"
                                     value={formData.name}
                                     onChange={e => setFormData({ ...formData, name: e.target.value })}
                                     required
@@ -88,7 +93,6 @@ export default function NewBranchPage() {
                                     <Label htmlFor="code">Short Code</Label>
                                     <Input
                                         id="code"
-                                        placeholder="e.g. DWTN"
                                         value={formData.code}
                                         onChange={e => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
                                         required
@@ -104,18 +108,29 @@ export default function NewBranchPage() {
                                             <SelectValue />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="clinic">Clinic / Retail</SelectItem>
                                             <SelectItem value="office">Office / Corporate</SelectItem>
                                             <SelectItem value="warehouse">Warehouse / Lab</SelectItem>
+                                            <SelectItem value="clinic">Clinic / Retail</SelectItem>
                                             <SelectItem value="other">Other</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
                             </div>
+
+                            <div className="pt-4 flex items-center justify-between border-t mt-4">
+                                <div className="space-y-0.5">
+                                    <Label>Active Status</Label>
+                                    <p className="text-xs text-slate-500">Disable this to prevent users from selecting this branch.</p>
+                                </div>
+                                <Switch
+                                    checked={formData.is_active}
+                                    onCheckedChange={(v: boolean) => setFormData({ ...formData, is_active: v })}
+                                />
+                            </div>
                         </CardContent>
                     </Card>
 
-                    <Card border-slate-200>
+                    <Card className="border-slate-200 shadow-sm">
                         <CardHeader className="bg-slate-50/50">
                             <CardTitle className="text-lg flex items-center gap-2">
                                 <MapPin className="h-4 w-4 text-indigo-600" />
@@ -127,7 +142,6 @@ export default function NewBranchPage() {
                                 <Label htmlFor="address">Physical Address</Label>
                                 <Input
                                     id="address"
-                                    placeholder="Full street address, City, Country"
                                     value={formData.address}
                                     onChange={e => setFormData({ ...formData, address: e.target.value })}
                                 />
@@ -137,7 +151,6 @@ export default function NewBranchPage() {
                                     <Label htmlFor="phone">Contact Phone</Label>
                                     <Input
                                         id="phone"
-                                        placeholder="+1 234 567 890"
                                         value={formData.phone}
                                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                     />
@@ -147,7 +160,6 @@ export default function NewBranchPage() {
                                     <Input
                                         id="email"
                                         type="email"
-                                        placeholder="branch@company.com"
                                         value={formData.email}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
                                     />
@@ -158,40 +170,41 @@ export default function NewBranchPage() {
                 </div>
 
                 <div className="space-y-6">
-                    <Card className="bg-indigo-600 text-white border-0 shadow-xl overflow-hidden relative">
-                        <div className="absolute top-0 right-0 p-4 opacity-10">
-                            <Building2 className="h-32 w-32" />
+                    <Card className="bg-slate-900 text-white border-0 shadow-xl overflow-hidden relative">
+                        <div className="absolute top-0 right-0 p-4 opacity-5">
+                            <Save className="h-32 w-32" />
                         </div>
                         <CardHeader>
-                            <CardTitle>Branch Preview</CardTitle>
-                            <CardDescription className="text-indigo-100">See how this branch will appear to users.</CardDescription>
+                            <CardTitle>Save Changes</CardTitle>
+                            <CardDescription className="text-slate-400">Apply updates to all users in this branch.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4 relative z-10">
-                            <div className="p-4 bg-white/10 rounded-lg backdrop-blur-sm border border-white/20">
-                                <h4 className="font-bold text-lg">{formData.name || 'Branch Name'}</h4>
-                                <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 mt-1">{formData.code || 'CODE'}</Badge>
-                                <p className="text-xs text-indigo-100 mt-4 line-clamp-2">{formData.address || 'Address will appear here'}</p>
-                            </div>
                             <Button
                                 type="submit"
-                                form="branch-form"
-                                className="w-full bg-white text-indigo-600 hover:bg-slate-50 font-bold"
-                                disabled={loading || !formData.name || !formData.code}
+                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12"
+                                disabled={loading}
                             >
-                                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm & Save"}
+                                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update Branch"}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className="w-full text-slate-300 hover:text-white hover:bg-white/10"
+                                onClick={() => router.back()}
+                            >
+                                Discard Changes
                             </Button>
                         </CardContent>
                     </Card>
 
-                    <div className="text-xs text-slate-500 bg-slate-100 p-4 rounded-lg flex gap-3">
-                        <Tag className="h-4 w-4 shrink-0 mt-0.5" />
+                    <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl text-xs text-amber-800 leading-relaxed flex gap-3">
+                        <MessageSquare className="h-4 w-4 shrink-0 mt-0.5" />
                         <div>
-                            <strong>Branch Management:</strong> You can assign specific groups of users to manage certain branches exclusively from the Roles section.
+                            <strong>Note:</strong> Changing the branch code may affect legacy report filtering. Please use caution when updating codes for active locations.
                         </div>
                     </div>
                 </div>
             </form>
-            <form id="branch-form" onSubmit={handleSubmit} className="hidden" />
         </div>
     )
 }

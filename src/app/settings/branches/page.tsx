@@ -86,7 +86,7 @@ export default async function BranchesPage() {
                                     <div className="flex items-center gap-1.5">
                                         <div className={`h-2 w-2 rounded-full ${branch.is_active ? 'bg-emerald-500' : 'bg-slate-300'}`} />
                                         <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                                            {branch.type || 'Clinic'}
+                                            {branch.type && branch.type !== 'clinic' ? branch.type : 'Location'}
                                         </span>
                                     </div>
                                     <div className="flex gap-2">
