@@ -51,7 +51,12 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
             });
         }
 
-        const isPublic = host === 'cloud-hms.onrender.com' || host === 'localhost:3000' || !host;
+        const isPublic = [
+            'cloud-hms.onrender.com',
+            'localhost:3000',
+            'seeakk.com',
+            'seeakk.vercel.app'
+        ].includes(host) || host.endsWith('.vercel.app');
 
         return {
             app_name: tenant?.app_name || null,
