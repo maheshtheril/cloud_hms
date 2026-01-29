@@ -277,7 +277,7 @@ export function SignupForm({ setIsLogin, branding }: { setIsLogin: (v: boolean) 
                         )}
                         {step === 3 && state && !('error' in state) && (
                             <div className="p-3 bg-green-50 text-green-600 rounded-lg text-sm mt-2">
-                                Account created successfully! <button type="button" onClick={() => setIsLogin(true)} className="underline font-bold">Sign In</button>
+                                Account created successfully! Finalizing your setup...
                             </div>
                         )}
 
@@ -289,9 +289,7 @@ export function SignupForm({ setIsLogin, branding }: { setIsLogin: (v: boolean) 
                                     Back
                                 </button>
                             ) : (
-                                <button type="button" onClick={() => setIsLogin(true)} className="px-6 py-2.5 text-gray-600 font-medium hover:bg-gray-100 rounded-lg transition-colors">
-                                    Cancel
-                                </button>
+                                <div />
                             )}
 
                             {step < 3 ? (

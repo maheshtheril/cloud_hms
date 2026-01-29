@@ -134,28 +134,6 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                 )}
                             </button>
                         </form>
-
-                        {branding?.isPublic && (
-                            <div className="mt-10">
-                                <div className="relative mb-8">
-                                    <div className="absolute inset-0 flex items-center">
-                                        <div className="w-full border-t border-slate-100 dark:border-white/5"></div>
-                                    </div>
-                                    <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-[0.3em]">
-                                        <span className="px-4 bg-white dark:bg-[#0f172a] text-slate-400 rounded-full">
-                                            Onboarding
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <button
-                                    onClick={() => setIsLogin(false)}
-                                    className="w-full py-4 rounded-2xl border border-slate-200 dark:border-white/10 text-slate-600 dark:text-slate-300 font-bold text-xs uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-white/5 transition-all"
-                                >
-                                    Create Free Account
-                                </button>
-                            </div>
-                        )}
                     </div>
                 </motion.div>
             </div>
