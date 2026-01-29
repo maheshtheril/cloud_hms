@@ -55,9 +55,10 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                             initial={{ y: -20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ type: "spring", stiffness: 100, delay: 0.1 }}
+                            style={{ WebkitMaskImage: "-webkit-radial-gradient(white, black)" }} // Fix for Safari border-radius clipping
                             className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-indigo-500/20 overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-500 to-violet-600 p-0.5"
                         >
-                            <div className="w-full h-full bg-white dark:bg-slate-900 rounded-[1.4rem] flex items-center justify-center overflow-hidden">
+                            <div className="w-full h-full bg-white dark:bg-slate-900 rounded-[22px] flex items-center justify-center overflow-hidden">
                                 {branding?.logo_url ? (
                                     <img src={branding.logo_url} alt={branding.app_name || 'Logo'} className="h-full w-full object-contain p-2" />
                                 ) : (
