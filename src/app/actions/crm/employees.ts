@@ -53,13 +53,16 @@ export async function getEmployeeMasters() {
     if (!session?.user?.id || !session.user.tenantId) return { error: "Unauthorized" };
 
     try {
+        const companyId = session.user.companyId;
+        if (!companyId) return { success: true, designations: [], branches: [] };
+
         const [designations, branches] = await Promise.all([
             prisma.crm_designation.findMany({
                 where: { tenant_id: session.user.tenantId, is_active: true },
                 orderBy: { name: 'asc' }
             }),
             prisma.hms_branch.findMany({
-                where: { company_id: session.user.companyId, is_active: true },
+                where: { company_id: companyId, is_active: true },
                 orderBy: { name: 'asc' }
             })
         ]);
