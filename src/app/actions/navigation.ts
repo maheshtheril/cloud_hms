@@ -96,9 +96,8 @@ export async function getMenuItems() {
         }
 
         // Always allow General and Configuration
-        allowedModuleKeys.add('general');
-        allowedModuleKeys.add('configuration');
         allowedModuleKeys.add('system');
+        allowedModuleKeys.add('settings');
 
         // 3. IMPLICIT PERMISSION-BASED MODULE ACCESS (Safety Net)
         // If a user has permission to view a module, they should see its menu, 
@@ -210,6 +209,16 @@ export async function getMenuItems() {
             // STRICT CHECK: Skip if module not allowed for this tenant
             if (!allowedModuleKeys.has(modKey)) {
                 continue;
+            }
+
+            // SMART CONFIG FILTER: Hide module-specific settings if module is disabled
+            // e.g. Hide 'hms-config' if 'hms' module is not allowed.
+            if ((modKey === 'system' || modKey === 'configuration' || modKey === 'settings')) {
+                const itemKey = (item.key || '').toLowerCase();
+                if (itemKey.includes('hms') && !allowedModuleKeys.has('hms')) continue;
+                if (itemKey.includes('accounting') && !allowedModuleKeys.has('accounting') && !allowedModuleKeys.has('finance')) continue;
+                if (itemKey.includes('inventory') && !allowedModuleKeys.has('inventory')) continue;
+                if (itemKey.includes('crm') && !allowedModuleKeys.has('crm')) continue;
             }
 
             // If group doesn't exist
@@ -470,7 +479,7 @@ export async function auditAndFixMenuPermissions() {
         // 1. STANDARDIZE MODULE KEYS (Smart Fix)
         const potentialRemaps = [
             { source: 'finance', target: 'accounting' },
-            { source: 'sales', target: 'crm' },
+            // { source: 'sales', target: 'crm' }, // DISABLED: Sales Orders should not be in CRM
             { source: 'purchasing', target: 'inventory' }
         ];
 
@@ -577,10 +586,22 @@ export async function auditAndFixMenuPermissions() {
             });
         }
 
-        // 4. REPORTS (Safe Update)
+        // 4. REPORTS & ROGUE ITEMS (Safe Update)
         await prisma.menu_items.updateMany({
             where: { module_key: 'reports', permission_code: null },
             data: { permission_code: 'system:view' }
+        });
+
+        // FIX ROGUE SALES ORDERS in CRM
+        await prisma.menu_items.updateMany({
+            where: {
+                OR: [
+                    { label: { contains: 'Sales Order' } },
+                    { key: { contains: 'sales-order' } }
+                ],
+                module_key: 'crm'
+            },
+            data: { module_key: 'sales' } // Move out of CRM
         });
 
         // 5. EMERGENCY REPAIR: Ensure Nursing Station & Enforce Permissions
