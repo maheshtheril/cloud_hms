@@ -29,6 +29,7 @@ interface PageProps {
         is_hot?: string
         followup_from?: string
         followup_to?: string
+        branch_id?: string
     }
 }
 
