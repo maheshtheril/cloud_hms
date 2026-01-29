@@ -8,10 +8,13 @@ export default async function EditBranchPage({ params }: { params: { id: string 
     const session = await auth()
     if (!session?.user?.id) redirect('/login')
 
+    const companyId = session.user.companyId
+    if (!companyId) redirect('/login')
+
     const branch = await prisma.hms_branch.findUnique({
         where: {
             id: params.id,
-            company_id: session.user.companyId
+            company_id: companyId
         }
     })
 
