@@ -19,6 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 import { getTenantBrandingByHost } from "./actions/branding";
+import { auditAndFixMenuPermissions } from "./actions/navigation";
 
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await getTenantBrandingByHost();
