@@ -10,7 +10,7 @@ async function main() {
 
     try {
         // 1. Get the correct Tenant
-        const tenant = await prisma.tenant.findUnique({ where: { slug: slug } });
+        const tenant = await prisma.tenant.findFirst({ where: { slug: slug } });
         if (!tenant) {
             console.error("❌ CRITICAL: Tenant 'seeakk' not found! Did the config script run?");
             return;
