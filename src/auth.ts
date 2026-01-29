@@ -29,9 +29,41 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     ` as any[];
 
                     if (users && users.length > 0) {
-                        const user = users[0];
+                        let user = users[0];
 
                         try {
+                            // SELF-HEALING: If Company/Tenant is missing or incomplete
+                            if (!user.company_id && user.tenant_id) {
+                                console.log(`[AUTH] User ${user.email} missing company. Attempting self-repair...`);
+
+                                // 1. Check if ANY company exists for this tenant
+                                let defaultCompany = await prisma.company.findFirst({
+                                    where: { tenant_id: user.tenant_id }
+                                });
+
+                                // 2. If not, create one
+                                if (!defaultCompany) {
+                                    console.log("[AUTH] Creating default company...");
+                                    defaultCompany = await prisma.company.create({
+                                        data: {
+                                            tenant_id: user.tenant_id,
+                                            name: "Seeakk Hospital",  // Default Name
+                                            industry: "Healthcare"
+                                        }
+                                    });
+                                }
+
+                                // 3. Link user to company
+                                console.log(`[AUTH] Linking user to company ${defaultCompany.id}`);
+                                await prisma.app_user.update({
+                                    where: { id: user.id },
+                                    data: { company_id: defaultCompany.id }
+                                });
+
+                                // 4. Update local user object so session is correct immediately
+                                user.company_id = defaultCompany.id;
+                            }
+
                             // Fetch Company & Modules
                             const company = user.company_id ? await prisma.company.findFirst({ where: { id: user.company_id } }) : null;
                             const tenantInfo = await prisma.tenant.findUnique({
