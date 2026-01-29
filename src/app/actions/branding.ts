@@ -15,9 +15,11 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
             tenant = await prisma.tenant.findFirst({
                 where: { slug: slugOverride },
                 select: {
+                    id: true,
                     app_name: true,
                     logo_url: true,
-                    name: true
+                    name: true,
+                    metadata: true
                 }
             });
         }
@@ -38,9 +40,11 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
                     ]
                 },
                 select: {
+                    id: true,
                     app_name: true,
                     logo_url: true,
-                    name: true
+                    name: true,
+                    metadata: true
                 }
             });
         }
@@ -50,20 +54,29 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
             tenant = await prisma.tenant.findFirst({
                 orderBy: { created_at: 'desc' },
                 select: {
+                    id: true,
                     app_name: true,
                     logo_url: true,
-                    name: true
+                    name: true,
+                    metadata: true
                 }
             });
         }
 
-        const isPublic = [
-            'cloud-hms.onrender.com',
-            'localhost:3000',
-            'seeakk.com',
-            'www.seeakk.com',
-            'seeakk.vercel.app'
-        ].includes(host.toLowerCase()) || host.endsWith('.vercel.app');
+        // --- PUBLIC REGISTRATION LOGIC ---
+        const meta = (tenant?.metadata as any) || {};
+        let isPublic = meta.registration_enabled !== false; // Default to true if not explicitly false
+
+        // If not explicitly set in metadata, use hostname-based defaults
+        if (meta.registration_enabled === undefined) {
+            isPublic = [
+                'cloud-hms.onrender.com',
+                'localhost:3000',
+                'seeakk.com',
+                'www.seeakk.com',
+                'seeakk.vercel.app'
+            ].includes(host.toLowerCase()) || host.endsWith('.vercel.app');
+        }
 
         // SPECIAL OVERRIDE: Seeakk.com branding
         if (host.toLowerCase().includes('seeakk.com')) {
@@ -71,7 +84,7 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
                 app_name: "Seeakk CRM",
                 logo_url: "/branding/seeakk_logo.png",
                 name: "Seeakk Solutions",
-                isPublic
+                isPublic: isPublic // Respect toggle
             };
         }
 

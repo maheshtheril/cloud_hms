@@ -12,6 +12,7 @@ import { Loader2, Save, Building2, Coins, ShieldCheck, Database, Layout } from '
 import { toast } from '@/components/ui/use-toast'
 import { FileUpload } from '@/components/ui/file-upload'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Switch } from '@/components/ui/switch'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
@@ -36,6 +37,7 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin 
     const [appName, setAppName] = useState(tenant?.app_name || tenant?.name || '')
     const [tenantLogoUrl, setTenantLogoUrl] = useState(tenant?.logo_url || '')
     const [dbUrl, setDbUrl] = useState(tenant?.db_url || '')
+    const [registrationEnabled, setRegistrationEnabled] = useState((tenant?.metadata as any)?.registration_enabled !== false)
 
     // Contact Info (stored in metadata)
     const meta = (company.metadata as any) || {}
@@ -85,7 +87,8 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin 
                 tenantId: tenant.id,
                 appName,
                 logoUrl: tenantLogoUrl,
-                dbUrl: dbUrl || undefined
+                dbUrl: dbUrl || undefined,
+                registrationEnabled
             });
             if (!res.success) {
                 tenantResult = { success: false, error: res.error || 'Failed to update tenant branding' };
@@ -101,15 +104,15 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin 
             }
 
             toast({
-                title: "Settings saved",
-                description: "Your organization and branding settings have been updated.",
+                title: "Settings Updated",
+                description: "Organization and branding settings saved successfully.",
             })
             router.refresh()
         } else {
             toast({
-                variant: "destructive",
                 title: "Error",
-                description: tenantResult.error || result.error || "Failed to update settings"
+                description: result.error || tenantResult.error || "Something went wrong",
+                variant: "destructive"
             })
         }
         setLoading(false)
@@ -291,6 +294,19 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin 
                                     currentFileUrl={tenantLogoUrl}
                                     onUploadComplete={(url) => setTenantLogoUrl(url)}
                                 />
+                            </div>
+
+                            <div className="pt-4 border-t border-slate-100">
+                                <div className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100">
+                                    <div className="space-y-0.5">
+                                        <div className="text-sm font-bold text-slate-900">Public Enrollment</div>
+                                        <div className="text-[10px] text-slate-500 uppercase font-black tracking-wider">Show "Create Free Account" on login page</div>
+                                    </div>
+                                    <Switch
+                                        checked={registrationEnabled}
+                                        onCheckedChange={setRegistrationEnabled}
+                                    />
+                                </div>
                             </div>
                         </CardContent>
                     </Card>

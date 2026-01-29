@@ -181,7 +181,8 @@ export async function updateTenantSettings(data: {
     tenantId: string,
     appName: string,
     logoUrl?: string,
-    dbUrl?: string
+    dbUrl?: string,
+    registrationEnabled?: boolean
 }) {
     const session = await auth();
     if (!session?.user?.id || !session.user.isTenantAdmin) {
@@ -189,12 +190,23 @@ export async function updateTenantSettings(data: {
     }
 
     try {
+        // Fetch current tenant for metadata
+        const currentTenant = await prisma.tenant.findUnique({
+            where: { id: data.tenantId }
+        });
+
+        const currentMeta = (currentTenant?.metadata as any) || {};
+
         await prisma.tenant.update({
             where: { id: data.tenantId },
             data: {
                 app_name: data.appName,
                 logo_url: data.logoUrl,
-                db_url: data.dbUrl
+                db_url: data.dbUrl,
+                metadata: {
+                    ...currentMeta,
+                    registration_enabled: data.registrationEnabled
+                }
             }
         });
 
