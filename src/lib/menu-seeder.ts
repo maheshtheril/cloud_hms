@@ -205,6 +205,7 @@ export async function ensureAdminMenus() {
             { key: 'users', label: 'Users', url: '/settings/users', icon: 'Users', sort: 90, permission: 'users:view' },
             { key: 'roles', label: 'Roles & Permissions', url: '/settings/roles', icon: 'Shield', sort: 91, permission: 'roles:manage' },
             { key: 'general-settings', label: 'Global Settings', url: '/settings/global', icon: 'Settings', sort: 99, permission: 'settings:view' },
+            { key: 'branch-settings', label: 'Branch Management', url: '/settings/branches', icon: 'Building2', sort: 98, permission: 'settings:view' },
             { key: 'crm-masters', label: 'CRM Masters', url: '/settings/crm', icon: 'Database', sort: 92, permission: 'settings:view' },
             { key: 'import-leads', label: 'Import Leads', url: '/crm/import/leads', icon: 'UploadCloud', sort: 93, permission: 'crm:create_leads' },
             { key: 'hms-config', label: 'Clinical Config', url: '/settings/hms', icon: 'Stethoscope', sort: 96, permission: 'hms:admin' },
@@ -257,10 +258,43 @@ export async function ensureCrmMenus() {
             { key: 'crm-pipeline', label: 'Pipeline', url: '/crm/pipeline', icon: 'Trello', sort: 40 },
             { key: 'crm-targets', label: 'Targets', url: '/crm/targets', icon: 'Target', sort: 50 },
             { key: 'crm-activities', label: 'Activities', url: '/crm/activities', icon: 'PhoneCall', sort: 60 },
+            // Staff & HR (Nested)
+            { key: 'crm-staff-root', label: 'Staff & Workforce', url: '#', icon: 'Briefcase', sort: 80 },
             // CRM Setup (Nested)
             { key: 'crm-setup-root', label: 'Advanced & Setup', url: '#', icon: 'Settings', sort: 90 },
         ];
 
+        // 2a. Staff & HR Root
+        let staffParent = await prisma.menu_items.findFirst({ where: { key: 'crm-staff-root' } });
+        if (!staffParent) {
+            staffParent = await prisma.menu_items.create({
+                data: { label: 'Staff & Workforce', url: '#', key: 'crm-staff-root', module_key: 'crm', icon: 'Briefcase', sort_order: 80, is_global: true }
+            });
+        }
+
+        const staffItems = [
+            { key: 'crm-employees', label: 'Employee Directory', url: '/crm/employees', icon: 'Users', sort: 10, permission: 'hr:view' },
+            { key: 'crm-designations', label: 'Designations', url: '/settings/designations', icon: 'UserCheck', sort: 20, permission: 'roles:manage' },
+        ];
+
+        for (const item of staffItems) {
+            const existing = await prisma.menu_items.findFirst({ where: { key: item.key } });
+            if (!existing) {
+                await prisma.menu_items.create({
+                    data: {
+                        label: item.label, url: item.url, key: item.key, module_key: 'crm', icon: item.icon,
+                        parent_id: staffParent.id, sort_order: item.sort, permission_code: item.permission, is_global: true
+                    }
+                });
+            } else {
+                await prisma.menu_items.update({
+                    where: { id: existing.id },
+                    data: { module_key: 'crm', parent_id: staffParent.id, permission_code: item.permission }
+                });
+            }
+        }
+
+        // 2b. Advanced Setup Root
         let setupParent = await prisma.menu_items.findFirst({ where: { key: 'crm-setup-root' } });
         if (!setupParent) {
             setupParent = await prisma.menu_items.create({

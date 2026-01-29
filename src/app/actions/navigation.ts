@@ -476,11 +476,12 @@ export async function auditAndFixMenuPermissions() {
         // -0.5 ENSURE CORE MENUS EXIST (Self-Healing Structure)
         // We must ensure the physical menu items exist before we can secure them.
         // Importing dynamically to avoid circular deps if any.
-        const { ensureHmsMenus, ensureAccountingMenu, ensureCrmMenus, ensurePurchasingMenus } = await import('@/lib/menu-seeder');
+        const { ensureHmsMenus, ensureAccountingMenu, ensureCrmMenus, ensurePurchasingMenus, ensureAdminMenus } = await import('@/lib/menu-seeder');
 
         await ensureHmsMenus();
+        await ensureCrmMenus();
+        await ensureAdminMenus();
         // await ensureAccountingMenu(); // Optional: Enable if needed for other roles
-        // await ensureCrmMenus();
         // await ensurePurchasingMenus();
 
         // 0. CHECK REAL MODULES (User Request)
