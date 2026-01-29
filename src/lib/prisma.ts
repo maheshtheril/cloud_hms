@@ -1,16 +1,31 @@
 
-import { PrismaClient } from '@prisma/client'
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client';
 
 const prismaClientSingleton = () => {
+  const connectionString = `${process.env.DATABASE_URL}`;
+
+  // Using postgreSQL pool for faster serverless performance in Prisma 7
+  const pool = new Pool({
+    connectionString,
+    ssl: { rejectUnauthorized: false },
+    max: 10, // Optimize pool size for Vercel functions
+  });
+
+  const adapter = new PrismaPg(pool);
+
   return new PrismaClient({
+    adapter,
     log: ['error', 'warn'],
-  })
+  });
 }
 
 declare global {
   var prismaGlobal: undefined | ReturnType<typeof prismaClientSingleton>
 }
 
+// In Prisma 7, the Client needs to be instantiated carefully in Serverless
 const basePrisma = globalThis.prismaGlobal ?? prismaClientSingleton()
 
 if (process.env.NODE_ENV !== 'production') globalThis.prismaGlobal = basePrisma
@@ -42,18 +57,17 @@ export const prisma = basePrisma.$extends({
 
         if (!isSystemModel) {
           try {
-            // Use the established auth pattern to get session context
             const { auth } = await import('@/auth');
             const session = await auth();
             activeBranchId = session?.user?.current_branch_id;
             customDbUrl = session?.user?.dbUrl;
             tenantId = session?.user?.tenantId;
           } catch (e) {
-            // Background contexts where auth is unavailable
+            // Background contexts
           }
         }
 
-        // 2. Handle 'Bring Your Own Database' (BYOB) for external tenants
+        // 2. Handle 'Bring Your Own Database' (BYOB)
         if (customDbUrl && tenantId && !isSystemModel) {
           try {
             const { getClientForTenant } = await import('./db-manager');
@@ -63,7 +77,7 @@ export const prisma = basePrisma.$extends({
               return (tenantClient as any)[model][operation](args);
             }
           } catch (err) {
-            console.error(`[Prisma Extension] DB Switch failed for tenant ${tenantId}. Falling back to main.`, err);
+            console.error(`[Prisma Extension] Switch failed for ${tenantId}.`, err);
           }
         }
 
