@@ -222,7 +222,7 @@ export async function ensureAdminMenus() {
                         label: item.label,
                         url: item.url,
                         key: item.key,
-                        module_key: 'system',
+                        module_key: 'configuration',
                         icon: item.icon,
                         sort_order: item.sort,
                         permission_code: item.permission,
@@ -236,7 +236,7 @@ export async function ensureAdminMenus() {
                     await prisma.menu_items.update({
                         where: { id: existing.id },
                         data: {
-                            module_key: 'system',
+                            module_key: 'configuration',
                             permission_code: item.permission
                         }
                     });
@@ -257,7 +257,39 @@ export async function ensureCrmMenus() {
             { key: 'crm-pipeline', label: 'Pipeline', url: '/crm/pipeline', icon: 'Trello', sort: 40 },
             { key: 'crm-targets', label: 'Targets', url: '/crm/targets', icon: 'Target', sort: 50 },
             { key: 'crm-activities', label: 'Activities', url: '/crm/activities', icon: 'PhoneCall', sort: 60 },
+            // CRM Setup (Nested)
+            { key: 'crm-setup-root', label: 'Advanced & Setup', url: '#', icon: 'Settings', sort: 90 },
         ];
+
+        let setupParent = await prisma.menu_items.findFirst({ where: { key: 'crm-setup-root' } });
+        if (!setupParent) {
+            setupParent = await prisma.menu_items.create({
+                data: { label: 'Advanced & Setup', url: '#', key: 'crm-setup-root', module_key: 'crm', icon: 'Settings', sort_order: 90, is_global: true }
+            });
+        }
+
+        const setupItems = [
+            { key: 'crm-masters', label: 'CRM Masters', url: '/settings/crm', icon: 'Database', sort: 10, permission: 'crm:admin' },
+            { key: 'import-leads', label: 'Leads Import', url: '/crm/import/leads', icon: 'UploadCloud', sort: 20, permission: 'crm:create_leads' },
+            { key: 'custom-fields', label: 'Custom Fields', url: '/settings/custom-fields', icon: 'FileText', sort: 30, permission: 'settings:view' },
+        ];
+
+        for (const item of setupItems) {
+            const existing = await prisma.menu_items.findFirst({ where: { key: item.key } });
+            if (!existing) {
+                await prisma.menu_items.create({
+                    data: {
+                        label: item.label, url: item.url, key: item.key, module_key: 'crm', icon: item.icon,
+                        parent_id: setupParent.id, sort_order: item.sort, permission_code: item.permission, is_global: true
+                    }
+                });
+            } else {
+                await prisma.menu_items.update({
+                    where: { id: existing.id },
+                    data: { module_key: 'crm', parent_id: setupParent.id, permission_code: item.permission }
+                });
+            }
+        }
 
         for (const item of items) {
             const existing = await prisma.menu_items.findFirst({

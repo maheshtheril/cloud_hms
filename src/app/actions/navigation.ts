@@ -193,8 +193,15 @@ export async function getMenuItems() {
 
         // Initialize groups for Allowed Modules
         for (const mod of globalActiveModules) {
-            if (allowedModuleKeys.has(mod.module_key)) {
-                grouped[mod.module_key] = { module: mod, items: [] };
+            const mKey = mod.module_key.toLowerCase();
+            if (allowedModuleKeys.has(mKey)) {
+                // Better Display Names
+                let displayName = mod.name;
+                if (mKey === 'configuration') displayName = 'Settings & Administration';
+                if (mKey === 'crm') displayName = 'CRM & Engagement';
+                if (mKey === 'hms') displayName = 'Health Management';
+
+                grouped[mKey] = { module: { ...mod, name: displayName }, items: [] };
             }
         }
 
@@ -202,6 +209,9 @@ export async function getMenuItems() {
 
         if (!grouped['general']) { // Always ensure General exists
             grouped['general'] = { module: { name: 'General', module_key: 'general' }, items: [] };
+        }
+        if (!grouped['configuration'] && allowedModuleKeys.has('configuration')) {
+            grouped['configuration'] = { module: { name: 'Settings & Administration', module_key: 'configuration' }, items: [] };
         }
 
         // 4. Assign Items to Groups (WITH MODULE FILTERING)
