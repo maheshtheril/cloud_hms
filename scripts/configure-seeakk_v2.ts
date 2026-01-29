@@ -22,7 +22,7 @@ async function main() {
 
             // Delete Children first (Manual Cascade)
             await prisma.app_user.deleteMany({ where: { tenant_id: t.id } });
-            await prisma.tenant_modules.deleteMany({ where: { tenant_id: t.id } });
+            await prisma.tenant_module.deleteMany({ where: { tenant_id: t.id } });
             await prisma.company.deleteMany({ where: { tenant_id: t.id } });
 
             // Delete Tenant
@@ -47,7 +47,7 @@ async function main() {
 
     // 3. Configure Modules (CRM Only)
     // No need to deleteMany as it's fresh
-    await prisma.tenant_modules.create({
+    await prisma.tenant_module.create({
         data: {
             tenant_id: tenant.id,
             module_key: 'crm',

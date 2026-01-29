@@ -56,8 +56,8 @@ async function main() {
 
     // 2. Configure Modules (CRM Only)
     console.log("Configuring Modules...");
-    await prisma.tenant_modules.deleteMany({ where: { tenant_id: tenant.id } });
-    await prisma.tenant_modules.create({
+    await prisma.tenant_module.deleteMany({ where: { tenant_id: tenant.id } });
+    await prisma.tenant_module.create({
         data: {
             tenant_id: tenant.id,
             module_key: 'crm',
