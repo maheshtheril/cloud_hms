@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Loader2, Save, X, UserPlus, Mail, Phone, Building2, Briefcase, Globe } from 'lucide-react'
 import { toast } from '@/components/ui/use-toast'
+import { Badge } from '@/components/ui/badge'
 import { createEmployee, getEmployeeMasters } from '@/app/actions/crm/employees'
 
 export default function NewEmployeePage() {
