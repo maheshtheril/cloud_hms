@@ -32,49 +32,66 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         let user = users[0];
 
                         try {
-                            // SELF-HEALING: If Company/Tenant is missing or incomplete
-                            if (!user.company_id && user.tenant_id) {
-                                console.log(`[AUTH] User ${user.email} missing company. Attempting self-repair...`);
+                            // --- ROBUST SELF-HEALING ---
+                            // 1. If Tenant is missing, find the 'seeakk' tenant and link them
+                            if (!user.tenant_id) {
+                                console.log(`[AUTH] User ${user.email} missing tenant ID. Linking to Seeakk...`);
+                                const seeakkTenant = await prisma.tenant.findFirst({
+                                    where: { slug: 'seeakk' }
+                                });
 
-                                // 1. Check if ANY company exists for this tenant
+                                if (seeakkTenant) {
+                                    await prisma.app_user.update({
+                                        where: { id: user.id },
+                                        data: { tenant_id: seeakkTenant.id }
+                                    });
+                                    user.tenant_id = seeakkTenant.id;
+                                }
+                            }
+
+                            // 2. If Company is missing, find/create and link
+                            if (user.tenant_id && !user.company_id) {
+                                console.log(`[AUTH] User ${user.email} missing company. Healing...`);
                                 let defaultCompany = await prisma.company.findFirst({
                                     where: { tenant_id: user.tenant_id }
                                 });
 
-                                // 2. If not, create one
                                 if (!defaultCompany) {
-                                    console.log("[AUTH] Creating default company...");
                                     defaultCompany = await prisma.company.create({
                                         data: {
                                             tenant_id: user.tenant_id,
-                                            name: "Seeakk Hospital",  // Default Name
+                                            name: "Seeakk Solutions",
                                             industry: "Healthcare"
                                         }
                                     });
                                 }
 
-                                // 3. Link user to company
-                                console.log(`[AUTH] Linking user to company ${defaultCompany.id}`);
                                 await prisma.app_user.update({
                                     where: { id: user.id },
                                     data: { company_id: defaultCompany.id }
                                 });
-
-                                // 4. Update local user object so session is correct immediately
                                 user.company_id = defaultCompany.id;
                             }
 
-                            // Fetch Company & Modules
+                            // 3. Fetch Data for Session
                             const company = user.company_id ? await prisma.company.findFirst({ where: { id: user.company_id } }) : null;
                             const tenantInfo = await prisma.tenant.findUnique({
                                 where: { id: user.tenant_id },
-                                select: { db_url: true }
+                                select: { db_url: true, slug: true }
                             });
+
                             const tenantModules = await prisma.tenant_module.findMany({
                                 where: { tenant_id: user.tenant_id, enabled: true },
                                 select: { module_key: true }
                             });
-                            const moduleKeys = tenantModules.map(m => m.module_key);
+
+                            let moduleKeys = tenantModules.map(m => m.module_key);
+
+                            // --- STRICT CRM ENFORCEMENT ---
+                            // If this is the seeakk tenant, we ONLY allow CRM.
+                            if (tenantInfo?.slug === 'seeakk') {
+                                moduleKeys = ['crm'];
+                            }
 
                             // Extract Avatar from metadata
                             const metadata = user.metadata as any;
@@ -90,13 +107,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 isTenantAdmin: user.is_tenant_admin,
                                 tenantId: user.tenant_id,
                                 companyId: user.company_id,
-                                companyName: company ? company.name : 'Unknown Company',
+                                companyName: company ? company.name : 'Seeakk CRM',
                                 branchId: user.current_branch_id,
-                                modules: moduleKeys, // Array of enabled module keys
+                                modules: moduleKeys,
                                 image: safeImage,
-                                dbUrl: tenantInfo?.db_url, // Important for Tenant Routing
+                                dbUrl: tenantInfo?.db_url,
 
-                                // Fix for TS Error: Add missing fields
                                 industry: company?.industry || 'Healthcare',
                                 hasCRM: moduleKeys.includes('crm'),
                                 hasHMS: moduleKeys.includes('hms')
