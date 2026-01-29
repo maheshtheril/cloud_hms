@@ -308,35 +308,6 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                         </CardContent>
                     </Card>
 
-                    {isAdmin && (
-                        <Card className="border-indigo-600/20 shadow-xl bg-gradient-to-br from-indigo-900 to-slate-900 overflow-hidden rounded-[2rem]">
-                            <CardHeader className="border-b border-white/5 p-8">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-white">
-                                        <ShieldCheck className="w-6 h-6" />
-                                    </div>
-                                    <div>
-                                        <CardTitle className="text-xl font-black text-white uppercase tracking-tight">System Developer Controls</CardTitle>
-                                        <CardDescription className="text-white/60 text-xs">High-level registration and infrastructure settings. Limited to Developers.</CardDescription>
-                                    </div>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-8 space-y-6">
-                                <div className="flex items-center justify-between p-6 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-md">
-                                    <div className="space-y-1">
-                                        <div className="text-base font-bold text-white">Public System Enrollment</div>
-                                        <div className="text-[10px] text-white/40 uppercase font-black tracking-widest">Global "Create Free Account" Toggle</div>
-                                    </div>
-                                    <Switch
-                                        checked={registrationEnabled}
-                                        onCheckedChange={setRegistrationEnabled}
-                                        className="data-[state=checked]:bg-indigo-500"
-                                    />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
                     <Card className="border-amber-100 shadow-sm overflow-hidden">
                         <CardHeader className="bg-amber-50/30">
                             <CardTitle className="flex items-center gap-2 text-amber-900">
