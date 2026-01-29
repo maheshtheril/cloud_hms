@@ -49,8 +49,8 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                 transition={{ duration: 0.4, ease: "easeOut" }}
                 className="max-w-md w-full relative z-10"
             >
-                <div className="bg-white/80 dark:bg-slate-900/40 backdrop-blur-2xl p-8 md:p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/60 dark:border-white/5 ring-1 ring-black/5">
-                    <div className="text-center mb-10">
+                <div className="bg-white/80 dark:bg-slate-900/40 backdrop-blur-2xl p-6 md:p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/60 dark:border-white/5 ring-1 ring-black/5">
+                    <div className="text-center mb-6 md:mb-10">
                         <motion.div
                             initial={{ y: -20, opacity: 0 }}
                             animate={{ y: 0, opacity: 1 }}
