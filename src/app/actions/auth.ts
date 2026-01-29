@@ -42,6 +42,7 @@ export async function signup(prevState: any, formData: FormData) {
         const result = await prisma.$transaction(async (tx) => {
             const tenantId = crypto.randomUUID();
             const companyId = crypto.randomUUID();
+            const branchId = crypto.randomUUID();
             const userId = crypto.randomUUID();
 
             // 1. Create Tenant
@@ -63,6 +64,19 @@ export async function signup(prevState: any, formData: FormData) {
                     industry: industry,
                     // Default settings can be set later or via triggers
                     enabled: true
+                }
+            });
+
+            // 2b. Create Default Main Branch (World Class Standard)
+            await tx.hms_branch.create({
+                data: {
+                    id: branchId,
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    name: "Main Branch",
+                    code: "MAIN",
+                    is_active: true,
+                    type: "clinic"
                 }
             });
 
@@ -158,13 +172,14 @@ export async function signup(prevState: any, formData: FormData) {
                 console.log('[Signup] Seeded Financial Accounts and Settings');
             }
 
-            // 4. Create User (Admin)
+            // 4. Create User (Admin) - Linked to Branch
             await tx.$executeRaw`
-                INSERT INTO app_user (id, tenant_id, company_id, email, password, name, is_admin, is_tenant_admin, is_active)
+                INSERT INTO app_user (id, tenant_id, company_id, current_branch_id, email, password, name, is_admin, is_tenant_admin, is_active)
                 VALUES (
                     ${userId}::uuid, 
                     ${tenantId}::uuid, 
                     ${companyId}::uuid,
+                    ${branchId}::uuid,
                     ${email}, 
                     crypt(${password}, gen_salt('bf')), 
                     ${name}, 
@@ -173,6 +188,15 @@ export async function signup(prevState: any, formData: FormData) {
                     true
                 )
             `;
+
+            // 4a. Link User to Branch (Explicit Access)
+            await tx.user_branch.create({
+                data: {
+                    user_id: userId,
+                    branch_id: branchId,
+                    is_default: true
+                }
+            });
 
             // 4b. Create RBAC Roles and Assign to User
             const roleId = crypto.randomUUID();
