@@ -62,7 +62,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 branchId: user.current_branch_id,
                                 modules: moduleKeys, // Array of enabled module keys
                                 image: safeImage,
-                                dbUrl: tenantInfo?.db_url // Important for Tenant Routing
+                                dbUrl: tenantInfo?.db_url, // Important for Tenant Routing
+
+                                // Fix for TS Error: Add missing fields
+                                industry: company?.industry || 'Healthcare',
+                                hasCRM: moduleKeys.includes('crm'),
+                                hasHMS: moduleKeys.includes('hms')
                             };
                         } catch (innerError) {
                             console.error("Error fetching user details (company/tenant):", innerError);
