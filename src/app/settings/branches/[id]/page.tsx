@@ -4,16 +4,17 @@ import { auth } from "@/auth"
 import { notFound, redirect } from "next/navigation"
 import EditBranchForm from "./edit-branch-form"
 
-export default async function EditBranchPage({ params }: { params: { id: string } }) {
+export default async function EditBranchPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
     const session = await auth()
     if (!session?.user?.id) redirect('/login')
 
     const companyId = session.user.companyId
     if (!companyId) redirect('/login')
 
-    const branch = await prisma.hms_branch.findUnique({
+    const branch = await prisma.hms_branch.findFirst({
         where: {
-            id: params.id,
+            id: id,
             company_id: companyId
         }
     })
