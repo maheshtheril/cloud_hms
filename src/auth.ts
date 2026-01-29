@@ -32,6 +32,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         let user = users[0];
 
                         try {
+                            // Fetch Branch Name
+                            let branchName = 'Main Branch';
+                            if (user.current_branch_id) {
+                                const branch = await prisma.hms_branch.findUnique({
+                                    where: { id: user.current_branch_id },
+                                    select: { name: true }
+                                });
+                                if (branch) branchName = branch.name;
+                            }
+
                             // --- GENERIC MULTI-TENANT SELF-HEALING ---
                             // Ensure every user has a company within their tenant
                             if (user.tenant_id && !user.company_id) {
@@ -93,7 +103,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 tenantId: user.tenant_id,
                                 companyId: user.company_id,
                                 companyName: company ? company.name : (tenantInfo?.name || 'My Business'),
-                                branchId: user.current_branch_id,
+                                current_branch_id: user.current_branch_id,
+                                current_branch_name: branchName,
                                 modules: moduleKeys,
                                 image: safeImage,
                                 dbUrl: tenantInfo?.db_url,
@@ -104,8 +115,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             };
                         } catch (innerError) {
                             console.error("Error fetching user details (company/tenant):", innerError);
-                            // Fallback if metadata fetch fails? 
-                            // Usually strict fail is better for security, but we can log it.
                             return null;
                         }
                     } else {
@@ -120,7 +129,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     ],
     callbacks: {
         ...authConfig.callbacks,
-        async jwt({ token, user }) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 const u = user as any;
                 token.id = u.id;
@@ -134,6 +143,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 token.hasCRM = u.hasCRM;
                 token.hasHMS = u.hasHMS;
                 token.dbUrl = u.dbUrl;
+                token.current_branch_id = u.current_branch_id;
+                token.current_branch_name = u.current_branch_name;
+            }
+            if (trigger === "update" && session) {
+                if (session.companyId) token.companyId = session.companyId;
+                if (session.branchId) token.current_branch_id = session.branchId;
+                if (session.branchName) token.current_branch_name = session.branchName;
             }
             return token;
         },
@@ -151,6 +167,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 u.hasCRM = token.hasCRM;
                 u.hasHMS = token.hasHMS;
                 u.dbUrl = token.dbUrl;
+                u.current_branch_id = token.current_branch_id;
+                u.current_branch_name = token.current_branch_name;
             }
             return session;
         }

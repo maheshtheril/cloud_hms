@@ -91,10 +91,15 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
                                                 )}
                                             </span>
                                             {lead.company_name && (
-                                                <div className="flex items-center gap-1.5 mt-0.5">
+                                                <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                                                     <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-800 text-[10px] py-0 px-1.5 font-medium border-none text-slate-500 uppercase tracking-tighter">
                                                         {lead.company_name}
                                                     </Badge>
+                                                    {lead.branch?.name && (
+                                                        <Badge variant="outline" className="text-[9px] py-0 px-1.5 font-black border-slate-200 text-slate-400 uppercase tracking-tighter bg-transparent">
+                                                            {lead.branch.name}
+                                                        </Badge>
+                                                    )}
                                                 </div>
                                             )}
                                         </div>

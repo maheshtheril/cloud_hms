@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { CompanySwitcher } from '@/components/company-switcher';
 import { logout } from '@/app/actions/auth';
+import { BranchSwitcher } from '@/components/branch-switcher';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -262,6 +263,9 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                     </div>
                 )}
             </div>
+
+            {/* Branch Switcher (only show when expanded) */}
+            {!collapsed && <BranchSwitcher />}
 
             {/* Search (Only Expanded) */}
             {!collapsed && !isMobile && (

@@ -44,6 +44,7 @@ export default async function LeadsPage(props: PageProps) {
     const status = searchParams?.status
     const sourceId = searchParams?.source_id
     const ownerId = searchParams?.owner_id
+    const branchId = searchParams?.branch_id
     const fromDate = searchParams?.from
     const toDate = searchParams?.to
     const followupFrom = searchParams?.followup_from
@@ -67,6 +68,7 @@ export default async function LeadsPage(props: PageProps) {
         ...(status ? { status } : {}),
         ...(sourceId ? { source_id: sourceId } : {}),
         ...(effectiveOwnerId ? { owner_id: effectiveOwnerId } : {}),
+        ...(branchId ? { branch_id: branchId } : {}),
         ...(isHot ? { is_hot: true } : {}),
         ...((fromDate || toDate) ? {
             created_at: {
@@ -91,7 +93,7 @@ export default async function LeadsPage(props: PageProps) {
     }
 
     // Parallel data fetching for performance
-    const [leads, totalCount, stats, sources, users] = await Promise.all([
+    const [leads, totalCount, stats, sources, users, branches] = await Promise.all([
         prisma.crm_leads.findMany({
             where,
             take: limit,
@@ -100,6 +102,9 @@ export default async function LeadsPage(props: PageProps) {
             include: {
                 stage: true,
                 target_type: true,
+                branch: {
+                    select: { name: true }
+                },
                 owner: {
                     select: { id: true, name: true, email: true }
                 }
@@ -113,7 +118,11 @@ export default async function LeadsPage(props: PageProps) {
             }
         }),
         getSources(),
-        getCRMUsers()
+        getCRMUsers(),
+        prisma.hms_branch.findMany({
+            where: { tenant_id: tenantId || undefined, is_active: true },
+            select: { id: true, name: true }
+        })
     ])
 
     const hotLeadsCount = await prisma.crm_leads.count({
@@ -149,7 +158,7 @@ export default async function LeadsPage(props: PageProps) {
                         </div>
                         <div className="flex gap-2">
                             <ExportLeadsButton />
-                            <FilterLeads sources={sources} users={users} />
+                            <FilterLeads sources={sources} users={users} branches={branches} />
                             <Link href="/crm/leads/new">
                                 <Button className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-lg border-none px-6 rounded-xl">
                                     <Plus className="w-4 h-4 mr-2" />

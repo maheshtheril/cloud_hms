@@ -20,9 +20,10 @@ import { Label } from "@/components/ui/label"
 interface FilterLeadsProps {
     sources: any[]
     users: any[]
+    branches: any[]
 }
 
-export function FilterLeads({ sources, users }: FilterLeadsProps) {
+export function FilterLeads({ sources, users, branches }: FilterLeadsProps) {
     const router = useRouter()
     const searchParams = useSearchParams()
 
@@ -99,13 +100,28 @@ export function FilterLeads({ sources, users }: FilterLeadsProps) {
                         <div className="space-y-2">
                             <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Owner / Rep</Label>
                             <select
-                                className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg text-xs p-2 outline-none focus:ring-2 focus:ring-indigo-500"
+                                className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg text-xs p-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
                                 value={ownerId || ''}
                                 onChange={(e) => router.push(`?${createQueryString({ owner_id: e.target.value || null })}`)}
                             >
                                 <option value="">All Owners</option>
                                 {users.map(u => (
                                     <option key={u.id} value={u.id}>{u.name || u.email}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {/* Branch Section */}
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Branch Location</Label>
+                            <select
+                                className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-lg text-xs p-2 outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-white"
+                                value={searchParams.get('branch_id') || ''}
+                                onChange={(e) => router.push(`?${createQueryString({ branch_id: e.target.value || null })}`)}
+                            >
+                                <option value="">All Locations</option>
+                                {branches.map(b => (
+                                    <option key={b.id} value={b.id}>{b.name}</option>
                                 ))}
                             </select>
                         </div>
