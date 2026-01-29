@@ -206,10 +206,6 @@ export async function ensureAdminMenus() {
             { key: 'roles', label: 'Roles & Permissions', url: '/settings/roles', icon: 'Shield', sort: 91, permission: 'roles:manage' },
             { key: 'general-settings', label: 'Global Settings', url: '/settings/global', icon: 'Settings', sort: 99, permission: 'settings:view' },
             { key: 'branch-settings', label: 'Branch Management', url: '/settings/branches', icon: 'Building2', sort: 98, permission: 'settings:view' },
-            { key: 'crm-masters', label: 'CRM Masters', url: '/settings/crm', icon: 'Database', sort: 92, permission: 'settings:view' },
-            { key: 'import-leads', label: 'Import Leads', url: '/crm/import/leads', icon: 'UploadCloud', sort: 93, permission: 'crm:create_leads' },
-            { key: 'hms-config', label: 'Clinical Config', url: '/settings/hms', icon: 'Stethoscope', sort: 96, permission: 'hms:admin' },
-            { key: 'custom-fields', label: 'Custom Fields', url: '/settings/custom-fields', icon: 'FileText', sort: 95, permission: 'settings:view' },
         ];
 
         for (const item of adminItems) {
@@ -382,6 +378,7 @@ export async function ensureHmsMenus() {
             { key: 'hms-pharmacy-billing', label: 'Pharmacy Billing', url: '/hms/pharmacy/billing', icon: 'Pill', sort: 61, permission: 'billing:view' },
             // { key: 'hms-inventory', label: 'Pharmacy/Inventory', url: '/hms/inventory', icon: 'Package', sort: 70 }, // Removed to allow migration to Inventory Module
             { key: 'hms-wards', label: 'Clinics/Wards', url: '/hms/wards', icon: 'LayoutGrid', sort: 80, permission: 'hms:admin' },
+            { key: 'hms-config', label: 'Clinical Config', url: '/settings/hms', icon: 'Stethoscope', sort: 96, permission: 'hms:admin' },
         ];
 
         for (const item of hmsItems) {

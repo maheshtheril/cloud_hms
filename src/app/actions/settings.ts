@@ -362,3 +362,69 @@ export async function updateHMSSettings(data: any) {
         return { error: error.message };
     }
 }
+
+export async function createBranch(data: {
+    name: string;
+    code: string;
+    type: string;
+    phone?: string;
+    email?: string;
+    address?: string;
+}) {
+    const session = await auth();
+    if (!session?.user?.id || !session.user.companyId || !session.user.tenantId) {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        const branch = await prisma.hms_branch.create({
+            data: {
+                id: crypto.randomUUID(),
+                tenant_id: session.user.tenantId,
+                company_id: session.user.companyId,
+                name: data.name,
+                code: data.code.toUpperCase(),
+                type: data.type,
+                phone: data.phone,
+                email: data.email,
+                address: data.address,
+                is_active: true
+            }
+        });
+
+        revalidatePath('/settings/branches');
+        return { success: true, branchId: branch.id };
+    } catch (error) {
+        console.error("Failed to create branch:", error);
+        return { error: "Failed to create branch. Branch code must be unique within company." };
+    }
+}
+
+export async function createDesignation(data: {
+    name: string;
+    description?: string;
+}) {
+    const session = await auth();
+    if (!session?.user?.id || !session.user.tenantId) {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        const designation = await prisma.crm_designation.create({
+            data: {
+                tenant_id: session.user.tenantId,
+                name: data.name,
+                description: data.description,
+                is_active: true
+            }
+        });
+
+        revalidatePath('/settings/designations');
+        return { success: true, designationId: designation.id };
+    } catch (error) {
+        console.error("Failed to create designation:", error);
+        return { error: "Failed to create designation. Name must be unique." };
+    }
+}
+
+
