@@ -32,26 +32,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         let user = users[0];
 
                         try {
-                            // --- ROBUST SELF-HEALING ---
-                            // 1. If Tenant is missing, find the 'seeakk' tenant and link them
-                            if (!user.tenant_id) {
-                                console.log(`[AUTH] User ${user.email} missing tenant ID. Linking to Seeakk...`);
-                                const seeakkTenant = await prisma.tenant.findFirst({
-                                    where: { slug: 'seeakk' }
-                                });
-
-                                if (seeakkTenant) {
-                                    await prisma.app_user.update({
-                                        where: { id: user.id },
-                                        data: { tenant_id: seeakkTenant.id }
-                                    });
-                                    user.tenant_id = seeakkTenant.id;
-                                }
-                            }
-
-                            // 2. If Company is missing, find/create and link
+                            // --- GENERIC MULTI-TENANT SELF-HEALING ---
+                            // Ensure every user has a company within their tenant
                             if (user.tenant_id && !user.company_id) {
-                                console.log(`[AUTH] User ${user.email} missing company. Healing...`);
+                                console.log(`[AUTH] User ${user.email} missing company link. Initializing...`);
+
                                 let defaultCompany = await prisma.company.findFirst({
                                     where: { tenant_id: user.tenant_id }
                                 });
@@ -60,8 +45,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                     defaultCompany = await prisma.company.create({
                                         data: {
                                             tenant_id: user.tenant_id,
-                                            name: "Seeakk Solutions",
-                                            industry: "Healthcare"
+                                            name: "Default Company",
+                                            industry: "General"
                                         }
                                     });
                                 }
@@ -73,12 +58,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 user.company_id = defaultCompany.id;
                             }
 
-                            // 3. Fetch Data for Session
-                            const company = user.company_id ? await prisma.company.findFirst({ where: { id: user.company_id } }) : null;
+                            // Fetch Tenant & Entitlements
                             const tenantInfo = await prisma.tenant.findUnique({
                                 where: { id: user.tenant_id },
-                                select: { db_url: true, slug: true }
+                                select: { db_url: true, slug: true, name: true }
                             });
+
+                            const company = user.company_id ? await prisma.company.findFirst({ where: { id: user.company_id } }) : null;
 
                             const tenantModules = await prisma.tenant_module.findMany({
                                 where: { tenant_id: user.tenant_id, enabled: true },
@@ -87,13 +73,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                             let moduleKeys = tenantModules.map(m => m.module_key);
 
-                            // --- STRICT CRM ENFORCEMENT ---
-                            // If this is the seeakk tenant, we ONLY allow CRM.
+                            // Domain-specific enforcement (e.g., seeakk.com only wants CRM)
                             if (tenantInfo?.slug === 'seeakk') {
                                 moduleKeys = ['crm'];
                             }
 
-                            // Extract Avatar from metadata
+                            // Extract Avatar
                             const metadata = user.metadata as any;
                             const avatarUrl = metadata?.avatar_url || null;
                             const safeImage = avatarUrl?.startsWith('data:') ? null : avatarUrl;
@@ -107,13 +92,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 isTenantAdmin: user.is_tenant_admin,
                                 tenantId: user.tenant_id,
                                 companyId: user.company_id,
-                                companyName: company ? company.name : 'Seeakk CRM',
+                                companyName: company ? company.name : (tenantInfo?.name || 'My Business'),
                                 branchId: user.current_branch_id,
                                 modules: moduleKeys,
                                 image: safeImage,
                                 dbUrl: tenantInfo?.db_url,
 
-                                industry: company?.industry || 'Healthcare',
+                                industry: company?.industry || 'General',
                                 hasCRM: moduleKeys.includes('crm'),
                                 hasHMS: moduleKeys.includes('hms')
                             };
