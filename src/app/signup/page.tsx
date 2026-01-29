@@ -3,16 +3,19 @@ import { getTenantBrandingByHost } from "@/app/actions/branding"
 
 export const dynamic = 'force-dynamic'
 
-export default async function SignupPage(props: {
-    searchParams: Promise<{ org?: string }>
-}) {
-    // Standard Next.js 15 pattern: Await props
-    const searchParams = await props.searchParams;
-    const branding = await getTenantBrandingByHost(searchParams?.org);
+export default async function SignupPage() {
+    let branding = null;
+
+    try {
+        // Standard call without searching for dynamic props to avoid any RSC issues
+        branding = await getTenantBrandingByHost();
+    } catch (error) {
+        console.error("Signup Page Branding Load Failure:", error);
+    }
 
     return (
         <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-100 via-slate-50 to-white dark:from-slate-900 dark:via-slate-950 dark:to-black">
-            <SignupForm setIsLogin={() => { }} branding={branding} />
+            <SignupForm setIsLogin={() => { }} branding={branding || { isPublic: true }} />
         </div>
     )
 }
