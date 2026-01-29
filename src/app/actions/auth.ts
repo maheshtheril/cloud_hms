@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma"
 import { signOut } from "@/auth"
+import { headers } from "next/headers";
 
 export async function logout() {
     console.log("[Auth Action] Logging out...");
@@ -18,6 +19,10 @@ export async function logout() {
 }
 
 export async function signup(prevState: any, formData: FormData) {
+    const headersList = await headers();
+    const host = headersList.get('host') || '';
+    const isSeeakk = host.toLowerCase().includes('seeakk');
+
     const rawData = Object.fromEntries(formData.entries());
 
     // Extract fields
@@ -27,8 +32,8 @@ export async function signup(prevState: any, formData: FormData) {
     const companyName = rawData.companyName as string
     const countryId = rawData.countryId as string
     const currencyId = rawData.currencyId as string
-    const industry = rawData.industry as string // 'Healthcare', 'Manufacturing', etc.
-    const selectedModules = (rawData.modules as string || '').split(',').filter(Boolean); // Comma separated keys
+    const industry = isSeeakk ? 'CRM & Sales' : rawData.industry as string // Force industry if seeakk
+    const selectedModules = isSeeakk ? ['crm'] : (rawData.modules as string || '').split(',').filter(Boolean); // Force CRM if seeakk
     const taxId = rawData.taxId as string // Optional tax ID if they selected one
 
     if (!email || !password || !name || !companyName) {

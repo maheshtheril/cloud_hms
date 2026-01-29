@@ -7,6 +7,8 @@ async function main() {
 
     const targetSlug = "seeakk";
     const targetDomain = "seeakk.com";
+    const appName = "Seeakk CRM";
+    const logoUrl = "/branding/seeakk_logo.png";
 
     // A. Identify Conflicts
     const slugTenant = await prisma.tenant.findFirst({ where: { slug: targetSlug } });
@@ -14,7 +16,6 @@ async function main() {
 
     let finalTenantId = null;
 
-    // If different tenants verify the conflict
     if (slugTenant && domainTenant && slugTenant.id !== domainTenant.id) {
         console.log(`⚠️  CONFLICT DETECTED: Domain owned by '${domainTenant.slug}', Slug owned by '${slugTenant.slug}'.`);
         console.log("   Releasing domain from existing owner...");
@@ -35,7 +36,8 @@ async function main() {
                 slug: targetSlug,
                 domain: targetDomain,
                 name: "Seeakk Solutions",
-                app_name: "Seeakk CRM"
+                app_name: appName,
+                logo_url: logoUrl
             }
         });
     } else {
@@ -45,7 +47,8 @@ async function main() {
                 slug: targetSlug,
                 domain: targetDomain,
                 name: "Seeakk Solutions",
-                app_name: "Seeakk CRM",
+                app_name: appName,
+                logo_url: logoUrl,
                 mode: 'production',
                 billing_plan: 'startup'
             }
@@ -82,13 +85,9 @@ async function main() {
         console.log("Admin user already exists.");
     }
 
-    console.log("✅ Admin User Ready:");
-    console.log(`   Email: ${adminEmail}`);
-    console.log(`   Pass:  ${defaultPass}`);
-
     // 4. CRITICAL: Cleanup CRM Menus (Remove Sales Orders)
     console.log("🧹 Cleaning up CRM menus...");
-    const movedItems = await prisma.menu_items.updateMany({
+    await prisma.menu_items.updateMany({
         where: {
             OR: [
                 { label: { contains: 'Sales Order', mode: 'insensitive' } },
@@ -100,14 +99,12 @@ async function main() {
             module_key: 'sales' // Hide from CRM
         }
     });
-    console.log(`✅ Relocated ${movedItems.count} rogue sales items out of CRM.`);
 
     console.log("-----------------------------------------");
     console.log("👉 ONCE DNS IS READY:");
     console.log("   Go to https://seeakk.com");
-    console.log("   You will see 'Seeakk CRM' branding.");
-    console.log("   Login with above credentials.");
-    console.log("   You will ONLY see CRM features and Settings.");
+    console.log("   Branding: Seeakk CRM");
+    console.log("   Logo: " + logoUrl);
     console.log("-----------------------------------------");
 }
 

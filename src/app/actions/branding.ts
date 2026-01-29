@@ -24,11 +24,17 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
 
         // 2. Priority: Hostname Lookup
         if (!tenant) {
+            // Normalize host: Remove 'www.' and common port suffixes for local testing
+            const cleanHost = host.toLowerCase().replace(/^www\./, '').split(':')[0];
+            const hostParts = cleanHost.split('.');
+            const firstPart = hostParts[0];
+
             tenant = await prisma.tenant.findFirst({
                 where: {
                     OR: [
-                        { domain: host },
-                        { slug: host.split('.')[0] }
+                        { domain: cleanHost },
+                        { domain: host }, // Exact match as fallback
+                        { slug: firstPart }
                     ]
                 },
                 select: {
@@ -55,8 +61,19 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
             'cloud-hms.onrender.com',
             'localhost:3000',
             'seeakk.com',
+            'www.seeakk.com',
             'seeakk.vercel.app'
-        ].includes(host) || host.endsWith('.vercel.app');
+        ].includes(host.toLowerCase()) || host.endsWith('.vercel.app');
+
+        // SPECIAL OVERRIDE: Seeakk.com branding
+        if (host.toLowerCase().includes('seeakk.com')) {
+            return {
+                app_name: "Seeakk CRM",
+                logo_url: "/branding/seeakk_logo.png",
+                name: "Seeakk Solutions",
+                isPublic
+            };
+        }
 
         return {
             app_name: tenant?.app_name || null,
