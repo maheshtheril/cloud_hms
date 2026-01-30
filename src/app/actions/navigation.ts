@@ -5,7 +5,10 @@ import { auth } from "@/auth"
 import { getUserPermissions, seedRolesAndPermissions } from "./rbac"
 import { ensureAdminMenus } from "@/lib/menu-seeder"
 
+import { unstable_noStore as noStore } from 'next/cache';
+
 export async function getMenuItems() {
+    noStore();
     const session = await auth();
     // if (!session?.user) return []; 
 

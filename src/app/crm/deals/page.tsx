@@ -43,8 +43,12 @@ export default async function DealsPage({ searchParams }: { searchParams: { view
             {/* --- Unified Header --- */}
             <div className="px-6 py-4 bg-white dark:bg-zinc-900 border-b border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4 shrink-0">
                 <div className="flex items-center gap-4">
-                    <div className="p-2.5 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-500/20">
+                    <div className="p-2.5 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-500/20 relative">
                         <Target className="w-6 h-6 text-white" />
+                        <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span>
+                        </span>
                     </div>
                     <div>
                         <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
@@ -52,6 +56,7 @@ export default async function DealsPage({ searchParams }: { searchParams: { view
                             <span className="text-[10px] font-bold bg-slate-100 dark:bg-zinc-800 text-slate-500 px-2 py-0.5 rounded-full border border-slate-200 dark:border-zinc-700">
                                 {deals.length}
                             </span>
+                            <span className="text-[8px] text-indigo-400 font-mono opacity-50">V:2220</span>
                         </h1>
                         <p className="text-xs text-slate-500 font-medium">{activePipeline.name} • {formatCurrency(totalValue, defaultCurrency.code)} in Pipeline</p>
                     </div>
