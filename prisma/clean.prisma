@@ -1,11 +1,11 @@
 generator client {
   provider   = "prisma-client-js"
   output     = "../node_modules/.prisma/client"
+  engineType = "library"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model account_chart {
@@ -95,78 +95,14 @@ model accounts {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model agent_task {
-  id            String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id     String    @db.Uuid
-  lead_id       String?   @db.Uuid
-  type          String
-  handler       String?
-  payload       Json?     @default("{}")
-  status        String?   @default("pending")
-  scheduled_for DateTime? @db.Timestamptz(6)
-  started_at    DateTime? @db.Timestamptz(6)
-  completed_at  DateTime? @db.Timestamptz(6)
-  result        Json?
-  created_at    DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model agent_task_log {
-  id         String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  task_id    String?   @db.Uuid
-  step       String?
-  meta       Json?
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model ai_action {
-  id              String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id       String    @db.Uuid
-  session_id      String?   @db.Uuid
-  lead_id         String?   @db.Uuid
-  user_id         String?   @db.Uuid
-  action_type     String
-  payload         Json?     @default("{}")
-  accepted        Boolean?
-  executed        Boolean?  @default(false)
-  executed_result Json?
-  created_at      DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model ai_assistant_session {
-  id         String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id  String    @db.Uuid
-  user_id    String?   @db.Uuid
-  context    Json?     @default("{}")
-  messages   Json?     @default("[]")
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model ai_embedding {
-  id           String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id    String    @db.Uuid
-  lead_id      String?   @db.Uuid
-  namespace    String
-  reference_id String?
-  content      String?
-  vector       Bytes?
-  metadata     Json?     @default("{}")
-  created_at   DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model analytic_accounts {
@@ -237,38 +173,9 @@ model app_user {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model attachment {
-  id           String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id    String    @db.Uuid
-  lead_id      String?   @db.Uuid
-  company_id   String?   @db.Uuid
-  uploaded_by  String?   @db.Uuid
-  filename     String
-  content_type String?
-  size_bytes   BigInt?
-  storage_key  String
-  metadata     Json?     @default("{}")
-  created_at   DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model audit_log {
-  id         String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id  String?   @db.Uuid
-  actor_id   String?   @db.Uuid
-  table_name String
-  record_id  String?   @db.Uuid
-  operation  String
-  diff       Json?     @default("{}")
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
-  row_id     String?   @db.Uuid
-  event      String?
-
-  @@ignore
-}
 
 model business_partners {
   id               String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -298,38 +205,7 @@ model business_partners {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model catalog_pipeline_template {
-  id          String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  key         String
-  name        String
-  description String?
-  metadata    Json?     @default("{}")
-  created_at  DateTime? @default(now()) @db.Timestamptz(6)
 
-  @@ignore
-}
-
-model company {
-  id                     String                   @unique(map: "uq_company_id") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id              String                   @db.Uuid
-  name                   String
-  enabled                Boolean?                 @default(true)
-  metadata               Json?                    @default("{}")
-  created_at             DateTime?                @default(now()) @db.Timestamptz(6)
-  // search_tsv             Unsupported("tsvector")?
-  country_id             String?                  @db.Uuid
-  industry               String?
-  logo_url               String?
-  mode                   String                   @default("trial")
-  countries              countries?               @relation(fields: [country_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  company_menu_overrides company_menu_overrides[]
-  company_settings       company_settings?
-  company_taxes          company_taxes[]
-  branches               hms_branch[]
-  sessions               sessions[]
-
-  @@index([tenant_id], map: "idx_company_tenant_id")
-}
 
 model hms_branch {
   id                String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -523,23 +399,6 @@ model company_taxes {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model contact {
-  id         String                   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id  String?                  @db.Uuid
-  // search_tsv Unsupported("tsvector")?
-  first_name String?
-  last_name  String?
-  email      String?
-  phone      String?
-  role_title String?
-  meta       Json?                    @default("{}")
-  created_at DateTime                 @default(now()) @db.Timestamptz(6)
-  updated_at DateTime                 @default(now()) @db.Timestamptz(6)
-  company_id String?                  @db.Uuid
-  owner_id   String?                  @db.Uuid
-
-  @@ignore
-}
 
 model countries {
   id                       String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -645,26 +504,6 @@ model custom_field_value {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model custom_fields {
-  id          String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id   String   @db.Uuid
-  company_id  String?  @db.Uuid
-  pipeline_id String?  @db.Uuid
-  entity      String
-  key         String
-  label       String
-  field_type  String
-  options     Json?
-  required    Boolean  @default(false)
-  visible     Boolean  @default(true)
-  sort_order  Int      @default(100)
-  metadata    Json?
-  created_by  String?  @db.Uuid
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 model customer_loyalty_wallet {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -675,13 +514,6 @@ model customer_loyalty_wallet {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model deals {
-  id         String                   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id  String?                  @db.Uuid
-  // search_tsv Unsupported("tsvector")?
-
-  @@ignore
-}
 
 model domain_mappings {
   id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -1209,14 +1041,6 @@ model hms_encounter {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model hms_fk_cleanup_log {
-  cleaned_at      DateTime? @default(now()) @db.Timestamptz(6)
-  table_name      String?
-  constraint_name String?
-  definition      String?
-
-  @@ignore
-}
 
 model hms_idempotency_keys {
   id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -2622,20 +2446,6 @@ model hms_ward {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model import_job {
-  id          String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id   String    @db.Uuid
-  company_id  String?   @db.Uuid
-  uploaded_by String?   @db.Uuid
-  filename    String?
-  status      String?   @default("uploaded")
-  summary     Json?     @default("{}")
-  error       String?
-  created_at  DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 model invoice_sequences {
   id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -2786,124 +2596,18 @@ model lab_test_group {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
-model lead {
-  id                 String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id          String                   @db.Uuid
-  company_id         String?                  @db.Uuid
-  owner_id           String?                  @db.Uuid
-  pipeline_id        String?                  @db.Uuid
-  stage_id           String?                  @db.Uuid
-  name               String
-  primary_email      String?
-  primary_phone      String?
-  source_id          String?                  @db.Uuid
-  status             String?                  @default("new")
-  estimated_value    Decimal?                 @default(0) @db.Decimal
-  probability        Decimal?                 @default(0) @db.Decimal
-  priority           Int?                     @default(3) @db.SmallInt
-  custom_data        Json?                    @default("{}")
-  tags               String[]                 @default([])
-  meta               Json?                    @default("{}")
-  created_by         String?                  @db.Uuid
-  created_at         DateTime?                @default(now()) @db.Timestamptz(6)
-  updated_at         DateTime?                @default(now()) @db.Timestamptz(6)
-  metadata           Json?                    @default("{}")
-  // search_vector      Unsupported("tsvector")?
-  stage              String?                  @default("new")
-  primary_phone_e164 String?
-  profession_id      String?                  @db.Uuid
-  profession_name    String?
-  industry_id        String?                  @db.Uuid
-
-  @@index([industry_id], map: "idx_lead_industry_id")
-  @@index([profession_id], map: "idx_lead_profession_id")
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lead_activity {
-  id         String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  lead_id    String    @db.Uuid
-  tenant_id  String    @db.Uuid
-  actor_id   String?   @db.Uuid
-  actor_type String?   @default("user")
-  action_key String
-  payload    Json?     @default("{}")
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
-  company_id String?   @db.Uuid
-
-  @@ignore
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lead_assignment {
-  id            String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  lead_id       String    @db.Uuid
-  tenant_id     String    @db.Uuid
-  assigned_from String?   @db.Uuid
-  assigned_to   String?   @db.Uuid
-  assigned_by   String?   @db.Uuid
-  reason        String?
-  created_at    DateTime? @default(now()) @db.Timestamptz(6)
-  company_id    String?   @db.Uuid
-
-  @@ignore
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lead_assignment_history {
-  id         String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id  String?   @db.Uuid
-  lead_id    String    @db.Uuid
-  rule_id    String?   @db.Uuid
-  from_owner String?   @db.Uuid
-  to_owner   String    @db.Uuid
-  reason     String?
-  created_by String?   @db.Uuid
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lead_assignment_rule {
-  id          String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id   String?   @db.Uuid
-  pipeline_id String?   @db.Uuid
-  criteria    Json
-  assign_to   String    @db.Uuid
-  priority    Int?      @default(100)
-  active      Boolean?  @default(true)
-  created_at  DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lead_duplicate {
-  id           String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id    String    @db.Uuid
-  lead_id      String    @db.Uuid
-  duplicate_of String    @db.Uuid
-  score        Decimal   @db.Decimal
-  status       String?   @default("pending")
-  created_at   DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lead_event {
-  id         String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id  String    @db.Uuid
-  lead_id    String?   @db.Uuid
-  event_key  String
-  payload    Json?     @default("{}")
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
-  company_id String?   @db.Uuid
-
-  @@ignore
-}
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model lead_followups {
@@ -2963,19 +2667,6 @@ model lead_industry {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lead_note {
-  id         String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  lead_id    String    @db.Uuid
-  tenant_id  String    @db.Uuid
-  author_id  String?   @db.Uuid
-  body       String
-  visibility String?   @default("internal")
-  metadata   Json?     @default("{}")
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
-  company_id String?   @db.Uuid
-
-  @@ignore
-}
 
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model lead_pipeline {
@@ -3013,40 +2704,8 @@ model lead_profession {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lead_schedule {
-  id           String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id    String?   @db.Uuid
-  lead_id      String    @db.Uuid
-  title        String
-  note         String?
-  scheduled_at DateTime  @db.Timestamptz(6)
-  assignee_id  String?   @db.Uuid
-  done_at      DateTime? @db.Timestamptz(6)
-  created_at   DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at   DateTime  @default(now()) @db.Timestamptz(6)
-  company_id   String?   @db.Uuid
-
-  @@ignore
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lead_source {
-  id          String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id   String    @db.Uuid
-  key         String
-  name        String
-  config      Json?     @default("{}")
-  created_at  DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
-  description String?
-  is_active   Boolean?  @default(true)
-  deleted_at  DateTime? @db.Timestamptz(6)
-  deleted_by  String?   @db.Uuid
-
-  @@index([deleted_at], map: "idx_lead_source_deleted_at")
-  @@index([is_active], map: "idx_lead_source_is_active")
-  @@ignore
-}
 
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 model lead_stage {
@@ -3068,76 +2727,14 @@ model lead_stage {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lead_stage_history {
-  id            String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  lead_id       String    @db.Uuid
-  from_stage_id String?   @db.Uuid
-  to_stage_id   String?   @db.Uuid
-  changed_by    String?   @db.Uuid
-  reason        String?
-  created_at    DateTime? @default(now()) @db.Timestamptz(6)
-  tenant_id     String    @db.Uuid
-  from_stage    String?
-  to_stage      String?
-
-  @@ignore
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lead_tag {
-  id         String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  lead_id    String    @db.Uuid
-  tag_id     String    @db.Uuid
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lead_task {
-  id           String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id    String    @db.Uuid
-  lead_id      String    @db.Uuid
-  title        String
-  due_date     DateTime? @db.Date
-  status       String    @default("open")
-  assigned_to  String?   @db.Uuid
-  created_by   String    @db.Uuid
-  created_at   DateTime  @default(now()) @db.Timestamptz(6)
-  completed_at DateTime? @db.Timestamptz(6)
-  company_id   String?   @db.Uuid
-
-  @@index([company_id], map: "idx_lead_task_company")
-  @@ignore
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lead_template {
-  id          String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id   String?   @db.Uuid
-  key         String
-  name        String
-  description String?
-  spec        Json
-  scope       Json?     @default("{}")
-  is_active   Boolean?  @default(true)
-  created_by  String?   @db.Uuid
-  updated_by  String?   @db.Uuid
-  created_at  DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lead_template_pipeline_map {
-  id                   String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  lead_template_id     String    @db.Uuid
-  pipeline_template_id String    @db.Uuid
-  created_at           DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model ledger_posting_rules {
@@ -3391,22 +2988,6 @@ model modules {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model opportunity {
-  id                  String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id           String    @db.Uuid
-  lead_id             String?   @db.Uuid
-  pipeline_id         String    @db.Uuid
-  stage_id            String    @db.Uuid
-  name                String
-  amount              Decimal?  @db.Decimal
-  probability         Decimal?  @db.Decimal
-  expected_close_date DateTime? @db.Date
-  status              String?   @default("open")
-  created_at          DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at          DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model payment_allocations {
@@ -4176,19 +3757,6 @@ model reconciliations {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model refresh_tokens {
-  rid                    String
-  sid                    String
-  user_id                String    @db.Uuid
-  tenant_id              String?   @db.Uuid
-  token_hash             String?
-  revoked                Boolean   @default(false)
-  replaced_by_token_hash String?
-  created_at             DateTime  @default(now()) @db.Timestamptz(6)
-  expires_at             DateTime? @db.Timestamptz(6)
-
-  @@ignore
-}
 
 model retail_settings {
   company_id        String    @id @db.Uuid
@@ -4261,16 +3829,6 @@ model setting_schemas {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model tag {
-  id         String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id  String    @db.Uuid
-  key        String
-  name       String
-  metadata   Json?     @default("{}")
-  created_at DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
-}
 
 model tax_gl_accounts {
   id                                                                     String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
