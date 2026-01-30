@@ -15,6 +15,9 @@ import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
+export const dynamic = 'force-dynamic';
+// Cache breaker: 2026-01-30 21:55
+
 export default async function DealsPage({ searchParams }: { searchParams: { view?: string, pipelineId?: string } }) {
     const session = await auth();
     const tenantId = session?.user?.tenantId;
