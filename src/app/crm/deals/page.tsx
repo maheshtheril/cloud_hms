@@ -18,10 +18,11 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 export const dynamic = 'force-dynamic';
 // Cache breaker: 2026-01-30 21:55
 
-export default async function DealsPage({ searchParams }: { searchParams: { view?: string, pipelineId?: string } }) {
+export default async function DealsPage(props: { searchParams: Promise<{ view?: string, pipelineId?: string }> }) {
+    const searchParams = await props.searchParams;
     const session = await auth();
-    const tenantId = session?.user?.tenantId;
-    const view = searchParams.view || 'board'; // Default to Board view as per world standard
+    const tid = (session?.user as any)?.tenantId || (session?.user as any)?.tenant_id;
+    const view = searchParams.view || 'board';
 
     // 1. Fetch Master Data
     const pipelines = await getPipelines(true);

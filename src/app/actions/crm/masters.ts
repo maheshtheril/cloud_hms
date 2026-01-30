@@ -24,7 +24,7 @@ export async function getPipelines(includeStages = false) {
     const tid = (session?.user as any)?.tenantId || (session?.user as any)?.tenant_id;
     if (!tid) return []
 
-    const pipelines = await prisma.crm_pipelines.findMany({
+    let pipelines = await prisma.crm_pipelines.findMany({
         where: { tenant_id: tid, deleted_at: null },
         include: {
             stages: includeStages ? {
@@ -35,10 +35,39 @@ export async function getPipelines(includeStages = false) {
         orderBy: { created_at: 'asc' }
     })
 
+    // SELF-HEALING: If no pipelines exist, create a default one
+    if (pipelines.length === 0) {
+        console.log(`[CRM] Auto-seeding pipeline for tenant ${tid}`);
+        const newPipe = await prisma.crm_pipelines.create({
+            data: {
+                tenant_id: tid,
+                name: 'Sales Pipeline',
+                is_default: true,
+                stages: {
+                    create: [
+                        { name: 'Fresh Lead', sort_order: 10, probability: 10 },
+                        { name: 'Qualified', sort_order: 20, probability: 30 },
+                        { name: 'Proposal', sort_order: 30, probability: 60 },
+                        { name: 'Negotiation', sort_order: 40, probability: 80 },
+                        { name: 'Won', sort_order: 50, probability: 100 },
+                        { name: 'Lost', sort_order: 60, probability: 0 }
+                    ]
+                }
+            },
+            include: {
+                stages: includeStages ? {
+                    orderBy: { sort_order: 'asc' },
+                    where: { deleted_at: null }
+                } : false
+            }
+        });
+        pipelines = [newPipe];
+    }
+
     // Serialize Decimals for Client Components
-    return pipelines.map(p => ({
+    return pipelines.map((p: any) => ({
         ...p,
-        stages: p.stages?.map(s => ({
+        stages: p.stages?.map((s: any) => ({
             ...s,
             probability: s.probability ? Number(s.probability) : 0
         })) || []
