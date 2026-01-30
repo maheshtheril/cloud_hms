@@ -7,10 +7,32 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
     const headersList = await headers();
     const host = headersList.get('host') || '';
 
+    // PLATFORM OPTIMIZATION: Check Hardcoded Brands FIRST to skip DB latency
+    // 1. ZIONA (Default for cloud-hms)
+    const appBrand = process.env.NEXT_PUBLIC_APP_BRAND?.toUpperCase();
+    if (appBrand === 'ZIONA' || appBrand === 'CLOUD_HMS' || host.toLowerCase().includes('cloud-hms')) {
+        return {
+            app_name: "Ziona ERP",
+            logo_url: "/ziona.png",
+            name: "Ziona Technologies",
+            isPublic: true // Always public for main site
+        };
+    }
+
+    // 2. SEEAKK
+    if (host.toLowerCase().includes('seeakk.com') || appBrand === 'SEEAKK') {
+        return {
+            app_name: "Seeakk CRM",
+            logo_url: "/branding/seeakk_logo.png",
+            name: "Seeakk Solutions",
+            isPublic: true
+        };
+    }
+
     try {
         let tenant = null;
 
-        // 1. Priority: Manual Query Param Override (?org=slug)
+        // 3. Database Lookup for Custom Tenants
         if (slugOverride) {
             tenant = await prisma.tenant.findFirst({
                 where: { slug: slugOverride },
@@ -33,7 +55,9 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
             });
         }
 
-        // 2. Priority: Hostname Lookup
+        // ... rest of DB logic ...
+
+        // 4. Hostname Lookup (Only if not hardcoded above)
         if (!tenant) {
             // Normalize host: Remove 'www.' and common port suffixes for local testing
             const cleanHost = host.toLowerCase().replace(/^www\./, '').split(':')[0];
@@ -67,7 +91,7 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
             });
         }
 
-        // 3. Fallback: Newest Tenant (System Default)
+        // 5. Fallback: Newest Tenant (System Default)
         if (!tenant) {
             tenant = await prisma.tenant.findFirst({
                 orderBy: { created_at: 'desc' },
@@ -92,40 +116,7 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
 
         // --- PUBLIC REGISTRATION LOGIC ---
         const meta = (tenant?.metadata as any) || {};
-        let isPublic = meta.registration_enabled !== false; // Default to true if not explicitly false
-
-        // If not explicitly set in metadata, use hostname-based defaults
-        if (meta.registration_enabled === undefined) {
-            isPublic = [
-                'cloud-hms.onrender.com',
-                'localhost:3000',
-                'seeakk.com',
-                'www.seeakk.com',
-                'seeakk.vercel.app'
-            ].includes(host.toLowerCase()) || host.endsWith('.vercel.app');
-        }
-
-        // SPECIAL OVERRIDE: Seeakk.com branding or Env Var
-        const appBrand = process.env.NEXT_PUBLIC_APP_BRAND?.toUpperCase();
-
-        if (host.toLowerCase().includes('seeakk.com') || appBrand === 'SEEAKK') {
-            return {
-                app_name: "Seeakk CRM",
-                logo_url: "/branding/seeakk_logo.png",
-                name: "Seeakk Solutions",
-                isPublic: isPublic
-            };
-        }
-
-        // UNIFIED BRANDING: Ziona is the new identity for Cloud HMS
-        if (appBrand === 'ZIONA' || appBrand === 'CLOUD_HMS' || host.toLowerCase().includes('cloud-hms')) {
-            return {
-                app_name: "Ziona ERP",
-                logo_url: "/ziona.png",
-                name: "Ziona Technologies",
-                isPublic: isPublic
-            };
-        }
+        const isPublic = meta.registration_enabled !== false;
 
         return {
             app_name: tenant?.app_name || null,
@@ -135,6 +126,6 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
         };
     } catch (error) {
         console.error("Failed to fetch tenant branding:", error);
-        return null; // Handle null gracefully in UI
+        return null;
     }
 }
