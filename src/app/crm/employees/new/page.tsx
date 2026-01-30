@@ -67,17 +67,17 @@ export default function NewEmployeePage() {
                         <X className="h-5 w-5" />
                     </Button>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Add New Employee</h1>
-                        <p className="text-slate-500">Create a professional profile for your new team member.</p>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Add New Employee</h1>
+                        <p className="text-slate-500 dark:text-slate-400">Create a professional profile for your new team member.</p>
                     </div>
                 </div>
             </header>
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-10">
                 <div className="md:col-span-2 space-y-6">
-                    <Card className="border-slate-200">
-                        <CardHeader className="bg-slate-50/50">
-                            <CardTitle className="text-lg flex items-center gap-2">
+                    <Card className="border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                        <CardHeader className="bg-slate-50/50 dark:bg-zinc-900/50 border-b">
+                            <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
                                 <UserPlus className="h-4 w-4 text-indigo-600" />
                                 Personal Details
                             </CardTitle>
@@ -128,9 +128,9 @@ export default function NewEmployeePage() {
                         </CardContent>
                     </Card>
 
-                    <Card className="border-slate-200">
-                        <CardHeader className="bg-slate-50/50">
-                            <CardTitle className="text-lg flex items-center gap-2">
+                    <Card className="border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                        <CardHeader className="bg-slate-50/50 dark:bg-zinc-900/50 border-b">
+                            <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
                                 <Briefcase className="h-4 w-4 text-indigo-600" />
                                 Employment Info
                             </CardTitle>
@@ -200,9 +200,9 @@ export default function NewEmployeePage() {
                         </Button>
                     </div>
 
-                    <div className="bg-slate-100 p-4 rounded-xl text-xs text-slate-500 leading-relaxed">
+                    <div className="bg-slate-100 dark:bg-zinc-900 p-4 rounded-xl text-xs text-slate-600 dark:text-slate-400 leading-relaxed border border-slate-200 dark:border-zinc-800">
                         <Globe className="h-4 w-4 mb-2 text-slate-400" />
-                        <strong>Onboarding Note:</strong> Adding an employee does not automatically create a system user account. To grant system access, please go to <strong>Settings &gt; Users</strong> after onboarding.
+                        <strong className="text-slate-900 dark:text-white font-bold">Onboarding Note:</strong> Adding an employee does not automatically create a system user account. To grant system access, please go to <strong>Settings &gt; Users</strong> after onboarding.
                     </div>
                 </div>
             </form>

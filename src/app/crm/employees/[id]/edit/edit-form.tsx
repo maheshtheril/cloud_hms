@@ -99,7 +99,7 @@ export function EditEmployeeForm({ employee, designations, branches }: EditEmplo
                     <Card className="border-slate-200 shadow-sm overflow-hidden md:col-span-2">
                         <div className="h-1.5 bg-indigo-600 w-full" />
                         <CardHeader className="pb-4">
-                            <CardTitle className="text-lg flex items-center gap-2">
+                            <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
                                 <Users className="h-4 w-4 text-indigo-600" />
                                 Personal Information
                             </CardTitle>
@@ -149,7 +149,7 @@ export function EditEmployeeForm({ employee, designations, branches }: EditEmplo
                     {/* Employment Details */}
                     <Card className="border-slate-200 shadow-sm md:col-span-2">
                         <CardHeader className="pb-4">
-                            <CardTitle className="text-lg flex items-center gap-2">
+                            <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
                                 <Briefcase className="h-4 w-4 text-indigo-600" />
                                 Employment & Access
                             </CardTitle>
@@ -219,7 +219,7 @@ export function EditEmployeeForm({ employee, designations, branches }: EditEmplo
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Delete employee record?</AlertDialogTitle>
+                                <AlertDialogTitle className="text-slate-900 dark:text-white">Delete employee record?</AlertDialogTitle>
                                 <AlertDialogDescription>
                                     This will permanently remove <strong>{formData.first_name} {formData.last_name}</strong> from the directory.
                                     This action cannot be undone. Background portal access will also be revoked.

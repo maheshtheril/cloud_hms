@@ -82,7 +82,7 @@ export function EditDesignationForm({ designation }: { designation: any }) {
                     <div className="h-2 bg-indigo-600 w-full" />
                     <CardHeader className="pt-6">
                         <div className="flex justify-between items-center">
-                            <CardTitle className="text-lg flex items-center gap-2">
+                            <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
                                 <Briefcase className="h-4 w-4 text-indigo-600" />
                                 Role Identity
                             </CardTitle>
@@ -136,7 +136,7 @@ export function EditDesignationForm({ designation }: { designation: any }) {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogTitle className="text-slate-900 dark:text-white">Are you absolutely sure?</AlertDialogTitle>
                                 <AlertDialogDescription>
                                     This will permanently delete the <strong>{formData.name}</strong> designation.
                                     This action cannot be undone and may fail if employees are still assigned to this role.
