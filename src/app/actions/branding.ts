@@ -105,13 +105,24 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
             ].includes(host.toLowerCase()) || host.endsWith('.vercel.app');
         }
 
-        // SPECIAL OVERRIDE: Seeakk.com branding
-        if (host.toLowerCase().includes('seeakk.com')) {
+        // SPECIAL OVERRIDE: Seeakk.com branding or Env Var
+        const appBrand = process.env.NEXT_PUBLIC_APP_BRAND?.toUpperCase();
+
+        if (host.toLowerCase().includes('seeakk.com') || appBrand === 'SEEAKK') {
             return {
                 app_name: "Seeakk CRM",
                 logo_url: "/branding/seeakk_logo.png",
                 name: "Seeakk Solutions",
-                isPublic: isPublic // Respect toggle
+                isPublic: isPublic
+            };
+        }
+
+        if (appBrand === 'CLOUD_HMS') {
+            return {
+                app_name: "Cloud HMS",
+                logo_url: null, // Will use default icon
+                name: "Cloud Healthcare",
+                isPublic: isPublic
             };
         }
 
