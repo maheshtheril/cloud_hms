@@ -121,7 +121,7 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
         if (appBrand === 'ZIONA' || appBrand === 'CLOUD_HMS' || host.toLowerCase().includes('cloud-hms')) {
             return {
                 app_name: "Ziona ERP",
-                logo_url: "/branding/ziona_logo.png",
+                logo_url: "/ziona.png",
                 name: "Ziona Technologies",
                 isPublic: isPublic
             };
