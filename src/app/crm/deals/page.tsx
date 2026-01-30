@@ -56,7 +56,7 @@ export default async function DealsPage({ searchParams }: { searchParams: { view
                             <span className="text-[10px] font-bold bg-slate-100 dark:bg-zinc-800 text-slate-500 px-2 py-0.5 rounded-full border border-slate-200 dark:border-zinc-700">
                                 {deals.length}
                             </span>
-                            <span className="text-[8px] text-indigo-400 font-mono opacity-50">V:2220</span>
+                            <span className="text-[8px] text-indigo-400 font-mono opacity-50">V:2230</span>
                         </h1>
                         <p className="text-xs text-slate-500 font-medium">{activePipeline.name} • {formatCurrency(totalValue, defaultCurrency.code)} in Pipeline</p>
                     </div>

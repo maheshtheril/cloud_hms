@@ -250,8 +250,7 @@ export async function ensureCrmMenus() {
         const items = [
             { key: 'crm-dashboard', label: 'Dashboard', url: '/crm/dashboard', icon: 'LayoutDashboard', sort: 10 },
             { key: 'crm-leads', label: 'Leads', url: '/crm/leads', icon: 'Users', sort: 20 },
-            { key: 'crm-deals', label: 'Deals', url: '/crm/deals', icon: 'DollarSign', sort: 30 },
-            { key: 'crm-pipeline', label: 'Pipeline', url: '/crm/pipeline', icon: 'Trello', sort: 40 },
+            { key: 'crm-deals', label: 'Deals Pipeline', url: '/crm/deals', icon: 'DollarSign', sort: 30 },
             { key: 'crm-targets', label: 'Targets', url: '/crm/targets', icon: 'Target', sort: 50 },
             { key: 'crm-activities', label: 'Activities', url: '/crm/activities', icon: 'PhoneCall', sort: 60 },
             // Staff & HR (Nested)
@@ -341,18 +340,22 @@ export async function ensureCrmMenus() {
                 console.log(`Auto-seeded CRM Menu: ${item.label}`);
             } else {
                 // Ensure it is in CRM module and correct URL
-                if (existing.module_key !== 'crm' || existing.url !== item.url) {
+                if (existing.module_key !== 'crm' || existing.url !== item.url || existing.label !== item.label) {
                     await prisma.menu_items.update({
                         where: { id: existing.id },
                         data: {
                             module_key: 'crm',
                             url: item.url,
+                            label: item.label,
                             parent_id: null // Ensure top level
                         }
                     });
                 }
             }
         }
+
+        // Cleanup Redundant
+        await prisma.menu_items.deleteMany({ where: { key: 'crm-pipeline' } });
 
     } catch (e) {
         console.error("Failed to seed CRM menus:", e);

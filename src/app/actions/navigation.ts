@@ -470,7 +470,7 @@ let hasAudited = false;
  * Ensures all menu items have valid permission codes.
  */
 export async function auditAndFixMenuPermissions() {
-    if (hasAudited) return { success: true };
+    // Force audit on every request for 100% data reliability
     try {
         // -1. ENSURE PERMISSIONS EXIST
         // Run seed check to register any missing permission codes
