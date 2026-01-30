@@ -77,7 +77,7 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                             {appName}
                         </h1>
                         <p className="text-slate-500 text-sm">
-                            Single Sign-On for Healthcare
+                            Sign in to your account
                         </p>
                     </div>
 
