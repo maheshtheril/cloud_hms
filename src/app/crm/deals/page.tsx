@@ -13,6 +13,7 @@ import { getCompanyDefaultCurrency } from "@/app/actions/currency";
 import { formatCurrency } from "@/lib/currency";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from 'date-fns';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default async function DealsPage({ searchParams }: { searchParams: { view?: string, pipelineId?: string } }) {
     const session = await auth();
