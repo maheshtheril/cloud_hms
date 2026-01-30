@@ -37,66 +37,56 @@ export default function LoginClient({ branding }: { branding: Branding | null })
         }
     }
 
-    const appName = branding?.app_name || "Ziona";
+    const appName = branding?.app_name || "Ziona HMS";
 
     return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-black overflow-hidden relative font-sans selection:bg-indigo-500/30">
+        <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 relative font-sans overflow-hidden">
 
-            {/* Futuristic Background - Moving Aurora */}
-            <div className="absolute inset-0 z-0">
-                <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-indigo-600/20 blur-[150px] animate-pulse" />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[150px]" />
-                <div className="absolute top-[40%] left-[30%] w-[40%] h-[40%] rounded-full bg-violet-600/10 blur-[120px] animate-pulse delay-700" />
+            {/* Clean Medical Background - Soft Gradients */}
+            <div className="absolute inset-0 z-0 bg-white">
+                <div className="absolute top-[-10%] right-[-5%] w-[50%] h-[50%] rounded-full bg-cyan-100/50 blur-[100px]" />
+                <div className="absolute bottom-[-10%] left-[-5%] w-[50%] h-[50%] rounded-full bg-indigo-100/50 blur-[100px]" />
+                <div className="absolute top-[40%] left-[40%] w-[30%] h-[30%] rounded-full bg-blue-50 blur-[80px]" />
             </div>
 
-            {/* Grid Overlay for Tech Feel */}
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0 pointer-events-none mix-blend-overlay"></div>
-
             <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="max-w-[420px] w-full relative z-10"
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="max-w-[400px] w-full relative z-10"
             >
-                {/* Glass Card */}
-                <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-8 md:p-10 rounded-[2rem] shadow-2xl shadow-black/50 relative overflow-hidden group">
+                {/* Clean Card */}
+                <div className="bg-white/80 backdrop-blur-xl border border-white/60 p-8 rounded-[2rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] relative overflow-hidden ring-1 ring-black/5">
 
-                    {/* Top Shine Effect */}
-                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50" />
-
-                    <div className="text-center mb-10 relative">
+                    <div className="text-center mb-8 relative">
                         <motion.div
-                            initial={{ scale: 0.8, opacity: 0 }}
+                            initial={{ scale: 0.9, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.2, type: "spring" }}
-                            className="w-24 h-24 mx-auto mb-6 relative"
+                            transition={{ delay: 0.1 }}
+                            className="w-24 h-24 mx-auto mb-4 relative flex items-center justify-center"
                         >
-                            {/* Logo Glow */}
-                            <div className="absolute inset-0 bg-indigo-500/30 blur-2xl rounded-full" />
-
-                            <div className="relative w-full h-full bg-black/20 rounded-2xl flex items-center justify-center border border-white/10 shadow-inner overflow-hidden">
-                                {branding?.logo_url ? (
-                                    <img src={branding.logo_url} alt={appName} className="w-full h-full object-contain p-3" />
-                                ) : (
-                                    <Sparkles className="text-indigo-400 w-10 h-10" />
-                                )}
-                            </div>
+                            {/* Free Floating Logo - No Box */}
+                            {branding?.logo_url ? (
+                                <img src={branding.logo_url} alt={appName} className="w-full h-full object-contain filter drop-shadow-lg" />
+                            ) : (
+                                <Sparkles className="text-cyan-600 w-12 h-12" />
+                            )}
                         </motion.div>
 
-                        <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
+                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight mb-1">
                             {appName}
                         </h1>
-                        <p className="text-indigo-200/60 text-sm font-medium">
-                            Welcome back. Please sign in.
+                        <p className="text-slate-500 text-sm">
+                            Single Sign-On for Healthcare
                         </p>
                     </div>
 
-                    <form onSubmit={handleLogin} className="space-y-5">
+                    <form onSubmit={handleLogin} className="space-y-4">
                         <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-indigo-200/70 ml-1 uppercase tracking-wider">Email Address</label>
-                            <div className={`relative transition-all duration-300 ${focusedField === 'email' ? 'scale-[1.02]' : 'scale-100'}`}>
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <Mail className={`h-5 w-5 transition-colors duration-300 ${focusedField === 'email' ? 'text-indigo-400' : 'text-zinc-500'}`} />
+                            <label className="text-xs font-bold text-slate-400 ml-1 uppercase tracking-wider">Email</label>
+                            <div className={`relative transition-all duration-200 ${focusedField === 'email' ? 'scale-[1.01]' : 'scale-100'}`}>
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                    <Mail className={`h-4.5 w-4.5 transition-colors duration-200 ${focusedField === 'email' ? 'text-indigo-600' : 'text-slate-400'}`} />
                                 </div>
                                 <input
                                     name="email"
@@ -106,20 +96,20 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                     onBlur={() => setFocusedField(null)}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                                     required
-                                    className="block w-full pl-11 pr-4 py-3.5 bg-black/30 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all text-sm font-medium"
-                                    placeholder="name@company.com"
+                                    className="block w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:bg-white transition-all text-sm font-semibold"
+                                    placeholder="doctor@hospital.com"
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-1.5">
                             <div className="flex items-center justify-between ml-1">
-                                <label className="text-xs font-semibold text-indigo-200/70 uppercase tracking-wider">Password</label>
-                                <a href="#" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Forgot?</a>
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Password</label>
+                                <a href="#" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">Help?</a>
                             </div>
-                            <div className={`relative transition-all duration-300 ${focusedField === 'password' ? 'scale-[1.02]' : 'scale-100'}`}>
-                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <Lock className={`h-5 w-5 transition-colors duration-300 ${focusedField === 'password' ? 'text-indigo-400' : 'text-zinc-500'}`} />
+                            <div className={`relative transition-all duration-200 ${focusedField === 'password' ? 'scale-[1.01]' : 'scale-100'}`}>
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                    <Lock className={`h-4.5 w-4.5 transition-colors duration-200 ${focusedField === 'password' ? 'text-indigo-600' : 'text-slate-400'}`} />
                                 </div>
                                 <input
                                     name="password"
@@ -129,7 +119,7 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                     onBlur={() => setFocusedField(null)}
                                     onChange={e => setFormData({ ...formData, password: e.target.value })}
                                     required
-                                    className="block w-full pl-11 pr-4 py-3.5 bg-black/30 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all text-sm font-medium"
+                                    className="block w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus:bg-white transition-all text-sm font-semibold"
                                     placeholder="••••••••"
                                 />
                             </div>
@@ -138,30 +128,26 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full relative overflow-hidden bg-white text-black py-4 rounded-xl font-bold text-sm tracking-wide shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 mt-2 disabled:opacity-70 disabled:cursor-not-allowed group"
+                            className="w-full bg-slate-900 text-white py-3.5 rounded-xl font-bold text-sm tracking-wide shadow-xl shadow-slate-900/10 hover:shadow-slate-900/20 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 mt-2 disabled:opacity-70 disabled:cursor-not-allowed group flex items-center justify-center gap-2"
                         >
-                            <span className="relative z-10 flex items-center justify-center gap-2">
-                                {isLoading ? (
-                                    <>
-                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                        Authenticating...
-                                    </>
-                                ) : (
-                                    <>
-                                        Sign In
-                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                    </>
-                                )}
-                            </span>
-                            {/* Button Shine Animation */}
-                            <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-0" />
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                    Verifying...
+                                </>
+                            ) : (
+                                <>
+                                    Sign In
+                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                                </>
+                            )}
                         </button>
                     </form>
 
-                    {/* Bottom Link */}
-                    <div className="mt-8 text-center">
-                        <p className="text-xs text-indigo-200/40">
-                            Protected by Ziona Secure Identity
+                    {/* Legal/Footer */}
+                    <div className="mt-6 text-center">
+                        <p className="text-[10px] uppercase font-bold text-slate-300 tracking-widest">
+                            Secure Access
                         </p>
                     </div>
                 </div>

@@ -12,9 +12,9 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
     const appBrand = process.env.NEXT_PUBLIC_APP_BRAND?.toUpperCase();
     if (appBrand === 'ZIONA' || appBrand === 'CLOUD_HMS' || host.toLowerCase().includes('cloud-hms')) {
         return {
-            app_name: "Ziona ERP",
+            app_name: "Ziona HMS",
             logo_url: "/ziona.png",
-            name: "Ziona Technologies",
+            name: "Ziona Health",
             isPublic: true // Always public for main site
         };
     }
