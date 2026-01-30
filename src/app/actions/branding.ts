@@ -126,7 +126,8 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
             };
         }
 
-        if (appBrand === 'ZIONA') {
+        // Default to ZIONA for cloud-hms domains or explicit Env Var
+        if (appBrand === 'ZIONA' || host.toLowerCase().includes('cloud-hms')) {
             return {
                 app_name: "Ziona ERP",
                 logo_url: "/branding/ziona_logo.png",
