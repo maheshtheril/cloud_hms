@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { signIn } from "next-auth/react"
-import { Layers, Mail, Lock, ArrowRight, Loader2 } from "lucide-react"
+import { Mail, Lock, ArrowRight, Loader2, Sparkles } from "lucide-react"
 import { motion } from "framer-motion"
 
 interface Branding {
@@ -14,6 +14,7 @@ interface Branding {
 
 export default function LoginClient({ branding }: { branding: Branding | null }) {
     const [isLoading, setIsLoading] = useState(false)
+    const [focusedField, setFocusedField] = useState<string | null>(null)
 
     // Form State for Login
     const [formData, setFormData] = useState({
@@ -36,79 +37,99 @@ export default function LoginClient({ branding }: { branding: Branding | null })
         }
     }
 
-    return (
-        <div className="min-h-screen flex items-center justify-center p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-50 via-slate-50 to-white dark:from-slate-900 dark:via-indigo-950/20 dark:to-slate-950 overflow-hidden relative">
+    const appName = branding?.app_name || "Ziona";
 
-            {/* Animated Background Elements */}
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/10 dark:bg-indigo-500/5 blur-[120px] animate-pulse" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-violet-500/10 dark:bg-violet-500/5 blur-[120px] animate-pulse delay-1000" />
+    return (
+        <div className="min-h-screen flex items-center justify-center p-4 bg-black overflow-hidden relative font-sans selection:bg-indigo-500/30">
+
+            {/* Futuristic Background - Moving Aurora */}
+            <div className="absolute inset-0 z-0">
+                <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] rounded-full bg-indigo-600/20 blur-[150px] animate-pulse" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] rounded-full bg-blue-600/10 blur-[150px]" />
+                <div className="absolute top-[40%] left-[30%] w-[40%] h-[40%] rounded-full bg-violet-600/10 blur-[120px] animate-pulse delay-700" />
+            </div>
+
+            {/* Grid Overlay for Tech Feel */}
+            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 z-0 pointer-events-none mix-blend-overlay"></div>
 
             <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="max-w-md w-full relative z-10"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                className="max-w-[420px] w-full relative z-10"
             >
-                <div className="bg-white/80 dark:bg-slate-900/40 backdrop-blur-2xl p-6 md:p-10 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-white/60 dark:border-white/5 ring-1 ring-black/5">
-                    <div className="text-center mb-6 md:mb-10">
+                {/* Glass Card */}
+                <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-8 md:p-10 rounded-[2rem] shadow-2xl shadow-black/50 relative overflow-hidden group">
+
+                    {/* Top Shine Effect */}
+                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-50" />
+
+                    <div className="text-center mb-10 relative">
                         <motion.div
-                            initial={{ y: -20, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            transition={{ type: "spring", stiffness: 100, delay: 0.1 }}
-                            style={{ WebkitMaskImage: "-webkit-radial-gradient(white, black)" }} // Fix for Safari border-radius clipping
-                            className="w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-indigo-500/20 overflow-hidden bg-gradient-to-br from-indigo-600 via-indigo-500 to-violet-600 p-0.5"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.2, type: "spring" }}
+                            className="w-24 h-24 mx-auto mb-6 relative"
                         >
-                            <div className="w-full h-full bg-white dark:bg-slate-900 rounded-[22px] flex items-center justify-center overflow-hidden">
+                            {/* Logo Glow */}
+                            <div className="absolute inset-0 bg-indigo-500/30 blur-2xl rounded-full" />
+
+                            <div className="relative w-full h-full bg-black/20 rounded-2xl flex items-center justify-center border border-white/10 shadow-inner overflow-hidden">
                                 {branding?.logo_url ? (
-                                    <img src={branding.logo_url} alt={branding.app_name || 'Logo'} className="h-full w-full object-contain p-2" />
+                                    <img src={branding.logo_url} alt={appName} className="w-full h-full object-contain p-3" />
                                 ) : (
-                                    <Layers className="text-indigo-600 h-8 w-8" />
+                                    <Sparkles className="text-indigo-400 w-10 h-10" />
                                 )}
                             </div>
                         </motion.div>
-                        <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-                            {branding?.app_name || branding?.name || "Enterprise ERP"}
+
+                        <h1 className="text-3xl font-bold text-white tracking-tight mb-2">
+                            {appName}
                         </h1>
-                        <p className="text-slate-500 dark:text-slate-400 mt-3 text-sm font-medium">
-                            {branding?.app_name || branding?.name ? `Access your ${branding.app_name} workspace` : "Secure single sign-on for your team"}
+                        <p className="text-indigo-200/60 text-sm font-medium">
+                            Welcome back. Please sign in.
                         </p>
                     </div>
 
-                    <form onSubmit={handleLogin} className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] ml-1">Identity</label>
-                            <div className="relative group">
+                    <form onSubmit={handleLogin} className="space-y-5">
+                        <div className="space-y-1.5">
+                            <label className="text-xs font-semibold text-indigo-200/70 ml-1 uppercase tracking-wider">Email Address</label>
+                            <div className={`relative transition-all duration-300 ${focusedField === 'email' ? 'scale-[1.02]' : 'scale-100'}`}>
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <Mail className="h-5 w-5 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                                    <Mail className={`h-5 w-5 transition-colors duration-300 ${focusedField === 'email' ? 'text-indigo-400' : 'text-zinc-500'}`} />
                                 </div>
                                 <input
                                     name="email"
                                     type="email"
                                     value={formData.email}
+                                    onFocus={() => setFocusedField('email')}
+                                    onBlur={() => setFocusedField(null)}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                                     required
-                                    className="block w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-white/5 rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-semibold text-sm"
-                                    placeholder="email@example.com"
+                                    className="block w-full pl-11 pr-4 py-3.5 bg-black/30 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all text-sm font-medium"
+                                    placeholder="name@company.com"
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                             <div className="flex items-center justify-between ml-1">
-                                <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Secret Key</label>
-                                <a href="#" className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 uppercase tracking-wider">Recovery?</a>
+                                <label className="text-xs font-semibold text-indigo-200/70 uppercase tracking-wider">Password</label>
+                                <a href="#" className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors">Forgot?</a>
                             </div>
-                            <div className="relative group">
+                            <div className={`relative transition-all duration-300 ${focusedField === 'password' ? 'scale-[1.02]' : 'scale-100'}`}>
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <Lock className="h-5 w-5 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                                    <Lock className={`h-5 w-5 transition-colors duration-300 ${focusedField === 'password' ? 'text-indigo-400' : 'text-zinc-500'}`} />
                                 </div>
                                 <input
                                     name="password"
                                     type="password"
                                     value={formData.password}
+                                    onFocus={() => setFocusedField('password')}
+                                    onBlur={() => setFocusedField(null)}
                                     onChange={e => setFormData({ ...formData, password: e.target.value })}
                                     required
-                                    className="block w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-950/40 border border-slate-100 dark:border-white/5 rounded-2xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-semibold text-sm"
+                                    className="block w-full pl-11 pr-4 py-3.5 bg-black/30 border border-white/10 rounded-xl text-white placeholder-zinc-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all text-sm font-medium"
                                     placeholder="••••••••"
                                 />
                             </div>
@@ -117,21 +138,32 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed group"
+                            className="w-full relative overflow-hidden bg-white text-black py-4 rounded-xl font-bold text-sm tracking-wide shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 mt-2 disabled:opacity-70 disabled:cursor-not-allowed group"
                         >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                    Verifying...
-                                </>
-                            ) : (
-                                <>
-                                    Initialize Session
-                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                                </>
-                            )}
+                            <span className="relative z-10 flex items-center justify-center gap-2">
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Authenticating...
+                                    </>
+                                ) : (
+                                    <>
+                                        Sign In
+                                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                    </>
+                                )}
+                            </span>
+                            {/* Button Shine Animation */}
+                            <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-white/50 to-transparent z-0" />
                         </button>
                     </form>
+
+                    {/* Bottom Link */}
+                    <div className="mt-8 text-center">
+                        <p className="text-xs text-indigo-200/40">
+                            Protected by Ziona Secure Identity
+                        </p>
+                    </div>
                 </div>
             </motion.div>
         </div>
