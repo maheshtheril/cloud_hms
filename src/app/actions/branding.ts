@@ -126,6 +126,15 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
             };
         }
 
+        if (appBrand === 'ZIONA') {
+            return {
+                app_name: "Ziona ERP",
+                logo_url: "/branding/ziona_logo.png",
+                name: "Ziona Technologies",
+                isPublic: isPublic
+            };
+        }
+
         return {
             app_name: tenant?.app_name || null,
             logo_url: tenant?.logo_url || (tenant?.company_settings?.[0]?.company?.logo_url) || null,
