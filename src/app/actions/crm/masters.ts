@@ -21,10 +21,11 @@ export async function getCompanies() {
 
 export async function getPipelines(includeStages = false) {
     const session = await auth()
-    if (!session?.user?.tenantId) return []
+    const tid = (session?.user as any)?.tenantId || (session?.user as any)?.tenant_id;
+    if (!tid) return []
 
     const pipelines = await prisma.crm_pipelines.findMany({
-        where: { tenant_id: session.user.tenantId, deleted_at: null },
+        where: { tenant_id: tid, deleted_at: null },
         include: {
             stages: includeStages ? {
                 orderBy: { sort_order: 'asc' },

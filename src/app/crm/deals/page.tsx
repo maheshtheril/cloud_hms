@@ -28,7 +28,12 @@ export default async function DealsPage({ searchParams }: { searchParams: { view
     const defaultCurrency = await getCompanyDefaultCurrency();
 
     if (pipelines.length === 0) {
-        return <div className="p-20 text-center">Please set up a pipeline in settings first.</div>;
+        return (
+            <div className="p-20 text-center">
+                <p className="text-xl font-bold">Please set up a pipeline in settings first.</p>
+                <p className="text-xs text-slate-400 mt-4">Debug: V:2240 | CID:{(session?.user as any)?.id?.substring(0, 5)} | TID:{(session?.user as any)?.tenantId || 'X'} | t_id:{(session?.user as any)?.tenant_id || 'X'}</p>
+            </div>
+        );
     }
 
     const activePipeline = pipelines.find(p => p.id === searchParams.pipelineId) || pipelines.find(p => p.is_default) || pipelines[0];
@@ -56,7 +61,7 @@ export default async function DealsPage({ searchParams }: { searchParams: { view
                             <span className="text-[10px] font-bold bg-slate-100 dark:bg-zinc-800 text-slate-500 px-2 py-0.5 rounded-full border border-slate-200 dark:border-zinc-700">
                                 {deals.length}
                             </span>
-                            <span className="text-[8px] text-indigo-400 font-mono opacity-50">V:2230</span>
+                            <span className="text-[8px] text-indigo-400 font-mono opacity-50">V:2240</span>
                         </h1>
                         <p className="text-xs text-slate-500 font-medium">{activePipeline.name} • {formatCurrency(totalValue, defaultCurrency.code)} in Pipeline</p>
                     </div>
