@@ -72,3 +72,72 @@ export async function getEmployeeMasters() {
         return { error: "Failed to fetch master data" };
     }
 }
+
+export async function getEmployee(id: string) {
+    const session = await auth();
+    if (!session?.user?.id || !session.user.tenantId) return null;
+
+    return prisma.crm_employee.findUnique({
+        where: { id, tenant_id: session.user.tenantId },
+        include: {
+            designation: true,
+            branch: true
+        }
+    });
+}
+
+export async function updateEmployee(id: string, data: {
+    first_name: string;
+    last_name?: string;
+    email?: string;
+    phone?: string;
+    designation_id?: string;
+    branch_id?: string;
+    status?: string;
+}) {
+    const session = await auth();
+    if (!session?.user?.id || !session.user.tenantId) {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        await prisma.crm_employee.update({
+            where: { id, tenant_id: session.user.tenantId },
+            data: {
+                first_name: data.first_name,
+                last_name: data.last_name,
+                email: data.email,
+                phone: data.phone,
+                designation_id: data.designation_id || undefined,
+                branch_id: data.branch_id || undefined,
+                status: data.status
+            }
+        });
+
+        revalidatePath('/crm/employees');
+        revalidatePath(`/crm/employees/${id}`);
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to update employee:", error);
+        return { error: "Failed to update employee record." };
+    }
+}
+
+export async function deleteEmployee(id: string) {
+    const session = await auth();
+    if (!session?.user?.id || !session.user.tenantId) {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        await prisma.crm_employee.delete({
+            where: { id, tenant_id: session.user.tenantId }
+        });
+
+        revalidatePath('/crm/employees');
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to delete employee:", error);
+        return { error: "Failed to delete employee record. They might have related data." };
+    }
+}
