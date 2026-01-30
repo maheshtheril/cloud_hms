@@ -20,29 +20,29 @@ export function FieldList({ fields, entity }: { fields: any[], entity: string })
     }
 
     return (
-        <div className="border rounded-md">
+        <div className="border rounded-md border-slate-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-950/50 backdrop-blur-sm overflow-hidden">
             <Table>
                 <TableHeader>
-                    <TableRow>
-                        <TableHead>Label</TableHead>
-                        <TableHead>Key</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Settings</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                    <TableRow className="bg-slate-50/50 dark:bg-zinc-900/50 border-white/10">
+                        <TableHead className="font-bold text-slate-900 dark:text-slate-200">Label</TableHead>
+                        <TableHead className="font-bold text-slate-900 dark:text-slate-200">Key</TableHead>
+                        <TableHead className="font-bold text-slate-900 dark:text-slate-200">Type</TableHead>
+                        <TableHead className="font-bold text-slate-900 dark:text-slate-200">Settings</TableHead>
+                        <TableHead className="text-right font-bold text-slate-900 dark:text-slate-200">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
                     {fields.length === 0 ? (
                         <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                            <TableCell colSpan={5} className="text-center py-12 text-slate-400 dark:text-slate-600 italic">
                                 No custom fields found. Add one to get started.
                             </TableCell>
                         </TableRow>
                     ) : (
                         fields.map(field => (
                             <TableRow key={field.id}>
-                                <TableCell className="font-medium">{field.label}</TableCell>
-                                <TableCell className="text-gray-500 font-mono text-xs">{field.key}</TableCell>
+                                <TableCell className="font-bold text-slate-900 dark:text-white">{field.label}</TableCell>
+                                <TableCell className="text-slate-500 dark:text-slate-400 font-mono text-[10px] tracking-tight">{field.key}</TableCell>
                                 <TableCell>
                                     <Badge variant="outline">{field.field_type}</Badge>
                                 </TableCell>
