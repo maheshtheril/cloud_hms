@@ -134,3 +134,46 @@ export async function createDeal(prevState: DealFormState, formData: FormData): 
     revalidatePath('/crm/deals')
     redirect('/crm/deals')
 }
+
+export async function getDealsForPipeline(pipelineId: string) {
+    const session = await auth()
+    if (!session?.user?.tenantId) return []
+
+    const deals = await prisma.crm_deals.findMany({
+        where: {
+            tenant_id: session.user.tenantId,
+            pipeline_id: pipelineId,
+            deleted_at: null
+        },
+        include: {
+            account: { select: { name: true } },
+            owner: { select: { name: true, image: true } },
+            stage: true
+        },
+        orderBy: { updated_at: 'desc' }
+    })
+
+    return deals.map(d => ({
+        ...d,
+        value: Number(d.value),
+        probability: d.probability ? Number(d.probability) : 0
+    }))
+}
+
+export async function updateDealStageAction(dealId: string, stageId: string) {
+    const session = await auth()
+    if (!session?.user?.tenantId) return { error: 'Unauthorized' }
+
+    try {
+        await prisma.crm_deals.update({
+            where: { id: dealId, tenant_id: session.user.tenantId },
+            data: { stage_id: stageId, updated_at: new Date() }
+        })
+        revalidatePath('/crm/pipeline')
+        revalidatePath('/crm/deals')
+        return { success: true }
+    } catch (error) {
+        console.error('Failed to update stage:', error)
+        return { error: 'Database error' }
+    }
+}
