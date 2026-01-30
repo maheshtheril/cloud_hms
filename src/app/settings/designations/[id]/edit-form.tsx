@@ -11,7 +11,6 @@ import { Switch } from '@/components/ui/switch'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, Save, X, Briefcase, FileText, ShieldCheck, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import { LOADER_STYLE } from '@/lib/utils'
 import { updateDesignation, deleteDesignation } from '@/app/actions/settings'
 import {
     AlertDialog,
