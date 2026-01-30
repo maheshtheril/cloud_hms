@@ -1,22 +1,8 @@
 
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
 const prismaClientSingleton = () => {
-  const connectionString = `${process.env.DATABASE_URL}`;
-
-  // Using postgreSQL pool for faster serverless performance in Prisma 7
-  const pool = new Pool({
-    connectionString,
-    ssl: { rejectUnauthorized: false },
-    max: 10, // Optimize pool size for Vercel functions
-  });
-
-  const adapter = new PrismaPg(pool);
-
   return new PrismaClient({
-    adapter,
     log: ['error', 'warn'],
   });
 }
