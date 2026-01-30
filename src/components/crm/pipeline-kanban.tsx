@@ -49,6 +49,7 @@ interface Stage {
     name: string;
     type: string;
     sort_order: number;
+    probability?: number | null;
 }
 
 interface Pipeline {
