@@ -40,7 +40,7 @@ interface Deal {
     currency: string;
     stage_id: string | null;
     account?: { name: string } | null;
-    owner?: { name: string | null, image: string | null } | null;
+    owner?: { name: string | null } | null;
     expected_close_date?: Date | null;
 }
 
@@ -285,7 +285,6 @@ function KanbanCard({ deal, isDragging }: { deal: Deal, isDragging?: boolean }) 
                             </div>
                         )}
                         <Avatar className="h-5 w-5 border border-white dark:border-zinc-800">
-                            <AvatarImage src={deal.owner?.image || undefined} />
                             <AvatarFallback className="text-[8px] bg-slate-100 dark:bg-zinc-800">
                                 {deal.owner?.name?.substring(0, 1) || 'U'}
                             </AvatarFallback>

@@ -147,7 +147,7 @@ export async function getDealsForPipeline(pipelineId: string) {
         },
         include: {
             account: { select: { name: true } },
-            owner: { select: { name: true, image: true } },
+            owner: { select: { name: true } },
             stage: true
         },
         orderBy: { updated_at: 'desc' }

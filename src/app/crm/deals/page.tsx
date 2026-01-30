@@ -165,7 +165,6 @@ function DealsListView({ deals, currency }: { deals: any[], currency: string }) 
                             <td className="px-6 py-4">
                                 <div className="flex items-center gap-2">
                                     <Avatar className="h-6 w-6">
-                                        <AvatarImage src={deal.owner?.image || undefined} />
                                         <AvatarFallback className="text-[8px]">{deal.owner?.name?.charAt(0)}</AvatarFallback>
                                     </Avatar>
                                     <span className="text-xs text-slate-600 dark:text-zinc-400 font-medium">{deal.owner?.name}</span>
