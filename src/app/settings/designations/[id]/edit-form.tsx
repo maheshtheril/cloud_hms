@@ -71,7 +71,7 @@ export function EditDesignationForm({ designation }: { designation: any }) {
                         <X className="h-5 w-5" />
                     </Button>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Edit Designation</h1>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Edit Designation</h1>
                         <p className="text-slate-500">Update job role details and status.</p>
                     </div>
                 </div>

@@ -87,7 +87,7 @@ export function EditEmployeeForm({ employee, designations, branches }: EditEmplo
                         <X className="h-5 w-5" />
                     </Button>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight text-white">Edit Employee Profile</h1>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Edit Employee Profile</h1>
                         <p className="text-slate-500">Update personal and professional details for {employee.first_name}.</p>
                     </div>
                 </div>
