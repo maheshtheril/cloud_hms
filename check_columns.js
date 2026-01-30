@@ -12,9 +12,9 @@ const client = new Client({
 });
 
 client.connect()
-    .then(() => client.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'app_user' ORDER BY ordinal_position"))
+    .then(() => client.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'user_role' ORDER BY ordinal_position"))
     .then(res => {
-        console.log('Columns in app_user table:');
+        console.log('Columns in user_role table:');
         res.rows.forEach(r => console.log('  -', r.column_name));
         client.end();
     })
