@@ -518,4 +518,23 @@ export async function updateDesignation(id: string, data: {
     }
 }
 
+export async function deleteDesignation(id: string) {
+    const session = await auth();
+    if (!session?.user?.id || !session.user.tenantId) {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        await prisma.crm_designation.delete({
+            where: { id, tenant_id: session.user.tenantId }
+        });
+
+        revalidatePath('/settings/designations');
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to delete designation:", error);
+        return { error: "Failed to delete designation. It might be in use by employees." };
+    }
+}
+
 
