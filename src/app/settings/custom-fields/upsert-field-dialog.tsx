@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { upsertCustomFieldDefinition } from '@/app/actions/crm/custom-fields'
 import { Plus } from 'lucide-react'
+
+import { toast } from 'sonner'
 
 export function UpsertFieldDialog({
     entity = 'lead',
@@ -54,11 +57,12 @@ export function UpsertFieldDialog({
         setLoading(false)
 
         if (res.error) {
-            alert(res.error)
+            toast.error(res.error)
         } else {
+            toast.success(existingField ? "Field updated" : "Field added")
             setOpen(false)
             if (onOpenChange) onOpenChange(false)
-            // Toast success
+            router.refresh()
         }
     }
 
@@ -76,86 +80,95 @@ export function UpsertFieldDialog({
         }
     }
 
+    const router = useRouter()
+
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 {trigger || (
-                    <Button>
+                    <Button className="bg-indigo-600 hover:bg-indigo-700 font-bold">
                         <Plus className="w-4 h-4 mr-2" />
                         Add Field
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-[425px] dark:bg-zinc-950 dark:border-zinc-800">
                 <DialogHeader>
-                    <DialogTitle>{existingField ? 'Edit Field' : 'Add New Field'}</DialogTitle>
+                    <DialogTitle className="text-xl font-bold dark:text-white">
+                        {existingField ? 'Edit Parameter' : 'Define New Field'}
+                    </DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-5 pt-4">
                     <div className="space-y-2">
-                        <Label>Field Label</Label>
+                        <Label className="text-slate-900 dark:text-slate-200 font-bold">Field Label</Label>
                         <Input
                             value={label}
                             onChange={e => setLabel(e.target.value)}
                             placeholder="e.g. Budget Approved"
                             required
+                            className="dark:bg-zinc-900"
                         />
                     </div>
 
                     <div className="space-y-2">
-                        <Label>Type</Label>
+                        <Label className="text-slate-900 dark:text-slate-200 font-bold">Field Intelligence Type</Label>
                         <Select value={fieldType} onValueChange={setFieldType}>
-                            <SelectTrigger>
+                            <SelectTrigger className="dark:bg-zinc-900">
                                 <SelectValue />
                             </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="text">Text</SelectItem>
-                                <SelectItem value="number">Number</SelectItem>
-                                <SelectItem value="boolean">Checkbox (Yes/No)</SelectItem>
-                                <SelectItem value="date">Date</SelectItem>
-                                <SelectItem value="select">Select Dropdown</SelectItem>
-                                <SelectItem value="textarea">Multi-line Text</SelectItem>
-                                <SelectItem value="file">File Upload</SelectItem>
+                            <SelectContent className="dark:bg-zinc-950">
+                                <SelectItem value="text">Textual Data</SelectItem>
+                                <SelectItem value="number">Numeric Value</SelectItem>
+                                <SelectItem value="boolean">Boolean (Yes/No)</SelectItem>
+                                <SelectItem value="date">Temporal Point (Date)</SelectItem>
+                                <SelectItem value="select">Dynamic Selection</SelectItem>
+                                <SelectItem value="textarea">Structured Text (Multi-line)</SelectItem>
+                                <SelectItem value="file">Binary Object (FileUpload)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     {fieldType === 'select' && (
                         <div className="space-y-2">
-                            <Label>Options (comma separated)</Label>
+                            <Label className="text-slate-900 dark:text-slate-200 font-bold">Selection Matrix (comma separated)</Label>
                             <Textarea
                                 value={optionsStr}
                                 onChange={e => setOptionsStr(e.target.value)}
                                 placeholder="Option 1, Option 2, Option 3"
+                                className="dark:bg-zinc-900"
                             />
                         </div>
                     )}
 
-                    <div className="flex items-center space-x-2">
-                        <Checkbox
-                            id="req"
-                            checked={required}
-                            onCheckedChange={(c) => setRequired(!!c)}
-                        />
-                        <Label htmlFor="req">Required Field</Label>
+                    <div className="grid grid-cols-2 gap-4 pt-2">
+                        <div className="flex items-center space-x-3 p-3 rounded-lg border border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/50">
+                            <Checkbox
+                                id="req"
+                                checked={required}
+                                onCheckedChange={(c) => setRequired(!!c)}
+                            />
+                            <Label htmlFor="req" className="text-xs font-bold dark:text-slate-300 cursor-pointer">Strict Required</Label>
+                        </div>
+
+                        <div className="flex items-center space-x-3 p-3 rounded-lg border border-slate-100 dark:border-zinc-800 bg-slate-50 dark:bg-zinc-900/50">
+                            <Checkbox
+                                id="vis"
+                                checked={visible}
+                                onCheckedChange={(c) => setVisible(!!c)}
+                            />
+                            <Label htmlFor="vis" className="text-xs font-bold dark:text-slate-300 cursor-pointer">Live Visible</Label>
+                        </div>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                        <Checkbox
-                            id="vis"
-                            checked={visible}
-                            onCheckedChange={(c) => setVisible(!!c)}
-                        />
-                        <Label htmlFor="vis">Visible in Forms</Label>
-                    </div>
-
-                    <div className="flex justify-end gap-2 pt-4">
-                        <Button variant="ghost" type="button" onClick={() => setOpen(false)}>Cancel</Button>
-                        <Button type="submit" disabled={loading}>
-                            {loading ? 'Saving...' : 'Save Field'}
+                    <div className="flex justify-end gap-3 pt-6 border-t dark:border-zinc-800">
+                        <Button variant="ghost" type="button" onClick={() => setOpen(false)} className="dark:text-slate-400">Cancel</Button>
+                        <Button type="submit" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 px-8 font-black">
+                            {loading ? 'Processing...' : 'Deploy Field'}
                         </Button>
                     </div>
                 </form>
             </DialogContent>
         </Dialog>
+
     )
 }
