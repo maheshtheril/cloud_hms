@@ -481,4 +481,41 @@ export async function createDesignation(data: {
     }
 }
 
+export async function getDesignation(id: string) {
+    const session = await auth();
+    if (!session?.user?.id || !session.user.tenantId) return null;
+
+    return prisma.crm_designation.findUnique({
+        where: { id, tenant_id: session.user.tenantId }
+    });
+}
+
+export async function updateDesignation(id: string, data: {
+    name: string;
+    description?: string;
+    is_active?: boolean;
+}) {
+    const session = await auth();
+    if (!session?.user?.id || !session.user.tenantId) {
+        return { error: "Unauthorized" };
+    }
+
+    try {
+        await prisma.crm_designation.update({
+            where: { id, tenant_id: session.user.tenantId },
+            data: {
+                name: data.name,
+                description: data.description,
+                is_active: data.is_active ?? true
+            }
+        });
+
+        revalidatePath('/settings/designations');
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update designation:", error);
+        return { error: "Failed to update designation." };
+    }
+}
+
 
