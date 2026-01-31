@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { DateSelection } from '@/components/ui/date-selection'
+import { useState } from 'react'
 
 export type CustomFieldDefinition = {
     id: string
@@ -81,12 +83,16 @@ export function CustomFieldRenderer({ field }: { field: CustomFieldDefinition })
     }
 
     if (field.field_type === 'date') {
-        // Using native date picker for simplicity in forms, 
-        // passing date string to server
+        const [dateVal, setDateVal] = useState(value)
         return (
             <div className="space-y-2">
                 <Label htmlFor={name}>{field.label} {isRequired && <span className="text-red-500">*</span>}</Label>
-                <Input type="date" id={name} name={name} required={isRequired} defaultValue={value} className="bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white" />
+                <input type="hidden" name={name} value={dateVal} required={isRequired} />
+                <DateSelection
+                    value={dateVal}
+                    onChange={setDateVal}
+                    placeholder={`Pick ${field.label}`}
+                />
             </div>
         )
     }

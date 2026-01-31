@@ -26,6 +26,8 @@ import { useRouter } from 'next/navigation'
 import { CurrencyInfo } from '@/app/actions/currency'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { DateSelection } from '@/components/ui/date-selection'
+import { DateTimeSelection } from '@/components/ui/date-time-selection'
 
 export function LeadForm({
     customFields = [],
@@ -93,6 +95,7 @@ export function LeadForm({
 
     const [phone, setPhone] = useState<any>(initialData?.phone || initialData?.primary_phone)
     const [isHot, setIsHot] = useState<boolean>(initialData?.is_hot || false)
+    const [followUpDate, setFollowUpDate] = useState<string>(initialData?.next_followup_date || '')
 
     const initialState: LeadFormState = { message: '', errors: {} }
     const [state, dispatch] = useActionState(mode === 'edit' ? updateLead : createLead, initialState)
@@ -358,16 +361,12 @@ export function LeadForm({
 
                             <div className="space-y-2">
                                 <Label htmlFor="next_followup_date" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Next Follow-up Date</Label>
-                                <div className="relative">
-                                    <Input
-                                        id="next_followup_date"
-                                        name="next_followup_date"
-                                        type="datetime-local"
-                                        className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl pr-10 text-slate-900 dark:text-white font-medium"
-                                        defaultValue={initialData?.next_followup_date ? new Date(initialData.next_followup_date).toISOString().slice(0, 16) : ''}
-                                    />
-                                    <CalendarIcon className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-indigo-500 pointer-events-none" />
-                                </div>
+                                <input type="hidden" name="next_followup_date" value={followUpDate} />
+                                <DateTimeSelection
+                                    value={followUpDate}
+                                    onChange={setFollowUpDate}
+                                    placeholder="Schedule Follow-up"
+                                />
                             </div>
                         </div>
 
