@@ -70,7 +70,9 @@ ON CONFLICT ("iso2") DO NOTHING;`;
 
     while ((stateMatch = stateValueRegex.exec(statesData)) !== null) {
         const [_, name, iso2] = stateMatch;
-        const safeName = name.replace(/'/g, "''");
+        // Handle MySQL escapes: St. Paul\'s Bay -> St. Paul's Bay -> St. Paul''s Bay
+        const unescapedName = name.replace(/\\'/g, "'");
+        const safeName = unescapedName.replace(/'/g, "''");
 
         // Use CTE or subquery to insert safely
         sqlContent += `
