@@ -43,7 +43,17 @@ export function GeographySelector({ onCountryChange, onSubdivisionChange, select
         onCountryChange(countryId)
         setLoading(true)
         const roots = await getSubdivisions(countryId, null)
-        setSelections([{ id: '', name: 'Select State/Region', type: 'state', children: roots }])
+
+        if (roots.length > 0) {
+            setSelections([{
+                id: '',
+                name: `Select ${roots[0].type || 'Region'}`,
+                type: roots[0].type || 'state',
+                children: roots
+            }])
+        } else {
+            setSelections([])
+        }
         setLoading(false)
     }
 
