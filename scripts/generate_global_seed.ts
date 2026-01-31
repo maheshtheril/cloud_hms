@@ -74,8 +74,14 @@ ON CONFLICT ("iso2") DO NOTHING;`;
         // Use CTE or subquery to insert safely
         sqlContent += `
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
-SELECT id, '${safeName}', 'state', true FROM "countries" WHERE "iso2" = '${iso2}'
-ON CONFLICT DO NOTHING;`;
+SELECT c.id, '${safeName}', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = '${iso2}'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = '${safeName}'
+);`;
         count++;
     }
 
