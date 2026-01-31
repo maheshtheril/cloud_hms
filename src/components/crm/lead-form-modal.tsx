@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Sparkles } from 'lucide-react'
 import { BackButton } from '@/components/ui/back-button'
 
-export function LeadFormModal({ children }: { children: React.ReactNode }) {
+export function LeadFormModal({ children, title = "Create New Lead" }: { children: React.ReactNode, title?: string }) {
     const router = useRouter()
 
     return (
@@ -21,7 +21,7 @@ export function LeadFormModal({ children }: { children: React.ReactNode }) {
                             <BackButton href="/crm/leads" />
                             <div>
                                 <DialogTitle className="text-xl font-black tracking-tighter text-indigo-950 dark:text-white flex items-center gap-2">
-                                    Create New Lead
+                                    {title}
                                     <Sparkles className="h-4 w-4 text-indigo-500 animate-pulse" />
                                 </DialogTitle>
                                 <p className="text-slate-500 font-bold uppercase tracking-widest text-[8px]">
