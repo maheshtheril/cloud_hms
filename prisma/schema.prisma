@@ -225,6 +225,9 @@ model app_user {
   is_platform_admin         Boolean                     @default(false)
   is_tenant_admin           Boolean                     @default(false)
   current_branch_id         String?                     @db.Uuid
+  mobile                    String?
+  country_id                String?                     @db.Uuid
+  subdivision_id            String?                     @db.Uuid
   accounts                  crm_accounts[]
   contacts                  crm_contacts[]
   deals                     crm_deals[]
@@ -235,6 +238,8 @@ model app_user {
   hms_user_roles            hms_user_roles[]
   user_branches             user_branch[]
   user_permission           user_permission[]
+  country                   countries?                  @relation(fields: [country_id], references: [id])
+  subdivision               country_subdivision?        @relation(fields: [subdivision_id], references: [id])
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -556,6 +561,24 @@ model countries {
   company                  company[]
   country_default_currency country_default_currency[]
   country_tax_mappings     country_tax_mappings[]
+  subdivisions             country_subdivision[]
+  app_users                app_user[]
+}
+
+model country_subdivision {
+  id          String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  country_id  String                @db.Uuid
+  parent_id   String?               @db.Uuid
+  name        String
+  type        String                // e.g., "state", "district", "municipality"
+  code        String?
+  is_active   Boolean               @default(true)
+  created_at  DateTime              @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime              @default(now()) @db.Timestamptz(6)
+  country     countries             @relation(fields: [country_id], references: [id], onDelete: Cascade)
+  parent      country_subdivision?  @relation("SubdivisionToSubdivision", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children    country_subdivision[] @relation("SubdivisionToSubdivision")
+  app_users   app_user[]
 }
 
 model country_default_currency {

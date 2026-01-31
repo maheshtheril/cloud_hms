@@ -17,6 +17,9 @@ export interface InviteUserData {
     roleId?: string
     systemRole: 'admin' | 'user'
     fullName?: string
+    mobile?: string
+    countryId?: string
+    subdivisionId?: string
 }
 
 /**
@@ -64,7 +67,10 @@ export async function getUsers(filters?: {
         const [usersRaw, total] = await Promise.all([
             prisma.app_user.findMany({
                 where,
-                // include: { hms_user_roles: ... } // REMOVED: Legacy relation
+                include: {
+                    country: { select: { name: true, flag: true } },
+                    subdivision: { select: { name: true, type: true } }
+                },
                 orderBy: { created_at: 'desc' },
                 take: limit,
                 skip,
@@ -162,6 +168,9 @@ export async function inviteUser(data: InviteUserData) {
                 full_name: data.fullName || data.email.split('@')[0],
                 name: data.email.split('@')[0],
                 role: data.systemRole,
+                mobile: data.mobile,
+                country_id: data.countryId,
+                subdivision_id: data.subdivisionId,
                 is_active: false, // Must set password to activate
                 is_tenant_admin: data.systemRole === 'admin',
                 is_admin: data.systemRole === 'admin',
