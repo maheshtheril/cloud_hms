@@ -11,8 +11,8 @@ const client = new Client({
 async function check() {
     try {
         await client.connect();
-        const res = await client.query("SELECT column_name, column_default, is_nullable FROM information_schema.columns WHERE table_name = 'crm_pipelines'");
-        console.log(JSON.stringify(res.rows));
+        const res = await client.query("SELECT column_name, column_default FROM information_schema.columns WHERE table_name = 'crm_pipelines'");
+        res.rows.forEach(r => console.log(`${r.column_name} : ${r.column_default}`));
     } catch (e) { console.error(e); } finally { await client.end(); }
 }
 check();

@@ -8,11 +8,12 @@ const client = new Client({
     ssl: { rejectUnauthorized: false, servername: 'ep-flat-firefly-a19fhxoa-pooler.ap-southeast-1.aws.neon.tech' }
 });
 
-async function check() {
+async function find() {
     try {
         await client.connect();
-        const res = await client.query("SELECT column_name, column_default, is_nullable FROM information_schema.columns WHERE table_name = 'crm_pipelines'");
-        console.log(JSON.stringify(res.rows));
+        const users = await client.query("SELECT email, tenant_id FROM app_user LIMIT 20");
+        console.log('--- USERS IN PRODUCTION DB ---');
+        users.rows.forEach(u => console.log(`${u.email} | ${u.tenant_id}`));
     } catch (e) { console.error(e); } finally { await client.end(); }
 }
-check();
+find();

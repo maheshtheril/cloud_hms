@@ -8,11 +8,15 @@ const client = new Client({
     ssl: { rejectUnauthorized: false, servername: 'ep-flat-firefly-a19fhxoa-pooler.ap-southeast-1.aws.neon.tech' }
 });
 
-async function check() {
+async function find() {
     try {
         await client.connect();
-        const res = await client.query("SELECT column_name, column_default, is_nullable FROM information_schema.columns WHERE table_name = 'crm_pipelines'");
-        console.log(JSON.stringify(res.rows));
+        const res = await client.query("SELECT name FROM tenant WHERE name ILIKE '%seeakk%' OR name ILIKE '%cloud%'");
+        console.log('TENANTS:', JSON.stringify(res.rows));
+
+        const modules = await client.query("SELECT * FROM modules WHERE is_active = true");
+        console.log('ACTIVE_MODULES:', modules.rows.map(m => m.module_key).join(', '));
+
     } catch (e) { console.error(e); } finally { await client.end(); }
 }
-check();
+find();

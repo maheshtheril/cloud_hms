@@ -8,11 +8,15 @@ const client = new Client({
     ssl: { rejectUnauthorized: false, servername: 'ep-flat-firefly-a19fhxoa-pooler.ap-southeast-1.aws.neon.tech' }
 });
 
-async function check() {
+async function updateDeals() {
     try {
         await client.connect();
-        const res = await client.query("SELECT column_name, column_default, is_nullable FROM information_schema.columns WHERE table_name = 'crm_pipelines'");
-        console.log(JSON.stringify(res.rows));
-    } catch (e) { console.error(e); } finally { await client.end(); }
+        await client.query("UPDATE menu_items SET label = 'Deals Pipeline', url = '/crm/deals?v=firefly_final' WHERE key = 'crm-deals'");
+        console.log('✅ Updated crm-deals on firefly.');
+    } catch (e) {
+        console.error(e);
+    } finally {
+        await client.end();
+    }
 }
-check();
+updateDeals();

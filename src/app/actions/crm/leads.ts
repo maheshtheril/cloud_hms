@@ -3,6 +3,7 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
+import { processCustomFields } from './custom-fields'
 
 export async function importLeads(formData: FormData) {
     try {
@@ -219,7 +220,7 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
     }
 
     try {
-        await prisma.crm_leads.create({
+        const newLead = await prisma.crm_leads.create({
             data: {
                 tenant_id: session.user.tenantId,
                 company_id: company_id || session.user.companyId, // Use selected branch or user's default
@@ -247,6 +248,9 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
                 status: 'new'
             } as any
         });
+
+        // Process Custom Fields
+        await processCustomFields(formData, session.user.tenantId, newLead.id, 'lead')
 
         revalidatePath('/crm/leads');
         return { success: true, message: "Lead created successfully" };
@@ -335,6 +339,9 @@ export async function updateLead(prevState: LeadFormState, formData: FormData): 
                 lead_score: lead_score
             } as any
         });
+
+        // Process Custom Fields
+        await processCustomFields(formData, session.user.tenantId, id, 'lead')
 
         revalidatePath('/crm/leads');
         revalidatePath(`/crm/leads/${id}`); // also revalidate detail page if any

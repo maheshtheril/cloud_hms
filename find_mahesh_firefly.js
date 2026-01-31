@@ -11,7 +11,7 @@ const client = new Client({
 async function check() {
     try {
         await client.connect();
-        const res = await client.query("SELECT column_name, column_default, is_nullable FROM information_schema.columns WHERE table_name = 'crm_pipelines'");
+        const res = await client.query("SELECT email, tenant_id FROM app_user WHERE email ILIKE '%mahesh%'");
         console.log(JSON.stringify(res.rows));
     } catch (e) { console.error(e); } finally { await client.end(); }
 }

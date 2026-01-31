@@ -11,8 +11,9 @@ const client = new Client({
 async function check() {
     try {
         await client.connect();
-        const res = await client.query("SELECT column_name, column_default, is_nullable FROM information_schema.columns WHERE table_name = 'crm_pipelines'");
-        console.log(JSON.stringify(res.rows));
+        const res = await client.query("SELECT email FROM app_user ORDER BY email ASC");
+        console.log('Total Users on Firefly:', res.rows.length);
+        res.rows.forEach(u => console.log(`- ${u.email}`));
     } catch (e) { console.error(e); } finally { await client.end(); }
 }
 check();

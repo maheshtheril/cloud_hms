@@ -10,7 +10,7 @@ const fieldSchema = z.object({
     id: z.string().optional(),
     entity: z.string().min(1),
     label: z.string().min(1),
-    field_type: z.enum(['text', 'number', 'boolean', 'select', 'date', 'file', 'textarea']),
+    field_type: z.enum(['text', 'number', 'boolean', 'select', 'date', 'file', 'multi-file', 'textarea']),
     options: z.any().optional(), // Text for CSV or JSON
     required: z.boolean().optional(),
     visible: z.boolean().optional(),
@@ -145,20 +145,33 @@ export async function processCustomFields(formData: FormData, tenantId: string, 
         let valueBoolean = null
         let valueJson = null
 
-        if (def.field_type === 'file' && rawValue instanceof File && rawValue.size > 0) {
-            // Handle File Upload
-            // We need to re-create a FormData for the upload function specifically or call logic directly
-            // Since uploadFile takes FormData, let's wrap it
-            const uploadFormData = new FormData()
-            uploadFormData.append('file', rawValue)
+        if ((def.field_type === 'file' || def.field_type === 'multi-file') && rawValue) {
+            const files = def.field_type === 'multi-file' ? formData.getAll(`custom_${def.key}`) : [rawValue]
+            const uploadedFiles = []
 
-            const uploadResult = await uploadFile(uploadFormData, 'crm-attachments')
-            if (uploadResult.success) {
-                valueText = uploadResult.url // Store URL in text field
-                valueJson = {
-                    filename: uploadResult.filename,
-                    size: uploadResult.size,
-                    type: uploadResult.type
+            for (const file of files) {
+                if (file instanceof File && file.size > 0) {
+                    const uploadFormData = new FormData()
+                    uploadFormData.append('file', file)
+                    const uploadResult = await uploadFile(uploadFormData, 'crm-attachments')
+                    if (uploadResult.success) {
+                        uploadedFiles.push({
+                            url: uploadResult.url,
+                            filename: uploadResult.filename,
+                            size: uploadResult.size,
+                            type: uploadResult.type
+                        })
+                    }
+                }
+            }
+
+            if (uploadedFiles.length > 0) {
+                if (def.field_type === 'file') {
+                    valueText = uploadedFiles[0].url
+                    valueJson = { filename: uploadedFiles[0].filename, size: uploadedFiles[0].size, type: uploadedFiles[0].type }
+                } else {
+                    valueJson = { files: uploadedFiles }
+                    valueText = `${uploadedFiles.length} file(s) uploaded`
                 }
             }
         } else if (def.field_type === 'number') {
@@ -172,12 +185,23 @@ export async function processCustomFields(formData: FormData, tenantId: string, 
             }
         }
 
-        // Only save if we have a value (or if it was explicitly cleared? For creation we only care about values)
         if (valueText !== null || valueNumber !== null || valueBoolean !== null || valueJson !== null) {
-            results.push(prisma.crm_custom_values.create({
-                data: {
+            results.push(prisma.crm_custom_values.upsert({
+                where: {
+                    field_id_record_id: {
+                        field_id: def.id,
+                        record_id: entityId
+                    }
+                },
+                update: {
+                    value_text: valueText,
+                    value_number: valueNumber,
+                    value_boolean: valueBoolean,
+                    value_json: valueJson ?? undefined
+                },
+                create: {
                     field_id: def.id,
-                    record_id: entityId, // Using record_id as per schema crm_custom_values
+                    record_id: entityId,
                     value_text: valueText,
                     value_number: valueNumber,
                     value_boolean: valueBoolean,
@@ -188,4 +212,13 @@ export async function processCustomFields(formData: FormData, tenantId: string, 
     }
 
     await Promise.all(results)
+}
+
+export async function getCustomFieldValues(recordId: string) {
+    return prisma.crm_custom_values.findMany({
+        where: { record_id: recordId },
+        include: {
+            field: true
+        }
+    })
 }

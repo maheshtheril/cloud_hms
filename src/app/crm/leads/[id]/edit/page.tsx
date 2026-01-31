@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
 import { notFound } from 'next/navigation'
 
-import { getCustomFieldDefinitions } from '@/app/actions/crm/custom-fields'
+import { getCustomFieldDefinitions, getCustomFieldValues } from '@/app/actions/crm/custom-fields'
 import { getPipelines, getSources, getCompanies, getCRMUsers, getTargetTypes } from '@/app/actions/crm/masters'
 
 export const dynamic = 'force-dynamic'
@@ -37,11 +37,17 @@ export default async function EditLeadPage(props: Props) {
     }
 
     const rawDefinitions = await getCustomFieldDefinitions('lead')
-    const customFields = rawDefinitions.map(d => ({
-        ...d,
-        required: d.required === null ? false : d.required,
-        visible: true,
-    }))
+    const currentValues = await getCustomFieldValues(id)
+
+    const customFields = rawDefinitions.map(d => {
+        const val = currentValues.find(v => v.field_id === d.id)
+        return {
+            ...d,
+            required: d.required === null ? false : d.required,
+            visible: true,
+            currentValue: val
+        }
+    })
 
     const pipelines = await getPipelines(true) // include stages
     const sources = await getSources()

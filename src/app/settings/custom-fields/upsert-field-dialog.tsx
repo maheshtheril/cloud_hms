@@ -124,6 +124,7 @@ export function UpsertFieldDialog({
                                 <SelectItem value="select">Dynamic Selection</SelectItem>
                                 <SelectItem value="textarea">Structured Text (Multi-line)</SelectItem>
                                 <SelectItem value="file">Binary Object (FileUpload)</SelectItem>
+                                <SelectItem value="multi-file">Binary Cluster (Multi-FileUpload)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
