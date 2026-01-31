@@ -1648,6 +1648,15 @@ AND NOT EXISTS (
     AND s.name = 'Kalkara'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'St. Julian\''s', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'MT'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'St. Julian\''s'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Victoria', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'MT'
@@ -1837,6 +1846,15 @@ AND NOT EXISTS (
     AND s.name = 'Xewkija'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Ta\'' Xbiex', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'MT'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Ta\'' Xbiex'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Żabbar', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'MT'
@@ -1979,6 +1997,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Cospicua'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'St. Paul\''s Bay', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'MT'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'St. Paul\''s Bay'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Mosta', 'state', true 
@@ -2276,6 +2303,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Taita–Taveta'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Murang\''a', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'KE'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Murang\''a'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Nyeri', 'state', true 
@@ -5032,6 +5068,15 @@ AND NOT EXISTS (
     AND s.name = 'Les Mamelles'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Grand\''Anse Mahé', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'SC'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Grand\''Anse Mahé'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Roche Caiman', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'SC'
@@ -5057,6 +5102,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Glacis'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Grand\''Anse Praslin', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'SC'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Grand\''Anse Praslin'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Bel Ombre', 'state', true 
@@ -8245,6 +8299,15 @@ AND NOT EXISTS (
     AND s.name = 'Ajloun'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Ma\''an', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'JO'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Ma\''an'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Amman', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'JO'
@@ -9676,6 +9739,15 @@ AND NOT EXISTS (
     AND s.name = 'Tissemsilt'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'M\''Sila', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'DZ'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'M\''Sila'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Tamanghasset', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'DZ'
@@ -10189,6 +10261,15 @@ AND NOT EXISTS (
     AND s.name = 'Saint Michael'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Ta\''izz', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'YE'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Ta\''izz'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Amanat Al Asimah', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'YE'
@@ -10207,6 +10288,15 @@ AND NOT EXISTS (
     AND s.name = 'Ibb'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Ma\''rib', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'YE'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Ma\''rib'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Al Mahwit', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'YE'
@@ -10214,6 +10304,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Al Mahwit'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Sana\''a', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'YE'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Sana\''a'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Abyan', 'state', true 
@@ -10241,6 +10340,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Socotra'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Al Bayda\''', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'YE'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Al Bayda\'''
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Al Hudaydah', 'state', true 
@@ -10367,6 +10475,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Ouham'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Ombella-M\''Poko', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'CF'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Ombella-M\''Poko'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Lobaye', 'state', true 
@@ -14759,6 +14876,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Asti'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'L\''Aquila', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'IT'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'L\''Aquila'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Alessandria', 'state', true 
@@ -23311,6 +23437,15 @@ AND NOT EXISTS (
     AND s.name = 'Tarapacá'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Libertador General Bernardo O\''Higgins', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'CL'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Libertador General Bernardo O\''Higgins'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Commewijne', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'SR'
@@ -23453,6 +23588,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Northern Borders'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Ha\''il', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'SA'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Ha\''il'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Eastern Province', 'state', true 
@@ -24949,6 +25093,15 @@ AND NOT EXISTS (
     AND s.name = 'Mafeteng'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Mohale\''s Hoek', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'LS'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Mohale\''s Hoek'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Mokhotlong', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'LS'
@@ -24956,6 +25109,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Mokhotlong'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Qacha\''s Nek', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'LS'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Qacha\''s Nek'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Leribe', 'state', true 
@@ -27080,6 +27242,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Boulemane'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'L\''Oriental', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'MA'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'L\''Oriental'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Béni Mellal', 'state', true 
@@ -29843,6 +30014,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Logone Occidental'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'N\''Djamena', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'TD'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'N\''Djamena'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Tibesti', 'state', true 
@@ -33787,6 +33967,15 @@ AND NOT EXISTS (
     AND s.name = 'Bay of Plenty'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Hawke\''s Bay', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'NZ'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Hawke\''s Bay'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Saint John', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'DM'
@@ -34172,6 +34361,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Nippes'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Grand\''Anse', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'HT'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Grand\''Anse'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Ouest', 'state', true 
@@ -39115,6 +39313,33 @@ AND NOT EXISTS (
     AND s.name = 'Aiga-i-le-Tai'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Satupa\''itea', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'WS'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Satupa\''itea'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'A\''ana', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'WS'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'A\''ana'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Fa\''asaleleaga', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'WS'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Fa\''asaleleaga'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Atua', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'WS'
@@ -39142,6 +39367,24 @@ AND NOT EXISTS (
     AND s.name = 'Palauli'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Va\''a-o-Fonoti', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'WS'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Va\''a-o-Fonoti'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Gaga\''emauga', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'WS'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Gaga\''emauga'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Tuamasaga', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'WS'
@@ -39149,6 +39392,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Tuamasaga'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Gaga\''ifomauga', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'WS'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Gaga\''ifomauga'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Torba', 'state', true 
@@ -39826,6 +40078,15 @@ AND NOT EXISTS (
     AND s.name = 'Pembroke'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Saint George\''s', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'BM'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Saint George\''s'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Sandys', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'BM'
@@ -39833,6 +40094,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Sandys'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Smith\''s', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'BM'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Smith\''s'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Southampton', 'state', true 
@@ -40103,6 +40373,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Sidi Bel Abbès'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'El M\''ghair', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'DZ'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'El M\''ghair'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'El Menia', 'state', true 
@@ -40825,6 +41104,24 @@ AND NOT EXISTS (
     AND s.name = 'Corrèze'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Côte-d\''Or', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'FR'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Côte-d\''Or'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Côtes-d\''Armor', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'FR'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Côtes-d\''Armor'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Creuse', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'FR'
@@ -41489,6 +41786,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Val-de-Marne'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Val-d\''Oise', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'FR'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Val-d\''Oise'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Clipperton', 'state', true 
@@ -43237,6 +43543,15 @@ AND NOT EXISTS (
     AND s.name = 'Sinajana'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Talofofo (Talo\''fo\''fo)', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'GU'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Talofofo (Talo\''fo\''fo)'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Tamuning', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'GU'
@@ -44497,6 +44812,15 @@ AND NOT EXISTS (
     AND s.name = 'Tsingoni'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'M\''Tsangamouji', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'YT'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'M\''Tsangamouji'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Acoua', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'YT'
@@ -44785,6 +45109,15 @@ AND NOT EXISTS (
     AND s.name = 'Sandy Bay'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Saint Paul\''s', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'SH'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Saint Paul\''s'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Akershus', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'NO'
@@ -44956,6 +45289,15 @@ AND NOT EXISTS (
     AND s.name = 'Southwest Ethiopia Peoples'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Ad Dali\''', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'YE'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Ad Dali\'''
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Wardak', 'state', true 
 FROM "countries" c 
 WHERE c."iso2" = 'AF'
@@ -45098,6 +45440,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Chuadanga'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Cox\''s Bazar', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'BD'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Cox\''s Bazar'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Cumilla', 'state', true 
@@ -47186,6 +47537,15 @@ AND NOT EXISTS (
     SELECT 1 FROM "country_subdivision" s 
     WHERE s.country_id = c.id 
     AND s.name = 'Sowa Town'
+);
+INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
+SELECT c.id, 'Moore\''s Island', 'state', true 
+FROM "countries" c 
+WHERE c."iso2" = 'BS'
+AND NOT EXISTS (
+    SELECT 1 FROM "country_subdivision" s 
+    WHERE s.country_id = c.id 
+    AND s.name = 'Moore\''s Island'
 );
 INSERT INTO "country_subdivision" ("country_id", "name", "type", "is_active")
 SELECT c.id, 'Nampho', 'state', true 

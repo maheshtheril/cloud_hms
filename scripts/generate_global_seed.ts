@@ -64,8 +64,9 @@ ON CONFLICT ("iso2") DO NOTHING;`;
 
     // Let's just use a regex that captures "('Name', ..., 'ISO2')"
     // We need to be careful about the Country ID in the middle.
-    // Pattern: `(id, 'Name', country_id, 'ISO2'`
-    const stateValueRegex = /\(\d+,'((?:[^']|'')*)',\d+,'([A-Z]{2})'/g;
+    // Regex to handle MySQL escapes (\') and standard SQL escapes ('')
+    // Matches: (id, 'Name with \' escaped', country_id, 'ISO2'
+    const stateValueRegex = /\(\d+,'((?:[^'\\]|\\.|'')*)',\d+,'([A-Z]{2})'/g;
 
     while ((stateMatch = stateValueRegex.exec(statesData)) !== null) {
         const [_, name, iso2] = stateMatch;
