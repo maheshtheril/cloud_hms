@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { getCountries, getSubdivisions } from '@/app/actions/geography'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Loader2 } from 'lucide-react'
+import { SearchableSelect } from '@/components/ui/searchable-select'
 
 interface GeographySelectorProps {
     onCountryChange: (id: string) => void
@@ -19,6 +19,7 @@ export function GeographySelector({ onCountryChange, onSubdivisionChange, select
 
     useEffect(() => {
         async function loadCountries() {
+            setLoading(true)
             const data = await getCountries()
             setCountries(data)
             setLoading(false)
@@ -27,15 +28,18 @@ export function GeographySelector({ onCountryChange, onSubdivisionChange, select
     }, [])
 
     const handleCountrySelect = async (countryId: string) => {
+        if (!countryId) return
         onCountryChange(countryId)
         setLoading(true)
         const roots = await getSubdivisions(countryId, null)
-        setSelections([{ id: '', name: 'Select State', type: 'root', children: roots }])
+        setSelections([{ id: '', name: 'Select State', type: 'state', children: roots }])
         setLoading(false)
     }
 
     const handleSubdivisionSelect = async (subId: string, level: number) => {
-        const currentSelection = selections[level].children.find(c => c.id === subId)
+        if (!subId) return
+        const currentLevel = selections[level]
+        const currentSelection = currentLevel.children.find(c => c.id === subId)
         if (!currentSelection) return
 
         onSubdivisionChange(subId, level)
@@ -56,52 +60,48 @@ export function GeographySelector({ onCountryChange, onSubdivisionChange, select
         setLoading(false)
     }
 
-    if (loading && countries.length === 0) {
-        return <div className="flex items-center gap-2 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Intelligence loading...</div>
-    }
-
     return (
         <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Country</Label>
-                    <Select onValueChange={handleCountrySelect} value={selectedCountryId}>
-                        <SelectTrigger className="h-12 bg-white/50 border-slate-200/50 rounded-xl">
-                            <SelectValue placeholder="Select Country" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {countries.map(c => (
-                                <SelectItem key={c.id} value={c.id}>
-                                    <span className="flex items-center gap-2">
-                                        <span>{c.flag}</span>
-                                        <span>{c.name}</span>
-                                    </span>
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                        options={countries.map(c => ({ id: c.id, label: `${c.flag} ${c.name}` }))}
+                        value={selectedCountryId}
+                        onChange={(val) => handleCountrySelect(val || '')}
+                        onSearch={async (q) => countries
+                            .filter(c => c.name.toLowerCase().includes(q.toLowerCase()))
+                            .map(c => ({ id: c.id, label: `${c.flag} ${c.name}` }))
+                        }
+                        placeholder="Search Country..."
+                        className="h-12 bg-white/50 border-slate-200/50 rounded-xl"
+                    />
                 </div>
 
                 {selections.map((level, i) => (
                     <div key={i} className="space-y-2">
                         <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 capitalize">
-                            {level.type === 'root' ? 'Subdivision' : level.type}
+                            {level.type}
                         </Label>
-                        <Select onValueChange={(val) => handleSubdivisionSelect(val, i)}>
-                            <SelectTrigger className="h-12 bg-white/50 border-slate-200/50 rounded-xl">
-                                <SelectValue placeholder={level.name} />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {level.children.map(c => (
-                                    <SelectItem key={c.id} value={c.id}>
-                                        {c.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                        <SearchableSelect
+                            options={level.children.map(c => ({ id: c.id, label: c.name }))}
+                            value={null} // We don't need to track the value here locally as it's handled by parent
+                            onChange={(val) => handleSubdivisionSelect(val || '', i)}
+                            onSearch={async (q) => level.children
+                                .filter(c => c.name.toLowerCase().includes(q.toLowerCase()))
+                                .map(c => ({ id: c.id, label: c.name }))
+                            }
+                            placeholder={level.name}
+                            className="h-12 bg-white/50 border-slate-200/50 rounded-xl transition-all"
+                        />
                     </div>
                 ))}
             </div>
+            {loading && selections.length === 0 && selectedCountryId && (
+                <div className="flex items-center gap-2 text-[10px] font-bold text-indigo-500 uppercase tracking-widest">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Fetching Subdivisions...
+                </div>
+            )}
         </div>
     )
 }
