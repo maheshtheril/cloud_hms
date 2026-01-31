@@ -300,9 +300,10 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                                         <Tag className="w-3 h-3" /> Primary Core Role
                                     </Label>
                                     <SearchableSelect
-                                        options={currentRoles.map(r => ({ label: r.name, value: r.id }))}
+                                        options={currentRoles.map(r => ({ label: r.name, id: r.id }))}
                                         value={formData.roleId}
-                                        onValueChange={(val) => setFormData({ ...formData, roleId: val })}
+                                        onChange={(val) => setFormData({ ...formData, roleId: val || '' })}
+                                        onSearch={async (q) => currentRoles.filter(r => r.name.toLowerCase().includes(q.toLowerCase())).map(r => ({ label: r.name, id: r.id }))}
                                         placeholder="Select Core Role"
                                         className="h-12 bg-white/50 border-slate-200/50 rounded-xl"
                                     />
