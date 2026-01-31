@@ -4,755 +4,755 @@
 
 -- 1. Insert Countries
 
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AF', 'AFG', 'Afghanistan', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AF', 'AFG', 'Afghanistan', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AX', 'ALA', 'Aland Islands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AX', 'ALA', 'Aland Islands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AL', 'ALB', 'Albania', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AL', 'ALB', 'Albania', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('DZ', 'DZA', 'Algeria', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('DZ', 'DZA', 'Algeria', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AS', 'ASM', 'American Samoa', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AS', 'ASM', 'American Samoa', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AD', 'AND', 'Andorra', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AD', 'AND', 'Andorra', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AO', 'AGO', 'Angola', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AO', 'AGO', 'Angola', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AI', 'AIA', 'Anguilla', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AI', 'AIA', 'Anguilla', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AQ', 'ATA', 'Antarctica', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AQ', 'ATA', 'Antarctica', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AG', 'ATG', 'Antigua and Barbuda', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AG', 'ATG', 'Antigua and Barbuda', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AR', 'ARG', 'Argentina', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AR', 'ARG', 'Argentina', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AM', 'ARM', 'Armenia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AM', 'ARM', 'Armenia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AW', 'ABW', 'Aruba', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AW', 'ABW', 'Aruba', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AU', 'AUS', 'Australia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AU', 'AUS', 'Australia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AT', 'AUT', 'Austria', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AT', 'AUT', 'Austria', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AZ', 'AZE', 'Azerbaijan', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AZ', 'AZE', 'Azerbaijan', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BS', 'BHS', 'The Bahamas', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BS', 'BHS', 'The Bahamas', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BH', 'BHR', 'Bahrain', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BH', 'BHR', 'Bahrain', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BD', 'BGD', 'Bangladesh', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BD', 'BGD', 'Bangladesh', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BB', 'BRB', 'Barbados', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BB', 'BRB', 'Barbados', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BY', 'BLR', 'Belarus', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BY', 'BLR', 'Belarus', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BE', 'BEL', 'Belgium', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BE', 'BEL', 'Belgium', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BZ', 'BLZ', 'Belize', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BZ', 'BLZ', 'Belize', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BJ', 'BEN', 'Benin', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BJ', 'BEN', 'Benin', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BM', 'BMU', 'Bermuda', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BM', 'BMU', 'Bermuda', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BT', 'BTN', 'Bhutan', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BT', 'BTN', 'Bhutan', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BO', 'BOL', 'Bolivia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BO', 'BOL', 'Bolivia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BA', 'BIH', 'Bosnia and Herzegovina', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BA', 'BIH', 'Bosnia and Herzegovina', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BW', 'BWA', 'Botswana', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BW', 'BWA', 'Botswana', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BV', 'BVT', 'Bouvet Island', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BV', 'BVT', 'Bouvet Island', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BR', 'BRA', 'Brazil', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BR', 'BRA', 'Brazil', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('IO', 'IOT', 'British Indian Ocean Territory', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('IO', 'IOT', 'British Indian Ocean Territory', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BN', 'BRN', 'Brunei', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BN', 'BRN', 'Brunei', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BG', 'BGR', 'Bulgaria', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BG', 'BGR', 'Bulgaria', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BF', 'BFA', 'Burkina Faso', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BF', 'BFA', 'Burkina Faso', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BI', 'BDI', 'Burundi', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BI', 'BDI', 'Burundi', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('KH', 'KHM', 'Cambodia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('KH', 'KHM', 'Cambodia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CM', 'CMR', 'Cameroon', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CM', 'CMR', 'Cameroon', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CA', 'CAN', 'Canada', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CA', 'CAN', 'Canada', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CV', 'CPV', 'Cape Verde', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CV', 'CPV', 'Cape Verde', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('KY', 'CYM', 'Cayman Islands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('KY', 'CYM', 'Cayman Islands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CF', 'CAF', 'Central African Republic', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CF', 'CAF', 'Central African Republic', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TD', 'TCD', 'Chad', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TD', 'TCD', 'Chad', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CL', 'CHL', 'Chile', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CL', 'CHL', 'Chile', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CN', 'CHN', 'China', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CN', 'CHN', 'China', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CX', 'CXR', 'Christmas Island', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CX', 'CXR', 'Christmas Island', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CC', 'CCK', 'Cocos (Keeling) Islands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CC', 'CCK', 'Cocos (Keeling) Islands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CO', 'COL', 'Colombia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CO', 'COL', 'Colombia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('KM', 'COM', 'Comoros', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('KM', 'COM', 'Comoros', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CG', 'COG', 'Congo', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CG', 'COG', 'Congo', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CD', 'COD', 'Democratic Republic of the Congo', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CD', 'COD', 'Democratic Republic of the Congo', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CK', 'COK', 'Cook Islands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CK', 'COK', 'Cook Islands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CR', 'CRI', 'Costa Rica', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CR', 'CRI', 'Costa Rica', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CI', 'CIV', 'Ivory Coast', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CI', 'CIV', 'Ivory Coast', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('HR', 'HRV', 'Croatia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('HR', 'HRV', 'Croatia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CU', 'CUB', 'Cuba', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CU', 'CUB', 'Cuba', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CY', 'CYP', 'Cyprus', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CY', 'CYP', 'Cyprus', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CZ', 'CZE', 'Czech Republic', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CZ', 'CZE', 'Czech Republic', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('DK', 'DNK', 'Denmark', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('DK', 'DNK', 'Denmark', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('DJ', 'DJI', 'Djibouti', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('DJ', 'DJI', 'Djibouti', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('DM', 'DMA', 'Dominica', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('DM', 'DMA', 'Dominica', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('DO', 'DOM', 'Dominican Republic', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('DO', 'DOM', 'Dominican Republic', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TL', 'TLS', 'Timor-Leste', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TL', 'TLS', 'Timor-Leste', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('EC', 'ECU', 'Ecuador', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('EC', 'ECU', 'Ecuador', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('EG', 'EGY', 'Egypt', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('EG', 'EGY', 'Egypt', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SV', 'SLV', 'El Salvador', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SV', 'SLV', 'El Salvador', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GQ', 'GNQ', 'Equatorial Guinea', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GQ', 'GNQ', 'Equatorial Guinea', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('ER', 'ERI', 'Eritrea', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('ER', 'ERI', 'Eritrea', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('EE', 'EST', 'Estonia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('EE', 'EST', 'Estonia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('ET', 'ETH', 'Ethiopia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('ET', 'ETH', 'Ethiopia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('FK', 'FLK', 'Falkland Islands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('FK', 'FLK', 'Falkland Islands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('FO', 'FRO', 'Faroe Islands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('FO', 'FRO', 'Faroe Islands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('FJ', 'FJI', 'Fiji Islands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('FJ', 'FJI', 'Fiji Islands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('FI', 'FIN', 'Finland', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('FI', 'FIN', 'Finland', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('FR', 'FRA', 'France', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('FR', 'FRA', 'France', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GF', 'GUF', 'French Guiana', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GF', 'GUF', 'French Guiana', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('PF', 'PYF', 'French Polynesia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('PF', 'PYF', 'French Polynesia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TF', 'ATF', 'French Southern Territories', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TF', 'ATF', 'French Southern Territories', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GA', 'GAB', 'Gabon', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GA', 'GAB', 'Gabon', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GM', 'GMB', 'The Gambia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GM', 'GMB', 'The Gambia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GE', 'GEO', 'Georgia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GE', 'GEO', 'Georgia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('DE', 'DEU', 'Germany', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('DE', 'DEU', 'Germany', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GH', 'GHA', 'Ghana', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GH', 'GHA', 'Ghana', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GI', 'GIB', 'Gibraltar', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GI', 'GIB', 'Gibraltar', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GR', 'GRC', 'Greece', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GR', 'GRC', 'Greece', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GL', 'GRL', 'Greenland', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GL', 'GRL', 'Greenland', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GD', 'GRD', 'Grenada', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GD', 'GRD', 'Grenada', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GP', 'GLP', 'Guadeloupe', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GP', 'GLP', 'Guadeloupe', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GU', 'GUM', 'Guam', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GU', 'GUM', 'Guam', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GT', 'GTM', 'Guatemala', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GT', 'GTM', 'Guatemala', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GG', 'GGY', 'Guernsey', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GG', 'GGY', 'Guernsey', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GN', 'GIN', 'Guinea', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GN', 'GIN', 'Guinea', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GW', 'GNB', 'Guinea-Bissau', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GW', 'GNB', 'Guinea-Bissau', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GY', 'GUY', 'Guyana', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GY', 'GUY', 'Guyana', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('HT', 'HTI', 'Haiti', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('HT', 'HTI', 'Haiti', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('HM', 'HMD', 'Heard Island and McDonald Islands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('HM', 'HMD', 'Heard Island and McDonald Islands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('HN', 'HND', 'Honduras', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('HN', 'HND', 'Honduras', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('HK', 'HKG', 'Hong Kong S.A.R.', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('HK', 'HKG', 'Hong Kong S.A.R.', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('HU', 'HUN', 'Hungary', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('HU', 'HUN', 'Hungary', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('IS', 'ISL', 'Iceland', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('IS', 'ISL', 'Iceland', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('IN', 'IND', 'India', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('IN', 'IND', 'India', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('ID', 'IDN', 'Indonesia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('ID', 'IDN', 'Indonesia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('IR', 'IRN', 'Iran', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('IR', 'IRN', 'Iran', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('IQ', 'IRQ', 'Iraq', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('IQ', 'IRQ', 'Iraq', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('IE', 'IRL', 'Ireland', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('IE', 'IRL', 'Ireland', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('IL', 'ISR', 'Israel', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('IL', 'ISR', 'Israel', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('IT', 'ITA', 'Italy', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('IT', 'ITA', 'Italy', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('JM', 'JAM', 'Jamaica', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('JM', 'JAM', 'Jamaica', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('JP', 'JPN', 'Japan', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('JP', 'JPN', 'Japan', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('JE', 'JEY', 'Jersey', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('JE', 'JEY', 'Jersey', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('JO', 'JOR', 'Jordan', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('JO', 'JOR', 'Jordan', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('KZ', 'KAZ', 'Kazakhstan', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('KZ', 'KAZ', 'Kazakhstan', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('KE', 'KEN', 'Kenya', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('KE', 'KEN', 'Kenya', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('KI', 'KIR', 'Kiribati', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('KI', 'KIR', 'Kiribati', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('KP', 'PRK', 'North Korea', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('KP', 'PRK', 'North Korea', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('KR', 'KOR', 'South Korea', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('KR', 'KOR', 'South Korea', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('KW', 'KWT', 'Kuwait', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('KW', 'KWT', 'Kuwait', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('KG', 'KGZ', 'Kyrgyzstan', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('KG', 'KGZ', 'Kyrgyzstan', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('LA', 'LAO', 'Laos', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('LA', 'LAO', 'Laos', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('LV', 'LVA', 'Latvia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('LV', 'LVA', 'Latvia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('LB', 'LBN', 'Lebanon', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('LB', 'LBN', 'Lebanon', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('LS', 'LSO', 'Lesotho', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('LS', 'LSO', 'Lesotho', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('LR', 'LBR', 'Liberia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('LR', 'LBR', 'Liberia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('LY', 'LBY', 'Libya', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('LY', 'LBY', 'Libya', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('LI', 'LIE', 'Liechtenstein', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('LI', 'LIE', 'Liechtenstein', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('LT', 'LTU', 'Lithuania', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('LT', 'LTU', 'Lithuania', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('LU', 'LUX', 'Luxembourg', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('LU', 'LUX', 'Luxembourg', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MO', 'MAC', 'Macau S.A.R.', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MO', 'MAC', 'Macau S.A.R.', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MK', 'MKD', 'North Macedonia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MK', 'MKD', 'North Macedonia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MG', 'MDG', 'Madagascar', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MG', 'MDG', 'Madagascar', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MW', 'MWI', 'Malawi', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MW', 'MWI', 'Malawi', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MY', 'MYS', 'Malaysia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MY', 'MYS', 'Malaysia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MV', 'MDV', 'Maldives', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MV', 'MDV', 'Maldives', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('ML', 'MLI', 'Mali', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('ML', 'MLI', 'Mali', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MT', 'MLT', 'Malta', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MT', 'MLT', 'Malta', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('IM', 'IMN', 'Man (Isle of)', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('IM', 'IMN', 'Man (Isle of)', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MH', 'MHL', 'Marshall Islands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MH', 'MHL', 'Marshall Islands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MQ', 'MTQ', 'Martinique', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MQ', 'MTQ', 'Martinique', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MR', 'MRT', 'Mauritania', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MR', 'MRT', 'Mauritania', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MU', 'MUS', 'Mauritius', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MU', 'MUS', 'Mauritius', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('YT', 'MYT', 'Mayotte', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('YT', 'MYT', 'Mayotte', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MX', 'MEX', 'Mexico', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MX', 'MEX', 'Mexico', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('FM', 'FSM', 'Micronesia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('FM', 'FSM', 'Micronesia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MD', 'MDA', 'Moldova', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MD', 'MDA', 'Moldova', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MC', 'MCO', 'Monaco', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MC', 'MCO', 'Monaco', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MN', 'MNG', 'Mongolia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MN', 'MNG', 'Mongolia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('ME', 'MNE', 'Montenegro', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('ME', 'MNE', 'Montenegro', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MS', 'MSR', 'Montserrat', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MS', 'MSR', 'Montserrat', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MA', 'MAR', 'Morocco', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MA', 'MAR', 'Morocco', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MZ', 'MOZ', 'Mozambique', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MZ', 'MOZ', 'Mozambique', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MM', 'MMR', 'Myanmar', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MM', 'MMR', 'Myanmar', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('NA', 'NAM', 'Namibia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('NA', 'NAM', 'Namibia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('NR', 'NRU', 'Nauru', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('NR', 'NRU', 'Nauru', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('NP', 'NPL', 'Nepal', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('NP', 'NPL', 'Nepal', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BQ', 'BES', 'Bonaire, Sint Eustatius and Saba', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BQ', 'BES', 'Bonaire, Sint Eustatius and Saba', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('NL', 'NLD', 'Netherlands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('NL', 'NLD', 'Netherlands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('NC', 'NCL', 'New Caledonia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('NC', 'NCL', 'New Caledonia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('NZ', 'NZL', 'New Zealand', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('NZ', 'NZL', 'New Zealand', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('NI', 'NIC', 'Nicaragua', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('NI', 'NIC', 'Nicaragua', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('NE', 'NER', 'Niger', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('NE', 'NER', 'Niger', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('NG', 'NGA', 'Nigeria', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('NG', 'NGA', 'Nigeria', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('NU', 'NIU', 'Niue', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('NU', 'NIU', 'Niue', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('NF', 'NFK', 'Norfolk Island', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('NF', 'NFK', 'Norfolk Island', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MP', 'MNP', 'Northern Mariana Islands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MP', 'MNP', 'Northern Mariana Islands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('NO', 'NOR', 'Norway', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('NO', 'NOR', 'Norway', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('OM', 'OMN', 'Oman', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('OM', 'OMN', 'Oman', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('PK', 'PAK', 'Pakistan', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('PK', 'PAK', 'Pakistan', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('PW', 'PLW', 'Palau', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('PW', 'PLW', 'Palau', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('PS', 'PSE', 'Palestinian Territory Occupied', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('PS', 'PSE', 'Palestinian Territory Occupied', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('PA', 'PAN', 'Panama', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('PA', 'PAN', 'Panama', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('PG', 'PNG', 'Papua New Guinea', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('PG', 'PNG', 'Papua New Guinea', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('PY', 'PRY', 'Paraguay', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('PY', 'PRY', 'Paraguay', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('PE', 'PER', 'Peru', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('PE', 'PER', 'Peru', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('PH', 'PHL', 'Philippines', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('PH', 'PHL', 'Philippines', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('PN', 'PCN', 'Pitcairn Island', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('PN', 'PCN', 'Pitcairn Island', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('PL', 'POL', 'Poland', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('PL', 'POL', 'Poland', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('PT', 'PRT', 'Portugal', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('PT', 'PRT', 'Portugal', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('PR', 'PRI', 'Puerto Rico', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('PR', 'PRI', 'Puerto Rico', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('QA', 'QAT', 'Qatar', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('QA', 'QAT', 'Qatar', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('RE', 'REU', 'Reunion', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('RE', 'REU', 'Reunion', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('RO', 'ROU', 'Romania', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('RO', 'ROU', 'Romania', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('RU', 'RUS', 'Russia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('RU', 'RUS', 'Russia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('RW', 'RWA', 'Rwanda', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('RW', 'RWA', 'Rwanda', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SH', 'SHN', 'Saint Helena', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SH', 'SHN', 'Saint Helena', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('KN', 'KNA', 'Saint Kitts and Nevis', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('KN', 'KNA', 'Saint Kitts and Nevis', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('LC', 'LCA', 'Saint Lucia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('LC', 'LCA', 'Saint Lucia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('PM', 'SPM', 'Saint Pierre and Miquelon', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('PM', 'SPM', 'Saint Pierre and Miquelon', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('VC', 'VCT', 'Saint Vincent and the Grenadines', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('VC', 'VCT', 'Saint Vincent and the Grenadines', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('BL', 'BLM', 'Saint-Barthelemy', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('BL', 'BLM', 'Saint-Barthelemy', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('MF', 'MAF', 'Saint-Martin (French part)', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('MF', 'MAF', 'Saint-Martin (French part)', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('WS', 'WSM', 'Samoa', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('WS', 'WSM', 'Samoa', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SM', 'SMR', 'San Marino', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SM', 'SMR', 'San Marino', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('ST', 'STP', 'Sao Tome and Principe', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('ST', 'STP', 'Sao Tome and Principe', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SA', 'SAU', 'Saudi Arabia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SA', 'SAU', 'Saudi Arabia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SN', 'SEN', 'Senegal', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SN', 'SEN', 'Senegal', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('RS', 'SRB', 'Serbia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('RS', 'SRB', 'Serbia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SC', 'SYC', 'Seychelles', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SC', 'SYC', 'Seychelles', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SL', 'SLE', 'Sierra Leone', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SL', 'SLE', 'Sierra Leone', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SG', 'SGP', 'Singapore', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SG', 'SGP', 'Singapore', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SK', 'SVK', 'Slovakia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SK', 'SVK', 'Slovakia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SI', 'SVN', 'Slovenia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SI', 'SVN', 'Slovenia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SB', 'SLB', 'Solomon Islands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SB', 'SLB', 'Solomon Islands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SO', 'SOM', 'Somalia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SO', 'SOM', 'Somalia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('ZA', 'ZAF', 'South Africa', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('ZA', 'ZAF', 'South Africa', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GS', 'SGS', 'South Georgia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GS', 'SGS', 'South Georgia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SS', 'SSD', 'South Sudan', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SS', 'SSD', 'South Sudan', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('ES', 'ESP', 'Spain', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('ES', 'ESP', 'Spain', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('LK', 'LKA', 'Sri Lanka', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('LK', 'LKA', 'Sri Lanka', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SD', 'SDN', 'Sudan', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SD', 'SDN', 'Sudan', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SR', 'SUR', 'Suriname', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SR', 'SUR', 'Suriname', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SJ', 'SJM', 'Svalbard and Jan Mayen Islands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SJ', 'SJM', 'Svalbard and Jan Mayen Islands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SZ', 'SWZ', 'Eswatini', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SZ', 'SWZ', 'Eswatini', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SE', 'SWE', 'Sweden', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SE', 'SWE', 'Sweden', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CH', 'CHE', 'Switzerland', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CH', 'CHE', 'Switzerland', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SY', 'SYR', 'Syria', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SY', 'SYR', 'Syria', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TW', 'TWN', 'Taiwan', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TW', 'TWN', 'Taiwan', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TJ', 'TJK', 'Tajikistan', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TJ', 'TJK', 'Tajikistan', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TZ', 'TZA', 'Tanzania', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TZ', 'TZA', 'Tanzania', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TH', 'THA', 'Thailand', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TH', 'THA', 'Thailand', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TG', 'TGO', 'Togo', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TG', 'TGO', 'Togo', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TK', 'TKL', 'Tokelau', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TK', 'TKL', 'Tokelau', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TO', 'TON', 'Tonga', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TO', 'TON', 'Tonga', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TT', 'TTO', 'Trinidad and Tobago', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TT', 'TTO', 'Trinidad and Tobago', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TN', 'TUN', 'Tunisia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TN', 'TUN', 'Tunisia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TR', 'TUR', 'Turkey', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TR', 'TUR', 'Turkey', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TM', 'TKM', 'Turkmenistan', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TM', 'TKM', 'Turkmenistan', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TC', 'TCA', 'Turks and Caicos Islands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TC', 'TCA', 'Turks and Caicos Islands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('TV', 'TUV', 'Tuvalu', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('TV', 'TUV', 'Tuvalu', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('UG', 'UGA', 'Uganda', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('UG', 'UGA', 'Uganda', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('UA', 'UKR', 'Ukraine', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('UA', 'UKR', 'Ukraine', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('AE', 'ARE', 'United Arab Emirates', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('AE', 'ARE', 'United Arab Emirates', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('GB', 'GBR', 'United Kingdom', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('GB', 'GBR', 'United Kingdom', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('US', 'USA', 'United States', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('US', 'USA', 'United States', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('UM', 'UMI', 'United States Minor Outlying Islands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('UM', 'UMI', 'United States Minor Outlying Islands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('UY', 'URY', 'Uruguay', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('UY', 'URY', 'Uruguay', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('UZ', 'UZB', 'Uzbekistan', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('UZ', 'UZB', 'Uzbekistan', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('VU', 'VUT', 'Vanuatu', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('VU', 'VUT', 'Vanuatu', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('VA', 'VAT', 'Vatican City State (Holy See)', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('VA', 'VAT', 'Vatican City State (Holy See)', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('VE', 'VEN', 'Venezuela', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('VE', 'VEN', 'Venezuela', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('VN', 'VNM', 'Vietnam', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('VN', 'VNM', 'Vietnam', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('VG', 'VGB', 'Virgin Islands (British)', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('VG', 'VGB', 'Virgin Islands (British)', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('VI', 'VIR', 'Virgin Islands (US)', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('VI', 'VIR', 'Virgin Islands (US)', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('WF', 'WLF', 'Wallis and Futuna Islands', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('WF', 'WLF', 'Wallis and Futuna Islands', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('EH', 'ESH', 'Western Sahara', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('EH', 'ESH', 'Western Sahara', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('YE', 'YEM', 'Yemen', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('YE', 'YEM', 'Yemen', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('ZM', 'ZMB', 'Zambia', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('ZM', 'ZMB', 'Zambia', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('ZW', 'ZWE', 'Zimbabwe', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('ZW', 'ZWE', 'Zimbabwe', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('XK', 'XKX', 'Kosovo', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('XK', 'XKX', 'Kosovo', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('CW', 'CUW', 'Curaçao', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('CW', 'CUW', 'Curaçao', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('SX', 'SXM', 'Sint Maarten (Dutch part)', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('SX', 'SXM', 'Sint Maarten (Dutch part)', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;
 
 -- 2. Insert States (Subdivisions)

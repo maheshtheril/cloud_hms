@@ -40,8 +40,8 @@ function generateSeed() {
         if (!countriesSet.has(iso2)) {
             countriesSet.add(iso2);
             sqlContent += `
-INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active")
-VALUES ('${iso2}', '${iso3}', '${safeName}', 'World', true)
+INSERT INTO "countries" ("iso2", "iso3", "name", "region", "is_active", "flag")
+VALUES ('${iso2}', '${iso3}', '${safeName}', 'World', true, '🏳️')
 ON CONFLICT ("iso2") DO NOTHING;`;
         }
     }
