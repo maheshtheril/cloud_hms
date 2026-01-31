@@ -23,14 +23,18 @@ export function CustomFieldRenderer({ field }: { field: CustomFieldDefinition })
 
     // Helper to get the actual value based on field type
     const getVal = () => {
-        if (!valObj) return undefined
-        if (field.field_type === 'number') return valObj.value_number !== null ? Number(valObj.value_number) : undefined
-        if (field.field_type === 'boolean') return valObj.value_boolean
+        if (!valObj) return ''
+        if (field.field_type === 'number') return valObj.value_number !== null ? Number(valObj.value_number).toString() : ''
+        if (field.field_type === 'boolean') return valObj.value_boolean ?? false
         if (field.field_type === 'date') {
-            if (!valObj.value_date) return undefined
-            return new Date(valObj.value_date).toISOString().split('T')[0]
+            if (!valObj.value_text) return ''
+            try {
+                return new Date(valObj.value_text).toISOString().split('T')[0]
+            } catch (e) {
+                return valObj.value_text
+            }
         }
-        return valObj.value_text
+        return valObj.value_text ?? ''
     }
 
     const value = getVal()

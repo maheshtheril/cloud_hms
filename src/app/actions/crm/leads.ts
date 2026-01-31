@@ -344,7 +344,8 @@ export async function updateLead(prevState: LeadFormState, formData: FormData): 
         await processCustomFields(formData, session.user.tenantId, id, 'lead')
 
         revalidatePath('/crm/leads');
-        revalidatePath(`/crm/leads/${id}`); // also revalidate detail page if any
+        revalidatePath(`/crm/leads/${id}`);
+        revalidatePath(`/crm/leads/${id}/edit`);
         return { success: true, message: "Lead updated successfully" };
     } catch (error) {
         console.error(error);
