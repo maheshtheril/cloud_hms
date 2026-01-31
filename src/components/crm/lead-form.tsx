@@ -122,40 +122,40 @@ export function LeadForm({
             <input type="hidden" name="is_hot" value={isHot ? 'true' : 'false'} />
             {mode === 'edit' && <input type="hidden" name="id" value={initialData.id} />}
 
-            {/* AI Core Interaction Section */}
-            <div className="relative group overflow-hidden bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-pink-500/10 p-8 rounded-2xl border border-indigo-500/20 shadow-[0_0_20px_rgba(99,102,241,0.1)] transition-all duration-500 hover:shadow-[0_0_30px_rgba(99,102,241,0.2)]">
+            {/* Lead Analysis Section */}
+            <div className="relative group overflow-hidden bg-gradient-to-r from-indigo-500/10 via-teal-500/10 to-emerald-500/10 p-8 rounded-2xl border border-indigo-500/20 shadow-sm transition-all duration-500">
                 <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                     <Sparkles className="w-24 h-24 text-indigo-400" />
                 </div>
-                <div className="relative flex items-center gap-4 text-indigo-600 dark:text-indigo-400 font-black mb-3 text-lg uppercase tracking-tighter">
-                    <div className="p-2 rounded-lg bg-indigo-500/20 animate-pulse">
+                <div className="relative flex items-center gap-4 text-indigo-600 dark:text-indigo-400 font-bold mb-3 text-lg uppercase tracking-tight">
+                    <div className="p-2 rounded-lg bg-indigo-500/20">
                         <Sparkles className="w-6 h-6" />
                     </div>
-                    <span>AI-Driven Opportunity Analysis</span>
+                    <span>Lead Analysis & AI Insights</span>
                 </div>
                 <p className="relative text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
-                    Integrating this signal into the hive mind. Our proprietary algorithms will quantify growth potential and automate engagement summaries upon synchronization.
+                    Our AI models analyze this lead's potential. Complete the information below to improve the accuracy of growth projections and priority scoring.
                 </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Identity & Origin Card */}
+                {/* Lead Information Card */}
                 <div className="space-y-6 bg-white/40 dark:bg-slate-800/20 p-8 rounded-3xl border border-white/20 shadow-xl">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
-                        <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Identity & Origin</h3>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">Lead Information</h3>
                     </div>
 
                     <div className="space-y-5">
                         <div className="space-y-2">
-                            <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Opportunity Nomenclature</Label>
-                            <Input id="name" name="name" placeholder="e.g. Enterprise Modernization" required defaultValue={initialData?.name} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 focus:border-indigo-500 transition-all text-lg font-medium rounded-xl text-slate-900 dark:text-white" />
+                            <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Lead Title / Name</Label>
+                            <Input id="name" name="name" placeholder="e.g. Enterprise Software Project" required defaultValue={initialData?.name} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 focus:border-indigo-500 transition-all text-lg font-medium rounded-xl text-slate-900 dark:text-white" />
                             {state.errors?.name && <p className="text-red-500 text-xs font-bold mt-1 ml-1">{state.errors.name}</p>}
                         </div>
 
                         {companies.length > 1 && (
                             <div className="space-y-2">
-                                <Label htmlFor="company_id" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Internal Node / Branch</Label>
+                                <Label htmlFor="company_id" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Assigned Branch / Office</Label>
                                 <select
                                     id="company_id"
                                     name="company_id"
@@ -170,7 +170,7 @@ export function LeadForm({
                         {companies.length === 1 && <input type="hidden" name="company_id" value={companies[0].id} />}
 
                         <div className="space-y-4">
-                            <Label htmlFor="company_name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Target Entity / Client Org</Label>
+                            <Label htmlFor="company_name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Client Company / Organization</Label>
                             <Input id="company_name" name="company_name" placeholder="e.g. Apex Global Corp" defaultValue={initialData?.company_name} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white" />
                         </div>
 
@@ -231,7 +231,7 @@ export function LeadForm({
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="contact_name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Key Liaison</Label>
+                                <Label htmlFor="contact_name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Primary Contact Person</Label>
                                 <Input id="contact_name" name="contact_name" placeholder="Name" defaultValue={initialData?.contact_name} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white" />
                             </div>
                             <div className="space-y-2">
@@ -365,7 +365,7 @@ export function LeadForm({
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="next_followup_date" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Next Engagement Synchronization</Label>
+                            <Label htmlFor="next_followup_date" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Next Follow-up Date</Label>
                             <div className="relative">
                                 <Input
                                     id="next_followup_date"
@@ -385,7 +385,7 @@ export function LeadForm({
                 <div className="bg-white/40 dark:bg-slate-800/20 p-8 rounded-3xl border border-white/20 shadow-xl space-y-6">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="w-1.5 h-6 bg-teal-500 rounded-full" />
-                        <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Extended Data Vectors</h3>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">Additional Information</h3>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {customFields.map(field => (
@@ -398,21 +398,21 @@ export function LeadForm({
             <div className="bg-white/40 dark:bg-slate-800/20 p-8 rounded-3xl border border-white/20 shadow-xl space-y-6">
                 <div className="flex items-center gap-3 mb-2">
                     <div className="w-1.5 h-6 bg-slate-500 rounded-full" />
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Strategic Intelligence</h3>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white uppercase tracking-tight">Lead Notes</h3>
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="notes" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Contextual Summary / Notes</Label>
-                    <Textarea id="notes" name="ai_summary" placeholder="Input strategic context for AI processing..." defaultValue={initialData?.ai_summary} className="min-h-[120px] bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all text-slate-900 dark:text-white" />
+                    <Label htmlFor="notes" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Internal Notes & Context</Label>
+                    <Textarea id="notes" name="ai_summary" placeholder="Enter any specific notes or context for this lead..." defaultValue={initialData?.ai_summary} className="min-h-[120px] bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl focus:ring-2 focus:ring-indigo-500 transition-all text-slate-900 dark:text-white" />
                 </div>
             </div>
 
             <div className="flex justify-end items-center gap-6 pt-6">
                 <Button variant="ghost" type="button" onClick={() => window.history.back()} className="text-slate-500 hover:text-slate-900 font-bold uppercase tracking-widest text-xs">
-                    Abort Sync
+                    Cancel
                 </Button>
-                <SubmitButton className="h-14 px-10 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-[0_10px_20px_rgba(79,70,229,0.3)] border-none rounded-2xl font-black uppercase tracking-tighter text-lg flex items-center gap-3 transition-transform hover:scale-105 active:scale-95">
-                    <Sparkles className="w-6 h-6" />
-                    {mode === 'edit' ? 'Update Signal' : 'Synchronize Lead'}
+                <SubmitButton className="h-14 px-10 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-700 hover:to-teal-700 text-white shadow-lg border-none rounded-2xl font-bold uppercase tracking-tight text-lg flex items-center gap-3 transition-transform hover:scale-105 active:scale-95">
+                    <Save className="w-6 h-6" />
+                    {mode === 'edit' ? 'Update Lead' : 'Save Lead'}
                 </SubmitButton>
             </div>
 

@@ -77,11 +77,11 @@ export default async function EditLeadPage(props: Props) {
                     <BackButton href="/crm/leads" />
                     <div>
                         <h1 className="text-4xl font-bold tracking-tight text-gradient-primary flex items-center gap-3">
-                            Refine Signal
+                            Edit Lead
                             <Sparkles className="h-8 w-8 text-indigo-600 animate-pulse" />
                         </h1>
                         <p className="text-slate-500 dark:text-slate-400 mt-2 text-lg">
-                            Updating parameters for Lead: <span className="font-bold text-slate-900 dark:text-white">{lead.name}</span>
+                            Updating details for: <span className="font-bold text-slate-900 dark:text-white">{lead.name}</span>
                         </p>
                     </div>
                 </div>

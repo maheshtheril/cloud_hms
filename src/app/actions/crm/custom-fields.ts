@@ -26,12 +26,10 @@ export async function upsertCustomFieldDefinition(data: z.infer<typeof fieldSche
 
     const { id, entity, label, field_type, options, required, visible, sort_order } = parsed.data
 
-    // Generate key from label if new (simple slugify)
     const key = label.toLowerCase().replace(/[^a-z0-9]/g, '_')
 
     try {
         if (id) {
-            // Update
             await prisma.crm_custom_fields.update({
                 where: { id },
                 data: {
@@ -43,8 +41,6 @@ export async function upsertCustomFieldDefinition(data: z.infer<typeof fieldSche
                 }
             })
         } else {
-            // Create
-            // Check if key exists for this entity/tenant
             const existing = await prisma.crm_custom_fields.findFirst({
                 where: {
                     tenant_id: session.user.tenantId,
@@ -55,10 +51,9 @@ export async function upsertCustomFieldDefinition(data: z.infer<typeof fieldSche
 
             let finalKey = key
             if (existing) {
-                finalKey = `${key}_${Date.now()}` // Simple conflict resolution
+                finalKey = `${key}_${Date.now()}`
             }
 
-            // Get max sort order
             const maxSort = await prisma.crm_custom_fields.aggregate({
                 where: { tenant_id: session.user.tenantId, entity_type: entity },
                 _max: { sort_order: true }
@@ -80,7 +75,7 @@ export async function upsertCustomFieldDefinition(data: z.infer<typeof fieldSche
         }
 
         revalidatePath('/settings/custom-fields')
-        revalidatePath(`/crm/${entity}s/new`) // Rough heuristic
+        revalidatePath(`/crm/${entity}s/new`)
         return { success: true }
     } catch (e) {
         console.error("Upsert Field Error", e)
@@ -107,7 +102,6 @@ export async function getCustomFieldDefinitions(entity: string) {
     const session = await auth()
     if (!session?.user?.tenantId) return []
 
-    // Fetch definitions for this tenant and entity
     const definitions = await prisma.crm_custom_fields.findMany({
         where: {
             tenant_id: session.user.tenantId,
@@ -122,9 +116,7 @@ export async function getCustomFieldDefinitions(entity: string) {
     return definitions
 }
 
-// Utility to process custom field values from FormData
 export async function processCustomFields(formData: FormData, tenantId: string, entityId: string, entityType: string) {
-    // 1. Fetch definitions to know what to look for
     const definitions = await prisma.crm_custom_fields.findMany({
         where: {
             tenant_id: tenantId,
@@ -132,13 +124,10 @@ export async function processCustomFields(formData: FormData, tenantId: string, 
         }
     })
 
-    const results = []
+    const ops = []
 
     for (const def of definitions) {
         const rawValue = formData.get(`custom_${def.key}`)
-
-        // Skip if not present (unless it's a boolean unchecked, but formdata usually omits)
-        // For file uploads, rawValue is a File object
 
         let valueText = null
         let valueNumber = null
@@ -175,18 +164,17 @@ export async function processCustomFields(formData: FormData, tenantId: string, 
                 }
             }
         } else if (def.field_type === 'number') {
-            if (rawValue) valueNumber = Number(rawValue)
+            if (rawValue !== null && rawValue !== '') valueNumber = Number(rawValue)
         } else if (def.field_type === 'boolean') {
             valueBoolean = rawValue === 'on' || rawValue === 'true'
         } else {
-            // Text, Select, Date, etc.
             if (rawValue && typeof rawValue === 'string') {
                 valueText = rawValue
             }
         }
 
         if (valueText !== null || valueNumber !== null || valueBoolean !== null || valueJson !== null) {
-            results.push(prisma.crm_custom_values.upsert({
+            ops.push(prisma.crm_custom_values.upsert({
                 where: {
                     field_id_record_id: {
                         field_id: def.id,
@@ -211,7 +199,10 @@ export async function processCustomFields(formData: FormData, tenantId: string, 
         }
     }
 
-    await Promise.all(results)
+    if (ops.length > 0) {
+        await prisma.$transaction(ops)
+        console.log(`✅ Processed ${ops.length} custom fields for ${entityType} ${entityId}`)
+    }
 }
 
 export async function getCustomFieldValues(recordId: string) {
