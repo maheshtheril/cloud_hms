@@ -122,22 +122,6 @@ export function LeadForm({
             <input type="hidden" name="is_hot" value={isHot ? 'true' : 'false'} />
             {mode === 'edit' && <input type="hidden" name="id" value={initialData.id} />}
 
-            {/* Lead Analysis Section */}
-            <div className="relative group overflow-hidden bg-gradient-to-r from-indigo-500/10 via-teal-500/10 to-emerald-500/10 p-8 rounded-2xl border border-indigo-500/20 shadow-sm transition-all duration-500">
-                <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                    <Sparkles className="w-24 h-24 text-indigo-400" />
-                </div>
-                <div className="relative flex items-center gap-4 text-indigo-600 dark:text-indigo-400 font-bold mb-3 text-lg uppercase tracking-tight">
-                    <div className="p-2 rounded-lg bg-indigo-500/20">
-                        <Sparkles className="w-6 h-6" />
-                    </div>
-                    <span>Lead Analysis & AI Insights</span>
-                </div>
-                <p className="relative text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
-                    Our AI models analyze this lead's potential. Complete the information below to improve the accuracy of growth projections and priority scoring.
-                </p>
-            </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Lead Information Card */}
                 <div className="space-y-6 bg-white/40 dark:bg-slate-800/20 p-8 rounded-3xl border border-white/20 shadow-xl">
