@@ -43,18 +43,18 @@ export default async function NewLeadPage() {
             </div>
 
             <Dialog open={true}>
-                <DialogContent className="max-w-[95vw] w-[1400px] h-[90vh] p-0 overflow-hidden bg-white/80 dark:bg-slate-900/90 backdrop-blur-2xl border-white/20 rounded-[2rem] shadow-[0_0_100px_rgba(0,0,0,0.2)]">
+                <DialogContent className="max-w-[95vw] w-[1300px] h-[90vh] p-0 overflow-hidden bg-white/95 dark:bg-slate-900/95 backdrop-blur-3xl border-white/20 rounded-[1.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.3)] flex flex-col resize overflow-auto min-w-[600px] min-h-[500px]">
                     <div className="flex flex-col h-full">
-                        <DialogHeader className="px-10 py-8 border-b border-white/10 bg-white/5 flex flex-row items-center justify-between space-y-0">
-                            <div className="flex items-center gap-6">
+                        <DialogHeader className="px-8 py-5 border-b border-indigo-500/10 bg-indigo-50/20 dark:bg-indigo-900/10 flex flex-row items-center justify-between space-y-0 shrink-0">
+                            <div className="flex items-center gap-5">
                                 <BackButton href="/crm/leads" />
                                 <div>
-                                    <DialogTitle className="text-3xl font-black tracking-tight text-gradient-primary flex items-center gap-3">
+                                    <DialogTitle className="text-2xl font-black tracking-tighter text-indigo-950 dark:text-white flex items-center gap-2">
                                         Create New Lead
-                                        <Sparkles className="h-7 w-7 text-indigo-500 animate-pulse" />
+                                        <Sparkles className="h-5 w-5 text-indigo-500 animate-pulse" />
                                     </DialogTitle>
-                                    <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-[10px] mt-1">
-                                        Enterprise Grade CRM Pipeline Management
+                                    <p className="text-slate-500 font-bold uppercase tracking-widest text-[9px]">
+                                        Lead Management Portal
                                     </p>
                                 </div>
                             </div>

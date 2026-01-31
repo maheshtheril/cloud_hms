@@ -112,36 +112,36 @@ export function LeadForm({
             {mode === 'edit' && <input type="hidden" name="id" value={initialData.id} />}
 
             <Tabs defaultValue="information" className="flex-1 flex flex-col overflow-hidden">
-                <div className="px-8 pt-4 pb-2 border-b border-white/10 bg-white/5">
-                    <TabsList className="grid grid-cols-4 gap-4 bg-transparent p-0 h-12">
+                <div className="px-8 pt-2 pb-0 border-b border-indigo-500/5 bg-slate-50/30 dark:bg-slate-800/20 shrink-0">
+                    <TabsList className="flex items-center gap-2 bg-transparent p-0 h-10 w-fit">
                         <TabsTrigger
                             value="information"
-                            className="rounded-xl data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=inactive]:text-slate-400 font-bold uppercase tracking-tighter transition-all hover:bg-white/10"
+                            className="h-full px-5 border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:bg-transparent data-[state=active]:text-indigo-600 data-[state=inactive]:text-slate-400 font-bold uppercase tracking-widest text-[10px] transition-all rounded-none"
                         >
-                            Information
+                            General Info
                         </TabsTrigger>
                         <TabsTrigger
                             value="business"
-                            className="rounded-xl data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=inactive]:text-slate-400 font-bold uppercase tracking-tighter transition-all hover:bg-white/10"
+                            className="h-full px-5 border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:bg-transparent data-[state=active]:text-indigo-600 data-[state=inactive]:text-slate-400 font-bold uppercase tracking-widest text-[10px] transition-all rounded-none"
                         >
-                            Business
+                            Business Link
                         </TabsTrigger>
                         <TabsTrigger
                             value="additional"
-                            className="rounded-xl data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=inactive]:text-slate-400 font-bold uppercase tracking-tighter transition-all hover:bg-white/10"
+                            className="h-full px-5 border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:bg-transparent data-[state=active]:text-indigo-600 data-[state=inactive]:text-slate-400 font-bold uppercase tracking-widest text-[10px] transition-all rounded-none"
                         >
-                            Advanced
+                            Additional Params
                         </TabsTrigger>
                         <TabsTrigger
                             value="notes"
-                            className="rounded-xl data-[state=active]:bg-indigo-600 data-[state=active]:text-white data-[state=inactive]:text-slate-400 font-bold uppercase tracking-tighter transition-all hover:bg-white/10"
+                            className="h-full px-5 border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:bg-transparent data-[state=active]:text-indigo-600 data-[state=inactive]:text-slate-400 font-bold uppercase tracking-widest text-[10px] transition-all rounded-none"
                         >
-                            Notes
+                            Context Notes
                         </TabsTrigger>
                     </TabsList>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar bg-white/50 dark:bg-slate-900/50">
                     <TabsContent value="information" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                             <div className="space-y-2">
@@ -401,21 +401,21 @@ export function LeadForm({
                 </div>
             </Tabs>
 
-            <div className="flex justify-between items-center gap-6 px-8 py-6 border-t border-white/10 bg-white/5">
+            <div className="flex justify-between items-center gap-6 px-10 py-5 border-t border-indigo-500/10 bg-indigo-50/20 dark:bg-indigo-900/10 shrink-0">
                 <div className="flex-1">
                     {state.message && (
-                        <div role="alert" className={`p-3 rounded-xl border font-bold text-sm h-12 flex items-center px-6 animate-in slide-in-from-left-4 duration-300 ${state.success ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 'bg-rose-500/10 border-rose-500/20 text-rose-600'}`}>
+                        <div role="alert" className={`p-3 rounded-xl border-2 font-black text-xs h-10 flex items-center px-6 animate-in slide-in-from-left-4 duration-300 ${state.success ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600' : 'bg-rose-500/10 border-rose-500/20 text-rose-600'}`}>
                             {state.message}
                         </div>
                     )}
                 </div>
                 <div className="flex items-center gap-4">
-                    <Button variant="ghost" type="button" onClick={() => window.history.back()} className="h-14 px-8 text-slate-500 hover:text-slate-900 font-bold uppercase tracking-widest text-xs rounded-xl transition-all">
-                        Cancel
+                    <Button variant="ghost" type="button" onClick={() => window.history.back()} className="h-12 px-8 text-slate-500 hover:text-indigo-600 font-bold uppercase tracking-widest text-[10px] rounded-xl transition-all">
+                        Discard
                     </Button>
-                    <SubmitButton className="h-14 px-12 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white shadow-[0_10px_20px_rgba(79,70,229,0.3)] border-none rounded-2xl font-black uppercase tracking-tight text-lg flex items-center gap-3 transition-all hover:scale-[1.02] active:scale-95">
-                        <Save className="w-6 h-6" />
-                        {mode === 'edit' ? 'Update Lead' : 'Save Lead'}
+                    <SubmitButton className="h-12 px-10 bg-indigo-600 hover:bg-indigo-700 text-white shadow-xl shadow-indigo-500/20 border-none rounded-xl font-black uppercase tracking-widest text-xs flex items-center gap-3 transition-all active:scale-95">
+                        <Save className="w-4 h-4" />
+                        {mode === 'edit' ? 'Update Opportunity' : 'Create Opportunity'}
                     </SubmitButton>
                 </div>
             </div>
