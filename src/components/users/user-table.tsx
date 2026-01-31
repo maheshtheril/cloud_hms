@@ -28,6 +28,7 @@ interface User {
     mobile?: string | null
     country?: { name: string, flag: string } | null
     subdivision?: { name: string, type: string } | null
+    country_subdivision?: { name: string, type: string } | null
 }
 
 interface UserTableProps {
@@ -254,7 +255,7 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex items-center gap-1.5 text-xs font-black text-slate-900 dark:text-white uppercase tracking-tight">
                                                     <span>{user.country.flag}</span>
-                                                    <span>{user.subdivision?.name || 'N/A'}</span>
+                                                    <span>{user.subdivision?.name || user.country_subdivision?.name || 'N/A'}</span>
                                                 </div>
                                                 <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{user.country.name}</div>
                                             </div>
