@@ -112,8 +112,8 @@ export function LeadForm({
             {mode === 'edit' && <input type="hidden" name="id" value={initialData.id} />}
 
             <Tabs defaultValue="information" className="flex-1 flex flex-col overflow-hidden">
-                <div className="px-8 pt-2 pb-0 border-b border-indigo-500/5 bg-slate-50/30 dark:bg-slate-800/20 shrink-0">
-                    <TabsList className="flex items-center gap-2 bg-transparent p-0 h-10 w-fit">
+                <div className="px-8 pt-1 pb-0 border-b border-indigo-500/5 bg-slate-50/30 dark:bg-slate-800/20 shrink-0">
+                    <TabsList className="flex items-center gap-2 bg-transparent p-0 h-9 w-fit">
                         <TabsTrigger
                             value="information"
                             className="h-full px-5 border-b-2 border-transparent data-[state=active]:border-indigo-600 data-[state=active]:bg-transparent data-[state=active]:text-indigo-600 data-[state=inactive]:text-slate-400 font-bold uppercase tracking-widest text-[10px] transition-all rounded-none"
@@ -141,8 +141,8 @@ export function LeadForm({
                     </TabsList>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar bg-white/50 dark:bg-slate-900/50">
-                    <TabsContent value="information" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-white/50 dark:bg-slate-900/50">
+                    <TabsContent value="information" className="mt-0 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                             <div className="space-y-2">
                                 <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Lead Name *</Label>

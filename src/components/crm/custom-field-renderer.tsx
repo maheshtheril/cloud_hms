@@ -131,7 +131,7 @@ export function CustomFieldRenderer({ field }: { field: CustomFieldDefinition })
                     />
                 </div>
                 <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold px-1">
-                    {valObj ? 'Upload to replace existing' : (isMulti ? `Upload one or more ${field.label} documents` : `Upload ${field.label} document`)}
+                    {valObj ? 'Upload to replace existing' : (isMulti ? `Select files for ${field.label}` : `Select ${field.label.toLowerCase().includes('document') ? field.label : `${field.label} document`}`)}
                 </p>
             </div>
         )
