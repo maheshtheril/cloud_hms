@@ -1,4 +1,7 @@
 import { PrismaClient } from '@prisma/client'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 const prisma = new PrismaClient()
 
@@ -15,6 +18,7 @@ async function main() {
             flag: '🇮🇳',
         }
     })
+    console.log('Country seeded:', india.name)
 
     let karnataka = await prisma.country_subdivision.findFirst({
         where: { name: 'Karnataka', country_id: india.id }
@@ -28,6 +32,9 @@ async function main() {
                 type: 'state',
             }
         })
+        console.log('State created:', karnataka.name)
+    } else {
+        console.log('State exists:', karnataka.name)
     }
 
     const kalaburgi = await prisma.country_subdivision.findFirst({
@@ -43,6 +50,9 @@ async function main() {
                 type: 'district',
             }
         })
+        console.log('District created: Kalaburgi')
+    } else {
+        console.log('District exists: Kalaburgi')
     }
 
     console.log('Geography data seeded successfully!')
@@ -50,7 +60,7 @@ async function main() {
 
 main()
     .catch((e) => {
-        console.error(e)
+        console.error('Seeding failed:', e)
         process.exit(1)
     })
     .finally(async () => {
