@@ -82,6 +82,8 @@ const STANDARD_PERMISSIONS = [
     { code: 'crm:activities:view', name: 'View Activities', module: 'CRM' },
     { code: 'crm:contacts:view', name: 'View Contacts', module: 'CRM' },
     { code: 'crm:accounts:view', name: 'View Accounts', module: 'CRM' },
+    { code: 'crm:staff', name: 'Access CRM Staff & Workforce', module: 'CRM' },
+    { code: 'crm:setup', name: 'Access CRM Advanced & Setup', module: 'CRM' },
 
     // Inventory
     { code: 'inventory:view', name: 'View Inventory', module: 'Inventory' },
@@ -181,7 +183,8 @@ export async function seedRolesAndPermissions() {
                     'roles:view', 'roles:manage',
                     'settings:view', 'settings:edit',
                     'hms:admin', 'crm:admin', 'inventory:admin',
-                    'hms:view', 'crm:view', 'inventory:view', 'accounting:view'
+                    'hms:view', 'crm:view', 'inventory:view', 'accounting:view',
+                    'crm:staff', 'crm:setup'
                 ]
             },
             // 3. DOCTOR (Clinical - Diagnosis & Treatment)

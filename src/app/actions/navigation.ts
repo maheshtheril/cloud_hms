@@ -528,6 +528,8 @@ export async function auditAndFixMenuPermissions() {
             { key: 'crm-leads', perm: 'leads:view' },
             { key: 'crm-deals', perm: 'deals:view' },
             { key: 'crm-reports', perm: 'crm:reports' },
+            { key: 'crm-staff-root', perm: 'crm:staff' },
+            { key: 'crm-setup-root', perm: 'crm:setup' },
 
             // CONFIGURATION SECURITY (Fix "Show to All" Issue)
             // Ensure these settings items require specific module permissions

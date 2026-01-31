@@ -263,7 +263,12 @@ export async function ensureCrmMenus() {
         let staffParent = await prisma.menu_items.findFirst({ where: { key: 'crm-staff-root' } });
         if (!staffParent) {
             staffParent = await prisma.menu_items.create({
-                data: { label: 'Staff & Workforce', url: '#', key: 'crm-staff-root', module_key: 'crm', icon: 'Briefcase', sort_order: 80, is_global: true }
+                data: { label: 'Staff & Workforce', url: '#', key: 'crm-staff-root', module_key: 'crm', icon: 'Briefcase', sort_order: 80, is_global: true, permission_code: 'crm:staff' }
+            });
+        } else if (staffParent.permission_code !== 'crm:staff') {
+            await prisma.menu_items.update({
+                where: { id: staffParent.id },
+                data: { permission_code: 'crm:staff' }
             });
         }
 
@@ -293,7 +298,12 @@ export async function ensureCrmMenus() {
         let setupParent = await prisma.menu_items.findFirst({ where: { key: 'crm-setup-root' } });
         if (!setupParent) {
             setupParent = await prisma.menu_items.create({
-                data: { label: 'Advanced & Setup', url: '#', key: 'crm-setup-root', module_key: 'crm', icon: 'Settings', sort_order: 90, is_global: true }
+                data: { label: 'Advanced & Setup', url: '#', key: 'crm-setup-root', module_key: 'crm', icon: 'Settings', sort_order: 90, is_global: true, permission_code: 'crm:setup' }
+            });
+        } else if (setupParent.permission_code !== 'crm:setup') {
+            await prisma.menu_items.update({
+                where: { id: setupParent.id },
+                data: { permission_code: 'crm:setup' }
             });
         }
 
