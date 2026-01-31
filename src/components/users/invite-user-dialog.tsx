@@ -301,51 +301,51 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                                     </div>
                                 </div>
                             </TabsContent>
-                    </div>
-                </div>
-
-                {/* Footer - Sticky with fixed height */}
-                <div className="p-6 md:p-8 border-t border-slate-100 shrink-0 bg-slate-50/50 flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex gap-1.5">
-                        <div className={cn("w-6 h-1 rounded-full transition-all", activeTab === 'profile' ? "bg-indigo-600" : "bg-slate-200")} />
-                        <div className={cn("w-6 h-1 rounded-full transition-all", activeTab === 'access' ? "bg-indigo-600" : "bg-slate-200")} />
+                        </Tabs>
                     </div>
 
-                    <div className="flex gap-3 w-full md:w-auto">
-                        {activeTab === 'profile' ? (
-                            <Button
-                                type="button"
-                                onClick={() => {
-                                    if (validateProfile()) setActiveTab('access')
-                                }}
-                                className="w-full md:w-auto bg-slate-900 text-white font-bold h-12 px-8 rounded-xl flex items-center gap-2 group"
-                            >
-                                Regional Settings
-                                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                            </Button>
-                        ) : (
-                            <>
+                    {/* Footer - Sticky with fixed height */}
+                    <div className="p-6 md:p-8 border-t border-slate-100 shrink-0 bg-slate-50/50 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="flex gap-1.5">
+                            <div className={cn("w-6 h-1 rounded-full transition-all", activeTab === 'profile' ? "bg-indigo-600" : "bg-slate-200")} />
+                            <div className={cn("w-6 h-1 rounded-full transition-all", activeTab === 'access' ? "bg-indigo-600" : "bg-slate-200")} />
+                        </div>
+
+                        <div className="flex gap-3 w-full md:w-auto">
+                            {activeTab === 'profile' ? (
                                 <Button
                                     type="button"
-                                    variant="ghost"
-                                    onClick={() => setActiveTab('profile')}
-                                    className="font-bold text-slate-500 h-12 px-6"
+                                    onClick={() => {
+                                        if (validateProfile()) setActiveTab('access')
+                                    }}
+                                    className="w-full md:w-auto bg-slate-900 text-white font-bold h-12 px-8 rounded-xl flex items-center gap-2 group"
                                 >
-                                    Back
+                                    Regional Settings
+                                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                                 </Button>
-                                <Button
-                                    type="submit"
-                                    disabled={loading}
-                                    className="flex-1 md:flex-none bg-indigo-600 hover:bg-slate-900 text-white font-bold h-12 px-10 rounded-xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2"
-                                >
-                                    {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Save className="h-4 w-4" /> Create User</>}
-                                </Button>
-                            </>
-                        )}
+                            ) : (
+                                <>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={() => setActiveTab('profile')}
+                                        className="font-bold text-slate-500 h-12 px-6"
+                                    >
+                                        Back
+                                    </Button>
+                                    <Button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="flex-1 md:flex-none bg-indigo-600 hover:bg-slate-900 text-white font-bold h-12 px-10 rounded-xl shadow-lg shadow-indigo-100 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <><Save className="h-4 w-4" /> Create User</>}
+                                    </Button>
+                                </>
+                            )}
+                        </div>
                     </div>
-                </div>
-            </form>
-        </DialogContent>
-        </Dialog >
+                </form>
+            </DialogContent>
+        </Dialog>
     )
 }
