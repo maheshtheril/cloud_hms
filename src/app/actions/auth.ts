@@ -342,6 +342,7 @@ export async function signup(prevState: any, formData: FormData) {
         // Assign Super Administrator role to first user
         await prisma.user_role.create({
             data: {
+                id: crypto.randomUUID(),
                 user_id: userId,
                 role_id: roleId, // Super admin role ID
                 tenant_id: tenantId
