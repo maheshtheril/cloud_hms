@@ -1,4 +1,5 @@
 import { auth } from "@/auth"
+import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 import { getHolidays } from "@/app/actions/holidays"
 import { HolidayManager } from "./holiday-manager"
@@ -17,6 +18,16 @@ export default async function HolidaySettingsPage() {
         subdivision: h.subdivision ? { name: h.subdivision.name } : null
     }))
 
+    // Fetch company default country
+    let defaultCountryId = null;
+    if (session.user.companyId) {
+        const company = await prisma.company.findUnique({
+            where: { id: session.user.companyId },
+            select: { country_id: true }
+        });
+        defaultCountryId = company?.country_id;
+    }
+
     return (
         <div className="container mx-auto p-6 max-w-5xl">
             <header className="mb-8 border-b pb-4">
@@ -30,6 +41,7 @@ export default async function HolidaySettingsPage() {
             <HolidayManager
                 initialHolidays={safeHolidays}
                 tenantId={session.user.tenantId}
+                defaultCountryId={defaultCountryId || undefined}
             />
         </div>
     )

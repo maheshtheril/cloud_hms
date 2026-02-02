@@ -30,9 +30,10 @@ export type Holiday = {
 interface HolidayManagerProps {
     initialHolidays: Holiday[]
     tenantId: string
+    defaultCountryId?: string
 }
 
-export function HolidayManager({ initialHolidays, tenantId }: HolidayManagerProps) {
+export function HolidayManager({ initialHolidays, tenantId, defaultCountryId }: HolidayManagerProps) {
     const [holidays, setHolidays] = useState<Holiday[]>(initialHolidays)
     const [open, setOpen] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -45,7 +46,7 @@ export function HolidayManager({ initialHolidays, tenantId }: HolidayManagerProp
         name: '',
         date: new Date().toISOString().split('T')[0],
         type: 'NATIONAL' as 'NATIONAL' | 'REGIONAL',
-        countryId: '',
+        countryId: defaultCountryId || '',
         subdivisionId: '',
         description: ''
     })
@@ -79,7 +80,7 @@ export function HolidayManager({ initialHolidays, tenantId }: HolidayManagerProp
                 name: '',
                 date: new Date().toISOString().split('T')[0],
                 type: 'NATIONAL',
-                countryId: '',
+                countryId: defaultCountryId || '',
                 subdivisionId: '',
                 description: ''
             })
@@ -234,8 +235,8 @@ export function HolidayManager({ initialHolidays, tenantId }: HolidayManagerProp
                                 </div>
                             </div>
                             <span className={`text-[10px] font-bold px-2 py-1 rounded-full uppercase ${holiday.type === 'NATIONAL'
-                                    ? 'bg-blue-100 text-blue-700'
-                                    : 'bg-purple-100 text-purple-700'
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-purple-100 text-purple-700'
                                 }`}>
                                 {holiday.type}
                             </span>
