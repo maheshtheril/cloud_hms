@@ -3,21 +3,15 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 const prismaClientSingleton = () => {
-  // Fix for build time environment where DATABASE_URL might be missing or placeholder
-  const connectionString = process.env.DATABASE_URL;
+  // Force use of adapter for Prisma 7 compatibility
+  // If DATABASE_URL is missing (e.g. build step), use a dummy one
+  const connectionString = process.env.DATABASE_URL || 'postgresql://dummy:dummy@localhost:5432/dummy';
 
-  // If we have a valid connection string, use the adapter
-  if (connectionString && connectionString.startsWith('postgres')) {
-    const pool = new Pool({ connectionString });
-    const adapter = new PrismaPg(pool);
-    return new PrismaClient({
-      adapter,
-      log: ['error', 'warn'],
-    });
-  }
+  const pool = new Pool({ connectionString });
+  const adapter = new PrismaPg(pool);
 
-  // Fallback for build phases or if adapter fails (though schema expects adapter now mostly)
   return new PrismaClient({
+    adapter,
     log: ['error', 'warn'],
   });
 }
