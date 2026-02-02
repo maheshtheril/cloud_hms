@@ -243,8 +243,24 @@ export async function ensureAdminMenus() {
                         });
                     }
                 }
-            } catch (innerError) {
-                console.error(`Failed to seed admin menu item ${item.label}:`, innerError);
+            } catch (innerError: any) {
+                console.error(`Failed to seed admin menu item ${item.label} (Prisma):`, innerError?.message);
+
+                // Fallback: Raw SQL Insert
+                try {
+                    const rawId = crypto.randomUUID();
+                    // Use a raw query to bypass potential Prisma schema mismatch
+                    await prisma.$executeRawUnsafe(`
+                        INSERT INTO "menu_items" 
+                        ("id", "label", "url", "key", "module_key", "icon", "sort_order", "permission_code", "is_global", "parent_id", "created_at", "updated_at")
+                        VALUES 
+                        ($1::uuid, $2, $3, $4, 'configuration', $5, $6, $7, true, NULL, NOW(), NOW())
+                    `, rawId, item.label, item.url, item.key, item.icon, item.sort, item.permission);
+
+                    console.log(`Auto-seeded Admin Menu via Raw SQL: ${item.label}`);
+                } catch (rawError: any) {
+                    console.error(`Failed to seed admin menu item ${item.label} via Raw SQL:`, rawError?.message);
+                }
                 // Continue to next item
             }
         }
