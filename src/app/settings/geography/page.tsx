@@ -80,6 +80,7 @@ export default async function GeographySettingsPage({
             </header>
 
             <HierarchyManager
+                key={targetCountryId}
                 country={data.country}
                 hierarchy={data.hierarchy}
                 availableCountries={availableCountries}

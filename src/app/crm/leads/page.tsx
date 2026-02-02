@@ -55,7 +55,7 @@ export default async function LeadsPage(props: PageProps) {
 
     const isGlobalAdmin = session?.user?.isAdmin
     const isTenantAdmin = session?.user?.isTenantAdmin
-    const canViewAll = isGlobalAdmin || isTenantAdmin
+    const canViewAll = isGlobalAdmin || isTenantAdmin || session?.user?.role === 'ADMIN'
 
     // Security: Restrict non-admins to their own data
     let effectiveOwnerId = ownerId;

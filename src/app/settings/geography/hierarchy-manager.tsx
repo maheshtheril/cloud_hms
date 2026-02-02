@@ -277,9 +277,14 @@ export function HierarchyManager({
     const [showActiveOnly, setShowActiveOnly] = useState(false)
     const [viewData, setViewData] = useState(hierarchy) // Local state for optimistic updates
 
+    // Sync state when prop changes (e.g. country switch)
+    useMemo(() => {
+        setViewData(hierarchy)
+    }, [hierarchy])
+
     // Dialog States
     const [isAddOpen, setIsAddOpen] = useState(false)
-    const [addParent, setAddParent] = useState<{ id: string, name: string, type: string } | null>(null)
+    const [addParent, setAddParent] = useState<{ id: string | null, name: string, type: string } | null>(null)
     const [newRegionName, setNewRegionName] = useState('')
     const [newRegionType, setNewRegionType] = useState('DISTRICT')
     const [newRegionCode, setNewRegionCode] = useState('')
@@ -341,9 +346,9 @@ export function HierarchyManager({
         router.push(`/settings/geography?countryId=${id}`)
     }
 
-    const openAddDialog = (parentId: string, parentName: string, parentType: string) => {
+    const openAddDialog = (parentId: string | null, parentName: string, parentType: string) => {
         setAddParent({ id: parentId, name: parentName, type: parentType })
-        setNewRegionType(NEXT_LEVEL_TYPE[parentType] || 'ZONE')
+        setNewRegionType(NEXT_LEVEL_TYPE[parentType] || 'STATE')
         setNewRegionName('')
         setNewRegionCode('')
         setIsAddOpen(true)
@@ -530,8 +535,19 @@ export function HierarchyManager({
                         <div className="bg-white dark:bg-slate-900 p-4 rounded-full inline-flex mb-4 shadow-sm">
                             <Building2 className="w-8 h-8 text-slate-300" />
                         </div>
-                        <h3 className="text-slate-900 font-semibold mb-1">No matching regions found</h3>
-                        <p className="text-slate-500 text-sm">Try adjusting your search filters</p>
+                        <h3 className="text-slate-900 font-semibold mb-1">
+                            {viewData.length === 0 ? `No regions configured for ${country.name}` : "No matching regions found"}
+                        </h3>
+                        <p className="text-slate-500 text-sm mb-6">
+                            {viewData.length === 0 ? "Get started by adding the first state or province." : "Try adjusting your search filters"}
+                        </p>
+
+                        {viewData.length === 0 && (
+                            <Button onClick={() => openAddDialog(null, country.name, 'COUNTRY')}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Add First State
+                            </Button>
+                        )}
                     </div>
                 )}
             </div>
