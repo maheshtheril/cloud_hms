@@ -73,6 +73,51 @@ export function ReceptionActionCenter({
         return () => clearInterval(timer)
     }, [])
 
+    // Keyboard Shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Ctrl+N or Cmd+N - New Patient
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault()
+                router.push('/hms/patients/new')
+                toast({
+                    title: "Opening New Patient Form",
+                    description: "Shortcut: Ctrl+N",
+                })
+            }
+
+            // Ctrl+A or Cmd+A - New Appointment
+            if ((e.ctrlKey || e.metaKey) && e.key === 'a' && !activeModal) {
+                e.preventDefault()
+                setEditingAppointment(null)
+                setActiveModal('appointment')
+                toast({
+                    title: "Opening New Appointment",
+                    description: "Shortcut: Ctrl+A",
+                })
+            }
+
+            // Ctrl+B or Cmd+B - Billing
+            if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                e.preventDefault()
+                router.push('/hms/billing')
+                toast({
+                    title: "Opening Billing",
+                    description: "Shortcut: Ctrl+B",
+                })
+            }
+
+            // Escape - Close Modal
+            if (e.key === 'Escape' && activeModal) {
+                setActiveModal(null)
+                setEditingAppointment(null)
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [activeModal, router, toast])
+
     const handleEditClick = (apt: any) => {
         setEditingAppointment(apt)
         setActiveModal('edit-appointment')

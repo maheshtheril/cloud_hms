@@ -64,6 +64,22 @@ export function CreatePatientForm({
         syncSettings();
     }, [propFee]);
 
+    // Keyboard Shortcut: Ctrl+S to Save
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault()
+                const form = document.querySelector('form#patient-master-form') as HTMLFormElement
+                if (form) {
+                    form.requestSubmit()
+                }
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [])
+
     // State for Vault
     const [profileImageUrl, setProfileImageUrl] = useState(initialData?.profile_image_url || initialData?.metadata?.profile_image_url || '');
     const [idCardUrl, setIdCardUrl] = useState(initialData?.metadata?.id_card_url || '');

@@ -541,7 +541,7 @@ export async function cancelInvoice(invoiceId: string) {
 
 export async function updateInvoice(invoiceId: string, data: { patient_id: string, appointment_id?: string, date: string, line_items: any[], payments?: any[], status?: any, total_discount?: number, billing_metadata?: any }) {
     const session = await auth();
-    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    const companyId = session?.user?.companyId || session?.user?.tenantId; https://cloud-hms.vercel.app/hms/reception/dashboard
     if (!companyId) return { error: "Unauthorized" };
 
     const lockCheck = await checkTransactionLock(invoiceId, companyId, session);
