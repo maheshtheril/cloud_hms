@@ -117,6 +117,7 @@ export default function CRMCalendar() {
         else if (type === 'task') style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
         else if (type === 'lead_followup') style.background = 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)'
         else if (type === 'lead_created') style.background = 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' // Dark Slate
+        else if (type === 'holiday') style.background = 'linear-gradient(135deg, #dc2626 0%, #991b1b 100%)' // Red for holidays
         else style.background = 'linear-gradient(135deg, #64748b 0%, #475569 100%)'
 
         return { style }
@@ -171,7 +172,9 @@ export default function CRMCalendar() {
                                 ${selectedEvent?.resource.type === 'meeting' ? 'bg-violet-500 text-white' :
                                     selectedEvent?.resource.type === 'call' ? 'bg-emerald-500 text-white' :
                                         selectedEvent?.resource.type === 'lead_followup' ? 'bg-pink-500 text-white' :
-                                            'bg-blue-500 text-white'}`}>
+                                            selectedEvent?.resource.type === 'lead_created' ? 'bg-slate-700 text-white' :
+                                                selectedEvent?.resource.type === 'holiday' ? 'bg-red-500 text-white' :
+                                                    'bg-blue-500 text-white'}`}>
                                 {selectedEvent?.resource.type?.replace('_', ' ')}
                             </Badge>
                         </div>

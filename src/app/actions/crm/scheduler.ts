@@ -17,7 +17,7 @@ export async function getSchedulerEvents(start: Date, end: Date) {
 
     // Note: start and end are coming from the client calendar view range
 
-    const [activities, leads, createdLeads] = await Promise.all([
+    const [activities, leads, createdLeads, holidays] = await Promise.all([
         prisma.crm_activities.findMany({
             where: {
                 tenant_id: tenantId,
@@ -77,6 +77,24 @@ export async function getSchedulerEvents(start: Date, end: Date) {
                 company_name: true,
                 created_at: true,
                 status: true
+            }
+        }),
+        // Fetch Holidays
+        (prisma as any).hms_holiday.findMany({
+            where: {
+                tenant_id: tenantId,
+                date: {
+                    gte: start,
+                    lte: end
+                }
+            },
+            select: {
+                id: true,
+                name: true,
+                date: true,
+                type: true,
+                country_id: true,
+                subdivision_id: true
             }
         })
     ])
@@ -143,5 +161,28 @@ export async function getSchedulerEvents(start: Date, end: Date) {
         }
     })
 
-    return [...activityEvents, ...leadEvents, ...createdLeadEvents]
+    // Map Holidays
+    const holidayEvents = holidays.map((hol: any) => {
+        const startDate = new Date(hol.date);
+        // Holidays are all day usually, but to fit in timeline we can set a block or use allDay
+        const endDate = new Date(startDate);
+        endDate.setHours(23, 59, 59, 999);
+
+        return {
+            id: `holiday_${hol.id}`,
+            title: `🏝️ ${hol.name}`,
+            start: startDate,
+            end: endDate,
+            allDay: true, // Use allDay for holidays
+            resource: {
+                type: 'holiday',
+                description: `Holiday: ${hol.name} (${hol.type})`,
+                status: 'active',
+                related: 'Global',
+                subtext: hol.type === 'NATIONAL' ? 'National Holiday' : 'Regional Holiday'
+            }
+        }
+    })
+
+    return [...activityEvents, ...leadEvents, ...createdLeadEvents, ...holidayEvents]
 }
