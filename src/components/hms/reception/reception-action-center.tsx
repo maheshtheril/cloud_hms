@@ -263,6 +263,40 @@ export function ReceptionActionCenter({
                 </motion.div>
             )}
 
+            {/* KEYBOARD SHORTCUTS GUIDE */}
+            <div className="bg-gradient-to-br from-indigo-50 to-violet-50 dark:from-indigo-950/30 dark:to-violet-950/30 border-2 border-indigo-200 dark:border-indigo-800 rounded-2xl p-4 shadow-lg">
+                <div className="flex items-center gap-3 mb-3">
+                    <div className="h-10 w-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
+                        <kbd className="text-xl">⌨️</kbd>
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">Keyboard Shortcuts</h3>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Work faster with hotkeys</p>
+                    </div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="flex flex-col gap-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900">
+                        <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-xs font-mono font-bold text-slate-700 dark:text-slate-300 shadow-sm text-center">Ctrl+N</kbd>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-bold text-center">New Patient</span>
+                    </div>
+                    <div className="flex flex-col gap-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900">
+                        <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-xs font-mono font-bold text-slate-700 dark:text-slate-300 shadow-sm text-center">Ctrl+A</kbd>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-bold text-center">Appointment</span>
+                    </div>
+                    <div className="flex flex-col gap-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900">
+                        <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-xs font-mono font-bold text-slate-700 dark:text-slate-300 shadow-sm text-center">Ctrl+B</kbd>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-bold text-center">Billing</span>
+                    </div>
+                    <div className="flex flex-col gap-1 bg-white dark:bg-slate-900 p-3 rounded-xl border border-indigo-100 dark:border-indigo-900">
+                        <kbd className="px-2 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded text-xs font-mono font-bold text-slate-700 dark:text-slate-300 shadow-sm text-center">Esc</kbd>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-bold text-center">Close Modal</span>
+                    </div>
+                </div>
+                <div className="mt-3 text-[10px] text-center text-slate-500 dark:text-slate-400 font-semibold">
+                    💡 Tip: Use <kbd className="px-1 py-0.5 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded font-mono text-slate-700 dark:text-slate-300">Ctrl+S</kbd> to save in patient form
+                </div>
+            </div>
+
             {/* MAIN CONTENT AREA */}
             <div className="flex flex-col xl:flex-row gap-8 min-h-[700px]">
                 {/* LEFT: FLOW & LIST */}
@@ -332,7 +366,7 @@ export function ReceptionActionCenter({
                                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
                                 <Input
                                     placeholder="Quick Search..."
-                                    className="pl-9 h-9 w-[180px] text-xs bg-slate-100 dark:bg-slate-800 border-none shadow-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+                                    className="pl-9 h-9 w-[180px] text-xs bg-slate-100 dark:bg-slate-800 border-none shadow-none focus-visible:ring-1 focus-visible:ring-indigo-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                 />
