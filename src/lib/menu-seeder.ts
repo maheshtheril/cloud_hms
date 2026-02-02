@@ -498,35 +498,66 @@ export async function ensureHmsMenus() {
             { key: 'hms-config', label: 'Clinical Config', url: '/settings/hms', icon: 'Stethoscope', sort: 96, permission: 'hms:admin' },
         ];
 
-        for (const item of hmsItems) {
-            const existing = await prisma.menu_items.findFirst({
-                where: { key: item.key }
-            });
+        // --- HELPER FOR RAW SQL INSERT (Duplicate for scope) ---
+        // Note: Ideally extract this to a shared helper file, but keeping localized for now to avoid large refactors.
+        const rawInsertHms = async (data: any) => {
+            const rawId = crypto.randomUUID();
+            const parentId = data.parent_id || null;
+            const perm = data.permission_code || null;
 
-            if (!existing) {
-                await prisma.menu_items.create({
-                    data: {
-                        label: item.label,
-                        url: item.url,
-                        key: item.key,
-                        module_key: 'hms',
-                        icon: item.icon,
-                        sort_order: item.sort,
-                        permission_code: item.permission,
-                        is_global: true
-                    }
+            await prisma.$executeRawUnsafe(`
+                INSERT INTO "menu_items" 
+                ("id", "label", "url", "key", "module_key", "icon", "sort_order", "permission_code", "is_global", "parent_id", "created_at", "updated_at")
+                VALUES 
+                ($1::uuid, $2, $3, $4, $5, $6, $7, $8, true, $9::uuid, NOW(), NOW())
+            `, rawId, data.label, data.url, data.key, data.module_key, data.icon, data.sort_order, perm, parentId);
+            return { id: rawId };
+        };
+
+        for (const item of hmsItems) {
+            try {
+                const existing = await prisma.menu_items.findFirst({
+                    where: { key: item.key }
                 });
-                console.log(`Auto-seeded HMS Menu: ${item.label}`);
-            } else {
-                // Always update permission_code to ensure security
-                if (existing.permission_code !== item.permission || existing.url !== item.url) {
-                    await prisma.menu_items.update({
-                        where: { id: existing.id },
+
+                if (!existing) {
+                    await prisma.menu_items.create({
                         data: {
+                            label: item.label,
                             url: item.url,
-                            permission_code: item.permission
+                            key: item.key,
+                            module_key: 'hms',
+                            icon: item.icon,
+                            sort_order: item.sort,
+                            permission_code: item.permission,
+                            is_global: true,
+                            parent_id: null
                         }
                     });
+                    console.log(`Auto-seeded HMS Menu: ${item.label}`);
+                } else {
+                    // Always update permission_code to ensure security
+                    if (existing.permission_code !== item.permission || existing.url !== item.url) {
+                        await prisma.menu_items.update({
+                            where: { id: existing.id },
+                            data: {
+                                url: item.url,
+                                permission_code: item.permission
+                            }
+                        });
+                    }
+                }
+            } catch (innerError: any) {
+                console.error(`Failed to seed HMS menu item ${item.label} (Prisma):`, innerError?.message);
+                // Fallback: Raw SQL Insert
+                try {
+                    await rawInsertHms({
+                        label: item.label, url: item.url, key: item.key, module_key: 'hms', icon: item.icon,
+                        sort_order: item.sort, permission_code: item.permission, parent_id: null
+                    });
+                    console.log(`Auto-seeded HMS Menu via Raw SQL: ${item.label}`);
+                } catch (rawError: any) {
+                    console.error(`Failed to seed HMS menu item ${item.label} via Raw SQL:`, rawError?.message);
                 }
             }
         }
