@@ -355,35 +355,55 @@ export async function ensureCrmMenus() {
         }
 
         for (const item of items) {
-            const existing = await prisma.menu_items.findFirst({
-                where: { key: item.key }
-            });
-
-            if (!existing) {
-                await prisma.menu_items.create({
-                    data: {
-                        label: item.label,
-                        url: item.url,
-                        key: item.key,
-                        module_key: 'crm',
-                        icon: item.icon,
-                        sort_order: item.sort,
-                        is_global: true
-                    }
+            try {
+                const existing = await prisma.menu_items.findFirst({
+                    where: { key: item.key }
                 });
-                console.log(`Auto-seeded CRM Menu: ${item.label}`);
-            } else {
-                // Ensure it is in CRM module and correct URL
-                if (existing.module_key !== 'crm' || existing.url !== item.url || existing.label !== item.label) {
-                    await prisma.menu_items.update({
-                        where: { id: existing.id },
+
+                if (!existing) {
+                    await prisma.menu_items.create({
                         data: {
-                            module_key: 'crm',
-                            url: item.url,
                             label: item.label,
-                            parent_id: null // Ensure top level
+                            url: item.url,
+                            key: item.key,
+                            module_key: 'crm',
+                            icon: item.icon,
+                            sort_order: item.sort,
+                            is_global: true,
+                            parent_id: null
                         }
                     });
+                    console.log(`Auto-seeded CRM Menu: ${item.label}`);
+                } else {
+                    // Ensure it is in CRM module and correct URL
+                    if (existing.module_key !== 'crm' || existing.url !== item.url || existing.label !== item.label) {
+                        await prisma.menu_items.update({
+                            where: { id: existing.id },
+                            data: {
+                                module_key: 'crm',
+                                url: item.url,
+                                label: item.label,
+                                parent_id: null // Ensure top level
+                            }
+                        });
+                    }
+                }
+            } catch (innerError: any) {
+                console.error(`Failed to seed CRM menu item ${item.label} (Prisma):`, innerError?.message);
+
+                // Fallback: Raw SQL Insert
+                try {
+                    const rawId = crypto.randomUUID();
+                    await prisma.$executeRawUnsafe(`
+                       INSERT INTO "menu_items" 
+                       ("id", "label", "url", "key", "module_key", "icon", "sort_order", "permission_code", "is_global", "parent_id", "created_at", "updated_at")
+                       VALUES 
+                       ($1::uuid, $2, $3, $4, 'crm', $5, $6, NULL, true, NULL, NOW(), NOW())
+                   `, rawId, item.label, item.url, item.key, item.icon, item.sort);
+
+                    console.log(`Auto-seeded CRM Menu via Raw SQL: ${item.label}`);
+                } catch (rawError: any) {
+                    console.error(`Failed to seed CRM menu item ${item.label} via Raw SQL:`, rawError?.message);
                 }
             }
         }
