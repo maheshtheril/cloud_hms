@@ -58,8 +58,16 @@ export default async function LeadsPage(props: PageProps) {
     const canViewAll = isGlobalAdmin || isTenantAdmin || session?.user?.role?.toLowerCase() === 'admin'
 
     // Security: Restrict non-admins to their own data
-    let effectiveOwnerId = ownerId;
-    if (!canViewAll) {
+    let effectiveOwnerId = undefined; // Default: No owner filter (See ALL)
+
+    // IF user CAN view all (Admin/TenantAdmin):
+    // Only filter by owner if they explicitly requested it via ?owner_id=...
+    if (canViewAll) {
+        effectiveOwnerId = ownerId;
+    }
+    // IF user CANNOT view all (Standard User):
+    // Force the filter to be their own ID, ignoring whatever they requested
+    else {
         effectiveOwnerId = session?.user?.id;
     }
 
