@@ -41,7 +41,7 @@ export default async function RootLayout({
 }>) {
   // SELF-HEALING: Re-enabled to fix rogue menu items like "Sales Orders" in CRM.
   // Performance is mitigated by internal 'hasAudited' flag in the action.
-  // await auditAndFixMenuPermissions();
+  await auditAndFixMenuPermissions();
 
   return (
     <html lang="en" suppressHydrationWarning className="dark">
