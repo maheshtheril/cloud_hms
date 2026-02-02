@@ -22,7 +22,8 @@ export default async function GeographySettingsPage({
 
     // Default to company country if not specified
     if (!targetCountryId) {
-        targetCountryId = await getCompanyCountry()
+        const companyCountryId = await getCompanyCountry()
+        targetCountryId = companyCountryId || undefined
     }
 
     // Pass all countries for the switcher if admin
