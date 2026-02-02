@@ -3,13 +3,14 @@ import { getTenantBrandingByHost } from './actions/branding'
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
     const branding = await getTenantBrandingByHost();
-    const appName = branding?.app_name || branding?.name || "Cloud HMS";
-    const shortName = (branding?.app_name || "HMS").substring(0, 12);
+    // User requested "GMH" as the name
+    const appName = branding?.app_name || "GMH";
+    const shortName = "GMH";
 
     return {
         name: appName,
         short_name: shortName,
-        description: 'Enterprise Hospital Management System',
+        description: 'GMH - Enterprise Hospital Management System',
         start_url: '/',
         display: 'standalone',
         background_color: '#ffffff',
