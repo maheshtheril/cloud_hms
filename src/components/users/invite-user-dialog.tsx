@@ -211,9 +211,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                                     <DialogTitle className="text-xl font-black text-slate-900 tracking-tight">Onboard Global Talent</DialogTitle>
                                     <DialogDescription className="text-xs font-semibold text-slate-500 uppercase tracking-widest mt-0.5">Configure access and regional identity</DialogDescription>
                                 </div>
-                                <button type="button" onClick={() => setOpen(false)} className="p-2 hover:bg-slate-200 rounded-full transition-colors hidden md:block">
-                                    <X className="w-5 h-5 text-slate-400" />
-                                </button>
+                                {/* Close button removed to avoid duplication with DialogContent default close button */}
                             </div>
                         </div>
 
