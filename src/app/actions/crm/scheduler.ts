@@ -17,8 +17,7 @@ export async function getSchedulerEvents(start: Date, end: Date) {
 
     // Note: start and end are coming from the client calendar view range
 
-    // Parallel fetch for activities and leads with followups
-    const [activities, leads] = await Promise.all([
+    const [activities, leads, createdLeads] = await Promise.all([
         prisma.crm_activities.findMany({
             where: {
                 tenant_id: tenantId,
@@ -59,6 +58,24 @@ export async function getSchedulerEvents(start: Date, end: Date) {
                 name: true,
                 company_name: true,
                 next_followup_date: true,
+                status: true
+            }
+        }),
+        prisma.crm_leads.findMany({
+            where: {
+                tenant_id: tenantId,
+                owner_id: userId,
+                created_at: {
+                    gte: start,
+                    lte: end
+                },
+                deleted_at: null
+            },
+            select: {
+                id: true,
+                name: true,
+                company_name: true,
+                created_at: true,
                 status: true
             }
         })
@@ -106,5 +123,25 @@ export async function getSchedulerEvents(start: Date, end: Date) {
         }
     })
 
-    return [...activityEvents, ...leadEvents]
+    const createdLeadEvents = createdLeads.map(lead => {
+        const startDate = new Date(lead.created_at)
+        const endDate = new Date(startDate.getTime() + 60 * 60 * 1000) // 1 hour block
+
+        return {
+            id: `created_${lead.id}`,
+            title: `Lead Created: ${lead.name}`,
+            start: startDate,
+            end: endDate,
+            allDay: false,
+            resource: {
+                type: 'lead_created',
+                description: `New Lead Created: ${lead.name} (${lead.company_name || 'Individual'})`,
+                status: lead.status,
+                related: `Lead: ${lead.name}`,
+                subtext: lead.company_name || ''
+            }
+        }
+    })
+
+    return [...activityEvents, ...leadEvents, ...createdLeadEvents]
 }

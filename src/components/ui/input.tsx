@@ -7,7 +7,25 @@ export interface InputProps
     extends React.InputHTMLAttributes<HTMLInputElement> { }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-    ({ className, type, ...props }, ref) => {
+    ({ className, type, onChange, ...props }, ref) => {
+        const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+            if (type !== 'password' && type !== 'email' && type !== 'url' && type !== 'search') {
+                const val = e.target.value;
+                if (val && val.length > 0) {
+                    const start = e.target.selectionStart;
+                    // Capitalize first letter
+                    // And Capitalize after sentence terminators
+                    const newVal = val.replace(/(^|[.!?]\s+)([a-z])/g, (m, p1, p2) => p1 + p2.toUpperCase());
+
+                    if (newVal !== val) {
+                        e.target.value = newVal;
+                        e.target.setSelectionRange(start, start);
+                    }
+                }
+            }
+            onChange?.(e);
+        }
+
         return (
             <input
                 type={type}
@@ -16,6 +34,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
                     className
                 )}
                 ref={ref}
+                spellCheck={true}
+                autoCapitalize="sentences"
+                onChange={handleChange}
                 {...props}
             />
         )

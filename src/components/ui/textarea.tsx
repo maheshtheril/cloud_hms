@@ -5,7 +5,21 @@ export interface TextareaProps
     extends React.TextareaHTMLAttributes<HTMLTextAreaElement> { }
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-    ({ className, ...props }, ref) => {
+    ({ className, onChange, ...props }, ref) => {
+        const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+            const val = e.target.value;
+            if (val && val.length > 0) {
+                const start = e.target.selectionStart;
+                const newVal = val.replace(/(^|[.!?]\s+)([a-z])/g, (m, p1, p2) => p1 + p2.toUpperCase());
+
+                if (newVal !== val) {
+                    e.target.value = newVal;
+                    e.target.setSelectionRange(start, start);
+                }
+            }
+            onChange?.(e);
+        }
+
         return (
             <textarea
                 className={cn(
@@ -13,6 +27,9 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
                     className
                 )}
                 ref={ref}
+                spellCheck={true}
+                autoCapitalize="sentences"
+                onChange={handleChange}
                 {...props}
             />
         )

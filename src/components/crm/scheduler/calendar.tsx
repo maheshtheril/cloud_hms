@@ -116,6 +116,7 @@ export default function CRMCalendar() {
         else if (type === 'email') style.background = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'
         else if (type === 'task') style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
         else if (type === 'lead_followup') style.background = 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)'
+        else if (type === 'lead_created') style.background = 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' // Dark Slate
         else style.background = 'linear-gradient(135deg, #64748b 0%, #475569 100%)'
 
         return { style }
