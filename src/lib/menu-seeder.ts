@@ -283,12 +283,37 @@ export async function ensureCrmMenus() {
             { key: 'crm-setup-root', label: 'Advanced & Setup', url: '#', icon: 'Settings', sort: 90 },
         ];
 
+        // --- HELPER FOR RAW SQL INSERT ---
+        const rawInsert = async (data: any) => {
+            const rawId = crypto.randomUUID();
+            const parentId = data.parent_id || null;
+            // Safe param handling for optional fields
+            const perm = data.permission_code || null;
+
+            await prisma.$executeRawUnsafe(`
+                INSERT INTO "menu_items" 
+                ("id", "label", "url", "key", "module_key", "icon", "sort_order", "permission_code", "is_global", "parent_id", "created_at", "updated_at")
+                VALUES 
+                ($1::uuid, $2, $3, $4, $5, $6, $7, $8, true, $9::uuid, NOW(), NOW())
+            `, rawId, data.label, data.url, data.key, data.module_key, data.icon, data.sort_order, perm, parentId);
+            return { id: rawId };
+        };
+
         // 2a. Staff & HR Root
-        let staffParent = await prisma.menu_items.findFirst({ where: { key: 'crm-staff-root' } });
+        let staffParent: any = await prisma.menu_items.findFirst({ where: { key: 'crm-staff-root' } });
         if (!staffParent) {
-            staffParent = await prisma.menu_items.create({
-                data: { label: 'Staff & Workforce', url: '#', key: 'crm-staff-root', module_key: 'crm', icon: 'Briefcase', sort_order: 80, is_global: true, permission_code: 'crm:staff' }
-            });
+            try {
+                staffParent = await prisma.menu_items.create({
+                    data: { label: 'Staff & Workforce', url: '#', key: 'crm-staff-root', module_key: 'crm', icon: 'Briefcase', sort_order: 80, is_global: true, permission_code: 'crm:staff', parent_id: null }
+                });
+            } catch (e: any) {
+                console.error("Failed to create Staff Root (Prisma):", e?.message);
+                try {
+                    const res = await rawInsert({ label: 'Staff & Workforce', url: '#', key: 'crm-staff-root', module_key: 'crm', icon: 'Briefcase', sort_order: 80, permission_code: 'crm:staff', parent_id: null });
+                    staffParent = { id: res.id }; // Mock object for children
+                    console.log("Created Staff Root via Raw SQL");
+                } catch (rawE: any) { console.error("Failed to create Staff Root (Raw):", rawE?.message); }
+            }
         } else if (staffParent.permission_code !== 'crm:staff') {
             await prisma.menu_items.update({
                 where: { id: staffParent.id },
@@ -301,29 +326,51 @@ export async function ensureCrmMenus() {
             { key: 'crm-designations', label: 'Designations', url: '/settings/designations', icon: 'UserCheck', sort: 20, permission: 'roles:manage' },
         ];
 
-        for (const item of staffItems) {
-            const existing = await prisma.menu_items.findFirst({ where: { key: item.key } });
-            if (!existing) {
-                await prisma.menu_items.create({
-                    data: {
-                        label: item.label, url: item.url, key: item.key, module_key: 'crm', icon: item.icon,
-                        parent_id: staffParent.id, sort_order: item.sort, permission_code: item.permission, is_global: true
+        if (staffParent) {
+            for (const item of staffItems) {
+                try {
+                    const existing = await prisma.menu_items.findFirst({ where: { key: item.key } });
+                    if (!existing) {
+                        await prisma.menu_items.create({
+                            data: {
+                                label: item.label, url: item.url, key: item.key, module_key: 'crm', icon: item.icon,
+                                parent_id: staffParent.id, sort_order: item.sort, permission_code: item.permission, is_global: true
+                            }
+                        });
+                    } else {
+                        await prisma.menu_items.update({
+                            where: { id: existing.id },
+                            data: { module_key: 'crm', parent_id: staffParent.id, permission_code: item.permission }
+                        });
                     }
-                });
-            } else {
-                await prisma.menu_items.update({
-                    where: { id: existing.id },
-                    data: { module_key: 'crm', parent_id: staffParent.id, permission_code: item.permission }
-                });
+                } catch (e: any) {
+                    console.error(`Failed to seed ${item.label} (Prisma):`, e?.message);
+                    try {
+                        await rawInsert({
+                            label: item.label, url: item.url, key: item.key, module_key: 'crm', icon: item.icon,
+                            parent_id: staffParent.id, sort_order: item.sort, permission_code: item.permission
+                        });
+                        console.log(`Created ${item.label} via Raw SQL`);
+                    } catch (rawE: any) { console.error(`Failed to seed ${item.label} (Raw):`, rawE?.message); }
+                }
             }
         }
 
         // 2b. Advanced Setup Root
-        let setupParent = await prisma.menu_items.findFirst({ where: { key: 'crm-setup-root' } });
+        let setupParent: any = await prisma.menu_items.findFirst({ where: { key: 'crm-setup-root' } });
         if (!setupParent) {
-            setupParent = await prisma.menu_items.create({
-                data: { label: 'Advanced & Setup', url: '#', key: 'crm-setup-root', module_key: 'crm', icon: 'Settings', sort_order: 90, is_global: true, permission_code: 'crm:setup' }
-            });
+            try {
+                setupParent = await prisma.menu_items.create({
+                    data: { label: 'Advanced & Setup', url: '#', key: 'crm-setup-root', module_key: 'crm', icon: 'Settings', sort_order: 90, is_global: true, permission_code: 'crm:setup', parent_id: null }
+                });
+            } catch (e: any) {
+                console.error("Failed to create Setup Root (Prisma):", e?.message);
+                try {
+                    const res = await rawInsert({ label: 'Advanced & Setup', url: '#', key: 'crm-setup-root', module_key: 'crm', icon: 'Settings', sort_order: 90, permission_code: 'crm:setup', parent_id: null });
+                    setupParent = { id: res.id };
+                    console.log("Created Setup Root via Raw SQL");
+                } catch (rawE: any) { console.error("Failed to create Setup Root (Raw):", rawE?.message); }
+            }
         } else if (setupParent.permission_code !== 'crm:setup') {
             await prisma.menu_items.update({
                 where: { id: setupParent.id },
@@ -337,20 +384,33 @@ export async function ensureCrmMenus() {
             { key: 'custom-fields', label: 'Custom Fields', url: '/settings/custom-fields', icon: 'FileText', sort: 30, permission: 'settings:view' },
         ];
 
-        for (const item of setupItems) {
-            const existing = await prisma.menu_items.findFirst({ where: { key: item.key } });
-            if (!existing) {
-                await prisma.menu_items.create({
-                    data: {
-                        label: item.label, url: item.url, key: item.key, module_key: 'crm', icon: item.icon,
-                        parent_id: setupParent.id, sort_order: item.sort, permission_code: item.permission, is_global: true
+        if (setupParent) {
+            for (const item of setupItems) {
+                try {
+                    const existing = await prisma.menu_items.findFirst({ where: { key: item.key } });
+                    if (!existing) {
+                        await prisma.menu_items.create({
+                            data: {
+                                label: item.label, url: item.url, key: item.key, module_key: 'crm', icon: item.icon,
+                                parent_id: setupParent.id, sort_order: item.sort, permission_code: item.permission, is_global: true
+                            }
+                        });
+                    } else {
+                        await prisma.menu_items.update({
+                            where: { id: existing.id },
+                            data: { module_key: 'crm', parent_id: setupParent.id, permission_code: item.permission }
+                        });
                     }
-                });
-            } else {
-                await prisma.menu_items.update({
-                    where: { id: existing.id },
-                    data: { module_key: 'crm', parent_id: setupParent.id, permission_code: item.permission }
-                });
+                } catch (e: any) {
+                    console.error(`Failed to seed ${item.label} (Prisma):`, e?.message);
+                    try {
+                        await rawInsert({
+                            label: item.label, url: item.url, key: item.key, module_key: 'crm', icon: item.icon,
+                            parent_id: setupParent.id, sort_order: item.sort, permission_code: item.permission
+                        });
+                        console.log(`Created ${item.label} via Raw SQL`);
+                    } catch (rawE: any) { console.error(`Failed to seed ${item.label} (Raw):`, rawE?.message); }
+                }
             }
         }
 
