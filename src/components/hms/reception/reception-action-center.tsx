@@ -256,10 +256,10 @@ export function ReceptionActionCenter({
 
                             <div className="flex items-center gap-2">
                                 <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
-                                    <SelectTrigger className="h-9 w-[180px] bg-white dark:bg-slate-800 border-none shadow-none text-xs font-bold">
+                                    <SelectTrigger className="h-9 w-[180px] bg-white dark:bg-slate-800 border-none shadow-none text-xs font-bold text-slate-900 dark:text-slate-100">
                                         <SelectValue placeholder="All Doctors" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                                         {doctorOptions.map(d => (
                                             <SelectItem key={d.id} value={d.id}>{d.label}</SelectItem>
                                         ))}
@@ -267,10 +267,10 @@ export function ReceptionActionCenter({
                                 </Select>
 
                                 <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                                    <SelectTrigger className="h-9 w-[130px] bg-white dark:bg-slate-800 border-none shadow-none text-xs font-bold">
+                                    <SelectTrigger className="h-9 w-[130px] bg-white dark:bg-slate-800 border-none shadow-none text-xs font-bold text-slate-900 dark:text-slate-100">
                                         <SelectValue placeholder="All Status" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                                         <SelectItem value="all">All Flows</SelectItem>
                                         <SelectItem value="scheduled">Upcoming</SelectItem>
                                         <SelectItem value="arrived">Waiting</SelectItem>
