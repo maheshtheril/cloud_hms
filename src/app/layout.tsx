@@ -39,9 +39,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // SELF-HEALING: Re-enabled to fix rogue menu items like "Sales Orders" in CRM.
+  // SELF-HEALING: Disabled for now to prevent duplication issues.
   // Performance is mitigated by internal 'hasAudited' flag in the action.
-  await auditAndFixMenuPermissions();
+  // await auditAndFixMenuPermissions();
 
   return (
     <html lang="en" suppressHydrationWarning className="dark">
