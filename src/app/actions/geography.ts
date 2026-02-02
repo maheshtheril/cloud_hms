@@ -126,3 +126,46 @@ export async function getCompanyCountry() {
     })
     return company?.country_id
 }
+
+// ---- Client-usable fetchers for Dropdowns ----
+
+export async function getCountries() {
+    const session = await auth()
+    if (!session?.user) return []
+
+    // Cache this heavily or use simple query
+    const countries = await prisma.countries.findMany({
+        orderBy: { name: 'asc' },
+        select: { id: true, name: true, iso2: true, flag: true }
+    })
+    return countries
+}
+
+/**
+ * Fetch subdivisions.
+ * If parentId is null, fetches top-level (states) for the country.
+ * If parentId is provided, fetches children (districts) for that parent.
+ */
+export async function getSubdivisions(countryId: string, parentId?: string | null) {
+    const session = await auth()
+    if (!session?.user) return []
+
+    const whereClause: any = {
+        country_id: countryId,
+        is_active: true // Only active ones for dropdowns
+    }
+
+    if (parentId) {
+        whereClause.parent_id = parentId
+    } else {
+        whereClause.parent_id = null
+    }
+
+    const subdivisions = await prisma.country_subdivision.findMany({
+        where: whereClause,
+        orderBy: { name: 'asc' },
+        select: { id: true, name: true, type: true }
+    })
+
+    return subdivisions
+}
