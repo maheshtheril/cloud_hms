@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { signOut } from "@/auth"
 import { headers } from "next/headers";
+import bcrypt from 'bcryptjs';
 
 export async function logout() {
     console.log("[Auth Action] Logging out...");
@@ -177,6 +178,9 @@ export async function signup(prevState: any, formData: FormData) {
         }
 
         // 4. Create User (Admin) - Linked to Branch
+        // Hash password with bcryptjs instead of relying on pgcrypto
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         await prisma.$executeRaw`
                 INSERT INTO app_user (id, tenant_id, company_id, current_branch_id, email, password, name, is_admin, is_tenant_admin, is_active)
                 VALUES (
@@ -185,7 +189,7 @@ export async function signup(prevState: any, formData: FormData) {
                     ${companyId}::uuid,
                     ${branchId}::uuid,
                     ${email}, 
-                    crypt(${password}, gen_salt('bf')), 
+                    ${hashedPassword}, 
                     ${name}, 
                     true, 
                     true,

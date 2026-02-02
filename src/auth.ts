@@ -2,6 +2,7 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { authConfig } from "./auth.config"
 import { prisma } from "@/lib/prisma"
+import bcrypt from 'bcryptjs'
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     ...authConfig,
@@ -19,17 +20,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     // Normalize email
                     const email = (credentials.email as string).toLowerCase()
 
-                    // Use raw query to verify password with pgcrypto (Case Insensitive Email)
+                    // Use raw query to fetch user (Case Insensitive Email)
                     const users = await prisma.$queryRaw`
                         SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, current_branch_id, password, role, metadata
                         FROM app_user
                         WHERE LOWER(email) = ${email}
                           AND is_active = true
-                          AND password = crypt(${credentials.password}, password)
                     ` as any[];
 
                     if (users && users.length > 0) {
                         let user = users[0];
+
+                        const passwordsMatch = await bcrypt.compare(credentials.password as string, user.password);
+                        if (!passwordsMatch) return null;
 
                         try {
                             // Fetch Branch Name
