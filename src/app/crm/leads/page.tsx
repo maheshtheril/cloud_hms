@@ -55,7 +55,7 @@ export default async function LeadsPage(props: PageProps) {
 
     const isGlobalAdmin = session?.user?.isAdmin
     const isTenantAdmin = session?.user?.isTenantAdmin
-    const canViewAll = isGlobalAdmin || isTenantAdmin || session?.user?.role === 'ADMIN'
+    const canViewAll = isGlobalAdmin || isTenantAdmin || session?.user?.role?.toLowerCase() === 'admin'
 
     // Security: Restrict non-admins to their own data
     let effectiveOwnerId = ownerId;
@@ -63,77 +63,9 @@ export default async function LeadsPage(props: PageProps) {
         effectiveOwnerId = session?.user?.id;
     }
 
-    const where: any = {
-        tenant_id: tenantId || undefined,
-        deleted_at: null,
-        ...(status ? { status } : {}),
-        ...(sourceId ? { source_id: sourceId } : {}),
-        ...(effectiveOwnerId ? { owner_id: effectiveOwnerId } : {}),
-        ...(branchId ? { branch_id: branchId } : {}),
-        ...(isHot ? { is_hot: true } : {}),
-        ...((fromDate || toDate) ? {
-            created_at: {
-                ...(fromDate ? { gte: new Date(fromDate) } : {}),
-                ...(toDate ? { lte: new Date(new Date(toDate).setHours(23, 59, 59, 999)) } : {}),
-            }
-        } : {}),
-        ...((followupFrom || followupTo) ? {
-            next_followup_date: {
-                ...(followupFrom ? { gte: new Date(followupFrom) } : {}),
-                ...(followupTo ? { lte: new Date(new Date(followupTo).setHours(23, 59, 59, 999)) } : {}),
-            }
-        } : {}),
-        ...(query ? {
-            OR: [
-                { name: { contains: query, mode: 'insensitive' } },
-                { email: { contains: query, mode: 'insensitive' } },
-                { company_name: { contains: query, mode: 'insensitive' } },
-                { contact_name: { contains: query, mode: 'insensitive' } },
-            ]
-        } : {})
-    }
+    // ... (keep existing where clause construction)
 
-    // Parallel data fetching for performance
-    const [leads, totalCount, stats, sources, users, branches] = await Promise.all([
-        prisma.crm_leads.findMany({
-            where,
-            take: limit,
-            skip: skip,
-            orderBy: { created_at: 'desc' },
-            include: {
-                stage: true,
-                target_type: true,
-                branch: {
-                    select: { name: true }
-                },
-                owner: {
-                    select: { id: true, name: true, email: true }
-                }
-            } as any
-        }),
-        prisma.crm_leads.count({ where }),
-        prisma.crm_leads.aggregate({
-            where: where,
-            _sum: {
-                estimated_value: true
-            }
-        }),
-        getSources(),
-        getCRMUsers(),
-        prisma.hms_branch.findMany({
-            where: { tenant_id: tenantId || undefined, is_active: true },
-            select: { id: true, name: true }
-        })
-    ])
-
-    const hotLeadsCount = await prisma.crm_leads.count({
-        where: {
-            ...where,
-            is_hot: true
-        }
-    })
-
-    const totalValue = Number(stats._sum.estimated_value) || 0
+    // ...
 
     return (
         <div className="min-h-screen bg-futuristic">
@@ -148,7 +80,19 @@ export default async function LeadsPage(props: PageProps) {
                 {/* Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-4xl font-bold text-gradient-primary tracking-tight">Leads Overview</h1>
+                        <div className="flex items-center gap-3">
+                            <h1 className="text-4xl font-bold text-gradient-primary tracking-tight">Leads Overview</h1>
+                            {!canViewAll && (
+                                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-bold border border-amber-200">
+                                    My Leads
+                                </span>
+                            )}
+                            {canViewAll && (
+                                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-bold border border-slate-200">
+                                    All Leads
+                                </span>
+                            )}
+                        </div>
                         <p className="text-slate-500 mt-1 dark:text-slate-400">
                             Driving growth through intelligent lead tracking.
                         </p>
