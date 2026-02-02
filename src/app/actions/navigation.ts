@@ -48,18 +48,21 @@ export async function getMenuItems() {
         // Removed database side-effects for performance. 
         // Admin menus are now assumed to be pre-seeded.
 
-        // Fetch Tenant Details for Industry Check
+        // Fetch Industry from the tenant's primary company
         let industry = '';
         if (session?.user?.tenantId) {
-            const tenant = await prisma.tenant.findUnique({
-                where: { id: session.user.tenantId },
-                select: { metadata: true }
+            const company = await prisma.company.findFirst({
+                where: { tenant_id: session.user.tenantId },
+                select: { industry: true }
             });
-            const metadata = tenant?.metadata as any;
-            industry = metadata?.industry || '';
+            industry = company?.industry || '';
         }
 
-        const isHealthcare = industry.toLowerCase().includes('health') || industry.toLowerCase().includes('clinic') || industry.toLowerCase().includes('hospital');
+        const isHealthcare = industry.toLowerCase().includes('health') ||
+            industry.toLowerCase().includes('clinic') ||
+            industry.toLowerCase().includes('hospital') ||
+            industry.toLowerCase().includes('medical') ||
+            industry.toLowerCase().includes('hms');
 
         // Fetch active modules (Global)
         const globalActiveModules = await prisma.modules.findMany({
@@ -107,17 +110,23 @@ export async function getMenuItems() {
         // 3. IMPLICIT PERMISSION-BASED MODULE ACCESS (Safety Net)
         // If a user has permission to view a module, they should see its menu, 
         // regardless of tenant-level flags (which might be misconfigured).
-        if (userPerms.has('hms:view') || userPerms.has('hms:dashboard:reception') || userPerms.has('hms:dashboard:doctor')) {
+        // Added '*' check to ensure Admins see these modules if subscribed.
+        const hasHMSPerm = userPerms.has('hms:view') || userPerms.has('hms:dashboard:reception') || userPerms.has('hms:dashboard:doctor') || userPerms.has('*');
+        const hasCRMPerm = userPerms.has('crm:view') || userPerms.has('crm:admin'); // CRM doesn't auto-show for '*' unless industry is CRM
+        const hasFinancePerm = userPerms.has('accounting:view') || userPerms.has('finance:view') || userPerms.has('billing:view') || userPerms.has('*');
+        const hasInventoryPerm = userPerms.has('inventory:view') || userPerms.has('purchasing:view') || userPerms.has('pharmacy:view') || userPerms.has('*');
+
+        if (hasHMSPerm) {
             allowedModuleKeys.add('hms');
         }
-        if (userPerms.has('crm:view') || userPerms.has('crm:admin')) {
+        if (hasCRMPerm || (userPerms.has('*') && industry.toLowerCase().includes('crm'))) {
             allowedModuleKeys.add('crm');
         }
-        if (userPerms.has('accounting:view') || userPerms.has('finance:view') || userPerms.has('billing:view')) {
+        if (hasFinancePerm) {
             allowedModuleKeys.add('accounting');
             allowedModuleKeys.add('finance');
         }
-        if (userPerms.has('inventory:view') || userPerms.has('purchasing:view') || userPerms.has('pharmacy:view')) {
+        if (hasInventoryPerm) {
             allowedModuleKeys.add('inventory');
         }
 
