@@ -63,9 +63,77 @@ export default async function LeadsPage(props: PageProps) {
         effectiveOwnerId = session?.user?.id;
     }
 
-    // ... (keep existing where clause construction)
+    const where: any = {
+        tenant_id: tenantId || undefined,
+        deleted_at: null,
+        ...(status ? { status } : {}),
+        ...(sourceId ? { source_id: sourceId } : {}),
+        ...(effectiveOwnerId ? { owner_id: effectiveOwnerId } : {}),
+        ...(branchId ? { branch_id: branchId } : {}),
+        ...(isHot ? { is_hot: true } : {}),
+        ...((fromDate || toDate) ? {
+            created_at: {
+                ...(fromDate ? { gte: new Date(fromDate) } : {}),
+                ...(toDate ? { lte: new Date(new Date(toDate).setHours(23, 59, 59, 999)) } : {}),
+            }
+        } : {}),
+        ...((followupFrom || followupTo) ? {
+            next_followup_date: {
+                ...(followupFrom ? { gte: new Date(followupFrom) } : {}),
+                ...(followupTo ? { lte: new Date(new Date(followupTo).setHours(23, 59, 59, 999)) } : {}),
+            }
+        } : {}),
+        ...(query ? {
+            OR: [
+                { name: { contains: query, mode: 'insensitive' } },
+                { email: { contains: query, mode: 'insensitive' } },
+                { company_name: { contains: query, mode: 'insensitive' } },
+                { contact_name: { contains: query, mode: 'insensitive' } },
+            ]
+        } : {})
+    }
 
-    // ...
+    // Parallel data fetching for performance
+    const [leads, totalCount, stats, sources, users, branches] = await Promise.all([
+        prisma.crm_leads.findMany({
+            where,
+            take: limit,
+            skip: skip,
+            orderBy: { created_at: 'desc' },
+            include: {
+                stage: true,
+                target_type: true,
+                branch: {
+                    select: { name: true }
+                },
+                owner: {
+                    select: { id: true, name: true, email: true }
+                }
+            } as any
+        }),
+        prisma.crm_leads.count({ where }),
+        prisma.crm_leads.aggregate({
+            where: where,
+            _sum: {
+                estimated_value: true
+            }
+        }),
+        getSources(),
+        getCRMUsers(),
+        prisma.hms_branch.findMany({
+            where: { tenant_id: tenantId || undefined, is_active: true },
+            select: { id: true, name: true }
+        })
+    ])
+
+    const hotLeadsCount = await prisma.crm_leads.count({
+        where: {
+            ...where,
+            is_hot: true
+        }
+    })
+
+    const totalValue = Number(stats._sum.estimated_value) || 0
 
     return (
         <div className="min-h-screen bg-futuristic">
