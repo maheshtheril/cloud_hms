@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
 import { v4 as uuidv4 } from 'uuid'
+import { hms_invoice_status } from "@prisma/client"
 import { AccountingService } from "@/lib/services/accounting"
 import { ensureDefaultAccounts } from "@/lib/account-seeder"
 
@@ -211,7 +212,7 @@ export async function upsertPayment(data: {
                                 data: {
                                     total_paid: { decrement: line.amount },
                                     outstanding: { increment: line.amount },
-                                    status: 'posted' // Revert to 'posted' (unpaid but valid)
+                                    status: 'posted' as any // Revert to 'posted' (unpaid but valid)
                                 }
                             });
                             await tx.hms_invoice_payments.deleteMany({
@@ -319,7 +320,7 @@ export async function upsertPayment(data: {
                             select: { outstanding: true }
                         });
                         if (updatedInvoice && Number(updatedInvoice.outstanding || 0) <= 0) {
-                            await tx.hms_invoice.update({ where: { id: alloc.invoiceId }, data: { status: 'paid' } });
+                            await tx.hms_invoice.update({ where: { id: alloc.invoiceId }, data: { status: 'paid' as any } });
                         }
                     } else {
                         // VENDOR PAYMENT: Update hms_purchase_invoice
@@ -426,7 +427,7 @@ export async function deletePayment(id: string) {
                             data: {
                                 total_paid: { decrement: line.amount },
                                 outstanding: { increment: line.amount },
-                                status: 'posted'
+                                status: 'posted' as any
                             }
                         });
 

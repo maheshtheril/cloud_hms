@@ -5,6 +5,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { hms_move_type, hms_receipt_status } from "@prisma/client"
 
 export type ReceiveStockItem = {
     productId: string
@@ -87,7 +88,7 @@ export async function receiveStock(data: ReceiveStockData) {
                     company_id: companyId,
                     name: data.reference || `REC-${Date.now()}`, // Temporary name generation
                     receipt_date: data.date,
-                    status: 'received', // Direct receive for now
+                    status: hms_receipt_status.received, // Direct receive for now
                     received_by: session.user.id,
                     metadata: {
                         notes: data.notes,
@@ -165,7 +166,7 @@ export async function receiveStock(data: ReceiveStockData) {
                         location_to: locationId, // To Warehouse
                         qty: item.quantity,
                         uom: product.uom,
-                        move_type: 'in', // 'in' from Postgres Enum hms_move_type
+                        move_type: hms_move_type.in, // 'in' from Postgres Enum hms_move_type
                         source: 'Purchase Receipt',
                         source_reference: receipt.id,
                         cost: item.unitCost,

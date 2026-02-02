@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react"
 import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/billing"
 import { auth } from "@/auth"
+import { hms_invoice_status } from "@prisma/client"
 
 export default async function NewInvoicePage({
     searchParams
@@ -87,7 +88,7 @@ export default async function NewInvoicePage({
         const draftInvoice = await prisma.hms_invoice.findFirst({
             where: {
                 appointment_id: appointmentId,
-                status: 'draft'
+                status: 'draft' as any
             },
             include: {
                 hms_invoice_lines: {

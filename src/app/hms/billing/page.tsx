@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { Plus, TrendingUp, AlertCircle, CheckCircle2, Search, FileText, Clock, Receipt } from "lucide-react"
 import { auth } from "@/auth"
+import { hms_invoice_status } from "@prisma/client"
 
 import SearchInput from "@/components/search-input"
 import { BillingActions } from "@/components/billing/billing-actions"
@@ -69,7 +70,7 @@ export default async function BillingPage({
             where: {
                 tenant_id: session.user.tenantId,
                 company_id: session.user.companyId,
-                status: 'draft'
+                status: 'draft' as any
             }
         })
     ]);

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ensureDefaultAccounts } from "@/lib/account-seeder";
+import { hms_invoice_status, hms_receipt_status } from "@prisma/client";
 
 export class AccountingService {
 
@@ -754,7 +755,7 @@ export class AccountingService {
                 // Update receipt status
                 await tx.hms_purchase_receipt.update({
                     where: { id: receipt.id },
-                    data: { status: 'received', updated_at: new Date() }
+                    data: { status: hms_receipt_status.received, updated_at: new Date() }
                 });
             });
 

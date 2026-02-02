@@ -4,6 +4,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import { hms_invoice_status, hms_move_type } from "@prisma/client"
 
 export type ConsumeStockData = {
     productId: string
@@ -78,7 +79,7 @@ export async function consumeStock(data: ConsumeStockData) {
                     location_to: null, // Consumed (gone)
                     qty: data.quantity,
                     uom: product.uom,
-                    move_type: 'out', // Outbound
+                    move_type: hms_move_type.out, // Outbound
                     source: 'Nursing Consumption',
                     source_reference: data.encounterId, // Link to Encounter ID
                     created_by: userId
@@ -241,7 +242,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                         location_to: null, // Consumed (gone)
                         qty: item.quantity,
                         uom: product.uom || 'Unit',
-                        move_type: 'out',
+                        move_type: hms_move_type.out,
                         source: 'Nursing Consumption',
                         source_reference: data.encounterId,
                         created_by: userId
@@ -309,7 +310,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                 where: {
                     company_id: companyId,
                     appointment_id: data.encounterId,
-                    status: 'draft'
+                    status: hms_invoice_status.draft
                 }
             });
 
@@ -328,7 +329,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                         appointment_id: data.encounterId,
                         invoice_number: invoiceNumber,
                         invoice_date: new Date(),
-                        status: 'draft',
+                        status: hms_invoice_status.draft,
                         currency: 'INR',
                         total: 0,
                         subtotal: 0,

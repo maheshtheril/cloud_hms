@@ -3,6 +3,7 @@
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
+import { hms_purchase_status } from "@prisma/client"
 
 export type PurchaseOrderLineItem = {
     productId: string
@@ -307,7 +308,7 @@ export async function createPurchaseOrder(data: PurchaseOrderData) {
                     subtotal,
                     total_tax: totalTax,
                     total_amount: totalAmount,
-                    status: 'draft', // Default status
+                    status: hms_purchase_status.draft, // Default status
                     notes: data.notes,
                     created_by: session.user.id
                 }

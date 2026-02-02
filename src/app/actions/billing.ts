@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
+import { hms_invoice_status } from "@prisma/client";
 import { AccountingService } from "@/lib/services/accounting"
 import { NotificationService } from "@/lib/services/notification";
 
@@ -245,12 +246,12 @@ export async function getTaxConfiguration() {
     }
 }
 
-export async function createInvoice(data: any) {
+export async function createInvoice(data: { patient_id: string, appointment_id?: string, date: string, line_items: any[], payments?: any[], status?: hms_invoice_status, total_discount?: number, billing_metadata?: any }) {
     const session = await auth();
     const companyId = session?.user?.companyId || session?.user?.tenantId;
     if (!companyId) return { error: "Unauthorized" };
 
-    const { patient_id, appointment_id, date, line_items, payments, status = 'draft', total_discount = 0, billing_metadata = {} } = data;
+    const { patient_id, appointment_id, date, line_items, payments, status = hms_invoice_status.draft, total_discount = 0, billing_metadata = {} } = data;
 
     if (!line_items || line_items.length === 0) {
         return { error: "At least one line item is required" };
@@ -326,7 +327,7 @@ export async function createInvoice(data: any) {
         // Determine Outstanding
         // If status is "paid", outstanding should be 0 (forcefully)
         // If status is "posted", likely outstanding is Total - Paid
-        const outstandingAmount = (status === 'paid') ? 0 : Math.max(0, total - totalPaid);
+        const outstandingAmount = (status === hms_invoice_status.paid) ? 0 : Math.max(0, total - totalPaid);
 
         // ... (triggers check) ...
 
@@ -338,7 +339,7 @@ export async function createInvoice(data: any) {
             invoice_number: invoiceNo,
             invoice_date: new Date(date),
             currency: 'INR',
-            status: status as any,
+            status: status,
             total: total,
             subtotal: subtotal,
             total_tax: totalTaxAmount,
@@ -387,7 +388,7 @@ export async function createInvoice(data: any) {
                         tenant_id: session.user.tenantId,
                         company_id: companyId,
                         patient_id: patient_id as string,
-                        status: 'posted',
+                        status: hms_invoice_status.posted,
                         id: { not: newInvoice.id }
                     },
                     orderBy: { issued_at: 'asc' }
@@ -404,7 +405,7 @@ export async function createInvoice(data: any) {
                             data: {
                                 total_paid: Number(oldInv.total_paid || 0) + paymentToApply,
                                 outstanding_amount: due - paymentToApply,
-                                status: (due - paymentToApply <= 0.01) ? 'paid' : 'posted'
+                                status: (due - paymentToApply <= 0.01) ? hms_invoice_status.paid : hms_invoice_status.posted
                             }
                         });
                         excess -= paymentToApply;
@@ -413,7 +414,7 @@ export async function createInvoice(data: any) {
             }
 
             // If status is paid and appointment is linked, mark appointment as completed
-            if (status === 'paid' && appointment_id) {
+            if (status === hms_invoice_status.paid && appointment_id) {
                 await tx.hms_appointments.update({
                     where: { id: appointment_id },
                     data: { status: 'completed' }
@@ -422,7 +423,7 @@ export async function createInvoice(data: any) {
 
             // [WORLD CLASS] Registration Fee Tracking
             const hasRegistrationFee = line_items.some((l: any) => l.description === 'Registration Fee');
-            if (hasRegistrationFee && patient_id && (status === 'posted' || status === 'paid')) {
+            if (hasRegistrationFee && patient_id && (status === hms_invoice_status.posted || status === hms_invoice_status.paid)) {
                 const patient = await tx.hms_patient.findUnique({ where: { id: patient_id as string } });
                 const currentMeta = (patient?.metadata as any) || {};
                 await tx.hms_patient.update({
@@ -451,7 +452,7 @@ export async function createInvoice(data: any) {
             return newInvoice;
         });
 
-        if ((result.status === 'posted' || result.status === 'paid') && result.id) {
+        if ((result.status === hms_invoice_status.posted || result.status === hms_invoice_status.paid) && result.id) {
             // 1. Accounting Post (Safely wrapped)
             try {
                 const accountingRes = await AccountingService.postSalesInvoice(result.id, session.user.id);
@@ -510,7 +511,7 @@ async function checkTransactionLock(invoiceId: string, company_id: string, sessi
 
     // 2. Role Check (Only Admin can edit posted/paid)
     const isAdmin = session?.user?.isAdmin;
-    if (existing.status !== 'draft' && !isAdmin) {
+    if (existing.status !== hms_invoice_status.draft && !isAdmin) {
         return { locked: true, reason: "Administrative privileges required to modify a finalized ledger entry." };
     }
 
@@ -528,7 +529,7 @@ export async function cancelInvoice(invoiceId: string) {
 
         await prisma.hms_invoice.update({
             where: { id: invoiceId },
-            data: { status: 'cancelled' as any }
+            data: { status: hms_invoice_status.cancelled }
         });
 
         revalidatePath('/hms/billing');
@@ -538,7 +539,7 @@ export async function cancelInvoice(invoiceId: string) {
     }
 }
 
-export async function updateInvoice(invoiceId: string, data: any) {
+export async function updateInvoice(invoiceId: string, data: { patient_id: string, appointment_id?: string, date: string, line_items: any[], payments?: any[], status?: hms_invoice_status, total_discount?: number, billing_metadata?: any }) {
     const session = await auth();
     const companyId = session?.user?.companyId || session?.user?.tenantId;
     if (!companyId) return { error: "Unauthorized" };
@@ -546,7 +547,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
     const lockCheck = await checkTransactionLock(invoiceId, companyId, session);
     if (lockCheck.locked) return { error: lockCheck.reason };
 
-    const { patient_id, appointment_id, date, line_items, status = 'draft', total_discount = 0, payments = [], billing_metadata = {} } = data;
+    const { patient_id, appointment_id, date, line_items, status = hms_invoice_status.draft, total_discount = 0, payments = [], billing_metadata = {} } = data;
 
     if (!line_items || line_items.length === 0) {
         return { error: "At least one line item is required" };
@@ -574,7 +575,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
         const totalPaid = paymentList.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
 
         // Determine Outstanding
-        const outstandingAmount = (status === 'paid') ? 0 : Math.max(0, total - totalPaid);
+        const outstandingAmount = (status === hms_invoice_status.paid) ? 0 : Math.max(0, total - totalPaid);
 
         const result = await prisma.$transaction(async (tx) => {
             // 1. Update Invoice Header
@@ -584,7 +585,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
                     patient_id: (patient_id as string) || null,
                     appointment_id: (appointment_id as string) || null,
                     invoice_date: new Date(date),
-                    status: status as any,
+                    status: status,
                     total: total,
                     subtotal: subtotal,
                     total_tax: totalTaxAmount,
@@ -645,7 +646,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
                             tenant_id: session.user.tenantId,
                             company_id: companyId,
                             patient_id: patient_id as string,
-                            status: 'posted',
+                            status: hms_invoice_status.posted,
                             id: { not: invoiceId }
                         },
                         orderBy: { issued_at: 'asc' }
@@ -662,7 +663,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
                                 data: {
                                     total_paid: Number(oldInv.total_paid || 0) + paymentToApply,
                                     outstanding_amount: due - paymentToApply,
-                                    status: (due - paymentToApply <= 0.01) ? 'paid' : 'posted'
+                                    status: (due - paymentToApply <= 0.01) ? hms_invoice_status.paid : hms_invoice_status.posted
                                 }
                             });
                             excess -= paymentToApply;
@@ -672,7 +673,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
             }
 
             // If status is paid and appointment is linked, mark appointment as completed
-            if (status === 'paid' && appointment_id) {
+            if (status === hms_invoice_status.paid && appointment_id) {
                 await tx.hms_appointments.update({
                     where: { id: appointment_id },
                     data: { status: 'completed' }
@@ -681,7 +682,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
 
             // [WORLD CLASS] Registration Fee Tracking
             const hasRegistrationFee = line_items.some((l: any) => l.description === 'Registration Fee');
-            if (hasRegistrationFee && patient_id && (status === 'posted' || status === 'paid')) {
+            if (hasRegistrationFee && patient_id && (status === hms_invoice_status.posted || status === hms_invoice_status.paid)) {
                 const patient = await tx.hms_patient.findUnique({ where: { id: patient_id as string } });
                 const currentMeta = (patient?.metadata as any) || {};
                 await tx.hms_patient.update({
@@ -704,7 +705,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
                     total: total,
                     subtotal: subtotal,
                     total_tax: totalTaxAmount,
-                    outstanding_amount: (status === 'paid') ? 0 : Math.max(0, total - totalPaid)
+                    outstanding_amount: (status === hms_invoice_status.paid) ? 0 : Math.max(0, total - totalPaid)
                 }
             });
 
@@ -716,7 +717,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
             return { ...updatedInvoice, total, subtotal, total_tax: totalTaxAmount };
         });
 
-        if ((result.status === 'posted' || result.status === 'paid') && result.id) {
+        if ((result.status === hms_invoice_status.posted || result.status === hms_invoice_status.paid) && result.id) {
             try {
                 const accountingRes = await AccountingService.postSalesInvoice(result.id, session.user.id);
                 if (!accountingRes.success) {
@@ -737,7 +738,7 @@ export async function updateInvoice(invoiceId: string, data: any) {
     }
 }
 
-export async function updateInvoiceStatus(invoiceId: string, status: 'draft' | 'posted' | 'paid' | 'cancelled') {
+export async function updateInvoiceStatus(invoiceId: string, status: hms_invoice_status) {
     const session = await auth();
     const companyId = session?.user?.companyId || session?.user?.tenantId;
     if (!companyId) return { error: "Unauthorized" };
@@ -751,13 +752,13 @@ export async function updateInvoiceStatus(invoiceId: string, status: 'draft' | '
                 where: { id: invoiceId },
                 data: {
                     status: status,
-                    outstanding_amount: status === 'paid' ? 0 : (status === 'posted' ? invoice.total : invoice.outstanding_amount),
+                    outstanding_amount: status === hms_invoice_status.paid ? 0 : (status === hms_invoice_status.posted ? invoice.total : invoice.outstanding_amount),
                     updated_at: new Date()
                 }
             });
 
             // If paid, close appointment
-            if (status === 'paid' && updated.appointment_id) {
+            if (status === hms_invoice_status.paid && updated.appointment_id) {
                 await tx.hms_appointments.update({
                     where: { id: updated.appointment_id },
                     data: { status: 'completed' }
@@ -768,7 +769,7 @@ export async function updateInvoiceStatus(invoiceId: string, status: 'draft' | '
         });
 
         // Trigger Accounting
-        if (status === 'posted' || status === 'paid') {
+        if (status === hms_invoice_status.posted || status === hms_invoice_status.paid) {
             const accountingRes = await AccountingService.postSalesInvoice(invoiceId, session.user.id);
             if (!accountingRes.success) {
                 console.warn("Accounting Post Failed:", accountingRes.error);
@@ -786,7 +787,7 @@ export async function updateInvoiceStatus(invoiceId: string, status: 'draft' | '
     }
 }
 
-export async function recordPayment(invoiceId: string, payment: { amount: number, method: string, reference?: string }, newStatus: 'paid' | 'posted' = 'paid') {
+export async function recordPayment(invoiceId: string, payment: { amount: number, method: string, reference?: string }, newStatus: hms_invoice_status.paid | hms_invoice_status.posted = hms_invoice_status.paid) {
     const session = await auth();
     const companyId = session?.user?.companyId || session?.user?.tenantId;
     if (!companyId) return { error: "Unauthorized" };
@@ -833,7 +834,7 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
             // 2. Recalculate Totals
             const totalPaid = Number(invoice.total_paid || 0) + Number(payment.amount);
             const outstanding = Math.max(0, Number(invoice.total) - totalPaid);
-            const finalStatus = outstanding === 0 ? 'paid' : newStatus; // Auto-paid if fully settled
+            const finalStatus = outstanding === 0 ? hms_invoice_status.paid : newStatus; // Auto-paid if fully settled
 
             // 3. Update Invoice
             const updated = await tx.hms_invoice.update({
@@ -847,7 +848,7 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
             });
 
             // If paid, close appointment
-            if (finalStatus === 'paid' && updated.appointment_id) {
+            if (finalStatus === hms_invoice_status.paid && updated.appointment_id) {
                 await tx.hms_appointments.update({
                     where: { id: updated.appointment_id },
                     data: { status: 'completed' }
@@ -858,7 +859,7 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
         });
 
         // Trigger Accounting & Notification
-        if (result.status === 'paid') {
+        if (result.status === hms_invoice_status.paid) {
             await AccountingService.postSalesInvoice(invoiceId, session.user.id);
             NotificationService.sendInvoiceWhatsapp(invoiceId, session.user.tenantId!).catch(console.error);
         }
@@ -895,7 +896,7 @@ export async function settlePatientDues(patientId: string, amount: number, metho
             where: {
                 company_id: companyId,
                 patient_id: patientId,
-                status: { in: ['posted', 'draft'] }, // Allow paying Draft invoices (auto-posts them)
+                status: { in: ['posted', 'draft'] as any }, // Allow paying Draft invoices (auto-posts them)
                 outstanding_amount: { gt: 0 }
             },
             orderBy: { created_at: 'asc' }
@@ -926,7 +927,7 @@ export async function settlePatientDues(patientId: string, amount: number, metho
                 // Update Invoice
                 const totalPaid = Number(inv.total_paid || 0) + payAmount;
                 const outstanding = Number(inv.total) - totalPaid;
-                const newStatus = outstanding <= 0.01 ? 'paid' : 'posted'; // Tolerance for float
+                const newStatus = outstanding <= 0.01 ? hms_invoice_status.paid : hms_invoice_status.posted; // Tolerance for float
 
                 await tx.hms_invoice.update({
                     where: { id: inv.id },
@@ -967,7 +968,7 @@ export async function settlePatientDues(patientId: string, amount: number, metho
                 where: {
                     patient_id: patientId,
                     // We check paid or posted invoices that might have unposted payments
-                    status: { in: ['paid', 'posted'] },
+                    status: { in: [hms_invoice_status.paid, hms_invoice_status.posted] },
                 },
                 orderBy: { updated_at: 'desc' },
                 take: 10
@@ -1041,7 +1042,7 @@ export async function getPatientBalance(patientId: string) {
             where: {
                 patient_id: patientId,
                 company_id: companyId,
-                status: 'draft'
+                status: 'draft' as any
             },
             _sum: { outstanding_amount: true }
         });
@@ -1121,7 +1122,7 @@ export async function recordPatientConsumption(patientId: string, items: any[], 
             where: {
                 company_id: companyId,
                 patient_id: patientId,
-                status: 'draft' // Crucial: We add to the DRAFT invoice
+                status: hms_invoice_status.draft // Crucial: We add to the DRAFT invoice
             },
             orderBy: { created_at: 'desc' },
             include: { hms_invoice_lines: true }
@@ -1184,7 +1185,7 @@ export async function recordPatientConsumption(patientId: string, items: any[], 
             const payload = {
                 patient_id: patientId,
                 date: new Date().toISOString(),
-                status: 'draft',
+                status: hms_invoice_status.draft,
                 line_items: items.map(item => ({
                     product_id: item.productId,
                     description: item.name || item.description,
@@ -1228,7 +1229,7 @@ export async function getPatientOutstandingBalance(patientId: string) {
                 tenant_id: session.user.tenantId,
                 company_id: companyId,
                 patient_id: patientId,
-                status: 'posted' // Only confirmed debts (unpaid or partially paid)
+                status: 'posted' as any // Only confirmed debts (unpaid or partially paid)
             },
             select: {
                 outstanding_amount: true

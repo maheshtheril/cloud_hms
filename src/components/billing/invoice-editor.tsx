@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, UserPlus } from 'lucide-react'
 import { createInvoice, updateInvoice } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
+import { hms_invoice_status } from "@prisma/client"
 
 export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice }: {
     patients: any[],
@@ -425,7 +426,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
         }))
     }
 
-    const handleSave = async (status: 'draft' | 'posted') => {
+    const handleSave = async (status: hms_invoice_status) => {
         if (!selectedPatientId) return alert('Please select a patient')
 
         setLoading(true)
@@ -740,14 +741,14 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                     <div className="flex items-end gap-4">
                         <button
                             className="flex-1 px-8 py-4 rounded-xl border-2 border-gray-300 dark:border-slate-700 text-gray-700 dark:text-slate-300 font-bold text-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-all shadow-sm"
-                            onClick={() => handleSave('draft')}
+                            onClick={() => handleSave(hms_invoice_status.draft)}
                             disabled={loading}
                         >
                             Save as Draft
                         </button>
                         <button
                             className="flex-1 px-8 py-4 rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-500 dark:to-emerald-500 text-white font-bold text-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2"
-                            onClick={() => handleSave('posted')}
+                            onClick={() => handleSave(hms_invoice_status.posted)}
                             disabled={loading}
                         >
                             <Save className="h-5 w-5" />
@@ -755,7 +756,7 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                         </button>
                         <button
                             className="flex-1 px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white font-bold text-lg hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-2"
-                            onClick={() => handleSave('paid' as any)}
+                            onClick={() => handleSave(hms_invoice_status.paid)}
                             disabled={loading}
                         >
                             <DollarSign className="h-5 w-5" />

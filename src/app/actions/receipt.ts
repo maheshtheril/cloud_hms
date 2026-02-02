@@ -4,6 +4,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { AccountingService } from '@/lib/services/accounting'
+import { hms_purchase_status, hms_receipt_status } from "@prisma/client"
 
 export type PurchaseReceiptData = {
     supplierId?: string
@@ -49,7 +50,7 @@ export async function getPendingPurchaseOrders() {
     const pos = await prisma.hms_purchase_order.findMany({
         where: {
             company_id: session.user.companyId,
-            status: { in: ['approved', 'partially_received'] }
+            status: { in: ['approved', 'partially_received'] as any }
         },
         include: {
             hms_supplier: true
@@ -184,7 +185,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     name: receiptNumber,
                     received_by: session.user.id,
                     receipt_date: data.receivedDate,
-                    status: 'received',
+                    status: hms_receipt_status.received,
                     metadata: {
                         reference: data.reference,
                         notes: data.notes,
@@ -485,7 +486,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 // Let's set it to 'partially_received' as safe default.
                 await tx.hms_purchase_order.update({
                     where: { id: data.purchaseOrderId },
-                    data: { status: 'partially_received' }
+                    data: { status: hms_purchase_status.partially_received }
                 })
             }
 

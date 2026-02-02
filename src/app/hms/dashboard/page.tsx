@@ -119,10 +119,27 @@ export default async function DashboardPage() {
         prisma.hms_patient.count({ where: { tenant_id: tenantId } }),
 
         // 5. Stats: Pending Bills
-        prisma.$queryRaw`SELECT COUNT(*)::bigint as count FROM "hms_invoice" WHERE "tenant_id" = ${tenantId} AND "status" = 'draft'`.then((r: any) => Number(r[0]?.count || 0)),
+        prisma.hms_invoice.count({
+            where: {
+                tenant_id: tenantId,
+                status: 'draft' as any
+            }
+        }),
 
         // 6. Stats: Revenue (Today)
-        prisma.$queryRaw`SELECT COALESCE(SUM("total"), 0) as total FROM "hms_invoice" WHERE "tenant_id" = ${tenantId} AND "status" = 'paid' AND "created_at" >= ${today} AND "created_at" < ${tomorrow}`.then((r: any) => Number(r[0]?.total || 0)),
+        prisma.hms_invoice.aggregate({
+            where: {
+                tenant_id: tenantId,
+                status: 'paid' as any,
+                created_at: {
+                    gte: today,
+                    lt: tomorrow
+                }
+            },
+            _sum: {
+                total: true
+            }
+        }).then(r => Number(r._sum.total || 0)),
 
         // 7. Tenant Branding
         getTenant(),
