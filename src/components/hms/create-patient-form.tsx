@@ -1,12 +1,13 @@
 'use client'
 
 import { createPatient, createPatientQuick } from "@/app/actions/patient"
-import { X, User, Phone, Calendar, Camera, FileText, Shield, MapPin, Mail, AlertCircle, CheckCircle2, Fingerprint, Activity } from "lucide-react"
+import { X, User, Phone, Calendar, Camera, FileText, Shield, MapPin, Mail, AlertCircle, CheckCircle2, Fingerprint, Activity, Printer } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { FileUpload } from "@/components/ui/file-upload"
 import { VoiceWrapper } from "@/components/ui/voice-wrapper"
 import { getHMSSettings } from "@/app/actions/settings"
+import { PatientIDCard } from "@/components/hms/patient-id-card"
 
 interface CreatePatientFormProps {
     tenantCountry?: string
@@ -37,6 +38,8 @@ export function CreatePatientForm({
     const [activeTab, setActiveTab] = useState<'basic' | 'residency' | 'vault'>('basic');
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [isPending, setIsPending] = useState(false);
+    const [savedPatient, setSavedPatient] = useState<any>(null);
+    const [showIDCard, setShowIDCard] = useState(false);
 
     // Dynamic Settings State
     const [registrationFee, setRegistrationFee] = useState(propFee ?? 100);
@@ -478,6 +481,38 @@ export function CreatePatientForm({
                                 Cancel
                             </button>
                             <button
+                                type="button"
+                                onClick={async (e) => {
+                                    e.preventDefault();
+                                    const form = document.querySelector('form#patient-master-form') as HTMLFormElement;
+                                    if (form) {
+                                        const formData = new FormData(form);
+                                        setIsPending(true);
+                                        try {
+                                            const res = await createPatient(initialData?.id || null, formData);
+                                            if ((res as any)?.error) {
+                                                setMessage({ type: 'error', text: (res as any).error });
+                                            } else {
+                                                setSavedPatient(res);
+                                                setShowIDCard(true);
+                                                setMessage({ type: 'success', text: "Patient registered successfully!" });
+                                            }
+                                        } catch (err) {
+                                            setMessage({ type: 'error', text: "Registration failed" });
+                                        } finally {
+                                            setIsPending(false);
+                                        }
+                                    }
+                                }}
+                                disabled={isPending}
+                                className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                            >
+                                {isPending ? (
+                                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                ) : <Printer className="h-4 w-4" />}
+                                Save & Print ID
+                            </button>
+                            <button
                                 type="submit"
                                 disabled={isPending}
                                 className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
@@ -530,6 +565,39 @@ export function CreatePatientForm({
                             >
                                 <CheckCircle2 className="h-5 w-5" />
                                 Save & Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showIDCard && savedPatient && (
+                <div className="absolute inset-0 z-[100] bg-slate-900/90 backdrop-blur-lg flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-2xl p-8 rounded-3xl shadow-2xl border border-white/20 animate-in zoom-in-95">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-2xl font-black text-slate-900 dark:text-white">Patient ID Card</h3>
+                            <button
+                                onClick={() => setShowIDCard(false)}
+                                className="h-10 w-10 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center justify-center transition-all"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+                        <PatientIDCard
+                            patient={savedPatient}
+                            registrationFee={registrationFee}
+                            upiId="hospital@upi"
+                        />
+                        <div className="mt-6 flex gap-3 justify-center">
+                            <button
+                                onClick={() => {
+                                    setShowIDCard(false);
+                                    if (onSuccess) onSuccess(savedPatient);
+                                    else router.push('/hms/patients');
+                                }}
+                                className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all"
+                            >
+                                Close
                             </button>
                         </div>
                     </div>
