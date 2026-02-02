@@ -303,7 +303,8 @@ export async function getMenuItems() {
             const exists = result.find(g => g.module?.module_key === key);
             if (!exists) {
                 const fallbackGroup = fallback.find((g: any) => g.module?.module_key === key);
-                if (fallbackGroup) {
+                // Validation: Only inject if the fallbackGroup's key is actually allowed
+                if (fallbackGroup && allowedModuleKeys.has(fallbackGroup.module.module_key)) {
                     result.push(fallbackGroup);
                 }
             }
