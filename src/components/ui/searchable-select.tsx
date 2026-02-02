@@ -407,7 +407,7 @@ export function SearchableSelect({
                                 ref={inputRef}
                                 id={inputId}
                                 type="text"
-                                className={`w-full border-none p-0 focus:ring-0 bg-transparent ${variant === 'ghost' ? `${isDark ? 'text-[#ffffcc]' : 'text-gray-900'} font-inherit placeholder:text-inherit placeholder:opacity-30` : `text-sm ${isDark ? 'text-[#ffffcc]' : 'text-gray-900'} placeholder:text-gray-400 dark:placeholder:text-neutral-600`}`}
+                                className={`w-full border-none p-0 focus:ring-0 bg-transparent ${variant === 'ghost' ? `${isDark ? 'text-white dark:text-white' : 'text-gray-900 dark:text-white'} font-inherit placeholder:text-inherit placeholder:opacity-30` : `text-sm ${isDark ? 'text-white dark:text-white' : 'text-gray-900 dark:text-white'} placeholder:text-gray-400 dark:placeholder:text-neutral-600`}`}
                                 placeholder={selectedOption && variant === 'default' ? selectedOption.label : placeholder}
                                 value={query}
                                 onChange={handleInputChange}
