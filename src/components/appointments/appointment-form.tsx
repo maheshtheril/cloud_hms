@@ -69,6 +69,19 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
         }
     }, [editingAppointment, initialPatientId, initialDate, initialTime])
 
+    // Keyboard Shortcut: Ctrl+N to open New Patient
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                e.preventDefault()
+                setShowNewPatientModal(true)
+            }
+        }
+
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [])
+
     // ... (Smart slot logic remains, but we might want to skip it on initial load if editing)
 
     const handleClinicianChange = (clinicianId: string) => {
