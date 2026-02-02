@@ -4,7 +4,7 @@ import { getCurrentCompany } from "@/app/actions/company"
 import { getTenant } from "@/app/actions/tenant"
 import { auth } from "@/auth"
 
-import { ensureAccountingMenu } from "@/lib/menu-seeder";
+import { ensureAccountingMenu, ensureAdminMenus } from "@/lib/menu-seeder";
 
 export default async function SettingsLayout({
     children,
@@ -13,6 +13,7 @@ export default async function SettingsLayout({
 }) {
     // Auto-fix menu visibility on ANY settings page load
     await ensureAccountingMenu();
+    await ensureAdminMenus();
 
     const menuItems = await getMenuItems();
     const currentCompany = await getCurrentCompany();

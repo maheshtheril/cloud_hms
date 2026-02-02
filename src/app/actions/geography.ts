@@ -1,103 +1,128 @@
 'use server'
 
-import { prisma } from '@/lib/prisma'
+import { prisma } from "@/lib/prisma"
+import { auth } from "@/auth"
+import { revalidatePath } from "next/cache"
 
-export interface GeographyNode {
+export type AdministrativeUnit = {
     id: string
     name: string
     type: string
-    parentId: string | null
+    code: string | null
+    is_active: boolean
+    children?: AdministrativeUnit[]
 }
 
-export async function getCountries() {
-    try {
-        return await prisma.countries.findMany({
-            where: { is_active: true },
-            orderBy: { name: 'asc' },
-            select: { id: true, name: true, flag: true, iso2: true }
-        })
-    } catch (error) {
-        console.error('Error fetching countries:', error)
-        return []
-    }
-}
+/**
+ * Fetches the full administrative hierarchy for a given country.
+ * Returns a nested tree structure: Country -> States -> Districts -> etc.
+ */
+export async function getAdministrativeHierarchy(countryId: string) {
+    const session = await auth()
+    if (!session?.user) return { success: false, error: "Unauthorized" }
 
-export async function getSubdivisions(countryId: string, parentId: string | null = null) {
     try {
-        return await prisma.country_subdivision.findMany({
-            where: {
-                country_id: countryId,
-                parent_id: parentId,
-                is_active: true
-            },
-            orderBy: { name: 'asc' },
-            select: { id: true, name: true, type: true }
+        // 1. Fetch Country Info
+        const country = await prisma.countries.findUnique({
+            where: { id: countryId },
+            select: { id: true, name: true, iso2: true, flag: true }
         })
+
+        if (!country) return { success: false, error: "Country not found" }
+
+        // 2. Fetch All Subdivisions for this Country
+        // Order by type to help with processing, but mainly we rely on parent_id
+        const subdivisions = await prisma.country_subdivision.findMany({
+            where: { country_id: countryId },
+            orderBy: { name: 'asc' }
+        })
+
+        // 3. Build Tree
+        const rootUnits: AdministrativeUnit[] = []
+        const map = new Map<string, AdministrativeUnit>()
+
+        // Initialize all nodes
+        subdivisions.forEach(sub => {
+            map.set(sub.id, {
+                id: sub.id,
+                name: sub.name,
+                type: sub.type,
+                code: sub.code,
+                is_active: sub.is_active,
+                children: []
+            })
+        })
+
+        // Link parent-child
+        subdivisions.forEach(sub => {
+            const node = map.get(sub.id)!
+            if (sub.parent_id && map.has(sub.parent_id)) {
+                map.get(sub.parent_id)!.children!.push(node)
+            } else {
+                // Top level subdivision (usually State/Province)
+                rootUnits.push(node)
+            }
+        })
+
+        return { success: true, data: { country, hierarchy: rootUnits } }
+
     } catch (error) {
-        console.error('Error fetching subdivisions:', error)
-        return []
+        console.error("Error fetching hierarchy:", error)
+        return { success: false, error: "Failed to load geography data" }
     }
 }
 
 /**
- * Seed basic geography data if it doesn't exist
+ * Toggles the active status of a subdivision (and optionally its children)
  */
-export async function seedBasicGeography() {
+export async function toggleSubdivisionStatus(id: string, isActive: boolean, includeChildren: boolean = false) {
+    const session = await auth()
+    if (!session?.user?.isTenantAdmin) return { success: false, error: "Unauthorized" }
+
     try {
-        const india = await prisma.countries.upsert({
-            where: { iso2: 'IN' },
-            update: {},
-            create: {
-                iso2: 'IN',
-                iso3: 'IND',
-                name: 'India',
-                flag: '🇮🇳',
-            }
+        // Update the node itself
+        await prisma.country_subdivision.update({
+            where: { id },
+            data: { is_active: isActive }
         })
 
-        const karnataka = await prisma.country_subdivision.upsert({
-            where: { id: 'karnataka-id-placeholder' }, // This won't work with random UUIDs, but we can search by name
-            update: {},
-            create: {
-                country_id: india.id,
-                name: 'Karnataka',
-                type: 'state',
-            }
-        })
-
-        // Better way: find by name
-        let kState = await prisma.country_subdivision.findFirst({
-            where: { name: 'Karnataka', country_id: india.id }
-        })
-
-        if (!kState) {
-            kState = await prisma.country_subdivision.create({
-                data: {
-                    country_id: india.id,
-                    name: 'Karnataka',
-                    type: 'state',
-                }
-            })
+        if (includeChildren) {
+            await updateChildrenRecursively(id, isActive)
         }
 
-        const kalaburgi = await prisma.country_subdivision.findFirst({
-            where: { name: 'Kalaburgi', parent_id: kState.id }
-        })
-
-        if (!kalaburgi) {
-            await prisma.country_subdivision.create({
-                data: {
-                    country_id: india.id,
-                    parent_id: kState.id,
-                    name: 'Kalaburgi',
-                    type: 'district',
-                }
-            })
-        }
-
+        revalidatePath('/settings/geography')
         return { success: true }
     } catch (error) {
-        console.error('Error seeding geography:', error)
-        return { success: false, error }
+        console.error("Error toggling status:", error)
+        return { success: false, error: "Failed to update status" }
     }
+}
+
+async function updateChildrenRecursively(parentId: string, isActive: boolean) {
+    const children = await prisma.country_subdivision.findMany({
+        where: { parent_id: parentId },
+        select: { id: true }
+    })
+
+    if (children.length === 0) return
+
+    await prisma.country_subdivision.updateMany({
+        where: { parent_id: parentId },
+        data: { is_active: isActive }
+    })
+
+    for (const child of children) {
+        await updateChildrenRecursively(child.id, isActive)
+    }
+}
+
+export async function getCompanyCountry() {
+    const session = await auth()
+    if (!session?.user?.companyId) return null
+
+    const company = await prisma.company.findUnique({
+        where: { id: session.user.companyId },
+        select: { country_id: true }
+    })
+    return company?.country_id
 }

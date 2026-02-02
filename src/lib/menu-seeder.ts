@@ -206,6 +206,7 @@ export async function ensureAdminMenus() {
             { key: 'roles', label: 'Roles & Permissions', url: '/settings/roles', icon: 'Shield', sort: 91, permission: 'roles:manage' },
             { key: 'general-settings', label: 'Global Settings', url: '/settings/global', icon: 'Settings', sort: 99, permission: 'settings:view' },
             { key: 'branch-settings', label: 'Branch Management', url: '/settings/branches', icon: 'Building2', sort: 98, permission: 'settings:view' },
+            { key: 'geography-settings', label: 'Geography & Regions', url: '/settings/geography', icon: 'Globe', sort: 96, permission: 'settings:view' },
             { key: 'holiday-settings', label: 'Holiday Masters', url: '/settings/holidays', icon: 'CalendarDays', sort: 97, permission: 'settings:view' },
         ];
 
