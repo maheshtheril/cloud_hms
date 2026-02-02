@@ -308,7 +308,7 @@ export async function createPurchaseOrder(data: PurchaseOrderData) {
                     subtotal,
                     total_tax: totalTax,
                     total_amount: totalAmount,
-                    status: hms_purchase_status.draft, // Default status
+                    status: 'draft' as any, // Default status
                     notes: data.notes,
                     created_by: session.user.id
                 }

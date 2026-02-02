@@ -529,7 +529,7 @@ export async function cancelInvoice(invoiceId: string) {
 
         await prisma.hms_invoice.update({
             where: { id: invoiceId },
-            data: { status: hms_invoice_status.cancelled }
+            data: { status: 'cancelled' as any }
         });
 
         revalidatePath('/hms/billing');
@@ -646,7 +646,7 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
                             tenant_id: session.user.tenantId,
                             company_id: companyId,
                             patient_id: patient_id as string,
-                            status: hms_invoice_status.posted,
+                            status: 'posted' as any,
                             id: { not: invoiceId }
                         },
                         orderBy: { issued_at: 'asc' }
@@ -663,7 +663,7 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
                                 data: {
                                     total_paid: Number(oldInv.total_paid || 0) + paymentToApply,
                                     outstanding_amount: due - paymentToApply,
-                                    status: (due - paymentToApply <= 0.01) ? hms_invoice_status.paid : hms_invoice_status.posted
+                                    status: (due - paymentToApply <= 0.01) ? 'paid' as any : 'posted' as any
                                 }
                             });
                             excess -= paymentToApply;
@@ -842,7 +842,7 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
                 data: {
                     total_paid: totalPaid,
                     outstanding_amount: outstanding,
-                    status: finalStatus,
+                    status: finalStatus as any,
                     updated_at: new Date()
                 }
             });
@@ -968,7 +968,7 @@ export async function settlePatientDues(patientId: string, amount: number, metho
                 where: {
                     patient_id: patientId,
                     // We check paid or posted invoices that might have unposted payments
-                    status: { in: [hms_invoice_status.paid, hms_invoice_status.posted] },
+                    status: { in: ['paid', 'posted'] as any },
                 },
                 orderBy: { updated_at: 'desc' },
                 take: 10
@@ -1122,7 +1122,7 @@ export async function recordPatientConsumption(patientId: string, items: any[], 
             where: {
                 company_id: companyId,
                 patient_id: patientId,
-                status: hms_invoice_status.draft // Crucial: We add to the DRAFT invoice
+                status: 'draft' as any // Crucial: We add to the DRAFT invoice
             },
             orderBy: { created_at: 'desc' },
             include: { hms_invoice_lines: true }
@@ -1185,7 +1185,7 @@ export async function recordPatientConsumption(patientId: string, items: any[], 
             const payload = {
                 patient_id: patientId,
                 date: new Date().toISOString(),
-                status: hms_invoice_status.draft,
+                status: 'draft' as any,
                 line_items: items.map(item => ({
                     product_id: item.productId,
                     description: item.name || item.description,

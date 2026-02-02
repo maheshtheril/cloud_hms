@@ -185,7 +185,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     name: receiptNumber,
                     received_by: session.user.id,
                     receipt_date: data.receivedDate,
-                    status: hms_receipt_status.received,
+                    status: 'received' as any,
                     metadata: {
                         reference: data.reference,
                         notes: data.notes,
@@ -486,7 +486,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 // Let's set it to 'partially_received' as safe default.
                 await tx.hms_purchase_order.update({
                     where: { id: data.purchaseOrderId },
-                    data: { status: hms_purchase_status.partially_received }
+                    data: { status: 'partially_received' as any }
                 })
             }
 

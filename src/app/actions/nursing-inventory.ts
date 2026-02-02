@@ -310,7 +310,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                 where: {
                     company_id: companyId,
                     appointment_id: data.encounterId,
-                    status: hms_invoice_status.draft
+                    status: 'draft' as any
                 }
             });
 
@@ -329,7 +329,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                         appointment_id: data.encounterId,
                         invoice_number: invoiceNumber,
                         invoice_date: new Date(),
-                        status: hms_invoice_status.draft,
+                        status: 'draft' as any,
                         currency: 'INR',
                         total: 0,
                         subtotal: 0,

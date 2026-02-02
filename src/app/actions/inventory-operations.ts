@@ -88,7 +88,7 @@ export async function receiveStock(data: ReceiveStockData) {
                     company_id: companyId,
                     name: data.reference || `REC-${Date.now()}`, // Temporary name generation
                     receipt_date: data.date,
-                    status: hms_receipt_status.received, // Direct receive for now
+                    status: 'received' as any, // Direct receive for now
                     received_by: session.user.id,
                     metadata: {
                         notes: data.notes,

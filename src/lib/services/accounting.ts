@@ -755,7 +755,7 @@ export class AccountingService {
                 // Update receipt status
                 await tx.hms_purchase_receipt.update({
                     where: { id: receipt.id },
-                    data: { status: hms_receipt_status.received, updated_at: new Date() }
+                    data: { status: 'received' as any, updated_at: new Date() }
                 });
             });
 
