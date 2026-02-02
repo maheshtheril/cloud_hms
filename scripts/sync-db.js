@@ -3,7 +3,7 @@ const { Client } = require('pg');
 
 async function sync() {
     // 1. Get database URL from Environment Variables (set by Vercel)
-    const connectionString = process.env.DATABASE_URL;
+    const connectionString = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
     if (!connectionString) {
         console.error('❌ DATABASE_URL not found in environment.');
         return;

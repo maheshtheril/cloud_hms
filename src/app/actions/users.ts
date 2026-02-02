@@ -20,6 +20,7 @@ export interface InviteUserData {
     mobile?: string
     countryId?: string
     subdivisionId?: string
+    holidayIds?: string[]
 }
 
 /**
@@ -249,6 +250,26 @@ export async function inviteUser(data: InviteUserData) {
                 }
             } catch (roleError) {
                 console.error("Error assigning role:", roleError);
+            }
+        }
+
+        // Assign Holidays (Mandatory Logic per user request)
+        if (data.holidayIds && data.holidayIds.length > 0) {
+            try {
+                // Use createMany if database supports it (Postgres does)
+                // Casting to any to bypass current Prisma Client generation issues
+                const payload = data.holidayIds.map((hid: string) => ({
+                    user_id: user.id,
+                    holiday_id: hid
+                }));
+
+                await (prisma as any).hms_user_holiday.createMany({
+                    data: payload,
+                    skipDuplicates: true
+                });
+            } catch (holidayErr) {
+                console.error("Error assigning holidays:", holidayErr);
+                // Don't fail the whole Invite process, but log it.
             }
         }
 

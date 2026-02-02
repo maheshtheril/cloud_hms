@@ -25,6 +25,8 @@ import { inviteUser } from '@/app/actions/users'
 import { useToast } from '@/components/ui/use-toast'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { GeographySelector } from './geography-selector'
+import { getApplicableHolidays } from '@/app/actions/holidays'
+import { Checkbox } from '@/components/ui/checkbox'
 import PhoneInput from 'react-phone-number-input'
 import 'react-phone-number-input/style.css'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -59,6 +61,22 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
     })
 
     const [errors, setErrors] = useState<Record<string, string>>({})
+    const [applicableHolidays, setApplicableHolidays] = useState<any[]>([])
+    const [selectedHolidays, setSelectedHolidays] = useState<string[]>([])
+
+    useEffect(() => {
+        if (formData.countryId) {
+            const fetchHolidays = async () => {
+                const hols = await getApplicableHolidays(formData.countryId, formData.subdivisionId || undefined)
+                setApplicableHolidays(hols)
+                setSelectedHolidays(hols.map((h: any) => h.id))
+            }
+            fetchHolidays()
+        } else {
+            setApplicableHolidays([])
+            setSelectedHolidays([])
+        }
+    }, [formData.countryId, formData.subdivisionId])
 
     useEffect(() => {
         if (open) {
@@ -103,6 +121,7 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
             mobile: formData.mobile,
             countryId: formData.countryId,
             subdivisionId: formData.subdivisionId,
+            holidayIds: selectedHolidays,
         })
 
         setLoading(false)
@@ -304,6 +323,34 @@ export function InviteUserDialog({ roles = [] }: InviteUserDialogProps) {
                                         onCountryChange={(id) => setFormData({ ...formData, countryId: id })}
                                         onSubdivisionChange={(id) => setFormData({ ...formData, subdivisionId: id })}
                                     />
+
+                                    {applicableHolidays.length > 0 && (
+                                        <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-dashed border-slate-200">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-1.5 list-image-none">
+                                                <Tag className="w-3.5 h-3.5" /> Applicable Holidays
+                                            </Label>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm max-h-40 overflow-y-auto custom-scrollbar">
+                                                {applicableHolidays.map((holiday: any) => (
+                                                    <div key={holiday.id} className="flex items-center space-x-2 bg-white p-2 rounded-lg border border-slate-100 shadow-sm">
+                                                        <Checkbox
+                                                            id={holiday.id}
+                                                            checked={selectedHolidays.includes(holiday.id)}
+                                                            onCheckedChange={(checked) => {
+                                                                if (checked) setSelectedHolidays([...selectedHolidays, holiday.id])
+                                                                else setSelectedHolidays(selectedHolidays.filter(id => id !== holiday.id))
+                                                            }}
+                                                        />
+                                                        <label htmlFor={holiday.id} className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer w-full select-none">
+                                                            {holiday.name}
+                                                            <span className="text-slate-400 ml-1 text-[10px]">
+                                                                ({new Date(holiday.date).toLocaleDateString()})
+                                                            </span>
+                                                        </label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                                         <div className="space-y-2">

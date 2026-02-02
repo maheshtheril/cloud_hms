@@ -6,7 +6,6 @@ generator client {
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_DATABASE_URL")
 }
 
 model account_chart {
@@ -240,6 +239,38 @@ model app_user {
   user_permission           user_permission[]
   country                   countries?                  @relation(fields: [country_id], references: [id])
   subdivision               country_subdivision?        @relation(fields: [subdivision_id], references: [id])
+  user_holidays             hms_user_holiday[]
+}
+
+model hms_holiday {
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id      String    @db.Uuid
+  name           String
+  date           DateTime  @db.Date
+  type           String    // "NATIONAL" or "REGIONAL"
+  country_id     String?   @db.Uuid
+  subdivision_id String?   @db.Uuid
+  description    String?
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+
+  country        countries?          @relation(fields: [country_id], references: [id])
+  subdivision    country_subdivision? @relation(fields: [subdivision_id], references: [id])
+  users          hms_user_holiday[]
+
+  @@index([tenant_id])
+  @@index([country_id])
+  @@index([subdivision_id])
+}
+
+model hms_user_holiday {
+  user_id    String      @db.Uuid
+  holiday_id String      @db.Uuid
+  assigned_at DateTime   @default(now())
+
+  user       app_user    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  holiday    hms_holiday @relation(fields: [holiday_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, holiday_id])
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
