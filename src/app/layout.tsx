@@ -21,6 +21,13 @@ const geistMono = Geist_Mono({
 import { getTenantBrandingByHost } from "./actions/branding";
 import { auditAndFixMenuPermissions } from "./actions/navigation";
 
+export const viewport = {
+  themeColor: "#4f46e5",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await getTenantBrandingByHost();
   const appName = branding?.app_name || branding?.name || "Enterprise";
@@ -28,7 +35,16 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${appName} - Enterprise ERP`,
     description: `World-class ${appName} Management & ERP System`,
-    icons: branding?.logo_url ? { icon: branding.logo_url } : undefined
+    icons: branding?.logo_url ? { icon: branding.logo_url } : undefined,
+    manifest: '/manifest.webmanifest',
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: appName,
+    },
+    formatDetection: {
+      telephone: false,
+    },
   };
 }
 
