@@ -5,7 +5,6 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
 }
 
 model account_chart {
@@ -594,6 +593,7 @@ model countries {
   country_tax_mappings     country_tax_mappings[]
   subdivisions             country_subdivision[]
   app_users                app_user[]
+  hms_holidays             hms_holiday[]
 }
 
 model country_subdivision {
@@ -610,6 +610,7 @@ model country_subdivision {
   parent      country_subdivision?  @relation("SubdivisionToSubdivision", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   children    country_subdivision[] @relation("SubdivisionToSubdivision")
   app_users   app_user[]
+  hms_holidays hms_holiday[]
 }
 
 model country_default_currency {
