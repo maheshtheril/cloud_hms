@@ -44,9 +44,10 @@ async function main() {
     } catch (e) {
         console.error("Seed execution failed:");
         // Print less of the error to avoid buffer limits if it's huge
-        console.error(e.message);
-        if (e.detail) console.error("Detail:", e.detail);
-        if (e.hint) console.error("Hint:", e.hint);
+        const err = e as any;
+        console.error(err.message);
+        if (err.detail) console.error("Detail:", err.detail);
+        if (err.hint) console.error("Hint:", err.hint);
         process.exit(1);
     } finally {
         await client.end();
