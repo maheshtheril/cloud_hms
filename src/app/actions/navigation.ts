@@ -290,17 +290,16 @@ export async function getMenuItems() {
             // ... (rest validation)
         }
 
-        // 7. INJECT MISSING CORE MODULES (Hybrid Mode) - DISABLED
-        // This was causing a security leak: if RBAC filtered out all items for a module, 
-        // this logic was re-injecting the full unrestricted fallback menu!
-        /*
+        // 7. INJECT MISSING CORE MODULES (Hybrid Mode)
+        // This ensures that if RBAC filtered out everything (or DB is empty), we still show the structure
+        // for modules the user is legally allowed to see.
         const fallback = getFallbackMenuItems(isAdmin);
         const coreKeys = ['accounting', 'inventory', 'crm', 'hms'];
- 
+
         coreKeys.forEach(key => {
             // KEY FIX: Only consider injection if the module is in allowedModuleKeys
             if (!allowedModuleKeys.has(key)) return;
- 
+
             const exists = result.find(g => g.module?.module_key === key);
             if (!exists) {
                 const fallbackGroup = fallback.find((g: any) => g.module?.module_key === key);
@@ -309,7 +308,6 @@ export async function getMenuItems() {
                 }
             }
         });
-        */
 
 
 
