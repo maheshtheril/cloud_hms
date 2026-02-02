@@ -200,10 +200,8 @@ export async function createPatient(existingId: string | null | any, formData: F
                 console.log("Auto-creating registration invoice for patient:", patient.id);
 
                 const invoiceRes = await createInvoice({
-                    tenant_id: tenantId,
-                    company_id: companyId,
                     patient_id: patient.id,
-                    date: new Date(),
+                    date: new Date().toISOString(),
                     status: invoiceStatus,
                     line_items: [{
                         description: "Patient Registration Fee",

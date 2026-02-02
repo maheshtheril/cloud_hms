@@ -311,14 +311,14 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     }))
   }
 
-  const handleSave = async (status: hms_invoice_status) => {
+  const handleSave = async (status: any) => {
     if (loading) return
     const finalPayments = payments.filter(p => p.amount > 0)
 
     // Auto-paid if fully settled
-    const effectiveStatus = (status === hms_invoice_status.paid && totalPaid < grandTotal) ? hms_invoice_status.posted : status;
+    const effectiveStatus = (status === 'paid' && totalPaid < grandTotal) ? 'posted' : status;
 
-    if (effectiveStatus === hms_invoice_status.paid && finalPayments.length === 0) {
+    if (effectiveStatus === 'paid' && finalPayments.length === 0) {
       return toast({ title: "Payment Required", description: "Apply at least one payment method to mark as paid.", variant: "destructive" });
     }
 
@@ -330,7 +330,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     setLoading(true)
     const payload = {
       patient_id: isWalkIn ? null : selectedPatientId,
-      appointment_id: appointmentId || searchParams.get('appointmentId'),
+      appointment_id: appointmentId || searchParams.get('appointmentId') || undefined,
       date,
       line_items: lines.filter(l => l.description || l.product_id),
       status: effectiveStatus,
@@ -844,7 +844,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                   <div className="flex gap-3">
                     <button
                       type="button"
-                      onClick={(e) => { e.preventDefault(); handleSave(hms_invoice_status.draft); }}
+                      onClick={(e) => { e.preventDefault(); handleSave('draft'); }}
                       disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
                       className="px-6 py-4 bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all"
                     >
@@ -852,7 +852,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     </button>
                     <button
                       type="button"
-                      onClick={(e) => { e.preventDefault(); handleSave(hms_invoice_status.posted); }}
+                      onClick={(e) => { e.preventDefault(); handleSave('posted'); }}
                       disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
                       className="px-8 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg"
                     >
@@ -1080,7 +1080,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                         if (!confirmed) return;
                       }
 
-                      handleSave(hms_invoice_status.paid);
+                      handleSave('paid');
                     }}
                     disabled={loading || (payments.length === 0 && (parseFloat(activePaymentAmount) || 0) === 0)}
                     className={`flex-1 h-16 rounded-2xl text-white font-black text-[10px] uppercase tracking-[0.3em] transition-all active:scale-[0.98] shadow-xl flex items-center justify-center gap-3 col-span-1 ${isDeficit ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20' :

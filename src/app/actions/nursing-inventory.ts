@@ -79,7 +79,7 @@ export async function consumeStock(data: ConsumeStockData) {
                     location_to: null, // Consumed (gone)
                     qty: data.quantity,
                     uom: product.uom,
-                    move_type: hms_move_type.out, // Outbound
+                    move_type: 'out', // Outbound
                     source: 'Nursing Consumption',
                     source_reference: data.encounterId, // Link to Encounter ID
                     created_by: userId
@@ -242,7 +242,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                         location_to: null, // Consumed (gone)
                         qty: item.quantity,
                         uom: product.uom || 'Unit',
-                        move_type: hms_move_type.out,
+                        move_type: 'out',
                         source: 'Nursing Consumption',
                         source_reference: data.encounterId,
                         created_by: userId

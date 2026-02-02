@@ -30,7 +30,21 @@ export default function InvoiceGenerator({ patients }: { patients: any[] }) {
 
     const handleSubmit = async (formData: FormData) => {
         setIsSubmitting(true)
-        const result = await createInvoice(formData)
+
+        const patient_id = formData.get('patient_id') as string
+        const date = formData.get('date') as string
+
+        const result = await createInvoice({
+            patient_id,
+            date,
+            line_items: lineItems.map(item => ({
+                description: item.description,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                tax_amount: 0,
+                discount_amount: 0
+            }))
+        })
 
         if (result && 'error' in result) {
             alert(result.error)

@@ -136,8 +136,8 @@ export default async function ReceptionDashboardPage() {
         const invoices = apt.hms_invoice || [];
         const labs = apt.hms_lab_order || [];
 
-        const hasPendingInvoice = invoices.some(inv => inv.status !== hms_invoice_status.paid && inv.status !== hms_invoice_status.cancelled);
-        const isPaid = invoices.length > 0 && invoices.every(inv => inv.status === hms_invoice_status.paid);
+        const hasPendingInvoice = invoices.some(inv => inv.status !== 'paid' && inv.status !== 'cancelled');
+        const isPaid = invoices.length > 0 && invoices.every(inv => inv.status === 'paid');
         const hasPendingLabs = labs.some(l => l.status !== 'completed' && l.status !== 'partial' && l.status !== 'verified');
 
         return {

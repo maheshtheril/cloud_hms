@@ -166,7 +166,7 @@ export async function receiveStock(data: ReceiveStockData) {
                         location_to: locationId, // To Warehouse
                         qty: item.quantity,
                         uom: product.uom,
-                        move_type: hms_move_type.in, // 'in' from Postgres Enum hms_move_type
+                        move_type: 'in', // 'in' from Postgres Enum hms_move_type
                         source: 'Purchase Receipt',
                         source_reference: receipt.id,
                         cost: item.unitCost,
