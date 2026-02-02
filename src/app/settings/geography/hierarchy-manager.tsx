@@ -34,6 +34,19 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
 import { toggleSubdivisionStatus, createSubdivision, deleteSubdivision, AdministrativeUnit } from '@/app/actions/geography'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
@@ -397,16 +410,40 @@ export function HierarchyManager({
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-1">
                                 {availableCountries.length > 1 ? (
-                                    <Select value={currentCountryId} onValueChange={handleCountryChange}>
-                                        <SelectTrigger className="h-9 px-3 text-2xl font-black bg-transparent border-none shadow-none p-0 focus:ring-0 w-auto gap-2">
-                                            <SelectValue>{country.name}</SelectValue>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {availableCountries.map((c: any) => (
-                                                <SelectItem key={c.id} value={c.id}>{c.flag} {c.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                role="combobox"
+                                                className="pl-0 text-2xl font-black text-slate-900 dark:text-white hover:bg-transparent hover:text-indigo-600 gap-2 p-0 h-auto"
+                                            >
+                                                {country.name}
+                                                <ChevronDown className="w-5 h-5 opacity-50" />
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[300px] p-0" align="start">
+                                            <Command>
+                                                <CommandInput placeholder="Search country..." />
+                                                <CommandList>
+                                                    <CommandEmpty>No country found.</CommandEmpty>
+                                                    <CommandGroup heading="Available Countries">
+                                                        {availableCountries.map((c: any) => (
+                                                            <CommandItem
+                                                                key={c.id}
+                                                                value={c.name}
+                                                                onSelect={() => handleCountryChange(c.id)}
+                                                                className="flex items-center gap-2"
+                                                            >
+                                                                <span className="text-lg">{c.flag}</span>
+                                                                <span className="font-medium">{c.name}</span>
+                                                                {c.id === currentCountryId && <CheckCircle2 className="w-4 h-4 ml-auto text-indigo-600" />}
+                                                            </CommandItem>
+                                                        ))}
+                                                    </CommandGroup>
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
                                 ) : (
                                     <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                                         {country.name}
