@@ -647,12 +647,23 @@ export async function auditAndFixMenuPermissions() {
                     }
                 });
             } catch (innerError: any) {
-                console.error("Failed to create Nursing Station menu:", innerError?.message || innerError);
-                if (innerError?.meta) {
-                    console.error("Inner Error Meta:", JSON.stringify(innerError.meta));
-                }
-                if (innerError?.code) {
-                    console.error("Inner Error Code:", innerError.code);
+                console.error("Failed to create Nursing Station menu (Prisma):", innerError?.message || innerError);
+                if (innerError?.meta) console.error("Prisma Meta:", JSON.stringify(innerError.meta));
+                if (innerError?.code) console.error("Prisma Code:", innerError.code);
+
+                // Fallback: Try Raw SQL to get better error message or bypass Prisma schema issues
+                try {
+                    const rawId = crypto.randomUUID();
+                    await prisma.$executeRaw`
+                        INSERT INTO "menu_items" 
+                        ("id", "label", "url", "key", "module_key", "icon", "sort_order", "permission_code", "is_global", "parent_id", "created_at", "updated_at")
+                        VALUES 
+                        (${rawId}::uuid, 'Nursing Station', '/hms/nursing/dashboard', 'hms-nursing', 'hms', 'Activity', 45, 'hms:dashboard:nurse', true, NULL, NOW(), NOW())
+                    `;
+                    console.log("Auto-repair: Created Nursing Station menu via Raw SQL");
+                } catch (rawError: any) {
+                    console.error("Failed to create via Raw SQL:", rawError.message);
+                    // This raw error usually says: null value in column "XYZ" violates not-null constraint
                 }
             }
         } else {
