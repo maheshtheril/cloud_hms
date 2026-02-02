@@ -1,7 +1,10 @@
 
 import CRMCalendar from '@/components/crm/scheduler/calendar'
 
-// ... (imports remain)
+import Link from 'next/link'
+import { getDashboardData } from '@/app/actions/crm/dashboard'
+import { Sparkles, DollarSign, Activity, Target, TrendingUp, Zap, IndianRupee, Euro, PoundSterling, Plus, Calendar } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
 export default async function DashboardPage() {
     const data = await getDashboardData()
