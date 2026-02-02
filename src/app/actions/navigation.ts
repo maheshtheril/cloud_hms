@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { getUserPermissions, seedRolesAndPermissions } from "./rbac"
 import { ensureAdminMenus } from "@/lib/menu-seeder"
+import crypto from "crypto";
 
 import { unstable_noStore as noStore } from 'next/cache';
 
@@ -49,20 +50,24 @@ export async function getMenuItems() {
         // Admin menus are now assumed to be pre-seeded.
 
         // Fetch Industry from the tenant's primary company
-        let industry = '';
+        let industryName = '';
         if (session?.user?.tenantId) {
-            const company = await prisma.company.findFirst({
-                where: { tenant_id: session.user.tenantId },
-                select: { industry: true }
-            });
-            industry = company?.industry || '';
+            try {
+                const company = await prisma.company.findFirst({
+                    where: { tenant_id: session.user.tenantId },
+                    select: { industry: true }
+                });
+                industryName = company?.industry || '';
+            } catch (e) {
+                console.error("Failed to fetch industry:", e);
+            }
         }
 
-        const isHealthcare = industry.toLowerCase().includes('health') ||
-            industry.toLowerCase().includes('clinic') ||
-            industry.toLowerCase().includes('hospital') ||
-            industry.toLowerCase().includes('medical') ||
-            industry.toLowerCase().includes('hms');
+        const isHealthcare = industryName.toLowerCase().includes('health') ||
+            industryName.toLowerCase().includes('clinic') ||
+            industryName.toLowerCase().includes('hospital') ||
+            industryName.toLowerCase().includes('medical') ||
+            industryName.toLowerCase().includes('hms');
 
         // Fetch active modules (Global)
         const globalActiveModules = await prisma.modules.findMany({
@@ -119,7 +124,7 @@ export async function getMenuItems() {
         if (hasHMSPerm) {
             allowedModuleKeys.add('hms');
         }
-        if (hasCRMPerm || (userPerms.has('*') && industry.toLowerCase().includes('crm'))) {
+        if (hasCRMPerm || (userPerms.has('*') && industryName.toLowerCase().includes('crm'))) {
             allowedModuleKeys.add('crm');
         }
         if (hasFinancePerm) {
