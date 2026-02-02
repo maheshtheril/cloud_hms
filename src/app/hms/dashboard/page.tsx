@@ -5,6 +5,7 @@ import { ensureHmsMenus } from "@/lib/menu-seeder"
 import { getTenant } from "../../actions/tenant"
 import { getCurrentCompany } from "../../actions/company"
 import { redirect } from 'next/navigation'
+import { hms_invoice_status } from "@prisma/client"
 
 export default async function DashboardPage() {
     await ensureHmsMenus()
@@ -13,7 +14,6 @@ export default async function DashboardPage() {
     if (!session?.user) {
         redirect('/login')
     }
-
     // SECURITY: Redirect Receptionists to their dedicated dashboard
     // This prevents them from "landing" on the Admin dashboard even if they have hms:view permission
     if (session?.user?.role === 'receptionist' || session?.user?.name?.toLowerCase().includes('reception')) {
@@ -122,7 +122,7 @@ export default async function DashboardPage() {
         prisma.hms_invoice.count({
             where: {
                 tenant_id: tenantId,
-                status: 'draft'
+                status: hms_invoice_status.draft
             }
         }),
 
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
         prisma.hms_invoice.aggregate({
             where: {
                 tenant_id: tenantId,
-                status: 'paid',
+                status: hms_invoice_status.paid,
                 created_at: {
                     gte: today,
                     lt: tomorrow
