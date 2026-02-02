@@ -1,6 +1,6 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import { getAdministrativeHierarchy, getCompanyCountry } from "@/app/actions/geography"
+import { getAdministrativeHierarchy, getCompanyCountry, getCountries } from "@/app/actions/geography"
 import { HierarchyManager } from "./hierarchy-manager"
 import { Globe, AlertTriangle } from "lucide-react"
 
@@ -9,13 +9,26 @@ export const metadata = {
     description: 'Manage your organization\'s operating regions and administrative hierarchy.'
 }
 
-export default async function GeographySettingsPage() {
+export default async function GeographySettingsPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}) {
     const session = await auth()
     if (!session?.user?.id) redirect('/login')
 
-    const countryId = await getCompanyCountry()
+    const params = await searchParams
+    let targetCountryId = typeof params.countryId === 'string' ? params.countryId : undefined
 
-    if (!countryId) {
+    // Default to company country if not specified
+    if (!targetCountryId) {
+        targetCountryId = await getCompanyCountry()
+    }
+
+    // Pass all countries for the switcher if admin
+    const availableCountries = await getCountries()
+
+    if (!targetCountryId) {
         return (
             <div className="container mx-auto p-8 max-w-5xl flex flex-col items-center justify-center min-h-[50vh] text-center">
                 <div className="w-16 h-16 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mb-6">
@@ -24,8 +37,9 @@ export default async function GeographySettingsPage() {
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">No Country Configured</h2>
                 <p className="text-slate-500 max-w-md mb-8">
                     Your company profile doesn't have a headquarters country assigned.
-                    Please update your Global Settings to enable Geography management.
+                    Please update your Global Settings or select a country from the list if you are an admin.
                 </p>
+                {/* Fallback Switcher could go here */}
                 <a
                     href="/settings/global"
                     className="px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors"
@@ -36,7 +50,7 @@ export default async function GeographySettingsPage() {
         )
     }
 
-    const { success, data, error } = await getAdministrativeHierarchy(countryId)
+    const { success, data, error } = await getAdministrativeHierarchy(targetCountryId)
 
     if (!success || !data) {
         return (
@@ -46,8 +60,7 @@ export default async function GeographySettingsPage() {
                     <div>
                         <h3 className="text-lg font-bold text-rose-900">Data Unavailable</h3>
                         <p className="text-rose-700 mt-1">
-                            We couldn't load the administrative structure for your country.
-                            If this persists, please contact support to initialize the geography database for your region.
+                            We couldn't load the administrative structure for the selected country.
                         </p>
                         <p className="text-xs font-mono mt-4 text-rose-500">Error: {error}</p>
                     </div>
@@ -68,6 +81,8 @@ export default async function GeographySettingsPage() {
             <HierarchyManager
                 country={data.country}
                 hierarchy={data.hierarchy}
+                availableCountries={availableCountries}
+                currentCountryId={targetCountryId}
             />
         </div>
     )

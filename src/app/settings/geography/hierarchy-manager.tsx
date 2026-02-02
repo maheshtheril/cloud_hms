@@ -2,23 +2,62 @@
 
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronRight, ChevronDown, MapPin, Globe, Building2, Search, Filter, Layers, ListTree, CheckCircle2 } from 'lucide-react'
+import { ChevronRight, ChevronDown, MapPin, Globe, Building2, Search, Filter, Layers, ListTree, CheckCircle2, MoreHorizontal, Plus, Trash2 } from 'lucide-react'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Toggle } from '@/components/ui/toggle'
 import { Separator } from '@/components/ui/separator'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
-import { toggleSubdivisionStatus, AdministrativeUnit } from '@/app/actions/geography'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
+import { toggleSubdivisionStatus, createSubdivision, deleteSubdivision, AdministrativeUnit } from '@/app/actions/geography'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { useRouter } from 'next/navigation'
 
 // ---- Types & Helpers ----
+
+// Mapping for next level suggestion
+const NEXT_LEVEL_TYPE: Record<string, string> = {
+    'COUNTRY': 'STATE',
+    'STATE': 'DISTRICT',
+    'PROVINCE': 'DISTRICT',
+    'DISTRICT': 'TALUK',
+    'TALUK': 'ZONE',
+    'ZONE': 'WARD',
+    'WARD': 'STREET'
+}
 
 interface HierarchyNodeProps {
     node: AdministrativeUnit
     level: number
     onToggle: (id: string, status: boolean) => void
+    onAddChild: (parentId: string, parentName: string, parentType: string) => void
+    onDelete: (id: string, name: string) => void
     searchTerm: string
     expandAll: boolean
 }
@@ -34,7 +73,7 @@ const getStats = (node: AdministrativeUnit) => {
     return { total, active }
 }
 
-function HierarchyNode({ node, level, onToggle, searchTerm, expandAll }: HierarchyNodeProps) {
+function HierarchyNode({ node, level, onToggle, onAddChild, onDelete, searchTerm, expandAll }: HierarchyNodeProps) {
     const [isOpen, setIsOpen] = useState(expandAll)
     const [isUpdating, setIsUpdating] = useState(false)
     const hasChildren = node.children && node.children.length > 0
@@ -52,8 +91,6 @@ function HierarchyNode({ node, level, onToggle, searchTerm, expandAll }: Hierarc
 
     const handleStatusChange = async (checked: boolean) => {
         setIsUpdating(true)
-        // Optimistic UI update handled by parent provided function or we can just trigger the server action
-        // For 'World Class' feel, we should use optimistic updates, but for now we'll stick to simple toast flow
         try {
             await onToggle(node.id, checked)
         } finally {
@@ -124,7 +161,7 @@ function HierarchyNode({ node, level, onToggle, searchTerm, expandAll }: Hierarc
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 pointer-events-none md:pointer-events-auto">
                     <div className="flex items-center gap-2 mb-0.5">
                         <h4 className={cn(
                             "font-bold text-sm truncate",
@@ -150,21 +187,34 @@ function HierarchyNode({ node, level, onToggle, searchTerm, expandAll }: Hierarc
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-4 pl-4 border-l border-slate-100 dark:border-slate-800">
-                    <div className="flex flex-col items-end gap-0.5">
-                        <span className={cn(
-                            "text-[10px] font-bold uppercase tracking-wider",
-                            node.is_active ? "text-emerald-600" : "text-slate-400"
-                        )}>
-                            {node.is_active ? 'Active' : 'Inactive'}
-                        </span>
-                    </div>
+                <div className="flex items-center gap-2 pl-4 border-l border-slate-100 dark:border-slate-800">
                     <Switch
                         checked={node.is_active}
                         onCheckedChange={handleStatusChange}
                         disabled={isUpdating}
-                        className="data-[state=checked]:bg-emerald-500"
+                        className="data-[state=checked]:bg-emerald-500 mr-2"
                     />
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
+                                <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => onAddChild(node.id, node.name, node.type)}>
+                                <Plus className="w-4 h-4 mr-2" /> Add Sub-Region
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                className="text-rose-600 focus:text-rose-600"
+                                onClick={() => onDelete(node.id, node.name)}
+                            >
+                                <Trash2 className="w-4 h-4 mr-2" /> Delete Region
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
             </div>
 
@@ -184,6 +234,8 @@ function HierarchyNode({ node, level, onToggle, searchTerm, expandAll }: Hierarc
                                 node={child}
                                 level={level + 1}
                                 onToggle={onToggle}
+                                onAddChild={onAddChild}
+                                onDelete={onDelete}
                                 searchTerm={searchTerm}
                                 expandAll={expandAll}
                             />
@@ -197,43 +249,48 @@ function HierarchyNode({ node, level, onToggle, searchTerm, expandAll }: Hierarc
 
 export function HierarchyManager({
     country,
-    hierarchy
+    hierarchy,
+    availableCountries = [],
+    currentCountryId
 }: {
     country: any,
-    hierarchy: AdministrativeUnit[]
+    hierarchy: AdministrativeUnit[],
+    availableCountries?: any[],
+    currentCountryId?: string
 }) {
+    const router = useRouter()
     const [searchTerm, setSearchTerm] = useState('')
     const [expandAll, setExpandAll] = useState(false)
     const [showActiveOnly, setShowActiveOnly] = useState(false)
     const [viewData, setViewData] = useState(hierarchy) // Local state for optimistic updates
 
+    // Dialog States
+    const [isAddOpen, setIsAddOpen] = useState(false)
+    const [addParent, setAddParent] = useState<{ id: string, name: string, type: string } | null>(null)
+    const [newRegionName, setNewRegionName] = useState('')
+    const [newRegionType, setNewRegionType] = useState('DISTRICT')
+    const [newRegionCode, setNewRegionCode] = useState('')
+
     // --- Search & Filter Logic ---
     const displayedHierarchy = useMemo(() => {
         let nodes = viewData
 
-        // 1. Filter by Active Status
         if (showActiveOnly) {
             const filterActive = (n: AdministrativeUnit): AdministrativeUnit | null => {
                 if (n.is_active) {
                     const children = n.children ? n.children.map(filterActive).filter(Boolean) as AdministrativeUnit[] : []
                     return { ...n, children }
                 }
-                // Keep parent if it has active children even if inactive itself? Usually no, strict filtering.
-                // But for hierarchy, context matters. Let's strict filter Top-Down.
                 return null
             }
             nodes = nodes.map(filterActive).filter(Boolean) as AdministrativeUnit[]
         }
 
-        // 2. Filter by Search
         if (searchTerm) {
             const filterSearch = (n: AdministrativeUnit): AdministrativeUnit | null => {
                 const matchesName = n.name.toLowerCase().includes(searchTerm.toLowerCase())
                 const children = n.children ? n.children.map(filterSearch).filter(Boolean) as AdministrativeUnit[] : []
-
-                if (matchesName || children.length > 0) {
-                    return { ...n, children }
-                }
+                if (matchesName || children.length > 0) return { ...n, children }
                 return null
             }
             nodes = nodes.map(filterSearch).filter(Boolean) as AdministrativeUnit[]
@@ -242,44 +299,75 @@ export function HierarchyManager({
         return nodes
     }, [viewData, searchTerm, showActiveOnly])
 
-
     // ---- Handlers ----
 
     const handleToggle = async (id: string, status: boolean) => {
-        // 1. Optimistic Update (Recursive)
+        // Optimistic
         const updateRecursive = (nodes: AdministrativeUnit[]): AdministrativeUnit[] => {
             return nodes.map(node => {
                 if (node.id === id) {
-                    // Update this node AND all children
                     const updateChildren = (children: AdministrativeUnit[] = []): AdministrativeUnit[] => {
                         return children.map(c => ({
-                            ...c,
-                            is_active: status,
-                            children: updateChildren(c.children)
+                            ...c, is_active: status, children: updateChildren(c.children)
                         }))
                     }
                     return { ...node, is_active: status, children: updateChildren(node.children) }
                 }
-                if (node.children) {
-                    return { ...node, children: updateRecursive(node.children) }
-                }
+                if (node.children) return { ...node, children: updateRecursive(node.children) }
                 return node
             })
         }
-
         setViewData(prev => updateRecursive(prev))
 
-        // 2. Server Action
         const result = await toggleSubdivisionStatus(id, status, true)
+        if (result.success) toast.success("Region status updated")
+        else toast.error("Failed to sync with server")
+    }
+
+    const handleCountryChange = (id: string) => {
+        router.push(`/settings/geography?countryId=${id}`)
+    }
+
+    const openAddDialog = (parentId: string, parentName: string, parentType: string) => {
+        setAddParent({ id: parentId, name: parentName, type: parentType })
+        setNewRegionType(NEXT_LEVEL_TYPE[parentType] || 'ZONE')
+        setNewRegionName('')
+        setNewRegionCode('')
+        setIsAddOpen(true)
+    }
+
+    const handleCreateRegion = async () => {
+        if (!addParent || !newRegionName) return
+
+        const result = await createSubdivision({
+            name: newRegionName,
+            type: newRegionType,
+            countryId: country.id,
+            parentId: addParent.id,
+            code: newRegionCode
+        })
 
         if (result.success) {
-            toast.success("Region status updated")
+            toast.success("Region created successfully")
+            setIsAddOpen(false)
+            // Ideally we should update viewData locally or just refresh
+            router.refresh()
         } else {
-            // Revert on failure (reload page or undo state, for now simple reload warning)
-            toast.error("Failed to sync with server")
+            toast.error("Failed to create region")
         }
     }
 
+    const handleDeleteRegion = async (id: string, name: string) => {
+        if (!confirm(`Are you sure you want to delete ${name}? This cannot be undone.`)) return
+
+        const result = await deleteSubdivision(id)
+        if (result.success) {
+            toast.success("Region deleted")
+            router.refresh()
+        } else {
+            toast.error("Failed to delete (Region may have children)")
+        }
+    }
 
     // ---- Metrics ----
     const totalRegions = useMemo(() => {
@@ -306,11 +394,24 @@ export function HierarchyManager({
                         <div className="text-5xl shadow-sm rounded-xl overflow-hidden border bg-slate-50 flex items-center justify-center w-20 h-14 shrink-0">
                             {country.flag || <Globe className="w-8 h-8 text-slate-400" />}
                         </div>
-                        <div>
-                            <div className="flex items-center gap-2 mb-1">
-                                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                                    {country.name}
-                                </h2>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-1">
+                                {availableCountries.length > 1 ? (
+                                    <Select value={currentCountryId} onValueChange={handleCountryChange}>
+                                        <SelectTrigger className="h-9 px-3 text-2xl font-black bg-transparent border-none shadow-none p-0 focus:ring-0 w-auto gap-2">
+                                            <SelectValue>{country.name}</SelectValue>
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {availableCountries.map((c: any) => (
+                                                <SelectItem key={c.id} value={c.id}>{c.flag} {c.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                                        {country.name}
+                                    </h2>
+                                )}
                                 <Badge className="bg-indigo-600 hover:bg-indigo-700">HQ</Badge>
                             </div>
                             <p className="text-slate-500 font-medium mb-3">Master Geography Configuration</p>
@@ -332,14 +433,13 @@ export function HierarchyManager({
                     {/* Toolbar */}
                     <div className="flex flex-col gap-3 w-full md:w-auto">
                         <div className="relative w-full md:w-80">
-                            <input
-                                type="text"
-                                placeholder="Search states, districts..."
+                            <Input
+                                placeholder="Search states, districts, wards..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full h-11 pl-11 pr-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-sm focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                className="pl-10"
                             />
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
                                 <Search className="w-4 h-4" />
                             </div>
                         </div>
@@ -348,7 +448,7 @@ export function HierarchyManager({
                             <Toggle
                                 pressed={showActiveOnly}
                                 onPressedChange={setShowActiveOnly}
-                                className="h-9 px-3 gap-2 data-[state=on]:bg-indigo-100 data-[state=on]:text-indigo-700 border border-slate-200"
+                                className="h-9 px-3 gap-2 border border-slate-200"
                                 variant="outline"
                             >
                                 <Filter className="w-3.5 h-3.5" />
@@ -381,6 +481,8 @@ export function HierarchyManager({
                                 node={node}
                                 level={0}
                                 onToggle={handleToggle}
+                                onAddChild={openAddDialog}
+                                onDelete={handleDeleteRegion}
                                 searchTerm={searchTerm}
                                 expandAll={expandAll}
                             />
@@ -400,6 +502,60 @@ export function HierarchyManager({
             <div className="flex justify-center py-8">
                 <p className="text-xs text-slate-400 font-medium uppercase tracking-widest">End of Hierarchy</p>
             </div>
+
+            {/* Create Dialog */}
+            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Add New Region</DialogTitle>
+                        <DialogDescription>
+                            Create a new {newRegionType.toLowerCase()} under <strong>{addParent?.name}</strong>.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                            <Label>Name</Label>
+                            <Input
+                                value={newRegionName}
+                                onChange={(e) => setNewRegionName(e.target.value)}
+                                placeholder="e.g. Western Zone, Ward 15"
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>Type</Label>
+                                <Select value={newRegionType} onValueChange={setNewRegionType}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="STATE">State/Prov</SelectItem>
+                                        <SelectItem value="DISTRICT">District</SelectItem>
+                                        <SelectItem value="TALUK">Taluk</SelectItem>
+                                        <SelectItem value="ZONE">Zone</SelectItem>
+                                        <SelectItem value="WARD">Ward</SelectItem>
+                                        <SelectItem value="VILLAGE">Village</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>Code (Optional)</Label>
+                                <Input
+                                    value={newRegionCode}
+                                    onChange={(e) => setNewRegionCode(e.target.value)}
+                                    placeholder="e.g. W-15"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsAddOpen(false)}>Cancel</Button>
+                        <Button onClick={handleCreateRegion} disabled={!newRegionName}>Create Region</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

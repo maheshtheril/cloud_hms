@@ -116,6 +116,51 @@ async function updateChildrenRecursively(parentId: string, isActive: boolean) {
     }
 }
 
+export async function createSubdivision(data: {
+    name: string,
+    type: string,
+    countryId: string,
+    parentId?: string | null,
+    code?: string
+}) {
+    const session = await auth()
+    if (!session?.user?.isTenantAdmin) return { success: false, error: "Unauthorized" }
+
+    try {
+        const result = await prisma.country_subdivision.create({
+            data: {
+                name: data.name,
+                type: data.type,
+                country_id: data.countryId,
+                parent_id: data.parentId || null,
+                code: data.code,
+                is_active: true
+            }
+        })
+        revalidatePath('/settings/geography')
+        return { success: true, data: result }
+    } catch (error) {
+        console.error("Error creating subdivision:", error)
+        return { success: false, error: "Failed to create region" }
+    }
+}
+
+export async function deleteSubdivision(id: string) {
+    const session = await auth()
+    if (!session?.user?.isTenantAdmin) return { success: false, error: "Unauthorized" }
+
+    try {
+        await prisma.country_subdivision.delete({
+            where: { id }
+        })
+        revalidatePath('/settings/geography')
+        return { success: true }
+    } catch (error) {
+        console.error("Error deleting subdivision:", error)
+        return { success: false, error: "Failed to delete region (it may have children)" }
+    }
+}
+
 export async function getCompanyCountry() {
     const session = await auth()
     if (!session?.user?.companyId) return null
