@@ -119,10 +119,10 @@ export default async function DashboardPage() {
         prisma.hms_patient.count({ where: { tenant_id: tenantId } }),
 
         // 5. Stats: Pending Bills
-        prisma.$queryRaw`SELECT COUNT(*)::bigint as count FROM "hms_invoice" WHERE "tenant_id" = CAST(${tenantId} AS uuid) AND "status" = 'draft'::hms_invoice_status`.then((r: any) => Number(r[0]?.count || 0)),
+        prisma.$queryRaw`SELECT COUNT(*)::bigint as count FROM "hms_invoice" WHERE "tenant_id" = ${tenantId} AND "status" = 'draft'::hms_invoice_status`.then((r: any) => Number(r[0]?.count || 0)),
 
         // 6. Stats: Revenue (Today)
-        prisma.$queryRaw`SELECT COALESCE(SUM("total"), 0) as total FROM "hms_invoice" WHERE "tenant_id" = CAST(${tenantId} AS uuid) AND "status" = 'paid'::hms_invoice_status AND "created_at" >= ${today} AND "created_at" < ${tomorrow}`.then((r: any) => Number(r[0]?.total || 0)),
+        prisma.$queryRaw`SELECT COALESCE(SUM("total"), 0) as total FROM "hms_invoice" WHERE "tenant_id" = ${tenantId} AND "status" = 'paid'::hms_invoice_status AND "created_at" >= ${today} AND "created_at" < ${tomorrow}`.then((r: any) => Number(r[0]?.total || 0)),
 
         // 7. Tenant Branding
         getTenant(),
