@@ -93,9 +93,11 @@ export function LeadForm({
         return (c?.countries?.iso2?.toUpperCase() as any) || 'US'
     }, [selectedCompanyId, companies])
 
+
     const [phone, setPhone] = useState<any>(initialData?.phone || initialData?.primary_phone)
     const [isHot, setIsHot] = useState<boolean>(initialData?.is_hot || false)
     const [followUpDate, setFollowUpDate] = useState<string>(initialData?.next_followup_date || '')
+    const [activeTab, setActiveTab] = useState("information")
 
     const initialState: LeadFormState = { message: '', errors: {} }
     const [state, dispatch] = useActionState(mode === 'edit' ? updateLead : createLead, initialState)
@@ -114,7 +116,7 @@ export function LeadForm({
             <input type="hidden" name="is_hot" value={isHot ? 'true' : 'false'} />
             {mode === 'edit' && <input type="hidden" name="id" value={initialData.id} />}
 
-            <Tabs defaultValue="information" className="flex-1 flex flex-col overflow-hidden">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
                 <div className="px-8 pt-1 pb-0 border-b border-indigo-500/5 bg-slate-50/30 dark:bg-slate-800/20 shrink-0">
                     <TabsList className="flex items-center gap-2 bg-transparent p-0 h-9 w-fit">
                         <TabsTrigger
@@ -145,7 +147,8 @@ export function LeadForm({
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-white/50 dark:bg-slate-900/50">
-                    <TabsContent forceMount={true} value="information" className="mt-0 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 data-[state=inactive]:hidden">
+                    <div className={`mt-0 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 ${activeTab === 'information' ? 'block' : 'hidden'}`}>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                             <div className="space-y-2">
                                 <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Lead Name *</Label>
@@ -225,9 +228,9 @@ export function LeadForm({
                                 {isHot && <div className="w-3 h-3 bg-white rounded-full" />}
                             </div>
                         </div>
-                    </TabsContent>
+                    </div>
 
-                    <TabsContent forceMount={true} value="business" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 data-[state=inactive]:hidden">
+                    <div className={`mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 ${activeTab === 'business' ? 'block' : 'hidden'}`}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                             {companies.length > 1 && (
                                 <div className="space-y-2">
@@ -329,9 +332,9 @@ export function LeadForm({
                                 </select>
                             </div>
                         </div>
-                    </TabsContent>
+                    </div>
 
-                    <TabsContent forceMount={true} value="additional" className="mt-0 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 data-[state=inactive]:hidden">
+                    <div className={`mt-0 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 ${activeTab === 'additional' ? 'block' : 'hidden'}`}>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                             <div className="space-y-2">
                                 <Label htmlFor="pipeline_id" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Assigned Pipeline</Label>
@@ -383,9 +386,9 @@ export function LeadForm({
                                 </div>
                             </div>
                         )}
-                    </TabsContent>
+                    </div>
 
-                    <TabsContent forceMount={true} value="notes" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 data-[state=inactive]:hidden">
+                    <div className={`mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 ${activeTab === 'notes' ? 'block' : 'hidden'}`}>
                         <div className="space-y-3">
                             <Label htmlFor="notes" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Internal Notes & Context</Label>
                             <Textarea
@@ -396,7 +399,7 @@ export function LeadForm({
                                 className="min-h-[300px] bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl focus:ring-2 focus:ring-indigo-500 transition-all text-slate-900 dark:text-white text-lg p-6 leading-relaxed shadow-inner"
                             />
                         </div>
-                    </TabsContent>
+                    </div>
                 </div>
             </Tabs>
 
