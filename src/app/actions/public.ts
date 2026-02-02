@@ -8,17 +8,22 @@ export async function getCountries() {
         const count = await prisma.countries.count();
         if (count === 0) {
             console.log("Auto-seeding Countries...");
-            await prisma.countries.createMany({
-                data: countriesList.map(c => ({
-                    iso2: c.iso2,
-                    iso3: c.iso3,
-                    name: c.name,
-                    flag: c.flag,
-                    region: c.region,
-                    is_active: true
-                })),
-                skipDuplicates: true
-            });
+            // Use fallback mechanism if this fails or takes too long
+            try {
+                await prisma.countries.createMany({
+                    data: countriesList.map(c => ({
+                        iso2: c.iso2,
+                        iso3: c.iso3,
+                        name: c.name,
+                        flag: c.flag,
+                        region: c.region,
+                        is_active: true
+                    })),
+                    skipDuplicates: true
+                });
+            } catch (seedError) {
+                console.error("Auto-seeding countries failed:", seedError);
+            }
         }
 
         const countries = await prisma.countries.findMany({
@@ -26,10 +31,17 @@ export async function getCountries() {
             orderBy: { name: 'asc' },
             select: { id: true, name: true, iso2: true }
         });
+
+        if (countries.length === 0) throw new Error("No countries found after seeding attempting");
         return countries;
     } catch (error) {
-        console.error("Failed to fetch countries:", error);
-        return [];
+        console.error("Failed to fetch countries, returning static fallback:", error);
+        // Fallback to static data so UI doesn't break
+        return countriesList.map(c => ({
+            id: c.iso2, // Use iso2 as fake ID for UI
+            name: c.name,
+            iso2: c.iso2
+        }));
     }
 }
 
@@ -38,15 +50,19 @@ export async function getCurrencies() {
         const count = await prisma.currencies.count();
         if (count === 0) {
             console.log("Auto-seeding Currencies...");
-            await prisma.currencies.createMany({
-                data: currenciesList.map(c => ({
-                    code: c.code,
-                    name: c.name,
-                    symbol: c.symbol,
-                    is_active: true
-                })),
-                skipDuplicates: true
-            });
+            try {
+                await prisma.currencies.createMany({
+                    data: currenciesList.map(c => ({
+                        code: c.code,
+                        name: c.name,
+                        symbol: c.symbol,
+                        is_active: true
+                    })),
+                    skipDuplicates: true
+                });
+            } catch (seedError) {
+                console.error("Auto-seeding currencies failed:", seedError);
+            }
         }
 
         const currencies = await prisma.currencies.findMany({
@@ -54,10 +70,17 @@ export async function getCurrencies() {
             orderBy: { code: 'asc' },
             select: { id: true, code: true, name: true, symbol: true }
         });
+
+        if (currencies.length === 0) throw new Error("No currencies found after seeding attempting");
         return currencies;
     } catch (error) {
-        console.error("Failed to fetch currencies:", error);
-        return [];
+        console.error("Failed to fetch currencies, returning static fallback:", error);
+        return currenciesList.map(c => ({
+            id: c.code, // Use code as fake ID
+            code: c.code,
+            name: c.name,
+            symbol: c.symbol
+        }));
     }
 }
 
@@ -66,15 +89,19 @@ export async function getModules() {
         const count = await prisma.modules.count();
         if (count === 0) {
             console.log("Auto-seeding Modules...");
-            await prisma.modules.createMany({
-                data: modulesList.map(m => ({
-                    module_key: m.key,
-                    name: m.name,
-                    description: m.desc,
-                    is_active: true
-                })),
-                skipDuplicates: true
-            });
+            try {
+                await prisma.modules.createMany({
+                    data: modulesList.map(m => ({
+                        module_key: m.key,
+                        name: m.name,
+                        description: m.desc,
+                        is_active: true
+                    })),
+                    skipDuplicates: true
+                });
+            } catch (seedError) {
+                console.error("Auto-seeding modules failed:", seedError);
+            }
         }
 
         const modules = await prisma.modules.findMany({
@@ -85,9 +112,18 @@ export async function getModules() {
             orderBy: { name: 'asc' },
             select: { id: true, module_key: true, name: true, description: true }
         });
+
+        if (modules.length === 0) throw new Error("No modules found after seeding attempting");
         return modules;
     } catch (error) {
-        console.error("Failed to fetch modules:", error);
-        return [];
+        console.error("Failed to fetch modules, returning static fallback:", error);
+        return modulesList
+            .filter(m => m.key !== 'system')
+            .map(m => ({
+                id: m.key, // Use key as fake ID
+                module_key: m.key,
+                name: m.name,
+                description: m.desc
+            }));
     }
 }
