@@ -203,7 +203,7 @@ export async function ensureAdminMenus() {
     try {
         const adminItems = [
             { key: 'users', label: 'Users', url: '/settings/users', icon: 'Users', sort: 90, permission: 'users:view' },
-            { key: 'roles', label: 'Roles & Permissions', url: '/settings/roles', icon: 'Shield', sort: 91, permission: 'roles:manage' },
+            { key: 'roles', label: 'Roles & Permissions', url: '/settings/roles', icon: 'Shield', url_key: 'settings-roles', sort: 91, permission: 'roles:manage' }, // Added unique key
             { key: 'general-settings', label: 'Global Settings', url: '/settings/global', icon: 'Settings', sort: 99, permission: 'settings:view' },
             { key: 'branch-settings', label: 'Branch Management', url: '/settings/branches', icon: 'Building2', sort: 98, permission: 'settings:view' },
             { key: 'geography-settings', label: 'Geography & Regions', url: '/settings/geography', icon: 'Globe', sort: 96, permission: 'settings:view' },
@@ -211,35 +211,41 @@ export async function ensureAdminMenus() {
         ];
 
         for (const item of adminItems) {
-            const existing = await prisma.menu_items.findFirst({
-                where: { key: item.key }
-            });
-
-            if (!existing) {
-                await prisma.menu_items.create({
-                    data: {
-                        label: item.label,
-                        url: item.url,
-                        key: item.key,
-                        module_key: 'configuration',
-                        icon: item.icon,
-                        sort_order: item.sort,
-                        permission_code: item.permission,
-                        is_global: true
-                    }
+            try {
+                const existing = await prisma.menu_items.findFirst({
+                    where: { key: item.key }
                 });
-                console.log(`Auto-seeded Admin Menu: ${item.label}`);
-            } else {
-                // Update permission if missing
-                if (!existing.permission_code || existing.module_key !== 'configuration') {
-                    await prisma.menu_items.update({
-                        where: { id: existing.id },
+
+                if (!existing) {
+                    await prisma.menu_items.create({
                         data: {
+                            label: item.label,
+                            url: item.url,
+                            key: item.key,
                             module_key: 'configuration',
-                            permission_code: item.permission
+                            icon: item.icon,
+                            sort_order: item.sort,
+                            permission_code: item.permission,
+                            is_global: true,
+                            parent_id: null // Explicitly handle parent_id
                         }
                     });
+                    console.log(`Auto-seeded Admin Menu: ${item.label}`);
+                } else {
+                    // Update permission if missing
+                    if (!existing.permission_code || existing.module_key !== 'configuration') {
+                        await prisma.menu_items.update({
+                            where: { id: existing.id },
+                            data: {
+                                module_key: 'configuration',
+                                permission_code: item.permission
+                            }
+                        });
+                    }
                 }
+            } catch (innerError) {
+                console.error(`Failed to seed admin menu item ${item.label}:`, innerError);
+                // Continue to next item
             }
         }
     } catch (e) {
