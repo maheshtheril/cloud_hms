@@ -49,19 +49,8 @@ export async function getMenuItems() {
         // Removed database side-effects for performance. 
         // Admin menus are now assumed to be pre-seeded.
 
-        // Fetch Industry from the tenant's primary company
-        let industryName = '';
-        if (session?.user?.tenantId) {
-            try {
-                const company = await prisma.company.findFirst({
-                    where: { tenant_id: session.user.tenantId },
-                    select: { industry: true }
-                });
-                industryName = company?.industry || '';
-            } catch (e) {
-                console.error("Failed to fetch industry:", e);
-            }
-        }
+        // Use industry from session (provided by auth())
+        const industryName = (session?.user as any)?.industry || '';
 
         const isHealthcare = industryName.toLowerCase().includes('health') ||
             industryName.toLowerCase().includes('clinic') ||
