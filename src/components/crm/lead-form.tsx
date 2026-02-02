@@ -145,7 +145,7 @@ export function LeadForm({
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar bg-white/50 dark:bg-slate-900/50">
-                    <TabsContent value="information" className="mt-0 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <TabsContent forceMount={true} value="information" className="mt-0 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300 data-[state=inactive]:hidden">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                             <div className="space-y-2">
                                 <Label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Lead Name *</Label>
@@ -227,7 +227,7 @@ export function LeadForm({
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="business" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <TabsContent forceMount={true} value="business" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 data-[state=inactive]:hidden">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                             {companies.length > 1 && (
                                 <div className="space-y-2">
@@ -331,7 +331,7 @@ export function LeadForm({
                         </div>
                     </TabsContent>
 
-                    <TabsContent value="additional" className="mt-0 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <TabsContent forceMount={true} value="additional" className="mt-0 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300 data-[state=inactive]:hidden">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                             <div className="space-y-2">
                                 <Label htmlFor="pipeline_id" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Assigned Pipeline</Label>
@@ -385,7 +385,7 @@ export function LeadForm({
                         )}
                     </TabsContent>
 
-                    <TabsContent value="notes" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <TabsContent forceMount={true} value="notes" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 data-[state=inactive]:hidden">
                         <div className="space-y-3">
                             <Label htmlFor="notes" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Internal Notes & Context</Label>
                             <Textarea
