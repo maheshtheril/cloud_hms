@@ -622,17 +622,23 @@ export async function auditAndFixMenuPermissions() {
             data: { module_key: 'sales' } // Move out of CRM
         });
 
+
         // 5. EMERGENCY REPAIR: Ensure Nursing Station & Enforce Permissions
         // UPSERT: If exists, update it. If not, create it.
         const nsExist = await prisma.menu_items.findFirst({ where: { key: 'hms-nursing' } });
         if (!nsExist) {
             console.log("Auto-repair: Creating missing Nursing Station menu");
-            await prisma.menu_items.create({
-                data: {
-                    label: 'Nursing Station', url: '/hms/nursing/dashboard', key: 'hms-nursing',
-                    module_key: 'hms', icon: 'Activity', sort_order: 45, permission_code: 'hms:dashboard:nurse', is_global: true
-                }
-            });
+            try {
+                await prisma.menu_items.create({
+                    data: {
+                        label: 'Nursing Station', url: '/hms/nursing/dashboard', key: 'hms-nursing',
+                        module_key: 'hms', icon: 'Activity', sort_order: 45, permission_code: 'hms:dashboard:nurse', is_global: true,
+                        parent_id: null
+                    }
+                });
+            } catch (innerError: any) {
+                console.error("Failed to create Nursing Station menu:", innerError?.message || innerError);
+            }
         } else {
             // Force properties if it exists
             await prisma.menu_items.update({
@@ -662,6 +668,11 @@ export async function auditAndFixMenuPermissions() {
         return { success: true };
     } catch (error) {
         console.error("Self-healing failed:", error);
+        if ((error as any)?.code) {
+            console.error("Prisma Code:", (error as any).code);
+            console.error("Prisma Meta:", (error as any).meta);
+        }
+
         return { success: false };
     }
 }
