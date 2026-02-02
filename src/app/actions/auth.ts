@@ -181,21 +181,20 @@ export async function signup(prevState: any, formData: FormData) {
         // Hash password with bcryptjs instead of relying on pgcrypto
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        await prisma.$executeRaw`
-                INSERT INTO app_user (id, tenant_id, company_id, current_branch_id, email, password, name, is_admin, is_tenant_admin, is_active)
-                VALUES (
-                    ${userId}::uuid, 
-                    ${tenantId}::uuid, 
-                    ${companyId}::uuid,
-                    ${branchId}::uuid,
-                    ${email}, 
-                    ${hashedPassword}, 
-                    ${name}, 
-                    true, 
-                    true,
-                    true
-                )
-            `;
+        await prisma.app_user.create({
+            data: {
+                id: userId,
+                tenant_id: tenantId,
+                company_id: companyId,
+                current_branch_id: branchId,
+                email: email,
+                password: hashedPassword,
+                name: name,
+                is_admin: true,
+                is_tenant_admin: true,
+                is_active: true
+            }
+        });
 
         // 4a. Link User to Branch (Explicit Access)
         await prisma.user_branch.create({
@@ -220,8 +219,10 @@ export async function signup(prevState: any, formData: FormData) {
             }
         });
 
+        // Explicitly generate ID for hms_user_roles to avoid DB default issues if pgcrypto is missing
         await prisma.hms_user_roles.create({
             data: {
+                id: crypto.randomUUID(),
                 user_id: userId,
                 role_id: hmsRoleId
             }
