@@ -87,21 +87,28 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                     className="flex justify-center mb-6"
                                 >
                                     {branding?.logo_url ? (
-                                        <div className="w-24 h-24 relative flex items-center justify-center">
-                                            {/* Glow behind logo to ensure visibility of dark logos */}
-                                            <div className="absolute inset-0 bg-white/10 blur-[30px] rounded-full" />
-                                            <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/20 to-indigo-500/20 rounded-full blur-xl animate-pulse" />
+                                        <div className="w-28 h-28 relative flex items-center justify-center">
+                                            {/* Stylized Glows */}
+                                            <div className="absolute inset-0 bg-cyan-500/30 blur-[40px] rounded-full opacity-50" />
+                                            <div className="absolute inset-0 bg-indigo-500/20 blur-[30px] rounded-full" />
 
-                                            <img
-                                                src={branding.logo_url}
-                                                alt={appName}
-                                                className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
-                                            />
+                                            {/* 'Token' Container - Makes the logo look like a premium 3D App Icon */}
+                                            <div className="relative z-10 w-24 h-24 bg-white rounded-3xl p-4 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.4)] ring-1 ring-white/50 flex items-center justify-center overflow-hidden">
+                                                {/* Inner subtle gradient to give depth to the white chip */}
+                                                <div className="absolute inset-0 bg-gradient-to-br from-white via-slate-50 to-slate-100" />
+
+                                                <img
+                                                    src={branding.logo_url}
+                                                    alt={appName}
+                                                    className="w-full h-full object-contain relative z-20 mix-blend-multiply filter contrast-105"
+                                                />
+                                            </div>
                                         </div>
                                     ) : (
-                                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 p-0.5 shadow-2xl shadow-cyan-500/30">
-                                            <div className="w-full h-full bg-black/40 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10">
-                                                <Activity className="w-10 h-10 text-white" />
+                                        <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-400 to-indigo-600 p-[1px] shadow-2xl shadow-cyan-500/30">
+                                            <div className="w-full h-full bg-slate-900/90 backdrop-blur-xl rounded-3xl flex items-center justify-center border border-white/10 relative overflow-hidden">
+                                                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50" />
+                                                <Activity className="w-10 h-10 text-white relative z-10" />
                                             </div>
                                         </div>
                                     )}
