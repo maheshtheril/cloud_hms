@@ -106,26 +106,33 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                     >
                         <div className="mb-10">
                             <div className="flex items-center gap-3 mb-8">
-                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-cyan-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 text-white">
+                                {/* Clean Logo Wrapper - Removed heavy colored box */}
+                                <div className="w-12 h-12 flex items-center justify-center">
                                     {branding?.logo_url ? (
-                                        <img src={branding.logo_url} alt="Logo" className="w-8 h-8 object-contain" />
+                                        <img
+                                            src={branding.logo_url}
+                                            alt="Logo"
+                                            className="w-full h-full object-contain"
+                                        />
                                     ) : (
-                                        <Building2 className="w-6 h-6" />
+                                        <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-slate-800 border border-indigo-100 dark:border-slate-700 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                                            <Building2 className="w-6 h-6" />
+                                        </div>
                                     )}
                                 </div>
-                                <span className="text-2xl font-bold tracking-tight text-foreground">{appName}</span>
+                                <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{appName}</span>
                             </div>
 
-                            <h2 className="text-3xl font-bold tracking-tight text-foreground mb-2">Welcome back</h2>
-                            <p className="text-muted-foreground">Please enter your credentials to access the workspace.</p>
+                            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-2">Welcome back</h2>
+                            <p className="text-slate-500 dark:text-slate-400">Please enter your credentials to access the workspace.</p>
                         </div>
 
                         <form onSubmit={handleLogin} className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-foreground ml-0.5">Email Address</label>
+                                <label className="text-sm font-semibold text-slate-900 dark:text-white ml-0.5">Email Address</label>
                                 <div className={`relative group transition-all duration-300 ${focusedField === 'email' ? 'scale-[1.01]' : ''}`}>
                                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Mail className={`h-5 w-5 transition-colors duration-300 ${focusedField === 'email' ? 'text-primary' : 'text-muted-foreground/70'}`} />
+                                        <Mail className={`h-5 w-5 transition-colors duration-300 ${focusedField === 'email' ? 'text-indigo-600' : 'text-slate-400'}`} />
                                     </div>
                                     <input
                                         name="email"
@@ -135,7 +142,7 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                         onBlur={() => setFocusedField(null)}
                                         onChange={e => setFormData({ ...formData, email: e.target.value })}
                                         required
-                                        className="block w-full pl-12 pr-4 py-4 bg-secondary/50 border border-border hover:border-primary/50 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
+                                        className="block w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 transition-all duration-300"
                                         placeholder="name@hospital.com"
                                     />
                                 </div>
