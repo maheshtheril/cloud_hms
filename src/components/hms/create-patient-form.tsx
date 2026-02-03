@@ -244,8 +244,9 @@ export function CreatePatientForm({
                             }
                             if (onSuccess) onSuccess(res);
                             else {
+                                setSavedPatient(res);
                                 setMessage({ type: 'success', text: "Patient profile created successfully." });
-                                setTimeout(() => window.location.reload(), 1000);
+                                setShowIDCard(true);
                             }
                         }
                     } catch (err: any) {
@@ -486,46 +487,14 @@ export function CreatePatientForm({
                                 Cancel
                             </button>
                             <button
-                                type="button"
-                                onClick={async (e) => {
-                                    e.preventDefault();
-                                    const form = document.querySelector('form#patient-master-form') as HTMLFormElement;
-                                    if (form) {
-                                        const formData = new FormData(form);
-                                        setIsPending(true);
-                                        try {
-                                            const res = await createPatient(initialData?.id || null, formData);
-                                            if ((res as any)?.error) {
-                                                setMessage({ type: 'error', text: (res as any).error });
-                                            } else {
-                                                setSavedPatient(res);
-                                                setShowIDCard(true);
-                                                setMessage({ type: 'success', text: "Patient registered successfully!" });
-                                            }
-                                        } catch (err) {
-                                            setMessage({ type: 'error', text: "Registration failed" });
-                                        } finally {
-                                            setIsPending(false);
-                                        }
-                                    }
-                                }}
-                                disabled={isPending}
-                                className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
-                            >
-                                {isPending ? (
-                                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                ) : <Printer className="h-4 w-4" />}
-                                Save & Print ID
-                            </button>
-                            <button
                                 type="submit"
                                 disabled={isPending}
                                 className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 hover:-translate-y-1 transition-all active:scale-95 flex items-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
                             >
                                 {isPending ? (
                                     <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                ) : <CheckCircle2 className="h-4 w-4" />}
-                                {initialData ? 'Update Profile' : 'Complete Registration'}
+                                ) : (chargeRegistration && !waiveFee ? <Printer className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />)}
+                                {chargeRegistration && !waiveFee ? 'Save & Print Invoice' : (initialData ? 'Update Profile' : 'Save & Print ID')}
                             </button>
                         </div>
                     </div>
