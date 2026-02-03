@@ -723,10 +723,14 @@ export function CreatePatientForm({
                                 type="button"
                                 onClick={() => {
                                     // Skip Payment - Just Print Invoice
-                                    window.open(`/hms/billing/${invoiceData.id}/print`, '_blank');
+                                    if (invoiceData?.id) {
+                                        window.open(`/hms/billing/${invoiceData.id}/print`, '_blank');
+                                    }
                                     setInvoiceData(null);
                                     if (printIDCard) setShowIDCard(true);
+                                    else if (onSuccess) onSuccess(savedPatient); // For modal usage
                                     else router.push('/hms/patients');
+
                                 }}
                                 className="w-full py-3 bg-white border border-slate-200 text-slate-500 hover:text-slate-900 rounded-xl font-bold text-xs uppercase tracking-wide hover:bg-slate-50 transition-all"
                             >
