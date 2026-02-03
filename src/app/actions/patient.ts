@@ -278,8 +278,17 @@ export async function createPatient(existingId: string | null | any, formData: F
                         const fallbackInvoice = await prisma.hms_invoice.findUnique({ where: { id: invoiceId } });
                         invoiceRes = { success: true, data: fallbackInvoice };
                     } catch (dbErr: any) {
+                        // DIAGNOSTIC START
+                        let debugInfo = "";
+                        try {
+                            const cols: any = await prisma.$queryRaw`SELECT column_name, data_type, udt_name FROM information_schema.columns WHERE table_name = 'hms_invoice' AND column_name = 'line_items'`;
+                            const triga: any = await prisma.$queryRaw`SELECT trigger_name FROM information_schema.triggers WHERE event_object_table = 'hms_invoice'`;
+                            debugInfo = ` | COLS: ${JSON.stringify(cols)} | TRIGS: ${JSON.stringify(triga)}`;
+                        } catch (e) { debugInfo = " | DebugQueryFailed"; }
+                        // DIAGNOSTIC END
+
                         console.error("CRITICAL: Direct DB Invoice Creation Failed:", dbErr);
-                        throw new Error("System Critical: Unable to generate invoice record. " + dbErr.message);
+                        throw new Error("System Critical: Unable to generate invoice record. " + dbErr.message + debugInfo);
                     }
                 }
 
