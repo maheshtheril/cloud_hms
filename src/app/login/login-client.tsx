@@ -37,7 +37,38 @@ export default function LoginClient({ branding }: { branding: Branding | null })
         }
     }
 
-    const appName = branding?.app_name || "Ziona HMS";
+    const appName = branding?.app_name || "Enterprise ERP";
+    const isCRM = appName.toLowerCase().includes('crm') || appName.toLowerCase().includes('seeakk');
+
+    const theme = isCRM ? {
+        bgImage: "/crm-login-bg.png",
+        gradientOverlay: "from-blue-950/80 via-slate-900/60 to-purple-900/40",
+        radialOverlay: "from-blue-900/20 via-slate-950/40 to-slate-950/80",
+        heading: (
+            <>
+                Powering <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
+                    Business Growth
+                </span>
+            </>
+        ),
+        subheading: "Manage leads, track performance, and drive revenue with AI-driven insights.",
+        tagline: "Intelligent Business Suite"
+    } : {
+        bgImage: "/login-bg.png",
+        gradientOverlay: "from-slate-950/80 via-slate-900/60 to-slate-900/40",
+        radialOverlay: "from-indigo-950/20 via-slate-950/40 to-slate-950/80",
+        heading: (
+            <>
+                The Future of <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-cyan-400 to-indigo-400">
+                    Healthcare
+                </span>
+            </>
+        ),
+        subheading: "Streamline patient care, manage operations efficiently, and experience the next generation of hospital management.",
+        tagline: "Secure Enterprise Gateway"
+    };
 
     return (
         <div className="min-h-screen w-full flex items-center justify-center font-sans overflow-hidden relative">
@@ -51,13 +82,13 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                     className="absolute inset-0"
                 >
                     <img
-                        src="/login-bg.png"
+                        src={theme.bgImage}
                         alt="Background"
                         className="w-full h-full object-cover opacity-80"
                     />
                     {/* Gradient Overlays for Readability */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-slate-950/80 via-slate-900/60 to-slate-900/40" />
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-950/20 via-slate-950/40 to-slate-950/80" />
+                    <div className={`absolute inset-0 bg-gradient-to-br ${theme.gradientOverlay}`} />
+                    <div className={`absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] ${theme.radialOverlay}`} />
                 </motion.div>
             </div>
 
@@ -94,12 +125,14 @@ export default function LoginClient({ branding }: { branding: Branding | null })
 
                                             {/* Stylized Logo Container */}
                                             <div className="relative z-10 w-24 h-24 flex items-center justify-center">
-                                                {/* Magically invert dark logo to glowing white and screen out the background */}
+                                                {/* Conditional Logo Rendering: Authentic Color for CRM, Holographic for HMS */}
                                                 <img
                                                     src={branding.logo_url}
                                                     alt={appName}
-                                                    className="w-full h-full object-contain relative z-20 mix-blend-screen"
-                                                    style={{
+                                                    className={`w-full h-full object-contain relative z-20 ${!isCRM ? 'mix-blend-screen' : ''}`}
+                                                    style={isCRM ? {
+                                                        filter: 'drop-shadow(0 0 10px rgba(56,189,248,0.4))'
+                                                    } : {
                                                         filter: 'invert(1) grayscale(1) brightness(2) drop-shadow(0 0 5px rgba(34,211,238,0.8))'
                                                     }}
                                                 />
@@ -125,7 +158,7 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                     </h1>
                                     <div className="h-0.5 w-16 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mx-auto mb-4 opacity-70 shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
                                     <p className="text-slate-400 text-xs font-semibold tracking-[0.3em] uppercase opacity-70">
-                                        Secure Enterprise Gateway
+                                        {theme.tagline}
                                     </p>
                                 </motion.div>
                             </div>
