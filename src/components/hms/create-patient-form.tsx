@@ -270,8 +270,8 @@ export function CreatePatientForm({
                                     return;
                                 } else {
                                     // Failure: Invoice NOT Created
-                                    console.error("Automatic billing failed.");
-                                    setMessage({ type: 'error', text: "Patient saved, but invoice generation failed. Please create bill manually from dashboard." });
+                                    console.error("Automatic billing failed:", (res as any).billingError);
+                                    setMessage({ type: 'error', text: `Invoice Failed: ${(res as any).billingError || "Please create bill manually."}` });
                                     // Fallback if they wanted ID card but billing failed?
                                     if (printIDCard) {
                                         setSavedPatient(res);
