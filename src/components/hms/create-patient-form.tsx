@@ -268,14 +268,14 @@ export function CreatePatientForm({
                                     if (onSuccess) onSuccess(res);
                                     return;
                                 } else {
-                                    // Failure: Invoice NOT Created (Logic or System Error)
-                                    // DO NOT SHOW ID CARD. Redirect to manual billing.
-                                    console.warn("Automatic billing failed, redirecting to manual.");
-                                    setMessage({ type: 'error', text: "Auto-invoice failed. Opening manual billing..." });
-                                    setTimeout(() => {
-                                        router.push(`/hms/billing/new?patientId=${patientId}`);
-                                    }, 1000);
-                                    if (onSuccess) onSuccess(res);
+                                    // Failure: Invoice NOT Created
+                                    // Do NOT redirect to manual entry form (user hates it).
+                                    console.error("Automatic billing failed.");
+                                    setMessage({ type: 'error', text: "Patient saved, but invoice generation failed. Please create bill manually from dashboard." });
+                                    // Just stay here or show ID card as fallback state so they are not stuck?
+                                    // Let's safe-fall to ID card view but with the error visible.
+                                    setSavedPatient(res);
+                                    setShowIDCard(true);
                                     return;
                                 }
                             }
