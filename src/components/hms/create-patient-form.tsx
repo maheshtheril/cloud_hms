@@ -210,7 +210,6 @@ export function CreatePatientForm({
                     const formData = new FormData(e.currentTarget);
                     const requiredFields = [
                         { name: 'first_name', tab: 'basic' },
-                        { name: 'last_name', tab: 'basic' },
                         { name: 'phone', tab: 'basic' }
                     ];
 
@@ -287,7 +286,7 @@ export function CreatePatientForm({
                                                 <div className="col-span-3">
                                                     <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wide">Title</label>
                                                     <div className="relative">
-                                                        <select defaultValue={initialData?.metadata?.title} name="title" className="w-full h-10 px-3 bg-white dark:bg-slate-800 border items-center border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 transition-all appearance-none">
+                                                        <select autoFocus defaultValue={initialData?.metadata?.title} name="title" className="w-full h-10 px-3 bg-white dark:bg-slate-800 border items-center border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 transition-all appearance-none">
                                                             <option>Mr.</option><option>Mrs.</option><option>Ms.</option><option>Dr.</option><option>Baby</option>
                                                         </select>
                                                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 text-xs">▼</div>
@@ -303,7 +302,7 @@ export function CreatePatientForm({
                                                     <div>
                                                         <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wide">Last Name</label>
                                                         <VoiceWrapper>
-                                                            <input defaultValue={initialData?.last_name} name="last_name" type="text" placeholder="Last Name" required onChange={(e) => e.target.value = e.target.value.replace(/\b\w/g, c => c.toUpperCase())} className="w-full h-10 px-3 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
+                                                            <input defaultValue={initialData?.last_name} name="last_name" type="text" placeholder="Last Name" onChange={(e) => e.target.value = e.target.value.replace(/\b\w/g, c => c.toUpperCase())} className="w-full h-10 px-3 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
                                                         </VoiceWrapper>
                                                     </div>
                                                 </div>
