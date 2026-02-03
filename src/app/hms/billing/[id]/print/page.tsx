@@ -5,6 +5,8 @@ import { PremiumPrintWrapper } from "@/components/print/premium-print-wrapper"
 import { PremiumPrintHeader } from "@/components/print/premium-print-header"
 import { PremiumPrintFooter } from "@/components/print/premium-print-footer"
 import { getCurrentCompany } from "@/app/actions/company"
+import { Printer } from "lucide-react"
+import { InvoiceControlPanel } from "@/components/billing/invoice-control-panel"
 
 export default async function PrintPage({ params, searchParams }: {
     params: Promise<{ id: string }>,
@@ -143,6 +145,28 @@ export default async function PrintPage({ params, searchParams }: {
 
     return (
         <PremiumPrintWrapper>
+            {/* Interactive Control Panel (Hidden when printing) */}
+            <div className="print:hidden w-full flex items-center justify-between gap-4 mb-8 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
+                <div className="flex items-center gap-3">
+                    <div className="bg-indigo-50 p-2 rounded-lg">
+                        <Printer className="h-5 w-5 text-indigo-600" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-900">Print Preview Mode</h3>
+                        <p className="text-xs text-slate-500">Review the document below before printing.</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <InvoiceControlPanel
+                        invoiceId={invoice.id}
+                        currentStatus={invoice.status || 'draft'}
+                        outstandingAmount={Number(invoice.outstanding_amount || 0)}
+                        patientEmail={(invoice.hms_patient?.contact as any)?.email}
+                        invoiceData={{ ...invoice, company: companyData }}
+                    />
+                </div>
+            </div>
+
             <PremiumPrintHeader
                 company={companyData as any}
                 title="TAX INVOICE"

@@ -263,7 +263,7 @@ export function CreatePatientForm({
                                     // Success: Invoice Created
                                     setMessage({ type: 'success', text: "Patient registered. Opening Invoice..." });
                                     setTimeout(() => {
-                                        router.push(`/hms/billing/${(res as any).invoiceId}`);
+                                        router.push(`/hms/billing/${(res as any).invoiceId}/print`);
                                     }, 200);
                                     if (onSuccess) onSuccess(res);
                                     return;
