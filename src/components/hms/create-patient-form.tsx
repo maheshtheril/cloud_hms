@@ -1,7 +1,8 @@
 'use client'
 
 import { createPatient, createPatientQuick } from "@/app/actions/patient"
-import { X, User, Phone, Calendar, Camera, FileText, Shield, MapPin, Mail, AlertCircle, CheckCircle2, Fingerprint, Activity, Printer } from "lucide-react"
+import { recordPayment } from "@/app/actions/billing"
+import { X, User, Phone, Calendar, Camera, FileText, Shield, MapPin, Mail, AlertCircle, CheckCircle2, Fingerprint, Activity, Printer, CreditCard, Banknote, Smartphone } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { FileUpload } from "@/components/ui/file-upload"
@@ -41,6 +42,9 @@ export function CreatePatientForm({
     const [savedPatient, setSavedPatient] = useState<any>(null);
     const [showIDCard, setShowIDCard] = useState(false);
     const [printIDCard, setPrintIDCard] = useState(false);
+    const [invoiceData, setInvoiceData] = useState<any>(null); // For Payment Popup
+    const [paymentMethod, setPaymentMethod] = useState('cash'); // cash, card, upi
+    const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
 
     // Dynamic Settings State
     const [registrationFee, setRegistrationFee] = useState(propFee ?? 100);
@@ -262,10 +266,13 @@ export function CreatePatientForm({
                             if (chargeRegistration && !waiveFee) {
                                 if ((res as any).invoiceId) {
                                     // Success: Invoice Created
-                                    setMessage({ type: 'success', text: "Patient registered. Opening Invoice..." });
-                                    setTimeout(() => {
-                                        router.push(`/hms/billing/${(res as any).invoiceId}/print?action=pay`);
-                                    }, 200);
+                                    setMessage({ type: 'success', text: "Registration Saved. Please collect payment." });
+
+                                    // SHOW PAYMENT POPUP (Overlay)
+                                    // Ensure we have the full invoice object. The server action returns it now.
+                                    setSavedPatient(res);
+                                    setInvoiceData((res as any).invoice);
+
                                     if (onSuccess) onSuccess(res);
                                     return;
                                 } else {
@@ -616,6 +623,120 @@ export function CreatePatientForm({
                     </div>
                 )
             }
+            {/* PAYMENT POPUP OVERLAY */}
+            {invoiceData && (
+                <div className="absolute inset-0 z-[100] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+                    <div className="bg-white dark:bg-slate-900 w-full max-w-lg p-6 rounded-3xl shadow-2xl border border-white/20 animate-in zoom-in-95 flex flex-col gap-6">
+
+                        {/* Header */}
+                        <div className="text-center">
+                            <div className="h-16 w-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-600 dark:text-emerald-400">
+                                <Banknote className="h-8 w-8" />
+                            </div>
+                            <h3 className="text-xl font-black text-slate-900 dark:text-white">Collect Payment</h3>
+                            <p className="text-sm font-medium text-slate-500">Registration Fee for {savedPatient?.first_name}</p>
+                        </div>
+
+                        {/* Amount Display */}
+                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl flex flex-col items-center justify-center border border-slate-100 dark:border-slate-700">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Total Amount Due</span>
+                            <div className="text-5xl font-black text-slate-900 dark:text-white tracking-tight">
+                                ₹{Number(invoiceData.total || registrationFee).toFixed(0)}
+                            </div>
+                        </div>
+
+                        {/* Payment Methods */}
+                        <div className="grid grid-cols-3 gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setPaymentMethod('cash')}
+                                className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${paymentMethod === 'cash' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-100 hover:border-slate-200 text-slate-500'}`}
+                            >
+                                <Banknote className="h-5 w-5" />
+                                <span className="text-[10px] font-black uppercase">Cash</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setPaymentMethod('upi')}
+                                className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${paymentMethod === 'upi' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-100 hover:border-slate-200 text-slate-500'}`}
+                            >
+                                <Smartphone className="h-5 w-5" />
+                                <span className="text-[10px] font-black uppercase">UPI / Scan</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setPaymentMethod('card')}
+                                className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${paymentMethod === 'card' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-100 hover:border-slate-200 text-slate-500'}`}
+                            >
+                                <CreditCard className="h-5 w-5" />
+                                <span className="text-[10px] font-black uppercase">Card</span>
+                            </button>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex flex-col gap-3 mt-2">
+                            <button
+                                type="button"
+                                disabled={isPaymentProcessing}
+                                onClick={async () => {
+                                    setIsPaymentProcessing(true);
+                                    try {
+                                        // 1. Record Payment
+                                        const res = await recordPayment(invoiceData.id, {
+                                            amount: Number(invoiceData.total || registrationFee),
+                                            method: paymentMethod,
+                                            reference: 'Quick-Pay-Popup'
+                                        });
+
+                                        if (res.success) {
+                                            // 2. Open Print Window
+                                            window.open(`/hms/billing/${invoiceData.id}/print`, '_blank');
+
+                                            // 3. Close & Reset
+                                            setInvoiceData(null);
+                                            // Show ID card if requested, otherwise redirect
+                                            if (printIDCard) setShowIDCard(true);
+                                            else router.push('/hms/patients');
+                                        } else {
+                                            alert("Payment Failed: " + res.error);
+                                        }
+                                    } catch (e) {
+                                        console.error(e);
+                                        alert("Payment Error");
+                                    } finally {
+                                        setIsPaymentProcessing(false);
+                                    }
+                                }}
+                                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-emerald-200 transition-all active:scale-95 flex items-center justify-center gap-2"
+                            >
+                                {isPaymentProcessing ? (
+                                    <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                ) : (
+                                    <>
+                                        <CheckCircle2 className="h-5 w-5" />
+                                        Confirm Payment & Print
+                                    </>
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    // Skip Payment - Just Print Invoice
+                                    window.open(`/hms/billing/${invoiceData.id}/print`, '_blank');
+                                    setInvoiceData(null);
+                                    if (printIDCard) setShowIDCard(true);
+                                    else router.push('/hms/patients');
+                                }}
+                                className="w-full py-3 bg-white border border-slate-200 text-slate-500 hover:text-slate-900 rounded-xl font-bold text-xs uppercase tracking-wide hover:bg-slate-50 transition-all"
+                            >
+                                Skip Payment (Bill Later)
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            )}
         </div >
     );
 }

@@ -275,6 +275,7 @@ export async function createPatient(existingId: string | null | any, formData: F
                     return {
                         ...patient,
                         invoiceId: invoiceRes.data.id,
+                        invoice: invoiceRes.data,
                         warning: (invoiceRes as any).warning
                     };
                 } else {
