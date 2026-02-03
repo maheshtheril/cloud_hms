@@ -60,7 +60,8 @@ export function PremiumPrintWrapper({ children }: PremiumPrintWrapperProps) {
                 {children}
             </div>
 
-            <script dangerouslySetInnerHTML={{ __html: `setTimeout(() => { if(!window.location.search.includes('no-auto')) window.print() }, 1500)` }} />
+            {/* Auto-print disabled to allow payment interaction first */}
+            {/* <script dangerouslySetInnerHTML={{ __html: `setTimeout(() => { if(!window.location.search.includes('no-auto')) window.print() }, 1500)` }} /> */}
         </div>
     );
 }
