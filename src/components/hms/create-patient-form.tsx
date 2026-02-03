@@ -214,6 +214,7 @@ export function CreatePatientForm({
                     for (const field of requiredFields) {
                         const value = formData.get(field.name);
 
+                        // 1. Check for Empty
                         if (!value || value.toString().trim() === '') {
                             if (activeTab !== field.tab) {
                                 setActiveTab(field.tab as any);
@@ -226,26 +227,58 @@ export function CreatePatientForm({
                             }, 150);
                             return;
                         }
+
+                        // 2. Strict Validation: Mobile Number Length
+                        if (field.name === 'phone') {
+                            const phoneStr = value.toString().trim();
+                            // Regex to check if it contains only digits and is exactly 10 long
+                            if (!/^\d{10}$/.test(phoneStr)) {
+                                if (activeTab !== 'basic') setActiveTab('basic');
+                                setMessage({ type: 'error', text: "Mobile number must be exactly 10 digits." });
+                                setTimeout(() => {
+                                    const element = document.querySelector(`[name="phone"]`) as HTMLElement;
+                                    element?.focus();
+                                }, 150);
+                                return;
+                            }
+                        }
                     }
 
                     setIsPending(true);
                     setMessage(null);
                     try {
+                        // FORCE Charge Registration Update in FormData if needed
+                        if (chargeRegistration) formData.set('charge_registration', 'on');
+
                         const res = await createPatient(initialData?.id || null, formData);
+
                         if ((res as any)?.error) {
                             setMessage({ type: 'error', text: (res as any).error });
                         } else {
+                            // CASE 1: Invoice Created -> Redirect to Bill
                             if ((res as any).invoiceId) {
+                                setMessage({ type: 'success', text: "Patient registered. Generating Invoice..." });
                                 setTimeout(() => {
                                     router.push(`/hms/billing/${(res as any).invoiceId}`);
-                                }, 800);
+                                }, 500); // Faster redirect
                                 if (onSuccess) onSuccess(res);
                                 return;
                             }
+
+                            // CASE 2: Expected Invoice but Failed (Billing Error)
+                            if (chargeRegistration && !waiveFee && (res as any).billingError) {
+                                setMessage({ type: 'error', text: `Patient saved, but Billing Failed: ${(res as any).billingError}` });
+                                // Still show ID card so they aren't stuck, but error is visible.
+                                setSavedPatient(res);
+                                setShowIDCard(true);
+                                return;
+                            }
+
+                            // CASE 3: No Invoice Expected (Free / Update) -> Show ID Card
                             if (onSuccess) onSuccess(res);
                             else {
                                 setSavedPatient(res);
-                                setMessage({ type: 'success', text: "Patient profile created successfully." });
+                                setMessage({ type: 'success', text: initialData ? "Profile updated successfully." : "Patient registration complete." });
                                 setShowIDCard(true);
                             }
                         }
@@ -373,7 +406,10 @@ export function CreatePatientForm({
                                                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
                                                         <input
                                                             value={phone}
-                                                            onChange={(e) => setPhone(e.target.value)}
+                                                            onChange={(e) => {
+                                                                const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                                                                setPhone(val);
+                                                            }}
                                                             name="phone"
                                                             type="tel"
                                                             placeholder="e.g. 9876543210"
