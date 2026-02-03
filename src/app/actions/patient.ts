@@ -249,12 +249,19 @@ export async function createPatient(existingId: string | null | any, formData: F
                                 total_discount: 0,
                                 total_paid: 0,
                                 outstanding_amount: fee,
+                                line_items: [{
+                                    // line_idx: 1, // Optional inside JSON
+                                    description: "Registration Fee (Recovered)",
+                                    quantity: 1,
+                                    unit_price: fee,
+                                    net_amount: fee,
+                                    tax_amount: 0
+                                }],
                                 hms_invoice_lines: {
                                     create: {
                                         tenant_id: tenantId,
                                         company_id: (companyId || tenantId) as string,
                                         line_idx: 1,
-                                        // product_id: regProductId || null, // Skip product link to avoid FK issues in emergency
                                         description: "Registration Fee (Recovered)",
                                         quantity: 1,
                                         unit_price: fee,
