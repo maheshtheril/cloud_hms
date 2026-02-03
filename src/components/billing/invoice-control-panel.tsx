@@ -200,8 +200,8 @@ export function InvoiceControlPanel({
                 </Button>
             )}
 
-            {/* COLLECT PAYMENT (If Posted) */}
-            {currentStatus === 'posted' && (
+            {/* COLLECT PAYMENT (If Posted or Draft) */}
+            {['posted', 'draft'].includes(currentStatus) && (
                 <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
                     <DialogTrigger asChild>
                         <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={openPaymentModal}>

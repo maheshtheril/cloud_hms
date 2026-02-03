@@ -189,6 +189,8 @@ export async function createPatient(existingId: string | null | any, formData: F
 
             try {
                 const fee = Number(formData.get('registration_fee')) || (hmsSettings as any).settings?.registrationFee || 100;
+                const regProductId = formData.get('registration_product_id') as string;
+
                 const { createInvoice } = await import('./billing'); // Dynamic import to safely handle circular refs if any
 
                 // Determine Invoice Status based on Billing Mode (Default to Paid/Spot Pay)
@@ -199,18 +201,33 @@ export async function createPatient(existingId: string | null | any, formData: F
 
                 console.log("Auto-creating registration invoice for patient:", patient.id);
 
-                const invoiceRes = await createInvoice({
+                const lineItems = [{
+                    product_id: regProductId || null,
+                    description: "Patient Registration Fee",
+                    quantity: 1,
+                    unit_price: fee,
+                    tax_amount: 0,
+                    discount_amount: 0
+                }];
+
+                // ATTEMPT 1: Create with preferred status
+                let invoiceRes = await createInvoice({
                     patient_id: patient.id,
                     date: new Date().toISOString(),
                     status: invoiceStatus,
-                    line_items: [{
-                        description: "Patient Registration Fee",
-                        quantity: 1,
-                        unit_price: fee,
-                        tax_amount: 0,
-                        discount_amount: 0
-                    }]
+                    line_items: lineItems
                 });
+
+                // ATTEMPT 2: Fallback to Draft on failure (Robustness)
+                if (invoiceRes.error) {
+                    console.warn(`Invoice creation failed as '${invoiceStatus}'. Retrying as 'draft'. Error:`, invoiceRes.error);
+                    invoiceRes = await createInvoice({
+                        patient_id: patient.id,
+                        date: new Date().toISOString(),
+                        status: 'draft',
+                        line_items: lineItems
+                    });
+                }
 
                 if (invoiceRes.success && invoiceRes.data?.id) {
                     return {
