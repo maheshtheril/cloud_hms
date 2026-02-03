@@ -142,7 +142,7 @@ export async function createPatient(existingId: string | null | any, formData: F
                 data: {
                     id: crypto.randomUUID(),
                     tenant_id: tenantId,
-                    company_id: companyId || tenantId,
+                    company_id: (companyId || tenantId) as string,
                     first_name: firstName,
                     last_name: lastName || '',
                     dob: dob ? new Date(dob) : null,
@@ -238,7 +238,7 @@ export async function createPatient(existingId: string | null | any, formData: F
                             data: {
                                 id: crypto.randomUUID(),
                                 tenant_id: tenantId,
-                                company_id: companyId,
+                                company_id: (companyId || tenantId) as string,
                                 patient_id: patient.id,
                                 invoice_number: `REG-${Date.now().toString().slice(-6)}`, // Emergency Numbering
                                 invoice_date: new Date(),
@@ -252,7 +252,7 @@ export async function createPatient(existingId: string | null | any, formData: F
                                 hms_invoice_lines: {
                                     create: {
                                         tenant_id: tenantId,
-                                        company_id: companyId,
+                                        company_id: (companyId || tenantId) as string,
                                         line_idx: 1,
                                         // product_id: regProductId || null, // Skip product link to avoid FK issues in emergency
                                         description: "Registration Fee (Recovered)",
