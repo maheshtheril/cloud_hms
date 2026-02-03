@@ -88,19 +88,20 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                 >
                                     {branding?.logo_url ? (
                                         <div className="w-28 h-28 relative flex items-center justify-center">
-                                            {/* Stylized Glows */}
-                                            <div className="absolute inset-0 bg-cyan-500/30 blur-[40px] rounded-full opacity-50" />
+                                            {/* Holographic Energy Glows */}
+                                            <div className="absolute inset-0 bg-cyan-500/20 blur-[40px] rounded-full animate-pulse" />
                                             <div className="absolute inset-0 bg-indigo-500/20 blur-[30px] rounded-full" />
 
-                                            {/* 'Token' Container - Makes the logo look like a premium 3D App Icon */}
-                                            <div className="relative z-10 w-24 h-24 bg-white rounded-3xl p-4 shadow-[0_20px_40px_-10px_rgba(0,0,0,0.4)] ring-1 ring-white/50 flex items-center justify-center overflow-hidden">
-                                                {/* Inner subtle gradient to give depth to the white chip */}
-                                                <div className="absolute inset-0 bg-gradient-to-br from-white via-slate-50 to-slate-100" />
-
+                                            {/* Stylized Logo Container */}
+                                            <div className="relative z-10 w-24 h-24 flex items-center justify-center">
+                                                {/* Magically invert dark logo to glowing white and screen out the background */}
                                                 <img
                                                     src={branding.logo_url}
                                                     alt={appName}
-                                                    className="w-full h-full object-contain relative z-20 mix-blend-multiply filter contrast-105"
+                                                    className="w-full h-full object-contain relative z-20 mix-blend-screen"
+                                                    style={{
+                                                        filter: 'invert(1) grayscale(1) brightness(2) drop-shadow(0 0 5px rgba(34,211,238,0.8))'
+                                                    }}
                                                 />
                                             </div>
                                         </div>
