@@ -381,32 +381,6 @@ export function PatientIDCard({
                 </div>
             </div>
 
-            {/* UPI Payment QR Code for Swiping Machines */}
-            <div ref={paymentQRRef} className="payment-card bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950 dark:to-teal-950 p-8 rounded-2xl border-2 border-emerald-200 dark:border-emerald-800 flex flex-col items-center text-center">
-                <div className="title text-2xl font-black text-emerald-600 dark:text-emerald-400 mb-2">
-                    Pay Registration Fee
-                </div>
-                <div className="amount text-5xl font-black text-emerald-700 dark:text-emerald-300 my-4">
-                    ₹{registrationFee.toFixed(2)}
-                </div>
-
-                <div className="bg-white p-4 rounded-xl shadow-lg border border-emerald-100 mb-4 inline-block">
-                    <QRCodeSVG
-                        value={upiPaymentString}
-                        size={180}
-                        level="H"
-                        includeMargin={true}
-                    />
-                </div>
-
-                <div className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Scan on Terminal / UPI App
-                </div>
-                <div className="text-xs text-slate-500 dark:text-slate-500">
-                    Patient: {patientData.name} ({patient.patient_number})
-                </div>
-            </div>
-
             {/* Print Buttons */}
             <div className="flex gap-3 justify-center flex-wrap">
                 <button
@@ -414,28 +388,6 @@ export function PatientIDCard({
                     className="px-6 py-3 bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 rounded-xl font-bold text-sm shadow-sm hover:shadow-md transition-all flex items-center gap-2"
                 >
                     🪪 Print ID Card
-                </button>
-                <button
-                    onClick={handlePrintBill}
-                    className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-bold text-sm shadow-lg hover:shadow-xl transition-all flex items-center gap-2"
-                >
-                    <IndianRupee className="h-4 w-4" />
-                    Print Bill (Receipt)
-                </button>
-                <button
-                    onClick={handleTerminalPayment}
-                    disabled={terminalStatus !== 'idle' && terminalStatus !== 'success'} // Allow clicking success to reset? No, keep simple
-                    className={`px-6 py-3 ${terminalStatus === 'success' ? 'bg-green-600' : 'bg-slate-800'} text-white rounded-xl font-bold text-sm shadow-lg hover:shadow-xl transition-all flex items-center gap-2`}
-                >
-                    {terminalStatus === 'idle' && <CreditCard className="h-4 w-4" />}
-                    {terminalStatus === 'connecting' && <Wifi className="h-4 w-4 animate-pulse" />}
-                    {terminalStatus === 'waiting' && <CreditCard className="h-4 w-4 animate-bounce" />}
-                    {terminalStatus === 'success' && <Activity className="h-4 w-4" />}
-
-                    {terminalStatus === 'idle' && "Push to Terminal"}
-                    {terminalStatus === 'connecting' && "Connecting..."}
-                    {terminalStatus === 'waiting' && "Swipe Card Now..."}
-                    {terminalStatus === 'success' && "Paid via POS"}
                 </button>
             </div>
         </div>
