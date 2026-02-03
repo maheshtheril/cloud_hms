@@ -1,6 +1,7 @@
 import { QRCodeSVG } from 'qrcode.react'
-import { User, Phone, Calendar, MapPin, Activity, IndianRupee } from 'lucide-react'
-import { useRef } from 'react'
+import { User, Phone, Calendar, MapPin, Activity, IndianRupee, CreditCard, Wifi } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { useToast } from "@/components/ui/use-toast"
 
 interface PatientIDCardProps {
     patient: {
@@ -37,6 +38,9 @@ export function PatientIDCard({
     hospitalName = 'Cloud HMS',
     hospitalLogo
 }: PatientIDCardProps) {
+    const { toast } = useToast()
+    const [terminalStatus, setTerminalStatus] = useState<'idle' | 'connecting' | 'waiting' | 'success'>('idle')
+
     const cardRef = useRef<HTMLDivElement>(null)
     const paymentQRRef = useRef<HTMLDivElement>(null)
 
@@ -303,6 +307,35 @@ export function PatientIDCard({
         }
     }
 
+    const handleTerminalPayment = () => {
+        if (terminalStatus === 'success') return
+
+        setTerminalStatus('connecting')
+        toast({
+            title: "Connecting to Output Device...",
+            description: "Sending payment request to terminal..."
+        })
+
+        // Simulation of API call to POS
+        setTimeout(() => {
+            setTerminalStatus('waiting')
+            toast({
+                title: "Please Swipe Card",
+                description: `Waiting for payment of ₹${registrationFee.toFixed(2)} on terminal.`
+            })
+
+            // Auto-complete simulation (User would actually swipe)
+            setTimeout(() => {
+                setTerminalStatus('success')
+                toast({
+                    title: "Payment Approved ✅",
+                    description: "Transaction ID: 883920-POS",
+                    className: "bg-green-600 text-white border-none"
+                })
+            }, 4000)
+        }, 1500)
+    }
+
     const patientData = {
         id: patient.id,
         number: patient.patient_number,
@@ -388,6 +421,21 @@ export function PatientIDCard({
                 >
                     <IndianRupee className="h-4 w-4" />
                     Print Bill (Receipt)
+                </button>
+                <button
+                    onClick={handleTerminalPayment}
+                    disabled={terminalStatus !== 'idle' && terminalStatus !== 'success'} // Allow clicking success to reset? No, keep simple
+                    className={`px-6 py-3 ${terminalStatus === 'success' ? 'bg-green-600' : 'bg-slate-800'} text-white rounded-xl font-bold text-sm shadow-lg hover:shadow-xl transition-all flex items-center gap-2`}
+                >
+                    {terminalStatus === 'idle' && <CreditCard className="h-4 w-4" />}
+                    {terminalStatus === 'connecting' && <Wifi className="h-4 w-4 animate-pulse" />}
+                    {terminalStatus === 'waiting' && <CreditCard className="h-4 w-4 animate-bounce" />}
+                    {terminalStatus === 'success' && <Activity className="h-4 w-4" />}
+
+                    {terminalStatus === 'idle' && "Push to Terminal"}
+                    {terminalStatus === 'connecting' && "Connecting..."}
+                    {terminalStatus === 'waiting' && "Swipe Card Now..."}
+                    {terminalStatus === 'success' && "Paid via POS"}
                 </button>
             </div>
         </div>
