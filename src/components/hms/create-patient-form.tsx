@@ -119,8 +119,6 @@ export function CreatePatientForm({
 
     // Prompt for missing phone
     const [phone, setPhone] = useState(initialData?.contact?.phone || '');
-    const [showPhonePrompt, setShowPhonePrompt] = useState(false);
-    const [noPhoneMode, setNoPhoneMode] = useState(false);
 
     const handleAgeChange = (value: string, unit: string) => {
         setAge(value);
@@ -215,17 +213,13 @@ export function CreatePatientForm({
 
                     for (const field of requiredFields) {
                         const value = formData.get(field.name);
-                        if (field.name === 'phone' && !value && !noPhoneMode) {
-                            setShowPhonePrompt(true);
-                            return;
-                        }
 
-                        if ((!value || value.toString().trim() === '') && field.name !== 'phone') {
+                        if (!value || value.toString().trim() === '') {
                             if (activeTab !== field.tab) {
                                 setActiveTab(field.tab as any);
                                 await new Promise(resolve => setTimeout(resolve, 100));
                             }
-                            setMessage({ type: 'error', text: `Missing mandatory field: ${field.name.replace('_', ' ')}` });
+                            setMessage({ type: 'error', text: `Missing mandatory field: ${field.name === 'phone' ? 'Mobile Number' : field.name.replace('_', ' ')}` });
                             setTimeout(() => {
                                 const element = document.querySelector(`[name="${field.name}"]`) as HTMLElement;
                                 element?.focus();
@@ -538,50 +532,7 @@ export function CreatePatientForm({
                 </form>
             </div >
 
-            {showPhonePrompt && (
-                <div className="absolute inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-sm p-8 rounded-3xl shadow-2xl border border-white/20 animate-in zoom-in-95 scale-100 ring-4 ring-indigo-500/20">
-                        <div className="flex flex-col items-center text-center mb-8">
-                            <div className="h-16 w-16 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 mb-4 shadow-inner">
-                                <Phone className="h-8 w-8" />
-                            </div>
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2">Mobile Required</h3>
-                            <p className="text-slate-500 font-medium text-sm">Please enter the patient's WhatsApp-enabled mobile number to proceed.</p>
-                        </div>
-                        <div className="space-y-6">
-                            <div className="relative">
-                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-lg">+91</span>
-                                <input
-                                    autoFocus
-                                    value={phone}
-                                    onChange={(e) => {
-                                        const val = e.target.value.replace(/\D/g, '');
-                                        if (val.length <= 10) setPhone(val);
-                                    }}
-                                    placeholder="Mobile Number"
-                                    className="w-full h-16 pl-14 pr-6 text-2xl bg-slate-50 border-2 border-indigo-100 focus:border-indigo-500 rounded-2xl font-black text-slate-800 outline-none tracking-widest text-center transition-all shadow-sm focus:shadow-md"
-                                />
-                            </div>
-                            <button
-                                type="button"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    if (phone && phone.length === 10) {
-                                        setShowPhonePrompt(false);
-                                        const form = document.querySelector('form#patient-master-form') as HTMLFormElement;
-                                        if (form) form.requestSubmit();
-                                    }
-                                }}
-                                className="w-full h-16 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all hover:scale-[1.02] shadow-xl shadow-indigo-500/30 flex items-center justify-center gap-2"
-                            >
-                                <CheckCircle2 className="h-5 w-5" />
-                                Save & Continue
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )
-            }
+
 
             {
                 showIDCard && savedPatient && (
