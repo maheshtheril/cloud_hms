@@ -229,6 +229,48 @@ export async function createPatient(existingId: string | null | any, formData: F
                     });
                 }
 
+                // ATTEMPT 3: Direct DB Create (Emergency Fallback)
+                // If the billing service fails (e.g. number generation, locks), we FORCE a record so the user can take money.
+                if (invoiceRes.error || !invoiceRes.success) {
+                    console.error("Billing Service Failed. Attempting Direct DB Insertion.");
+                    try {
+                        const fallbackInvoice = await prisma.hms_invoice.create({
+                            data: {
+                                id: crypto.randomUUID(),
+                                tenant_id: tenantId,
+                                company_id: companyId,
+                                patient_id: patient.id,
+                                invoice_number: `REG-${Date.now().toString().slice(-6)}`, // Emergency Numbering
+                                invoice_date: new Date(),
+                                status: 'draft', // Safe default
+                                total: fee,
+                                subtotal: fee,
+                                total_tax: 0,
+                                total_discount: 0,
+                                total_paid: 0,
+                                outstanding_amount: fee,
+                                hms_invoice_lines: {
+                                    create: {
+                                        tenant_id: tenantId,
+                                        company_id: companyId,
+                                        line_idx: 1,
+                                        // product_id: regProductId || null, // Skip product link to avoid FK issues in emergency
+                                        description: "Registration Fee (Recovered)",
+                                        quantity: 1,
+                                        unit_price: fee,
+                                        net_amount: fee,
+                                        tax_amount: 0
+                                    }
+                                }
+                            }
+                        });
+                        invoiceRes = { success: true, data: fallbackInvoice };
+                    } catch (dbErr: any) {
+                        console.error("CRITICAL: Direct DB Invoice Creation Failed:", dbErr);
+                        throw new Error("System Critical: Unable to generate invoice record. " + dbErr.message);
+                    }
+                }
+
                 if (invoiceRes.success && invoiceRes.data?.id) {
                     return {
                         ...patient,
