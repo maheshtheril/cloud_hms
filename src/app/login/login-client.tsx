@@ -40,171 +40,163 @@ export default function LoginClient({ branding }: { branding: Branding | null })
     const appName = branding?.app_name || "Ziona HMS";
 
     return (
-        <div className="min-h-screen w-full flex bg-background font-sans overflow-hidden">
+        <div className="min-h-screen w-full flex items-center justify-center font-sans overflow-hidden relative">
 
-            {/* Left Side - Cinematic Image */}
-            <div className="hidden lg:flex w-1/2 xl:w-3/5 relative bg-slate-900 overflow-hidden">
+            {/* Cinematic Background (Fixed Full Screen) */}
+            <div className="absolute inset-0 bg-slate-900">
                 <motion.div
-                    initial={{ scale: 1.1, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 1.5, ease: "easeOut" }}
+                    initial={{ scale: 1.05 }}
+                    animate={{ scale: 1 }}
+                    transition={{ duration: 2.5, ease: "easeOut" }}
                     className="absolute inset-0"
                 >
                     <img
                         src="/login-bg.png"
-                        alt="Medical Background"
-                        className="w-full h-full object-cover opacity-90"
+                        alt="Background"
+                        className="w-full h-full object-cover opacity-80"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-slate-900/10" />
-                    <div className="absolute inset-0 bg-indigo-950/20 mix-blend-overlay" />
+                    {/* Gradient Overlays for Readability */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-slate-950/80 via-slate-900/60 to-slate-900/40" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-950/20 via-slate-950/40 to-slate-950/80" />
                 </motion.div>
-
-                <div className="relative z-10 w-full h-full flex flex-col justify-between p-16 text-white">
-                    <motion.div
-                        initial={{ y: -20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.5 }}
-                    >
-                        <div className="flex items-center gap-2 text-indigo-300 mb-6">
-                            <Activity className="w-5 h-5 animate-pulse" />
-                            <span className="text-xs font-bold tracking-[0.2em] uppercase">Enterprise Medical System</span>
-                        </div>
-                    </motion.div>
-
-                    <motion.div
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.7 }}
-                        className="max-w-2xl"
-                    >
-                        <h1 className="text-5xl xl:text-7xl font-bold tracking-tight mb-6 leading-tight">
-                            The Future of <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-400">
-                                Healthcare
-                            </span>
-                        </h1>
-                        <p className="text-lg text-slate-300 leading-relaxed max-w-lg">
-                            Streamline patient care, manage operations efficiently, and experience the next generation of hospital management.
-                        </p>
-                    </motion.div>
-                </div>
             </div>
 
-            {/* Right Side - Login Form */}
-            <div className="w-full lg:w-1/2 xl:w-2/5 flex items-center justify-center p-8 lg:p-12 xl:p-16 relative bg-background">
-                {/* Mobile Background Blob */}
-                <div className="lg:hidden absolute inset-0 z-0 overflow-hidden">
-                    <div className="absolute -top-[20%] -right-[20%] w-[80%] h-[80%] rounded-full bg-indigo-500/10 blur-[100px]" />
-                    <div className="absolute -bottom-[20%] -left-[20%] w-[80%] h-[80%] rounded-full bg-cyan-500/10 blur-[100px]" />
-                </div>
+            {/* Content Container */}
+            <div className="relative z-10 w-full max-w-7xl mx-auto p-4 flex flex-col items-center justify-center">
 
-                <div className="w-full max-w-[420px] relative z-10">
-                    <motion.div
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                    >
-                        <div className="mb-10">
-                            <div className="flex items-center gap-3 mb-8">
-                                {/* Clean Logo Wrapper - Removed heavy colored box */}
-                                <div className="w-12 h-12 flex items-center justify-center">
+                <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    className="w-full max-w-md"
+                >
+                    {/* Glassmorphism Card */}
+                    <div className="backdrop-blur-xl bg-white/10 dark:bg-black/40 border border-white/20 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] rounded-3xl overflow-hidden relative">
+                        {/* Glow Effect Top */}
+                        <div className="absolute -top-24 -left-24 w-48 h-48 bg-cyan-500/20 rounded-full blur-[80px]" />
+                        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-indigo-500/20 rounded-full blur-[80px]" />
+
+                        <div className="p-8 md:p-10 relative z-10">
+
+                            {/* Header Section */}
+                            <div className="text-center mb-8">
+                                <motion.div
+                                    initial={{ scale: 0.9, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ delay: 0.2 }}
+                                    className="flex justify-center mb-4"
+                                >
                                     {branding?.logo_url ? (
-                                        <img
-                                            src={branding.logo_url}
-                                            alt="Logo"
-                                            className="w-full h-full object-contain"
-                                        />
+                                        <div className="w-16 h-16 relative">
+                                            {/* Glow behind logo */}
+                                            <div className="absolute inset-0 bg-white/20 blur-xl rounded-full" />
+                                            <img
+                                                src={branding.logo_url}
+                                                alt={appName}
+                                                className="w-full h-full object-contain relative z-10 drop-shadow-2xl"
+                                            />
+                                        </div>
                                     ) : (
-                                        <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-slate-800 border border-indigo-100 dark:border-slate-700 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                                            <Building2 className="w-6 h-6" />
+                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 p-0.5 shadow-xl shadow-cyan-500/20">
+                                            <div className="w-full h-full bg-black/40 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10">
+                                                <Activity className="w-8 h-8 text-white" />
+                                            </div>
                                         </div>
                                     )}
-                                </div>
-                                <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{appName}</span>
+                                </motion.div>
+                                <motion.h1
+                                    initial={{ y: 10, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.3 }}
+                                    className="text-2xl font-bold text-white tracking-tight"
+                                >
+                                    {appName}
+                                </motion.h1>
+                                <motion.p
+                                    initial={{ y: 10, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.4 }}
+                                    className="text-slate-300 text-sm mt-2"
+                                >
+                                    Secure Enterprise Gateway
+                                </motion.p>
                             </div>
 
-                            <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-2">Welcome back</h2>
-                            <p className="text-slate-500 dark:text-slate-400">Please enter your credentials to access the workspace.</p>
+                            {/* Login Form */}
+                            <form onSubmit={handleLogin} className="space-y-5">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-semibold text-slate-300 ml-1 uppercase tracking-wider">Email</label>
+                                    <div className={`relative group transition-all duration-300 ${focusedField === 'email' ? 'scale-[1.02]' : ''}`}>
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <Mail className={`h-5 w-5 transition-colors duration-300 ${focusedField === 'email' ? 'text-cyan-400' : 'text-slate-500'}`} />
+                                        </div>
+                                        <input
+                                            name="email"
+                                            type="email"
+                                            value={formData.email}
+                                            onFocus={() => setFocusedField('email')}
+                                            onBlur={() => setFocusedField(null)}
+                                            onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                            required
+                                            className="block w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 focus:bg-black/40 focus:ring-1 focus:ring-cyan-500/50 transition-all duration-300 backdrop-blur-sm"
+                                            placeholder="doctor@hospital.com"
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <div className="flex items-center justify-between ml-1">
+                                        <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Password</label>
+                                        <a href="#" className="text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors">Forgot?</a>
+                                    </div>
+                                    <div className={`relative group transition-all duration-300 ${focusedField === 'password' ? 'scale-[1.02]' : ''}`}>
+                                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                            <Lock className={`h-5 w-5 transition-colors duration-300 ${focusedField === 'password' ? 'text-cyan-400' : 'text-slate-500'}`} />
+                                        </div>
+                                        <input
+                                            name="password"
+                                            type="password"
+                                            value={formData.password}
+                                            onFocus={() => setFocusedField('password')}
+                                            onBlur={() => setFocusedField(null)}
+                                            onChange={e => setFormData({ ...formData, password: e.target.value })}
+                                            required
+                                            className="block w-full pl-12 pr-4 py-3.5 bg-black/20 border border-white/10 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 focus:bg-black/40 focus:ring-1 focus:ring-cyan-500/50 transition-all duration-300 backdrop-blur-sm"
+                                            placeholder="••••••••"
+                                        />
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className="w-full bg-gradient-to-r from-cyan-600 to-indigo-600 hover:from-cyan-500 hover:to-indigo-500 text-white py-4 rounded-xl font-bold text-sm tracking-wide shadow-lg shadow-cyan-900/40 hover:shadow-cyan-500/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all duration-300 mt-2 disabled:opacity-70 disabled:cursor-not-allowed group flex items-center justify-center gap-2 relative overflow-hidden"
+                                >
+                                    <div className="absolute inset-0 bg-white/20 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                                    {isLoading ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin relative z-10" />
+                                            <span className="relative z-10">Authenticating...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="relative z-10">Sign In to Dashboard</span>
+                                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
+                                        </button>
+                                    )}
+                                </button>
+                            </form>
                         </div>
 
-                        <form onSubmit={handleLogin} className="space-y-6">
-                            <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-900 dark:text-white ml-0.5">Email Address</label>
-                                <div className={`relative group transition-all duration-300 ${focusedField === 'email' ? 'scale-[1.01]' : ''}`}>
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Mail className={`h-5 w-5 transition-colors duration-300 ${focusedField === 'email' ? 'text-indigo-600' : 'text-slate-400'}`} />
-                                    </div>
-                                    <input
-                                        name="email"
-                                        type="email"
-                                        value={formData.email}
-                                        onFocus={() => setFocusedField('email')}
-                                        onBlur={() => setFocusedField(null)}
-                                        onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                        required
-                                        className="block w-full pl-12 pr-4 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-600/10 transition-all duration-300"
-                                        placeholder="name@hospital.com"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-sm font-semibold text-foreground ml-0.5">Password</label>
-                                    <a href="#" className="text-sm font-medium text-primary hover:text-primary/80 hover:underline transition-colors">Forgot password?</a>
-                                </div>
-                                <div className={`relative group transition-all duration-300 ${focusedField === 'password' ? 'scale-[1.01]' : ''}`}>
-                                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                        <Lock className={`h-5 w-5 transition-colors duration-300 ${focusedField === 'password' ? 'text-primary' : 'text-muted-foreground/70'}`} />
-                                    </div>
-                                    <input
-                                        name="password"
-                                        type="password"
-                                        value={formData.password}
-                                        onFocus={() => setFocusedField('password')}
-                                        onBlur={() => setFocusedField(null)}
-                                        onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                        required
-                                        className="block w-full pl-12 pr-4 py-4 bg-secondary/50 border border-border hover:border-primary/50 rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all duration-300"
-                                        placeholder="••••••••"
-                                    />
-                                </div>
-                            </div>
-
-                            <button
-                                type="submit"
-                                disabled={isLoading}
-                                className="w-full bg-primary text-primary-foreground py-4 rounded-xl font-bold text-base tracking-wide shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99] transition-all duration-300 disabled:opacity-70 disabled:cursor-not-allowed group flex items-center justify-center gap-2 overflow-hidden relative"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[200%] group-hover:animate-[shimmer_1.5s_infinite]" />
-                                {isLoading ? (
-                                    <>
-                                        <Loader2 className="w-5 h-5 animate-spin" />
-                                        <span>Signing in...</span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span>Sign In to Dashboard</span>
-                                        <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                    </>
-                                )}
-                            </button>
-                        </form>
-
-                        <div className="mt-10 text-center">
-                            <p className="text-sm text-muted-foreground">
-                                Don't have an account?{' '}
-                                <a href="#" className="font-semibold text-primary hover:underline">Contact Administrator</a>
+                        {/* Footer in Card */}
+                        <div className="px-8 pb-6 text-center">
+                            <p className="text-xs text-slate-500">
+                                Protected by Enterprise Security &copy; {new Date().getFullYear()}
                             </p>
                         </div>
-                    </motion.div>
-                </div>
-
-                <div className="absolute bottom-8 left-0 right-0 text-center px-8 lg:text-left lg:px-12 lg:left-0 lg:right-auto">
-                    <p className="text-xs text-muted-foreground/60">
-                        &copy; {new Date().getFullYear()} {appName}. All rights reserved.
-                    </p>
-                </div>
+                    </div>
+                </motion.div>
             </div>
         </div>
     )
