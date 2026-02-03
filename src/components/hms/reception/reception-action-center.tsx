@@ -636,11 +636,11 @@ export function ReceptionActionCenter({
             </div >
 
             {/* MODALS */}
-            < Dialog open={activeModal === 'register'} onOpenChange={() => setActiveModal(null)}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden p-0">
+            <Dialog open={activeModal === 'register'} onOpenChange={() => setActiveModal(null)}>
+                <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-hidden p-0">
                     <CreatePatientForm onClose={() => setActiveModal(null)} />
                 </DialogContent>
-            </Dialog >
+            </Dialog>
 
             <Dialog open={activeModal === 'appointment' || activeModal === 'edit-appointment'} onOpenChange={(open) => { if (!open) { setActiveModal(null); setEditingAppointment(null); } }}>
                 <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden p-0">

@@ -35,7 +35,7 @@ export function CreatePatientForm({
     appName = 'Health Registry'
 }: CreatePatientFormProps) {
     const router = useRouter();
-    const [activeTab, setActiveTab] = useState<'basic' | 'residency' | 'vault'>('basic');
+    const [activeTab, setActiveTab] = useState<'basic' | 'identity'>('basic');
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [isPending, setIsPending] = useState(false);
     const [savedPatient, setSavedPatient] = useState<any>(null);
@@ -186,9 +186,8 @@ export function CreatePatientForm({
                 <div className="px-5 py-2 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
                     <div className="flex p-1 bg-slate-200/50 dark:bg-slate-800 rounded-xl relative">
                         {[
-                            { id: 'basic', label: 'Core Identity', icon: User },
-                            { id: 'residency', label: 'Contact & Location', icon: MapPin },
-                            { id: 'vault', label: 'Digital Vault', icon: Shield }
+                            { id: 'basic', label: 'Patient Details', icon: User },
+                            { id: 'identity', label: 'Digital Identity & Docs', icon: Shield }
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -212,7 +211,7 @@ export function CreatePatientForm({
                     const requiredFields = [
                         { name: 'first_name', tab: 'basic' },
                         { name: 'last_name', tab: 'basic' },
-                        { name: 'phone', tab: 'residency' }
+                        { name: 'phone', tab: 'basic' }
                     ];
 
                     for (const field of requiredFields) {
@@ -274,10 +273,12 @@ export function CreatePatientForm({
                         )}
 
                         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
-                            {/* TAB 1: IDENTITY */}
+                            {/* TAB 1: BASIC DETAILS (Personal + Contact + Location) */}
                             <div className={activeTab === 'basic' ? 'block' : 'hidden'}>
                                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                                    <div className="lg:col-span-8 space-y-4">
+                                    {/* COLUMN 1: Personal & Vitals */}
+                                    <div className="lg:col-span-7 space-y-4">
+                                        {/* Personal Identity */}
                                         <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
                                             <h3 className="text-xs font-black text-indigo-500 uppercase tracking-widest mb-3 flex items-center gap-2">
                                                 <User className="h-4 w-4" /> Personal Details
@@ -309,6 +310,7 @@ export function CreatePatientForm({
                                             </div>
                                         </div>
 
+                                        {/* Vitals */}
                                         <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
                                             <h3 className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-4 flex items-center gap-2">
                                                 <Activity className="h-4 w-4" /> Vitals & Demographics
@@ -358,20 +360,50 @@ export function CreatePatientForm({
                                         </div>
                                     </div>
 
-                                    <div className="lg:col-span-4 space-y-6">
-                                        <div className="bg-gradient-to-br from-slate-900 to-indigo-950 p-4 rounded-2xl text-white shadow-xl shadow-indigo-900/20 relative overflow-hidden group">
-                                            <div className="absolute top-0 right-0 p-32 bg-indigo-500 rounded-full blur-[60px] opacity-20 group-hover:opacity-30 transition-opacity"></div>
-                                            <h3 className="text-[10px] font-black text-indigo-300 uppercase tracking-widest mb-3 z-10 relative">Digital Identity</h3>
-                                            <div className="space-y-3 relative z-10">
-                                                <div className="p-3 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md">
-                                                    <label className="block text-[10px] font-bold text-indigo-200 mb-1 uppercase">Profile Photo</label>
-                                                    <FileUpload onUploadComplete={(url) => setProfileImageUrl(url)} folder="patients/profiles" label="Upload Photo" accept="image/*" showCamera={true} compact={true} />
-                                                    <input type="hidden" name="profile_image_url" value={profileImageUrl} />
+                                    {/* COLUMN 2: Contact & Address */}
+                                    <div className="lg:col-span-5 space-y-4">
+                                        <div className="bg-white dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="h-8 w-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                                    <Phone className="h-4 w-4" />
                                                 </div>
-                                                <div className="p-3 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md">
-                                                    <label className="block text-[10px] font-bold text-indigo-200 mb-1 uppercase">Govt ID Proof</label>
-                                                    <FileUpload onUploadComplete={(url) => setIdCardUrl(url)} folder="patients/ids" label="Upload Document" accept="application/pdf,image/*" compact={true} />
-                                                    <input type="hidden" name="id_card_url" value={idCardUrl} />
+                                                <div>
+                                                    <h3 className="text-xs font-bold text-slate-900 dark:text-white">Contact & Location</h3>
+                                                    <p className="text-[9px] text-slate-400 font-medium uppercase tracking-wide">Communication</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Mobile Number <span className="text-rose-500">*</span></label>
+                                                    <div className="relative group">
+                                                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                                                        <input
+                                                            value={phone}
+                                                            onChange={(e) => setPhone(e.target.value)}
+                                                            name="phone"
+                                                            type="tel"
+                                                            placeholder="e.g. 9876543210"
+                                                            required
+                                                            className="w-full h-10 pl-9 pr-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 transition-all text-sm tracking-wide"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Email Address</label>
+                                                    <div className="relative group">
+                                                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
+                                                        <input defaultValue={initialData?.contact?.email} name="email" type="email" placeholder="email@example.com" className="w-full h-10 pl-9 pr-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 transition-all text-sm" />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Address</label>
+                                                    <VoiceWrapper>
+                                                        <textarea defaultValue={initialData?.contact?.address?.street} name="street" placeholder="Street Address, Area" className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-200 text-xs outline-none focus:border-indigo-500 transition-all min-h-[50px] resize-none" />
+                                                    </VoiceWrapper>
+                                                    <div className="grid grid-cols-2 gap-2 mt-2">
+                                                        <input defaultValue={initialData?.contact?.address?.city} name="city" type="text" placeholder="City" className="w-full h-9 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 outline-none focus:border-indigo-500 transition-all text-xs" />
+                                                        <input defaultValue={initialData?.contact?.address?.zip} name="zip" type="text" placeholder="Pincode" className="w-full h-9 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 outline-none focus:border-indigo-500 transition-all text-xs" />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -379,80 +411,44 @@ export function CreatePatientForm({
                                 </div>
                             </div>
 
-                            {/* TAB 2: RESIDENCY */}
-                            <div className={activeTab === 'residency' ? 'block' : 'hidden'}>
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    <div className="bg-white dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <div className="h-10 w-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600">
-                                                <Phone className="h-5 w-5" />
+                            {/* TAB 2: DIGITAL IDENTITY (Photo + ID Proof) */}
+                            <div className={activeTab === 'identity' ? 'block' : 'hidden'}>
+                                <div className="max-w-3xl mx-auto space-y-6 py-6">
+                                    <div className="bg-gradient-to-br from-slate-900 to-indigo-950 p-6 rounded-3xl text-white shadow-xl shadow-indigo-900/20 relative overflow-hidden group">
+                                        <div className="absolute top-0 right-0 p-40 bg-indigo-500 rounded-full blur-[80px] opacity-20 group-hover:opacity-30 transition-opacity"></div>
+
+                                        <div className="flex items-center gap-4 mb-6 relative z-10">
+                                            <div className="h-14 w-14 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20">
+                                                <Shield className="h-7 w-7 text-indigo-300" />
                                             </div>
                                             <div>
-                                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Contact Information</h3>
-                                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Primary Communication Channels</p>
+                                                <h3 className="text-lg font-black text-white tracking-tight">Digital Vault</h3>
+                                                <p className="text-indigo-200 text-xs font-medium">Secure storage for patient identity and documents.</p>
                                             </div>
                                         </div>
-                                        <div className="space-y-4">
-                                            <div>
-                                                <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Mobile Number <span className="text-rose-500">*</span></label>
-                                                <div className="relative group">
-                                                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                                                    <input
-                                                        value={phone}
-                                                        onChange={(e) => setPhone(e.target.value)}
-                                                        name="phone"
-                                                        type="tel"
-                                                        placeholder="e.g. 9876543210"
-                                                        required
-                                                        className="w-full h-10 pl-9 pr-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 transition-all text-sm tracking-wide"
-                                                    />
-                                                </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+                                            <div className="p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md hover:bg-white/10 transition-colors">
+                                                <label className="block text-xs font-bold text-indigo-200 mb-2 uppercase tracking-wide">Patient Photo</label>
+                                                <FileUpload onUploadComplete={(url) => setProfileImageUrl(url)} folder="patients/profiles" label="Capture / Upload Photo" accept="image/*" showCamera={true} compact={false} />
+                                                <input type="hidden" name="profile_image_url" value={profileImageUrl} />
                                             </div>
-                                            <div>
-                                                <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Email Address</label>
-                                                <div className="relative group">
-                                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                                                    <input defaultValue={initialData?.contact?.email} name="email" type="email" placeholder="email@example.com" className="w-full h-10 pl-9 pr-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 outline-none focus:border-indigo-500 transition-all text-sm" />
-                                                </div>
+                                            <div className="p-4 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-md hover:bg-white/10 transition-colors">
+                                                <label className="block text-xs font-bold text-indigo-200 mb-2 uppercase tracking-wide">Government ID Proof</label>
+                                                <FileUpload onUploadComplete={(url) => setIdCardUrl(url)} folder="patients/ids" label="Upload ID Document" accept="application/pdf,image/*" compact={false} />
+                                                <input type="hidden" name="id_card_url" value={idCardUrl} />
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="bg-white dark:bg-slate-900/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-shadow">
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <div className="h-10 w-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                                                <MapPin className="h-5 w-5" />
-                                            </div>
-                                            <div>
-                                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Residential Address</h3>
-                                                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wide">Logistics & Billing</p>
-                                            </div>
+                                    <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-900/50 flex gap-3 items-start">
+                                        <Shield className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                                        <div>
+                                            <h4 className="text-xs font-bold text-amber-900 dark:text-amber-400 uppercase tracking-wide mb-1">Privacy Notice</h4>
+                                            <p className="text-xs text-amber-700 dark:text-amber-500 leading-relaxed">
+                                                Documents uploaded here are encrypted at rest. Access is restricted to authorized clinical and administrative staff only.
+                                            </p>
                                         </div>
-                                        <div className="space-y-3">
-                                            <VoiceWrapper>
-                                                <textarea defaultValue={initialData?.contact?.address?.street} name="street" placeholder="Street Address, Area, Landmark" className="w-full p-3 pr-10 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 transition-all min-h-[60px] resize-none" />
-                                            </VoiceWrapper>
-                                            <div className="grid grid-cols-2 gap-3">
-                                                <input defaultValue={initialData?.contact?.address?.city} name="city" type="text" placeholder="City" className="w-full h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 outline-none focus:border-indigo-500 transition-all text-sm" />
-                                                <input defaultValue={initialData?.contact?.address?.zip} name="zip" type="text" placeholder="Pincode" className="w-full h-10 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 outline-none focus:border-indigo-500 transition-all text-sm" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* TAB 3: VAULT */}
-                            <div className={activeTab === 'vault' ? 'block' : 'hidden'}>
-                                <div className="flex flex-col items-center justify-center py-12 text-center space-y-6">
-                                    <div className="h-32 w-32 bg-slate-100 rounded-full flex items-center justify-center">
-                                        <Shield className="h-16 w-16 text-slate-300" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-2xl font-black text-slate-800">Secure Fiscal Vault</h3>
-                                        <p className="text-slate-500 max-w-md mx-auto mt-2">
-                                            All financial transactions and privacy records are encrypted and stored in our secure ledger.
-                                            <br /><span className="text-xs uppercase tracking-widest font-bold text-indigo-500 mt-2 block">Enterprise Standard Security</span>
-                                        </p>
                                     </div>
                                 </div>
                             </div>
@@ -541,7 +537,7 @@ export function CreatePatientForm({
                         </div>
                     </div>
                 </form>
-            </div>
+            </div >
 
             {showPhonePrompt && (
                 <div className="absolute inset-0 z-[100] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
@@ -585,40 +581,43 @@ export function CreatePatientForm({
                         </div>
                     </div>
                 </div>
-            )}
+            )
+            }
 
-            {showIDCard && savedPatient && (
-                <div className="absolute inset-0 z-[100] bg-slate-900/90 backdrop-blur-lg flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-2xl p-8 rounded-3xl shadow-2xl border border-white/20 animate-in zoom-in-95">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-2xl font-black text-slate-900 dark:text-white">Patient ID Card</h3>
-                            <button
-                                onClick={() => setShowIDCard(false)}
-                                className="h-10 w-10 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center justify-center transition-all"
-                            >
-                                <X className="h-5 w-5" />
-                            </button>
-                        </div>
-                        <PatientIDCard
-                            patient={savedPatient}
-                            registrationFee={registrationFee}
-                            upiId="hospital@upi"
-                        />
-                        <div className="mt-6 flex gap-3 justify-center">
-                            <button
-                                onClick={() => {
-                                    setShowIDCard(false);
-                                    if (onSuccess) onSuccess(savedPatient);
-                                    else router.push('/hms/patients');
-                                }}
-                                className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all"
-                            >
-                                Close
-                            </button>
+            {
+                showIDCard && savedPatient && (
+                    <div className="absolute inset-0 z-[100] bg-slate-900/90 backdrop-blur-lg flex items-center justify-center p-4 animate-in fade-in duration-300">
+                        <div className="bg-white dark:bg-slate-900 w-full max-w-2xl p-8 rounded-3xl shadow-2xl border border-white/20 animate-in zoom-in-95">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-2xl font-black text-slate-900 dark:text-white">Patient ID Card</h3>
+                                <button
+                                    onClick={() => setShowIDCard(false)}
+                                    className="h-10 w-10 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center justify-center transition-all"
+                                >
+                                    <X className="h-5 w-5" />
+                                </button>
+                            </div>
+                            <PatientIDCard
+                                patient={savedPatient}
+                                registrationFee={registrationFee}
+                                upiId="hospital@upi"
+                            />
+                            <div className="mt-6 flex gap-3 justify-center">
+                                <button
+                                    onClick={() => {
+                                        setShowIDCard(false);
+                                        if (onSuccess) onSuccess(savedPatient);
+                                        else router.push('/hms/patients');
+                                    }}
+                                    className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all"
+                                >
+                                    Close
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     );
 }
