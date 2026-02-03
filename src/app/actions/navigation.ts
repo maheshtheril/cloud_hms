@@ -101,27 +101,27 @@ export async function getMenuItems() {
         allowedModuleKeys.add('system');
         allowedModuleKeys.add('settings');
 
-        // 3. IMPLICIT PERMISSION-BASED MODULE ACCESS (Safety Net)
-        // If a user has permission to view a module, they should see its menu, 
-        // regardless of tenant-level flags (which might be misconfigured).
-        // Added '*' check to ensure Admins see these modules if subscribed.
-        const hasHMSPerm = userPerms.has('hms:view') || userPerms.has('hms:dashboard:reception') || userPerms.has('hms:dashboard:doctor') || userPerms.has('*');
-        const hasCRMPerm = userPerms.has('crm:view') || userPerms.has('crm:admin'); // CRM doesn't auto-show for '*' unless industry is CRM
-        const hasFinancePerm = userPerms.has('accounting:view') || userPerms.has('finance:view') || userPerms.has('billing:view') || userPerms.has('*');
-        const hasInventoryPerm = userPerms.has('inventory:view') || userPerms.has('purchasing:view') || userPerms.has('pharmacy:view') || userPerms.has('*');
+        // 3. IMPLICIT PERMISSION-BASED MODULE ACCESS (Safety Net vs Strict Mode)
+        // CRITICAL FIX: If the tenant has explicit subscriptions (hasStrictSubscriptions), 
+        // we MUST NOT allow User Permissions (like Admin '*') to leak unrelated modules (like HMS in a CRM tenant).
+        const hasStrictSubscriptions = session?.user?.tenantId && (await prisma.tenant_module.count({ where: { tenant_id: session.user.tenantId, enabled: true } })) > 0;
 
-        if (hasHMSPerm) {
-            allowedModuleKeys.add('hms');
-        }
-        if (hasCRMPerm || (userPerms.has('*') && industryName.toLowerCase().includes('crm'))) {
-            allowedModuleKeys.add('crm');
-        }
-        if (hasFinancePerm) {
-            allowedModuleKeys.add('accounting');
-            allowedModuleKeys.add('finance');
-        }
-        if (hasInventoryPerm) {
-            allowedModuleKeys.add('inventory');
+        if (!hasStrictSubscriptions) {
+            // Only fall back to "Permission Guessing" if the tenant has NO configuration.
+            // This prevents CRM tenants from seeing Hospital menus just because the user is an Admin.
+
+            const hasHMSPerm = userPerms.has('hms:view') || userPerms.has('hms:dashboard:reception') || userPerms.has('hms:dashboard:doctor') || userPerms.has('*');
+            const hasCRMPerm = userPerms.has('crm:view') || userPerms.has('crm:admin');
+            const hasFinancePerm = userPerms.has('accounting:view') || userPerms.has('finance:view') || userPerms.has('billing:view') || userPerms.has('*');
+            const hasInventoryPerm = userPerms.has('inventory:view') || userPerms.has('purchasing:view') || userPerms.has('pharmacy:view') || userPerms.has('*');
+
+            if (hasHMSPerm) allowedModuleKeys.add('hms');
+            if (hasCRMPerm || (userPerms.has('*') && industryName.toLowerCase().includes('crm'))) allowedModuleKeys.add('crm');
+            if (hasFinancePerm) {
+                allowedModuleKeys.add('accounting');
+                allowedModuleKeys.add('finance');
+            }
+            if (hasInventoryPerm) allowedModuleKeys.add('inventory');
         }
 
         // AUTO-MIGRATION REMOVED
