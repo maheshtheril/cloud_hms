@@ -255,26 +255,33 @@ export function CreatePatientForm({
                         if ((res as any)?.error) {
                             setMessage({ type: 'error', text: (res as any).error });
                         } else {
-                            // CASE 1: Invoice Created -> Redirect to Bill
-                            if ((res as any).invoiceId) {
-                                setMessage({ type: 'success', text: "Patient registered. Generating Invoice..." });
-                                setTimeout(() => {
-                                    router.push(`/hms/billing/${(res as any).invoiceId}`);
-                                }, 500); // Faster redirect
-                                if (onSuccess) onSuccess(res);
-                                return;
+                            const patientId = (res as any).id || (res as any).data?.id;
+
+                            // LOGIC BRANCH 1: BILLING REQUESTED
+                            if (chargeRegistration && !waiveFee) {
+                                if ((res as any).invoiceId) {
+                                    // Success: Invoice Created
+                                    setMessage({ type: 'success', text: "Patient registered. Opening Invoice..." });
+                                    setTimeout(() => {
+                                        router.push(`/hms/billing/${(res as any).invoiceId}`);
+                                    }, 200);
+                                    if (onSuccess) onSuccess(res);
+                                    return;
+                                } else {
+                                    // Failure: Invoice NOT Created (Logic or System Error)
+                                    // DO NOT SHOW ID CARD. Redirect to manual billing.
+                                    console.warn("Automatic billing failed, redirecting to manual.");
+                                    setMessage({ type: 'error', text: "Auto-invoice failed. Opening manual billing..." });
+                                    setTimeout(() => {
+                                        router.push(`/hms/billing/new?patientId=${patientId}`);
+                                    }, 1000);
+                                    if (onSuccess) onSuccess(res);
+                                    return;
+                                }
                             }
 
-                            // CASE 2: Expected Invoice but Failed (Billing Error)
-                            if (chargeRegistration && !waiveFee && (res as any).billingError) {
-                                setMessage({ type: 'error', text: `Patient saved, but Billing Failed: ${(res as any).billingError}` });
-                                // Still show ID card so they aren't stuck, but error is visible.
-                                setSavedPatient(res);
-                                setShowIDCard(true);
-                                return;
-                            }
-
-                            // CASE 3: No Invoice Expected (Free / Update) -> Show ID Card
+                            // LOGIC BRANCH 2: FREE / UPDATE (No Billing)
+                            // Only here do we show the ID card (QR Code)
                             if (onSuccess) onSuccess(res);
                             else {
                                 setSavedPatient(res);
