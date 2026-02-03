@@ -232,45 +232,50 @@ export async function createPatient(existingId: string | null | any, formData: F
                 // ATTEMPT 3: Direct DB Create (Emergency Fallback)
                 // If the billing service fails (e.g. number generation, locks), we FORCE a record so the user can take money.
                 if (invoiceRes.error || !invoiceRes.success) {
-                    console.error("Billing Service Failed. Attempting Direct DB Insertion (Fallback).");
+                    console.error("Billing Service Failed. Attempting Direct DB Insertion (Fallback - RAW).");
                     try {
-                        const fallbackInvoice = await prisma.hms_invoice.create({
+                        const invoiceId = crypto.randomUUID();
+                        const fallbackInvoiceNo = `REG-${Date.now().toString().slice(-6)}`;
+                        const safeCompanyId = (companyId || tenantId) as string;
+
+                        // Header (Raw Insert to bypass ORM array issues)
+                        await prisma.$executeRaw`
+                            INSERT INTO "hms_invoice" (
+                                "id", "tenant_id", "company_id", "patient_id", 
+                                "invoice_number", "invoice_date", "status", 
+                                "total", "subtotal", "total_tax", "total_discount", "total_paid", "outstanding_amount",
+                                "line_items", "billing_metadata", "currency", "currency_rate"
+                            ) VALUES (
+                                ${invoiceId}::uuid, ${tenantId}::uuid, ${safeCompanyId}::uuid, ${patient.id}::uuid,
+                                ${fallbackInvoiceNo}, ${new Date()}, 'draft', 
+                                ${fee}, ${fee}, 0, 0, 0, ${fee},
+                                ${JSON.stringify([{
+                            description: "Registration Fee (Recovered)",
+                            quantity: 1,
+                            unit_price: fee,
+                            net_amount: fee,
+                            tax_amount: 0
+                        }])}::jsonb,
+                                '{}'::jsonb, 'INR', 1
+                            )
+                        `;
+
+                        // Lines (Prisma)
+                        await prisma.hms_invoice_lines.create({
                             data: {
-                                id: crypto.randomUUID(),
                                 tenant_id: tenantId,
-                                company_id: (companyId || tenantId) as string,
-                                patient_id: patient.id,
-                                invoice_number: `REG-${Date.now().toString().slice(-6)}`, // Emergency Numbering
-                                invoice_date: new Date(),
-                                status: 'draft', // Safe default
-                                total: fee,
-                                subtotal: fee,
-                                total_tax: 0,
-                                total_discount: 0,
-                                total_paid: 0,
-                                outstanding_amount: fee,
-                                line_items: [{
-                                    // line_idx: 1, // Optional inside JSON
-                                    description: "Registration Fee (Recovered)",
-                                    quantity: 1,
-                                    unit_price: fee,
-                                    net_amount: fee,
-                                    tax_amount: 0
-                                }],
-                                hms_invoice_lines: {
-                                    create: {
-                                        tenant_id: tenantId,
-                                        company_id: (companyId || tenantId) as string,
-                                        line_idx: 1,
-                                        description: "Registration Fee (Recovered)",
-                                        quantity: 1,
-                                        unit_price: fee,
-                                        net_amount: fee,
-                                        tax_amount: 0
-                                    }
-                                }
+                                company_id: safeCompanyId,
+                                invoice_id: invoiceId,
+                                line_idx: 1,
+                                description: "Registration Fee (Recovered)",
+                                quantity: 1,
+                                unit_price: fee,
+                                net_amount: fee,
+                                tax_amount: 0
                             }
                         });
+
+                        const fallbackInvoice = await prisma.hms_invoice.findUnique({ where: { id: invoiceId } });
                         invoiceRes = { success: true, data: fallbackInvoice };
                     } catch (dbErr: any) {
                         console.error("CRITICAL: Direct DB Invoice Creation Failed:", dbErr);
