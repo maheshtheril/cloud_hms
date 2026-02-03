@@ -240,7 +240,7 @@ export async function createPatient(existingId: string | null | any, formData: F
 
                         // Header (Raw Insert to bypass ORM array issues)
                         await prisma.$executeRaw`
-                            INSERT INTO "hms_invoice" (
+                            INSERT INTO "public"."hms_invoice" (
                                 "id", "tenant_id", "company_id", "patient_id", 
                                 "invoice_number", "invoice_date", "status", 
                                 "total", "subtotal", "total_tax", "total_discount", "total_paid", "outstanding_amount",
