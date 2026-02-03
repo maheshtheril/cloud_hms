@@ -33,6 +33,7 @@ interface InvoiceControlPanelProps {
     outstandingAmount: number;
     patientEmail?: string | null;
     invoiceData?: any;
+    autoOpenPayment?: boolean;
 }
 
 export function InvoiceControlPanel({
@@ -40,10 +41,11 @@ export function InvoiceControlPanel({
     currentStatus,
     outstandingAmount,
     patientEmail,
-    invoiceData
+    invoiceData,
+    autoOpenPayment = false
 }: InvoiceControlPanelProps) {
     const [isLoading, setIsLoading] = useState(false);
-    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(autoOpenPayment && currentStatus === 'posted');
 
     // Payment State
     const [paymentMethod, setPaymentMethod] = useState('cash');

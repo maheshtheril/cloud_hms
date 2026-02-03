@@ -14,7 +14,7 @@ export default async function PrintPage({ params, searchParams }: {
 }) {
     const session = await auth();
     const { id } = await params;
-    const { type } = await searchParams;
+    const { type, action } = await searchParams;
 
     if (!session?.user?.companyId) return <div>Unauthorized</div>;
 
@@ -163,6 +163,7 @@ export default async function PrintPage({ params, searchParams }: {
                         outstandingAmount={Number(invoice.outstanding_amount || 0)}
                         patientEmail={(invoice.hms_patient?.contact as any)?.email}
                         invoiceData={{ ...invoice, company: companyData }}
+                        autoOpenPayment={action === 'pay'}
                     />
                 </div>
             </div>
