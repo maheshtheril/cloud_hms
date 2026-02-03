@@ -40,6 +40,7 @@ export function CreatePatientForm({
     const [isPending, setIsPending] = useState(false);
     const [savedPatient, setSavedPatient] = useState<any>(null);
     const [showIDCard, setShowIDCard] = useState(false);
+    const [printIDCard, setPrintIDCard] = useState(false);
 
     // Dynamic Settings State
     const [registrationFee, setRegistrationFee] = useState(propFee ?? 100);
@@ -269,24 +270,32 @@ export function CreatePatientForm({
                                     return;
                                 } else {
                                     // Failure: Invoice NOT Created
-                                    // Do NOT redirect to manual entry form (user hates it).
                                     console.error("Automatic billing failed.");
                                     setMessage({ type: 'error', text: "Patient saved, but invoice generation failed. Please create bill manually from dashboard." });
-                                    // Just stay here or show ID card as fallback state so they are not stuck?
-                                    // Let's safe-fall to ID card view but with the error visible.
-                                    setSavedPatient(res);
-                                    setShowIDCard(true);
+                                    // Fallback if they wanted ID card but billing failed?
+                                    if (printIDCard) {
+                                        setSavedPatient(res);
+                                        setShowIDCard(true);
+                                    }
                                     return;
                                 }
                             }
 
                             // LOGIC BRANCH 2: FREE / UPDATE (No Billing)
-                            // Only here do we show the ID card (QR Code)
                             if (onSuccess) onSuccess(res);
                             else {
                                 setSavedPatient(res);
-                                setMessage({ type: 'success', text: initialData ? "Profile updated successfully." : "Patient registration complete." });
-                                setShowIDCard(true);
+                                setMessage({ type: 'success', text: initialData ? "Profile updated successfully." : "Patient registered successfully." });
+
+                                // Explicitly check user preference for ID Card
+                                if (printIDCard) {
+                                    setShowIDCard(true);
+                                } else {
+                                    // If we are not printing ID card and not billing, just close/redirect after a moment
+                                    setTimeout(() => {
+                                        router.push('/hms/patients');
+                                    }, 1000);
+                                }
                             }
                         }
                     } catch (err: any) {
@@ -495,6 +504,7 @@ export function CreatePatientForm({
                     {/* Premium Footer */}
                     <div className="px-5 py-4 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between z-10 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] shrink-0">
                         <div className="flex items-center gap-6">
+                            {/* Billing Checkbox */}
                             <label className="group flex items-center gap-3 cursor-pointer p-1 pr-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
                                 <div className="relative">
                                     <input
@@ -519,6 +529,26 @@ export function CreatePatientForm({
                                     </div>
                                 </div>
                             </label>
+
+                            {/* ID Card Checkbox */}
+                            <label className="group flex items-center gap-3 cursor-pointer p-1 px-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                                <div className="relative flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={printIDCard}
+                                        onChange={(e) => setPrintIDCard(e.target.checked)}
+                                        className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                    />
+                                </div>
+                                <div>
+                                    <span className="block text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider group-hover:text-indigo-600 transition-colors">
+                                        Print ID Card
+                                    </span>
+                                    <span className="block text-[10px] font-bold text-slate-400">
+                                        Show QR Code & Details
+                                    </span>
+                                </div>
+                            </label>
                         </div>
 
                         <div className="flex items-center gap-4">
@@ -537,7 +567,12 @@ export function CreatePatientForm({
                                 {isPending ? (
                                     <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                                 ) : (chargeRegistration && !waiveFee ? <Printer className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />)}
-                                {chargeRegistration && !waiveFee ? 'Save & Print Invoice' : (initialData ? 'Update Profile' : 'Save & Print ID')}
+                                {
+                                    chargeRegistration && !waiveFee ? 'Save & Print Invoice' :
+                                        (initialData ? 'Update Profile' :
+                                            (printIDCard ? 'Save & Print ID' : 'Save Patient')
+                                        )
+                                }
                             </button>
                         </div>
                     </div>
