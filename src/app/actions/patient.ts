@@ -329,7 +329,7 @@ export async function createPatientQuick(formData: FormData) {
         const patient = await prisma.hms_patient.create({
             data: {
                 tenant_id: tenantId,
-                company_id: companyId || tenantId,
+                company_id: (companyId || tenantId) as string,
                 first_name: firstName.trim(),
                 last_name: (lastName || '').trim(),
                 dob: dob ? new Date(dob) : null,
