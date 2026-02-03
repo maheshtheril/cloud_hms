@@ -79,47 +79,47 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                         <div className="p-8 md:p-10 relative z-10">
 
                             {/* Header Section */}
-                            <div className="text-center mb-8">
+                            <div className="text-center mb-10">
                                 <motion.div
                                     initial={{ scale: 0.9, opacity: 0 }}
                                     animate={{ scale: 1, opacity: 1 }}
                                     transition={{ delay: 0.2 }}
-                                    className="flex justify-center mb-4"
+                                    className="flex justify-center mb-6"
                                 >
                                     {branding?.logo_url ? (
-                                        <div className="w-16 h-16 relative">
-                                            {/* Glow behind logo */}
-                                            <div className="absolute inset-0 bg-white/20 blur-xl rounded-full" />
+                                        <div className="w-24 h-24 relative flex items-center justify-center">
+                                            {/* Glow behind logo to ensure visibility of dark logos */}
+                                            <div className="absolute inset-0 bg-white/10 blur-[30px] rounded-full" />
+                                            <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/20 to-indigo-500/20 rounded-full blur-xl animate-pulse" />
+
                                             <img
                                                 src={branding.logo_url}
                                                 alt={appName}
-                                                className="w-full h-full object-contain relative z-10 drop-shadow-2xl"
+                                                className="w-full h-full object-contain relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
                                             />
                                         </div>
                                     ) : (
-                                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 p-0.5 shadow-xl shadow-cyan-500/20">
+                                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-cyan-400 to-indigo-500 p-0.5 shadow-2xl shadow-cyan-500/30">
                                             <div className="w-full h-full bg-black/40 backdrop-blur-md rounded-xl flex items-center justify-center border border-white/10">
-                                                <Activity className="w-8 h-8 text-white" />
+                                                <Activity className="w-10 h-10 text-white" />
                                             </div>
                                         </div>
                                     )}
                                 </motion.div>
-                                <motion.h1
+
+                                <motion.div
                                     initial={{ y: 10, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
                                     transition={{ delay: 0.3 }}
-                                    className="text-2xl font-bold text-white tracking-tight"
                                 >
-                                    {appName}
-                                </motion.h1>
-                                <motion.p
-                                    initial={{ y: 10, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 0.4 }}
-                                    className="text-slate-300 text-sm mt-2"
-                                >
-                                    Secure Enterprise Gateway
-                                </motion.p>
+                                    <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-50 to-indigo-100 tracking-[0.15em] uppercase drop-shadow-sm mb-2">
+                                        {appName}
+                                    </h1>
+                                    <div className="h-0.5 w-12 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto mb-3 opacity-50" />
+                                    <p className="text-slate-400 text-xs font-medium tracking-widest uppercase opacity-80">
+                                        Secure Enterprise Gateway
+                                    </p>
+                                </motion.div>
                             </div>
 
                             {/* Login Form */}
@@ -183,7 +183,7 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                         <>
                                             <span className="relative z-10">Sign In to Dashboard</span>
                                             <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform relative z-10" />
-                                        </button>
+                                        </>
                                     )}
                                 </button>
                             </form>
