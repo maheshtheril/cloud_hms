@@ -637,7 +637,7 @@ export function ReceptionActionCenter({
 
             {/* MODALS */}
             <Dialog open={activeModal === 'register'} onOpenChange={() => setActiveModal(null)}>
-                <DialogContent className="max-w-[95vw] max-h-[90vh] overflow-hidden p-0">
+                <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden p-0">
                     <CreatePatientForm onClose={() => setActiveModal(null)} />
                 </DialogContent>
             </Dialog>
