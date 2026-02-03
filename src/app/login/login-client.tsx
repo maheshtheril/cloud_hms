@@ -41,13 +41,14 @@ export default function LoginClient({ branding }: { branding: Branding | null })
     const isCRM = appName.toLowerCase().includes('crm') || appName.toLowerCase().includes('seeakk');
 
     const theme = isCRM ? {
-        bgImage: "/crm-login-bg.png",
-        gradientOverlay: "from-blue-950/80 via-slate-900/60 to-purple-900/40",
-        radialOverlay: "from-blue-900/20 via-slate-950/40 to-slate-950/80",
+        // Updated to Green/Emerald Theme for Seeakk CRM
+        bgImage: "/crm-green-bg.png",
+        gradientOverlay: "from-emerald-950/90 via-gray-950/70 to-teal-950/50",
+        radialOverlay: "from-emerald-900/30 via-slate-950/50 to-black/80",
         heading: (
             <>
                 Powering <br />
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-400 to-cyan-400">
                     Business Growth
                 </span>
             </>
@@ -131,7 +132,7 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                                     alt={appName}
                                                     className={`w-full h-full object-contain relative z-20 ${!isCRM ? 'mix-blend-screen' : ''}`}
                                                     style={isCRM ? {
-                                                        filter: 'drop-shadow(0 0 10px rgba(56,189,248,0.4))'
+                                                        filter: 'drop-shadow(0 0 15px rgba(16,185,129,0.5))'
                                                     } : {
                                                         filter: 'invert(1) grayscale(1) brightness(2) drop-shadow(0 0 5px rgba(34,211,238,0.8))'
                                                     }}
@@ -153,10 +154,16 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                     animate={{ y: 0, opacity: 1 }}
                                     transition={{ delay: 0.3 }}
                                 >
-                                    <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-cyan-400 to-indigo-400 tracking-[0.2em] uppercase drop-shadow-[0_0_10px_rgba(34,211,238,0.5)] mb-3 filter contrast-125">
+                                    <h1 className={`text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r tracking-[0.2em] uppercase mb-3 filter contrast-125 ${isCRM
+                                            ? "from-emerald-400 via-teal-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                                            : "from-sky-300 via-cyan-400 to-indigo-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]"
+                                        }`}>
                                         {appName}
                                     </h1>
-                                    <div className="h-0.5 w-16 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mx-auto mb-4 opacity-70 shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+                                    <div className={`h-0.5 w-16 bg-gradient-to-r from-transparent to-transparent mx-auto mb-4 opacity-70 ${isCRM
+                                            ? "via-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]"
+                                            : "via-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]"
+                                        }`} />
                                     <p className="text-slate-400 text-xs font-semibold tracking-[0.3em] uppercase opacity-70">
                                         {theme.tagline}
                                     </p>
