@@ -130,19 +130,25 @@ export function InvoiceControlPanel({
     };
 
     const handlePrintPdf = async () => {
-        if (!invoiceData) {
-            window.open(`/hms/billing/${invoiceId}/print`, '_blank');
-            return;
-        }
+        // Direct Print View (HTML) - "Normal Bill"
+        window.open(`/hms/billing/${invoiceId}/print`, '_blank');
+    };
+
+    const handleDownloadPdf = async () => {
         setIsLoading(true);
         try {
             const b64 = await generateInvoicePDFBase64(invoiceData);
             const blob = base64ToBlob(b64, 'application/pdf');
             const url = URL.createObjectURL(blob);
-            window.open(url, '_blank');
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `Invoice-${invoiceData?.invoice_number || invoiceId}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         } catch (e) {
             console.error(e);
-            window.open(`/hms/billing/${invoiceId}/print`, '_blank');
+            toast({ title: "PDF Generation Failed", description: "Could not generate PDF download.", variant: "destructive" });
         } finally {
             setIsLoading(false);
         }
@@ -176,6 +182,8 @@ export function InvoiceControlPanel({
         }
     }
 
+    const balanceDifference = paymentAmount - outstandingAmount;
+
     return (
         <div className="flex flex-wrap items-center gap-3">
             {/* POST ACTION (If Draft) */}
@@ -203,29 +211,41 @@ export function InvoiceControlPanel({
                         <DialogHeader>
                             <DialogTitle>Record Payment</DialogTitle>
                             <DialogDescription>
-                                Select payment method to settle the outstanding amount.
+                                Enter the amount received. You can record partial payments (Credit) or advance payments.
                             </DialogDescription>
-                            <div className="text-[10px] bg-blue-50 text-blue-700 px-3 py-2 rounded-md border border-blue-100 mt-2">
-                                <strong>Note:</strong> This invoice is currently <strong>Unpaid (Credit)</strong>. Only proceed if you are receiving money now. If the customer is paying later, just close this popup.
-                            </div>
                         </DialogHeader>
 
-                        <div className="flex flex-col gap-2 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                            <label className="text-xs font-bold text-slate-500 uppercase">Amount to Pay</label>
-                            <div className="flex items-center gap-2">
-                                <span className="text-2xl font-bold font-mono text-slate-400">₹</span>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max={outstandingAmount}
-                                    value={paymentAmount}
-                                    onChange={(e) => setPaymentAmount(Number(e.target.value))}
-                                    className="text-2xl font-bold font-mono text-slate-900 bg-transparent outline-none w-full"
-                                />
+                        <div className="flex flex-col gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200 mt-2">
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase block mb-1">Received Amount</label>
+                                <div className="flex items-center gap-2 border-b border-slate-300 pb-1">
+                                    <span className="text-2xl font-bold font-mono text-slate-400">₹</span>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        autoFocus
+                                        value={paymentAmount}
+                                        onChange={(e) => setPaymentAmount(Number(e.target.value))}
+                                        className="text-3xl font-bold font-mono text-slate-900 bg-transparent outline-none w-full placeholder:text-slate-300"
+                                    />
+                                </div>
                             </div>
-                            <div className="text-xs text-slate-500 text-right">
-                                Total Outstanding: ₹{outstandingAmount.toFixed(2)}
+
+                            <div className="flex justify-between items-center text-xs font-medium pt-2 border-t border-slate-200">
+                                <span className="text-slate-500">Invoice Due: <span className="font-bold text-slate-700">₹{outstandingAmount.toFixed(2)}</span></span>
+                                {balanceDifference < 0 ? (
+                                    <span className="text-orange-600 font-bold">Remaining Due: ₹{Math.abs(balanceDifference).toFixed(2)}</span>
+                                ) : (
+                                    <span className="text-emerald-600 font-bold">Change / Advance: ₹{balanceDifference.toFixed(2)}</span>
+                                )}
                             </div>
+
+                            {balanceDifference > 0 && (
+                                <div className="bg-emerald-50 text-emerald-700 text-[10px] p-2 rounded border border-emerald-100 flex items-center gap-2">
+                                    <CheckCircle2 className="h-3 w-3" />
+                                    <span>Excess amount of ₹{balanceDifference.toFixed(2)} will be recorded as <strong>Advance Payment</strong>.</span>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-3 gap-3">
@@ -260,7 +280,7 @@ export function InvoiceControlPanel({
                             <Button
                                 onClick={handlePaymentConfirm}
                                 disabled={isLoading}
-                                className="bg-green-600 hover:bg-green-700 text-white"
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200"
                             >
                                 {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
                                 Confirm Receipt
@@ -274,7 +294,7 @@ export function InvoiceControlPanel({
             {/* PRINT & SHARE ACTIONS - Always Available */}
             <Button variant="outline" onClick={handlePrintPdf} disabled={isLoading}>
                 {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Printer className="mr-2 h-4 w-4" />}
-                Print
+                Print Bill
             </Button>
 
             <Button
