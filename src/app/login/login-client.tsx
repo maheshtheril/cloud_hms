@@ -119,11 +119,11 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                     animate={{ y: 0, opacity: 1 }}
                                     transition={{ delay: 0.3 }}
                                 >
-                                    <h1 className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-50 to-indigo-100 tracking-[0.15em] uppercase drop-shadow-sm mb-2">
+                                    <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-cyan-400 to-indigo-400 tracking-[0.2em] uppercase drop-shadow-[0_0_10px_rgba(34,211,238,0.5)] mb-3 filter contrast-125">
                                         {appName}
                                     </h1>
-                                    <div className="h-0.5 w-12 bg-gradient-to-r from-transparent via-cyan-500 to-transparent mx-auto mb-3 opacity-50" />
-                                    <p className="text-slate-400 text-xs font-medium tracking-widest uppercase opacity-80">
+                                    <div className="h-0.5 w-16 bg-gradient-to-r from-transparent via-cyan-400 to-transparent mx-auto mb-4 opacity-70 shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+                                    <p className="text-slate-400 text-xs font-semibold tracking-[0.3em] uppercase opacity-70">
                                         Secure Enterprise Gateway
                                     </p>
                                 </motion.div>
