@@ -125,3 +125,8 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
 }
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
