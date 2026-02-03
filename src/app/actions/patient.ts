@@ -276,7 +276,7 @@ export async function createPatient(existingId: string | null | any, formData: F
                         });
 
                         const fallbackInvoice = await prisma.hms_invoice.findUnique({ where: { id: invoiceId } });
-                        invoiceRes = { success: true, data: fallbackInvoice || undefined };
+                        invoiceRes = { success: true, data: fallbackInvoice ? fallbackInvoice : undefined };
                     } catch (dbErr: any) {
                         // DIAGNOSTIC START
                         let debugInfo = "";
