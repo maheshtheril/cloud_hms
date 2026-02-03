@@ -89,7 +89,6 @@ export function PatientDoctorSelectors({
                             onChange={(id) => onPatientSelect?.(id || '')}
                             placeholder="Search patient..."
                             inputId="patient_select"
-                            isDark={true}
                         />
                         <input type="hidden" name="patient_id" value={selectedPatientId} />
                     </div>
@@ -123,7 +122,6 @@ export function PatientDoctorSelectors({
                         onChange={(e) => onClinicianSelect?.(e || '')}
                         placeholder="Search doctor..."
                         inputId="clinician_select"
-                        isDark={true}
                     />
                     <input type="hidden" name="clinician_id" value={selectedClinicianId || ''} />
                 </div>
