@@ -225,9 +225,16 @@ export async function updateTenantSettings(data: {
 
 // === HMS SETTINGS LOGIC ===
 
+import { checkPermission } from "./rbac"
+
 export async function getHMSSettings() {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
+
+    const isAdmin = await checkPermission('hms:admin');
+    if (!isAdmin) {
+        return { error: "Access Denied: You need 'hms:admin' permission to manage clinical settings." };
+    }
 
     try {
         const companyId = session.user.companyId;
@@ -314,10 +321,16 @@ export async function updateHMSSettings(data: any) {
     const session = await auth();
     const companyId = session?.user?.companyId;
     const tenantId = session?.user?.tenantId;
+    const userId = session?.user?.id;
 
     if (!companyId || !tenantId) {
-        console.error("HMS Settings Persistence Failure: Missing session context", { companyId, tenantId });
-        return { error: "Your session has expired. Please log out and log in again to save settings." };
+        return { error: "Session expired. Please log in again." };
+    }
+
+    // Permission Check
+    const canManage = await checkPermission('hms:admin');
+    if (!canManage) {
+        return { error: "Unauthorized: You do not have permission to manage clinical settings." };
     }
 
     try {
@@ -389,8 +402,7 @@ export async function updateHMSSettings(data: any) {
                 lastUpdated: new Date().toISOString()
             };
 
-            // Use delete + create or find + update to ensure unique constraint
-            // Upsert is safer but Requires index name which varies, so we do find + handle
+            // Bulletproof find-then-upsert to handle missing defaults in DB
             const existingConfig = await tx.hms_settings.findFirst({
                 where: { tenant_id: tenantId, company_id: companyId, key: 'registration_config' }
             });
@@ -398,17 +410,28 @@ export async function updateHMSSettings(data: any) {
             if (existingConfig) {
                 await tx.hms_settings.update({
                     where: { id: existingConfig.id },
-                    data: { value: configValue as any, updated_at: new Date() }
+                    data: {
+                        value: configValue as any,
+                        updated_at: new Date(),
+                        updated_by: userId
+                    }
                 });
             } else {
                 await tx.hms_settings.create({
                     data: {
+                        id: crypto.randomUUID(), // Explicitly provide UUID
                         tenant_id: tenantId,
                         company_id: companyId,
                         key: 'registration_config',
                         value: configValue as any,
                         scope: 'company',
-                        created_at: new Date()
+                        version: 1,
+                        is_active: true,
+                        created_by: userId,
+                        updated_by: userId,
+                        created_at: new Date(),
+                        updated_at: new Date(),
+                        metadata: {}
                     }
                 });
             }
