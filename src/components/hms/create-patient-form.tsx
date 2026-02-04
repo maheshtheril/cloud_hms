@@ -1,6 +1,6 @@
 'use client'
 
-import { createPatient, createPatientQuick } from "@/app/actions/patient-v2"
+import { createPatientEmergency as createPatient, createPatientQuick } from "@/app/actions/patient-emergency"
 import { recordPayment } from "@/app/actions/billing"
 import { X, User, Phone, Calendar, Camera, FileText, Shield, MapPin, Mail, AlertCircle, CheckCircle2, Fingerprint, Activity, Printer, CreditCard, Banknote, Smartphone } from "lucide-react"
 import { useState, useEffect } from "react"
