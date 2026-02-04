@@ -232,7 +232,7 @@ export async function createPatient(existingId: string | null | any, formData: F
                 // ATTEMPT 3: Direct DB Create (Emergency Fallback)
                 // If the billing service fails (e.g. number generation, locks), we FORCE a record so the user can take money.
                 if (invoiceRes.error || !invoiceRes.success) { // FORCE DEPLOY 2026-02-03
-                    console.error("Billing Service Failed. Attempting Direct DB Insertion (Fallback - RAW V2).");
+                    console.error("Billing Service Failed. Attempting Direct DB Insertion (Fallback - RAW V3 - ARRAY FIX).");
                     try {
                         const invoiceId = crypto.randomUUID();
                         const fallbackInvoiceNo = `REG-${Date.now().toString().slice(-6)}`;
