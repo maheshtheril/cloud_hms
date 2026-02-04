@@ -22,10 +22,9 @@ export async function nuclearMenuFix() {
         data: { permission_code: 'billing:view' } // Keep as billing, but ensure Receptionist doesn't have it if unwanted
     });
 
-    // 4. LOCK HMS SETTINGS (Leaking into HMS)
-    await prisma.menu_items.updateMany({
-        where: { key: 'hms-config' },
-        data: { permission_code: 'hms:admin' }
+    // 4. DELETE REDUNDANT HMS CONFIG (Prevent Duplication)
+    await prisma.menu_items.deleteMany({
+        where: { key: 'hms-config' }
     });
 
     // 5. LOCK ACCOUNTING CONFIG (Leaking into Config)

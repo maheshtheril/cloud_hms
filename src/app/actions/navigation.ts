@@ -457,7 +457,7 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
                 { key: 'users', label: 'User Management', icon: 'Users', url: '/settings/users' },
                 { key: 'roles', label: 'RBAC & Security', icon: 'Shield', url: '/settings/roles' },
                 { key: 'settings', label: 'Global Settings', icon: 'Settings', url: '/settings/global' },
-                { key: 'hms-settings', label: 'HMS Configuration', icon: 'Activity', url: '/settings/hms' },
+                { key: 'hms-settings', label: 'HMS Settings', icon: 'Activity', url: '/settings/hms' },
             ]
         });
     }
@@ -537,7 +537,6 @@ export async function auditAndFixMenuPermissions() {
             // Ensure these settings items require specific module permissions
             { key: 'crm-masters', perm: 'crm:admin' },
             { key: 'crm-settings', perm: 'crm:admin' },
-            { key: 'hms-config', perm: 'hms:admin' },
             { key: 'accounting-settings', perm: 'accounting:view' },
 
             // PURCHASING & INVENTORY (Granular)
@@ -560,9 +559,8 @@ export async function auditAndFixMenuPermissions() {
 
             { key: 'hms-lab', perm: 'lab:view' }, // Strict Lab Access
 
-            // HMS SETTINGS (Restoring "HMS Settings" label)
+            // HMS SETTINGS (Standardizing on "HMS Settings")
             { key: 'hms-settings', perm: 'hms:admin', label: 'HMS Settings' },
-            { key: 'hms-config', perm: 'hms:admin', label: 'HMS Settings' },
 
             // STRICT DASHBOARDS
             { key: 'hms-dashboard', perm: 'hms:admin' }, // Main dashboard is for admins

@@ -332,32 +332,32 @@ export async function updateHMSSettings(data: any) {
 
         const result = await prisma.$transaction(async (tx) => {
             // 1. Update/Create Registration Fee Product (Master Product)
-            // Search for existing active registration products
+            // SKU must be unique per tenant. Since multiple companies share a tenant, we suffix with company fragment.
+            const targetSku = `REG-FEE-${companyId.slice(0, 4).toUpperCase()}`;
+
             let regProduct = await tx.hms_product.findFirst({
                 where: {
                     company_id: companyId,
                     tenant_id: tenantId,
-                    sku: { in: ['REG-FEE', 'REG001'] },
+                    OR: [
+                        { sku: targetSku },
+                        { sku: 'REG-FEE' },
+                        { name: { contains: 'Registration Fee', mode: 'insensitive' } }
+                    ],
                     is_active: true
                 }
             });
 
-            if (!regProduct) {
-                // Secondary search by name
-                regProduct = await tx.hms_product.findFirst({
-                    where: {
-                        company_id: companyId,
-                        tenant_id: tenantId,
-                        name: { contains: 'Registration Fee', mode: 'insensitive' },
-                        is_active: true
-                    }
-                });
-            }
-
             if (regProduct) {
                 await tx.hms_product.update({
                     where: { id: regProduct.id },
-                    data: { price: feeAmount, is_service: true, is_stockable: false, updated_at: new Date() }
+                    data: {
+                        price: feeAmount,
+                        sku: targetSku, // Ensure it has the correct SKU now
+                        is_service: true,
+                        is_stockable: false,
+                        updated_at: new Date()
+                    }
                 });
             } else {
                 // Create if missing
@@ -366,7 +366,7 @@ export async function updateHMSSettings(data: any) {
                         tenant_id: tenantId,
                         company_id: companyId,
                         name: "Patient Registration Fee",
-                        sku: "REG-FEE",
+                        sku: targetSku,
                         description: "Standard fee for new patient registration",
                         price: feeAmount,
                         is_service: true,
@@ -435,6 +435,8 @@ export async function updateHMSSettings(data: any) {
         console.log("HMS Settings Saved Successfully", result);
 
         revalidatePath('/settings/hms');
+        revalidatePath('/hms/patients/new');
+        revalidatePath('/hms/reception/dashboard');
         return { success: true };
 
     } catch (error: any) {
