@@ -393,7 +393,7 @@ export async function updateHMSSettings(data: any) {
                 });
             }
 
-            // STEP 2: Manage HMS Configuration JSON
+            // STEP 2: Manage HMS Configuration JSON (Reset & Create Pattern)
             const configValue = {
                 validity: validityDays,
                 enableCardIssuance: !!data.enableCardIssuance,
@@ -402,39 +402,32 @@ export async function updateHMSSettings(data: any) {
                 lastUpdated: new Date().toISOString()
             };
 
-            // Bulletproof find-then-upsert to handle missing defaults in DB
-            const existingConfig = await tx.hms_settings.findFirst({
+            console.log(`[HMS SETTINGS SAVE] Wiping old config for ${companyId}`);
+
+            // Delete any existing config for this company to avoid unique constraint issues
+            await tx.hms_settings.deleteMany({
                 where: { tenant_id: tenantId, company_id: companyId, key: 'registration_config' }
             });
 
-            if (existingConfig) {
-                await tx.hms_settings.update({
-                    where: { id: existingConfig.id },
-                    data: {
-                        value: configValue as any,
-                        updated_at: new Date(),
-                        updated_by: userId
-                    }
-                });
-            } else {
-                await tx.hms_settings.create({
-                    data: {
-                        id: crypto.randomUUID(), // Explicitly provide UUID
-                        tenant_id: tenantId,
-                        company_id: companyId,
-                        key: 'registration_config',
-                        value: configValue as any,
-                        scope: 'company',
-                        version: 1,
-                        is_active: true,
-                        created_by: userId,
-                        updated_by: userId,
-                        created_at: new Date(),
-                        updated_at: new Date(),
-                        metadata: {}
-                    }
-                });
-            }
+            console.log(`[HMS SETTINGS SAVE] Creating fresh config for ${companyId}`);
+
+            // Create fresh config
+            await tx.hms_settings.create({
+                data: {
+                    id: crypto.randomUUID(),
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    key: 'registration_config',
+                    value: configValue as any,
+                    scope: 'company',
+                    version: 1,
+                    is_active: true,
+                    created_by: userId,
+                    updated_by: userId,
+                    created_at: new Date(),
+                    updated_at: new Date()
+                }
+            });
 
             // STEP 3: Log Fee History (Audit Trail)
             // Deactivate all old fees for this branch
@@ -446,12 +439,14 @@ export async function updateHMSSettings(data: any) {
             // Create new audit record
             await tx.hms_patient_registration_fees.create({
                 data: {
+                    id: crypto.randomUUID(),
                     tenant_id: tenantId,
                     company_id: companyId,
                     fee_amount: feeAmount,
                     validity_days: validityDays,
                     is_active: true,
-                    created_at: new Date()
+                    created_at: new Date(),
+                    updated_at: new Date()
                 }
             });
 
