@@ -192,7 +192,7 @@ export async function createPatientV10(patientId: string | null | any, formData:
                 if (feeProduct) {
                     const amount = Number(feeProduct.price) || configFee || 0;
 
-                    const invoiceId = crypto.randomUUID();
+                    invoiceId = crypto.randomUUID();
                     const lineId = crypto.randomUUID();
                     const now = new Date();
 
@@ -240,7 +240,6 @@ export async function createPatientV10(patientId: string | null | any, formData:
                         }
                     });
 
-                    invoiceId = invoice.id;
                 } else {
                     warning = "Registration fee product not found. Bill manually.";
                 }
