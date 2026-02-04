@@ -334,14 +334,15 @@ export async function updateHMSSettings(data: any) {
     }
 
     try {
-        console.log(`[HMS SETTINGS SAVE] Starting transaction for Company: ${companyId}`);
-
-        // 1. Sanitize Inputs
         const feeAmount = parseFloat(String(data.registrationFee || '0'));
         const validityDays = parseInt(String(data.registrationValidity || '365'));
 
+        console.log(`[HMS SAVE DIAGNOSTIC] User: ${userId} | Co: ${companyId} | Ten: ${tenantId}`);
+        console.log(`[HMS SAVE DIAGNOSTIC] Types: Co=${typeof companyId} | Ten=${typeof tenantId} | User=${typeof userId}`);
+        console.log(`[HMS SAVE DIAGNOSTIC] Data: Fee=${feeAmount} | Valid=${validityDays}`);
+
         if (isNaN(feeAmount) || isNaN(validityDays)) {
-            return { error: "Invalid registration fee or validity period. Please enter valid numbers." };
+            return { error: "Invalid registration fee or validity period." };
         }
 
         const result = await prisma.$transaction(async (tx) => {
@@ -394,13 +395,13 @@ export async function updateHMSSettings(data: any) {
             }
 
             // STEP 2: Manage HMS Configuration JSON (Reset & Create Pattern)
-            const configValue = {
+            const configValue = JSON.stringify({
                 validity: validityDays,
                 enableCardIssuance: !!data.enableCardIssuance,
                 fee: feeAmount,
                 productId: regProduct.id,
                 lastUpdated: new Date().toISOString()
-            };
+            });
 
             console.log(`[HMS SETTINGS SAVE] Wiping old config for ${companyId}`);
 
@@ -409,25 +410,19 @@ export async function updateHMSSettings(data: any) {
                 where: { tenant_id: tenantId, company_id: companyId, key: 'registration_config' }
             });
 
-            console.log(`[HMS SETTINGS SAVE] Creating fresh config for ${companyId}`);
+            console.log(`[HMS SETTINGS SAVE] Creating fresh config via Raw SQL for ${companyId}`);
 
-            // Create fresh config
-            await tx.hms_settings.create({
-                data: {
-                    id: crypto.randomUUID(),
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    key: 'registration_config',
-                    value: configValue as any,
-                    scope: 'company',
-                    version: 1,
-                    is_active: true,
-                    created_by: userId,
-                    updated_by: userId,
-                    created_at: new Date(),
-                    updated_at: new Date()
-                }
-            });
+            // USE RAW SQL to bypass any Prisma mapping bugs or null constraint false-positives
+            const configId = (await tx.$queryRaw`SELECT gen_random_uuid()` as any)[0].gen_random_uuid;
+
+            await tx.$executeRaw`
+                INSERT INTO hms_settings (
+                    id, tenant_id, company_id, key, value, scope, version, is_active, created_at, updated_at, created_by, updated_by
+                ) VALUES (
+                    ${configId}::uuid, ${tenantId}::uuid, ${companyId}::uuid, 'registration_config', ${configValue}::jsonb, 'company', 1, true, now(), now(), ${userId}::uuid, ${userId}::uuid
+                )
+            `;
+            console.log(`[HMS SETTINGS SAVE] Created config ID: ${configId}`);
 
             // STEP 3: Log Fee History (Audit Trail)
             // Deactivate all old fees for this branch
@@ -436,19 +431,15 @@ export async function updateHMSSettings(data: any) {
                 data: { is_active: false, updated_at: new Date() }
             });
 
-            // Create new audit record
-            await tx.hms_patient_registration_fees.create({
-                data: {
-                    id: crypto.randomUUID(),
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    fee_amount: feeAmount,
-                    validity_days: validityDays,
-                    is_active: true,
-                    created_at: new Date(),
-                    updated_at: new Date()
-                }
-            });
+            // Create new audit record with explicit UUID
+            const historyId = (await tx.$queryRaw`SELECT gen_random_uuid()` as any)[0].gen_random_uuid;
+            await tx.$executeRaw`
+                INSERT INTO hms_patient_registration_fees (
+                    id, tenant_id, company_id, fee_amount, validity_days, is_active, created_at, updated_at
+                ) VALUES (
+                    ${historyId}::uuid, ${tenantId}::uuid, ${companyId}::uuid, ${feeAmount}, ${validityDays}, true, now(), now()
+                )
+            `;
 
             return { success: true, productId: regProduct.id };
         }, { timeout: 15000 }); // High timeout for concurrent production writes
