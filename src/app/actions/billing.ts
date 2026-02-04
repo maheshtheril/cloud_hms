@@ -329,51 +329,55 @@ export async function createInvoice(data: { patient_id: string, appointment_id?:
         // If status is "posted", likely outstanding is Total - Paid
         const outstandingAmount = (status === 'paid') ? 0 : Math.max(0, total - totalPaid);
 
-        // ... (triggers check) ...
+        const tenantId = session.user.tenantId;
+        if (!tenantId) return { error: "Missing Tenant ID in session" };
 
         const invoicePayload = {
-            tenant_id: session.user.tenantId!,
+            tenant_id: tenantId,
             company_id: companyId,
             patient_id: (patient_id as string) || null,
             appointment_id: (appointment_id as string) || null,
             invoice_number: invoiceNo,
             invoice_date: new Date(date),
+            issued_at: new Date(), // Explicitly set instead of relying on default for now
             currency: 'INR',
             status: status,
-            total: total,
-            subtotal: subtotal,
-            total_tax: totalTaxAmount,
-            total_discount: Number(total_discount),
-            total_paid: totalPaid,
-            outstanding_amount: outstandingAmount,
-            billing_metadata: billing_metadata,
+            total: total || 0,
+            subtotal: subtotal || 0,
+            total_tax: totalTaxAmount || 0,
+            total_discount: Number(total_discount) || 0,
+            total_paid: totalPaid || 0,
+            outstanding_amount: outstandingAmount || 0,
+            billing_metadata: billing_metadata || {},
+            line_items: [], // Use the Json[] field as empty default to satisfy schema if needed
             hms_invoice_lines: {
                 create: line_items.map((item: any, index: number) => ({
-                    tenant_id: session.user.tenantId,
+                    tenant_id: tenantId,
                     company_id: companyId,
                     line_idx: index + 1,
-                    product_id: item.product_id || null, // Convert empty string to null
-                    description: item.description,
-                    quantity: item.quantity,
-                    unit_price: item.unit_price,
-                    net_amount: (item.quantity * item.unit_price) - (item.discount_amount || 0),
-                    // Tax details
-                    tax_rate_id: item.tax_rate_id || null, // Convert empty string to null
-                    tax_amount: item.tax_amount || 0,
-                    discount_amount: item.discount_amount || 0
+                    product_id: (item.product_id && item.product_id !== "") ? item.product_id : null,
+                    description: item.description || "Service Item",
+                    quantity: Number(item.quantity) || 1,
+                    unit_price: Number(item.unit_price) || 0,
+                    net_amount: (Number(item.quantity) * Number(item.unit_price)) - (Number(item.discount_amount) || 0),
+                    tax_rate_id: (item.tax_rate_id && item.tax_rate_id !== "") ? item.tax_rate_id : null,
+                    tax_amount: Number(item.tax_amount) || 0,
+                    discount_amount: Number(item.discount_amount) || 0
                 }))
             },
-            hms_invoice_payments: {
-                create: paymentList.map((p: any) => ({
-                    tenant_id: session.user.tenantId,
+            hms_invoice_payments: payments ? {
+                create: payments.map((p: any) => ({
+                    tenant_id: tenantId,
                     company_id: companyId,
-                    amount: Number(p.amount),
-                    method: p.method, // 'cash', 'card', 'upi'
+                    amount: Number(p.amount) || 0,
+                    method: p.method || 'cash',
                     payment_reference: p.reference || null,
                     paid_at: new Date()
                 }))
-            }
+            } : undefined
         };
+
+        console.log(`[Billing] Creating invoice ${invoiceNo} for company ${companyId}`);
 
         const result = await prisma.$transaction(async (tx) => {
             const newInvoice = await tx.hms_invoice.create({
