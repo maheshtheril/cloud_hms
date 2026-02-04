@@ -52,6 +52,7 @@ export function CreatePatientForm({
     const [registrationProductId, setRegistrationProductId] = useState(propId);
     const [registrationProductName, setRegistrationProductName] = useState(propName);
     const [registrationProductDescription, setRegistrationProductDescription] = useState(propDesc);
+    const [enableCardIssuanceSetting, setEnableCardIssuanceSetting] = useState(true);
 
     useEffect(() => {
         const syncSettings = async () => {
@@ -63,6 +64,8 @@ export function CreatePatientForm({
                     setRegistrationProductId(res.settings.registrationProductId);
                     setRegistrationProductName(res.settings.registrationProductName);
                     setRegistrationProductDescription(res.settings.registrationProductDescription);
+                    setEnableCardIssuanceSetting(res.settings.enableCardIssuance);
+                    setPrintIDCard(res.settings.enableCardIssuance);
                 }
             } catch (err) {
                 console.error("Failed to sync HMS settings:", err);
@@ -546,24 +549,26 @@ export function CreatePatientForm({
                             </label>
 
                             {/* ID Card Checkbox */}
-                            <label className="group flex items-center gap-3 cursor-pointer p-1 px-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
-                                <div className="relative flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={printIDCard}
-                                        onChange={(e) => setPrintIDCard(e.target.checked)}
-                                        className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-                                    />
-                                </div>
-                                <div>
-                                    <span className="block text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider group-hover:text-indigo-600 transition-colors">
-                                        Print ID Card
-                                    </span>
-                                    <span className="block text-[10px] font-bold text-slate-400">
-                                        Show QR Code & Details
-                                    </span>
-                                </div>
-                            </label>
+                            {enableCardIssuanceSetting && (
+                                <label className="group flex items-center gap-3 cursor-pointer p-1 px-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                                    <div className="relative flex items-center">
+                                        <input
+                                            type="checkbox"
+                                            checked={printIDCard}
+                                            onChange={(e) => setPrintIDCard(e.target.checked)}
+                                            className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 dark:focus:ring-indigo-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                                        />
+                                    </div>
+                                    <div>
+                                        <span className="block text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider group-hover:text-indigo-600 transition-colors">
+                                            Print ID Card
+                                        </span>
+                                        <span className="block text-[10px] font-bold text-slate-400">
+                                            Show QR Code & Details
+                                        </span>
+                                    </div>
+                                </label>
+                            )}
                         </div>
 
                         <div className="flex items-center gap-4">
