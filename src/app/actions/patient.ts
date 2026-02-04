@@ -182,7 +182,8 @@ export async function createPatient(existingId: string | null | any, formData: F
                                 by: userId
                             }
                         }
-                    });
+                    }
+                });
                 return patient; // Exit early, no invoice.
             }
 
