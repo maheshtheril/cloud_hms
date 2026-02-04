@@ -18,11 +18,13 @@ export async function searchPatients(query: string) {
                 OR: [
                     { first_name: { contains: query, mode: 'insensitive' } },
                     { last_name: { contains: query, mode: 'insensitive' } },
+                    { full_name: { contains: query, mode: 'insensitive' } },
                     { contact: { path: ['phone'], string_contains: query } },
+                    { contact: { path: ['mobile'], string_contains: query } },
                     { patient_number: { contains: query, mode: 'insensitive' } }
                 ]
             },
-            take: 10,
+            take: 15,
             select: {
                 id: true,
                 first_name: true,
