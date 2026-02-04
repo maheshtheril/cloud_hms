@@ -58,18 +58,27 @@ export async function createPatientV10(patientId: string | null | any, formData:
             companyId = defaultCompany?.id;
         }
 
-        // 1. Dynamic Expiry Calculation
+        // 1. Dynamic Expiry Calculation (Branch-Aware)
         let validityDays = 365;
+        let configProductId = null;
+        let configFee = 0;
+
         try {
             const hmsConfigRecord = await prisma.hms_settings.findFirst({
-                where: { tenant_id: tenantId, key: 'registration_config' }
+                where: {
+                    tenant_id: tenantId,
+                    company_id: companyId || undefined,
+                    key: 'registration_config'
+                }
             });
             if (hmsConfigRecord) {
                 const config = hmsConfigRecord.value as any;
                 validityDays = parseInt(config.validity) || 365;
+                configProductId = config.productId || null;
+                configFee = parseFloat(config.fee) || 0;
             }
         } catch (e) {
-            console.error("Failed to fetch validity setting, defaulting to 365");
+            console.error("Failed to fetch HMS config in Patient V10:", e);
         }
 
         const registrationDate = new Date();
@@ -136,17 +145,33 @@ export async function createPatientV10(patientId: string | null | any, formData:
         // 4. Invoice Logic
         if (!skipInvoice && companyId) {
             try {
-                // Find Registration Fee Product
-                const feeProduct = await prisma.hms_product.findFirst({
-                    where: {
-                        tenant_id: tenantId,
-                        sku: { in: ['REG001', 'REG-FEE'] }
-                    },
-                    orderBy: { created_at: 'desc' }
-                });
+                // Find Registration Fee Product (Smarter Lookup)
+                let feeProduct = null;
+
+                if (configProductId) {
+                    feeProduct = await prisma.hms_product.findUnique({
+                        where: { id: configProductId }
+                    });
+                }
+
+                if (!feeProduct) {
+                    // Fallback: Find by company and SKU prefix
+                    feeProduct = await prisma.hms_product.findFirst({
+                        where: {
+                            tenant_id: tenantId,
+                            company_id: companyId,
+                            OR: [
+                                { sku: { startsWith: 'REG-FEE' } },
+                                { name: { contains: 'Registration Fee', mode: 'insensitive' } }
+                            ],
+                            is_active: true
+                        },
+                        orderBy: { created_at: 'desc' }
+                    });
+                }
 
                 if (feeProduct) {
-                    const amount = Number(feeProduct.price) || 100;
+                    const amount = Number(feeProduct.price) || configFee || 0;
 
                     invoice = await prisma.hms_invoice.create({
                         data: {
