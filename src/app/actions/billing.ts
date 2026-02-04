@@ -330,26 +330,38 @@ export async function createInvoice(data: { patient_id: string, appointment_id?:
         const outstandingAmount = (status === 'paid') ? 0 : Math.max(0, total - totalPaid);
 
         const tenantId = session.user.tenantId;
+        const branchId = (session.user as any).current_branch_id || (session.user as any).branch_id;
+        const userId = session.user.id;
+
         if (!tenantId) return { error: "Missing Tenant ID in session" };
 
         const invoicePayload = {
             tenant_id: tenantId,
             company_id: companyId,
+            branch_id: branchId || null,
             patient_id: (patient_id as string) || null,
             appointment_id: (appointment_id as string) || null,
             invoice_number: invoiceNo,
             invoice_date: new Date(date),
-            issued_at: new Date(), // Explicitly set instead of relying on default for now
+            issued_at: new Date(),
             currency: 'INR',
-            status: status,
-            total: total || 0,
-            subtotal: subtotal || 0,
-            total_tax: totalTaxAmount || 0,
+            status: status || 'draft',
+            total: Number(total) || 0,
+            subtotal: Number(subtotal) || 0,
+            total_tax: Number(totalTaxAmount) || 0,
             total_discount: Number(total_discount) || 0,
-            total_paid: totalPaid || 0,
-            outstanding_amount: outstandingAmount || 0,
+            total_paid: Number(totalPaid) || 0,
+            outstanding_amount: Number(outstandingAmount) || 0,
             billing_metadata: billing_metadata || {},
-            line_items: [], // Use the Json[] field as empty default to satisfy schema if needed
+            created_by: userId || null,
+            // Mirror lines into the JSON array for triggers/reporting
+            line_items: line_items.map((item: any) => ({
+                id: item.product_id,
+                name: item.description,
+                qty: Number(item.quantity),
+                price: Number(item.unit_price),
+                total: (Number(item.quantity) * Number(item.unit_price))
+            })),
             hms_invoice_lines: {
                 create: line_items.map((item: any, index: number) => ({
                     tenant_id: tenantId,
@@ -359,25 +371,27 @@ export async function createInvoice(data: { patient_id: string, appointment_id?:
                     description: item.description || "Service Item",
                     quantity: Number(item.quantity) || 1,
                     unit_price: Number(item.unit_price) || 0,
+                    subtotal: (Number(item.quantity) * Number(item.unit_price)),
                     net_amount: (Number(item.quantity) * Number(item.unit_price)) - (Number(item.discount_amount) || 0),
                     tax_rate_id: (item.tax_rate_id && item.tax_rate_id !== "") ? item.tax_rate_id : null,
                     tax_amount: Number(item.tax_amount) || 0,
                     discount_amount: Number(item.discount_amount) || 0
                 }))
             },
-            hms_invoice_payments: payments ? {
+            hms_invoice_payments: payments && payments.length > 0 ? {
                 create: payments.map((p: any) => ({
                     tenant_id: tenantId,
                     company_id: companyId,
                     amount: Number(p.amount) || 0,
-                    method: p.method || 'cash',
-                    payment_reference: p.reference || null,
-                    paid_at: new Date()
+                    method: (p.method as any) || 'cash',
+                    payment_reference: p.reference || 'Counter Payment',
+                    paid_at: new Date(),
+                    created_by: userId || null
                 }))
             } : undefined
         };
 
-        console.log(`[Billing] Creating invoice ${invoiceNo} for company ${companyId}`);
+        console.log(`[Billing] Creating invoice ${invoiceNo} for company ${companyId}, tenant ${tenantId}, user ${userId}`);
 
         const result = await prisma.$transaction(async (tx) => {
             const newInvoice = await tx.hms_invoice.create({
