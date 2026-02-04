@@ -250,6 +250,7 @@ export async function createPatient(existingId: string | null | any, formData: F
                                 ${fallbackInvoiceNo}, ${new Date()}, 'draft', 
                                 ${fee}, ${fee}, 0, 0, 0, ${fee},
                                 ARRAY[${JSON.stringify({
+                            product_id: regProductId || null,
                             description: "Registration Fee (Recovered)",
                             quantity: 1,
                             unit_price: fee,
