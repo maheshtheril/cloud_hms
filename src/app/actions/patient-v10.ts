@@ -192,19 +192,37 @@ export async function createPatientV10(patientId: string | null | any, formData:
                 if (feeProduct) {
                     const amount = Number(feeProduct.price) || configFee || 0;
 
+                    const invoiceId = crypto.randomUUID();
+                    const lineId = crypto.randomUUID();
+                    const now = new Date();
+
                     invoice = await prisma.hms_invoice.create({
                         data: {
+                            id: invoiceId,
                             tenant_id: tenantId,
                             company_id: companyId,
                             patient_id: patient.id,
                             invoice_number: `INV-${Date.now()}`,
                             status: 'draft',
-                            invoice_date: new Date(),
+                            invoice_date: now,
+                            issued_at: now,
+                            due_date: now,
+                            currency: 'INR',
+                            currency_rate: 1,
                             subtotal: amount,
                             total: amount,
-                            created_by: userId,
+                            total_tax: 0,
+                            total_discount: 0,
+                            total_paid: 0,
+                            outstanding: amount,
+                            billing_metadata: {},
+                            line_items: [] as any,
+                            created_by: userId || undefined,
+                            created_at: now,
+                            updated_at: now,
                             hms_invoice_lines: {
                                 create: [{
+                                    id: lineId,
                                     tenant_id: tenantId,
                                     company_id: companyId,
                                     product_id: feeProduct.id,
@@ -212,7 +230,11 @@ export async function createPatientV10(patientId: string | null | any, formData:
                                     quantity: 1,
                                     unit_price: amount,
                                     net_amount: amount,
-                                    line_idx: 1
+                                    discount_amount: 0,
+                                    tax_amount: 0,
+                                    line_idx: 1,
+                                    metadata: {},
+                                    created_at: now
                                 }]
                             }
                         }
