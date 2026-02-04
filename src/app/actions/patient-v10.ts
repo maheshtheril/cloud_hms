@@ -30,7 +30,6 @@ export async function createPatientV10(existingId: string | null | any, formData
 
     console.log("Registration Details:", { firstName, lastName, phone, chargeRegistration, skipInvoice });
 
-
     // Parse Contact
     const address = {
         street: formData.get('street'),
@@ -46,12 +45,6 @@ export async function createPatientV10(existingId: string | null | any, formData
         email
     }
 
-    // Metadata
-    let metadata: any = {
-        title: formData.get("title") as string,
-        registration_notes: "V10 Registration"
-    }
-
     const session = await auth()
     const tenantId = session?.user?.tenantId
     let companyId = session?.user?.companyId
@@ -64,6 +57,32 @@ export async function createPatientV10(existingId: string | null | any, formData
         return { error: "No tenant found." };
     }
     if (!firstName) return { error: "Name is required" }
+
+    // Dynamic Expiry Calculation (Clinical Requirement)
+    let validityDays = 365;
+    try {
+        const hmsConfigRecord = await prisma.hms_settings.findFirst({
+            where: { tenant_id: tenantId, key: 'registration_config' }
+        });
+        if (hmsConfigRecord) {
+            const config = hmsConfigRecord.value as any;
+            validityDays = parseInt(config.validity) || 365;
+        }
+    } catch (e) {
+        console.error("Failed to fetch validity setting, defaulting to 365");
+    }
+
+    const registrationDate = new Date();
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + validityDays);
+
+    // Metadata
+    let metadata: any = {
+        title: formData.get("title") as string,
+        registration_notes: "V10 Registration",
+        registration_date: registrationDate.toISOString(),
+        registration_expiry: expiryDate.toISOString()
+    }
 
     // Fallback: Ensure Company ID exists
     if (!companyId) {
@@ -86,7 +105,7 @@ export async function createPatientV10(existingId: string | null | any, formData
             data: {
                 id: crypto.randomUUID(),
                 tenant_id: tenantId,
-                company_id: companyId || null, // Use null if no company found, do not force tenantId
+                company_id: companyId || null,
                 first_name: firstName,
                 last_name: lastName || '',
                 dob: dob ? new Date(dob) : null,
@@ -115,31 +134,28 @@ export async function createPatientV10(existingId: string | null | any, formData
                             tenant_id: tenantId,
                             sku: { in: ['REG001', 'REG-FEE'] }
                         },
-                        orderBy: { created_at: 'desc' } // Prefer newest if both exist
+                        orderBy: { created_at: 'desc' }
                     });
 
                     if (feeProduct) {
                         console.log("Found Fee Product:", feeProduct.sku);
-
                         const amount = Number(feeProduct.price) || 100;
 
-                        // Create Invoice with Standard Relations
                         invoice = await prisma.hms_invoice.create({
                             data: {
                                 tenant_id: tenantId,
-                                company_id: companyId, // Safe as we checked it
+                                company_id: companyId,
                                 patient_id: patient.id,
                                 invoice_number: `INV-${Date.now()}`,
                                 status: 'draft',
                                 invoice_date: new Date(),
                                 subtotal: amount,
                                 total_tax: 0,
-                                total_discount: 0, // Explicitly set
-                                total_paid: 0,     // Explicitly set
+                                total_discount: 0,
+                                total_paid: 0,
                                 total: amount,
                                 locked: false,
                                 created_by: userId,
-                                // Populate line_items (JSON Header) for redundancy
                                 line_items: [{
                                     product_id: feeProduct.id,
                                     description: feeProduct.description || "Registration Fee",
@@ -147,12 +163,11 @@ export async function createPatientV10(existingId: string | null | any, formData
                                     unit_price: amount,
                                     total: amount
                                 }],
-                                // Populate hms_invoice_lines (Relational Table) - World Standard
                                 hms_invoice_lines: {
                                     create: [{
                                         tenant_id: tenantId,
                                         company_id: companyId,
-                                        product_id: feeProduct.id, // Linked to Inventory
+                                        product_id: feeProduct.id,
                                         description: feeProduct.description || "Registration Fee",
                                         quantity: 1,
                                         line_idx: 1,
@@ -175,7 +190,6 @@ export async function createPatientV10(existingId: string | null | any, formData
                 } catch (invErr: any) {
                     console.error("Invoice Creation Failed (V10):", invErr);
                     warning = `Patient saved, but Invoice failed (Details: ${invErr.message}). Please bill manually.`;
-                    // We Swallow the error to ensure Patient Registration is returned as Success
                 }
             } else {
                 warning = "Billing Skipped: No Active Company found to issue invoice.";
@@ -185,15 +199,14 @@ export async function createPatientV10(existingId: string | null | any, formData
         return {
             success: true,
             data: patient,
-            id: patient.id, // For legacy compatibility
+            id: patient.id,
             invoiceId: invoiceId,
-            invoice: (invoiceId && typeof invoice !== 'undefined') ? invoice : null, // Return full invoice object if created
+            invoice: (invoiceId && typeof invoice !== 'undefined') ? invoice : null,
             warning
         };
 
     } catch (error: any) {
         console.error('V10 creation error:', error)
-        // Return a cleaner error message but log the full error
         return { error: error.message || "Failed to create patient" }
     }
 }

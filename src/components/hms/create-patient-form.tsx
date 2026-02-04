@@ -48,6 +48,7 @@ export function CreatePatientForm({
 
     // Dynamic Settings State
     const [registrationFee, setRegistrationFee] = useState(propFee ?? 100);
+    const [registrationValidity, setRegistrationValidity] = useState(365);
     const [registrationProductId, setRegistrationProductId] = useState(propId);
     const [registrationProductName, setRegistrationProductName] = useState(propName);
     const [registrationProductDescription, setRegistrationProductDescription] = useState(propDesc);
@@ -58,6 +59,7 @@ export function CreatePatientForm({
                 const res = await getHMSSettings();
                 if (res.success && res.settings) {
                     setRegistrationFee(res.settings.registrationFee);
+                    setRegistrationValidity(res.settings.registrationValidity);
                     setRegistrationProductId(res.settings.registrationProductId);
                     setRegistrationProductName(res.settings.registrationProductName);
                     setRegistrationProductDescription(res.settings.registrationProductDescription);
@@ -534,6 +536,11 @@ export function CreatePatientForm({
                                             Fee: <span className={chargeRegistration && !waiveFee ? "text-emerald-500" : "text-slate-300 decoration-slate-400 line-through"}>₹{registrationFee.toFixed(2)}</span>
                                             {waiveFee && <span className="text-amber-500 ml-1 font-black uppercase text-[9px]">(Waived)</span>}
                                         </span>
+                                        {chargeRegistration && (
+                                            <span className="block text-[9px] text-indigo-400 font-black uppercase tracking-tighter">
+                                                Expires: {new Date(new Date().setDate(new Date().getDate() + (registrationValidity || 365))).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                             </label>

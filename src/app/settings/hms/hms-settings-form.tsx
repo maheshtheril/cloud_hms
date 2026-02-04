@@ -73,15 +73,15 @@ export function HMSSettingsForm({ settings }: { settings: any }) {
                     </p>
                 </div>
 
-                {/* 2. Validity Period Card */}
+                {/* 2. Expiry Duration Card */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group">
                     <div className="flex items-center gap-4 mb-4">
                         <div className="h-10 w-10 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                             <Calendar className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-slate-800 dark:text-slate-100">Validity Period</h3>
-                            <p className="text-xs text-slate-500 font-medium">Registration renewal cycle</p>
+                            <h3 className="font-bold text-slate-800 dark:text-slate-100">Registration Expiry Duration</h3>
+                            <p className="text-xs text-slate-500 font-medium">Standard renewal cycle</p>
                         </div>
                     </div>
 
@@ -97,7 +97,7 @@ export function HMSSettingsForm({ settings }: { settings: any }) {
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400 uppercase tracking-wider">Days</div>
                     </div>
                     <p className="mt-3 text-[10px] text-slate-400 leading-normal">
-                        System will prompt for renewal if a patient visits after this period.
+                        Patient's registration will expire after this many days from payment.
                     </p>
                 </div>
 
@@ -133,7 +133,7 @@ export function HMSSettingsForm({ settings }: { settings: any }) {
                         <div className="h-8 w-8 bg-amber-50 dark:bg-amber-900/20 rounded-lg flex items-center justify-center">
                             <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                         </div>
-                        <h3 className="font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider text-sm">Registration Fee History</h3>
+                        <h3 className="font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider text-sm">Registration Fee Management (Amount & Expiry)</h3>
                     </div>
                 </div>
                 <div className="overflow-x-auto">
@@ -142,7 +142,7 @@ export function HMSSettingsForm({ settings }: { settings: any }) {
                             <tr className="bg-slate-50 dark:bg-slate-950 text-[10px] uppercase font-black text-slate-400 tracking-widest border-b border-slate-100 dark:border-slate-800">
                                 <th className="px-6 py-4">Effective Date</th>
                                 <th className="px-6 py-4">Amount</th>
-                                <th className="px-6 py-4">Validity</th>
+                                <th className="px-6 py-4">Registration Expiry</th>
                                 <th className="px-6 py-4">Status</th>
                             </tr>
                         </thead>
