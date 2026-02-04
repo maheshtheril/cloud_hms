@@ -289,7 +289,7 @@ export async function createPatient(existingId: string | null | any, formData: F
                         // DIAGNOSTIC END
 
                         console.error("CRITICAL: Direct DB Invoice Creation Failed:", dbErr);
-                        throw new Error("System Critical: Unable to generate invoice record. " + dbErr.message + debugInfo);
+                        throw new Error(`System Critical: Unable to generate invoice record. ${dbErr.message} | COMMIT: ${process.env.VERCEL_GIT_COMMIT_SHA?.substring(0, 7) || 'LOCAL'} ` + debugInfo);
                     }
                 }
 
