@@ -260,28 +260,28 @@ export function CreatePatientForm({
                         if ((res as any)?.error) {
                             setMessage({ type: 'error', text: (res as any).error });
                         } else {
-                            const patientId = (res as any).id || (res as any).data?.id;
+                            const patient = (res as any).data;
+                            const invoice = (res as any).invoice;
 
                             // LOGIC BRANCH 1: BILLING REQUESTED
                             if (chargeRegistration && !waiveFee) {
-                                if ((res as any).invoiceId) {
+                                if (invoice) {
                                     // Success: Invoice Created
                                     setMessage({ type: 'success', text: "Registration Saved. Please collect payment." });
 
                                     // SHOW PAYMENT POPUP (Overlay)
-                                    // Ensure we have the full invoice object. The server action returns it now.
-                                    setSavedPatient(res);
-                                    setInvoiceData((res as any).invoice);
+                                    setSavedPatient(patient);
+                                    setInvoiceData(invoice);
 
-                                    if (onSuccess) onSuccess(res);
+                                    if (onSuccess) onSuccess(patient);
                                     return;
                                 } else {
                                     // Failure: Invoice NOT Created
-                                    console.error("Automatic billing failed:", (res as any).billingError);
-                                    setMessage({ type: 'error', text: `Invoice Failed: ${(res as any).billingError || "Please create bill manually."}` });
-                                    // Fallback if they wanted ID card but billing failed?
+                                    console.error("Automatic billing failed:", (res as any).warning);
+                                    setMessage({ type: 'error', text: `Invoice Failed: ${(res as any).warning || "Please create bill manually."}` });
+
+                                    setSavedPatient(patient);
                                     if (printIDCard) {
-                                        setSavedPatient(res);
                                         setShowIDCard(true);
                                     }
                                     return;
@@ -289,9 +289,9 @@ export function CreatePatientForm({
                             }
 
                             // LOGIC BRANCH 2: FREE / UPDATE (No Billing)
-                            if (onSuccess) onSuccess(res);
+                            setSavedPatient(patient);
+                            if (onSuccess) onSuccess(patient);
                             else {
-                                setSavedPatient(res);
                                 setMessage({ type: 'success', text: initialData ? "Profile updated successfully." : "Patient registered successfully." });
 
                                 // Explicitly check user preference for ID Card
