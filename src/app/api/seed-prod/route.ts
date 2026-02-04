@@ -157,6 +157,34 @@ export async function GET() {
             console.log("Admin User Updated.");
         }
 
+        // 5. Seed Registration Fee Product (Essential for Auto-Billing)
+        const feeProduct = await prisma.hms_product.upsert({
+            where: {
+                tenant_id_sku: {
+                    tenant_id: tenant.id,
+                    sku: 'REG-FEE'
+                }
+            },
+            update: {
+                price: 100,
+                is_active: true,
+                is_service: true
+            },
+            create: {
+                tenant_id: tenant.id,
+                company_id: company.id,
+                sku: 'REG-FEE',
+                name: 'Patient Registration Fee',
+                description: 'Standard hospital registration fee',
+                price: 100,
+                is_service: true,
+                is_stockable: false,
+                is_active: true,
+                uom: 'each'
+            }
+        });
+        console.log("Registration Fee Product Seeded.");
+
         // VERIFY IMMEDIATE
         const verify = await prisma.$queryRaw`
             SELECT id FROM app_user 
