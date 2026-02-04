@@ -560,9 +560,9 @@ export async function auditAndFixMenuPermissions() {
 
             { key: 'hms-lab', perm: 'lab:view' }, // Strict Lab Access
 
-            // REGISTRATION FEE MANAGEMENT (Priority Fix)
-            { key: 'hms-settings', perm: 'hms:admin', label: 'Registration Fee' },
-            { key: 'hms-config', perm: 'hms:admin', label: 'Registration Fee' },
+            // HMS SETTINGS (Restoring "HMS Settings" label)
+            { key: 'hms-settings', perm: 'hms:admin', label: 'HMS Settings' },
+            { key: 'hms-config', perm: 'hms:admin', label: 'HMS Settings' },
 
             // STRICT DASHBOARDS
             { key: 'hms-dashboard', perm: 'hms:admin' }, // Main dashboard is for admins

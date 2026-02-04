@@ -208,6 +208,7 @@ export async function ensureAdminMenus() {
             { key: 'branch-settings', label: 'Branch Management', url: '/settings/branches', icon: 'Building2', sort: 98, permission: 'settings:view' },
             { key: 'geography-settings', label: 'Geography & Regions', url: '/settings/geography', icon: 'Globe', sort: 96, permission: 'settings:view' },
             { key: 'holiday-settings', label: 'Holiday Masters', url: '/settings/holidays', icon: 'CalendarDays', sort: 97, permission: 'settings:view' },
+            { key: 'hms-settings', label: 'HMS Settings', url: '/settings/hms', icon: 'Activity', sort: 95, permission: 'hms:admin' },
         ];
 
         for (const item of adminItems) {
@@ -495,7 +496,6 @@ export async function ensureHmsMenus() {
             { key: 'hms-pharmacy-billing', label: 'Pharmacy Billing', url: '/hms/pharmacy/billing', icon: 'Pill', sort: 61, permission: 'billing:view' },
             // { key: 'hms-inventory', label: 'Pharmacy/Inventory', url: '/hms/inventory', icon: 'Package', sort: 70 }, // Removed to allow migration to Inventory Module
             { key: 'hms-wards', label: 'Clinics/Wards', url: '/hms/wards', icon: 'LayoutGrid', sort: 80, permission: 'hms:admin' },
-            { key: 'hms-config', label: 'Registration Fee Management', url: '/settings/hms', icon: 'Settings', sort: 96, permission: 'hms:admin' },
         ];
 
         // --- HELPER FOR RAW SQL INSERT (Duplicate for scope) ---
