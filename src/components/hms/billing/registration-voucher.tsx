@@ -13,7 +13,10 @@ import {
     Trash2,
     FileText,
     CheckCircle2,
-    AlertCircle
+    AlertCircle,
+    Banknote,
+    Smartphone,
+    Wallet
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -26,6 +29,15 @@ import { useToast } from "@/components/ui/use-toast"
 import { PatientSearchWithCreate } from "./patient-search-dialog"
 import { createInvoice } from "@/app/actions/billing"
 import { AccountingService } from "@/lib/services/accounting"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 interface RegistrationVoucherProps {
     initialSettings: {
@@ -42,6 +54,8 @@ export function RegistrationVoucher({ initialSettings }: RegistrationVoucherProp
     const [isPending, setIsPending] = useState(false)
     const [selectedPatient, setSelectedPatient] = useState<any>(null)
     const [items, setItems] = useState<any[]>([])
+    const [showPaymentDialog, setShowPaymentDialog] = useState(false)
+    const [paymentMethod, setPaymentMethod] = useState<string>("cash")
 
     // Auto-select registration fee item on mount or when settings change
     useEffect(() => {
@@ -67,13 +81,17 @@ export function RegistrationVoucher({ initialSettings }: RegistrationVoucherProp
             toast({ title: "Identification Required", description: "Please select or register a patient first.", variant: "destructive" })
             return
         }
+        setShowPaymentDialog(true)
+    }
 
+    async function handleConfirmPayment() {
         setIsPending(true)
+        setShowPaymentDialog(false)
         try {
             const invoicePayload = {
                 patient_id: selectedPatient.id,
                 date: new Date().toISOString(),
-                status: 'posted' as any, // Post immediately
+                status: 'paid' as any, // Post as Paid immediately
                 line_items: items.map(item => ({
                     product_id: item.id,
                     description: item.name,
@@ -81,7 +99,12 @@ export function RegistrationVoucher({ initialSettings }: RegistrationVoucherProp
                     unit_price: item.price,
                     tax_amount: 0,
                     discount_amount: 0
-                }))
+                })),
+                payments: [{
+                    amount: total,
+                    method: paymentMethod, // 'cash', 'card', 'upi'
+                    reference: `Counter Payment`
+                }]
             }
 
             const res = await createInvoice(invoicePayload)
@@ -89,7 +112,7 @@ export function RegistrationVoucher({ initialSettings }: RegistrationVoucherProp
             if (res.error) {
                 toast({ title: "Financial Error", description: res.error, variant: "destructive" })
             } else if (res.success && res.data) {
-                toast({ title: "Success", description: "Voucher saved and posted to ledger." })
+                toast({ title: "Success", description: "Registration completed and paid." })
                 // Redirect to receipt/invoice view
                 router.push(`/hms/billing/${res.data.id}?print=true`)
             }
@@ -272,6 +295,117 @@ export function RegistrationVoucher({ initialSettings }: RegistrationVoucherProp
                     </Card>
                 </div>
             </div>
+
+            {/* Payment Options Dialog */}
+            <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+                <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none shadow-2xl rounded-2xl">
+                    <DialogHeader className="p-6 bg-slate-900 text-white">
+                        <DialogTitle className="text-xl font-black flex items-center gap-2">
+                            <Wallet className="h-5 w-5 text-indigo-400" />
+                            COLLECT PAYMENT
+                        </DialogTitle>
+                        <DialogDescription className="text-slate-400 font-medium">
+                            Select payment method to complete registration for {selectedPatient?.name}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="p-6 space-y-6 bg-white dark:bg-slate-950">
+                        <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
+                            <span className="text-slate-500 font-bold uppercase text-xs tracking-widest">Total Payable</span>
+                            <span className="text-2xl font-black text-slate-900 dark:text-white">₹{total.toFixed(2)}</span>
+                        </div>
+
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 block">Choose Payment Mode</Label>
+                            <RadioGroup
+                                defaultValue="cash"
+                                value={paymentMethod}
+                                onValueChange={setPaymentMethod}
+                                className="grid grid-cols-1 gap-3"
+                            >
+                                <Label
+                                    htmlFor="mode-cash"
+                                    className={cn(
+                                        "flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer group",
+                                        paymentMethod === "cash" ? "border-indigo-600 bg-indigo-50/50 ring-4 ring-indigo-50" : "border-slate-100 hover:border-slate-200"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn(
+                                            "h-10 w-10 rounded-full flex items-center justify-center transition-colors",
+                                            paymentMethod === "cash" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"
+                                        )}>
+                                            <Banknote className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <span className="font-bold text-slate-900 dark:text-white block">Cash Payment</span>
+                                            <span className="text-[10px] text-slate-500 font-medium">Physical currency received at counter</span>
+                                        </div>
+                                    </div>
+                                    <RadioGroupItem value="cash" id="mode-cash" className="sr-only" />
+                                </Label>
+
+                                <Label
+                                    htmlFor="mode-upi"
+                                    className={cn(
+                                        "flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer group",
+                                        paymentMethod === "upi" ? "border-indigo-600 bg-indigo-50/50 ring-4 ring-indigo-50" : "border-slate-100 hover:border-slate-200"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn(
+                                            "h-10 w-10 rounded-full flex items-center justify-center transition-colors",
+                                            paymentMethod === "upi" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"
+                                        )}>
+                                            <Smartphone className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <span className="font-bold text-slate-900 dark:text-white block">UPI / Digital Quick Pay</span>
+                                            <span className="text-[10px] text-slate-500 font-medium">GPay, PhonePe, or Scan & Pay</span>
+                                        </div>
+                                    </div>
+                                    <RadioGroupItem value="upi" id="mode-upi" className="sr-only" />
+                                </Label>
+
+                                <Label
+                                    htmlFor="mode-card"
+                                    className={cn(
+                                        "flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer group",
+                                        paymentMethod === "card" ? "border-indigo-600 bg-indigo-50/50 ring-4 ring-indigo-50" : "border-slate-100 hover:border-slate-200"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <div className={cn(
+                                            "h-10 w-10 rounded-full flex items-center justify-center transition-colors",
+                                            paymentMethod === "card" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"
+                                        )}>
+                                            <CreditCard className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <span className="font-bold text-slate-900 dark:text-white block">Credit / Debit Card</span>
+                                            <span className="text-[10px] text-slate-500 font-medium">Swipe or Dip Card via EDC machine</span>
+                                        </div>
+                                    </div>
+                                    <RadioGroupItem value="card" id="mode-card" className="sr-only" />
+                                </Label>
+                            </RadioGroup>
+                        </div>
+                    </div>
+
+                    <DialogFooter className="p-6 bg-slate-50 dark:bg-slate-900 flex sm:justify-between items-center gap-4">
+                        <Button variant="ghost" onClick={() => setShowPaymentDialog(false)} className="font-bold text-slate-500">
+                            Back to Voucher
+                        </Button>
+                        <Button
+                            onClick={handleConfirmPayment}
+                            disabled={isPending}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-10 h-12 rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95"
+                        >
+                            {isPending ? "Processing..." : "Finish & Post Transaction"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
