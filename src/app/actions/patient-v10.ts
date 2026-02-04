@@ -109,6 +109,8 @@ export async function createPatientV10(existingId: string | null | any, formData
                             invoice_date: new Date(),
                             subtotal: amount,
                             total_tax: 0,
+                            total_discount: 0, // Explicitly set
+                            total_paid: 0,     // Explicitly set
                             total: amount,
                             locked: false,
                             created_by: userId,
@@ -130,6 +132,8 @@ export async function createPatientV10(existingId: string | null | any, formData
                                     quantity: 1,
                                     line_idx: 1,
                                     unit_price: amount,
+                                    discount_amount: 0,
+                                    tax_amount: 0,
                                     net_amount: amount
                                 }]
                             }
