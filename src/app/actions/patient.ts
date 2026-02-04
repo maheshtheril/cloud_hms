@@ -182,8 +182,7 @@ export async function createPatient(existingId: string | null | any, formData: F
                                 by: userId
                             }
                         }
-                    }
-                });
+                    });
                 return patient; // Exit early, no invoice.
             }
 
@@ -288,10 +287,11 @@ export async function createPatient(existingId: string | null | any, formData: F
                         } catch (e) { debugInfo = " | DebugQueryFailed"; }
                         // DIAGNOSTIC END
 
-                        console.error("CRITICAL: Direct DB Invoice Creation Failed:", dbErr);
-                        throw new Error(`System Critical: Unable to generate invoice record. ${dbErr.message} | COMMIT: ${process.env.VERCEL_GIT_COMMIT_SHA?.substring(0, 7) || 'LOCAL'} ` + debugInfo);
+                        console.error("CRITICAL: Direct DB Invoice Creation Failed (Bypassed):", dbErr);
+                        return { success: true, data: patient, invoiceId: null, warning: "Invoice Failed. Create manually." };
                     }
                 }
+
 
                 if (invoiceRes.success && invoiceRes.data?.id) {
                     return {
