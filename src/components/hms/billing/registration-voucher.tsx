@@ -38,6 +38,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { cn } from "@/lib/utils"
 
 interface RegistrationVoucherProps {
     initialSettings: {
