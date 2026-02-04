@@ -21,12 +21,12 @@ export async function createPatientV10(patientId: string | null | any, formData:
     const finalPatientId = (patientId && typeof patientId === 'string') ? patientId : null;
 
     // Parse Basic Details
-    const firstName = formData.get("first_name") as string
-    const lastName = formData.get("last_name") as string
-    const dob = formData.get('dob') as string
-    const gender = formData.get('gender') as string
-    const phone = formData.get('phone') as string
-    const email = formData.get('email') as string
+    const firstName = (formData.get("first_name") as string)?.trim();
+    const lastName = (formData.get("last_name") as string)?.trim();
+    const dob = formData.get('dob') as string;
+    const gender = formData.get('gender') as string;
+    const phone = formData.get('phone') as string;
+    const email = formData.get('email') as string;
 
     // Parse Billing Mode - Check if registration charge is requested
     const chargeRegistration = formData.get('charge_registration') === 'on';
@@ -59,9 +59,8 @@ export async function createPatientV10(patientId: string | null | any, formData:
         }
 
         console.log(`[V10 DIAGNOSTIC] User: ${userId} | Co: ${companyId} | Ten: ${tenantId}`);
-        console.log(`[V10 DIAGNOSTIC] Types: Co=${typeof companyId} | Ten=${typeof tenantId} | User=${typeof userId}`);
 
-        // 1. Dynamic Expiry Calculation (Branch-Aware)
+        // 1. Dynamic Expiry Calculation
         let validityDays = 365;
         let configProductId = null;
         let configFee = 0;
@@ -88,7 +87,7 @@ export async function createPatientV10(patientId: string | null | any, formData:
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + validityDays);
 
-        // 2. Metadata Handling (Merge Strategy)
+        // 2. Metadata Handling
         const existingPatient = finalPatientId ? await prisma.hms_patient.findUnique({ where: { id: finalPatientId } }) : null;
         const currentMeta = (existingPatient?.metadata as any) || {};
 
@@ -98,7 +97,6 @@ export async function createPatientV10(patientId: string | null | any, formData:
             last_updated: new Date().toISOString()
         }
 
-        // ONLY update registration dates if we are actually charging/renewing
         if (chargeRegistration) {
             metadata.registration_date = registrationDate.toISOString();
             metadata.registration_expiry = expiryDate.toISOString();
@@ -139,28 +137,19 @@ export async function createPatientV10(patientId: string | null | any, formData:
             });
         }
 
-        console.log("Patient Processed:", patient.id);
-
         let invoiceId = null;
         let invoice = null;
         let warning = null;
 
-        // 4. Invoice Logic
+        // 4. Invoice Logic (RAW SQL ONLY)
         if (!skipInvoice && companyId) {
             try {
-                // Find Registration Fee Product (Extreme Resilience)
+                // Find Registration Fee Product
                 let feeProduct = null;
-
-                if (configProductId && typeof configProductId === 'string' && configProductId.length > 30) {
-                    console.log(`[V10 INVOICE DEBUG] Searching by specific ID: ${configProductId}`);
-                    feeProduct = await prisma.hms_product.findUnique({
-                        where: { id: configProductId }
-                    });
+                if (configProductId) {
+                    feeProduct = await prisma.hms_product.findUnique({ where: { id: configProductId } });
                 }
-
                 if (!feeProduct) {
-                    console.log(`[V10 INVOICE DEBUG] Specific ID failed, falling back to SKU search...`);
-                    // Fallback 1: Company + SKU
                     feeProduct = await prisma.hms_product.findFirst({
                         where: {
                             tenant_id: tenantId,
@@ -175,45 +164,27 @@ export async function createPatientV10(patientId: string | null | any, formData:
                     });
                 }
 
-                if (!feeProduct) {
-                    console.log(`[V10 INVOICE DEBUG] Company SKU failed, falling back to Tenant-Wide search...`);
-                    // Fallback 2: Tenant wide lookup (in case product was cross-linked)
-                    feeProduct = await prisma.hms_product.findFirst({
-                        where: {
-                            tenant_id: tenantId,
-                            OR: [
-                                { sku: { startsWith: 'REG-FEE' } },
-                                { sku: 'REG-FEE' },
-                                { name: { contains: 'Registration', mode: 'insensitive' } }
-                            ],
-                            is_active: true
-                        },
-                        orderBy: { created_at: 'desc' }
-                    });
-                }
-
                 if (feeProduct) {
                     const amount = Number(feeProduct.price) || configFee || 0;
-
                     invoiceId = crypto.randomUUID();
                     const lineId = crypto.randomUUID();
                     const now = new Date();
                     const invNumber = `INV-${Date.now()}`;
 
-                    console.log(`[V10 INVOICE RAW] Creating Invoice ${invNumber} for Patient ${patient.id}`);
+                    console.log(`[V10 RAW SQL] Inserting Invoice: ${invoiceId}`);
 
-                    // Use Raw SQL to circumvent Prisma's Null Constraint failures
+                    // Bulletproof Raw SQL Insertion
                     await prisma.$executeRaw`
                         INSERT INTO hms_invoice (
                             id, tenant_id, company_id, patient_id, invoice_number, status, 
                             invoice_date, issued_at, currency, currency_rate, 
                             subtotal, total, total_tax, total_discount, total_paid, 
-                            outstanding, outstanding_amount, billing_metadata, created_by, created_at, updated_at
+                            outstanding_amount, billing_metadata, created_by, created_at, updated_at
                         ) VALUES (
                             ${invoiceId}::uuid, ${tenantId}::uuid, ${companyId}::uuid, ${patient.id}::uuid, ${invNumber}, 'draft',
                             ${now}::date, ${now}, 'INR', 1.0, 
                             ${amount}, ${amount}, 0, 0, 0, 
-                            ${amount}, ${amount}, '{}'::jsonb, ${userId}::uuid, now(), now()
+                            ${amount}, '{}'::jsonb, ${userId}::uuid, now(), now()
                         )
                     `;
 
@@ -229,15 +200,13 @@ export async function createPatientV10(patientId: string | null | any, formData:
                         )
                     `;
 
-                    // Mock the invoice object for the return
-                    invoice = { id: invoiceId, invoice_number: invNumber };
-
+                    invoice = { id: invoiceId, invoice_number: invNumber, total: amount };
                 } else {
-                    warning = "Registration fee product not found. Bill manually.";
+                    warning = "Registration fee product not found.";
                 }
             } catch (invErr: any) {
-                console.error("Auto-Billing Failed:", invErr);
-                warning = `Patient saved, but billing failed: ${invErr.message}`;
+                console.error("RAW SQL FAILED:", invErr);
+                warning = `Billing failed: ${invErr.message}`;
             }
         }
 
@@ -251,8 +220,8 @@ export async function createPatientV10(patientId: string | null | any, formData:
         };
 
     } catch (error: any) {
-        console.error("V10 EXECUTION ERROR:", error);
-        return { error: error.message || "A system error occurred." };
+        console.error("V10 ERROR:", error);
+        return { error: error.message || "Capture error." };
     }
 }
 
