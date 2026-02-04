@@ -268,10 +268,12 @@ export async function getHMSSettings() {
 
         // 3. Fetch Registration Fee History (The "Amount and Date" part)
         const feeHistory = await prisma.hms_patient_registration_fees.findMany({
-            where: { tenant_id: tenantId },
+            where: { tenant_id: tenantId, company_id: companyId },
             orderBy: { created_at: 'desc' },
             take: 20
         });
+
+        console.log(`Fetched ${feeHistory.length} history records for company ${companyId}`);
 
         const activeFee = feeHistory.find(f => f.is_active);
 
@@ -282,7 +284,7 @@ export async function getHMSSettings() {
         } else if (configData.fee !== undefined) {
             finalFee = parseFloat(configData.fee);
         } else if (finalProduct) {
-            finalFee = parseFloat(finalProduct.price?.toString() || '0');
+            finalFee = parseFloat(finalProduct.price?.toString() || '100');
         }
 
         return {
@@ -310,67 +312,90 @@ export async function getHMSSettings() {
 
 export async function updateHMSSettings(data: any) {
     const session = await auth();
-    if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
-    const companyId = session.user.companyId;
-    const tenantId = session.user.tenantId;
+    const companyId = session?.user?.companyId;
+    const tenantId = session?.user?.tenantId;
+
+    if (!companyId || !tenantId) {
+        console.error("HMS Settings Save Rejected: Missing session context", { companyId, tenantId });
+        return { error: "Session expired or unauthorized. Please login again." };
+    }
 
     try {
-        console.log("Saving HMS Settings (Syncing History)...", data);
+        console.log("Saving HMS Settings Cluster...", { companyId, fee: data.registrationFee });
 
         const feeAmount = parseFloat(data.registrationFee);
         const validityDays = parseInt(data.registrationValidity);
 
-        await prisma.$transaction(async (tx) => {
+        if (isNaN(feeAmount) || isNaN(validityDays)) {
+            return { error: "Invalid fee amount or validity days." };
+        }
+
+        const result = await prisma.$transaction(async (tx) => {
             // 1. Update/Create Registration Fee Product (Master Product)
+            // Search for existing active registration products
             let regProduct = await tx.hms_product.findFirst({
                 where: {
                     company_id: companyId,
-                    name: { contains: 'Registration Fee', mode: 'insensitive' }
+                    tenant_id: tenantId,
+                    sku: { in: ['REG-FEE', 'REG001'] },
+                    is_active: true
                 }
             });
 
-            if (regProduct) {
-                await tx.hms_product.update({
-                    where: { id: regProduct.id },
-                    data: { price: feeAmount, is_service: true, is_stockable: false, is_active: true }
-                });
-            } else {
-                regProduct = await tx.hms_product.create({
-                    data: {
-                        tenant_id: tenantId,
+            if (!regProduct) {
+                // Secondary search by name
+                regProduct = await tx.hms_product.findFirst({
+                    where: {
                         company_id: companyId,
-                        name: "Patient Registration Fee",
-                        sku: `REG-FEE-${companyId.slice(0, 8).toUpperCase()}`,
-                        description: "Standard fee for new patient registration",
-                        price: feeAmount,
-                        is_service: true,
-                        is_stockable: false,
-                        uom: 'each',
+                        tenant_id: tenantId,
+                        name: { contains: 'Registration Fee', mode: 'insensitive' },
                         is_active: true
                     }
                 });
             }
 
-            // 2. Manage HMS Settings (Config JSON)
-            const existingConfig = await tx.hms_settings.findFirst({
-                where: {
-                    company_id: companyId,
-                    tenant_id: tenantId,
-                    key: 'registration_config'
-                }
-            });
+            if (regProduct) {
+                await tx.hms_product.update({
+                    where: { id: regProduct.id },
+                    data: { price: feeAmount, is_service: true, is_stockable: false, updated_at: new Date() }
+                });
+            } else {
+                // Create if missing
+                regProduct = await tx.hms_product.create({
+                    data: {
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        name: "Patient Registration Fee",
+                        sku: "REG-FEE",
+                        description: "Standard fee for new patient registration",
+                        price: feeAmount,
+                        is_service: true,
+                        is_stockable: false,
+                        uom: 'unit',
+                        is_active: true,
+                        created_at: new Date()
+                    }
+                });
+            }
 
+            // 2. Manage HMS Settings (Config JSON)
             const configValue = {
                 validity: validityDays,
                 enableCardIssuance: data.enableCardIssuance,
                 fee: feeAmount,
-                productId: regProduct?.id
+                productId: regProduct.id,
+                updatedAt: new Date().toISOString()
             };
+
+            // Use delete + create or find + update to ensure unique constraint [tenant_id, company_id, key]
+            const existingConfig = await tx.hms_settings.findFirst({
+                where: { tenant_id: tenantId, company_id: companyId, key: 'registration_config' }
+            });
 
             if (existingConfig) {
                 await tx.hms_settings.update({
                     where: { id: existingConfig.id },
-                    data: { value: configValue as any }
+                    data: { value: configValue as any, updated_at: new Date() }
                 });
             } else {
                 await tx.hms_settings.create({
@@ -379,37 +404,42 @@ export async function updateHMSSettings(data: any) {
                         company_id: companyId,
                         key: 'registration_config',
                         value: configValue as any,
-                        scope: 'company'
+                        scope: 'company',
+                        created_at: new Date()
                     }
                 });
             }
 
-            // 3. Update Patient Registration Fees History (THE MISSING LINK)
-            // Deactivate existing
+            // 3. Update Patient Registration Fees History (Audit Trail)
+            // Deactivate existing for this COMPANY
             await tx.hms_patient_registration_fees.updateMany({
-                where: { tenant_id: tenantId, is_active: true },
-                data: { is_active: false }
+                where: { company_id: companyId, is_active: true },
+                data: { is_active: false, updated_at: new Date() }
             });
 
-            // Create new version
-            await tx.hms_patient_registration_fees.create({
+            // Create new record
+            const history = await tx.hms_patient_registration_fees.create({
                 data: {
                     tenant_id: tenantId,
                     company_id: companyId,
                     fee_amount: feeAmount,
                     validity_days: validityDays,
-                    is_active: true
+                    is_active: true,
+                    created_at: new Date()
                 }
             });
+
+            return { productId: regProduct.id, historyId: history.id };
         });
 
+        console.log("HMS Settings Saved Successfully", result);
+
         revalidatePath('/settings/hms');
-        revalidatePath('/hms/patients/new');
         return { success: true };
 
     } catch (error: any) {
-        console.error("Error updating HMS settings:", error);
-        return { error: error.message };
+        console.error("FATAL ERROR updating HMS settings:", error);
+        return { error: `System Error: ${error.message || "Unknown error during transaction"}` };
     }
 }
 

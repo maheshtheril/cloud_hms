@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { updateHMSSettings } from "@/app/actions/settings"
 import { Shield, CreditCard, Save, Calendar, Sparkles } from "lucide-react"
 
 export function HMSSettingsForm({ settings }: { settings: any }) {
+    const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [msg, setMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
@@ -25,6 +27,7 @@ export function HMSSettingsForm({ settings }: { settings: any }) {
 
         if (res.success) {
             setMsg({ type: 'success', text: 'Configuration saved successfully.' });
+            router.refresh(); // Force refresh server data
         } else {
             setMsg({ type: 'error', text: res.error || 'Failed to save settings.' });
         }
