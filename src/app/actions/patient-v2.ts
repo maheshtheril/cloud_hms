@@ -249,14 +249,14 @@ export async function createPatient(existingId: string | null | any, formData: F
                                 ${invoiceId}::uuid, ${tenantId}::uuid, ${safeCompanyId}::uuid, ${patient.id}::uuid,
                                 ${fallbackInvoiceNo}, ${new Date()}, 'draft', 
                                 ${fee}, ${fee}, 0, 0, 0, ${fee},
-                                ARRAY[${JSON.stringify({
+                                ('[' || ${JSON.stringify({
                             product_id: regProductId || null,
                             description: "Registration Fee (Recovered)",
                             quantity: 1,
                             unit_price: fee,
                             net_amount: fee,
                             tax_amount: 0
-                        })}::jsonb],
+                        })} || ']')::jsonb[],
                                 '{}'::jsonb, 'INR', 1
                             )
                         `;
