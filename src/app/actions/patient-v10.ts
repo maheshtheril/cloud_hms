@@ -60,7 +60,7 @@ export async function createPatientV10(patientId: string | null | any, formData:
         const fallback = await prisma.company.findFirst({
             where: { tenant_id: tenantId, enabled: true }
         });
-        companyId = fallback?.id;
+        companyId = fallback?.id ?? null;
     }
     if (!companyId) return { error: "FACILITY_NOT_LINKED: Terminal must be associated with an active medical branch." };
 
