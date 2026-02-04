@@ -590,11 +590,13 @@ export function CreatePatientForm({
                             >
                                 {isPending ? (
                                     <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                ) : (chargeRegistration && !waiveFee ? <Printer className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />)}
+                                ) : (hideBilling ? <CheckCircle2 className="h-4 w-4" /> : (chargeRegistration && !waiveFee ? <Printer className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />))}
                                 {
-                                    chargeRegistration && !waiveFee ? 'Save & Print Invoice' :
-                                        (initialData ? 'Update Profile' :
-                                            (printIDCard ? 'Save & Print ID' : 'Save Patient')
+                                    hideBilling ? 'Save' :
+                                        (chargeRegistration && !waiveFee ? 'Save & Print Invoice' :
+                                            (initialData ? 'Update Profile' :
+                                                (printIDCard ? 'Save & Print ID' : 'Save')
+                                            )
                                         )
                                 }
                             </button>
