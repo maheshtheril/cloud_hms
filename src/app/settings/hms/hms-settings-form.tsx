@@ -1,18 +1,25 @@
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { updateHMSSettings } from "@/app/actions/settings"
-import { Shield, CreditCard, Save, Calendar, Sparkles } from "lucide-react"
+import { Shield, CreditCard, Save, Calendar, Sparkles, AlertCircle } from "lucide-react"
 
 export function HMSSettingsForm({ settings }: { settings: any }) {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
-    const [msg, setMsg] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+    const [msg, setMsg] = useState<{ type: 'success' | 'error', text: string, debug?: string } | null>(null)
 
     const [registrationFee, setRegistrationFee] = useState(settings.registrationFee)
     const [registrationValidity, setRegistrationValidity] = useState(settings.registrationValidity)
     const [enableCardIssuance, setEnableCardIssuance] = useState(settings.enableCardIssuance)
+
+    // CRITICAL: Sync local state when settings props change (after router.refresh)
+    useEffect(() => {
+        setRegistrationFee(settings.registrationFee);
+        setRegistrationValidity(settings.registrationValidity);
+        setEnableCardIssuance(settings.enableCardIssuance);
+    }, [settings]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,9 +34,14 @@ export function HMSSettingsForm({ settings }: { settings: any }) {
 
         if (res.success) {
             setMsg({ type: 'success', text: 'Configuration saved successfully.' });
-            router.refresh(); // Force refresh server data
+            router.refresh();
         } else {
-            setMsg({ type: 'error', text: res.error || 'Failed to save settings.' });
+            console.error("Save failed:", res.error);
+            setMsg({
+                type: 'error',
+                text: res.error || 'Failed to save settings.',
+                debug: res.debug
+            });
         }
         setLoading(false);
     }
@@ -38,10 +50,23 @@ export function HMSSettingsForm({ settings }: { settings: any }) {
         <form onSubmit={handleSubmit} className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
             {/* Status Message */}
             {msg && (
-                <div className={`p-4 rounded-xl flex items-center gap-3 border ${msg.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'
+                <div className={`p-5 rounded-2xl flex flex-col gap-2 border shadow-sm ${msg.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-red-50 text-red-700 border-red-200'
                     }`}>
-                    <div className={`h-2 w-2 rounded-full ${msg.type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`}></div>
-                    <span className="text-sm font-bold">{msg.text}</span>
+                    <div className="flex items-center gap-3">
+                        {msg.type === 'success' ? (
+                            <Sparkles className="h-5 w-5 text-emerald-500" />
+                        ) : (
+                            <AlertCircle className="h-5 w-5 text-red-500" />
+                        )}
+                        <span className="text-sm font-black uppercase tracking-tight">{msg.text}</span>
+                    </div>
+                    {msg.debug && (
+                        <div className="mt-1 p-2 bg-red-100/50 rounded-lg text-[10px] font-mono whitespace-pre-wrap break-all opacity-70 border border-red-200 text-red-800">
+                            <strong>System Debug:</strong> {msg.debug}
+                        </div>
+                    )}
                 </div>
             )}
 

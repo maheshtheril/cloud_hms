@@ -273,9 +273,9 @@ export async function getHMSSettings() {
             take: 20
         });
 
-        console.log(`Fetched ${feeHistory.length} history records for company ${companyId}`);
-
         const activeFee = feeHistory.find(f => f.is_active);
+
+        console.log(`HMS Settings Audit [${companyId}]: Found ${feeHistory.length} history records, active=${!!activeFee}`);
 
         // 4. Finalize Fee (Priority: Active Table Entry > Config JSON Value > Product Price > Fallback 100)
         let finalFee = 100;
@@ -316,29 +316,30 @@ export async function updateHMSSettings(data: any) {
     const tenantId = session?.user?.tenantId;
 
     if (!companyId || !tenantId) {
-        console.error("HMS Settings Save Rejected: Missing session context", { companyId, tenantId });
-        return { error: "Session expired or unauthorized. Please login again." };
+        console.error("HMS Settings Persistence Failure: Missing session context", { companyId, tenantId });
+        return { error: "Your session has expired. Please log out and log in again to save settings." };
     }
 
     try {
-        console.log("Saving HMS Settings Cluster...", { companyId, fee: data.registrationFee });
+        console.log(`[HMS SETTINGS SAVE] Starting transaction for Company: ${companyId}`);
 
-        const feeAmount = parseFloat(data.registrationFee);
-        const validityDays = parseInt(data.registrationValidity);
+        // 1. Sanitize Inputs
+        const feeAmount = parseFloat(String(data.registrationFee || '0'));
+        const validityDays = parseInt(String(data.registrationValidity || '365'));
 
         if (isNaN(feeAmount) || isNaN(validityDays)) {
-            return { error: "Invalid fee amount or validity days." };
+            return { error: "Invalid registration fee or validity period. Please enter valid numbers." };
         }
 
         const result = await prisma.$transaction(async (tx) => {
-            // 1. Update/Create Registration Fee Product (Master Product)
-            // SKU must be unique per tenant. Since multiple companies share a tenant, we suffix with company fragment.
-            const targetSku = `REG-FEE-${companyId.slice(0, 4).toUpperCase()}`;
+            // STEP 1: Manage the Registration Fee Product
+            // We use a unique SKU per company to avoid tenant-level collisions
+            const targetSku = `REG-FEE-${companyId.toUpperCase()}`;
 
+            // Search for ANY product that looks like a registration fee for THIS company
             let regProduct = await tx.hms_product.findFirst({
                 where: {
                     company_id: companyId,
-                    tenant_id: tenantId,
                     OR: [
                         { sku: targetSku },
                         { sku: 'REG-FEE' },
@@ -348,19 +349,20 @@ export async function updateHMSSettings(data: any) {
             });
 
             if (regProduct) {
-                await tx.hms_product.update({
+                console.log(`[HMS SETTINGS SAVE] Updating existing product: ${regProduct.id} (${regProduct.sku})`);
+                regProduct = await tx.hms_product.update({
                     where: { id: regProduct.id },
                     data: {
                         price: feeAmount,
-                        sku: targetSku, // Ensure it has the correct SKU now
+                        sku: targetSku,
                         is_service: true,
                         is_stockable: false,
-                        is_active: true, // RE-ENABLE IF INACTIVE
+                        is_active: true,
                         updated_at: new Date()
                     }
                 });
             } else {
-                // Create if missing
+                console.log(`[HMS SETTINGS SAVE] Creating new Registration Fee product for company ${companyId}`);
                 regProduct = await tx.hms_product.create({
                     data: {
                         tenant_id: tenantId,
@@ -378,16 +380,17 @@ export async function updateHMSSettings(data: any) {
                 });
             }
 
-            // 2. Manage HMS Settings (Config JSON)
+            // STEP 2: Manage HMS Configuration JSON
             const configValue = {
                 validity: validityDays,
-                enableCardIssuance: data.enableCardIssuance,
+                enableCardIssuance: !!data.enableCardIssuance,
                 fee: feeAmount,
                 productId: regProduct.id,
-                updatedAt: new Date().toISOString()
+                lastUpdated: new Date().toISOString()
             };
 
-            // Use delete + create or find + update to ensure unique constraint [tenant_id, company_id, key]
+            // Use delete + create or find + update to ensure unique constraint
+            // Upsert is safer but Requires index name which varies, so we do find + handle
             const existingConfig = await tx.hms_settings.findFirst({
                 where: { tenant_id: tenantId, company_id: companyId, key: 'registration_config' }
             });
@@ -410,15 +413,15 @@ export async function updateHMSSettings(data: any) {
                 });
             }
 
-            // 3. Update Patient Registration Fees History (Audit Trail)
-            // Deactivate existing for this COMPANY
+            // STEP 3: Log Fee History (Audit Trail)
+            // Deactivate all old fees for this branch
             await tx.hms_patient_registration_fees.updateMany({
                 where: { company_id: companyId, is_active: true },
                 data: { is_active: false, updated_at: new Date() }
             });
 
-            // Create new record
-            const history = await tx.hms_patient_registration_fees.create({
+            // Create new audit record
+            await tx.hms_patient_registration_fees.create({
                 data: {
                     tenant_id: tenantId,
                     company_id: companyId,
@@ -429,19 +432,25 @@ export async function updateHMSSettings(data: any) {
                 }
             });
 
-            return { productId: regProduct.id, historyId: history.id };
-        });
+            return { success: true, productId: regProduct.id };
+        }, { timeout: 15000 }); // High timeout for concurrent production writes
 
-        console.log("HMS Settings Saved Successfully", result);
+        console.log(`[HMS SETTINGS SAVE] COMPLETED SUCCESSFULLY for ${companyId}`);
 
+        // Flush all relevant caches
         revalidatePath('/settings/hms');
         revalidatePath('/hms/patients/new');
         revalidatePath('/hms/reception/dashboard');
+
         return { success: true };
 
     } catch (error: any) {
-        console.error("FATAL ERROR updating HMS settings:", error);
-        return { error: `System Error: ${error.message || "Unknown error during transaction"}` };
+        console.error("CRITICAL PERSISTENCE ERROR in HMS Settings:", error);
+
+        let userMessage = "Database error while saving. Please try again in 30 seconds.";
+        if (error.code === 'P2002') userMessage = "Data collision error (SKU/Key already exists). Retrying might fix this.";
+
+        return { error: userMessage, debug: error.message };
     }
 }
 
