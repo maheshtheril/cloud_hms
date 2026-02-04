@@ -233,8 +233,7 @@ export async function getHMSSettings() {
         const companyId = session.user.companyId;
         const tenantId = session.user.tenantId;
 
-        // 1. Fetch Registration Fee Product
-        // Priority 1: Exact match logic used in updateHMSSettings ("Registration Fee")
+        // 1. Fetch Registration Fee Product (Master definition)
         let regFeeProduct = await prisma.hms_product.findFirst({
             where: {
                 company_id: companyId,
@@ -243,7 +242,6 @@ export async function getHMSSettings() {
             }
         });
 
-        // Priority 2: Fallback to broader search
         if (!regFeeProduct) {
             regFeeProduct = await prisma.hms_product.findFirst({
                 where: {
@@ -257,7 +255,7 @@ export async function getHMSSettings() {
 
         const finalProduct = regFeeProduct;
 
-        // 2. Fetch HMS Specific Settings
+        // 2. Fetch HMS Specific Settings (Config JSON)
         const hmsConfigRecord = await prisma.hms_settings.findFirst({
             where: {
                 company_id: companyId,
@@ -268,9 +266,20 @@ export async function getHMSSettings() {
 
         const configData = (hmsConfigRecord?.value as any) || {};
 
-        // 3. Finalize Fee (Priority: Config JSON Value > Product Price > Fallback 100)
+        // 3. Fetch Registration Fee History (The "Amount and Date" part)
+        const feeHistory = await prisma.hms_patient_registration_fees.findMany({
+            where: { tenant_id: tenantId },
+            orderBy: { created_at: 'desc' },
+            take: 20
+        });
+
+        const activeFee = feeHistory.find(f => f.is_active);
+
+        // 4. Finalize Fee (Priority: Active Table Entry > Config JSON Value > Product Price > Fallback 100)
         let finalFee = 100;
-        if (configData.fee !== undefined) {
+        if (activeFee) {
+            finalFee = parseFloat(activeFee.fee_amount.toString());
+        } else if (configData.fee !== undefined) {
             finalFee = parseFloat(configData.fee);
         } else if (finalProduct) {
             finalFee = parseFloat(finalProduct.price?.toString() || '0');
@@ -283,8 +292,15 @@ export async function getHMSSettings() {
                 registrationProductId: finalProduct?.id || configData.productId || null,
                 registrationProductName: finalProduct?.name || 'Patient Registration Fee',
                 registrationProductDescription: finalProduct?.description || 'Standard Registration Service',
-                registrationValidity: configData.validity || 365,
-                enableCardIssuance: configData.enableCardIssuance ?? true
+                registrationValidity: activeFee?.validity_days || configData.validity || 365,
+                enableCardIssuance: configData.enableCardIssuance ?? true,
+                feeHistory: feeHistory.map(f => ({
+                    id: f.id,
+                    amount: f.fee_amount,
+                    validity: f.validity_days,
+                    active: f.is_active,
+                    date: f.created_at
+                }))
             }
         };
     } catch (error: any) {
@@ -294,79 +310,98 @@ export async function getHMSSettings() {
 
 export async function updateHMSSettings(data: any) {
     const session = await auth();
-    if (!session?.user?.companyId) return { error: "Unauthorized" };
+    if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
     const companyId = session.user.companyId;
     const tenantId = session.user.tenantId;
 
     try {
-        console.log("Saving HMS Settings...", data);
+        console.log("Saving HMS Settings (Syncing History)...", data);
 
-        // 1. Update/Create Registration Fee Product
         const feeAmount = parseFloat(data.registrationFee);
+        const validityDays = parseInt(data.registrationValidity);
 
-        let regProduct = await prisma.hms_product.findFirst({
-            where: {
-                company_id: companyId,
-                name: { contains: 'Registration Fee', mode: 'insensitive' }
-            }
-        });
-
-        if (regProduct) {
-            await prisma.hms_product.update({
-                where: { id: regProduct.id },
-                data: { price: feeAmount, is_service: true, is_stockable: false, is_active: true }
-            });
-        } else {
-            // Create if missing!
-            const newProduct = await prisma.hms_product.create({
-                data: {
-                    tenant_id: tenantId!,
+        await prisma.$transaction(async (tx) => {
+            // 1. Update/Create Registration Fee Product (Master Product)
+            let regProduct = await tx.hms_product.findFirst({
+                where: {
                     company_id: companyId,
-                    name: "Patient Registration Fee",
-                    sku: `REG-FEE-${companyId.slice(0, 8).toUpperCase()}`, // Ensure unique SKU per company
-                    description: "Standard fee for new patient registration",
-                    price: feeAmount,
-                    is_service: true,
-                    is_stockable: false, // User requested non-stock service
-                    uom: 'each',
+                    name: { contains: 'Registration Fee', mode: 'insensitive' }
+                }
+            });
+
+            if (regProduct) {
+                await tx.hms_product.update({
+                    where: { id: regProduct.id },
+                    data: { price: feeAmount, is_service: true, is_stockable: false, is_active: true }
+                });
+            } else {
+                regProduct = await tx.hms_product.create({
+                    data: {
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        name: "Patient Registration Fee",
+                        sku: `REG-FEE-${companyId.slice(0, 8).toUpperCase()}`,
+                        description: "Standard fee for new patient registration",
+                        price: feeAmount,
+                        is_service: true,
+                        is_stockable: false,
+                        uom: 'each',
+                        is_active: true
+                    }
+                });
+            }
+
+            // 2. Manage HMS Settings (Config JSON)
+            const existingConfig = await tx.hms_settings.findFirst({
+                where: {
+                    company_id: companyId,
+                    tenant_id: tenantId,
+                    key: 'registration_config'
+                }
+            });
+
+            const configValue = {
+                validity: validityDays,
+                enableCardIssuance: data.enableCardIssuance,
+                fee: feeAmount,
+                productId: regProduct?.id
+            };
+
+            if (existingConfig) {
+                await tx.hms_settings.update({
+                    where: { id: existingConfig.id },
+                    data: { value: configValue as any }
+                });
+            } else {
+                await tx.hms_settings.create({
+                    data: {
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        key: 'registration_config',
+                        value: configValue as any,
+                        scope: 'company'
+                    }
+                });
+            }
+
+            // 3. Update Patient Registration Fees History (THE MISSING LINK)
+            // Deactivate existing
+            await tx.hms_patient_registration_fees.updateMany({
+                where: { tenant_id: tenantId, is_active: true },
+                data: { is_active: false }
+            });
+
+            // Create new version
+            await tx.hms_patient_registration_fees.create({
+                data: {
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    fee_amount: feeAmount,
+                    validity_days: validityDays,
                     is_active: true
                 }
             });
-            regProduct = newProduct;
-        }
-
-        // 2. Upsert HMS Settings
-        const existingConfig = await prisma.hms_settings.findFirst({
-            where: {
-                company_id: companyId,
-                tenant_id: tenantId!,
-                key: 'registration_config'
-            }
         });
-
-        const configValue = {
-            validity: parseInt(data.registrationValidity),
-            enableCardIssuance: data.enableCardIssuance,
-            fee: feeAmount, // Store the fee directly here too for robustness
-            productId: regProduct?.id
-        };
-
-        if (existingConfig) {
-            await prisma.hms_settings.update({
-                where: { id: existingConfig.id },
-                data: { value: configValue as any }
-            });
-        } else {
-            await prisma.hms_settings.create({
-                data: {
-                    tenant_id: tenantId!,
-                    company_id: companyId,
-                    key: 'registration_config',
-                    value: configValue as any,
-                    scope: 'company'
-                }
-            });
-        }
 
         revalidatePath('/settings/hms');
         revalidatePath('/hms/patients/new');
