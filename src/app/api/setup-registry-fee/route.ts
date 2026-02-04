@@ -31,8 +31,7 @@ export async function GET() {
                     is_service: true,      // KEY: It's a service
                     is_stockable: false,   // KEY: No stock tracking
                     uom: "unit",
-                    price: 100,            // Default Price (can be overridden)
-                    tax_rates: undefined    // Assuming no tax default for now
+                    price: 100            // Default Price (can be overridden)
                 }
             });
         }
