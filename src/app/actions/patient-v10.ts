@@ -174,7 +174,7 @@ export async function createPatientV10(existingId: string | null | any, formData
 
                 } catch (invErr: any) {
                     console.error("Invoice Creation Failed (V10):", invErr);
-                    warning = "Patient saved, but Invoice failed. Please bill manually.";
+                    warning = `Patient saved, but Invoice failed (Details: ${invErr.message}). Please bill manually.`;
                     // We Swallow the error to ensure Patient Registration is returned as Success
                 }
             } else {
