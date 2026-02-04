@@ -6,7 +6,7 @@ import { updateHMSSettings } from "@/app/actions/settings"
 import { Shield, CreditCard, Save, Calendar, Sparkles, AlertCircle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
-export function HMSSettingsForm({ settings }: { settings: any }) {
+export function HMSSettingsForm({ settings, products }: { settings: any, products: any[] }) {
     const router = useRouter()
     const { toast } = useToast()
     const [loading, setLoading] = useState(false)
@@ -15,12 +15,14 @@ export function HMSSettingsForm({ settings }: { settings: any }) {
     const [registrationFee, setRegistrationFee] = useState(settings.registrationFee)
     const [registrationValidity, setRegistrationValidity] = useState(settings.registrationValidity)
     const [enableCardIssuance, setEnableCardIssuance] = useState(settings.enableCardIssuance)
+    const [selectedProductId, setSelectedProductId] = useState(settings.registrationProductId)
 
     // CRITICAL: Sync local state when settings props change (after router.refresh)
     useEffect(() => {
         setRegistrationFee(settings.registrationFee);
         setRegistrationValidity(settings.registrationValidity);
         setEnableCardIssuance(settings.enableCardIssuance);
+        setSelectedProductId(settings.registrationProductId);
     }, [settings]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -38,7 +40,8 @@ export function HMSSettingsForm({ settings }: { settings: any }) {
             const res = await updateHMSSettings({
                 registrationFee: parseFloat(String(registrationFee)),
                 registrationValidity: parseInt(String(registrationValidity)),
-                enableCardIssuance: !!enableCardIssuance
+                enableCardIssuance: !!enableCardIssuance,
+                productId: selectedProductId
             });
 
             if (loadingToast) loadingToast.dismiss();
@@ -105,6 +108,43 @@ export function HMSSettingsForm({ settings }: { settings: any }) {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                {/* 0. Registration Product Mapping */}
+                <div className="md:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm group">
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="h-10 w-10 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Sparkles className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 mb-0.5">
+                                <span className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] bg-blue-50 dark:bg-blue-900/40 px-2 py-0.5 rounded-md">Financial Mapping</span>
+                            </div>
+                            <h3 className="font-black text-xl text-slate-800 dark:text-slate-100 italic">Registration Service Product</h3>
+                            <p className="text-[11px] text-slate-500 font-medium leading-relaxed mt-1">Select the item from your Inventory Master that should appear on the Patient Invoice.</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3">
+                        <select
+                            value={selectedProductId || ''}
+                            onChange={(e) => setSelectedProductId(e.target.value)}
+                            className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-black text-slate-900 dark:text-white outline-none focus:border-indigo-500 transition-all appearance-none cursor-pointer hover:bg-white dark:hover:bg-slate-900"
+                        >
+                            <option value="">-- AUTO-PILOT (System searches for Registration Product) --</option>
+                            {products.map(p => (
+                                <option key={p.id} value={p.id}>
+                                    {p.name} [{p.sku}] - ₹{parseFloat(p.price || '0').toFixed(2)}
+                                </option>
+                            ))}
+                        </select>
+                        <div className="flex items-center gap-2 px-1">
+                            <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                                {products.length} Mappable Services Found
+                            </p>
+                        </div>
+                    </div>
+                </div>
 
                 {/* 1. Registration Fee Card */}
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group">

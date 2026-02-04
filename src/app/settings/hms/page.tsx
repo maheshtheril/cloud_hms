@@ -36,7 +36,7 @@ export default async function HMSSettingsPage() {
                 </div>
             </header>
 
-            <HMSSettingsForm settings={res.settings} />
+            <HMSSettingsForm settings={res.settings} products={res.availableProducts || []} />
         </div>
     )
 }

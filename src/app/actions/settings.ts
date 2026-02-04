@@ -294,11 +294,27 @@ export async function getHMSSettings() {
             finalFee = parseFloat(finalProduct.price?.toString() || '100');
         }
 
+        // 4. Fetch All Available Service Products (for mapping)
+        const availableProducts = await prisma.hms_product.findMany({
+            where: {
+                company_id: companyId,
+                is_service: true,
+                is_active: true
+            },
+            select: {
+                id: true,
+                name: true,
+                sku: true,
+                price: true
+            },
+            orderBy: { name: 'asc' }
+        });
+
         return {
             success: true,
             settings: {
                 registrationFee: finalFee,
-                registrationProductId: finalProduct?.id || configData.productId || null,
+                registrationProductId: configData.productId || finalProduct?.id || null,
                 registrationProductName: finalProduct?.name || 'Patient Registration Fee',
                 registrationProductDescription: finalProduct?.description || 'Standard Registration Service',
                 registrationValidity: activeFee?.validity_days || configData.validity || 365,
@@ -310,7 +326,8 @@ export async function getHMSSettings() {
                     active: f.is_active,
                     date: f.created_at
                 }))
-            }
+            },
+            availableProducts
         };
     } catch (error: any) {
         return { error: error.message };
@@ -347,49 +364,72 @@ export async function updateHMSSettings(data: any) {
 
         const result = await prisma.$transaction(async (tx) => {
             // STEP 1: Manage the Registration Fee Product
-            const branchSuffix = companyId.slice(-6).toUpperCase();
-            const targetSku = `REG-FEE-${branchSuffix}`;
+            let regProduct = null;
 
-            // Search for ANY product that looks like a registration fee for THIS company
-            let regProduct = await tx.hms_product.findFirst({
-                where: {
-                    company_id: companyId,
-                    OR: [
-                        { sku: targetSku },
-                        { sku: { startsWith: 'REG-FEE' } },
-                        { name: { contains: 'Registration Fee', mode: 'insensitive' } }
-                    ]
+            // 1a. Check if an explicit product was selected in the UI
+            if (data.productId && data.productId.length > 20) {
+                console.log(`[HMS SETTINGS SAVE] Using explicitly selected product: ${data.productId}`);
+                regProduct = await tx.hms_product.findUnique({
+                    where: { id: data.productId }
+                });
+            }
+
+            // 1b. If no explicit product (or not found), find/create standard SKU
+            if (!regProduct) {
+                const branchSuffix = companyId.slice(-6).toUpperCase();
+                const targetSku = `REG-FEE-${branchSuffix}`;
+
+                regProduct = await tx.hms_product.findFirst({
+                    where: {
+                        company_id: companyId,
+                        OR: [
+                            { sku: targetSku },
+                            { sku: { startsWith: 'REG-FEE' } },
+                            { name: { contains: 'Registration Fee', mode: 'insensitive' } }
+                        ]
+                    }
+                });
+
+                if (regProduct) {
+                    console.log(`[HMS SETTINGS SAVE] Updating existing product: ${regProduct.id} (${regProduct.sku})`);
+                    regProduct = await tx.hms_product.update({
+                        where: { id: regProduct.id },
+                        data: {
+                            price: feeAmount,
+                            sku: targetSku,
+                            is_service: true,
+                            is_stockable: false,
+                            is_active: true,
+                            updated_at: new Date()
+                        }
+                    });
+                } else {
+                    console.log(`[HMS SETTINGS SAVE] Creating new Registration Fee product for company ${companyId}`);
+                    regProduct = await tx.hms_product.create({
+                        data: {
+                            tenant_id: tenantId,
+                            company_id: companyId,
+                            name: "Patient Registration Fee",
+                            sku: targetSku,
+                            description: "Standard fee for new patient registration",
+                            price: feeAmount,
+                            is_service: true,
+                            is_stockable: false,
+                            uom: 'unit',
+                            is_active: true,
+                            created_at: new Date()
+                        }
+                    });
                 }
-            });
-
-            if (regProduct) {
-                console.log(`[HMS SETTINGS SAVE] Updating existing product: ${regProduct.id} (${regProduct.sku})`);
+            } else {
+                // UPDATE EXPLICIT PRODUCT price to match the setting
                 regProduct = await tx.hms_product.update({
                     where: { id: regProduct.id },
                     data: {
                         price: feeAmount,
-                        sku: targetSku,
                         is_service: true,
-                        is_stockable: false,
                         is_active: true,
                         updated_at: new Date()
-                    }
-                });
-            } else {
-                console.log(`[HMS SETTINGS SAVE] Creating new Registration Fee product for company ${companyId}`);
-                regProduct = await tx.hms_product.create({
-                    data: {
-                        tenant_id: tenantId,
-                        company_id: companyId,
-                        name: "Patient Registration Fee",
-                        sku: targetSku,
-                        description: "Standard fee for new patient registration",
-                        price: feeAmount,
-                        is_service: true,
-                        is_stockable: false,
-                        uom: 'unit',
-                        is_active: true,
-                        created_at: new Date()
                     }
                 });
             }

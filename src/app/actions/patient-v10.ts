@@ -145,24 +145,43 @@ export async function createPatientV10(patientId: string | null | any, formData:
         // 4. Invoice Logic
         if (!skipInvoice && companyId) {
             try {
-                // Find Registration Fee Product (Smarter Lookup)
+                // Find Registration Fee Product (Extreme Resilience)
                 let feeProduct = null;
 
-                if (configProductId) {
+                if (configProductId && typeof configProductId === 'string' && configProductId.length > 30) {
+                    console.log(`[V10 INVOICE DEBUG] Searching by specific ID: ${configProductId}`);
                     feeProduct = await prisma.hms_product.findUnique({
                         where: { id: configProductId }
                     });
                 }
 
                 if (!feeProduct) {
-                    // Fallback: Find by company and SKU prefix
+                    console.log(`[V10 INVOICE DEBUG] Specific ID failed, falling back to SKU search...`);
+                    // Fallback 1: Company + SKU
                     feeProduct = await prisma.hms_product.findFirst({
                         where: {
                             tenant_id: tenantId,
-                            company_id: companyId,
+                            company_id: companyId || undefined,
                             OR: [
                                 { sku: { startsWith: 'REG-FEE' } },
                                 { name: { contains: 'Registration Fee', mode: 'insensitive' } }
+                            ],
+                            is_active: true
+                        },
+                        orderBy: { created_at: 'desc' }
+                    });
+                }
+
+                if (!feeProduct) {
+                    console.log(`[V10 INVOICE DEBUG] Company SKU failed, falling back to Tenant-Wide search...`);
+                    // Fallback 2: Tenant wide lookup (in case product was cross-linked)
+                    feeProduct = await prisma.hms_product.findFirst({
+                        where: {
+                            tenant_id: tenantId,
+                            OR: [
+                                { sku: { startsWith: 'REG-FEE' } },
+                                { sku: 'REG-FEE' },
+                                { name: { contains: 'Registration', mode: 'insensitive' } }
                             ],
                             is_active: true
                         },
