@@ -4,9 +4,11 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { updateHMSSettings } from "@/app/actions/settings"
 import { Shield, CreditCard, Save, Calendar, Sparkles, AlertCircle } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
 
 export function HMSSettingsForm({ settings }: { settings: any }) {
     const router = useRouter()
+    const { toast } = useToast()
     const [loading, setLoading] = useState(false)
     const [msg, setMsg] = useState<{ type: 'success' | 'error', text: string, debug?: string } | null>(null)
 
@@ -26,24 +28,56 @@ export function HMSSettingsForm({ settings }: { settings: any }) {
         setLoading(true);
         setMsg(null);
 
-        const res = await updateHMSSettings({
-            registrationFee,
-            registrationValidity,
-            enableCardIssuance
+        const loadingToast = toast({
+            title: "Saving Configuration",
+            description: "Updating hospital settings and products...",
         });
 
-        if (res.success) {
-            setMsg({ type: 'success', text: 'Configuration saved successfully.' });
-            router.refresh();
-        } else {
-            console.error("Save failed:", res.error);
+        try {
+            console.log("Submitting HMS settings...");
+            const res = await updateHMSSettings({
+                registrationFee: parseFloat(String(registrationFee)),
+                registrationValidity: parseInt(String(registrationValidity)),
+                enableCardIssuance: !!enableCardIssuance
+            });
+
+            if (loadingToast) loadingToast.dismiss();
+
+            if (res.success) {
+                setMsg({ type: 'success', text: 'Configuration saved successfully.' });
+                toast({
+                    title: "Success",
+                    description: "HMS registration settings updated.",
+                });
+                router.refresh();
+            } else {
+                setMsg({
+                    type: 'error',
+                    text: res.error || 'Failed to save settings.',
+                    debug: res.debug
+                });
+                toast({
+                    title: "Save Failed",
+                    description: res.error || "Please check your input.",
+                    variant: "destructive",
+                });
+            }
+        } catch (err: any) {
+            if (loadingToast) loadingToast.dismiss();
+            console.error("Critical error in settings save:", err);
             setMsg({
                 type: 'error',
-                text: res.error || 'Failed to save settings.',
-                debug: res.debug
+                text: 'Network or Critical System Error',
+                debug: err.message
             });
+            toast({
+                title: "Critical Error",
+                description: "The connection to the server was lost.",
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }
 
     return (

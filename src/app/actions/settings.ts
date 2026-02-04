@@ -333,8 +333,8 @@ export async function updateHMSSettings(data: any) {
 
         const result = await prisma.$transaction(async (tx) => {
             // STEP 1: Manage the Registration Fee Product
-            // We use a unique SKU per company to avoid tenant-level collisions
-            const targetSku = `REG-FEE-${companyId.toUpperCase()}`;
+            const branchSuffix = companyId.slice(-6).toUpperCase();
+            const targetSku = `REG-FEE-${branchSuffix}`;
 
             // Search for ANY product that looks like a registration fee for THIS company
             let regProduct = await tx.hms_product.findFirst({
@@ -342,7 +342,7 @@ export async function updateHMSSettings(data: any) {
                     company_id: companyId,
                     OR: [
                         { sku: targetSku },
-                        { sku: 'REG-FEE' },
+                        { sku: { startsWith: 'REG-FEE' } },
                         { name: { contains: 'Registration Fee', mode: 'insensitive' } }
                     ]
                 }
