@@ -5,123 +5,158 @@ import { auth } from "@/auth"
 import crypto from "crypto";
 
 /**
- * WORLD CLASS PATIENT REGISTRATION SERVICE
- * Handles Atomic Patient Creation + Optional Auto-Invoicing
+ * ===================================================================================
+ * SERVICE: REVENUE CYCLE & PATIENT ADMISSION (WORLD-CLASS STANDARD)
+ * ===================================================================================
+ * Logic: 
+ * 1. Financial Clearance: Check if facility is configured for billing.
+ * 2. Identity Mastery: Ensure patient demographics are validated and scrubbed.
+ * 3. Atomic Commitment: Single transaction for Patient + Financial Encounter.
+ * 4. RCM Capture: capture the registration fee as a "Charge Event".
+ * ===================================================================================
  */
 
+interface PatientData {
+    firstName: string;
+    lastName?: string;
+    dob?: Date;
+    gender?: string;
+    phone: string;
+    email?: string;
+    address: any;
+    title?: string;
+}
+
 const normalizeGender = (gender: string | null) => {
-    if (!gender) return null;
+    if (!gender) return 'unknown';
     const g = gender.toLowerCase().trim();
     if (g === 'm' || g === 'male') return 'male';
     if (g === 'f' || g === 'female') return 'female';
     if (g === 'other') return 'other';
-    if (g === 'unknown') return 'unknown';
-    return null;
+    return 'unknown';
 }
 
 export async function createPatientV10(patientId: string | null | any, formData: FormData) {
     const session = await auth();
-    const tenantId = session?.user?.tenantId;
-    let companyId = session?.user?.companyId;
-    const userId = session?.user?.id;
-
-    if (!tenantId || !userId) return { error: "Authentication session expired. Please login again." };
-
-    // 1. Parse and Standardize Inputs
-    const firstName = (formData.get("first_name") as string)?.trim();
-    if (!firstName) return { error: "Patient first name is mandatory for clinical safety." };
-
-    const lastName = (formData.get("last_name") as string)?.trim() || '';
-    const dob = formData.get('dob') as string;
-    const gender = formData.get('gender') as string;
-    const phone = formData.get('phone') as string;
-    const email = formData.get('email') as string;
-    const chargeRegistration = formData.get('charge_registration') === 'on';
-
-    const address = {
-        street: formData.get('street') as string,
-        city: formData.get('city') as string,
-        state: formData.get('state') as string,
-        zip: formData.get('zip') as string,
-        country: formData.get('country') as string
-    };
-
-    // 2. Resolve Multi-Tenant Context
-    if (!companyId) {
-        const defaultCompany = await prisma.company.findFirst({
-            where: { tenant_id: tenantId, enabled: true },
-            select: { id: true }
-        });
-        companyId = defaultCompany?.id;
+    if (!session?.user?.id || !session?.user?.tenantId) {
+        return { error: "SECURITY_AUTH_EXPIRED: Please login to verify clinical credentials." };
     }
-    if (!companyId) return { error: "Terminal is not linked to an active medical facility." };
 
-    console.log(`[HMS REG SERVICE] Initializing for Patient: ${firstName} | Facility: ${companyId}`);
+    const userId = session.user.id;
+    const tenantId = session.user.tenantId;
+    let companyId = session.user.companyId;
+
+    // 1. DATA SCRUBBING (Standardizing Inputs)
+    const firstName = (formData.get("first_name") as string)?.trim();
+    const lastName = (formData.get("last_name") as string)?.trim() || "";
+    const phone = (formData.get("phone") as string)?.trim();
+
+    if (!firstName || !phone) {
+        return { error: "VALIDATION_FAILED: Patient Identity (Name/Phone) is mandatory for clinical indexing." };
+    }
+
+    // 2. CONTEXT RESOLUTION
+    if (!companyId) {
+        const fallback = await prisma.company.findFirst({
+            where: { tenant_id: tenantId, enabled: true }
+        });
+        companyId = fallback?.id;
+    }
+    if (!companyId) return { error: "FACILITY_NOT_LINKED: Terminal must be associated with an active medical branch." };
 
     try {
+        // -----------------------------------------------------------------------------------
+        // REVENUE CYCLE START: ATOMIC TRANSACTION
+        // -----------------------------------------------------------------------------------
         return await prisma.$transaction(async (tx) => {
-            // A. Fetch HMS Configuration
-            let validityDays = 365;
-            let configProductId = null;
-            let configFee = 0;
 
-            const hmsConfigRecord = await tx.hms_settings.findFirst({
+            // A. CONFIGURATION FETCH (Billing Rules)
+            const hmsConfig = await tx.hms_settings.findFirst({
                 where: { tenant_id: tenantId, company_id: companyId, key: 'registration_config' }
             });
-            if (hmsConfigRecord) {
-                const config = hmsConfigRecord.value as any;
-                validityDays = parseInt(config.validity) || 365;
-                configProductId = config.productId || null;
-                configFee = parseFloat(config.fee) || 0;
+            const config = (hmsConfig?.value as any) || {};
+            const feeProductSearchId = config.productId;
+            const feeAmountOverride = parseFloat(config.fee) || 0;
+            const validityDays = parseInt(config.validity) || 365;
+
+            // B. CHARGE CAPTURE VALIDATION
+            const chargeRegistration = formData.get('charge_registration') === 'on';
+            let feeProduct = null;
+
+            if (chargeRegistration) {
+                // Priority 1: Linked Config ID
+                if (feeProductSearchId) {
+                    feeProduct = await tx.hms_product.findUnique({ where: { id: feeProductSearchId } });
+                }
+                // Priority 2: Standard SKU Fallback
+                if (!feeProduct) {
+                    feeProduct = await tx.hms_product.findFirst({
+                        where: {
+                            tenant_id: tenantId,
+                            company_id: companyId,
+                            sku: { contains: 'REG-FEE' }
+                        }
+                    });
+                }
+                // Priority 3: Semantic Lookup
+                if (!feeProduct) {
+                    feeProduct = await tx.hms_product.findFirst({
+                        where: {
+                            tenant_id: tenantId,
+                            company_id: companyId,
+                            name: { contains: 'Registration', mode: 'insensitive' }
+                        }
+                    });
+                }
+
+                if (!feeProduct) {
+                    throw new Error("RCM_ERROR: Registration Service Product not configured. Please link a 'Registration Fee' product in Clinical Settings.");
+                }
             }
 
-            // B. Prepare Identity Records
-            const finalPatientId = (patientId && typeof patientId === 'string') ? patientId : crypto.randomUUID();
+            // C. MASTER PATIENT INDEX (UPSERT)
             const registrationDate = new Date();
             const expiryDate = new Date();
             expiryDate.setDate(expiryDate.getDate() + validityDays);
 
-            const metadata: any = {
-                title: formData.get("title") as string,
-                last_updated: new Date().toISOString()
+            const address = {
+                street: formData.get('street') as string,
+                city: formData.get('city') as string,
+                zip: formData.get('zip') as string,
             };
 
-            if (chargeRegistration) {
-                metadata.registration_date = registrationDate.toISOString();
-                metadata.registration_expiry = expiryDate.toISOString();
-                metadata.registration_notes = patientId ? "Account Renewal" : "New Patient Intake";
-            }
+            const metadata: any = {
+                created_via: 'WorldClass-V10-Service',
+                registration_date: chargeRegistration ? registrationDate.toISOString() : undefined,
+                registration_expiry: chargeRegistration ? expiryDate.toISOString() : undefined,
+                title: formData.get("title") as string,
+                last_rcm_audit: new Date().toISOString()
+            };
 
-            const upsertData = {
+            const upsertPayload = {
                 first_name: firstName,
                 last_name: lastName,
-                gender: normalizeGender(gender),
-                dob: dob ? new Date(dob) : null,
-                contact: { phone, email, address } as any,
-                metadata: metadata as any,
+                gender: normalizeGender(formData.get('gender') as string),
+                dob: formData.get('dob') ? new Date(formData.get('dob') as string) : null,
+                contact: { phone, email: formData.get('email'), address } as any,
+                metadata: metadata,
                 updated_at: new Date(),
                 updated_by: userId
             };
 
-            // C. Save Patient (Clinical Core)
-            // Note: We use executeRaw for the Patient as well if we suspect schema drift, 
-            // but Patient seems stable. Let's use Prisma for the Patient to keep it clean.
             let patient;
-            const isUpdate = (patientId && typeof patientId === 'string');
+            const isUpdate = (patientId && typeof patientId === 'string' && patientId.length > 30);
 
             if (isUpdate) {
-                patient = await tx.hms_patient.update({
-                    where: { id: patientId as string },
-                    data: upsertData
-                });
+                patient = await tx.hms_patient.update({ where: { id: patientId as string }, data: upsertPayload });
             } else {
                 patient = await tx.hms_patient.create({
                     data: {
-                        ...upsertData,
-                        id: finalPatientId,
+                        ...upsertPayload,
+                        id: crypto.randomUUID(),
                         tenant_id: tenantId,
                         company_id: companyId,
-                        patient_number: `PAT-${Date.now().toString().slice(-8)}`,
+                        patient_number: `PAT-${Date.now().toString().slice(-6)}`,
                         created_at: new Date(),
                         created_by: userId,
                         status: 'active'
@@ -129,92 +164,64 @@ export async function createPatientV10(patientId: string | null | any, formData:
                 });
             }
 
-            let invoice = null;
-
-            // D. Generate Financial Record (World Class Integrity)
-            if (chargeRegistration) {
-                // Determine Product
-                let feeProduct = null;
-                if (configProductId) {
-                    feeProduct = await tx.hms_product.findUnique({ where: { id: configProductId } });
-                }
-                if (!feeProduct) {
-                    feeProduct = await tx.hms_product.findFirst({
-                        where: {
-                            tenant_id: tenantId,
-                            company_id: companyId,
-                            OR: [
-                                { sku: { startsWith: 'REG-FEE' } },
-                                { name: { contains: 'Registration Fee', mode: 'insensitive' } }
-                            ],
-                            is_active: true
-                        }
-                    });
-                }
-
-                if (!feeProduct) {
-                    throw new Error("Financial Configuration Missing: 'Registration Fee' product not found in inventory.");
-                }
-
-                const amount = Number(feeProduct.price) || configFee || 0;
+            // D. FINANCIAL CLEARANCE (INVOICE GENERATION)
+            let invoiceSummary = null;
+            if (chargeRegistration && feeProduct) {
                 const invoiceId = crypto.randomUUID();
-                const invNumber = `INV-REG-${Date.now().toString().slice(-6)}`;
+                const invNo = `REG-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+                const amount = Number(feeProduct.price) || feeAmountOverride || 0;
 
-                console.log(`[HMS REG SERVICE] Posting Revenue: ${invNumber} Amount: ${amount}`);
+                console.log(`[RCM] Posting Charge Capture for Patient ${patient.id} | Amount: ${amount}`);
 
-                // ULTIMATE RAW SQL OVERRIDE (Explicitly filling every column that could be NULL)
-                // This bypasses any Prisma Null Constraint checks and forces the DB to accept.
+                // ATOMIC FINANCIAL INJECTION (Explicit SQL to prevent ORM-Null discrepancies)
                 await tx.$executeRaw`
                     INSERT INTO hms_invoice (
-                        id, tenant_id, company_id, patient_id, invoice_number, status, 
+                        id, tenant_id, company_id, patient_id, 
+                        invoice_number, invoice_no, status, 
                         invoice_date, issued_at, currency, currency_rate, 
                         subtotal, total, total_tax, total_discount, total_paid, 
-                        outstanding_amount, billing_metadata, created_by, created_at, updated_at,
-                        line_items, locked
+                        outstanding, outstanding_amount, billing_metadata, 
+                        created_by, created_at, updated_at, locked
                     ) VALUES (
-                        ${invoiceId}::uuid, ${tenantId}::uuid, ${companyId}::uuid, ${patient.id}::uuid, ${invNumber}, 'draft',
-                        ${registrationDate}::date, ${registrationDate}, 'INR', 1.0, 
-                        ${amount}, ${amount}, 0, 0, 0, 
-                        ${amount}, '{}'::jsonb, ${userId}::uuid, now(), now(),
-                        '[]'::jsonb[], false
+                        ${invoiceId}::uuid, ${tenantId}::uuid, ${companyId}::uuid, ${patient.id}::uuid,
+                        ${invNo}, ${invNo}, 'draft',
+                        ${registrationDate}::date, ${registrationDate}, 'INR', 1.0,
+                        ${amount}, ${amount}, 0, 0, 0,
+                        ${amount}, ${amount}, '{}'::jsonb,
+                        ${userId}::uuid, now(), now(), false
                     )
                 `;
 
                 const lineId = crypto.randomUUID();
                 await tx.$executeRaw`
                     INSERT INTO hms_invoice_lines (
-                        id, tenant_id, company_id, invoice_id, product_id, 
+                        id, tenant_id, company_id, invoice_id, product_id,
                         description, quantity, unit_price, net_amount, 
-                        discount_amount, tax_amount, line_idx, metadata, created_at
+                        discount_amount, tax_amount, line_idx, created_at
                     ) VALUES (
                         ${lineId}::uuid, ${tenantId}::uuid, ${companyId}::uuid, ${invoiceId}::uuid, ${feeProduct.id}::uuid,
-                        ${feeProduct.description || "Patient Registration Service"}, 1, ${amount}, ${amount},
-                        0, 0, 1, '{}'::jsonb, now()
+                        ${feeProduct.name}, 1, ${amount}, ${amount},
+                        0, 0, 1, now()
                     )
                 `;
 
-                invoice = { id: invoiceId, invoice_number: invNumber, total: amount };
+                invoiceSummary = { id: invoiceId, number: invNo, total: amount };
             }
 
             return {
                 success: true,
+                message: isUpdate ? "Master Patient Index Updated." : "New Patient Registered & Financial Record Opened.",
                 data: patient,
-                id: patient.id,
-                invoice: invoice
+                invoice: invoiceSummary
             };
         });
-    } catch (error: any) {
-        console.error("CRITICAL REGISTRATION FAILURE:", error);
 
-        // World Class Error Reporting
-        let terminalError = error.message;
-        if (terminalError.includes("Null constraint violation")) {
-            terminalError = "Database Integrity Violation: A required billing field is missing in the system schema. Please contact technical support.";
-        } else if (terminalError.includes("foreign key constraint")) {
-            terminalError = "Configuration Error: Linked product or location no longer exists.";
-        }
-
-        return { error: terminalError };
+    } catch (err: any) {
+        console.error("CRITICAL_RCM_FAILURE:", err);
+        return {
+            error: `HMS_CORE_EXCEPTION: ${err.message}`,
+            details: "Please verify if the 'Registration Fee' product matches the hospital fee schedule."
+        };
     }
 }
 
