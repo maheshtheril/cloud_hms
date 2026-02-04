@@ -18,7 +18,7 @@ export async function GET() {
                 first_name: "DEBUG",
                 last_name: "TEST_PATIENT_" + Date.now(),
                 gender: "other",
-                phone: "0000000000",
+                contact: { phone: "0000000000" },
                 patient_number: "DBG-" + Date.now(),
                 metadata: { debug: true }
             }
