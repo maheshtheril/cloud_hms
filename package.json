@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "cache-bust": "echo 'Clearing Vercel Cache of Feb 4' && exit 0",
     "build": "prisma generate && node scripts/sync-db.js && next build",
     "start": "next start",
     "lint": "eslint"
