@@ -55,9 +55,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // SELF-HEALING: Disabled for now to prevent duplication issues.
-  // Performance is mitigated by internal 'hasAudited' flag in the action.
-  // await auditAndFixMenuPermissions();
+  // SELF-HEALING: Ensuring menu items and permissions are standardized.
+  await auditAndFixMenuPermissions();
 
   return (
     <html lang="en" suppressHydrationWarning className="dark">
