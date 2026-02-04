@@ -21,6 +21,7 @@ interface CreatePatientFormProps {
     registrationProductName?: string
     registrationProductDescription?: string
     appName?: string
+    hideBilling?: boolean
 }
 
 export function CreatePatientForm({
@@ -33,7 +34,8 @@ export function CreatePatientForm({
     registrationProductId: propId = null,
     registrationProductName: propName = 'Patient Registration Fee',
     registrationProductDescription: propDesc = 'Standard Service',
-    appName = 'Health Registry'
+    appName = 'Health Registry',
+    hideBilling = false
 }: CreatePatientFormProps) {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState<'basic' | 'identity'>('basic');
@@ -517,36 +519,38 @@ export function CreatePatientForm({
                     <div className="px-5 py-4 bg-white dark:bg-slate-950 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between z-10 shadow-[0_-10px_40px_rgba(0,0,0,0.05)] shrink-0">
                         <div className="flex items-center gap-6">
                             {/* Billing Checkbox */}
-                            <label className="group flex items-center gap-3 cursor-pointer p-1 pr-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
-                                <div className="relative">
-                                    <input
-                                        type="checkbox"
-                                        checked={chargeRegistration}
-                                        onChange={(e) => setChargeRegistration(e.target.checked)}
-                                        className="peer sr-only"
-                                        name="charge_registration"
-                                    />
-                                    <input type="hidden" name="registration_fee" value={registrationFee} />
-                                    <input type="hidden" name="registration_product_id" value={registrationProductId || ''} />
-                                    <div className="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500 shadow-inner"></div>
-                                </div>
-                                <div>
-                                    <span className="block text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider group-hover:text-emerald-600 transition-colors">
-                                        {chargeRegistration ? (initialData ? 'Renew Registration' : 'Initial Registration') : 'Skip Billing'}
-                                    </span>
-                                    <div className="flex flex-col">
-                                        <span className="block text-[10px] font-bold text-slate-400">
-                                            Fee: <span className={chargeRegistration && !waiveFee ? "text-emerald-500" : "text-slate-300 decoration-slate-400 line-through"}>₹{registrationFee.toFixed(2)}</span>
-                                            {waiveFee && <span className="text-amber-500 ml-1 font-black uppercase text-[9px]">(Waived)</span>}
-                                        </span>
-                                        {chargeRegistration && (
-                                            <span className="block text-[9px] text-indigo-400 font-black uppercase tracking-tighter">
-                                                Expires: {new Date(new Date().setDate(new Date().getDate() + (registrationValidity || 365))).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                            </span>
-                                        )}
+                            {!hideBilling && (
+                                <label className="group flex items-center gap-3 cursor-pointer p-1 pr-3 rounded-lg hover:bg-slate-50 transition-colors border border-transparent hover:border-slate-100">
+                                    <div className="relative">
+                                        <input
+                                            type="checkbox"
+                                            checked={chargeRegistration}
+                                            onChange={(e) => setChargeRegistration(e.target.checked)}
+                                            className="peer sr-only"
+                                            name="charge_registration"
+                                        />
+                                        <input type="hidden" name="registration_fee" value={registrationFee} />
+                                        <input type="hidden" name="registration_product_id" value={registrationProductId || ''} />
+                                        <div className="w-10 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500 shadow-inner"></div>
                                     </div>
-                                </div>
-                            </label>
+                                    <div>
+                                        <span className="block text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider group-hover:text-emerald-600 transition-colors">
+                                            {chargeRegistration ? (initialData ? 'Renew Registration' : 'Initial Registration') : 'Skip Billing'}
+                                        </span>
+                                        <div className="flex flex-col">
+                                            <span className="block text-[10px] font-bold text-slate-400">
+                                                Fee: <span className={chargeRegistration && !waiveFee ? "text-emerald-500" : "text-slate-300 decoration-slate-400 line-through"}>₹{registrationFee.toFixed(2)}</span>
+                                                {waiveFee && <span className="text-amber-500 ml-1 font-black uppercase text-[9px]">(Waived)</span>}
+                                            </span>
+                                            {chargeRegistration && (
+                                                <span className="block text-[9px] text-indigo-400 font-black uppercase tracking-tighter">
+                                                    Expires: {new Date(new Date().setDate(new Date().getDate() + (registrationValidity || 365))).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </label>
+                            )}
 
                             {/* ID Card Checkbox */}
                             {enableCardIssuanceSetting && (

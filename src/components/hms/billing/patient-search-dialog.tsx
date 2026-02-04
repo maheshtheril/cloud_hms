@@ -33,6 +33,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { CreditCard } from "lucide-react"
 
+import { CreatePatientForm } from "@/components/hms/create-patient-form"
+
 interface Patient {
     id: string
     name: string
@@ -78,30 +80,18 @@ export function PatientSearchWithCreate({ onSelect, selectedPatientId }: Patient
         return () => clearTimeout(timer)
     }, [query, fetchPatients])
 
-    async function handleCreatePatient(e: React.FormEvent<HTMLFormElement>) {
-        e.preventDefault()
-        const formData = new FormData(e.currentTarget)
-
-        try {
-            const res = await createPatientV10(null, formData) as any
-            if (res.error) {
-                toast({ title: "Registration Error", description: res.error, variant: "destructive" })
-            } else if (res.success && res.data) {
-                const newPatient = {
-                    id: res.data.id,
-                    name: `${res.data.first_name} ${res.data.last_name || ''}`.trim(),
-                    patient_number: res.data.patient_number,
-                    phone: (res.data.contact as any)?.phone || (res.data.contact as any)?.mobile || ''
-                }
-                toast({ title: "Success", description: "Patient registered successfully." })
-                onSelect(newPatient)
-                setSelectedPatient(newPatient)
-                setDialogOpen(false)
-                setOpen(false)
-            }
-        } catch (err: any) {
-            toast({ title: "System Crash", description: err.message, variant: "destructive" })
+    const handlePatientCreated = (data: any) => {
+        const newPatient = {
+            id: data.id,
+            name: `${data.first_name} ${data.last_name || ''}`.trim(),
+            patient_number: data.patient_number,
+            phone: (data.contact as any)?.phone || (data.contact as any)?.mobile || ''
         }
+        toast({ title: "Success", description: "Patient registered successfully." })
+        onSelect(newPatient)
+        setSelectedPatient(newPatient)
+        setDialogOpen(false)
+        setOpen(false)
     }
 
     return (
@@ -206,59 +196,13 @@ export function PatientSearchWithCreate({ onSelect, selectedPatientId }: Patient
                         <span className="hidden sm:inline">Add New Patient</span>
                     </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader>
-                        <DialogTitle className="text-xl font-bold flex items-center gap-2 text-slate-900">
-                            <Plus className="h-5 w-5 bg-blue-500 text-white rounded-full p-0.5" />
-                            Register New Patient
-                        </DialogTitle>
-                    </DialogHeader>
-                    <form onSubmit={handleCreatePatient} className="space-y-4 py-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="first_name">First Name</Label>
-                                <Input id="first_name" name="first_name" required placeholder="John" className="bg-slate-50 border-slate-200" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="last_name">Last Name</Label>
-                                <Input id="last_name" name="last_name" placeholder="Doe" className="bg-slate-50 border-slate-200" />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="phone">Phone Number</Label>
-                                <Input id="phone" name="phone" required placeholder="9876543210" className="bg-slate-50 border-slate-200" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="gender">Gender</Label>
-                                <select
-                                    name="gender"
-                                    className="w-full h-10 px-3 rounded-md border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    defaultValue="male"
-                                >
-                                    <SelectItem value="male">Male</SelectItem>
-                                    <SelectItem value="female">Female</SelectItem>
-                                    <SelectItem value="other">Other</SelectItem>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="dob">Date of Birth</Label>
-                            <Input id="dob" name="dob" type="date" className="bg-slate-50 border-slate-200" />
-                        </div>
-
-                        <div className="flex items-center gap-2 pt-2 text-xs text-slate-500 italic bg-amber-50 p-2 rounded border border-amber-100">
-                            <Search className="h-3 w-3" />
-                            Patient will be added to the voucher after registration.
-                        </div>
-
-                        <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 mt-6">
-                            <Button type="button" variant="ghost" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-8">Register & Auto-Select</Button>
-                        </div>
-                    </form>
+                <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden p-0 border-none">
+                    <CreatePatientForm
+                        onClose={() => setDialogOpen(false)}
+                        onSuccess={handlePatientCreated}
+                        hideBilling={true}
+                        isDialog={true}
+                    />
                 </DialogContent>
             </Dialog>
         </div>
