@@ -84,12 +84,13 @@ export async function createPatientV10(existingId: string | null | any, formData
         // 2. Invoice Logic (Only if not skipped)
         if (!skipInvoice) {
             try {
-                // Lookup Service Product
+                // Lookup Service Product (Check Standard Seed 'REG001' OR Repair Script 'REG-FEE')
                 const feeProduct = await prisma.hms_product.findFirst({
                     where: {
                         tenant_id: tenantId,
-                        sku: 'REG-FEE'
-                    }
+                        sku: { in: ['REG001', 'REG-FEE'] }
+                    },
+                    orderBy: { created_at: 'desc' } // Prefer newest if both exist
                 });
 
                 if (feeProduct) {
