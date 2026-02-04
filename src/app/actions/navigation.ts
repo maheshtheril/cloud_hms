@@ -560,6 +560,10 @@ export async function auditAndFixMenuPermissions() {
 
             { key: 'hms-lab', perm: 'lab:view' }, // Strict Lab Access
 
+            // REGISTRATION FEE MANAGEMENT (Priority Fix)
+            { key: 'hms-settings', perm: 'hms:admin', label: 'Registration Fee' },
+            { key: 'hms-config', perm: 'hms:admin', label: 'Registration Fee' },
+
             // STRICT DASHBOARDS
             { key: 'hms-dashboard', perm: 'hms:admin' }, // Main dashboard is for admins
             { key: 'hms-reception', perm: 'hms:dashboard:reception' }, // Strict Reception Access
@@ -579,7 +583,10 @@ export async function auditAndFixMenuPermissions() {
         for (const o of specificOverrides) {
             await prisma.menu_items.updateMany({
                 where: { key: o.key },
-                data: { permission_code: o.perm }
+                data: {
+                    permission_code: o.perm,
+                    ...(o.label ? { label: o.label } : {})
+                }
             });
         }
 

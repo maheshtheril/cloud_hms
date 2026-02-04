@@ -495,7 +495,7 @@ export async function ensureHmsMenus() {
             { key: 'hms-pharmacy-billing', label: 'Pharmacy Billing', url: '/hms/pharmacy/billing', icon: 'Pill', sort: 61, permission: 'billing:view' },
             // { key: 'hms-inventory', label: 'Pharmacy/Inventory', url: '/hms/inventory', icon: 'Package', sort: 70 }, // Removed to allow migration to Inventory Module
             { key: 'hms-wards', label: 'Clinics/Wards', url: '/hms/wards', icon: 'LayoutGrid', sort: 80, permission: 'hms:admin' },
-            { key: 'hms-config', label: 'Clinical Config', url: '/settings/hms', icon: 'Stethoscope', sort: 96, permission: 'hms:admin' },
+            { key: 'hms-config', label: 'Registration Fee Management', url: '/settings/hms', icon: 'Settings', sort: 96, permission: 'hms:admin' },
         ];
 
         // --- HELPER FOR RAW SQL INSERT (Duplicate for scope) ---
