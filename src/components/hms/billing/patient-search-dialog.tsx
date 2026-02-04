@@ -75,7 +75,7 @@ export function PatientSearchWithCreate({ onSelect, selectedPatientId }: Patient
         const formData = new FormData(e.currentTarget)
 
         try {
-            const res = await createPatientV10(null, formData)
+            const res = await createPatientV10(null, formData) as any
             if (res.error) {
                 toast({ title: "Error", description: res.error, variant: "destructive" })
             } else if (res.success && res.data) {
