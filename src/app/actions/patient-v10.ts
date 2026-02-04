@@ -58,6 +58,9 @@ export async function createPatientV10(patientId: string | null | any, formData:
             companyId = defaultCompany?.id;
         }
 
+        console.log(`[V10 DIAGNOSTIC] User: ${userId} | Co: ${companyId} | Ten: ${tenantId}`);
+        console.log(`[V10 DIAGNOSTIC] Types: Co=${typeof companyId} | Ten=${typeof tenantId} | User=${typeof userId}`);
+
         // 1. Dynamic Expiry Calculation (Branch-Aware)
         let validityDays = 365;
         let configProductId = null;
@@ -195,50 +198,39 @@ export async function createPatientV10(patientId: string | null | any, formData:
                     invoiceId = crypto.randomUUID();
                     const lineId = crypto.randomUUID();
                     const now = new Date();
+                    const invNumber = `INV-${Date.now()}`;
 
-                    invoice = await prisma.hms_invoice.create({
-                        data: {
-                            id: invoiceId,
-                            tenant_id: tenantId,
-                            company_id: companyId,
-                            patient_id: patient.id,
-                            invoice_number: `INV-${Date.now()}`,
-                            status: 'draft',
-                            invoice_date: now,
-                            issued_at: now,
-                            due_date: now,
-                            currency: 'INR',
-                            currency_rate: 1,
-                            subtotal: amount,
-                            total: amount,
-                            total_tax: 0,
-                            total_discount: 0,
-                            total_paid: 0,
-                            outstanding: amount,
-                            billing_metadata: {},
-                            line_items: [] as any,
-                            created_by: userId || undefined,
-                            created_at: now,
-                            updated_at: now,
-                            hms_invoice_lines: {
-                                create: [{
-                                    id: lineId,
-                                    tenant_id: tenantId,
-                                    company_id: companyId,
-                                    product_id: feeProduct.id,
-                                    description: feeProduct.description || "Registration Fee",
-                                    quantity: 1,
-                                    unit_price: amount,
-                                    net_amount: amount,
-                                    discount_amount: 0,
-                                    tax_amount: 0,
-                                    line_idx: 1,
-                                    metadata: {},
-                                    created_at: now
-                                }]
-                            }
-                        }
-                    });
+                    console.log(`[V10 INVOICE RAW] Creating Invoice ${invNumber} for Patient ${patient.id}`);
+
+                    // Use Raw SQL to circumvent Prisma's Null Constraint failures
+                    await prisma.$executeRaw`
+                        INSERT INTO hms_invoice (
+                            id, tenant_id, company_id, patient_id, invoice_number, status, 
+                            invoice_date, issued_at, currency, currency_rate, 
+                            subtotal, total, total_tax, total_discount, total_paid, 
+                            outstanding, outstanding_amount, billing_metadata, created_by, created_at, updated_at
+                        ) VALUES (
+                            ${invoiceId}::uuid, ${tenantId}::uuid, ${companyId}::uuid, ${patient.id}::uuid, ${invNumber}, 'draft',
+                            ${now}::date, ${now}, 'INR', 1.0, 
+                            ${amount}, ${amount}, 0, 0, 0, 
+                            ${amount}, ${amount}, '{}'::jsonb, ${userId}::uuid, now(), now()
+                        )
+                    `;
+
+                    await prisma.$executeRaw`
+                        INSERT INTO hms_invoice_lines (
+                            id, tenant_id, company_id, invoice_id, product_id, 
+                            description, quantity, unit_price, net_amount, 
+                            discount_amount, tax_amount, line_idx, metadata, created_at
+                        ) VALUES (
+                            ${lineId}::uuid, ${tenantId}::uuid, ${companyId}::uuid, ${invoiceId}::uuid, ${feeProduct.id}::uuid,
+                            ${feeProduct.description || "Registration Fee"}, 1, ${amount}, ${amount},
+                            0, 0, 1, '{}'::jsonb, now()
+                        )
+                    `;
+
+                    // Mock the invoice object for the return
+                    invoice = { id: invoiceId, invoice_number: invNumber };
 
                 } else {
                     warning = "Registration fee product not found. Bill manually.";
