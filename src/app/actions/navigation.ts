@@ -494,6 +494,17 @@ export async function auditAndFixMenuPermissions() {
         const allModules = await prisma.modules.findMany({ select: { module_key: true } });
         const validKeys = new Set(allModules.map(m => m.module_key.toLowerCase()));
 
+        // 0.2 CLEANUP REDUNDANT ITEMS
+        await prisma.menu_items.deleteMany({
+            where: {
+                OR: [
+                    { label: { contains: 'Clinical Config', mode: 'insensitive' } },
+                    { label: { contains: 'Clinical Configuration', mode: 'insensitive' } },
+                    { key: 'hms-config' } // Old redundant key
+                ]
+            }
+        });
+
         // 1. STANDARDIZE MODULE KEYS (Smart Fix)
         const potentialRemaps = [
             { source: 'finance', target: 'accounting' },

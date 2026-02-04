@@ -343,8 +343,7 @@ export async function updateHMSSettings(data: any) {
                         { sku: targetSku },
                         { sku: 'REG-FEE' },
                         { name: { contains: 'Registration Fee', mode: 'insensitive' } }
-                    ],
-                    is_active: true
+                    ]
                 }
             });
 
@@ -356,6 +355,7 @@ export async function updateHMSSettings(data: any) {
                         sku: targetSku, // Ensure it has the correct SKU now
                         is_service: true,
                         is_stockable: false,
+                        is_active: true, // RE-ENABLE IF INACTIVE
                         updated_at: new Date()
                     }
                 });
