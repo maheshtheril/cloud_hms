@@ -173,7 +173,7 @@ export async function createPatientV10(patientId: string | null | any, formData:
 
                 console.log(`[RCM] Posting Charge Capture for Patient ${patient.id} | Amount: ${amount}`);
 
-                // ATOMIC FINANCIAL INJECTION (Explicit SQL to prevent ORM-Null discrepancies)
+                // ATOMIC FINANCIAL INJECTION (Hyper-Defensive Raw SQL)
                 await tx.$executeRaw`
                     INSERT INTO hms_invoice (
                         id, tenant_id, company_id, patient_id, 
@@ -181,14 +181,14 @@ export async function createPatientV10(patientId: string | null | any, formData:
                         invoice_date, issued_at, currency, currency_rate, 
                         subtotal, total, total_tax, total_discount, total_paid, 
                         outstanding, outstanding_amount, billing_metadata, 
-                        created_by, created_at, updated_at, locked
+                        line_items, locked, created_by, created_at, updated_at
                     ) VALUES (
                         ${invoiceId}::uuid, ${tenantId}::uuid, ${companyId}::uuid, ${patient.id}::uuid,
                         ${invNo}, ${invNo}, 'draft',
                         ${registrationDate}::date, ${registrationDate}, 'INR', 1.0,
                         ${amount}, ${amount}, 0, 0, 0,
-                        ${amount}, ${amount}, '{}'::jsonb,
-                        ${userId}::uuid, now(), now(), false
+                        ${amount}, ${amount}, '{}'::jsonb, 
+                        '[]'::jsonb[], false, ${userId}::uuid, now(), now()
                     )
                 `;
 
@@ -196,12 +196,12 @@ export async function createPatientV10(patientId: string | null | any, formData:
                 await tx.$executeRaw`
                     INSERT INTO hms_invoice_lines (
                         id, tenant_id, company_id, invoice_id, product_id,
-                        description, quantity, unit_price, net_amount, 
-                        discount_amount, tax_amount, line_idx, created_at
+                        description, quantity, unit_price, subtotal, net_amount, 
+                        discount_amount, tax_amount, line_idx, created_at, metadata
                     ) VALUES (
                         ${lineId}::uuid, ${tenantId}::uuid, ${companyId}::uuid, ${invoiceId}::uuid, ${feeProduct.id}::uuid,
-                        ${feeProduct.name}, 1, ${amount}, ${amount},
-                        0, 0, 1, now()
+                        ${feeProduct.name}, 1, ${amount}, ${amount}, ${amount},
+                        0, 0, 1, now(), '{}'::jsonb
                     )
                 `;
 
