@@ -148,6 +148,7 @@ export default async function ReceptionDashboardPage() {
             status: apt.status,
             priority: apt.priority, // Important for highlighting
             type: apt.type, // Visit Type (consultation, emergency, etc.)
+            notes: apt.notes, // Appointment notes
             patient: apt.hms_patient,
             clinician: apt.hms_clinician,
             // Enhanced Status Flags
