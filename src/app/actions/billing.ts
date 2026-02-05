@@ -355,10 +355,12 @@ export async function createInvoice(data: {
         const totalPaidCalc = payments.reduce((sum, p) => sum + safeNum(p.amount), 0);
         const outstandingCalc = (status === 'paid') ? 0 : Math.max(0, grandTotalCalc - totalPaidCalc);
 
-        // 4. Persistence
+        // 4. Persistence with Manual ID Injection (Neon Compatibility)
         const result = await prisma.$transaction(async (tx) => {
+            const invoiceId = crypto.randomUUID();
             const invoice = await tx.hms_invoice.create({
                 data: {
+                    id: invoiceId,
                     tenant_id: tenantId,
                     company_id: companyId,
                     invoice_number: invoiceNo,
@@ -384,6 +386,7 @@ export async function createInvoice(data: {
                     created_by: isUUID(userId) ? userId : null,
                     hms_invoice_lines: {
                         create: line_items.map((l, idx) => ({
+                            id: crypto.randomUUID(),
                             tenant_id: tenantId,
                             company_id: companyId,
                             line_idx: idx + 1,
@@ -402,6 +405,7 @@ export async function createInvoice(data: {
                     },
                     hms_invoice_payments: payments.length > 0 ? {
                         create: payments.filter(p => safeNum(p.amount) > 0).map(p => ({
+                            id: crypto.randomUUID(),
                             tenant_id: tenantId,
                             company_id: companyId,
                             amount: safeNum(p.amount),
