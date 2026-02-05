@@ -70,6 +70,7 @@ export async function consumeStock(data: ConsumeStockData) {
         }
 
         const locationId = location.id
+        if (!locationId) return { error: "Stock Location not found or could not be created" }
 
         // 2. Transaction
         await prisma.$transaction(async (tx) => {
@@ -220,6 +221,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
         }
 
         const locationId = location.id
+        if (!locationId) return { error: "Stock Location not found or could not be created" }
 
         // Fetch Product Details deeply for both Inventory and Billing
         const productMap = new Map();
