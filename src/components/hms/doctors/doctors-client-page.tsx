@@ -1,5 +1,5 @@
 'use client'
-
+// Force rebuild - badge refinements
 import { useState } from 'react'
 import Link from "next/link"
 import { Stethoscope, Plus, Users, Award, TrendingUp, Sparkles, Mail, Phone, Shield, Search } from "lucide-react"
