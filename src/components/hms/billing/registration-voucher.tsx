@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dialog"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
+import { getNextVoucherNumber } from "@/app/actions/billing"
 
 interface RegistrationVoucherProps {
     initialSettings: {
@@ -63,7 +64,6 @@ export function RegistrationVoucher({ initialSettings, masterData }: Registratio
     const [selectedPatient, setSelectedPatient] = useState<any>(null)
     const [items, setItems] = useState<any[]>([])
     const [showAdvancedEditor, setShowAdvancedEditor] = useState(false)
-    const [paymentMethod, setPaymentMethod] = useState<string>("cash")
     const [voucherNo, setVoucherNo] = useState<string>("Loading...")
     const [voucherDate, setVoucherDate] = useState<string>(new Date().toISOString().split('T')[0])
 
@@ -102,45 +102,6 @@ export function RegistrationVoucher({ initialSettings, masterData }: Registratio
             return
         }
         setShowAdvancedEditor(true)
-    }
-
-    async function handleConfirmPayment() {
-        setIsPending(true)
-        setShowPaymentDialog(false)
-        try {
-            const invoicePayload = {
-                patient_id: selectedPatient.id,
-                date: voucherDate,
-                status: 'paid' as any, // Post as Paid immediately
-                line_items: items.map(item => ({
-                    product_id: item.id,
-                    description: item.name,
-                    quantity: item.quantity,
-                    unit_price: item.price,
-                    tax_amount: 0,
-                    discount_amount: 0
-                })),
-                payments: [{
-                    amount: total,
-                    method: paymentMethod, // 'cash', 'card', 'upi'
-                    reference: `Counter Payment`
-                }]
-            }
-
-            const res = await createInvoice(invoicePayload)
-
-            if (res.error) {
-                toast({ title: "Financial Error", description: res.error, variant: "destructive" })
-            } else if (res.success && res.data) {
-                toast({ title: "Success", description: "Registration completed and paid." })
-                // Redirect to receipt/invoice view
-                router.push(`/hms/billing/${res.data.id}?print=true`)
-            }
-        } catch (err: any) {
-            toast({ title: "System Crash", description: err.message, variant: "destructive" })
-        } finally {
-            setIsPending(false)
-        }
     }
 
     return (
