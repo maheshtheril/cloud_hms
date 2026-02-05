@@ -63,6 +63,7 @@ export async function saveVitals(data: {
             await prisma.hms_vitals.create({
                 data: {
                     tenant_id: tenantId,
+                    company_id: session.user.companyId || tenantId, // Add company_id
                     patient_id: patientId,
                     encounter_id: encounterId,
                     height: height ? parseFloat(height) : null,
