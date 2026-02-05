@@ -574,29 +574,40 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               <button onClick={() => { setIsWalkIn(true); setSelectedPatientId(''); }} className={`px-4 py-1.5 text-[9px] font-black rounded-lg transition-all ${isWalkIn ? 'bg-white dark:bg-slate-700 text-pink-600 shadow-sm' : 'text-slate-500'}`}>WALK-IN GUEST</button>
             </div>
 
-            <div className="w-[450px]">
-              {isWalkIn ? (
-                <div className="flex gap-2 animate-in slide-in-from-right-4">
-                  <Input value={walkInPhone} onChange={e => setWalkInPhone(e.target.value)} disabled={isPaymentModalOpen || loading} placeholder="MOBILE..." className="h-10 bg-white dark:bg-slate-950 border-transparent focus:border-pink-500 rounded-xl text-[10px] font-black tracking-widest uppercase" />
-                  <Input value={walkInName} onChange={e => setWalkInName(e.target.value)} disabled={isPaymentModalOpen || loading} placeholder="NAME..." className="h-10 bg-white dark:bg-slate-950 border-transparent focus:border-pink-500 rounded-xl text-[10px] font-black tracking-widest uppercase" />
-                </div>
-              ) : (
-                <SearchableSelect
-                  value={selectedPatientId}
-                  valueLabel={selectedPatientLabel}
-                  options={patientOptions.slice(0, 20)}
-                  onChange={id => setSelectedPatientId(id || '')}
-                  onCreate={q => { setQuickPatientName(q); setIsQuickPatientOpen(true); return Promise.resolve(null); }}
-                  onSearch={async q => {
-                    const search = q.toLowerCase();
-                    return patientOptions.filter(p =>
-                      p.label.toLowerCase().includes(search) ||
-                      p.subLabel.toLowerCase().includes(search)
-                    );
-                  }}
-                  placeholder="IDENTIFY PATIENT..."
+            <div className="flex items-center gap-2">
+              <div className="w-[400px]">
+                {isWalkIn ? (
+                  <div className="flex gap-2 animate-in slide-in-from-right-4">
+                    <Input value={walkInPhone} onChange={e => setWalkInPhone(e.target.value)} disabled={isPaymentModalOpen || loading} placeholder="MOBILE..." className="h-10 bg-white dark:bg-slate-950 border-transparent focus:border-pink-500 rounded-xl text-[10px] font-black tracking-widest uppercase" />
+                    <Input value={walkInName} onChange={e => setWalkInName(e.target.value)} disabled={isPaymentModalOpen || loading} placeholder="NAME..." className="h-10 bg-white dark:bg-slate-950 border-transparent focus:border-pink-500 rounded-xl text-[10px] font-black tracking-widest uppercase" />
+                  </div>
+                ) : (
+                  <SearchableSelect
+                    value={selectedPatientId}
+                    valueLabel={selectedPatientLabel}
+                    options={patientOptions.slice(0, 20)}
+                    onChange={id => setSelectedPatientId(id || '')}
+                    onCreate={q => { setQuickPatientName(q); setIsQuickPatientOpen(true); return Promise.resolve(null); }}
+                    onSearch={async q => {
+                      const search = q.toLowerCase();
+                      return patientOptions.filter(p =>
+                        p.label.toLowerCase().includes(search) ||
+                        p.subLabel.toLowerCase().includes(search)
+                      );
+                    }}
+                    placeholder="IDENTIFY PATIENT..."
+                    disabled={isPaymentModalOpen || loading}
+                  />
+                )}
+              </div>
+              {!isWalkIn && (
+                <button
+                  onClick={() => { setQuickPatientName(''); setIsQuickPatientOpen(true); }}
                   disabled={isPaymentModalOpen || loading}
-                />
+                  className="h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 active:scale-95 shrink-0"
+                >
+                  <Plus className="h-4 w-4" /> New Patient
+                </button>
               )}
             </div>
             <div className="flex gap-2 border-l border-slate-200 dark:border-slate-800 pl-6">
@@ -1139,7 +1150,14 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
           <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 rounded-[3rem] border-none p-12 shadow-[0_50px_100px_rgba(0,0,0,0.5)]">
             <DialogHeader><DialogTitle className="text-3xl font-black italic tracking-tighter text-slate-900 dark:text-white">Quick Identification</DialogTitle><DialogDescription className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Register new medical identity node for {quickPatientName}</DialogDescription></DialogHeader>
             <div className="grid gap-8 py-8">
-              <div className="space-y-3"><Label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 pl-2">Sync Mobile Terminal</Label><Input value={quickPatientPhone} onChange={e => setQuickPatientPhone(e.target.value)} className="h-14 bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 rounded-2xl text-lg font-black tracking-widest transition-all focus:ring-4 focus:ring-indigo-500/10" placeholder="+91..." autoFocus /></div>
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 pl-2">Patient Full Name</Label>
+                <Input value={quickPatientName} onChange={e => setQuickPatientName(e.target.value)} className="h-14 bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 rounded-2xl text-lg font-black tracking-widest transition-all focus:ring-4 focus:ring-indigo-500/10" placeholder="NAME..." autoFocus />
+              </div>
+              <div className="space-y-3">
+                <Label className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-400 pl-2">Sync Mobile Terminal</Label>
+                <Input value={quickPatientPhone} onChange={e => setQuickPatientPhone(e.target.value)} className="h-14 bg-slate-50 dark:bg-slate-950 border-slate-100 dark:border-slate-800 rounded-2xl text-lg font-black tracking-widest transition-all focus:ring-4 focus:ring-indigo-500/10" placeholder="+91..." />
+              </div>
             </div>
             <DialogFooter><Button variant="ghost" onClick={() => setIsQuickPatientOpen(false)} className="text-[10px] font-black uppercase tracking-widest py-6">Abort</Button><button onClick={handleQuickPatientCreate} disabled={!quickPatientPhone || isCreatingPatient} className="bg-indigo-600 hover:bg-indigo-700 h-14 rounded-2xl text-[10px] font-black uppercase tracking-[0.4em] px-12 text-white shadow-2xl shadow-indigo-500/30 transition-all flex items-center gap-3">{isCreatingPatient ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Verify & Initialize <Check className="h-4 w-4" /></>}</button></DialogFooter>
           </DialogContent>
