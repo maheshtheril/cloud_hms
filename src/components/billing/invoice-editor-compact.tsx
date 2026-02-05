@@ -376,19 +376,32 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         setIsPaymentModalOpen(false)
       } else {
         setLoading(false)
-        console.error("Sync Interrupted:", res.error);
+        const errorMsg = res.error || "The server rejected the transaction. Please check your data and retry.";
+        console.error("Sync Interrupted:", errorMsg);
+
+        // CRITICAL DEBUG: Forced alert to capture error data
+        if (typeof window !== 'undefined') {
+          alert(`CRITICAL SAVE FAILURE: ${errorMsg}\n\nPlease screenshot this or copy this text.`);
+        }
+
         toast({
           title: "Sync Interrupted",
-          description: res.error || "The server rejected the transaction. Please check your data and retry.",
+          description: errorMsg,
           variant: "destructive"
         })
       }
     } catch (error: any) {
       setLoading(false)
+      const errorMsg = error.message || "A network or engine failure occurred.";
       console.error("Terminal Sync Error:", error);
+
+      if (typeof window !== 'undefined') {
+        alert(`NETWORK FAILURE: ${errorMsg}\n\nCheck your internet connection and verify if the server is alive.`);
+      }
+
       toast({
         title: "Network / Engine Failure",
-        description: "A continuous hang usually indicates a lost connection to the database. We've interrupted the wait to let you try again.",
+        description: errorMsg,
         variant: "destructive"
       })
     }
