@@ -320,7 +320,8 @@ export async function createInvoice(data: {
     try {
         // 1. Resolve Patient Identity
         let resolvedPatientId: string | null = null;
-        const rawPatientId = typeof data.patient_id === 'object' ? (data.patient_id as any).id : data.patient_id;
+        const patientInput = data.patient_id;
+        const rawPatientId = (patientInput && typeof patientInput === 'object') ? (patientInput as any).id : patientInput;
 
         if (isUUID(rawPatientId)) {
             resolvedPatientId = rawPatientId;
@@ -332,16 +333,19 @@ export async function createInvoice(data: {
             if (p) resolvedPatientId = p.id;
         }
 
-        // 2. Generate Sequence
-        const settings = await prisma.company_settings.findFirst({ where: { tenant_id: tenantId } });
-        const prefix = `${settings?.numbering_prefix || 'INV'}-${new Date().getFullYear().toString().slice(-2)}-`;
+        // 2. Simple Sequence (INV-0001)
         const lastInv = await prisma.hms_invoice.findFirst({
-            where: { tenant_id: tenantId, invoice_number: { startsWith: prefix } },
+            where: { tenant_id: tenantId },
             orderBy: { created_at: 'desc' },
             select: { invoice_number: true }
         });
-        const nextSeq = lastInv?.invoice_number ? (parseInt(lastInv.invoice_number.split('-').pop() || '0') + 1) : 1;
-        const invoiceNo = `${prefix}${nextSeq.toString().padStart(6, '0')}`;
+
+        let nextSeq = 1;
+        if (lastInv?.invoice_number) {
+            const match = lastInv.invoice_number.match(/(\d+)$/);
+            if (match) nextSeq = parseInt(match[0]) + 1;
+        }
+        const invoiceNo = `INV-${nextSeq.toString().padStart(6, '0')}`;
 
         // 3. Totals
         const { line_items = [], payments = [], status = 'draft', total_discount = 0 } = data;
