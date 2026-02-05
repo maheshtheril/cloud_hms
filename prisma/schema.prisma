@@ -1171,7 +1171,7 @@ model hms_clinicians {
   employee_id                String?              @unique
   qualification              String?
   working_days               String[]             @default(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
-  document_urls              Json?                @default("[]")
+  document_urls              String[]             @default([])
   profile_image_url          String?
   signature_url              String?
   user_id                    String?              @db.Uuid
