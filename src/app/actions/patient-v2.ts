@@ -244,19 +244,11 @@ export async function createPatient(existingId: string | null | any, formData: F
                                 "id", "tenant_id", "company_id", "patient_id", 
                                 "invoice_number", "invoice_date", "status", 
                                 "total", "subtotal", "total_tax", "total_discount", "total_paid", "outstanding_amount",
-                                "line_items", "billing_metadata", "currency", "currency_rate"
+                                "billing_metadata", "currency", "currency_rate"
                             ) VALUES (
                                 ${invoiceId}::uuid, ${tenantId}::uuid, ${safeCompanyId}::uuid, ${patient.id}::uuid,
                                 ${fallbackInvoiceNo}, ${new Date()}, 'draft', 
                                 ${fee}, ${fee}, 0, 0, 0, ${fee},
-                                ('[' || ${JSON.stringify({
-                            product_id: regProductId || null,
-                            description: "Registration Fee (Recovered)",
-                            quantity: 1,
-                            unit_price: fee,
-                            net_amount: fee,
-                            tax_amount: 0
-                        })} || ']')::jsonb[],
                                 '{}'::jsonb, 'INR', 1
                             )
                         `;
