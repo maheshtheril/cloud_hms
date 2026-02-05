@@ -126,11 +126,11 @@ export async function consumeStock(data: ConsumeStockData) {
 
             // D. Update/Create Stock Levels (Manual Raw UPSERT logic)
             const levels: any[] = await tx.$queryRaw`
-                SELECT id FROM hms_stock_levels 
-                WHERE tenant_id = CAST(${tenantId} AS uuid)
-                AND company_id = CAST(${companyId} AS uuid)
-                AND product_id = CAST(${data.productId} AS uuid)
-                AND location_id = CAST(${locationId} AS uuid)
+                SELECT id::text as id FROM hms_stock_levels 
+                WHERE tenant_id::text = ${tenantId}
+                AND company_id::text = ${companyId}
+                AND product_id::text = ${data.productId}
+                AND location_id::text = ${locationId}
                 AND batch_id IS NULL
                 LIMIT 1
             `;
@@ -141,7 +141,7 @@ export async function consumeStock(data: ConsumeStockData) {
                     UPDATE hms_stock_levels 
                     SET quantity = quantity - CAST(${data.quantity} AS numeric),
                         updated_at = NOW()
-                    WHERE id = ${levels[0].id}
+                    WHERE id::text = ${levels[0].id}
                 `;
             } else {
                 // Insert new
@@ -312,11 +312,11 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
 
                 // Update/Create Stock Levels (Manual Raw UPSERT logic)
                 const levels: any[] = await tx.$queryRaw`
-                    SELECT id FROM hms_stock_levels 
-                    WHERE tenant_id = CAST(${tenantId} AS uuid)
-                    AND company_id = CAST(${companyId} AS uuid)
-                    AND product_id = CAST(${item.productId} AS uuid)
-                    AND location_id = CAST(${locationId} AS uuid)
+                    SELECT id::text as id FROM hms_stock_levels 
+                    WHERE tenant_id::text = ${tenantId}
+                    AND company_id::text = ${companyId}
+                    AND product_id::text = ${item.productId}
+                    AND location_id::text = ${locationId}
                     AND batch_id IS NULL
                     LIMIT 1
                 `;
@@ -326,7 +326,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                         UPDATE hms_stock_levels 
                         SET quantity = quantity - CAST(${item.quantity} AS numeric),
                             updated_at = NOW()
-                        WHERE id = ${levels[0].id}
+                        WHERE id::text = ${levels[0].id}
                     `;
                 } else {
                     await tx.$executeRaw`
