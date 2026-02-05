@@ -291,49 +291,55 @@ export async function getTaxConfiguration() {
     }
 }
 
-export async function createInvoice(data: { patient_id: string, appointment_id?: string, date: string, line_items: any[], payments?: any[], status?: any, total_discount?: number, billing_metadata?: any }) {
+export async function createInvoice(data: {
+    patient_id: string,
+    appointment_id?: string,
+    date: string,
+    line_items: any[],
+    payments?: any[],
+    status?: any,
+    total_discount?: number,
+    billing_metadata?: any
+}) {
     const session = await auth();
-    const companyId = session?.user?.companyId || session?.user?.tenantId;
-    if (!companyId) return { error: "Unauthorized" };
+    console.log(`[Billing Engine] Starting createInvoice for ${session?.user?.email}`);
 
-    const { patient_id, appointment_id, date, line_items, payments, status = 'draft' as any, total_discount = 0, billing_metadata = {} } = data;
-
-    if (!line_items || line_items.length === 0) {
-        return { error: "At least one line item is required" };
+    if (!session?.user?.tenantId) {
+        return { error: "Authentication expired. Please log in again." };
     }
 
+    const tenantId = session.user.tenantId;
+    const companyId = (session.user as any).companyId || tenantId;
+    const branchId = (session.user as any).current_branch_id || (session.user as any).branch_id;
+    const userId = session.user.id;
+
+    const {
+        patient_id,
+        appointment_id,
+        date,
+        line_items,
+        payments,
+        status = 'draft',
+        total_discount = 0,
+        billing_metadata = {}
+    } = data;
+
+    // --- Helpers ---
+    const isUUID = (str: any) => typeof str === 'string' && str.length === 36;
+    const safeNum = (val: any) => {
+        const n = parseFloat(val);
+        return isNaN(n) ? 0 : n;
+    };
+
     try {
-        // Generate world-standard sequential invoice number: INV-{FY}-{SEQ}
-        // India FY: Apr 1 - Mar 31
-
-        // Fetch custom prefix
-        const settings = await prisma.company_settings.findUnique({
-            where: { company_id: companyId },
-            select: { numbering_prefix: true }
+        // 1. Generate Invoice Number
+        const settings = await prisma.company_settings.findFirst({
+            where: { tenant_id: tenantId }
         });
-        const customPrefix = settings?.numbering_prefix || 'INV';
+        const prefix = (settings?.numbering_prefix || 'INV') + "-";
 
-        const invDate = new Date(date);
-        const month = invDate.getMonth(); // 0-based
-        const year = invDate.getFullYear();
-
-        let fyStart = year;
-        let fyEnd = year + 1;
-        if (month < 3) { // Jan, Feb, Mar belong to previous FY start
-            fyStart = year - 1;
-            fyEnd = year;
-        }
-        const fyString = `${fyStart.toString().slice(-2)}-${fyEnd.toString().slice(-2)}`;
-        const prefix = `${customPrefix}-${fyString}-`;
-
-        // Find last invoice in this series
-        // Note: String sorting works for sequence ONLY if padded length is consistent.
-        // We use created_at desc as proxy for latest, which is generally safe for sequential creation.
         const lastInvoice = await prisma.hms_invoice.findFirst({
-            where: {
-                company_id: companyId,
-                invoice_number: { startsWith: prefix }
-            },
+            where: { tenant_id: tenantId, invoice_number: { startsWith: prefix } },
             orderBy: { created_at: 'desc' },
             select: { invoice_number: true }
         });
@@ -341,230 +347,111 @@ export async function createInvoice(data: { patient_id: string, appointment_id?:
         let nextSeq = 1;
         if (lastInvoice?.invoice_number) {
             const parts = lastInvoice.invoice_number.split('-');
-            const lastSeqStr = parts[parts.length - 1];
-            const lastSeq = parseInt(lastSeqStr);
-            if (!isNaN(lastSeq)) nextSeq = lastSeq + 1;
+            const seqStr = parts[parts.length - 1];
+            const seqNum = parseInt(seqStr);
+            if (!isNaN(seqNum)) nextSeq = seqNum + 1;
         }
+        const invoiceNo = `${prefix}${nextSeq.toString().padStart(6, '0')}`;
 
-        const invoiceNo = `${prefix}${nextSeq.toString().padStart(5, '0')}`;
+        // 2. Financial Calculations
+        const subtotal = line_items.reduce((sum, item) => sum + (safeNum(item.quantity) * safeNum(item.unit_price) - safeNum(item.discount_amount)), 0);
+        const totalTax = line_items.reduce((sum, item) => sum + safeNum(item.tax_amount), 0);
+        const grandTotal = Math.max(0, subtotal + totalTax - safeNum(total_discount));
+        const totalPaid = (payments || []).reduce((sum, p) => sum + safeNum(p.amount), 0);
+        const outstanding = (status === 'paid') ? 0 : Math.max(0, grandTotal - totalPaid);
 
-        // Calculate totals
-        // Subtotal (Sum of [Qty * Price - Discount])
-        const subtotal = line_items.reduce((sum: number, item: any) => {
-            const qty = Number(item.quantity) || 0;
-            const price = Number(item.unit_price) || 0;
-            const discount = Number(item.discount_amount) || 0;
-            const lineTotal = (qty * price) - discount;
-            return sum + lineTotal;
-        }, 0);
-
-        // Tax Total (Sum of line item taxes)
-        const totalTaxAmount = line_items.reduce((sum: number, item: any) => sum + (Number(item.tax_amount || 0)), 0);
-
-        // Grand Total: Subtotal + Tax - Global Discount
-        const total = Math.max(0, subtotal + totalTaxAmount - Number(total_discount || 0));
-        console.log(`[Billing] (${new Date().toISOString()}) Calculated total: ${total}, Subtotal: ${subtotal}, Tax: ${totalTaxAmount}`);
-
-        // Calculate Payment Totals
-        const paymentList = payments || [];
-        const totalPaid = paymentList.reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
-
-        // Determine Outstanding
-        // If status is "paid", outstanding should be 0 (forcefully)
-        // If status is "posted", likely outstanding is Total - Paid
-        const outstandingAmount = (status === 'paid') ? 0 : Math.max(0, total - totalPaid);
-
-        const safeNum = (val: any) => {
-            const n = Number(val);
-            return isNaN(n) ? 0 : n;
-        };
-
-        const tenantId = session.user.tenantId;
-        const branchId = (session.user as any).current_branch_id || (session.user as any).branch_id;
-        const userId = session.user.id;
-
-        if (!tenantId) return { error: "Missing Tenant ID in session" };
-
-        // Parse date safely
-        const parsedDate = new Date(date);
-        if (isNaN(parsedDate.getTime())) {
-            return { error: "Invalid date provided." };
-        }
-
-        const invoicePayload = {
+        // 3. Prepare Explicit Payload (Satisfy NOT NULL constraints)
+        const invoicePayload: any = {
             tenant_id: tenantId,
             company_id: companyId,
-            branch_id: branchId || null,
-            patient_id: (patient_id as string) || null,
-            appointment_id: (appointment_id as string) || null,
             invoice_number: invoiceNo,
             invoice_no: invoiceNo,
-            invoice_date: parsedDate,
+            invoice_date: new Date(date || new Date()),
             issued_at: new Date(),
             currency: 'INR',
+            subtotal: subtotal.toString(),
+            total_tax: totalTax.toString(),
+            total_discount: total_discount.toString(),
+            total: grandTotal.toString(),
+            total_paid: totalPaid.toString(),
             status: status || 'draft',
-            total: safeNum(total),
-            subtotal: safeNum(subtotal),
-            total_tax: safeNum(totalTaxAmount),
-            total_discount: safeNum(total_discount),
-            total_paid: safeNum(totalPaid),
-            outstanding_amount: safeNum(outstandingAmount),
+            outstanding_amount: outstanding.toString(),
+            outstanding: outstanding.toString(),
+            line_items: [], // Avoid Json[] array issues, use [] default
             billing_metadata: billing_metadata || {},
-            created_by: userId || null,
-            // Mirror lines into the JSON array for triggers/reporting
-            line_items: line_items.map((item: any) => ({
-                id: item.product_id,
-                name: item.description,
-                qty: safeNum(item.quantity),
-                price: safeNum(item.unit_price),
-                total: safeNum(item.quantity) * safeNum(item.unit_price)
-            })),
-            hms_invoice_lines: {
-                create: line_items.map((item: any, index: number) => ({
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    line_idx: index + 1,
-                    product_id: (item.product_id && item.product_id !== "") ? item.product_id : null,
-                    description: item.description || "Service Item",
-                    quantity: safeNum(item.quantity) || 1,
-                    unit_price: safeNum(item.unit_price),
-                    subtotal: safeNum(item.quantity) * safeNum(item.unit_price),
-                    net_amount: (safeNum(item.quantity) * safeNum(item.unit_price)) - safeNum(item.discount_amount),
-                    tax_rate_id: (item.tax_rate_id && item.tax_rate_id !== "") ? item.tax_rate_id : null,
-                    tax_amount: safeNum(item.tax_amount),
-                    discount_amount: safeNum(item.discount_amount)
-                }))
-            },
-            hms_invoice_payments: payments && payments.length > 0 ? {
-                create: payments.map((p: any) => ({
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    amount: safeNum(p.amount),
-                    method: (p.method as any) || 'cash',
-                    payment_reference: p.reference || 'Counter Payment',
-                    paid_at: new Date(),
-                    created_by: userId || null
-                }))
-            } : undefined
+            patient_id: isUUID(patient_id) ? patient_id : undefined,
+            appointment_id: isUUID(appointment_id) ? appointment_id : undefined,
+            branch_id: isUUID(branchId) ? branchId : undefined,
+            created_by: isUUID(userId) ? userId : undefined,
         };
 
-        console.log(`[Billing Action] Payload prepared for ${invoiceNo}`);
+        const linesPayload = line_items.map((line, idx) => ({
+            tenant_id: tenantId,
+            company_id: companyId,
+            line_idx: idx + 1,
+            description: line.description || "Service Item",
+            quantity: (line.quantity || 1).toString(),
+            unit_price: (line.unit_price || 0).toString(),
+            discount_amount: (line.discount_amount || 0).toString(),
+            tax_amount: (line.tax_amount || 0).toString(),
+            net_amount: ((line.quantity || 1) * (line.unit_price || 0) - (line.discount_amount || 0)).toString(),
+            product_id: isUUID(line.product_id) ? line.product_id : undefined,
+            tax_rate_id: isUUID(line.tax_rate_id) ? line.tax_rate_id : undefined,
+            uom: line.uom || 'Unit'
+        }));
 
+        const paymentsPayload = (payments || []).filter(p => safeNum(p.amount) > 0).map(p => ({
+            tenant_id: tenantId,
+            company_id: companyId,
+            amount: safeNum(p.amount).toString(),
+            method: (['cash', 'card', 'upi', 'bank_transfer', 'insurance', 'adjustment'].includes(p.method) ? p.method : 'cash') as any,
+            payment_reference: p.reference || 'Counter Receipt',
+            paid_at: new Date(),
+            created_by: isUUID(userId) ? userId : undefined
+        }));
+
+        console.log(`[SQL PREVIEW] Creating Invoice ${invoiceNo} with ${linesPayload.length} lines`);
+
+        // 4. Atomic Transaction with Manual Field Injection
         const result = await prisma.$transaction(async (tx) => {
-            // 1. Create Invoice
-            console.log(`[SQL EXEC] Inserting main invoice record: ${invoiceNo}`);
-            const newInvoice = await tx.hms_invoice.create({
-                data: invoicePayload as any
+            const invoice = await tx.hms_invoice.create({
+                data: {
+                    ...invoicePayload,
+                    hms_invoice_lines: { create: linesPayload },
+                    hms_invoice_payments: paymentsPayload.length > 0 ? { create: paymentsPayload } : undefined
+                }
             });
 
-            // 2. Reconciliation with previous debts
-            if (totalPaid > total && patient_id) {
-                let excess = totalPaid - total;
-                const oldInvoices = await tx.hms_invoice.findMany({
-                    where: {
-                        tenant_id: tenantId,
-                        company_id: companyId,
-                        patient_id: patient_id as string,
-                        status: 'posted' as any,
-                        id: { not: newInvoice.id }
-                    },
-                    orderBy: { issued_at: 'asc' }
-                });
-
-                for (const oldInv of oldInvoices) {
-                    if (excess <= 0) break;
-                    const due = Number(oldInv.outstanding_amount || 0);
-                    const paymentToApply = Math.min(due, excess);
-
-                    if (paymentToApply > 0) {
-                        await tx.hms_invoice.update({
-                            where: { id: oldInv.id },
-                            data: {
-                                total_paid: Number(oldInv.total_paid || 0) + paymentToApply,
-                                outstanding_amount: due - paymentToApply,
-                                status: (due - paymentToApply <= 0.01) ? 'paid' as any : 'posted' as any
-                            }
-                        });
-                        excess -= paymentToApply;
-                    }
-                }
-            }
-
-            // 3. Mark Appointment Completed
-            if (status === 'paid' && appointment_id) {
+            // Update related status
+            if (status === 'paid' && isUUID(appointment_id)) {
                 await tx.hms_appointments.update({
                     where: { id: appointment_id },
                     data: { status: 'completed' }
                 });
             }
 
-            // 4. Registration Fee Flag on Patient
-            const hasRegistrationFee = line_items.some((l: any) => l.description === 'Registration Fee');
-            if (hasRegistrationFee && patient_id && (status === 'posted' || status === 'paid')) {
-                const patient = await tx.hms_patient.findUnique({ where: { id: patient_id as string } });
-                const currentMeta = (patient?.metadata as any) || {};
-                await tx.hms_patient.update({
-                    where: { id: patient_id as string },
-                    data: {
-                        metadata: {
-                            ...currentMeta,
-                            registration_fees_paid: true,
-                            registration_fee_date: new Date().toISOString()
-                        }
-                    }
-                });
-            }
+            return invoice;
+        }, { timeout: 20000 });
 
-            // 5. FORCE UPDATE TOTAL: Ensure DB triggers didn't override the total to 0
-            await tx.hms_invoice.update({
-                where: { id: newInvoice.id },
-                data: {
-                    total: total,
-                    subtotal: subtotal,
-                    total_tax: totalTaxAmount,
-                    outstanding_amount: outstandingAmount
-                }
-            });
+        console.log(`[SUCCESS] Invoice ${invoiceNo} Saved. Result ID: ${result.id}`);
 
-            return newInvoice;
-        }, {
-            timeout: 10000 // Increased timeout for heavy transactions
-        });
-
-        // Post accounting after transaction to avoid nested transaction issues if current service isn't tx-aware
-        if ((result.status === 'posted' || result.status === 'paid') && result.id) {
-            // 1. Accounting Post (Safely wrapped)
-            try {
-                const accountingRes = await AccountingService.postSalesInvoice(result.id, session.user.id);
-                if (!accountingRes.success) {
-                    console.warn("Accounting Post Partial Failure:", accountingRes.error);
-                }
-            } catch (err) {
-                console.error("Accounting Post Exception:", err);
-            }
-
-            // 2. Send WhatsApp Notification (Fire and Forget)
-            try {
-                NotificationService.sendInvoiceWhatsapp(result.id, session.user.tenantId!).catch(err => {
-                    console.error("Background WhatsApp Send Failed:", err);
-                });
-            } catch (err) {
-                console.error("WhatsApp Trigger Exception:", err);
-            }
+        // 5. Post-Processing (Async)
+        if (result.id && status !== 'draft') {
+            AccountingService.postSalesInvoice(result.id, userId).catch(err => console.error("[GL POST] Failed:", err));
         }
 
         revalidatePath('/hms/billing');
         return { success: true, data: result };
 
     } catch (error: any) {
-        console.error("Failed to create invoice:", error);
-        let triggersInfo = '';
-        try {
-            const triggers = await prisma.$queryRaw`SELECT trigger_name, event_manipulation, event_object_table FROM information_schema.triggers WHERE event_object_table IN ('hms_invoice', 'hms_invoice_lines')`;
-            triggersInfo = JSON.stringify(triggers);
-        } catch (e) { triggersInfo = 'Check failed'; }
+        console.error("[CRITICAL] createInvoice Failed:");
+        console.error("  Error Code:", error.code);
+        console.error("  Message:", error.message);
+        console.error("  Field:", error.meta?.column || error.meta?.target || "Unknown Constraint");
 
-        return { error: `Failed to create invoice: ${error.message}. DB Triggers: ${triggersInfo}` }
+        return {
+            error: `Database Rejection: ${error.message}. (Triggered by field: ${error.meta?.column || 'Identity Check'})`
+        };
     }
 }
 
