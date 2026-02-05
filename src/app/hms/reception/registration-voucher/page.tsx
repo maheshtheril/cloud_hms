@@ -1,9 +1,8 @@
-import { RegistrationVoucher } from "@/components/hms/billing/registration-voucher"
+import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 import { getHMSSettings } from "@/app/actions/settings"
 import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/billing"
 import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
-import { redirect } from "next/navigation"
 
 export const dynamic = 'force-dynamic'
 
@@ -13,22 +12,7 @@ export default async function RegistrationVoucherPage() {
 
     // 1. Fetch Clinical & Financial Settings
     const hmsSettings = await getHMSSettings();
-
-    if (hmsSettings.error) {
-        console.error("Voucher Settings Load Failed:", hmsSettings.error);
-    }
-
-    const {
-        registrationFee,
-        registrationProductId,
-        registrationProductName,
-        registrationProductDescription
-    } = hmsSettings.success ? (hmsSettings.settings as any) : {
-        registrationFee: 100,
-        registrationProductId: null,
-        registrationProductName: 'Patient Registration Fee',
-        registrationProductDescription: 'Standard Service'
-    };
+    const settings = hmsSettings.success ? (hmsSettings.settings as any) : null;
 
     // 2. Fetch Master Data for Editor
     const [patients, itemsRes, taxRes, uomsRes, companySettings] = await Promise.all([
@@ -61,22 +45,36 @@ export default async function RegistrationVoucherPage() {
     const uoms = (uomsRes as any).success ? (uomsRes as any).data : [];
     const currency = companySettings?.currencies?.symbol || '₹';
 
+    // 3. Prepare Initial Item (Registration Fee)
+    const initialItems = [];
+    if (settings?.registrationProductId) {
+        initialItems.push({
+            id: settings.registrationProductId,
+            name: settings.registrationProductName,
+            price: Number(settings.registrationFee),
+            quantity: 1,
+            type: 'service'
+        });
+    } else {
+        // Fallback if settings missing
+        initialItems.push({
+            id: 'reg-fee',
+            name: 'Patient Registration Fee',
+            price: Number(settings?.registrationFee || 100),
+            quantity: 1,
+            type: 'service'
+        });
+    }
+
     return (
         <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950/50">
-            <RegistrationVoucher
-                initialSettings={{
-                    registrationFee,
-                    registrationProductId,
-                    registrationProductName,
-                    registrationProductDescription
-                }}
-                masterData={{
-                    patients,
-                    billableItems,
-                    taxConfig,
-                    uoms,
-                    currency
-                }}
+            <CompactInvoiceEditor
+                patients={JSON.parse(JSON.stringify(patients))}
+                billableItems={JSON.parse(JSON.stringify(billableItems))}
+                taxConfig={JSON.parse(JSON.stringify(taxConfig))}
+                uoms={JSON.parse(JSON.stringify(uoms))}
+                currency={currency}
+                initialMedicines={initialItems}
             />
         </div>
     )
