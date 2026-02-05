@@ -302,10 +302,11 @@ export async function createInvoice(data: {
     billing_metadata?: any
 }) {
     const session = await auth();
-    console.log(`[Billing Engine] Incoming Data for ${session?.user?.email}:`, JSON.stringify({ ...data, line_items: data.line_items?.length, payments: data.payments?.length }));
+    const LOG_PREFIX = `[BILLING-ENGINE-${Date.now()}]`;
+    console.log(`${LOG_PREFIX} START - User: ${session?.user?.email}`);
 
     if (!session?.user?.tenantId) {
-        return { error: "Session Lost: Please refresh and login again." };
+        return { error: "AUTH_EXPIRED: Session lost. Please login again." };
     }
 
     const tenantId = session.user.tenantId;
@@ -317,14 +318,13 @@ export async function createInvoice(data: {
     const safeNum = (val: any) => { const n = parseFloat(val); return isNaN(n) ? 0 : n; };
 
     try {
-        // 1. Resolve Patient ID (Fixes "PAT-xxx" friendly ID issues)
+        // 1. Resolve Patient Identity
         let resolvedPatientId: string | null = null;
         const rawPatientId = typeof data.patient_id === 'object' ? (data.patient_id as any).id : data.patient_id;
 
         if (isUUID(rawPatientId)) {
             resolvedPatientId = rawPatientId;
         } else if (rawPatientId && rawPatientId.toString().startsWith('PAT-')) {
-            console.log(`[Billing Engine] Resolving Patient Identity: ${rawPatientId}`);
             const p = await prisma.hms_patient.findFirst({
                 where: { tenant_id: tenantId, patient_number: rawPatientId.toString() },
                 select: { id: true }
@@ -335,7 +335,6 @@ export async function createInvoice(data: {
         // 2. Generate Sequence
         const settings = await prisma.company_settings.findFirst({ where: { tenant_id: tenantId } });
         const prefix = `${settings?.numbering_prefix || 'INV'}-${new Date().getFullYear().toString().slice(-2)}-`;
-
         const lastInv = await prisma.hms_invoice.findFirst({
             where: { tenant_id: tenantId, invoice_number: { startsWith: prefix } },
             orderBy: { created_at: 'desc' },
@@ -346,13 +345,13 @@ export async function createInvoice(data: {
 
         // 3. Totals
         const { line_items = [], payments = [], status = 'draft', total_discount = 0 } = data;
-        const subtotal = line_items.reduce((sum, l) => sum + (safeNum(l.quantity) * safeNum(l.unit_price) - safeNum(l.discount_amount)), 0);
-        const taxTotal = line_items.reduce((sum, l) => sum + safeNum(l.tax_amount), 0);
-        const grandTotal = Math.max(0, subtotal + taxTotal - safeNum(total_discount));
-        const totalPaid = payments.reduce((sum, p) => sum + safeNum(p.amount), 0);
-        const outstanding = (status === 'paid') ? 0 : Math.max(0, grandTotal - totalPaid);
+        const subtotalCalc = line_items.reduce((sum, l) => sum + (safeNum(l.quantity) * safeNum(l.unit_price) - safeNum(l.discount_amount)), 0);
+        const taxTotalCalc = line_items.reduce((sum, l) => sum + safeNum(l.tax_amount), 0);
+        const grandTotalCalc = Math.max(0, subtotalCalc + taxTotalCalc - safeNum(total_discount));
+        const totalPaidCalc = payments.reduce((sum, p) => sum + safeNum(p.amount), 0);
+        const outstandingCalc = (status === 'paid') ? 0 : Math.max(0, grandTotalCalc - totalPaidCalc);
 
-        // 4. Atomic Transaction with Explicit Constraints
+        // 4. Persistence
         const result = await prisma.$transaction(async (tx) => {
             const invoice = await tx.hms_invoice.create({
                 data: {
@@ -362,15 +361,18 @@ export async function createInvoice(data: {
                     invoice_no: invoiceNo,
                     invoice_date: new Date(data.date || new Date()),
                     issued_at: new Date(),
+                    due_at: new Date(new Date().setDate(new Date().getDate() + 7)),
                     currency: 'INR',
-                    subtotal: subtotal,
-                    total_tax: taxTotal,
+                    currency_rate: 1.0,
+                    subtotal: subtotalCalc,
+                    total_tax: taxTotalCalc,
                     total_discount: safeNum(total_discount),
-                    total: grandTotal,
-                    total_paid: totalPaid,
+                    total: grandTotalCalc,
+                    total_paid: totalPaidCalc,
                     status: status as any,
-                    outstanding_amount: outstanding,
-                    outstanding: outstanding,
+                    outstanding_amount: outstandingCalc,
+                    outstanding: outstandingCalc,
+                    line_items: [],
                     billing_metadata: data.billing_metadata || {},
                     patient_id: resolvedPatientId,
                     appointment_id: isUUID(data.appointment_id) ? data.appointment_id : null,
@@ -387,6 +389,7 @@ export async function createInvoice(data: {
                             discount_amount: safeNum(l.discount_amount),
                             tax_amount: safeNum(l.tax_amount),
                             net_amount: (safeNum(l.quantity) * safeNum(l.unit_price)) - safeNum(l.discount_amount),
+                            subtotal: (safeNum(l.quantity) * safeNum(l.unit_price)),
                             product_id: isUUID(l.product_id) ? l.product_id : null,
                             tax_rate_id: isUUID(l.tax_rate_id) ? l.tax_rate_id : null,
                             uom: l.uom || 'Unit'
@@ -398,7 +401,8 @@ export async function createInvoice(data: {
                             company_id: companyId,
                             amount: safeNum(p.amount),
                             method: (['cash', 'card', 'upi', 'bank_transfer', 'insurance', 'adjustment'].includes(p.method) ? p.method : 'cash') as any,
-                            payment_reference: p.reference || 'Auto-Payment',
+                            payment_reference: p.reference || 'COUNTER_SALE',
+                            currency: 'INR',
                             paid_at: new Date(),
                             created_by: isUUID(userId) ? userId : null
                         }))
@@ -411,14 +415,23 @@ export async function createInvoice(data: {
             }
 
             return invoice;
-        }, { timeout: 30000 });
+        }, { timeout: 40000 });
+
+        if (result.id && status !== 'draft') {
+            AccountingService.postSalesInvoice(result.id, userId).catch(err => console.error(`${LOG_PREFIX} GL POST ERR:`, err));
+        }
 
         revalidatePath('/hms/billing');
         return { success: true, data: result };
 
     } catch (error: any) {
-        console.error("[CRITICAL DB REJECTION]:", error);
-        return { error: `Security Intercept: ${error.message}. (Node: ${error.code || 'PRM-101'})` };
+        const detail = error.meta ? JSON.stringify(error.meta) : error.message;
+        const code = error.code || 'PRM-UNKNOWN';
+        const target = error.meta?.target || error.meta?.column || 'Identity Check';
+        console.error(`${LOG_PREFIX} SYNC REJECTION:`, { code, target, detail });
+        return {
+            error: `DATABASE REJECTION [${code}]: The field "${target}" failed validation. Detail: ${detail.slice(0, 150)}`
+        };
     }
 }
 
