@@ -25,7 +25,7 @@ async function run() {
             WHERE routine_schema = 'public'
             ORDER BY routine_name;
         `;
-        console.log("Functions found:", JSON.stringify(functions.map(f => (f as any).routine_name), null, 2));
+        console.log("Functions found:", JSON.stringify((functions as any[]).map(f => (f as any).routine_name), null, 2));
 
     } catch (err: any) {
         console.error("Query failed:", err);
