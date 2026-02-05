@@ -111,11 +111,11 @@ export async function createAppointment(formData: FormData) {
                 ${clinicianId}::uuid,
                 ${startsAt}::timestamptz,
                 ${endsAt}::timestamptz,
-                ${type}::text,
-                ${mode}::text,
-                ${priority}::text,
-                ${notes}::text,
-                'scheduled'::text,
+                ${type},
+                ${mode},
+                ${priority},
+                ${notes || null},
+                'scheduled',
                 ${session.user.id}::uuid,
                 ${session.user.current_branch_id || null}::uuid
             )
