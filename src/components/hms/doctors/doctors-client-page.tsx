@@ -92,7 +92,7 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                             <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
                                 <Users className="h-6 w-6 text-white" />
                             </div>
-                            <div className="px-3 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded-full">
+                            <div className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-semibold rounded-md">
                                 Enterprise
                             </div>
                         </div>
@@ -105,7 +105,7 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                             <div className="h-12 w-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
                                 <TrendingUp className="h-6 w-6 text-white" />
                             </div>
-                            <div className="px-3 py-1 bg-green-50 text-green-600 text-xs font-bold rounded-full">
+                            <div className="px-2 py-0.5 bg-green-50 text-green-600 text-[10px] font-semibold rounded-md">
                                 Operational
                             </div>
                         </div>
@@ -118,7 +118,7 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                             <div className="h-12 w-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
                                 <Award className="h-6 w-6 text-white" />
                             </div>
-                            <div className="px-3 py-1 bg-purple-50 text-purple-600 text-xs font-bold rounded-full">
+                            <div className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[10px] font-semibold rounded-md">
                                 Divisions
                             </div>
                         </div>
@@ -165,14 +165,14 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                             >
                                 {/* Status Badge */}
                                 <div className="flex items-center justify-between mb-4">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${doc.is_active
-                                        ? 'bg-green-100 text-green-700'
-                                        : 'bg-red-100 text-red-700'
+                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ${doc.is_active
+                                        ? 'bg-green-50 text-green-700'
+                                        : 'bg-red-50 text-red-700'
                                         }`}>
                                         {doc.is_active ? '✓ Active' : '✗ Inactive'}
                                     </span>
                                     {doc.hms_specializations && (
-                                        <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">
+                                        <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[10px] font-semibold">
                                             {doc.hms_specializations.name}
                                         </span>
                                     )}
@@ -217,15 +217,15 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                                     )}
 
                                     {/* Availability Pulse - WORLD CLASS */}
-                                    <div className="pt-3 flex gap-1 border-t border-slate-50 mt-2">
+                                    <div className="pt-2.5 flex gap-0.5 border-t border-slate-100 mt-2">
                                         {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => {
                                             const isActive = doc.working_days?.includes(day);
                                             return (
                                                 <div
                                                     key={day}
-                                                    className={`h-5 w-5 rounded-md flex items-center justify-center text-[7px] font-black transition-all ${isActive
-                                                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-100"
-                                                        : "bg-slate-50 text-slate-300"
+                                                    className={`h-4 w-4 rounded flex items-center justify-center text-[7px] font-bold transition-all ${isActive
+                                                        ? "bg-indigo-600 text-white"
+                                                        : "bg-slate-100 text-slate-400"
                                                         }`}
                                                 >
                                                     {day.substring(0, 1)}
