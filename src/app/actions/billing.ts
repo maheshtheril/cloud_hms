@@ -304,8 +304,9 @@ export async function createInvoice(data: {
     const session = await auth();
     console.log(`[Billing Engine] Starting createInvoice for ${session?.user?.email}`);
 
+    // --- Hard Session Check ---
     if (!session?.user?.tenantId) {
-        return { error: "Authentication expired. Please log in again." };
+        return { error: "Session Lost: Please refresh and login again." };
     }
 
     const tenantId = session.user.tenantId;
@@ -313,19 +314,23 @@ export async function createInvoice(data: {
     const branchId = (session.user as any).current_branch_id || (session.user as any).branch_id;
     const userId = session.user.id;
 
+    // --- Validate Required UUIDs ---
+    const isUUID = (str: any) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
+    if (!isUUID(tenantId)) return { error: `Configuration Error: Invalid Tenant Identity Format.` };
+    if (!isUUID(companyId)) return { error: `Configuration Error: Invalid Company Identity Format.` };
+
     const {
         patient_id,
         appointment_id,
         date,
-        line_items,
-        payments,
+        line_items = [],
+        payments = [],
         status = 'draft',
         total_discount = 0,
         billing_metadata = {}
     } = data;
 
-    // --- Helpers ---
-    const isUUID = (str: any) => typeof str === 'string' && str.length === 36;
     const safeNum = (val: any) => {
         const n = parseFloat(val);
         return isNaN(n) ? 0 : n;
@@ -336,7 +341,12 @@ export async function createInvoice(data: {
         const settings = await prisma.company_settings.findFirst({
             where: { tenant_id: tenantId }
         });
-        const prefix = (settings?.numbering_prefix || 'INV') + "-";
+        const customPrefix = settings?.numbering_prefix || 'INV';
+
+        const invDate = new Date(date || new Date());
+        const fyYear = invDate.getMonth() < 3 ? invDate.getFullYear() - 1 : invDate.getFullYear();
+        const fyString = `${fyYear.toString().slice(-2)}-${(fyYear + 1).toString().slice(-2)}`;
+        const prefix = `${customPrefix}-${fyString}-`;
 
         const lastInvoice = await prisma.hms_invoice.findFirst({
             where: { tenant_id: tenantId, invoice_number: { startsWith: prefix } },
@@ -360,65 +370,69 @@ export async function createInvoice(data: {
         const totalPaid = (payments || []).reduce((sum, p) => sum + safeNum(p.amount), 0);
         const outstanding = (status === 'paid') ? 0 : Math.max(0, grandTotal - totalPaid);
 
-        // 3. Prepare Explicit Payload (Satisfy NOT NULL constraints)
-        const invoicePayload: any = {
+        // 3. Main Data Payload
+        const hmsInvoiceData: any = {
             tenant_id: tenantId,
             company_id: companyId,
             invoice_number: invoiceNo,
             invoice_no: invoiceNo,
-            invoice_date: new Date(date || new Date()),
+            invoice_date: invDate,
             issued_at: new Date(),
             currency: 'INR',
-            subtotal: subtotal.toString(),
-            total_tax: totalTax.toString(),
-            total_discount: total_discount.toString(),
-            total: grandTotal.toString(),
-            total_paid: totalPaid.toString(),
+            subtotal: subtotal,
+            total_tax: totalTax,
+            total_discount: safeNum(total_discount),
+            total: grandTotal,
+            total_paid: totalPaid,
             status: status || 'draft',
-            outstanding_amount: outstanding.toString(),
-            outstanding: outstanding.toString(),
-            line_items: [], // Avoid Json[] array issues, use [] default
+            outstanding_amount: outstanding,
+            outstanding: outstanding,
             billing_metadata: billing_metadata || {},
+            line_items: line_items.map(l => ({
+                id: l.product_id,
+                name: l.description,
+                qty: safeNum(l.quantity),
+                price: safeNum(l.unit_price)
+            })),
             patient_id: isUUID(patient_id) ? patient_id : undefined,
             appointment_id: isUUID(appointment_id) ? appointment_id : undefined,
             branch_id: isUUID(branchId) ? branchId : undefined,
             created_by: isUUID(userId) ? userId : undefined,
         };
 
-        const linesPayload = line_items.map((line, idx) => ({
-            tenant_id: tenantId,
-            company_id: companyId,
-            line_idx: idx + 1,
-            description: line.description || "Service Item",
-            quantity: (line.quantity || 1).toString(),
-            unit_price: (line.unit_price || 0).toString(),
-            discount_amount: (line.discount_amount || 0).toString(),
-            tax_amount: (line.tax_amount || 0).toString(),
-            net_amount: ((line.quantity || 1) * (line.unit_price || 0) - (line.discount_amount || 0)).toString(),
-            product_id: isUUID(line.product_id) ? line.product_id : undefined,
-            tax_rate_id: isUUID(line.tax_rate_id) ? line.tax_rate_id : undefined,
-            uom: line.uom || 'Unit'
-        }));
-
-        const paymentsPayload = (payments || []).filter(p => safeNum(p.amount) > 0).map(p => ({
-            tenant_id: tenantId,
-            company_id: companyId,
-            amount: safeNum(p.amount).toString(),
-            method: (['cash', 'card', 'upi', 'bank_transfer', 'insurance', 'adjustment'].includes(p.method) ? p.method : 'cash') as any,
-            payment_reference: p.reference || 'Counter Receipt',
-            paid_at: new Date(),
-            created_by: isUUID(userId) ? userId : undefined
-        }));
-
-        console.log(`[SQL PREVIEW] Creating Invoice ${invoiceNo} with ${linesPayload.length} lines`);
-
-        // 4. Atomic Transaction with Manual Field Injection
         const result = await prisma.$transaction(async (tx) => {
+            console.log(`[SQL EXEC] Saving Invoice ${invoiceNo}`);
+
             const invoice = await tx.hms_invoice.create({
                 data: {
-                    ...invoicePayload,
-                    hms_invoice_lines: { create: linesPayload },
-                    hms_invoice_payments: paymentsPayload.length > 0 ? { create: paymentsPayload } : undefined
+                    ...hmsInvoiceData,
+                    hms_invoice_lines: {
+                        create: line_items.map((line, idx) => ({
+                            tenant_id: tenantId,
+                            company_id: companyId,
+                            line_idx: idx + 1,
+                            description: line.description || "Service Item",
+                            quantity: safeNum(line.quantity),
+                            unit_price: safeNum(line.unit_price),
+                            discount_amount: safeNum(line.discount_amount),
+                            tax_amount: safeNum(line.tax_amount),
+                            net_amount: (safeNum(line.quantity) * safeNum(line.unit_price)) - safeNum(line.discount_amount),
+                            product_id: isUUID(line.product_id) ? line.product_id : undefined,
+                            tax_rate_id: isUUID(line.tax_rate_id) ? line.tax_rate_id : undefined,
+                            uom: line.uom || 'Unit'
+                        }))
+                    },
+                    hms_invoice_payments: {
+                        create: (payments || []).filter(p => safeNum(p.amount) > 0).map(p => ({
+                            tenant_id: tenantId,
+                            company_id: companyId,
+                            amount: safeNum(p.amount),
+                            method: (['cash', 'card', 'upi', 'bank_transfer', 'insurance', 'adjustment'].includes(p.method) ? p.method : 'cash') as any,
+                            payment_reference: p.reference || 'Counter Receipt',
+                            paid_at: new Date(),
+                            created_by: isUUID(userId) ? userId : undefined
+                        }))
+                    }
                 }
             });
 
@@ -431,11 +445,10 @@ export async function createInvoice(data: {
             }
 
             return invoice;
-        }, { timeout: 20000 });
+        }, { timeout: 25000 });
 
         console.log(`[SUCCESS] Invoice ${invoiceNo} Saved. Result ID: ${result.id}`);
 
-        // 5. Post-Processing (Async)
         if (result.id && status !== 'draft') {
             AccountingService.postSalesInvoice(result.id, userId).catch(err => console.error("[GL POST] Failed:", err));
         }
@@ -444,13 +457,9 @@ export async function createInvoice(data: {
         return { success: true, data: result };
 
     } catch (error: any) {
-        console.error("[CRITICAL] createInvoice Failed:");
-        console.error("  Error Code:", error.code);
-        console.error("  Message:", error.message);
-        console.error("  Field:", error.meta?.column || error.meta?.target || "Unknown Constraint");
-
+        console.error("[CRITICAL] createInvoice Rejection:", error);
         return {
-            error: `Database Rejection: ${error.message}. (Triggered by field: ${error.meta?.column || 'Identity Check'})`
+            error: `Integrity Conflict: ${error.message}. (Triggered by Postgres ${error.code || 'Check'})`
         };
     }
 }
