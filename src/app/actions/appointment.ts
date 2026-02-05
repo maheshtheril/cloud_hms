@@ -98,26 +98,36 @@ export async function createAppointment(formData: FormData) {
 
     let createdApt;
     try {
-        createdApt = await prisma.hms_appointments.create({
-            data: {
-                tenant_id: session.user.tenantId,
-                company_id: finalCompanyId,
-                patient_id: patientId,
-                clinician_id: clinicianId,
-                starts_at: startsAt,
-                ends_at: endsAt,
-                type,
-                mode,
-                priority,
-                notes,
-                status: 'scheduled',
-                created_by: session.user.id,
-                branch_id: session.user.current_branch_id || null // Explicit null to prevent extension override
-            }
-        })
-    } catch (error) {
+        // Use raw SQL to get the ACTUAL error message from PostgreSQL
+        const result: any = await prisma.$queryRaw`
+            INSERT INTO hms_appointments (
+                id, tenant_id, company_id, patient_id, clinician_id,
+                starts_at, ends_at, type, mode, priority, notes, status, created_by, branch_id
+            ) VALUES (
+                gen_random_uuid(),
+                ${session.user.tenantId}::uuid,
+                ${finalCompanyId}::uuid,
+                ${patientId}::uuid,
+                ${clinicianId}::uuid,
+                ${startsAt}::timestamptz,
+                ${endsAt}::timestamptz,
+                ${type}::text,
+                ${mode}::text,
+                ${priority}::text,
+                ${notes}::text,
+                'scheduled'::text,
+                ${session.user.id}::uuid,
+                ${session.user.current_branch_id || null}::uuid
+            )
+            RETURNING *
+        `;
+
+        createdApt = result[0];
+    } catch (error: any) {
         console.error("Failed to create appointment:", error)
-        return { error: "Failed to create appointment" }
+        console.error("Error detail:", error.message)
+        console.error("Error code:", error.code)
+        return { error: `Failed to create appointment: ${error.message}` }
     }
 
     const source = formData.get("source") as string
