@@ -4,7 +4,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { hms_invoice_status, hms_move_type } from "@prisma/client"
+import { hms_invoice_status, hms_move_type, hms_location_type } from "@prisma/client"
 
 export type ConsumeStockData = {
     productId: string
