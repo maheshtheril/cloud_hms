@@ -124,23 +124,42 @@ export async function consumeStock(data: ConsumeStockData) {
                 )
             `;
 
-            // D. Update/Create Stock Levels (UPSERT)
-            await tx.$executeRaw`
-                INSERT INTO hms_stock_levels (
-                    tenant_id, company_id, product_id, location_id, quantity, updated_at
-                ) VALUES (
-                    CAST(${tenantId} AS uuid),
-                    CAST(${companyId} AS uuid),
-                    CAST(${data.productId} AS uuid),
-                    CAST(${locationId} AS uuid),
-                    CAST(${-data.quantity} AS numeric),
-                    NOW()
-                )
-                ON CONFLICT (tenant_id, company_id, product_id, COALESCE(batch_id, '00000000-0000-0000-0000-000000000000'), location_id) 
-                DO UPDATE SET 
-                    quantity = hms_stock_levels.quantity - CAST(${data.quantity} AS numeric),
-                    updated_at = NOW()
+            // D. Update/Create Stock Levels (Manual Raw UPSERT logic)
+            const levels: any[] = await tx.$queryRaw`
+                SELECT id FROM hms_stock_levels 
+                WHERE tenant_id = CAST(${tenantId} AS uuid)
+                AND company_id = CAST(${companyId} AS uuid)
+                AND product_id = CAST(${data.productId} AS uuid)
+                AND location_id = CAST(${locationId} AS uuid)
+                AND batch_id IS NULL
+                LIMIT 1
             `;
+
+            if (levels.length > 0) {
+                // Update existing
+                await tx.$executeRaw`
+                    UPDATE hms_stock_levels 
+                    SET quantity = quantity - CAST(${data.quantity} AS numeric),
+                        updated_at = NOW()
+                    WHERE id = ${levels[0].id}
+                `;
+            } else {
+                // Insert new
+                await tx.$executeRaw`
+                    INSERT INTO hms_stock_levels (
+                        id, tenant_id, company_id, product_id, location_id, quantity, updated_at, reserved
+                    ) VALUES (
+                        gen_random_uuid(),
+                        CAST(${tenantId} AS uuid),
+                        CAST(${companyId} AS uuid),
+                        CAST(${data.productId} AS uuid),
+                        CAST(${locationId} AS uuid),
+                        CAST(${-data.quantity} AS numeric),
+                        NOW(),
+                        0
+                    )
+                `;
+            }
         })
 
         revalidatePath('/hms/nursing/dashboard')
@@ -291,23 +310,40 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                     )
                 `;
 
-                // Update/Create Stock Levels (UPSERT)
-                await tx.$executeRaw`
-                    INSERT INTO hms_stock_levels (
-                        tenant_id, company_id, product_id, location_id, quantity, updated_at
-                    ) VALUES (
-                        CAST(${tenantId} AS uuid),
-                        CAST(${companyId} AS uuid),
-                        CAST(${item.productId} AS uuid),
-                        CAST(${locationId} AS uuid),
-                        CAST(${-item.quantity} AS numeric),
-                        NOW()
-                    )
-                    ON CONFLICT (tenant_id, company_id, product_id, COALESCE(batch_id, '00000000-0000-0000-0000-000000000000'), location_id) 
-                    DO UPDATE SET 
-                        quantity = hms_stock_levels.quantity - CAST(${item.quantity} AS numeric),
-                        updated_at = NOW()
+                // Update/Create Stock Levels (Manual Raw UPSERT logic)
+                const levels: any[] = await tx.$queryRaw`
+                    SELECT id FROM hms_stock_levels 
+                    WHERE tenant_id = CAST(${tenantId} AS uuid)
+                    AND company_id = CAST(${companyId} AS uuid)
+                    AND product_id = CAST(${item.productId} AS uuid)
+                    AND location_id = CAST(${locationId} AS uuid)
+                    AND batch_id IS NULL
+                    LIMIT 1
                 `;
+
+                if (levels.length > 0) {
+                    await tx.$executeRaw`
+                        UPDATE hms_stock_levels 
+                        SET quantity = quantity - CAST(${item.quantity} AS numeric),
+                            updated_at = NOW()
+                        WHERE id = ${levels[0].id}
+                    `;
+                } else {
+                    await tx.$executeRaw`
+                        INSERT INTO hms_stock_levels (
+                            id, tenant_id, company_id, product_id, location_id, quantity, updated_at, reserved
+                        ) VALUES (
+                            gen_random_uuid(),
+                            CAST(${tenantId} AS uuid),
+                            CAST(${companyId} AS uuid),
+                            CAST(${item.productId} AS uuid),
+                            CAST(${locationId} AS uuid),
+                            CAST(${-item.quantity} AS numeric),
+                            NOW(),
+                            0
+                        )
+                    `;
+                }
             }
 
             // ---------------------------------------------------------
