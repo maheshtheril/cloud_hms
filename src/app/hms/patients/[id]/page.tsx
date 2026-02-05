@@ -126,6 +126,11 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
             type: 'invoice',
             date: i.created_at,
             data: i
+        })),
+        ...patient.prescription.map(p => ({
+            type: 'prescription',
+            date: p.created_at,
+            data: p
         }))
     ].sort((a, b) => new Date(b.date || 0).getTime() - new Date(a.date || 0).getTime())
 
@@ -278,6 +283,12 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                                                                 iconColor = 'bg-emerald-100 text-emerald-600';
                                                                 Icon = Receipt;
                                                                 title = `Invoice Generated`;
+                                                            } else if (event.type === 'prescription') {
+                                                                LinkComponent = Link;
+                                                                linkProps = { href: `/hms/prescriptions/new?patientId=${patient.id}&appointmentId=${event.data.appointment_id || ''}` };
+                                                                iconColor = 'bg-blue-100 text-blue-600';
+                                                                Icon = FileText;
+                                                                title = 'Prescription (Rx)';
                                                             }
 
                                                             const CardContentFallback = (

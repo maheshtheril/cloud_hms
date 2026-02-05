@@ -20,6 +20,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
     const searchParams = useSearchParams()
     const patientId = searchParams.get('patientId')
     const appointmentId = searchParams.get('appointmentId')
+    const prescriptionId = searchParams.get('prescriptionId')
 
     const [patientInfo, setPatientInfo] = useState<any>(null)
     const [resolvedPatientId, setResolvedPatientId] = useState<string | null>(patientId)
@@ -143,11 +144,15 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
         }
     }, [appointmentId])
 
-    // Fetch existing prescription and nurse vitals if appointmentId is present
+    // Fetch existing prescription and nurse vitals
     useEffect(() => {
-        if (!appointmentId) return;
+        if (!appointmentId && !prescriptionId) return;
 
-        fetch(`/api/prescriptions/by-appointment/${appointmentId}`)
+        const endpoint = prescriptionId
+            ? `/api/prescriptions/${prescriptionId}`
+            : `/api/prescriptions/by-appointment/${appointmentId}`;
+
+        fetch(endpoint)
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
@@ -156,7 +161,6 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
 
                     if (vt) {
                         setVitalsData(vt);
-                        // Also populate text version for legacy save if needed, or if doctor wants to edit raw text
                         const vitalsStr = `T: ${vt.temperature || '-'}°F, P: ${vt.pulse || '-'}bpm, BP: ${vt.systolic || '-'}/${vt.diastolic || '-'}mmHg, SpO2: ${vt.spo2 || '-'}%, Wt: ${vt.weight || '-'}kg`.trim();
                         setConvertedText(prev => ({ ...prev, vitals: vitalsStr }));
                     }
@@ -183,7 +187,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                 }
             })
             .catch(err => console.error('Error fetching existing data:', err));
-    }, [appointmentId, patientId]);
+    }, [appointmentId, prescriptionId, patientId]);
 
     useEffect(() => {
         fetch('/api/medicines')

@@ -77,7 +77,11 @@ export default async function PrescriptionsPage() {
                         </div>
                     ) : (
                         prescriptions.map((pr) => (
-                            <div key={pr.id} className="p-4 hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors group">
+                            <Link
+                                href={`/hms/prescriptions/new?patientId=${pr.patient_id}&appointmentId=${pr.appointment_id || ''}&prescriptionId=${pr.id}`}
+                                key={pr.id}
+                                className="p-4 hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors group block"
+                            >
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-4">
                                         <div className="h-12 w-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400 font-bold shadow-sm">
@@ -100,12 +104,12 @@ export default async function PrescriptionsPage() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <button className="p-2 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-all">
+                                        <div className="p-2 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-900/20 rounded-lg transition-all">
                                             <ArrowRight className="h-5 w-5" />
-                                        </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </Link>
                         ))
                     )}
                 </div>

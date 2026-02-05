@@ -1,0 +1,78 @@
+[
+  {
+    "table_name": "hms_invoice_history",
+    "column_name": "id",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "hms_invoice",
+    "column_name": "id",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "NO"
+  },
+  {
+    "table_name": "hms_invoice",
+    "column_name": "line_items",
+    "data_type": "ARRAY",
+    "column_default": null,
+    "is_nullable": "YES"
+  },
+  {
+    "table_name": "hms_patient",
+    "column_name": "id",
+    "data_type": "text",
+    "column_default": null,
+    "is_nullable": "NO"
+  }
+]
+
+TRIGGERS:
+[
+  {
+    "trigger_name": "trg_hms_sync_invoice_lines_insert",
+    "event_object_table": "hms_invoice"
+  },
+  {
+    "trigger_name": "trg_hms_sync_invoice_lines_update",
+    "event_object_table": "hms_invoice"
+  },
+  {
+    "trigger_name": "trg_hms_invoice_recompute_totals",
+    "event_object_table": "hms_invoice"
+  },
+  {
+    "trigger_name": "trg_hms_invoice_history",
+    "event_object_table": "hms_invoice"
+  },
+  {
+    "trigger_name": "trg_hms_invoice_history",
+    "event_object_table": "hms_invoice"
+  },
+  {
+    "trigger_name": "trg_hms_notify_patient",
+    "event_object_table": "hms_patient"
+  },
+  {
+    "trigger_name": "trg_hms_notify_patient",
+    "event_object_table": "hms_patient"
+  },
+  {
+    "trigger_name": "trg_hms_patient_audit",
+    "event_object_table": "hms_patient"
+  },
+  {
+    "trigger_name": "trg_hms_patient_audit",
+    "event_object_table": "hms_patient"
+  },
+  {
+    "trigger_name": "trg_hms_patient_audit",
+    "event_object_table": "hms_patient"
+  },
+  {
+    "trigger_name": "trg_hms_patient_updated_at",
+    "event_object_table": "hms_patient"
+  }
+]

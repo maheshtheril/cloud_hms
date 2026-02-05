@@ -13,9 +13,9 @@ export async function GET(
         }
 
         const { id } = await params
-        console.log(`[GET /api/prescriptions/by-appointment/${id}] Fetching for tenant: ${session.user.tenantId}`)
+        console.log(`[GET /api/prescriptions/${id}] Fetching for tenant: ${session.user.tenantId}`)
 
-        // Use Raw SQL for consistency and better error detection
+        // Use Raw SQL for consistency
         const prescriptions: any[] = await prisma.$queryRaw`
             SELECT p.*, 
                 JSON_AGG(JSON_BUILD_OBJECT(
@@ -36,35 +36,32 @@ export async function GET(
             FROM prescription p
             LEFT JOIN prescription_items pi ON p.id = pi.prescription_id
             LEFT JOIN hms_product prod ON pi.medicine_id = prod.id
-            WHERE p.appointment_id::text = CAST(${id} AS text)
+            WHERE p.id::text = CAST(${id} AS text)
             AND p.tenant_id::text = CAST(${session.user.tenantId} AS text)
             GROUP BY p.id
-            ORDER BY p.created_at DESC
-            LIMIT 1
-        `;
-
-        const vitalsArr: any[] = await prisma.$queryRaw`
-            SELECT v.* FROM hms_vitals v
-            WHERE v.encounter_id::text = CAST(${id} AS text)
             LIMIT 1
         `;
 
         const prescription = prescriptions[0];
-        const vitals = vitalsArr[0];
 
-        console.log(`[GET /api/prescriptions/by-appointment/${id}] Found:`, {
-            prescriptionId: prescription?.id,
-            vitalsId: vitals?.id,
-            itemCount: prescription?.prescription_items?.length
-        })
-
-        if (!prescription && !vitals) {
+        if (!prescription) {
             return NextResponse.json({ success: true, prescription: null, vitals: null })
         }
 
-        // Format for frontend (handle the aggregate JSON structure safely)
+        // Fetch vitals if linked to an appointment
+        let vitals = null;
+        if (prescription.appointment_id) {
+            const vitalsArr: any[] = await prisma.$queryRaw`
+                SELECT v.* FROM hms_vitals v
+                WHERE v.encounter_id::text = CAST(${prescription.appointment_id} AS text)
+                LIMIT 1
+            `;
+            vitals = vitalsArr[0];
+        }
+
+        // Format for frontend
         let medicines = [];
-        if (prescription && Array.isArray(prescription.prescription_items)) {
+        if (prescription.prescription_items && Array.isArray(prescription.prescription_items)) {
             medicines = prescription.prescription_items
                 .filter((item: any) => item && item.medicine_id && item.hms_product && item.hms_product.id)
                 .map((item: any) => ({
@@ -79,14 +76,14 @@ export async function GET(
 
         return NextResponse.json({
             success: true,
-            prescription: prescription ? {
+            prescription: {
                 ...prescription,
                 medicines
-            } : null,
+            },
             vitals: vitals || null
         })
     } catch (error) {
-        console.error('Error fetching prescription by appointment:', error)
+        console.error('Error fetching prescription:', error)
         return NextResponse.json({
             error: 'Internal Server Error',
             details: error instanceof Error ? error.message : String(error)
