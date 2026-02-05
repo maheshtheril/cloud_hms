@@ -66,91 +66,45 @@ export async function createPatientV10(patientId: string | null | any, formData:
 
     try {
         // -----------------------------------------------------------------------------------
-        // REVENUE CYCLE START: ATOMIC TRANSACTION
+        // MASTER PATIENT INDEX (UPSERT) - DIRECT MODE (No Transaction, No Others)
         // -----------------------------------------------------------------------------------
-        return await prisma.$transaction(async (tx) => {
+        const registrationDate = new Date();
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 365);
 
-            // A. CONFIGURATION FETCH (Billing Rules)
-            const hmsConfig = await tx.hms_settings.findFirst({
-                where: { tenant_id: tenantId, company_id: companyId, key: 'registration_config' }
-            });
-            const config = (hmsConfig?.value as any) || {};
-            const feeProductSearchId = config.productId;
-            const feeAmountOverride = parseFloat(config.fee) || 0;
-            const validityDays = parseInt(config.validity) || 365;
+        const address = {
+            street: formData.get('street') as string,
+            city: formData.get('city') as string,
+            zip: formData.get('zip') as string,
+        };
 
-            // B. CHARGE CAPTURE VALIDATION
-            const chargeRegistration = formData.get('charge_registration') === 'on';
-            let feeProduct = null;
+        const metadata: any = {
+            created_via: 'WorldClass-V10-Atomic-Static',
+            registration_date: registrationDate.toISOString(),
+            registration_expiry: expiryDate.toISOString(),
+            title: formData.get("title") as string,
+            last_rcm_audit: new Date().toISOString()
+        };
 
-            if (chargeRegistration) {
-                // Priority 1: Linked Config ID
-                if (feeProductSearchId) {
-                    feeProduct = await tx.hms_product.findUnique({ where: { id: feeProductSearchId } });
-                }
-                // Priority 2: Standard SKU Fallback
-                if (!feeProduct) {
-                    feeProduct = await tx.hms_product.findFirst({
-                        where: {
-                            tenant_id: tenantId,
-                            company_id: companyId,
-                            sku: { contains: 'REG-FEE' }
-                        }
-                    });
-                }
-                // Priority 3: Semantic Lookup
-                if (!feeProduct) {
-                    feeProduct = await tx.hms_product.findFirst({
-                        where: {
-                            tenant_id: tenantId,
-                            company_id: companyId,
-                            name: { contains: 'Registration', mode: 'insensitive' }
-                        }
-                    });
-                }
+        const upsertPayload = {
+            first_name: firstName,
+            last_name: lastName,
+            gender: normalizeGender(formData.get('gender') as string),
+            dob: formData.get('dob') ? new Date(formData.get('dob') as string) : null,
+            contact: { phone, email: formData.get('email'), address } as any,
+            metadata: metadata,
+            updated_at: new Date(),
+            updated_by: userId
+        };
 
-                if (!feeProduct) {
-                    throw new Error("RCM_ERROR: Registration Service Product not configured. Please link a 'Registration Fee' product in Clinical Settings.");
-                }
-            }
+        let patient;
+        const isUpdate = (patientId && typeof patientId === 'string' && patientId.length > 30);
 
-            // C. MASTER PATIENT INDEX (UPSERT)
-            const registrationDate = new Date();
-            const expiryDate = new Date();
-            expiryDate.setDate(expiryDate.getDate() + validityDays);
-
-            const address = {
-                street: formData.get('street') as string,
-                city: formData.get('city') as string,
-                zip: formData.get('zip') as string,
-            };
-
-            const metadata: any = {
-                created_via: 'WorldClass-V10-Service',
-                registration_date: chargeRegistration ? registrationDate.toISOString() : undefined,
-                registration_expiry: chargeRegistration ? expiryDate.toISOString() : undefined,
-                title: formData.get("title") as string,
-                last_rcm_audit: new Date().toISOString()
-            };
-
-            const upsertPayload = {
-                first_name: firstName,
-                last_name: lastName,
-                gender: normalizeGender(formData.get('gender') as string),
-                dob: formData.get('dob') ? new Date(formData.get('dob') as string) : null,
-                contact: { phone, email: formData.get('email'), address } as any,
-                metadata: metadata,
-                updated_at: new Date(),
-                updated_by: userId
-            };
-
-            let patient;
-            const isUpdate = (patientId && typeof patientId === 'string' && patientId.length > 30);
-
+        try {
             if (isUpdate) {
-                patient = await tx.hms_patient.update({ where: { id: patientId as string }, data: upsertPayload });
+                patient = await prisma.hms_patient.update({ where: { id: patientId as string }, data: upsertPayload });
             } else {
-                patient = await tx.hms_patient.create({
+                patient = await prisma.hms_patient.create({
                     data: {
                         ...upsertPayload,
                         id: crypto.randomUUID(),
@@ -169,7 +123,9 @@ export async function createPatientV10(patientId: string | null | any, formData:
                 message: isUpdate ? "Master Patient Index Updated." : "New Patient Registered.",
                 data: patient
             };
-        });
+        } catch (err: any) {
+            throw err; // Let catch block below handle it
+        }
 
     } catch (err: any) {
         const errorDetail = {
