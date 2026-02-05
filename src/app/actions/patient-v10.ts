@@ -181,14 +181,14 @@ export async function createPatientV10(patientId: string | null | any, formData:
                         invoice_date, issued_at, currency, currency_rate, 
                         subtotal, total, total_tax, total_discount, total_paid, 
                         outstanding, outstanding_amount, billing_metadata, 
-                        line_items, locked, created_by, created_at, updated_at
+                        locked, created_by, created_at, updated_at
                     ) VALUES (
                         ${invoiceId}::uuid, ${tenantId}::uuid, ${companyId}::uuid, ${patient.id}::uuid,
                         ${invNo}, ${invNo}, 'draft',
                         ${registrationDate}::date, ${registrationDate}, 'INR', 1.0,
                         ${amount}, ${amount}, 0, 0, 0,
                         ${amount}, ${amount}, '{}'::jsonb, 
-                        '[]'::jsonb[], false, ${userId}::uuid, now(), now()
+                        false, ${userId}::uuid, now(), now()
                     )
                 `;
 
