@@ -217,10 +217,16 @@ export async function createPatientV10(patientId: string | null | any, formData:
         });
 
     } catch (err: any) {
-        console.error("CRITICAL_RCM_FAILURE:", err);
+        const errorDetail = {
+            message: err.message,
+            code: err.code,
+            meta: err.meta,
+            stack: err.stack?.split('\n')[0]
+        };
+        console.error("CRITICAL_RCM_FAILURE:", JSON.stringify(errorDetail, null, 2));
         return {
-            error: `HMS_CORE_EXCEPTION: ${err.message}`,
-            details: "Please verify if the 'Registration Fee' product matches the hospital fee schedule."
+            error: `HMS_CORE_EXCEPTION: ${err.message} (Code: ${err.code || 'N/A'})`,
+            details: JSON.stringify(errorDetail)
         };
     }
 }
