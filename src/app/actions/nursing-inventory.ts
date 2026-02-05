@@ -33,7 +33,7 @@ export async function consumeStock(data: ConsumeStockData) {
         const locations: any[] = await prisma.$queryRaw`
             SELECT id, tenant_id, company_id, name, code, location_type::text as location_type 
             FROM hms_stock_location 
-            WHERE company_id::text = ${companyId}
+            WHERE company_id::text = CAST(${companyId} AS text)
             AND (code = 'WH-MAIN' OR location_type::text = 'warehouse')
             LIMIT 1
         `;
@@ -45,7 +45,7 @@ export async function consumeStock(data: ConsumeStockData) {
             const anyLoc: any[] = await prisma.$queryRaw`
                 SELECT id, tenant_id, company_id, name, code, location_type::text as location_type 
                 FROM hms_stock_location 
-                WHERE company_id::text = ${companyId}
+                WHERE company_id::text = CAST(${companyId} AS text)
                 LIMIT 1
             `;
             location = anyLoc[0];
@@ -127,10 +127,10 @@ export async function consumeStock(data: ConsumeStockData) {
             // D. Update/Create Stock Levels (Manual Raw UPSERT logic)
             const levels: any[] = await tx.$queryRaw`
                 SELECT id::text as id FROM hms_stock_levels 
-                WHERE tenant_id::text = ${tenantId}
-                AND company_id::text = ${companyId}
-                AND product_id::text = ${data.productId}
-                AND location_id::text = ${locationId}
+                WHERE tenant_id::text = CAST(${tenantId} AS text)
+                AND company_id::text = CAST(${companyId} AS text)
+                AND product_id::text = CAST(${data.productId} AS text)
+                AND location_id::text = CAST(${locationId} AS text)
                 AND batch_id IS NULL
                 LIMIT 1
             `;
@@ -141,7 +141,7 @@ export async function consumeStock(data: ConsumeStockData) {
                     UPDATE hms_stock_levels 
                     SET quantity = quantity - CAST(${data.quantity} AS numeric),
                         updated_at = NOW()
-                    WHERE id::text = ${levels[0].id}
+                    WHERE id::text = CAST(${levels[0].id} AS text)
                 `;
             } else {
                 // Insert new
@@ -203,7 +203,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
         const locations: any[] = await prisma.$queryRaw`
             SELECT id, tenant_id, company_id, name, code, location_type::text as location_type 
             FROM hms_stock_location 
-            WHERE company_id::text = ${companyId}
+            WHERE company_id::text = CAST(${companyId} AS text)
             AND (code = 'WH-MAIN' OR location_type::text = 'warehouse')
             LIMIT 1
         `;
@@ -215,7 +215,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
             const anyLoc: any[] = await prisma.$queryRaw`
                 SELECT id, tenant_id, company_id, name, code, location_type::text as location_type 
                 FROM hms_stock_location 
-                WHERE company_id::text = ${companyId}
+                WHERE company_id::text = CAST(${companyId} AS text)
                 LIMIT 1
             `;
             location = anyLoc[0];
@@ -313,10 +313,10 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                 // Update/Create Stock Levels (Manual Raw UPSERT logic)
                 const levels: any[] = await tx.$queryRaw`
                     SELECT id::text as id FROM hms_stock_levels 
-                    WHERE tenant_id::text = ${tenantId}
-                    AND company_id::text = ${companyId}
-                    AND product_id::text = ${item.productId}
-                    AND location_id::text = ${locationId}
+                    WHERE tenant_id::text = CAST(${tenantId} AS text)
+                    AND company_id::text = CAST(${companyId} AS text)
+                    AND product_id::text = CAST(${item.productId} AS text)
+                    AND location_id::text = CAST(${locationId} AS text)
                     AND batch_id IS NULL
                     LIMIT 1
                 `;
@@ -326,7 +326,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                         UPDATE hms_stock_levels 
                         SET quantity = quantity - CAST(${item.quantity} AS numeric),
                             updated_at = NOW()
-                        WHERE id::text = ${levels[0].id}
+                        WHERE id::text = CAST(${levels[0].id} AS text)
                     `;
                 } else {
                     await tx.$executeRaw`
