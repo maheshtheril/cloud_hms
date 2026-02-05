@@ -38,9 +38,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { cn } from "@/lib/utils"
-import { getNextVoucherNumber } from "@/app/actions/billing"
-import { format } from "date-fns"
+import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 
 interface RegistrationVoucherProps {
     initialSettings: {
@@ -48,16 +46,23 @@ interface RegistrationVoucherProps {
         registrationProductId: string | null
         registrationProductName: string
         registrationProductDescription: string
+    },
+    masterData: {
+        patients: any[],
+        billableItems: any[],
+        taxConfig: any,
+        uoms: any[],
+        currency: string
     }
 }
 
-export function RegistrationVoucher({ initialSettings }: RegistrationVoucherProps) {
+export function RegistrationVoucher({ initialSettings, masterData }: RegistrationVoucherProps) {
     const router = useRouter()
     const { toast } = useToast()
     const [isPending, setIsPending] = useState(false)
     const [selectedPatient, setSelectedPatient] = useState<any>(null)
     const [items, setItems] = useState<any[]>([])
-    const [showPaymentDialog, setShowPaymentDialog] = useState(false)
+    const [showAdvancedEditor, setShowAdvancedEditor] = useState(false)
     const [paymentMethod, setPaymentMethod] = useState<string>("cash")
     const [voucherNo, setVoucherNo] = useState<string>("Loading...")
     const [voucherDate, setVoucherDate] = useState<string>(new Date().toISOString().split('T')[0])
@@ -96,7 +101,7 @@ export function RegistrationVoucher({ initialSettings }: RegistrationVoucherProp
             toast({ title: "Identification Required", description: "Please select or register a patient first.", variant: "destructive" })
             return
         }
-        setShowPaymentDialog(true)
+        setShowAdvancedEditor(true)
     }
 
     async function handleConfirmPayment() {
@@ -352,116 +357,19 @@ export function RegistrationVoucher({ initialSettings }: RegistrationVoucherProp
                 </div>
             </div>
 
-            {/* Payment Options Dialog */}
-            <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-                <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none shadow-2xl rounded-2xl">
-                    <DialogHeader className="p-6 bg-slate-900 text-white">
-                        <DialogTitle className="text-xl font-black flex items-center gap-2">
-                            <Wallet className="h-5 w-5 text-indigo-400" />
-                            COLLECT PAYMENT
-                        </DialogTitle>
-                        <DialogDescription className="text-slate-400 font-medium">
-                            Select payment method to complete registration for {selectedPatient?.name}
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="p-6 space-y-6 bg-white dark:bg-slate-950">
-                        <div className="flex justify-between items-center p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800">
-                            <span className="text-slate-500 font-bold uppercase text-xs tracking-widest">Total Payable</span>
-                            <span className="text-2xl font-black text-slate-900 dark:text-white">₹{total.toFixed(2)}</span>
-                        </div>
-
-                        <div className="space-y-3">
-                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-2 block">Choose Payment Mode</Label>
-                            <RadioGroup
-                                defaultValue="cash"
-                                value={paymentMethod}
-                                onValueChange={setPaymentMethod}
-                                className="grid grid-cols-1 gap-3"
-                            >
-                                <Label
-                                    htmlFor="mode-cash"
-                                    className={cn(
-                                        "flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer group",
-                                        paymentMethod === "cash" ? "border-indigo-600 bg-indigo-50/50 ring-4 ring-indigo-50" : "border-slate-100 hover:border-slate-200"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className={cn(
-                                            "h-10 w-10 rounded-full flex items-center justify-center transition-colors",
-                                            paymentMethod === "cash" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"
-                                        )}>
-                                            <Banknote className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <span className="font-bold text-slate-900 dark:text-white block">Cash Payment</span>
-                                            <span className="text-[10px] text-slate-500 font-medium">Physical currency received at counter</span>
-                                        </div>
-                                    </div>
-                                    <RadioGroupItem value="cash" id="mode-cash" className="sr-only" />
-                                </Label>
-
-                                <Label
-                                    htmlFor="mode-upi"
-                                    className={cn(
-                                        "flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer group",
-                                        paymentMethod === "upi" ? "border-indigo-600 bg-indigo-50/50 ring-4 ring-indigo-50" : "border-slate-100 hover:border-slate-200"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className={cn(
-                                            "h-10 w-10 rounded-full flex items-center justify-center transition-colors",
-                                            paymentMethod === "upi" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"
-                                        )}>
-                                            <Smartphone className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <span className="font-bold text-slate-900 dark:text-white block">UPI / Digital Quick Pay</span>
-                                            <span className="text-[10px] text-slate-500 font-medium">GPay, PhonePe, or Scan & Pay</span>
-                                        </div>
-                                    </div>
-                                    <RadioGroupItem value="upi" id="mode-upi" className="sr-only" />
-                                </Label>
-
-                                <Label
-                                    htmlFor="mode-card"
-                                    className={cn(
-                                        "flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer group",
-                                        paymentMethod === "card" ? "border-indigo-600 bg-indigo-50/50 ring-4 ring-indigo-50" : "border-slate-100 hover:border-slate-200"
-                                    )}
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className={cn(
-                                            "h-10 w-10 rounded-full flex items-center justify-center transition-colors",
-                                            paymentMethod === "card" ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"
-                                        )}>
-                                            <CreditCard className="h-5 w-5" />
-                                        </div>
-                                        <div>
-                                            <span className="font-bold text-slate-900 dark:text-white block">Credit / Debit Card</span>
-                                            <span className="text-[10px] text-slate-500 font-medium">Swipe or Dip Card via EDC machine</span>
-                                        </div>
-                                    </div>
-                                    <RadioGroupItem value="card" id="mode-card" className="sr-only" />
-                                </Label>
-                            </RadioGroup>
-                        </div>
-                    </div>
-
-                    <DialogFooter className="p-6 bg-slate-50 dark:bg-slate-900 flex sm:justify-between items-center gap-4">
-                        <Button variant="ghost" onClick={() => setShowPaymentDialog(false)} className="font-bold text-slate-500">
-                            Back to Voucher
-                        </Button>
-                        <Button
-                            onClick={handleConfirmPayment}
-                            disabled={isPending}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-10 h-12 rounded-xl shadow-lg shadow-indigo-200 dark:shadow-none transition-all active:scale-95"
-                        >
-                            {isPending ? "Processing..." : "Finish & Post Transaction"}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            {/* Advanced Billing Editor (The "Working Bill Form") */}
+            {showAdvancedEditor && (
+                <CompactInvoiceEditor
+                    patients={masterData.patients}
+                    billableItems={masterData.billableItems}
+                    taxConfig={masterData.taxConfig}
+                    uoms={masterData.uoms}
+                    currency={masterData.currency}
+                    initialPatientId={selectedPatient?.id}
+                    initialMedicines={items} // This passes the Registration Fee
+                    onClose={() => setShowAdvancedEditor(false)}
+                />
+            )}
         </div>
     )
 }
