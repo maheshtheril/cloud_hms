@@ -70,7 +70,10 @@ async function sync() {
         // 4. THE HAMMER: Extra Repairs for Triggers and UUID Defaults
         sql += `
         BEGIN;
-        -- Fix History Trigger (Explicit ID)
+        -- ENSURE EXTENSION
+        CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+        -- Fix Invoice History Trigger (Explicit ID)
         CREATE OR REPLACE FUNCTION public.hms_invoice_history_trigger() 
         RETURNS trigger AS $$
         DECLARE v_user_id uuid;
@@ -85,6 +88,21 @@ async function sync() {
             VALUES (gen_random_uuid(), NEW.tenant_id, NEW.company_id, NEW.id, NEW.created_by, 'insert', jsonb_build_object('new', to_jsonb(NEW)), now());
             RETURN NEW;
           ELSE RETURN NEW; END IF;
+        END;
+        $$ LANGUAGE plpgsql;
+
+        -- Fix Patient Audit Trigger (Explicit ID & Defensive)
+        CREATE OR REPLACE FUNCTION public.hms_patient_audit_trigger() RETURNS trigger AS $$
+        BEGIN
+          IF (TG_OP = 'DELETE') THEN
+            INSERT INTO public.hms_patient_audit (id, patient_id, operation, changed_at, row_data)
+            VALUES (gen_random_uuid(), OLD.id, TG_OP, now(), row_to_json(OLD));
+            RETURN OLD;
+          ELSE
+            INSERT INTO public.hms_patient_audit (id, patient_id, operation, changed_at, row_data)
+            VALUES (gen_random_uuid(), COALESCE(NEW.id, OLD.id), TG_OP, now(), row_to_json(COALESCE(NEW, OLD)));
+            RETURN NEW;
+          END IF;
         END;
         $$ LANGUAGE plpgsql;
 

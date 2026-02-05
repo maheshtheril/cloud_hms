@@ -4,7 +4,7 @@ import { createPatientV10 as createPatient, createPatientQuick } from "@/app/act
 import { recordPayment } from "@/app/actions/billing"
 import { X, User, Phone, Calendar, Camera, FileText, Shield, MapPin, Mail, AlertCircle, CheckCircle2, Fingerprint, Activity, Printer, CreditCard, Banknote, Smartphone } from "lucide-react"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { FileUpload } from "@/components/ui/file-upload"
 import { VoiceWrapper } from "@/components/ui/voice-wrapper"
 import { getHMSSettings } from "@/app/actions/settings"
@@ -38,6 +38,10 @@ export function CreatePatientForm({
     hideBilling = false
 }: CreatePatientFormProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const returnPath = searchParams.get('returnPath');
+    const autoSelect = searchParams.get('autoSelect') === 'true';
+
     const [activeTab, setActiveTab] = useState<'basic' | 'identity'>('basic');
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const [isPending, setIsPending] = useState(false);
@@ -300,6 +304,15 @@ export function CreatePatientForm({
                             if (onSuccess) onSuccess(patient);
                             else {
                                 setMessage({ type: 'success', text: initialData ? "Profile updated successfully." : "Patient registered successfully." });
+
+                                // REDIRECTION LOGIC: returnPath (from Billing) vs Default
+                                if (returnPath) {
+                                    setTimeout(() => {
+                                        const finalUrl = `${returnPath}${returnPath.includes('?') ? '&' : '?'}patientId=${patient.id}${autoSelect ? '&autoSelect=true' : ''}`;
+                                        router.push(finalUrl);
+                                    }, 1000);
+                                    return;
+                                }
 
                                 // Explicitly check user preference for ID Card
                                 if (printIDCard) {
@@ -686,6 +699,10 @@ export function CreatePatientForm({
                                             setInvoiceData(null);
                                             // Show ID card if requested, otherwise redirect
                                             if (printIDCard) setShowIDCard(true);
+                                            else if (returnPath) {
+                                                const finalUrl = `${returnPath}${returnPath.includes('?') ? '&' : '?'}patientId=${savedPatient.id}${autoSelect ? '&autoSelect=true' : ''}`;
+                                                router.push(finalUrl);
+                                            }
                                             else router.push('/hms/patients');
                                         } else {
                                             alert("Payment Failed: " + res.error);
@@ -717,10 +734,17 @@ export function CreatePatientForm({
                                         window.open(`/hms/billing/${invoiceData.id}/print`, '_blank');
                                     }
                                     setInvoiceData(null);
-                                    if (printIDCard) setShowIDCard(true);
-                                    else if (onSuccess) onSuccess(savedPatient); // For modal usage
-                                    else router.push('/hms/patients');
 
+                                    if (printIDCard) {
+                                        setShowIDCard(true);
+                                    } else if (returnPath) {
+                                        const finalUrl = `${returnPath}${returnPath.includes('?') ? '&' : '?'}patientId=${savedPatient.id}${autoSelect ? '&autoSelect=true' : ''}`;
+                                        router.push(finalUrl);
+                                    } else if (onSuccess) {
+                                        onSuccess(savedPatient); // For modal usage
+                                    } else {
+                                        router.push('/hms/patients');
+                                    }
                                 }}
                                 className="w-full py-3 bg-white border border-slate-200 text-slate-500 hover:text-slate-900 rounded-xl font-bold text-xs uppercase tracking-wide hover:bg-slate-50 transition-all"
                             >

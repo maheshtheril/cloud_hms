@@ -104,6 +104,15 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     subLabel: `[${(i.type || 'item').toUpperCase()}] ${i.sku ? `SKU: ${i.sku} | ` : ''}${currency}${i.price}`
   })), [billableItems, currency]);
 
+  // Auto-select patient from URL if coming back from registration
+  useEffect(() => {
+    const pId = searchParams.get('patientId');
+    if (pId) {
+      setSelectedPatientId(pId);
+      setIsWalkIn(false);
+    }
+  }, [searchParams]);
+
   const selectedPatientLabel = useMemo(() => {
     if (!selectedPatientId) return ''
     const p = patientOptions.find(p => p.id === selectedPatientId)
@@ -602,7 +611,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               </div>
               {!isWalkIn && (
                 <button
-                  onClick={() => router.push('/hms/patients/new')}
+                  onClick={() => router.push(`/hms/patients/new?returnPath=${encodeURIComponent(window.location.pathname)}&autoSelect=true`)}
                   disabled={isPaymentModalOpen || loading}
                   className="h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 active:scale-95 shrink-0"
                 >
