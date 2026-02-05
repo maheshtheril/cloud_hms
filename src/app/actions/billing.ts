@@ -345,7 +345,7 @@ export async function createInvoice(data: {
             const match = lastInv.invoice_number.match(/(\d+)$/);
             if (match) nextSeq = parseInt(match[0]) + 1;
         }
-        const invoiceNo = `INV-${nextSeq.toString().padStart(6, '0')}`;
+        const invoiceNo = `DBG-${Date.now()}`;
 
         // 3. Totals
         const { line_items = [], payments = [], status = 'draft', total_discount = 0 } = data;
@@ -396,7 +396,8 @@ export async function createInvoice(data: {
                             subtotal: (safeNum(l.quantity) * safeNum(l.unit_price)),
                             product_id: isUUID(l.product_id) ? l.product_id : null,
                             tax_rate_id: isUUID(l.tax_rate_id) ? l.tax_rate_id : null,
-                            uom: l.uom || 'Unit'
+                            uom: l.uom || 'Unit',
+                            metadata: {}
                         }))
                     },
                     hms_invoice_payments: payments.length > 0 ? {
@@ -432,9 +433,12 @@ export async function createInvoice(data: {
         const detail = error.meta ? JSON.stringify(error.meta) : error.message;
         const code = error.code || 'PRM-UNKNOWN';
         const target = error.meta?.target || error.meta?.column || 'Identity Check';
-        console.error(`${LOG_PREFIX} SYNC REJECTION:`, { code, target, detail });
+
+        const loudMessage = `[BILLING-FATAL] CODE: ${code} | TARGET: ${target} | DETAIL: ${detail}`;
+        console.error(loudMessage);
+
         return {
-            error: `DATABASE REJECTION [${code}]: The field "${target}" failed validation. Detail: ${detail.slice(0, 150)}`
+            error: loudMessage
         };
     }
 }
