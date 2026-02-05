@@ -31,9 +31,9 @@ export async function consumeStock(data: ConsumeStockData) {
         // 1. Find Location (Robust Lookup)
         // 1. Find Location (Robust Lookup with explicit type casting)
         const locations: any[] = await prisma.$queryRaw`
-            SELECT id, tenant_id, company_id, name, code, location_type 
+            SELECT id, tenant_id, company_id, name, code, location_type::text as location_type 
             FROM hms_stock_location 
-            WHERE company_id = CAST(${companyId} AS uuid)
+            WHERE company_id::text = ${companyId}
             AND (code = 'WH-MAIN' OR location_type::text = 'warehouse')
             LIMIT 1
         `;
@@ -43,9 +43,9 @@ export async function consumeStock(data: ConsumeStockData) {
         // Fallback: Find ANY location
         if (!location) {
             const anyLoc: any[] = await prisma.$queryRaw`
-                SELECT id, tenant_id, company_id, name, code, location_type 
+                SELECT id, tenant_id, company_id, name, code, location_type::text as location_type 
                 FROM hms_stock_location 
-                WHERE company_id = CAST(${companyId} AS uuid)
+                WHERE company_id::text = ${companyId}
                 LIMIT 1
             `;
             location = anyLoc[0];
@@ -188,9 +188,9 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
         // 1. Find Location (Robust Lookup)
         // 1. Find Location (Robust Lookup with explicit type casting)
         const locations: any[] = await prisma.$queryRaw`
-            SELECT id, tenant_id, company_id, name, code, location_type 
+            SELECT id, tenant_id, company_id, name, code, location_type::text as location_type 
             FROM hms_stock_location 
-            WHERE company_id = CAST(${companyId} AS uuid)
+            WHERE company_id::text = ${companyId}
             AND (code = 'WH-MAIN' OR location_type::text = 'warehouse')
             LIMIT 1
         `;
@@ -200,9 +200,9 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
         // Fallback: Find ANY location
         if (!location) {
             const anyLoc: any[] = await prisma.$queryRaw`
-                SELECT id, tenant_id, company_id, name, code, location_type 
+                SELECT id, tenant_id, company_id, name, code, location_type::text as location_type 
                 FROM hms_stock_location 
-                WHERE company_id = CAST(${companyId} AS uuid)
+                WHERE company_id::text = ${companyId}
                 LIMIT 1
             `;
             location = anyLoc[0];
