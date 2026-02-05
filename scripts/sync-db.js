@@ -121,6 +121,49 @@ async function sync() {
                 EXECUTE 'ALTER TABLE public.' || quote_ident(r.table_name) || ' ALTER COLUMN ' || quote_ident(r.column_name) || ' SET DEFAULT gen_random_uuid()';
             END LOOP;
         END $$;
+
+        -- RCM REPAIR: Convert native arrays back to JSONB to match trigger logic
+        DO $$ 
+        BEGIN
+            -- 1. Convert line_items from Array to single JSONB blob
+            IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'hms_invoice' AND column_name = 'line_items' AND data_type = 'ARRAY') THEN
+                ALTER TABLE public.hms_invoice ALTER COLUMN line_items SET DATA TYPE jsonb USING to_jsonb(line_items);
+                ALTER TABLE public.hms_invoice ALTER COLUMN line_items SET DEFAULT '[]'::jsonb;
+            END IF;
+            
+            -- 2. Ensure billing_metadata is JSONB
+            ALTER TABLE public.hms_invoice ALTER COLUMN billing_metadata SET DATA TYPE jsonb USING COALESCE(billing_metadata, '{}'::jsonb);
+            ALTER TABLE public.hms_invoice ALTER COLUMN billing_metadata SET DEFAULT '{}'::jsonb;
+        EXCEPTION
+            WHEN OTHERS THEN
+                RAISE NOTICE 'RCM Repair failed: %', SQLERRM;
+        END $$;
+
+        -- RCM REPAIR: Fix triggers that expect JSONB but might hit nulls or remnants
+        CREATE OR REPLACE FUNCTION public.hms_sync_invoice_lines_on_upsert() 
+        RETURNS trigger AS $$
+        DECLARE
+          lines jsonb; i int := 0; l jsonb; nid uuid;
+        BEGIN
+          -- Defensive check for RCM
+          IF (NEW.id IS NULL) THEN RETURN NEW; END IF;
+          
+          DELETE FROM hms_invoice_lines WHERE invoice_id = NEW.id;
+          lines := NEW.line_items;
+          
+          -- Fix: If lines is NOT a jsonb array (or null), skip sync but allow the save
+          IF lines IS NULL OR jsonb_typeof(lines) != 'array' THEN RETURN NEW; END IF;
+          
+          FOR i IN 0 .. jsonb_array_length(lines) - 1 LOOP
+            l := lines->i;
+            nid := COALESCE((l->>'line_id')::uuid, gen_random_uuid());
+            INSERT INTO hms_invoice_lines(id, tenant_id, company_id, invoice_id, line_idx, line_ref, product_id, description, quantity, uom, unit_price, discount_amount, tax_amount, net_amount, metadata, created_at)
+            VALUES (nid, NEW.tenant_id, NEW.company_id, NEW.id, i, l->>'service_code', NULLIF(l->>'product_id','')::uuid, l->>'description', COALESCE((l->>'quantity')::numeric,1), l->>'unit', COALESCE((l->>'unit_price')::numeric,0), COALESCE((l->'discount'->>'amount')::numeric,0), COALESCE((l->'taxes'->0->>'amount')::numeric,0), COALESCE((l->>'net_amount')::numeric,0), l->'metadata', now());
+          END LOOP;
+          RETURN NEW;
+        END;
+        $$ LANGUAGE plpgsql;
+
         COMMIT;
         `;
 
