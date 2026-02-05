@@ -14,17 +14,62 @@ export async function getUoms() {
     if (!companyId) return { error: "Unauthorized" };
 
     try {
-        const uoms = await prisma.hms_uom.findMany({
-            where: {
-                tenant_id: session.user.tenantId,
-                company_id: companyId,
-                is_active: true
-            }
+        const uoms = await (prisma as any).hms_uom.findMany({
+            where: { tenant_id: (session?.user as any).tenantId },
+            orderBy: { name: 'asc' }
         });
         return { success: true, data: uoms };
-    } catch (error) {
-        console.error("Failed to fetch UOMs:", error);
-        return { error: "Failed to fetch UOMs" };
+    } catch (err: any) {
+        return { error: err.message };
+    }
+}
+
+export async function getNextVoucherNumber(date: string = new Date().toISOString()) {
+    const session = await auth();
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    if (!companyId) return { error: "Unauthorized" };
+
+    try {
+        const settings = await prisma.company_settings.findUnique({
+            where: { company_id: companyId },
+            select: { numbering_prefix: true }
+        });
+        const customPrefix = settings?.numbering_prefix || 'INV';
+
+        const invDate = new Date(date);
+        const month = invDate.getMonth();
+        const year = invDate.getFullYear();
+
+        let fyStart = year;
+        let fyEnd = year + 1;
+        if (month < 3) {
+            fyStart = year - 1;
+            fyEnd = year;
+        }
+        const fyString = `${fyStart.toString().slice(-2)}-${fyEnd.toString().slice(-2)}`;
+        const prefix = `${customPrefix}-${fyString}-`;
+
+        const lastInvoice = await prisma.hms_invoice.findFirst({
+            where: {
+                company_id: companyId,
+                invoice_number: { startsWith: prefix }
+            },
+            orderBy: { created_at: 'desc' },
+            select: { invoice_number: true }
+        });
+
+        let nextSeq = 1;
+        if (lastInvoice?.invoice_number) {
+            const parts = lastInvoice.invoice_number.split('-');
+            const lastSeqStr = parts[parts.length - 1];
+            const lastSeq = parseInt(lastSeqStr);
+            if (!isNaN(lastSeq)) nextSeq = lastSeq + 1;
+        }
+
+        const invoiceNo = `${prefix}${nextSeq.toString().padStart(5, '0')}`;
+        return { success: true, data: invoiceNo };
+    } catch (error: any) {
+        return { error: error.message };
     }
 }
 
@@ -340,6 +385,12 @@ export async function createInvoice(data: { patient_id: string, appointment_id?:
 
         if (!tenantId) return { error: "Missing Tenant ID in session" };
 
+        // Parse date safely
+        const parsedDate = new Date(date);
+        if (isNaN(parsedDate.getTime())) {
+            return { error: "Invalid date provided." };
+        }
+
         const invoicePayload = {
             tenant_id: tenantId,
             company_id: companyId,
@@ -347,8 +398,8 @@ export async function createInvoice(data: { patient_id: string, appointment_id?:
             patient_id: (patient_id as string) || null,
             appointment_id: (appointment_id as string) || null,
             invoice_number: invoiceNo,
-            invoice_no: invoiceNo, // Fill both variants for schema safety
-            invoice_date: new Date(date),
+            invoice_no: invoiceNo,
+            invoice_date: parsedDate,
             issued_at: new Date(),
             currency: 'INR',
             status: status || 'draft',
@@ -397,20 +448,21 @@ export async function createInvoice(data: { patient_id: string, appointment_id?:
             } : undefined
         };
 
-        console.log(`[Billing] Creating invoice ${invoiceNo} for company ${companyId}, tenant ${tenantId}, user ${userId}`);
+        console.log(`[Billing Action] Payload prepared for ${invoiceNo}`);
 
         const result = await prisma.$transaction(async (tx) => {
+            // 1. Create Invoice
             console.log(`[SQL EXEC] Inserting main invoice record: ${invoiceNo}`);
             const newInvoice = await tx.hms_invoice.create({
                 data: invoicePayload as any
             });
 
-            // WORLD CLASS: Auto-Allocation of Excess Funds (Reconciliation)
+            // 2. Reconciliation with previous debts
             if (totalPaid > total && patient_id) {
                 let excess = totalPaid - total;
                 const oldInvoices = await tx.hms_invoice.findMany({
                     where: {
-                        tenant_id: session.user.tenantId,
+                        tenant_id: tenantId,
                         company_id: companyId,
                         patient_id: patient_id as string,
                         status: 'posted' as any,
@@ -438,7 +490,7 @@ export async function createInvoice(data: { patient_id: string, appointment_id?:
                 }
             }
 
-            // If status is paid and appointment is linked, mark appointment as completed
+            // 3. Mark Appointment Completed
             if (status === 'paid' && appointment_id) {
                 await tx.hms_appointments.update({
                     where: { id: appointment_id },
@@ -446,7 +498,7 @@ export async function createInvoice(data: { patient_id: string, appointment_id?:
                 });
             }
 
-            // [WORLD CLASS] Registration Fee Tracking
+            // 4. Registration Fee Flag on Patient
             const hasRegistrationFee = line_items.some((l: any) => l.description === 'Registration Fee');
             if (hasRegistrationFee && patient_id && (status === 'posted' || status === 'paid')) {
                 const patient = await tx.hms_patient.findUnique({ where: { id: patient_id as string } });
@@ -463,7 +515,7 @@ export async function createInvoice(data: { patient_id: string, appointment_id?:
                 });
             }
 
-            // FORCE UPDATE TOTAL: Ensure DB triggers didn't override the total to 0
+            // 5. FORCE UPDATE TOTAL: Ensure DB triggers didn't override the total to 0
             await tx.hms_invoice.update({
                 where: { id: newInvoice.id },
                 data: {
@@ -475,8 +527,11 @@ export async function createInvoice(data: { patient_id: string, appointment_id?:
             });
 
             return newInvoice;
+        }, {
+            timeout: 10000 // Increased timeout for heavy transactions
         });
 
+        // Post accounting after transaction to avoid nested transaction issues if current service isn't tx-aware
         if ((result.status === 'posted' || result.status === 'paid') && result.id) {
             // 1. Accounting Post (Safely wrapped)
             try {

@@ -39,6 +39,8 @@ import {
 } from "@/components/ui/dialog"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { cn } from "@/lib/utils"
+import { getNextVoucherNumber } from "@/app/actions/billing"
+import { format } from "date-fns"
 
 interface RegistrationVoucherProps {
     initialSettings: {
@@ -57,6 +59,8 @@ export function RegistrationVoucher({ initialSettings }: RegistrationVoucherProp
     const [items, setItems] = useState<any[]>([])
     const [showPaymentDialog, setShowPaymentDialog] = useState(false)
     const [paymentMethod, setPaymentMethod] = useState<string>("cash")
+    const [voucherNo, setVoucherNo] = useState<string>("Loading...")
+    const [voucherDate, setVoucherDate] = useState<string>(new Date().toISOString().split('T')[0])
 
     // Auto-select registration fee item on mount or when settings change
     useEffect(() => {
@@ -75,6 +79,16 @@ export function RegistrationVoucher({ initialSettings }: RegistrationVoucherProp
         }
     }, [initialSettings])
 
+    useEffect(() => {
+        async function fetchVoucherNo() {
+            const res = await getNextVoucherNumber(voucherDate)
+            if (res.success && res.data) {
+                setVoucherNo(res.data)
+            }
+        }
+        fetchVoucherNo()
+    }, [voucherDate])
+
     const total = items.reduce((sum, i) => sum + i.total, 0)
 
     async function handleSaveAndPost() {
@@ -91,7 +105,7 @@ export function RegistrationVoucher({ initialSettings }: RegistrationVoucherProp
         try {
             const invoicePayload = {
                 patient_id: selectedPatient.id,
-                date: new Date().toISOString(),
+                date: voucherDate,
                 status: 'paid' as any, // Post as Paid immediately
                 line_items: items.map(item => ({
                     product_id: item.id,
@@ -126,25 +140,66 @@ export function RegistrationVoucher({ initialSettings }: RegistrationVoucherProp
 
     return (
         <div className="space-y-6 max-w-6xl mx-auto px-4 py-8">
-            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                <div>
+            <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-1 opacity-5">
+                    <FileText size={120} />
+                </div>
+                <div className="relative z-10">
+                    <div className="flex items-center gap-2 mb-1">
+                        <Badge className="bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-50 font-bold px-3 py-0.5 rounded-full text-[10px] tracking-wider uppercase">
+                            Financial Document
+                        </Badge>
+                    </div>
                     <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">Registration Voucher</h1>
                     <p className="text-slate-500 text-sm mt-1">Efficient Patient Onboarding & Revenue Capture</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <Button variant="outline" className="flex items-center gap-2" onClick={() => router.back()}>
+                <div className="flex items-center gap-3 relative z-10">
+                    <Button variant="outline" className="flex items-center gap-2 border-slate-200" onClick={() => router.back()}>
                         Cancel
                     </Button>
                     <Button
                         onClick={handleSaveAndPost}
                         disabled={isPending || !selectedPatient}
-                        className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 shadow-lg shadow-blue-500/20 px-6 py-5 rounded-full"
+                        className="bg-blue-600 hover:bg-blue-700 text-white flex items-center gap-2 shadow-lg shadow-blue-500/20 px-8 py-6 rounded-xl font-bold transition-all active:scale-95"
                     >
                         {isPending ? "Posting Ledger..." : "Save & Post to Accounts"}
                         <Save className="h-4 w-4" />
                     </Button>
                 </div>
             </header>
+
+            {/* Document Details Header */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2 block italic">Voucher Number</Label>
+                    <div className="font-mono font-bold text-slate-900 dark:text-white text-lg">
+                        {voucherNo}
+                    </div>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2 block italic">Voucher Date</Label>
+                    <Input
+                        type="date"
+                        value={voucherDate}
+                        onChange={(e) => setVoucherDate(e.target.value)}
+                        className="border-none p-0 h-auto text-lg font-bold focus-visible:ring-0 bg-transparent"
+                    />
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2 block italic">Payment Status</Label>
+                    <div className="flex items-center gap-2 text-orange-600 font-bold pt-1">
+                        <div className="h-2 w-2 rounded-full bg-orange-600 animate-pulse" />
+                        AWAITING POSTING
+                    </div>
+                </div>
+                <div className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <Label className="text-[10px] font-black uppercase text-slate-400 tracking-wider mb-2 block italic">Authorized By</Label>
+                    <div className="font-bold text-slate-900 dark:text-white pt-1 flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px]">AD</div>
+                        Reception Desk
+                    </div>
+                </div>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 space-y-6">
