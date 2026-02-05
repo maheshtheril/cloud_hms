@@ -1363,7 +1363,6 @@ model hms_invoice {
   total                   Decimal                   @default(0) @db.Decimal(18, 2)
   total_paid              Decimal                   @default(0) @db.Decimal(18, 2)
   status                  String                    @default("draft")
-  line_items              Json[]                    @default([])
   billing_metadata        Json?                     @default("{}")
   locked                  Boolean                   @default(false)
   created_by              String?                   @db.Uuid

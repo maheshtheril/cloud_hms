@@ -378,7 +378,6 @@ export async function createInvoice(data: {
                     status: status as any,
                     outstanding_amount: outstandingCalc,
                     outstanding: outstandingCalc,
-                    line_items: [],
                     billing_metadata: data.billing_metadata || {},
                     patient_id: resolvedPatientId,
                     appointment_id: isUUID(data.appointment_id) ? data.appointment_id : null,
