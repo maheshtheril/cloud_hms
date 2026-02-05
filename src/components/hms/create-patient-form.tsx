@@ -35,7 +35,7 @@ export function CreatePatientForm({
     registrationProductName: propName = 'Patient Registration Fee',
     registrationProductDescription: propDesc = 'Standard Service',
     appName = 'Health Registry',
-    hideBilling = false
+    hideBilling = true
 }: CreatePatientFormProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -48,9 +48,7 @@ export function CreatePatientForm({
     const [savedPatient, setSavedPatient] = useState<any>(null);
     const [showIDCard, setShowIDCard] = useState(false);
     const [printIDCard, setPrintIDCard] = useState(false);
-    const [invoiceData, setInvoiceData] = useState<any>(null); // For Payment Popup
-    const [paymentMethod, setPaymentMethod] = useState('cash'); // cash, card, upi
-    const [isPaymentProcessing, setIsPaymentProcessing] = useState(false);
+
 
     // Dynamic Settings State
     const [registrationFee, setRegistrationFee] = useState(propFee ?? 100);
@@ -272,34 +270,7 @@ export function CreatePatientForm({
                             setMessage({ type: 'error', text: (res as any).error });
                         } else {
                             const patient = (res as any).data;
-                            const invoice = (res as any).invoice;
-
-                            // LOGIC BRANCH 1: BILLING REQUESTED
-                            if (chargeRegistration && !waiveFee) {
-                                if (invoice) {
-                                    // Success: Invoice Created
-                                    setMessage({ type: 'success', text: "Registration Saved. Please collect payment." });
-
-                                    // SHOW PAYMENT POPUP (Overlay)
-                                    setSavedPatient(patient);
-                                    setInvoiceData(invoice);
-
-                                    if (onSuccess) onSuccess(patient);
-                                    return;
-                                } else {
-                                    // Failure: Invoice NOT Created
-                                    console.error("Automatic billing failed:", (res as any).warning);
-                                    setMessage({ type: 'error', text: `Invoice Failed: ${(res as any).warning || "Please create bill manually."}` });
-
-                                    setSavedPatient(patient);
-                                    if (printIDCard) {
-                                        setShowIDCard(true);
-                                    }
-                                    return;
-                                }
-                            }
-
-                            // LOGIC BRANCH 2: FREE / UPDATE (No Billing)
+                            // Success BRANCH: Just Save & Close/Print ID
                             setSavedPatient(patient);
                             if (onSuccess) onSuccess(patient);
                             else {
@@ -308,8 +279,8 @@ export function CreatePatientForm({
                                 // REDIRECTION LOGIC: returnPath (from Billing) vs Default
                                 if (returnPath) {
                                     setTimeout(() => {
-                                        const finalUrl = `${returnPath}${returnPath.includes('?') ? '&' : '?'}patientId=${patient.id}${autoSelect ? '&autoSelect=true' : ''}`;
-                                        router.push(finalUrl);
+                                        const targetPath = `${returnPath}${returnPath.includes('?') ? '&' : '?'}patientId=${patient.id}${autoSelect ? '&autoSelect=true' : ''}`;
+                                        router.push(targetPath);
                                     }, 1000);
                                     return;
                                 }
@@ -318,7 +289,7 @@ export function CreatePatientForm({
                                 if (printIDCard) {
                                     setShowIDCard(true);
                                 } else {
-                                    // If we are not printing ID card and not billing, just close/redirect after a moment
+                                    // If we are not printing ID card, just close/redirect after a moment
                                     setTimeout(() => {
                                         router.push('/hms/patients');
                                     }, 1000);
@@ -575,15 +546,10 @@ export function CreatePatientForm({
                             >
                                 {isPending ? (
                                     <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                ) : (hideBilling ? <CheckCircle2 className="h-4 w-4" /> : (chargeRegistration && !waiveFee ? <Printer className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />))}
-                                {
-                                    hideBilling ? 'Save' :
-                                        (chargeRegistration && !waiveFee ? 'Save & Print Invoice' :
-                                            (initialData ? 'Update Profile' :
-                                                (printIDCard ? 'Save & Print ID' : 'Save')
-                                            )
-                                        )
-                                }
+                                ) : (
+                                    <CheckCircle2 className="h-4 w-4" />
+                                )}
+                                {initialData ? 'Update Profile' : 'Save Patient'}
                             </button>
                         </div>
                     </div>
@@ -630,135 +596,7 @@ export function CreatePatientForm({
                     </div>
                 )
             }
-            {/* PAYMENT POPUP OVERLAY */}
-            {invoiceData && (
-                <div className="absolute inset-0 z-[100] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-lg p-6 rounded-3xl shadow-2xl border border-white/20 animate-in zoom-in-95 flex flex-col gap-6">
 
-                        {/* Header */}
-                        <div className="text-center">
-                            <div className="h-16 w-16 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center mx-auto mb-4 text-emerald-600 dark:text-emerald-400">
-                                <Banknote className="h-8 w-8" />
-                            </div>
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white">Collect Payment</h3>
-                            <p className="text-sm font-medium text-slate-500">Registration Fee for {savedPatient?.first_name}</p>
-                        </div>
-
-                        {/* Amount Display */}
-                        <div className="bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl flex flex-col items-center justify-center border border-slate-100 dark:border-slate-700">
-                            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Total Amount Due</span>
-                            <div className="text-5xl font-black text-slate-900 dark:text-white tracking-tight">
-                                ₹{Number(invoiceData.total || registrationFee).toFixed(0)}
-                            </div>
-                        </div>
-
-                        {/* Payment Methods */}
-                        <div className="grid grid-cols-3 gap-3">
-                            <button
-                                type="button"
-                                onClick={() => setPaymentMethod('cash')}
-                                className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${paymentMethod === 'cash' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-100 hover:border-slate-200 text-slate-500'}`}
-                            >
-                                <Banknote className="h-5 w-5" />
-                                <span className="text-[10px] font-black uppercase">Cash</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setPaymentMethod('upi')}
-                                className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${paymentMethod === 'upi' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-100 hover:border-slate-200 text-slate-500'}`}
-                            >
-                                <Smartphone className="h-5 w-5" />
-                                <span className="text-[10px] font-black uppercase">UPI / Scan</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setPaymentMethod('card')}
-                                className={`flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all ${paymentMethod === 'card' ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-100 hover:border-slate-200 text-slate-500'}`}
-                            >
-                                <CreditCard className="h-5 w-5" />
-                                <span className="text-[10px] font-black uppercase">Card</span>
-                            </button>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex flex-col gap-3 mt-2">
-                            <button
-                                type="button"
-                                disabled={isPaymentProcessing}
-                                onClick={async () => {
-                                    setIsPaymentProcessing(true);
-                                    try {
-                                        // 1. Record Payment
-                                        const res = await recordPayment(invoiceData.id, {
-                                            amount: Number(invoiceData.total || registrationFee),
-                                            method: paymentMethod,
-                                            reference: 'Quick-Pay-Popup'
-                                        });
-
-                                        if (res.success) {
-                                            // 2. Open Print Window
-                                            window.open(`/hms/billing/${invoiceData.id}/print`, '_blank');
-
-                                            // 3. Close & Reset
-                                            setInvoiceData(null);
-                                            // Show ID card if requested, otherwise redirect
-                                            if (printIDCard) setShowIDCard(true);
-                                            else if (returnPath) {
-                                                const finalUrl = `${returnPath}${returnPath.includes('?') ? '&' : '?'}patientId=${savedPatient.id}${autoSelect ? '&autoSelect=true' : ''}`;
-                                                router.push(finalUrl);
-                                            }
-                                            else router.push('/hms/patients');
-                                        } else {
-                                            alert("Payment Failed: " + res.error);
-                                        }
-                                    } catch (e) {
-                                        console.error(e);
-                                        alert("Payment Error");
-                                    } finally {
-                                        setIsPaymentProcessing(false);
-                                    }
-                                }}
-                                className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black text-sm uppercase tracking-widest shadow-lg shadow-emerald-200 transition-all active:scale-95 flex items-center justify-center gap-2"
-                            >
-                                {isPaymentProcessing ? (
-                                    <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                ) : (
-                                    <>
-                                        <CheckCircle2 className="h-5 w-5" />
-                                        Confirm Payment & Print
-                                    </>
-                                )}
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    // Skip Payment - Just Print Invoice
-                                    if (invoiceData?.id) {
-                                        window.open(`/hms/billing/${invoiceData.id}/print`, '_blank');
-                                    }
-                                    setInvoiceData(null);
-
-                                    if (printIDCard) {
-                                        setShowIDCard(true);
-                                    } else if (returnPath) {
-                                        const finalUrl = `${returnPath}${returnPath.includes('?') ? '&' : '?'}patientId=${savedPatient.id}${autoSelect ? '&autoSelect=true' : ''}`;
-                                        router.push(finalUrl);
-                                    } else if (onSuccess) {
-                                        onSuccess(savedPatient); // For modal usage
-                                    } else {
-                                        router.push('/hms/patients');
-                                    }
-                                }}
-                                className="w-full py-3 bg-white border border-slate-200 text-slate-500 hover:text-slate-900 rounded-xl font-bold text-xs uppercase tracking-wide hover:bg-slate-50 transition-all"
-                            >
-                                Skip Payment (Bill Later)
-                            </button>
-                        </div>
-
-                    </div>
-                </div>
-            )}
         </div >
     );
 }

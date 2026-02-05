@@ -164,55 +164,10 @@ export async function createPatientV10(patientId: string | null | any, formData:
                 });
             }
 
-            // D. FINANCIAL CLEARANCE (INVOICE GENERATION)
-            let invoiceSummary = null;
-            if (chargeRegistration && feeProduct) {
-                const invoiceId = crypto.randomUUID();
-                const invNo = `REG-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-                const amount = Number(feeProduct.price) || feeAmountOverride || 0;
-
-                console.log(`[RCM] Posting Charge Capture for Patient ${patient.id} | Amount: ${amount}`);
-
-                // ATOMIC FINANCIAL INJECTION (Hyper-Defensive Raw SQL)
-                await tx.$executeRaw`
-                    INSERT INTO hms_invoice (
-                        id, tenant_id, company_id, patient_id, 
-                        invoice_number, invoice_no, status, 
-                        invoice_date, issued_at, currency, currency_rate, 
-                        subtotal, total, total_tax, total_discount, total_paid, 
-                        outstanding, outstanding_amount, billing_metadata, 
-                        locked, created_by, created_at, updated_at
-                    ) VALUES (
-                        ${invoiceId}::uuid, ${tenantId}::uuid, ${companyId}::uuid, ${patient.id}::uuid,
-                        ${invNo}, ${invNo}, 'draft',
-                        ${registrationDate}::date, ${registrationDate}, 'INR', 1.0,
-                        ${amount}, ${amount}, 0, 0, 0,
-                        ${amount}, ${amount}, '{}'::jsonb, 
-                        false, ${userId}::uuid, now(), now()
-                    )
-                `;
-
-                const lineId = crypto.randomUUID();
-                await tx.$executeRaw`
-                    INSERT INTO hms_invoice_lines (
-                        id, tenant_id, company_id, invoice_id, product_id,
-                        description, quantity, unit_price, subtotal, net_amount, 
-                        discount_amount, tax_amount, line_idx, created_at, metadata
-                    ) VALUES (
-                        ${lineId}::uuid, ${tenantId}::uuid, ${companyId}::uuid, ${invoiceId}::uuid, ${feeProduct.id}::uuid,
-                        ${feeProduct.name}, 1, ${amount}, ${amount}, ${amount},
-                        0, 0, 1, now(), '{}'::jsonb
-                    )
-                `;
-
-                invoiceSummary = { id: invoiceId, number: invNo, total: amount };
-            }
-
             return {
                 success: true,
-                message: isUpdate ? "Master Patient Index Updated." : "New Patient Registered & Financial Record Opened.",
-                data: patient,
-                invoice: invoiceSummary
+                message: isUpdate ? "Master Patient Index Updated." : "New Patient Registered.",
+                data: patient
             };
         });
 
