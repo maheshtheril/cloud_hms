@@ -29,44 +29,34 @@ export async function consumeStock(data: ConsumeStockData) {
 
     try {
         // 1. Find Location (Robust Lookup)
-        // 1. Find Location (Robust Lookup with explicit type casting)
-        const locations: any[] = await prisma.$queryRaw`
-            SELECT id, tenant_id, company_id, name, code, location_type 
-            FROM hms_stock_location 
-            WHERE company_id = ${companyId}::uuid
-            AND (code = 'WH-MAIN' OR location_type = 'warehouse'::hms_location_type)
-            LIMIT 1
-        `;
-
-        let location = locations[0];
+        let location = await prisma.hms_stock_location.findFirst({
+            where: {
+                company_id: companyId,
+                OR: [
+                    { code: 'WH-MAIN' },
+                    { location_type: hms_location_type.warehouse }
+                ]
+            }
+        })
 
         // Fallback: Find ANY location
         if (!location) {
-            const anyLoc: any[] = await prisma.$queryRaw`
-                SELECT id, tenant_id, company_id, name, code, location_type 
-                FROM hms_stock_location 
-                WHERE company_id = ${companyId}::uuid
-                LIMIT 1
-            `;
-            location = anyLoc[0];
+            location = await prisma.hms_stock_location.findFirst({
+                where: { company_id: companyId }
+            })
         }
 
         // Final Fallback: Create Default Location
         if (!location) {
-            const createdArr: any[] = await prisma.$queryRaw`
-                INSERT INTO hms_stock_location (
-                    id, tenant_id, company_id, name, code, location_type
-                ) VALUES (
-                    gen_random_uuid(),
-                    ${tenantId}::uuid,
-                    ${companyId}::uuid,
-                    'Main Warehouse',
-                    'WH-MAIN',
-                    'warehouse'::hms_location_type
-                )
-                RETURNING *
-            `;
-            location = createdArr[0];
+            location = await prisma.hms_stock_location.create({
+                data: {
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    name: 'Main Warehouse',
+                    code: 'WH-MAIN',
+                    location_type: hms_location_type.warehouse
+                }
+            })
         }
 
         const locationId = location.id
@@ -186,44 +176,34 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
 
     try {
         // 1. Find Location (Robust Lookup)
-        // 1. Find Location (Robust Lookup with explicit type casting)
-        const locations: any[] = await prisma.$queryRaw`
-            SELECT id, tenant_id, company_id, name, code, location_type 
-            FROM hms_stock_location 
-            WHERE company_id = ${companyId}::uuid
-            AND (code = 'WH-MAIN' OR location_type = 'warehouse'::hms_location_type)
-            LIMIT 1
-        `;
-
-        let location = locations[0];
+        let location = await prisma.hms_stock_location.findFirst({
+            where: {
+                company_id: companyId,
+                OR: [
+                    { code: 'WH-MAIN' },
+                    { location_type: hms_location_type.warehouse }
+                ]
+            }
+        })
 
         // Fallback: Find ANY location
         if (!location) {
-            const anyLoc: any[] = await prisma.$queryRaw`
-                SELECT id, tenant_id, company_id, name, code, location_type 
-                FROM hms_stock_location 
-                WHERE company_id = ${companyId}::uuid
-                LIMIT 1
-            `;
-            location = anyLoc[0];
+            location = await prisma.hms_stock_location.findFirst({
+                where: { company_id: companyId }
+            })
         }
 
         // Final Fallback: Create Default Location
         if (!location) {
-            const createdArr: any[] = await prisma.$queryRaw`
-                INSERT INTO hms_stock_location (
-                    id, tenant_id, company_id, name, code, location_type
-                ) VALUES (
-                    gen_random_uuid(),
-                    ${tenantId}::uuid,
-                    ${companyId}::uuid,
-                    'Main Warehouse',
-                    'WH-MAIN',
-                    'warehouse'::hms_location_type
-                )
-                RETURNING *
-            `;
-            location = createdArr[0];
+            location = await prisma.hms_stock_location.create({
+                data: {
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    name: 'Main Warehouse',
+                    code: 'WH-MAIN',
+                    location_type: hms_location_type.warehouse
+                }
+            })
         }
 
         const locationId = location.id
