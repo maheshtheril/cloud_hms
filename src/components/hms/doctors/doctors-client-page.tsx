@@ -92,7 +92,7 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                             <div className="h-12 w-12 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
                                 <Users className="h-6 w-6 text-white" />
                             </div>
-                            <div className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-semibold rounded-md">
+                            <div className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[9px] font-medium rounded">
                                 Enterprise
                             </div>
                         </div>
@@ -105,7 +105,7 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                             <div className="h-12 w-12 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
                                 <TrendingUp className="h-6 w-6 text-white" />
                             </div>
-                            <div className="px-2 py-0.5 bg-green-50 text-green-600 text-[10px] font-semibold rounded-md">
+                            <div className="px-1.5 py-0.5 bg-green-50 text-green-600 text-[9px] font-medium rounded">
                                 Operational
                             </div>
                         </div>
@@ -118,7 +118,7 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                             <div className="h-12 w-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
                                 <Award className="h-6 w-6 text-white" />
                             </div>
-                            <div className="px-2 py-0.5 bg-purple-50 text-purple-600 text-[10px] font-semibold rounded-md">
+                            <div className="px-1.5 py-0.5 bg-purple-50 text-purple-600 text-[9px] font-medium rounded">
                                 Divisions
                             </div>
                         </div>
@@ -165,14 +165,14 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                             >
                                 {/* Status Badge */}
                                 <div className="flex items-center justify-between mb-4">
-                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ${doc.is_active
-                                        ? 'bg-green-50 text-green-700'
-                                        : 'bg-red-50 text-red-700'
+                                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${doc.is_active
+                                        ? 'bg-green-50 text-green-600'
+                                        : 'bg-red-50 text-red-600'
                                         }`}>
-                                        {doc.is_active ? '✓ Active' : '✗ Inactive'}
+                                        {doc.is_active ? '● Active' : '○ Inactive'}
                                     </span>
                                     {doc.hms_specializations && (
-                                        <span className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md text-[10px] font-semibold">
+                                        <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-medium">
                                             {doc.hms_specializations.name}
                                         </span>
                                     )}
