@@ -123,37 +123,23 @@ export async function consumeStock(data: ConsumeStockData) {
                 )
             `;
 
-            // D. Decrement Stock Levels
-            const level = await tx.hms_stock_levels.findFirst({
-                where: {
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    product_id: data.productId,
-                    location_id: locationId
-                }
-            })
-
-            if (level) {
-                await tx.hms_stock_levels.update({
-                    where: { id: level.id },
-                    data: {
-                        quantity: { decrement: data.quantity },
-                        updated_at: new Date()
-                    }
-                })
-            } else {
-                // Allow negative stock
-                await tx.hms_stock_levels.create({
-                    data: {
-                        tenant_id: tenantId,
-                        company_id: companyId,
-                        product_id: data.productId,
-                        location_id: locationId,
-                        quantity: -data.quantity,
-                        reserved: 0
-                    }
-                })
-            }
+            // D. Update/Create Stock Levels (UPSERT)
+            await tx.$executeRaw`
+                INSERT INTO hms_stock_levels (
+                    tenant_id, company_id, product_id, location_id, quantity, updated_at
+                ) VALUES (
+                    CAST(${tenantId} AS uuid),
+                    CAST(${companyId} AS uuid),
+                    CAST(${data.productId} AS uuid),
+                    CAST(${locationId} AS uuid),
+                    CAST(${-data.quantity} AS numeric),
+                    NOW()
+                )
+                ON CONFLICT (tenant_id, company_id, product_id, COALESCE(batch_id, '00000000-0000-0000-0000-000000000000'), location_id) 
+                DO UPDATE SET 
+                    quantity = hms_stock_levels.quantity - CAST(${data.quantity} AS numeric),
+                    updated_at = NOW()
+            `;
         })
 
         revalidatePath('/hms/nursing/dashboard')
@@ -303,36 +289,23 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                     )
                 `;
 
-                // Update Stock Levels
-                const level = await tx.hms_stock_levels.findFirst({
-                    where: {
-                        tenant_id: tenantId,
-                        company_id: companyId,
-                        product_id: item.productId,
-                        location_id: locationId
-                    }
-                })
-
-                if (level) {
-                    await tx.hms_stock_levels.update({
-                        where: { id: level.id },
-                        data: {
-                            quantity: { decrement: item.quantity },
-                            updated_at: new Date()
-                        }
-                    })
-                } else {
-                    await tx.hms_stock_levels.create({
-                        data: {
-                            tenant_id: tenantId,
-                            company_id: companyId,
-                            product_id: item.productId,
-                            location_id: locationId,
-                            quantity: -item.quantity,
-                            reserved: 0
-                        }
-                    })
-                }
+                // Update/Create Stock Levels (UPSERT)
+                await tx.$executeRaw`
+                    INSERT INTO hms_stock_levels (
+                        tenant_id, company_id, product_id, location_id, quantity, updated_at
+                    ) VALUES (
+                        CAST(${tenantId} AS uuid),
+                        CAST(${companyId} AS uuid),
+                        CAST(${item.productId} AS uuid),
+                        CAST(${locationId} AS uuid),
+                        CAST(${-item.quantity} AS numeric),
+                        NOW()
+                    )
+                    ON CONFLICT (tenant_id, company_id, product_id, COALESCE(batch_id, '00000000-0000-0000-0000-000000000000'), location_id) 
+                    DO UPDATE SET 
+                        quantity = hms_stock_levels.quantity - CAST(${item.quantity} AS numeric),
+                        updated_at = NOW()
+                `;
             }
 
             // ---------------------------------------------------------
