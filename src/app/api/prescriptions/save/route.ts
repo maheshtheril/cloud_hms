@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import crypto from 'crypto'
 
 export async function POST(request: NextRequest) {
     try {
@@ -102,46 +103,76 @@ export async function POST(request: NextRequest) {
             }
 
             // 3. Create new prescription
-            const pr = await (tx.prescription as any).create({
-                data: {
-                    tenant_id: session.user.tenantId,
-                    company_id: userCompanyId || null,
-                    patient_id: patientId,
-                    appointment_id: appointmentId || null,
-                    vitals: vitals || '',
-                    diagnosis: diagnosis || '',
-                    complaint: complaint || '',
-                    examination: examination || '',
-                    plan: plan || '',
-                    prescription_items: {
-                        create: resolvedMedicines.map((med: any) => {
-                            const dosageParts = (med.dosage || '0-0-0').split('-').map((n: string) => parseInt(n) || 0)
-                            return {
-                                medicine_id: med.resolvedId,
-                                morning: dosageParts[0] || 0,
-                                afternoon: dosageParts[1] || 0,
-                                evening: dosageParts[2] || 0,
-                                night: dosageParts[3] || 0,
-                                days: parseInt(med.days) || 3
-                            }
-                        })
-                    }
-                },
-                include: {
-                    prescription_items: {
-                        include: {
-                            hms_product: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    sku: true,
-                                    price: true
-                                }
-                            }
-                        }
-                    }
-                }
-            })
+            // 3. Create new prescription using Raw SQL
+            const pId = crypto.randomUUID();
+            await tx.$executeRaw`
+                INSERT INTO prescription (
+                    id, tenant_id, company_id, patient_id, appointment_id,
+                    vitals, diagnosis, complaint, examination, plan,
+                    visit_date, created_at, updated_at, doctor_id
+                ) VALUES (
+                    CAST(${pId} AS uuid),
+                    CAST(${session.user.tenantId} AS uuid),
+                    CAST(${userCompanyId || null} AS uuid),
+                    CAST(${patientId} AS uuid),
+                    CAST(${appointmentId || null} AS uuid),
+                    ${vitals || ''},
+                    ${diagnosis || ''},
+                    ${complaint || ''},
+                    ${examination || ''},
+                    ${plan || ''},
+                    NOW(), NOW(), NOW(),
+                    CAST(${session.user.id || null} AS uuid)
+                )
+            `;
+
+            // 3.1 Create Prescription Items
+            for (const med of resolvedMedicines) {
+                const dosageParts = (med.dosage || '0-0-0').split('-').map((n: string) => parseInt(n) || 0)
+                await tx.$executeRaw`
+                    INSERT INTO prescription_items (
+                        id, prescription_id, medicine_id, 
+                        morning, afternoon, evening, night, days, created_at
+                    ) VALUES (
+                        gen_random_uuid(),
+                        CAST(${pId} AS uuid),
+                        CAST(${med.resolvedId} AS uuid),
+                        ${dosageParts[0] || 0},
+                        ${dosageParts[1] || 0},
+                        ${dosageParts[2] || 0},
+                        ${dosageParts[3] || 0},
+                        ${parseInt(med.days) || 3},
+                        NOW()
+                    )
+                `;
+            }
+
+            // Fetch created prescription for return (mimic original behavior)
+            const prArr: any[] = await tx.$queryRaw`
+                SELECT p.*, 
+                    JSON_AGG(JSON_BUILD_OBJECT(
+                        'id', pi.id,
+                        'medicine_id', pi.medicine_id,
+                        'morning', pi.morning,
+                        'afternoon', pi.afternoon,
+                        'evening', pi.evening,
+                        'night', pi.night,
+                        'days', pi.days,
+                        'hms_product', JSON_BUILD_OBJECT(
+                            'id', prod.id,
+                            'name', prod.name,
+                            'sku', prod.sku,
+                            'price', prod.price
+                        )
+                    )) as prescription_items
+                FROM prescription p
+                JOIN prescription_items pi ON p.id = pi.prescription_id
+                JOIN hms_product prod ON pi.medicine_id = prod.id
+                WHERE p.id::text = CAST(${pId} AS text)
+                GROUP BY p.id
+            `;
+            const pr = prArr[0];
+
 
             // 4. Handle Lab Orders
             if (labTests && labTests.length > 0) {
@@ -211,38 +242,53 @@ export async function POST(request: NextRequest) {
                 }
 
                 if (resolvedLabTests.length > 0) {
-                    const labOrder = await tx.hms_lab_order.create({
-                        data: {
-                            tenant_id: session.user.tenantId,
-                            company_id: finalCompanyId,
-                            patient_id: patientId,
-                            encounter_id: appointmentId || null,
-                            status: 'requested',
-                            order_number: `LAB-${Date.now()}`,
-                            hms_lab_order_line: {
-                                create: resolvedLabTests.map((test: any) => ({
-                                    tenant_id: session.user.tenantId,
-                                    company_id: finalCompanyId, // use validated companyId
-                                    test_id: test.resolvedId,
-                                    status: 'pending',
-                                    price: test.price || 0
-                                }))
-                            }
-                        }
-                    })
+                    const labOrderId = crypto.randomUUID();
+                    const orderNumber = `LAB-${Date.now()}`;
+
+                    await tx.$executeRaw`
+                        INSERT INTO hms_lab_order (
+                            id, tenant_id, company_id, patient_id, encounter_id, 
+                            status, order_number, ordered_at, created_at
+                        ) VALUES (
+                            CAST(${labOrderId} AS uuid),
+                            CAST(${session.user.tenantId} AS uuid),
+                            CAST(${finalCompanyId} AS uuid),
+                            CAST(${patientId} AS uuid),
+                            CAST(${appointmentId || null} AS uuid),
+                            'requested',
+                            ${orderNumber},
+                            NOW(), NOW()
+                        )
+                    `;
+
+                    for (const test of resolvedLabTests) {
+                        await tx.$executeRaw`
+                            INSERT INTO hms_lab_order_line (
+                                id, tenant_id, company_id, order_id, test_id, status, price, created_at
+                            ) VALUES (
+                                gen_random_uuid(),
+                                CAST(${session.user.tenantId} AS uuid),
+                                CAST(${finalCompanyId} AS uuid),
+                                CAST(${labOrderId} AS uuid),
+                                CAST(${test.resolvedId} AS uuid),
+                                'pending',
+                                ${test.price || 0},
+                                NOW()
+                            )
+                        `;
+                    }
                 }
             }
 
             // 5. Automate Patient Flow: Mark appointment status
             if (appointmentId) {
                 const targetStatus = (labTests && labTests.length > 0) ? 'in_progress' : 'completed';
-                await tx.hms_appointments.update({
-                    where: { id: appointmentId },
-                    data: {
-                        status: targetStatus,
-                        updated_at: new Date()
-                    }
-                })
+                await tx.$executeRaw`
+                    UPDATE hms_appointments 
+                    SET status = ${targetStatus},
+                        updated_at = NOW()
+                    WHERE id::text = CAST(${appointmentId} AS text)
+                `;
 
                 // Use Next.js revalidation to update all dashboards
                 const { revalidatePath } = await import('next/cache')
