@@ -531,7 +531,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   }
 
   return (
-    <div className={`fixed inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-md transition-all ${isMaximized ? 'p-0' : 'p-4'}`} onClick={() => onClose ? onClose() : router.back()}>
+    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md transition-all ${isMaximized ? 'p-0' : 'p-4'}`} onClick={() => onClose ? onClose() : router.back()}>
       {/* Global Sync Overlay */}
       {loading && (
         <div className="absolute inset-0 z-[200] bg-slate-900/40 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
@@ -898,7 +898,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             onInteractOutside={(e) => e.preventDefault()}
             onPointerDownOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
-            className="max-w-4xl p-0 overflow-hidden bg-white dark:bg-[#0a0f1e] border-none shadow-[0_60px_200px_rgba(0,0,0,0.2)] dark:shadow-[0_60px_200px_rgba(0,0,0,1)] rounded-[3rem] ring-1 ring-slate-200 dark:ring-white/10 z-[50]"
+            className="max-w-4xl p-0 overflow-hidden bg-white dark:bg-[#0a0f1e] border-none shadow-[0_60px_200px_rgba(0,0,0,0.2)] dark:shadow-[0_60px_200px_rgba(0,0,0,1)] rounded-[3rem] ring-1 ring-slate-200 dark:ring-white/10"
           >
             <div className="flex flex-col md:flex-row min-h-[500px]">
               {/* COLUMN 1: Audit & Reconciliation (Left) */}
@@ -1219,7 +1219,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
         {/* CRITICAL ERROR DIALOG */}
         <Dialog open={isErrorDialogOpen} onOpenChange={setIsErrorDialogOpen}>
-          <DialogContent className="sm:max-w-lg bg-white dark:bg-slate-900 rounded-[2rem] border-none p-0 overflow-hidden shadow-[0_50px_100px_rgba(255,0,0,0.5)] z-[9999] relative">
+          <DialogContent className="sm:max-w-lg bg-white dark:bg-slate-900 rounded-[2rem] border-none p-0 overflow-hidden shadow-[0_50px_100px_rgba(255,0,0,0.5)]">
             <div className="bg-rose-600 p-8 flex items-center gap-4">
               <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
                 <AlertTriangle className="h-8 w-8 text-white" />
