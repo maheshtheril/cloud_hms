@@ -65,19 +65,21 @@ export async function POST(request: NextRequest) {
                     if (existingProduct) {
                         mId = existingProduct.id;
                     } else {
-                        const newProduct = await tx.hms_product.create({
-                            data: {
-                                tenant_id: session.user.tenantId,
-                                company_id: targetCompanyId,
-                                sku: `MED-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-                                name: med.name,
-                                is_active: true,
-                                is_stockable: true,
-                                price: 0,
-                                uom: 'Unit'
-                            }
-                        });
-                        mId = newProduct.id;
+                        const pId = crypto.randomUUID();
+                        await tx.$executeRaw`
+                            INSERT INTO hms_product (
+                                id, tenant_id, company_id, sku, name, 
+                                is_active, is_stockable, price, uom, currency, valuation_method, created_at
+                            ) VALUES (
+                                CAST(${pId} AS uuid),
+                                CAST(${session.user.tenantId} AS uuid),
+                                CAST(${targetCompanyId} AS uuid),
+                                ${`MED-${Date.now()}-${Math.floor(Math.random() * 1000)}`},
+                                ${med.name},
+                                true, true, 0, 'Unit', 'INR', 'fifo', NOW()
+                            )
+                        `;
+                        mId = pId;
                     }
                 }
                 if (!mId || mId === '' || mId === 'undefined') {
@@ -209,15 +211,20 @@ export async function POST(request: NextRequest) {
                         tId = existingTest.id;
                     } else {
                         // Create new Lab Test
-                        const newTest = await tx.hms_lab_test.create({
-                            data: {
-                                tenant_id: session.user.tenantId,
-                                company_id: userCompanyId || (await tx.company.findFirst({ where: { tenant_id: session.user.tenantId } }))?.id || null,
-                                name: testName,
-                                code: `LAB-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-                            }
-                        });
-                        tId = newTest.id;
+                        const labTestId = crypto.randomUUID();
+                        await tx.$executeRaw`
+                            INSERT INTO hms_lab_test (
+                                id, tenant_id, company_id, name, code, created_at
+                            ) VALUES (
+                                CAST(${labTestId} AS uuid),
+                                CAST(${session.user.tenantId} AS uuid),
+                                CAST(${userCompanyId || (await tx.$queryRaw`SELECT id FROM company WHERE tenant_id::text = CAST(${session.user.tenantId} AS text) LIMIT 1` as any)[0]?.id || null} AS uuid),
+                                ${testName},
+                                ${`LAB-${Date.now()}-${Math.floor(Math.random() * 1000)}`},
+                                NOW()
+                            )
+                        `;
+                        tId = labTestId;
                     }
 
                     resolvedLabTests.push({ ...test, resolvedId: tId });
