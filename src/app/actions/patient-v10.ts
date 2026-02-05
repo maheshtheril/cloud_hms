@@ -225,7 +225,7 @@ export async function createPatientV10(patientId: string | null | any, formData:
         };
         console.error("CRITICAL_RCM_FAILURE:", JSON.stringify(errorDetail, null, 2));
         return {
-            error: `HMS_CORE_EXCEPTION: ${err.message} (Code: ${err.code || 'N/A'})`,
+            error: `[RCM-FATAL] HMS_CORE_EXCEPTION: ${err.message} (Code: ${err.code || 'N/A'})`,
             details: JSON.stringify(errorDetail)
         };
     }
