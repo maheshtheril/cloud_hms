@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import {
   Plus, Trash2, Search, Save, User, DollarSign, Receipt, X,
   Loader2, CreditCard, Banknote, Smartphone, Maximize2,
-  Minimize2, Check, QrCode, Clock, ArrowRight, Activity, Package, Landmark
+  Minimize2, Check, QrCode, Clock, ArrowRight, Activity, Package, Landmark,
+  Copy, AlertTriangle
 } from 'lucide-react'
 import { createInvoice, updateInvoice, cancelInvoice, createQuickPatient, getPatientOutstandingBalance, getPatientLedger, getNextVoucherNumber } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
@@ -73,6 +74,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [provisionalNo, setProvisionalNo] = useState<string>("...")
   const amountInputRef = useRef<HTMLInputElement>(null)
   const finalizeButtonRef = useRef<HTMLButtonElement>(null)
+  const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false)
+  const [errorDetails, setErrorDetails] = useState({ title: '', message: '' })
 
   // Focus management for modal
   useEffect(() => {
@@ -379,10 +382,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         const errorMsg = res.error || "The server rejected the transaction. Please check your data and retry.";
         console.error("Sync Interrupted:", errorMsg);
 
-        // CRITICAL DEBUG: Forced alert to capture error data
-        if (typeof window !== 'undefined') {
-          alert(`CRITICAL SAVE FAILURE: ${errorMsg}\n\nPlease screenshot this or copy this text.`);
-        }
+        setErrorDetails({ title: 'Critical Save Failure', message: errorMsg });
+        setIsErrorDialogOpen(true);
 
         toast({
           title: "Sync Interrupted",
@@ -395,9 +396,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
       const errorMsg = error.message || "A network or engine failure occurred.";
       console.error("Terminal Sync Error:", error);
 
-      if (typeof window !== 'undefined') {
-        alert(`NETWORK FAILURE: ${errorMsg}\n\nCheck your internet connection and verify if the server is alive.`);
-      }
+      setErrorDetails({ title: 'Network / Engine Failure', message: errorMsg });
+      setIsErrorDialogOpen(true);
 
       toast({
         title: "Network / Engine Failure",
@@ -1211,6 +1211,45 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               <Button onClick={() => setIsLedgerOpen(false)} variant="secondary" className="px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest py-6">
                 Close Audit Terminal
               </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* CRITICAL ERROR DIALOG */}
+        <Dialog open={isErrorDialogOpen} onOpenChange={setIsErrorDialogOpen}>
+          <DialogContent className="sm:max-w-lg bg-white dark:bg-slate-900 rounded-[2rem] border-none p-0 overflow-hidden shadow-[0_50px_100px_rgba(255,0,0,0.2)]">
+            <div className="bg-rose-600 p-8 flex items-center gap-4">
+              <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
+                <AlertTriangle className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-white italic tracking-tighter uppercase">{errorDetails.title}</h3>
+                <p className="text-[10px] font-black text-rose-100 uppercase tracking-widest">System Sync Failure</p>
+              </div>
+            </div>
+            <div className="p-10">
+              <div className="bg-slate-50 dark:bg-slate-950 p-6 rounded-2xl border border-slate-100 dark:border-white/5 mb-8">
+                <p className="text-sm font-mono font-medium text-slate-600 dark:text-slate-300 break-words select-text">
+                  {errorDetails.message}
+                </p>
+              </div>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(errorDetails.message);
+                    toast({ title: "Copied!", description: "Error message copied to clipboard." });
+                  }}
+                  className="flex-1 flex items-center justify-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all"
+                >
+                  <Copy className="h-4 w-4" /> Copy Error Code
+                </button>
+                <button
+                  onClick={() => setIsErrorDialogOpen(false)}
+                  className="px-8 bg-slate-100 dark:bg-slate-800 text-slate-500 h-14 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </DialogContent>
         </Dialog>

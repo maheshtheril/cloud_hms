@@ -780,6 +780,7 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
 
             await tx.hms_invoice_payments.create({
                 data: {
+                    id: crypto.randomUUID(),
                     tenant_id: session.user.tenantId,
                     company_id: companyId,
                     invoice_id: invoiceId,
