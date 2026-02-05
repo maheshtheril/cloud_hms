@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import { hms_invoice_status, hms_move_type, hms_location_type } from "@prisma/client"
+import crypto from 'crypto'
 
 export type ConsumeStockData = {
     productId: string
@@ -350,50 +351,57 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
             // 2. BILLING INTEGRATION (Create/Update Invoice)
             // ---------------------------------------------------------
 
-            // Find existing DRAFT invoice for this encounter
-            let invoice = await tx.hms_invoice.findFirst({
-                where: {
-                    company_id: companyId,
-                    appointment_id: data.encounterId,
-                    status: 'draft' as any
-                }
-            });
+            // Find existing DRAFT invoice for this encounter deeply with Raw SQL
+            const invoices: any[] = await tx.$queryRaw`
+                SELECT id::text FROM hms_invoice 
+                WHERE company_id::text = CAST(${companyId} AS text)
+                AND appointment_id::text = CAST(${data.encounterId} AS text)
+                AND status = 'draft'
+                LIMIT 1
+            `;
+
+            let invoiceId = invoices[0]?.id;
 
             // If no draft invoice exists, create one
-            if (!invoice) {
-                // Generate Invoice Number (Simplified logic for now, standard is handy)
+            if (!invoiceId) {
+                // Generate Invoice Number
                 const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, '');
                 const randomSuffix = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
                 const invoiceNumber = `INV-${dateStr}-${randomSuffix}`;
 
-                invoice = await tx.hms_invoice.create({
-                    data: {
-                        tenant_id: tenantId,
-                        company_id: companyId,
-                        patient_id: data.patientId,
-                        appointment_id: data.encounterId,
-                        invoice_number: invoiceNumber,
-                        invoice_date: new Date(),
-                        status: 'draft' as any,
-                        currency: 'INR',
-                        total: 0,
-                        subtotal: 0,
-                        total_tax: 0,
-                        outstanding_amount: 0,
-                        created_by: userId
-                    }
-                });
+                invoiceId = crypto.randomUUID();
+
+                await tx.$executeRaw`
+                    INSERT INTO hms_invoice (
+                        id, tenant_id, company_id, patient_id, appointment_id,
+                        invoice_number, invoice_no, invoice_date, issued_at,
+                        status, currency, total, subtotal, total_tax, 
+                        outstanding_amount, outstanding, created_by
+                    ) VALUES (
+                        CAST(${invoiceId} AS uuid),
+                        CAST(${tenantId} AS uuid),
+                        CAST(${companyId} AS uuid),
+                        CAST(${data.patientId} AS uuid),
+                        CAST(${data.encounterId} AS uuid),
+                        ${invoiceNumber},
+                        ${invoiceNumber},
+                        CURRENT_DATE,
+                        NOW(),
+                        'draft',
+                        'INR',
+                        0, 0, 0, 0, 0,
+                        CAST(${userId} AS uuid)
+                    )
+                `;
             }
 
             // Get current max line index
-            const maxLine = await tx.hms_invoice_lines.aggregate({
-                where: { invoice_id: invoice.id },
-                _max: { line_idx: true }
-            });
-            let nextLineIdx = (maxLine._max.line_idx || 0) + 1;
-
-            // Add new lines
-            let addedTotal = 0;
+            const lineIdxResult: any[] = await tx.$queryRaw`
+                SELECT COALESCE(MAX(line_idx), 0) as max_idx 
+                FROM hms_invoice_lines 
+                WHERE invoice_id::text = CAST(${invoiceId} AS text)
+            `;
+            let nextLineIdx = Number(lineIdxResult[0].max_idx) + 1;
 
             for (const item of data.items) {
                 const product = productMap.get(item.productId);
@@ -403,45 +411,49 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                 const price = product.hms_product_price_history?.[0]?.price?.toNumber() || Number(product.price) || 0;
                 const netAmount = price * item.quantity;
 
-                await tx.hms_invoice_lines.create({
-                    data: {
-                        tenant_id: tenantId,
-                        company_id: companyId,
-                        invoice_id: invoice.id,
-                        line_idx: nextLineIdx++,
-                        product_id: product.id,
-                        description: `(Nursing) ${product.name}`,
-                        quantity: item.quantity,
-                        unit_price: price,
-                        net_amount: netAmount,
-                        metadata: { source: 'nursing_consumption' }
-                    }
-                });
-
-                addedTotal += netAmount;
+                await tx.$executeRaw`
+                    INSERT INTO hms_invoice_lines (
+                        id, tenant_id, company_id, invoice_id, line_idx,
+                        product_id, description, quantity, unit_price, net_amount, metadata
+                    ) VALUES (
+                        gen_random_uuid(),
+                        CAST(${tenantId} AS uuid),
+                        CAST(${companyId} AS uuid),
+                        CAST(${invoiceId} AS uuid),
+                        ${nextLineIdx++},
+                        CAST(${product.id} AS uuid),
+                        ${`(Nursing) ${product.name}`},
+                        ${item.quantity},
+                        ${price},
+                        ${netAmount},
+                        ${JSON.stringify({ source: 'nursing_consumption' })}::jsonb
+                    )
+                `;
             }
 
             // Update Invoice Totals based on ALL lines (active aggregation for safety)
-            // We re-aggregate to ensure the invoice total strictly reflects all lines including previous ones.
-            const agg = await tx.hms_invoice_lines.aggregate({
-                where: { invoice_id: invoice.id },
-                _sum: { net_amount: true, tax_amount: true }
-            });
+            const agg: any[] = await tx.$queryRaw`
+                SELECT 
+                    SUM(net_amount) as subtotal,
+                    SUM(tax_amount) as total_tax
+                FROM hms_invoice_lines 
+                WHERE invoice_id::text = CAST(${invoiceId} AS text)
+            `;
 
-            const newSubtotal = Number(agg._sum.net_amount || 0);
-            const newTax = Number(agg._sum.tax_amount || 0);
-            const newTotal = newSubtotal + newTax; // Discount handled separately if needed, simplified here
+            const newSubtotal = Number(agg[0].subtotal || 0);
+            const newTax = Number(agg[0].total_tax || 0);
+            const newTotal = newSubtotal + newTax;
 
-            await tx.hms_invoice.update({
-                where: { id: invoice.id },
-                data: {
-                    subtotal: newSubtotal,
-                    total_tax: newTax,
-                    total: newTotal,
-                    outstanding_amount: newTotal, // Assuming no partial payments on draft yet
-                    updated_at: new Date()
-                }
-            });
+            await tx.$executeRaw`
+                UPDATE hms_invoice 
+                SET subtotal = ${newSubtotal},
+                    total_tax = ${newTax},
+                    total = ${newTotal},
+                    outstanding_amount = ${newTotal},
+                    outstanding = ${newTotal},
+                    updated_at = NOW()
+                WHERE id::text = CAST(${invoiceId} AS text)
+            `;
 
         })
 
