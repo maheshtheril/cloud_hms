@@ -7,7 +7,7 @@ import {
   Loader2, CreditCard, Banknote, Smartphone, Maximize2,
   Minimize2, Check, QrCode, Clock, ArrowRight, Activity, Package, Landmark
 } from 'lucide-react'
-import { createInvoice, updateInvoice, cancelInvoice, createQuickPatient, getPatientOutstandingBalance, getPatientLedger } from '@/app/actions/billing'
+import { createInvoice, updateInvoice, cancelInvoice, createQuickPatient, getPatientOutstandingBalance, getPatientLedger, getNextVoucherNumber } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { useToast } from '@/components/ui/use-toast'
 import { useSession } from 'next-auth/react'
@@ -70,6 +70,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [isLedgerOpen, setIsLedgerOpen] = useState(false)
   const [ledgerData, setLedgerData] = useState<any[]>([])
   const [isFetchingLedger, setIsFetchingLedger] = useState(false)
+  const [provisionalNo, setProvisionalNo] = useState<string>("...")
   const amountInputRef = useRef<HTMLInputElement>(null)
   const finalizeButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -110,6 +111,17 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   }, [selectedPatientId, patientOptions, initialInvoice])
 
   const [date, setDate] = useState(initialInvoice?.invoice_date ? new Date(initialInvoice.invoice_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+
+  // Fetch provisional number on mount and date change
+  useEffect(() => {
+    if (!initialInvoice?.invoice_number) {
+      getNextVoucherNumber(date).then(res => {
+        if (res.success && res.data) setProvisionalNo(res.data);
+      });
+    } else {
+      setProvisionalNo(initialInvoice.invoice_number);
+    }
+  }, [date, initialInvoice]);
 
   const defaultTaxId = taxConfig.defaultTax?.id || ''
 
@@ -585,7 +597,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             <div className="flex items-center gap-2">
               <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Ledger Identity:</span>
               <span className="text-[10px] font-mono font-black text-indigo-600 dark:text-indigo-400 bg-indigo-500/5 dark:bg-indigo-500/10 px-2 py-0.5 rounded cursor-help">
-                {initialInvoice?.invoice_number || 'TXN_PROVISIONAL_NODE'}
+                {provisionalNo}
               </span>
             </div>
             <div className="h-3 w-[1px] bg-slate-200 dark:bg-slate-700" />
