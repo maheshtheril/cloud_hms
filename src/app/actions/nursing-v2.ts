@@ -60,23 +60,28 @@ export async function saveVitals(data: {
                 }
             })
         } else {
-            await prisma.hms_vitals.create({
-                data: {
-                    tenant_id: tenantId,
-                    company_id: session.user.companyId || tenantId, // Add company_id
-                    patient_id: patientId,
-                    encounter_id: encounterId,
-                    height: height ? parseFloat(height) : null,
-                    weight: weight ? parseFloat(weight) : null,
-                    temperature: temperature ? parseFloat(temperature) : null,
-                    pulse: pulse ? parseInt(pulse) : null,
-                    systolic: systolic ? parseInt(systolic) : null,
-                    diastolic: diastolic ? parseInt(diastolic) : null,
-                    spo2: spo2 ? parseInt(spo2) : null,
-                    respiration: respiration ? parseInt(respiration) : null,
-                    notes: notes || null
-                }
-            })
+            // Use raw SQL to get actual error message
+            await prisma.$executeRaw`
+                INSERT INTO hms_vitals (
+                    id, tenant_id, company_id, patient_id, encounter_id,
+                    height, weight, temperature, pulse, systolic, diastolic, spo2, respiration, notes
+                ) VALUES (
+                    gen_random_uuid(),
+                    ${tenantId}::uuid,
+                    ${session.user.companyId || tenantId}::uuid,
+                    ${patientId}::uuid,
+                    ${encounterId}::uuid,
+                    ${height ? parseFloat(height) : null},
+                    ${weight ? parseFloat(weight) : null},
+                    ${temperature ? parseFloat(temperature) : null},
+                    ${pulse ? parseInt(pulse) : null},
+                    ${systolic ? parseInt(systolic) : null},
+                    ${diastolic ? parseInt(diastolic) : null},
+                    ${spo2 ? parseInt(spo2) : null},
+                    ${respiration ? parseInt(respiration) : null},
+                    ${notes || null}
+                )
+            `
         }
 
         // Auto-update appointment status if it's currently 'scheduled'
