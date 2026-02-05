@@ -329,6 +329,11 @@ export async function createInvoice(data: { patient_id: string, appointment_id?:
         // If status is "posted", likely outstanding is Total - Paid
         const outstandingAmount = (status === 'paid') ? 0 : Math.max(0, total - totalPaid);
 
+        const safeNum = (val: any) => {
+            const n = Number(val);
+            return isNaN(n) ? 0 : n;
+        };
+
         const tenantId = session.user.tenantId;
         const branchId = (session.user as any).current_branch_id || (session.user as any).branch_id;
         const userId = session.user.id;
@@ -342,25 +347,26 @@ export async function createInvoice(data: { patient_id: string, appointment_id?:
             patient_id: (patient_id as string) || null,
             appointment_id: (appointment_id as string) || null,
             invoice_number: invoiceNo,
+            invoice_no: invoiceNo, // Fill both variants for schema safety
             invoice_date: new Date(date),
             issued_at: new Date(),
             currency: 'INR',
             status: status || 'draft',
-            total: Number(total) || 0,
-            subtotal: Number(subtotal) || 0,
-            total_tax: Number(totalTaxAmount) || 0,
-            total_discount: Number(total_discount) || 0,
-            total_paid: Number(totalPaid) || 0,
-            outstanding_amount: Number(outstandingAmount) || 0,
+            total: safeNum(total),
+            subtotal: safeNum(subtotal),
+            total_tax: safeNum(totalTaxAmount),
+            total_discount: safeNum(total_discount),
+            total_paid: safeNum(totalPaid),
+            outstanding_amount: safeNum(outstandingAmount),
             billing_metadata: billing_metadata || {},
             created_by: userId || null,
             // Mirror lines into the JSON array for triggers/reporting
             line_items: line_items.map((item: any) => ({
                 id: item.product_id,
                 name: item.description,
-                qty: Number(item.quantity),
-                price: Number(item.unit_price),
-                total: (Number(item.quantity) * Number(item.unit_price))
+                qty: safeNum(item.quantity),
+                price: safeNum(item.unit_price),
+                total: safeNum(item.quantity) * safeNum(item.unit_price)
             })),
             hms_invoice_lines: {
                 create: line_items.map((item: any, index: number) => ({
@@ -369,20 +375,20 @@ export async function createInvoice(data: { patient_id: string, appointment_id?:
                     line_idx: index + 1,
                     product_id: (item.product_id && item.product_id !== "") ? item.product_id : null,
                     description: item.description || "Service Item",
-                    quantity: Number(item.quantity) || 1,
-                    unit_price: Number(item.unit_price) || 0,
-                    subtotal: (Number(item.quantity) * Number(item.unit_price)),
-                    net_amount: (Number(item.quantity) * Number(item.unit_price)) - (Number(item.discount_amount) || 0),
+                    quantity: safeNum(item.quantity) || 1,
+                    unit_price: safeNum(item.unit_price),
+                    subtotal: safeNum(item.quantity) * safeNum(item.unit_price),
+                    net_amount: (safeNum(item.quantity) * safeNum(item.unit_price)) - safeNum(item.discount_amount),
                     tax_rate_id: (item.tax_rate_id && item.tax_rate_id !== "") ? item.tax_rate_id : null,
-                    tax_amount: Number(item.tax_amount) || 0,
-                    discount_amount: Number(item.discount_amount) || 0
+                    tax_amount: safeNum(item.tax_amount),
+                    discount_amount: safeNum(item.discount_amount)
                 }))
             },
             hms_invoice_payments: payments && payments.length > 0 ? {
                 create: payments.map((p: any) => ({
                     tenant_id: tenantId,
                     company_id: companyId,
-                    amount: Number(p.amount) || 0,
+                    amount: safeNum(p.amount),
                     method: (p.method as any) || 'cash',
                     payment_reference: p.reference || 'Counter Payment',
                     paid_at: new Date(),
@@ -394,6 +400,7 @@ export async function createInvoice(data: { patient_id: string, appointment_id?:
         console.log(`[Billing] Creating invoice ${invoiceNo} for company ${companyId}, tenant ${tenantId}, user ${userId}`);
 
         const result = await prisma.$transaction(async (tx) => {
+            console.log(`[SQL EXEC] Inserting main invoice record: ${invoiceNo}`);
             const newInvoice = await tx.hms_invoice.create({
                 data: invoicePayload as any
             });
