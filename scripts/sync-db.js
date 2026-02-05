@@ -67,6 +67,45 @@ async function sync() {
         }
         sql += 'COMMIT;\n';
 
+        // 4. THE HAMMER: Extra Repairs for Triggers and UUID Defaults
+        sql += `
+        BEGIN;
+        -- Fix History Trigger (Explicit ID)
+        CREATE OR REPLACE FUNCTION public.hms_invoice_history_trigger() 
+        RETURNS trigger AS $$
+        DECLARE v_user_id uuid;
+        BEGIN
+          v_user_id := NULLIF(current_setting('app.current_user_id', true), '')::uuid;
+          IF TG_OP = 'UPDATE' THEN
+            INSERT INTO public.hms_invoice_history (id, tenant_id, company_id, invoice_id, changed_by, change_type, delta, changed_at)
+            VALUES (gen_random_uuid(), NEW.tenant_id, NEW.company_id, NEW.id, v_user_id, 'update', jsonb_build_object('old', to_jsonb(OLD), 'new', to_jsonb(NEW)), now());
+            RETURN NEW;
+          ELSIF TG_OP = 'INSERT' THEN
+            INSERT INTO public.hms_invoice_history (id, tenant_id, company_id, invoice_id, changed_by, change_type, delta, changed_at)
+            VALUES (gen_random_uuid(), NEW.tenant_id, NEW.company_id, NEW.id, NEW.created_by, 'insert', jsonb_build_object('new', to_jsonb(NEW)), now());
+            RETURN NEW;
+          ELSE RETURN NEW; END IF;
+        END;
+        $$ LANGUAGE plpgsql;
+
+        -- Force Defaults for all ID columns
+        DO $$ 
+        DECLARE 
+            r RECORD;
+        BEGIN
+            FOR r IN (
+                SELECT table_name, column_name 
+                FROM information_schema.columns 
+                WHERE table_schema = 'public' 
+                  AND column_name = 'id' 
+                  AND data_type = 'uuid'
+            ) LOOP
+                EXECUTE 'ALTER TABLE public.' || quote_ident(r.table_name) || ' ALTER COLUMN ' || quote_ident(r.column_name) || ' SET DEFAULT gen_random_uuid()';
+            END LOOP;
+        END $$;
+        COMMIT;
+        `;
+
         // 4. Execute
         await client.connect();
         await client.query(sql);
