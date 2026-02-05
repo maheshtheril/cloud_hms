@@ -89,12 +89,19 @@ export async function createAppointment(formData: FormData) {
     const durationMinutes = clinician?.consultation_slot_duration || 30
     const endsAt = new Date(startsAt.getTime() + durationMinutes * 60000)
 
+    // CRITICAL: Ensure company_id is NEVER null
+    const finalCompanyId = companyId || session.user.tenantId;
+    if (!finalCompanyId) {
+        console.error('CRITICAL: No company_id available', { session: session.user });
+        return { error: "System configuration error: missing company context" };
+    }
+
     let createdApt;
     try {
         createdApt = await prisma.hms_appointments.create({
             data: {
                 tenant_id: session.user.tenantId,
-                company_id: companyId,
+                company_id: finalCompanyId,
                 patient_id: patientId,
                 clinician_id: clinicianId,
                 starts_at: startsAt,
