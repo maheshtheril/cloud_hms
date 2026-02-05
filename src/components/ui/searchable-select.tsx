@@ -329,7 +329,11 @@ export function SearchableSelect({
                     {options.map((option, index) => (
                         <li
                             key={option.id}
-                            onClick={() => handleSelect(option)}
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleSelect(option);
+                            }}
                             className={`
                                 relative cursor-pointer select-none py-2.5 pl-3 pr-9 
                                 ${index === activeIndex ? (isDark ? 'bg-white/10' : 'bg-indigo-50 dark:bg-white/10') : ''}
@@ -421,8 +425,7 @@ export function SearchableSelect({
                                 autoFocus={autoFocus}
                                 disabled={disabled}
                                 onBlur={() => {
-                                    // Delay closing to allow clicks on dropdown to register
-                                    setTimeout(() => setOpen(false), 200);
+                                    setOpen(false);
                                 }}
                                 autoComplete="off"
                             />

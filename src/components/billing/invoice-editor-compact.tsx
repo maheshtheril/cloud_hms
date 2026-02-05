@@ -239,13 +239,22 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const isDeficit = (settlementTarget - totalPaid) > 0.005
   const isBalanced = !isSurplus && !isDeficit
 
-  // World Class Ledger Sync: Fetch previous balance for selected patient
+  // World Class Debt Awareness & Autofocus Node
   useEffect(() => {
     if (selectedPatientId) {
       setIsWalkIn(false);
       getPatientOutstandingBalance(selectedPatientId).then(res => {
         if (res.success) setPatientBalance(res.balance || 0);
       });
+
+      // AUTO FOCUS TO PRODUCT SEARCH
+      // We use a slight delay to ensure the patient select dropdown has closed and the grid is interactive
+      setTimeout(() => {
+        const firstItemSearch = document.getElementById('item-search-0');
+        if (firstItemSearch) {
+          (firstItemSearch as HTMLInputElement).focus();
+        }
+      }, 400);
     } else {
       setPatientBalance(0);
     }
