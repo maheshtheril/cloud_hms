@@ -104,7 +104,8 @@ export async function createAppointment(formData: FormData) {
                 priority,
                 notes,
                 status: 'scheduled',
-                created_by: session.user.id
+                created_by: session.user.id,
+                branch_id: session.user.current_branch_id || null // Explicit null to prevent extension override
             }
         })
     } catch (error) {
