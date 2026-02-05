@@ -80,41 +80,48 @@ export async function consumeStock(data: ConsumeStockData) {
             if (!product) throw new Error("Product not found")
 
             // B. Create Stock Move (Outbound)
-            await tx.hms_stock_move.create({
-                data: {
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    product_id: data.productId,
-                    location_from: locationId, // From Warehouse
-                    location_to: null, // Consumed (gone)
-                    qty: data.quantity,
-                    uom: product.uom,
-                    move_type: 'out', // Outbound
-                    source: 'Nursing Consumption',
-                    source_reference: data.encounterId, // Link to Encounter ID
-                    created_by: userId
-                }
-            })
+            await tx.$executeRaw`
+                INSERT INTO hms_stock_move (
+                    id, tenant_id, company_id, product_id, 
+                    location_from, location_to, qty, uom, 
+                    move_type, source, source_reference, created_by
+                ) VALUES (
+                    gen_random_uuid(),
+                    CAST(${tenantId} AS uuid),
+                    CAST(${companyId} AS uuid),
+                    CAST(${data.productId} AS uuid),
+                    CAST(${locationId || null} AS uuid),
+                    NULL,
+                    ${data.quantity},
+                    ${product.uom || 'Unit'},
+                    'out'::hms_move_type,
+                    'Nursing Consumption',
+                    CAST(${data.encounterId || null} AS uuid),
+                    CAST(${userId || null} AS uuid)
+                )
+            `;
 
             // C. Create Stock Ledger (History)
-            await tx.hms_stock_ledger.create({
-                data: {
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    product_id: data.productId,
-                    movement_type: 'out',
-                    qty: data.quantity,
-                    uom: product.uom,
-                    from_location_id: locationId,
-                    reference: `Patient: ${data.patientId}`,
-                    related_type: 'hms_encounter',
-                    related_id: data.encounterId,
-                    metadata: {
-                        notes: data.notes,
-                        patient_id: data.patientId
-                    }
-                }
-            })
+            await tx.$executeRaw`
+                INSERT INTO hms_stock_ledger (
+                    id, tenant_id, company_id, product_id,
+                    related_type, related_id, movement_type,
+                    qty, uom, from_location_id, reference, metadata
+                ) VALUES (
+                    gen_random_uuid(),
+                    CAST(${tenantId} AS uuid),
+                    CAST(${companyId} AS uuid),
+                    CAST(${data.productId} AS uuid),
+                    'hms_encounter',
+                    CAST(${data.encounterId || null} AS uuid),
+                    'out',
+                    ${data.quantity},
+                    ${product.uom || 'Unit'},
+                    CAST(${locationId || null} AS uuid),
+                    ${`Patient: ${data.patientId}`},
+                    ${JSON.stringify({ notes: data.notes || '', patient_id: data.patientId })}::jsonb
+                )
+            `;
 
             // D. Decrement Stock Levels
             const level = await tx.hms_stock_levels.findFirst({
@@ -252,42 +259,49 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                 const product = productMap.get(item.productId);
                 if (!product) throw new Error(`Product ID ${item.productId} not found`)
 
-                // Create Stock Move
-                await tx.hms_stock_move.create({
-                    data: {
-                        tenant_id: tenantId,
-                        company_id: companyId,
-                        product_id: item.productId,
-                        location_from: locationId, // From Warehouse
-                        location_to: null, // Consumed (gone)
-                        qty: item.quantity,
-                        uom: product.uom || 'Unit',
-                        move_type: 'out',
-                        source: 'Nursing Consumption',
-                        source_reference: data.encounterId,
-                        created_by: userId
-                    }
-                })
+                // Create Stock Move using Raw SQL for better error debugging
+                await tx.$executeRaw`
+                    INSERT INTO hms_stock_move (
+                        id, tenant_id, company_id, product_id, 
+                        location_from, location_to, qty, uom, 
+                        move_type, source, source_reference, created_by
+                    ) VALUES (
+                        gen_random_uuid(),
+                        CAST(${tenantId} AS uuid),
+                        CAST(${companyId} AS uuid),
+                        CAST(${item.productId} AS uuid),
+                        CAST(${locationId || null} AS uuid),
+                        NULL,
+                        ${item.quantity},
+                        ${product.uom || 'Unit'},
+                        'out'::hms_move_type,
+                        'Nursing Consumption',
+                        CAST(${data.encounterId || null} AS uuid),
+                        CAST(${userId || null} AS uuid)
+                    )
+                `;
 
-                // Create Stock Ledger
-                await tx.hms_stock_ledger.create({
-                    data: {
-                        tenant_id: tenantId,
-                        company_id: companyId,
-                        product_id: item.productId,
-                        movement_type: 'out',
-                        qty: item.quantity,
-                        uom: product.uom || 'Unit',
-                        from_location_id: locationId,
-                        reference: `Patient: ${data.patientId}`,
-                        related_type: 'hms_encounter',
-                        related_id: data.encounterId,
-                        metadata: {
-                            notes: item.notes,
-                            patient_id: data.patientId
-                        }
-                    }
-                })
+                // Create Stock Ledger using Raw SQL
+                await tx.$executeRaw`
+                    INSERT INTO hms_stock_ledger (
+                        id, tenant_id, company_id, product_id,
+                        related_type, related_id, movement_type,
+                        qty, uom, from_location_id, reference, metadata
+                    ) VALUES (
+                        gen_random_uuid(),
+                        CAST(${tenantId} AS uuid),
+                        CAST(${companyId} AS uuid),
+                        CAST(${item.productId} AS uuid),
+                        'hms_encounter',
+                        CAST(${data.encounterId || null} AS uuid),
+                        'out',
+                        ${item.quantity},
+                        ${product.uom || 'Unit'},
+                        CAST(${locationId || null} AS uuid),
+                        ${`Patient: ${data.patientId}`},
+                        ${JSON.stringify({ notes: item.notes || '', patient_id: data.patientId })}::jsonb
+                    )
+                `;
 
                 // Update Stock Levels
                 const level = await tx.hms_stock_levels.findFirst({
