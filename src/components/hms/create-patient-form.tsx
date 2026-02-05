@@ -313,7 +313,13 @@ export function CreatePatientForm({
                             }
                         }
                     } catch (err: any) {
-                        setMessage({ type: 'error', text: "Systems offline or validation failed." });
+                        const errorMsg = err.message || "Unknown Network Error";
+                        console.error("Patient Registration Terminal Failure:", err);
+
+                        // Force alert for user awareness
+                        alert(`PATIENT REGISTRATION FAILED: ${errorMsg}\n\nPlease check your internet and DB status.`);
+
+                        setMessage({ type: 'error', text: `Registration Interrupted: ${errorMsg}` });
                     } finally {
                         setIsPending(false);
                     }
