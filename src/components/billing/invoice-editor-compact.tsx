@@ -469,6 +469,21 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   }
 
   if (isSuccess) {
+    // Reset function for "NEXT BILL"
+    const handleNextBill = () => {
+      setLines([{ id: Date.now(), product_id: '', description: '', quantity: 1, uom: 'PCS', unit_price: 0, tax_rate_id: defaultTaxId, tax_amount: 0, discount_amount: 0, item_type: 'item' }]);
+      setPayments([]);
+      setGlobalDiscount(0);
+      setSelectedPatientId('');
+      setIsWalkIn(false);
+      setWalkInName('');
+      setWalkInPhone('');
+      setIsSuccess(false);
+      setLastSavedId(null);
+      if (onClose) onClose();
+      else router.push('/hms/billing');
+    };
+
     return (
       <div className="fixed inset-0 z-[300] bg-slate-950 flex items-center justify-center p-6">
         <div className="max-w-4xl w-full bg-white dark:bg-slate-900 rounded-[4rem] shadow-[0_50px_100px_rgba(0,0,0,0.8)] overflow-hidden border border-white/5 animate-in zoom-in-95 duration-500">
@@ -494,10 +509,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
               {/* NEW TRANSACTION */}
               <button
-                onClick={() => {
-                  if (onClose) onClose();
-                  else window.location.reload();
-                }}
+                onClick={handleNextBill}
                 className="group p-8 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-emerald-500 transition-all text-center"
               >
                 <div className="bg-emerald-600 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-xl shadow-emerald-600/20 group-hover:scale-110 transition-transform">
@@ -521,7 +533,10 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
               {/* FINISH & EXIT (World Standard Hub Redirect) */}
               <button
-                onClick={() => router.push('/hms/billing')}
+                onClick={() => {
+                  if (onClose) onClose();
+                  else router.push('/hms/billing');
+                }}
                 className="group p-8 bg-slate-900 dark:bg-white rounded-[2.5rem] border-4 border-white/10 hover:border-indigo-500 transition-all text-center shadow-2xl shadow-slate-900/50"
               >
                 <div className="bg-indigo-500 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-xl shadow-indigo-500/30 group-hover:rotate-12 transition-transform">
