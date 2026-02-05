@@ -615,6 +615,10 @@ export function CreatePatientForm({
                                     onClick={() => {
                                         setShowIDCard(false);
                                         if (onSuccess) onSuccess(savedPatient);
+                                        else if (returnPath) {
+                                            const finalUrl = `${returnPath}${returnPath.includes('?') ? '&' : '?'}patientId=${savedPatient.id}${autoSelect ? '&autoSelect=true' : ''}`;
+                                            router.push(finalUrl);
+                                        }
                                         else router.push('/hms/patients');
                                     }}
                                     className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all"
