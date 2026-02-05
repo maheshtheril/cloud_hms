@@ -602,7 +602,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               </div>
               {!isWalkIn && (
                 <button
-                  onClick={() => { setQuickPatientName(''); setIsQuickPatientOpen(true); }}
+                  onClick={() => router.push('/hms/patients/new')}
                   disabled={isPaymentModalOpen || loading}
                   className="h-10 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 active:scale-95 shrink-0"
                 >
