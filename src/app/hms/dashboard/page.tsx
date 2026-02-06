@@ -6,6 +6,8 @@ import { getTenant } from "../../actions/tenant"
 import { getCurrentCompany } from "../../actions/company"
 import { redirect } from 'next/navigation'
 import { hms_invoice_status } from "@prisma/client"
+import { getUserPermissions } from "@/app/actions/rbac"
+
 
 export default async function DashboardPage() {
     await ensureHmsMenus()
@@ -14,25 +16,51 @@ export default async function DashboardPage() {
     if (!session?.user) {
         redirect('/login')
     }
-    // SECURITY: Redirect Receptionists to their dedicated dashboard
-    // This prevents them from "landing" on the Admin dashboard even if they have hms:view permission
-    if (session?.user?.role === 'receptionist' || session?.user?.name?.toLowerCase().includes('reception')) {
+
+    const perms = await getUserPermissions(session.user.id);
+
+    // 1. DOCTOR DASHBOARD (High Priority)
+    if (perms.includes('hms:dashboard:doctor')) {
+        redirect('/hms/doctor/dashboard');
+    }
+
+    // 2. NURSING DASHBOARD
+    if (perms.includes('hms:dashboard:nurse')) {
+        redirect('/hms/nursing/dashboard');
+    }
+
+    // 3. RECEPTION DASHBOARD
+    if (perms.includes('hms:dashboard:reception')) {
         redirect('/hms/reception/dashboard');
     }
 
-    // SECURITY: Redirect Lab Technicians to their dedicated dashboard
+    // 4. LAB DASHBOARD
+    if (perms.includes('hms:dashboard:lab')) {
+        redirect('/hms/lab/dashboard');
+    }
+
+    // 5. ACCOUNTING DASHBOARD
+    if (perms.includes('hms:dashboard:accounting')) {
+        redirect('/hms/accounting');
+    }
+
+    // --- LEGACY FAIL-SAFE: Redirect based on role name/string (Compatibility Mode) ---
     const role = session?.user?.role?.toLowerCase() || '';
     const name = session?.user?.name?.toLowerCase() || '';
     const email = session?.user?.email?.toLowerCase() || '';
 
-    if (role === 'lab_technician' || role === 'lab technician' || role.includes('lab') || name.includes('lab') || email.includes('laab')) {
+    if (role === 'receptionist' || name.includes('reception')) {
+        redirect('/hms/reception/dashboard');
+    }
+
+    if (role.includes('lab') || name.includes('lab') || email.includes('laab')) {
         redirect('/hms/lab/dashboard');
     }
 
-    // SECURITY: Redirect Accountants to Financial Dashboard
-    if (role === 'accountant' || role === 'finance' || name.includes('account') || email.includes('acc')) {
+    if (role === 'accountant' || role === 'finance' || name.includes('account')) {
         redirect('/hms/accounting');
     }
+
 
     const tenantId = session?.user?.tenantId
     const companyId = session?.user?.companyId

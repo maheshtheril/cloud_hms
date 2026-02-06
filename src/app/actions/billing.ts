@@ -1241,3 +1241,102 @@ export async function getPatientLedger(patientId: string) {
         return { error: "Could not fetch patient ledger" };
     }
 }
+
+export async function generateRegistrationInvoice(patientId: string) {
+    const session = await auth();
+    const tenantId = session?.user?.tenantId;
+    const companyId = session?.user?.companyId;
+
+    if (!tenantId || !companyId) return { error: "SECURITY_AUTH_EXPIRED" };
+
+    try {
+        // 1. Resolve Settings for Registration Fee
+        const settings = await prisma.hms_settings.findFirst({
+            where: { tenant_id: tenantId, key: 'billing' }
+        });
+        const billingSettings = (settings?.value as any) || {};
+        const regFee = billingSettings.registrationFee || 150;
+        const regProductId = billingSettings.registrationProductId;
+
+        // 2. Resolve Product (Registration Fee)
+        let product = null;
+        if (regProductId) {
+            product = await prisma.hms_product.findUnique({ where: { id: regProductId } });
+        }
+
+        if (!product) {
+            product = await prisma.hms_product.findFirst({
+                where: {
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    name: { contains: 'Registration Fee', mode: 'insensitive' }
+                }
+            });
+        }
+
+        // Auto-create product if missing (Self-healing)
+        if (!product) {
+            product = await prisma.hms_product.create({
+                data: {
+                    id: crypto.randomUUID(),
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    name: "Patient Registration Fee",
+                    sku: "REG-FEE",
+                    is_service: true,
+                    price: regFee,
+                    is_active: true
+                }
+            });
+        }
+
+        // 3. Generate Official Invoice Number
+        const invNoRes = await getNextVoucherNumber();
+        const invoiceNumber = invNoRes.success ? invNoRes.data : `INV-REG-${Date.now().toString().slice(-6)}`;
+
+        // 4. Create Invoice Record with Line Item
+        const invoice = await prisma.hms_invoice.create({
+            data: {
+                id: crypto.randomUUID(),
+                tenant_id: tenantId,
+                company_id: companyId,
+                patient_id: patientId,
+                invoice_number: invoiceNumber,
+                issued_at: new Date(),
+                subtotal: product.price || 0,
+                total_tax: 0,
+                total: product.price || 0,
+                outstanding_amount: product.price || 0,
+                status: 'draft',
+                billing_metadata: {
+                    source: 'auto-registration-rcm',
+                    description: 'Automatic registration billing sequence'
+                },
+                branch_id: session.user.currentBranchId,
+                created_by: session.user.id,
+                hms_invoice_lines: {
+                    create: {
+                        id: crypto.randomUUID(),
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        line_idx: 1,
+                        product_id: product.id,
+                        description: "One-time Patient Registration & Identity Service",
+                        quantity: 1,
+                        unit_price: product.price || 0,
+                        net_amount: product.price || 0
+                    }
+                }
+            },
+            include: {
+                hms_invoice_lines: true,
+                hms_patient: true
+            }
+        });
+
+        return { success: true, data: invoice };
+    } catch (err: any) {
+        console.error("FAILED_TO_GENERATE_REG_INVOICE:", err);
+        return { error: err.message || "RCM_FAILURE: Could not generate auto-billing record." };
+    }
+}

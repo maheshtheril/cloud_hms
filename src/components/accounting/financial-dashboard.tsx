@@ -7,7 +7,8 @@ import {
     BarChart3, Landmark, Receipt, Wallet,
     ArrowUpRight, ArrowDownRight, RefreshCcw,
     Activity, ShieldCheck, Zap, Layers,
-    ChevronRight, CreditCard, Banknote, History
+    ChevronRight, CreditCard, Banknote, History,
+    FileText
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -407,6 +408,37 @@ export function FinancialDashboard() {
                             </div>
                             <ChevronRight className="h-4 w-4 text-slate-500 group-hover:translate-x-1 transition-transform" />
                         </Button>
+
+
+                        <div className="mt-4 pt-4 border-t border-white/10">
+                            <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-4 text-center">Audit & Oversight</h4>
+                            <div className="grid grid-cols-3 gap-3">
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => router.push('/hms/accounting/daybook')}
+                                    className="flex flex-col h-20 bg-white/5 hover:bg-white/10 rounded-2xl gap-2 border border-white/5"
+                                >
+                                    <FileText className="h-4 w-4 text-indigo-400" />
+                                    <span className="text-[10px] font-bold">Daybook</span>
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => router.push('/hms/accounting/cashbook')}
+                                    className="flex flex-col h-20 bg-white/5 hover:bg-white/10 rounded-2xl gap-2 border border-white/5"
+                                >
+                                    <Banknote className="h-4 w-4 text-emerald-400" />
+                                    <span className="text-[10px] font-bold">Cashbook</span>
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => router.push('/hms/accounting/bankbook')}
+                                    className="flex flex-col h-20 bg-white/5 hover:bg-white/10 rounded-2xl gap-2 border border-white/5"
+                                >
+                                    <CreditCard className="h-4 w-4 text-blue-400" />
+                                    <span className="text-[10px] font-bold">Bankbook</span>
+                                </Button>
+                            </div>
+                        </div>
 
                         <div className="mt-8 pt-8 border-t border-white/10">
                             <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em] mb-4 text-center">Cash On Hand Position</h4>

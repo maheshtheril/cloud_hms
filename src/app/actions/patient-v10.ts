@@ -121,6 +121,8 @@ export async function createPatientV10(patientId: string | null | any, formData:
         let patient;
 
         try {
+
+            let invoiceId = null;
             if (isUpdate) {
                 patient = await prisma.hms_patient.update({ where: { id: patientId as string }, data: upsertPayload });
             } else {
@@ -136,13 +138,27 @@ export async function createPatientV10(patientId: string | null | any, formData:
                         status: 'active'
                     }
                 });
+
+                // -----------------------------------------------------------------------------------
+                // AUTO-BILLING TRIGGER (RCM): Trigger invoice generation if requested
+                // -----------------------------------------------------------------------------------
+                const chargeRegistration = formData.get('charge_registration') === 'on' || formData.get('charge_registration') === 'true';
+                if (chargeRegistration) {
+                    const { generateRegistrationInvoice } = await import('./billing');
+                    const invRes = await generateRegistrationInvoice(patient.id);
+                    if (invRes.success) {
+                        invoiceId = (invRes.data as any).id;
+                    }
+                }
             }
 
             return {
                 success: true,
                 message: isUpdate ? "Master Patient Index Updated." : "New Patient Registered.",
-                data: patient
+                data: patient,
+                invoiceId: invoiceId
             };
+
         } catch (err: any) {
             throw err; // Let catch block below handle it
         }

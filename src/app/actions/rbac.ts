@@ -30,6 +30,9 @@ const STANDARD_PERMISSIONS = [
     { code: 'hms:dashboard:doctor', name: 'Access Doctor Dashboard', module: 'HMS' },
     { code: 'hms:dashboard:nurse', name: 'Access Nurse Dashboard', module: 'HMS' },
     { code: 'hms:dashboard:reception', name: 'Access Reception Dashboard', module: 'HMS' },
+    { code: 'hms:dashboard:lab', name: 'Access Lab Dashboard', module: 'HMS' },
+    { code: 'hms:dashboard:accounting', name: 'Access Accounting Dashboard', module: 'HMS' },
+
 
     // HMS - Clinical & Patient
     { code: 'patients:view', name: 'View Patients', module: 'HMS' },

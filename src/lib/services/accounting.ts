@@ -1491,4 +1491,93 @@ export class AccountingService {
             return { success: false, error: ["Intelligence engine calibration in progress..."] };
         }
     }
+
+    /**
+     * Fetches Daybook entries for a specific date.
+     */
+    static async getDaybook(companyId: string, date: Date = new Date()) {
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        try {
+            const entries = await prisma.journal_entries.findMany({
+                where: {
+                    company_id: companyId,
+                    date: { gte: startOfDay, lte: endOfDay },
+                    posted: true
+                },
+                include: {
+                    journal_entry_lines: {
+                        include: { accounts: true }
+                    }
+                },
+                orderBy: { date: 'asc' }
+            });
+
+            return { success: true, data: entries };
+        } catch (error: any) {
+            console.error("Daybook Error:", error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Fetches Cashbook or Bankbook entries.
+     * @param type - 'cash' | 'bank'
+     */
+    static async getCashBankBook(companyId: string, type: 'cash' | 'bank', date: Date = new Date()) {
+        const startOfDay = new Date(date);
+        startOfDay.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        // Define account ranges/codes based on standard COA
+        // Cash: 1000, 1010 | Bank: 1050
+        const codes = type === 'cash' ? ['1000', '1010'] : ['1050'];
+
+        try {
+            // 1. Find the target accounts for this company
+            const targetAccounts = await prisma.accounts.findMany({
+                where: { company_id: companyId, code: { in: codes } }
+            });
+            const accountIds = targetAccounts.map(a => a.id);
+
+            if (accountIds.length === 0) return { success: true, data: [], openingBalance: 0 };
+
+            // 2. Calculate Opening Balance (Cumulative net flow before start of day)
+            const obLines = await prisma.journal_entry_lines.findMany({
+                where: {
+                    company_id: companyId,
+                    account_id: { in: accountIds },
+                    journal_entries: { date: { lt: startOfDay }, posted: true }
+                }
+            });
+            const openingBalance = obLines.reduce((sum, line) => sum + (Number(line.debit || 0) - Number(line.credit || 0)), 0);
+
+            // 3. Fetch entries for the day
+            const entries = await prisma.journal_entries.findMany({
+                where: {
+                    company_id: companyId,
+                    date: { gte: startOfDay, lte: endOfDay },
+                    posted: true,
+                    journal_entry_lines: {
+                        some: { account_id: { in: accountIds } }
+                    }
+                },
+                include: {
+                    journal_entry_lines: {
+                        include: { accounts: true }
+                    }
+                },
+                orderBy: { date: 'asc' }
+            });
+
+            return { success: true, data: entries, openingBalance };
+        } catch (error: any) {
+            console.error(`${type.toUpperCase()}book Error:`, error);
+            return { success: false, error: error.message };
+        }
+    }
 }

@@ -9,6 +9,8 @@ import { FileUpload } from "@/components/ui/file-upload"
 import { VoiceWrapper } from "@/components/ui/voice-wrapper"
 import { getHMSSettings } from "@/app/actions/settings"
 import { PatientIDCard } from "@/components/hms/patient-id-card"
+import { QuickPaymentGateway } from "./quick-payment-gateway"
+
 
 interface CreatePatientFormProps {
     tenantCountry?: string
@@ -116,6 +118,7 @@ export function CreatePatientForm({
     const [dob, setDob] = useState(initialData?.dob ? new Date(initialData.dob).toISOString().split('T')[0] : '');
     const [gender, setGender] = useState(initialData?.gender || 'male');
 
+
     // Billing Options State
     const checkRegistrationStatus = () => {
         if (!initialData) return { shouldCharge: true, status: 'new' };
@@ -131,8 +134,13 @@ export function CreatePatientForm({
     const [chargeRegistration, setChargeRegistration] = useState(regStatus.shouldCharge);
     const [waiveFee, setWaiveFee] = useState(false);
 
+    // Payment Gateway State
+    const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+    const [invoiceForPayment, setInvoiceForPayment] = useState<any>(null);
+
     // Prompt for missing phone
     const [phone, setPhone] = useState(initialData?.contact?.phone || '');
+
 
     const handleAgeChange = (value: string, unit: string) => {
         setAge(value);
@@ -264,14 +272,27 @@ export function CreatePatientForm({
                         // FORCE Charge Registration Update in FormData if needed
                         if (chargeRegistration) formData.set('charge_registration', 'on');
 
+
                         const res = await createPatient(initialData?.id || null, formData);
 
                         if ((res as any)?.error) {
                             setMessage({ type: 'error', text: (res as any).error });
                         } else {
                             const patient = (res as any).data;
+                            const invoiceId = (res as any).invoiceId;
+
                             // Success BRANCH: Just Save & Close/Print ID
                             setSavedPatient(patient);
+
+                            // -----------------------------------------------------------------------------------
+                            // RCM OVERRIDE: If an invoice was generated, interupt the flow with Payment Gateway
+                            // -----------------------------------------------------------------------------------
+                            if (invoiceId) {
+                                setInvoiceForPayment({ id: invoiceId, total: registrationFee, invoice_number: 'PENDING' });
+                                setIsPaymentOpen(true);
+                                return; // Stop redirection/closing until payment is handled
+                            }
+
                             if (onSuccess) onSuccess(patient);
                             else {
                                 setMessage({ type: 'success', text: initialData ? "Profile updated successfully." : "Patient registered successfully." });
@@ -296,6 +317,7 @@ export function CreatePatientForm({
                                 }
                             }
                         }
+
                     } catch (err: any) {
                         const errorMsg = err.message || "Unknown Network Error";
                         console.error("Patient Registration Terminal Failure:", err);
@@ -566,7 +588,7 @@ export function CreatePatientForm({
                                 <h3 className="text-2xl font-black text-slate-900 dark:text-white">Patient ID Card</h3>
                                 <button
                                     onClick={() => setShowIDCard(false)}
-                                    className="h-10 w-10 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center justify-center transition-all"
+                                    className="h-10 w-10 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-lg flex items-center justify-center transition-all"
                                 >
                                     <X className="h-5 w-5" />
                                 </button>
@@ -597,6 +619,25 @@ export function CreatePatientForm({
                 )
             }
 
+            <QuickPaymentGateway
+                isOpen={isPaymentOpen}
+                onClose={() => {
+                    setIsPaymentOpen(false);
+                    // After payment, follow the usual success flow (Show ID card or redirect)
+                    if (printIDCard) {
+                        setShowIDCard(true);
+                    } else {
+                        if (onSuccess) onSuccess(savedPatient);
+                        else router.push('/hms/patients');
+                    }
+                }}
+                invoice={invoiceForPayment}
+                onSuccess={() => {
+                    // This is handled by the gateway's success step, but we can do extra here if needed
+                }}
+            />
+
         </div >
+
     );
 }

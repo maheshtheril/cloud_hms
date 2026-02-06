@@ -4,6 +4,8 @@ import { Plus } from "lucide-react"
 import { auth } from "@/auth"
 
 import SearchInput from "@/components/search-input"
+import { AdmitPatientButton } from "@/components/hms/patients/admit-patient-button"
+
 
 export default async function PatientsPage({
     searchParams
@@ -121,6 +123,11 @@ export default async function PatientsPage({
                                             View
                                         </Link>
                                         <div className="h-4 w-px bg-slate-200" />
+                                        <AdmitPatientButton
+                                            patientId={patient.id}
+                                            patientName={`${patient.first_name} ${patient.last_name}`}
+                                        />
+                                        <div className="h-4 w-px bg-slate-200" />
                                         <Link
                                             href={`/hms/prescriptions/new?patientId=${patient.id}`}
                                             className="text-purple-600 hover:text-purple-800 font-bold text-xs uppercase tracking-wider"
@@ -128,6 +135,7 @@ export default async function PatientsPage({
                                             Prescribe
                                         </Link>
                                     </td>
+
                                 </tr>
                             ))
                         )}
