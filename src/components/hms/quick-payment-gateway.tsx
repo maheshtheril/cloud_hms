@@ -34,12 +34,15 @@ export function QuickPaymentGateway({
     async function handlePayment() {
         if (!invoice) return
         setIsPending(true)
-        const res = await recordPayment({
-            invoiceId: invoice.id,
-            amount: Number(invoice.total),
-            method: method,
-            reference: `AUTO-${Date.now()}`
-        })
+        const res = await recordPayment(
+            invoice.id,
+            {
+                amount: Number(invoice.total),
+                method: method,
+                reference: `AUTO-${Date.now()}`
+            }
+        )
+
 
         if (res.success) {
             setStep('success')
