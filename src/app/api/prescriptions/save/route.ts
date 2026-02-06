@@ -168,8 +168,8 @@ export async function POST(request: NextRequest) {
                         )
                     )) as prescription_items
                 FROM prescription p
-                JOIN prescription_items pi ON p.id = pi.prescription_id
-                JOIN hms_product prod ON pi.medicine_id = prod.id
+                LEFT JOIN prescription_items pi ON p.id = pi.prescription_id
+                LEFT JOIN hms_product prod ON pi.medicine_id = prod.id
                 WHERE p.id::text = CAST(${pId} AS text)
                 GROUP BY p.id
             `;
@@ -177,48 +177,45 @@ export async function POST(request: NextRequest) {
 
 
             // 4. Handle Lab Orders
+            // Clear existing REQUESTED lab orders for this appointment to avoid duplicates on update
+            if (appointmentId) {
+                await tx.hms_lab_order.deleteMany({
+                    where: {
+                        encounter_id: appointmentId,
+                        status: 'requested',
+                        tenant_id: session.user.tenantId
+                    }
+                })
+            }
+
             if (labTests && labTests.length > 0) {
-                // 4a. Resolve Lab Test IDs (Handle custom labs)
+                // RESOLVE LAB TESTS (already done above, but move actual creation here)
                 const resolvedLabTests = [];
                 for (const test of labTests) {
                     let tId = test.id;
                     let testName = test.name || test.testName;
+                    if (!testName) continue;
 
-                    if (!testName) continue; // Skip invalid
-
-                    // Check if this ID actually exists? Or just search by name?
-                    // Simplest strategy: try to find by ID if it looks valid, then name.
-                    // Since frontend generates random UUIDs for custom tests, we can treat them as "unknown" if they don't match db.
-
-                    let existingTest = null;
-
-                    // If ID is potentially valid (not checking format strictly here, but assuming db lookup handles it)
-                    if (tId) {
-                        existingTest = await tx.hms_lab_test.findUnique({ where: { id: tId } }).catch(() => null);
-                    }
-
-                    if (!existingTest) {
-                        // Try finding by name
-                        existingTest = await tx.hms_lab_test.findFirst({
-                            where: {
-                                name: { equals: testName, mode: 'insensitive' },
-                                tenant_id: session.user.tenantId
-                            }
-                        });
-                    }
+                    let existingTest = await tx.hms_lab_test.findFirst({
+                        where: {
+                            name: { equals: testName, mode: 'insensitive' },
+                            tenant_id: session.user.tenantId
+                        }
+                    });
 
                     if (existingTest) {
                         tId = existingTest.id;
                     } else {
-                        // Create new Lab Test
                         const labTestId = crypto.randomUUID();
+                        const targetCompanyIdForTest = userCompanyId || (await tx.company.findFirst({ where: { tenant_id: session.user.tenantId } }))?.id;
+
                         await tx.$executeRaw`
                             INSERT INTO hms_lab_test (
                                 id, tenant_id, company_id, name, code, created_at
                             ) VALUES (
                                 CAST(${labTestId} AS uuid),
                                 CAST(${session.user.tenantId} AS uuid),
-                                CAST(${userCompanyId || (await tx.$queryRaw`SELECT id FROM company WHERE tenant_id::text = CAST(${session.user.tenantId} AS text) LIMIT 1` as any)[0]?.id || null} AS uuid),
+                                CAST(${targetCompanyIdForTest} AS uuid),
                                 ${testName},
                                 ${`LAB-${Date.now()}-${Math.floor(Math.random() * 1000)}`},
                                 NOW()
@@ -226,29 +223,17 @@ export async function POST(request: NextRequest) {
                         `;
                         tId = labTestId;
                     }
-
                     resolvedLabTests.push({ ...test, resolvedId: tId });
                 }
 
-                // Clear existing REQUESTED lab orders for this appointment to avoid duplicates on update
-                if (appointmentId) {
-                    await tx.hms_lab_order.deleteMany({
-                        where: {
-                            encounter_id: appointmentId,
-                            status: 'requested',
-                            tenant_id: session.user.tenantId
-                        }
-                    })
-                }
-
-                // Ensure we have a valid company_id (UUID or null, NOT empty string)
-                let finalCompanyId = userCompanyId;
-                if (!finalCompanyId) {
-                    const c = await tx.company.findFirst({ where: { tenant_id: session.user.tenantId } });
-                    finalCompanyId = c?.id || null;
-                }
-
                 if (resolvedLabTests.length > 0) {
+                    // Ensure we have a valid company_id
+                    let finalCompanyId = userCompanyId;
+                    if (!finalCompanyId) {
+                        const c = await tx.company.findFirst({ where: { tenant_id: session.user.tenantId } });
+                        finalCompanyId = c?.id || null;
+                    }
+
                     const labOrderId = crypto.randomUUID();
                     const orderNumber = `LAB-${Date.now()}`;
 
@@ -281,7 +266,7 @@ export async function POST(request: NextRequest) {
                                 'pending',
                                 ${test.price || 0},
                                 NOW()
-                            )
+                            );
                         `;
                     }
                 }
@@ -311,13 +296,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: true,
             prescriptionId: prescription.id,
-            medicines: (prescription as any).prescription_items.map((item: any) => ({
-                id: item.hms_product.id,
-                name: item.hms_product.name,
-                sku: item.hms_product.sku,
-                price: item.hms_product.price,
-                quantity: (item.morning + item.afternoon + item.evening + item.night) * item.days
-            }))
+            medicines: (prescription as any).prescription_items
+                ?.filter((item: any) => item && item.medicine_id && item.hms_product && item.hms_product.id)
+                .map((item: any) => ({
+                    id: item.hms_product.id,
+                    name: item.hms_product.name,
+                    sku: item.hms_product.sku,
+                    price: item.hms_product.price,
+                    quantity: (item.morning + item.afternoon + item.evening + item.night) * item.days
+                })) || []
         })
     } catch (error) {
         console.error('Error saving prescription:', error)

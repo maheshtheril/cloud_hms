@@ -174,6 +174,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                             plan: pr.plan || ''
                         });
                         setSelectedMedicines(pr.medicines || []);
+                        setSelectedLabs(pr.labTests || []);
 
                         if (!patientId && pr.patient_id) {
                             setResolvedPatientId(pr.patient_id);
@@ -397,13 +398,18 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
             if (data.success && data.data) {
                 if (data.data.medicines && data.data.medicines.length > 0) {
                     setSelectedMedicines(data.data.medicines.map((m: any) => ({
-                        id: m.medicineId,
-                        name: m.medicineName,
-                        dosage: `${m.morning || '0'}-${m.afternoon || '0'}-${m.evening || '0'}-${m.night || '0'}`,
+                        id: m.id,
+                        name: m.name,
+                        dosage: m.dosage || '0-0-0',
                         days: m.days,
                         timing: m.timing || 'After Food'
                     })))
                 }
+
+                if (data.data.labTests && data.data.labTests.length > 0) {
+                    setSelectedLabs(data.data.labTests);
+                }
+
                 alert(`✅ Loaded prescription from ${new Date(data.date).toLocaleDateString()}!`)
             } else {
                 alert('ℹ️ No previous prescription found')

@@ -49,13 +49,38 @@ export async function GET(
             LIMIT 1
         `;
 
+        // Fetch lab orders for this appointment
+        const labOrders: any[] = await prisma.$queryRaw`
+            SELECT lo.id, 
+                COALESCE(
+                    JSON_AGG(JSON_BUILD_OBJECT(
+                        'id', lt.id,
+                        'name', lt.name,
+                        'price', lol.price
+                    )) FILTER (WHERE lt.id IS NOT NULL),
+                    '[]'
+                ) as tests
+            FROM hms_lab_order lo
+            LEFT JOIN hms_lab_order_line lol ON lo.id = lol.order_id
+            LEFT JOIN hms_lab_test lt ON lol.test_id = lt.id
+            WHERE lo.encounter_id::text = CAST(${id} AS text)
+            AND lo.tenant_id::text = CAST(${session.user.tenantId} AS text)
+            AND lo.status = 'requested'
+            GROUP BY lo.id
+            ORDER BY lo.created_at DESC
+            LIMIT 1
+        `;
+
         const prescription = prescriptions[0];
         const vitals = vitalsArr[0];
+        const labOrder = labOrders[0];
 
         console.log(`[GET /api/prescriptions/by-appointment/${id}] Found:`, {
             prescriptionId: prescription?.id,
             vitalsId: vitals?.id,
-            itemCount: prescription?.prescription_items?.length
+            labOrderId: labOrder?.id,
+            itemCount: prescription?.prescription_items?.length,
+            labCount: labOrder?.tests?.length
         })
 
         if (!prescription && !vitals) {
@@ -81,7 +106,8 @@ export async function GET(
             success: true,
             prescription: prescription ? {
                 ...prescription,
-                medicines
+                medicines,
+                labTests: labOrder?.tests || []
             } : null,
             vitals: vitals || null
         })
