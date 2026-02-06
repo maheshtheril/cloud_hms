@@ -43,8 +43,9 @@ export function DetailedLedgerReport({ type }: DetailedLedgerProps) {
 
             if (res.success) {
                 setEntries(res.data || [])
-                setOpeningBalance(res.openingBalance || 0)
+                setOpeningBalance((res as any).openingBalance || 0)
             }
+
         } catch (e) {
             console.error(e)
         }

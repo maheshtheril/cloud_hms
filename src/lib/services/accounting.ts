@@ -1516,10 +1516,10 @@ export class AccountingService {
                 orderBy: { date: 'asc' }
             });
 
-            return { success: true, data: entries };
+            return { success: true, data: entries, openingBalance: 0 };
         } catch (error: any) {
             console.error("Daybook Error:", error);
-            return { success: false, error: error.message };
+            return { success: false, error: error.message, data: [], openingBalance: 0 };
         }
     }
 
@@ -1534,8 +1534,8 @@ export class AccountingService {
         endOfDay.setHours(23, 59, 59, 999);
 
         // Define account ranges/codes based on standard COA
-        // Cash: 1000, 1010 | Bank: 1050
-        const codes = type === 'cash' ? ['1000', '1010'] : ['1050'];
+        // Cash: 1000, 1010 | Bank: 1100 (Standard), 1050 (Legacy)
+        const codes = type === 'cash' ? ['1000', '1010'] : ['1100', '1050'];
 
         try {
             // 1. Find the target accounts for this company
@@ -1577,7 +1577,7 @@ export class AccountingService {
             return { success: true, data: entries, openingBalance };
         } catch (error: any) {
             console.error(`${type.toUpperCase()}book Error:`, error);
-            return { success: false, error: error.message };
+            return { success: false, error: error.message, data: [], openingBalance: 0 };
         }
     }
 }
