@@ -1084,10 +1084,18 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                     <Button
                         onClick={() => savePrescription(false)}
                         disabled={isSaving}
-                        className="bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-xl shadow-lg shadow-slate-900/20 px-8"
+                        className="bg-slate-900 text-white hover:bg-slate-800 font-bold rounded-xl shadow-lg shadow-slate-900/20 px-6"
                     >
                         {isSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                         Save Prescription
+                    </Button>
+                    <Button
+                        onClick={() => savePrescription(true)}
+                        disabled={isSaving}
+                        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black rounded-xl shadow-lg shadow-emerald-500/20 px-8 flex items-center gap-2"
+                    >
+                        <Receipt className="h-4 w-4" />
+                        Save & Collect Billing
                     </Button>
                 </div>
             </div>

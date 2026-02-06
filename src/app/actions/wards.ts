@@ -195,7 +195,7 @@ export async function releaseBed(bedId: string) {
 }
 
 
-export async function createAdmission(patientId: string, doctorId?: string) {
+export async function createAdmission(patientId: string, doctorId?: string, wardId?: string, bedId?: string) {
     const session = await auth()
     if (!session?.user?.tenantId || !session?.user?.companyId) return { success: false, error: "Unauthorized" }
 
@@ -213,20 +213,56 @@ export async function createAdmission(patientId: string, doctorId?: string) {
             return { success: false, error: "Patient is already currently admitted." }
         }
 
-        const admission = await prisma.hms_admission.create({
-            data: {
-                tenant_id: session.user.tenantId,
-                company_id: session.user.companyId,
-                patient_id: patientId,
-                admitting_doctor: doctorId,
-                status: 'admitted',
-                branch_id: session.user.current_branch_id
+        let bedInfo: any = {}
+        if (bedId) {
+            const bed = await prisma.hms_bed.findUnique({
+                where: { id: bedId },
+                include: { hms_ward: true }
+            })
+            if (bed && bed.status === 'available') {
+                bedInfo = {
+                    ward: bed.hms_ward.name,
+                    bed: bed.bed_no,
+                    metadata: {
+                        bed_id: bedId,
+                        ward_id: bed.ward_id
+                    }
+                }
+            } else if (bed && bed.status === 'occupied') {
+                return { success: false, error: "Selected bed is already occupied." }
             }
+        }
+
+        const admission = await prisma.$transaction(async (tx) => {
+            const adm = await tx.hms_admission.create({
+                data: {
+                    id: crypto.randomUUID(),
+                    tenant_id: session.user.tenantId,
+                    company_id: session.user.companyId,
+                    patient_id: patientId,
+                    admitting_doctor: doctorId,
+                    status: 'admitted',
+                    branch_id: session.user.current_branch_id,
+                    ...bedInfo
+                }
+            })
+
+            if (bedId) {
+                await tx.hms_bed.update({
+                    where: { id: bedId },
+                    data: { status: 'occupied' }
+                })
+            }
+
+            return adm
         })
+
         revalidatePath('/hms/wards')
         revalidatePath('/hms/patients')
+        revalidatePath(`/hms/patients/${patientId}`)
         return { success: true, data: admission }
     } catch (e: any) {
+        console.error("ADMISSION_ERROR:", e)
         return { success: false, error: e.message }
     }
 }

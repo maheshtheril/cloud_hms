@@ -4,7 +4,7 @@ import { Plus } from "lucide-react"
 import { auth } from "@/auth"
 
 import SearchInput from "@/components/search-input"
-import { AdmitPatientButton } from "@/components/hms/patients/admit-patient-button"
+import { AdmissionDialog } from "@/components/hms/patients/admission-dialog"
 
 
 export default async function PatientsPage({
@@ -123,7 +123,7 @@ export default async function PatientsPage({
                                             View
                                         </Link>
                                         <div className="h-4 w-px bg-slate-200" />
-                                        <AdmitPatientButton
+                                        <AdmissionDialog
                                             patientId={patient.id}
                                             patientName={`${patient.first_name} ${patient.last_name}`}
                                         />

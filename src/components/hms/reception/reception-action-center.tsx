@@ -29,6 +29,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Link from "next/link"
 import { VisitTypeBadge } from "../visit-type-badge"
 import { MessageSquare } from "lucide-react"
+import { AdmissionDialog } from "@/components/hms/patients/admission-dialog"
+import { OpSlipDialog } from "./op-slip-dialog"
 
 interface ReceptionActionCenterProps {
     todayAppointments: any[]
@@ -242,7 +244,75 @@ export function ReceptionActionCenter({
                         </div>
                     </Card>
                 </Link>
+                <Link href="/hms/billing?status=pending" className="block cursor-pointer">
+                    <Card className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800 shadow-sm flex items-center justify-between group hover:shadow-md transition-all hover:ring-2 hover:ring-emerald-500/20">
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Awaiting Billing</p>
+                            <h3 className="text-xl font-black text-emerald-700 dark:text-emerald-400">
+                                {todayAppointments.filter(a => a.status === 'completed' && a.invoiceStatus !== 'paid').length}
+                            </h3>
+                        </div>
+                        <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                            <IndianRupee className="h-5 w-5 text-emerald-600" />
+                        </div>
+                    </Card>
+                </Link>
             </div>
+
+            {/* BILLING HUB - IMMEDIATE ACTION (NEW) */}
+            {todayAppointments.some(a => a.status === 'completed' && a.invoiceStatus !== 'paid') && (
+                <div className="bg-gradient-to-r from-orange-500 to-amber-600 rounded-3xl p-1 shadow-xl shadow-orange-200/50 animate-in slide-in-from-top-4 duration-500">
+                    <div className="bg-white dark:bg-slate-950 rounded-[1.4rem] p-5 flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="flex items-center gap-5">
+                            <div className="h-16 w-16 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 shrink-0">
+                                <CreditCard className="h-8 w-8 animate-bounce" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic">
+                                    Billing <span className="text-orange-600">Action Required</span>
+                                </h2>
+                                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+                                    {todayAppointments.filter(a => a.status === 'completed' && a.invoiceStatus !== 'paid').length} Patients finished consultation & waiting for checkout
+                                </p>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 justify-center">
+                            {todayAppointments
+                                .filter(a => a.status === 'completed' && a.invoiceStatus !== 'paid')
+                                .slice(0, 3)
+                                .map(apt => (
+                                    <Button
+                                        key={apt.id}
+                                        variant="outline"
+                                        size="lg"
+                                        onClick={() => router.push(`/hms/billing/new?appointmentId=${apt.id}&patientId=${apt.patient.id}`)}
+                                        className="h-14 px-6 rounded-2xl border-2 border-orange-100 hover:border-orange-500 hover:bg-orange-50 transition-all flex items-center gap-3 group"
+                                    >
+                                        <Avatar className="h-8 w-8 border-2 border-white">
+                                            <AvatarFallback className="text-[10px] font-bold bg-orange-100 text-orange-600">
+                                                {apt.patient?.first_name?.[0]}{apt.patient?.last_name?.[0]}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="text-left">
+                                            <p className="text-xs font-black text-slate-800 uppercase leading-none">{apt.patient?.first_name}</p>
+                                            <p className="text-[9px] font-bold text-orange-500 mt-1">COLLECT FEES</p>
+                                        </div>
+                                        <ChevronRight className="h-4 w-4 text-orange-300 group-hover:translate-x-1 transition-transform" />
+                                    </Button>
+                                ))}
+                            {todayAppointments.filter(a => a.status === 'completed' && a.invoiceStatus !== 'paid').length > 3 && (
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => router.push('/hms/billing?status=pending')}
+                                    className="h-14 px-6 rounded-2xl font-black text-xs text-orange-500 hover:text-orange-700 uppercase tracking-widest"
+                                >
+                                    View All +{todayAppointments.filter(a => a.status === 'completed' && a.invoiceStatus !== 'paid').length - 3}
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* DRAFT ALERT */}
             {draftCount > 0 && (
@@ -532,6 +602,14 @@ export function ReceptionActionCenter({
                                                     <td className="px-6 py-5 text-right relative">
                                                         <div className="flex justify-end gap-2 items-center">
                                                             <div className="flex items-center gap-2">
+                                                                <OpSlipDialog
+                                                                    appointment={apt}
+                                                                    trigger={
+                                                                        <Button variant="outline" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
+                                                                            <Printer className="h-4 w-4" />
+                                                                        </Button>
+                                                                    }
+                                                                />
                                                                 <StatusBadge apt={apt} />
                                                                 {getSmartStatus(apt).label === 'Billing / Checkout' && (
                                                                     <Button
@@ -620,9 +698,26 @@ export function ReceptionActionCenter({
                                             <div className="text-[9px] text-slate-400">{p.patient_number}</div>
                                         </div>
                                     </div>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => router.push(`/hms/patients/${p.id}`)}>
-                                        <ChevronRight className="h-4 w-4" />
-                                    </Button>
+                                    <div className="flex items-center gap-1">
+                                        {todayAppointments.find(a => a.patient_id === p.id && a.status === 'completed' && a.invoiceStatus !== 'paid') && (
+                                            <Button
+                                                size="sm"
+                                                variant="ghost"
+                                                className="h-7 px-2 text-[9px] font-black bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 border border-orange-100 uppercase tracking-tighter"
+                                                onClick={() => router.push(`/hms/billing/new?patientId=${p.id}&appointmentId=${todayAppointments.find(a => a.patient_id === p.id && a.status === 'completed' && a.invoiceStatus !== 'paid').id}`)}
+                                            >
+                                                <CreditCard className="h-3 w-3 mr-1" />
+                                                Bill Pending
+                                            </Button>
+                                        )}
+                                        <AdmissionDialog
+                                            patientId={p.id}
+                                            patientName={`${p.first_name} ${p.last_name}`}
+                                        />
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => router.push(`/hms/patients/${p.id}`)}>
+                                            <ChevronRight className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -785,6 +880,17 @@ function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, 
                     {diffMins}m
                 </div>
                 <div className="flex items-center gap-1 mt-1">
+                    <OpSlipDialog
+                        appointment={apt}
+                        trigger={
+                            <button
+                                className="p-1 rounded-md text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 transition-all"
+                                title="Print OP Slip / Rx Sheet"
+                            >
+                                <Printer className="h-3.5 w-3.5" />
+                            </button>
+                        }
+                    />
                     <button
                         onClick={(e) => {
                             e.stopPropagation();

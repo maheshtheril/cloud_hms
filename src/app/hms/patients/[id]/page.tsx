@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Calendar, User, Phone, MapPin, Clock, FileText, Plus, Edit, Mail, Package, Activity, Receipt, CreditCard, History } from "lucide-react"
+import { ArrowLeft, Calendar, User, Phone, MapPin, Clock, FileText, Plus, Edit, Mail, Package, Activity, Receipt, CreditCard, History, Bed as BedIcon } from "lucide-react"
 import { EditPatientButton } from "@/components/hms/patients/edit-patient-button"
 import { PatientPaymentDialog } from "@/components/hms/billing/patient-payment-dialog"
 import { PatientConsumptionDialog } from "@/components/hms/billing/patient-consumption-dialog"
@@ -9,39 +9,50 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { InvoicePreviewDialog } from "@/components/hms/billing/invoice-preview-dialog"
 import { AppointmentManageDialog } from "@/components/hms/appointments/appointment-manage-dialog"
 
+import { AdmissionDialog } from "@/components/hms/patients/admission-dialog"
+
 export default async function PatientDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const patient = await prisma.hms_patient.findUnique({
-        where: { id },
-        include: {
-            hms_appointments: {
-                orderBy: { starts_at: 'desc' },
-                take: 50
-            },
-            hms_invoice: {
-                orderBy: { created_at: 'desc' },
-                take: 50,
-                include: {
-                    hms_invoice_lines: true
-                }
-            },
-            prescription: {
-                orderBy: { created_at: 'desc' },
-                take: 20,
-                include: {
-                    prescription_items: {
-                        include: {
-                            hms_product: true
+
+    const [patient, activeAdmission] = await Promise.all([
+        prisma.hms_patient.findUnique({
+            where: { id },
+            include: {
+                hms_appointments: {
+                    orderBy: { starts_at: 'desc' },
+                    take: 50
+                },
+                hms_invoice: {
+                    orderBy: { created_at: 'desc' },
+                    take: 50,
+                    include: {
+                        hms_invoice_lines: true
+                    }
+                },
+                prescription: {
+                    orderBy: { created_at: 'desc' },
+                    take: 20,
+                    include: {
+                        prescription_items: {
+                            include: {
+                                hms_product: true
+                            }
                         }
                     }
+                },
+                hms_vitals: {
+                    orderBy: { recorded_at: 'desc' },
+                    take: 50
                 }
-            },
-            hms_vitals: {
-                orderBy: { recorded_at: 'desc' },
-                take: 50
             }
-        }
-    })
+        }),
+        prisma.hms_admission.findFirst({
+            where: {
+                patient_id: id,
+                status: 'admitted'
+            }
+        })
+    ])
 
     // Fetch doctors for appointment dialog
     const doctors = await prisma.hms_clinicians.findMany({
@@ -175,6 +186,23 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                     </div>
 
                     <div className="flex flex-wrap gap-2">
+                        {!activeAdmission ? (
+                            <div className="bg-emerald-50 p-1 pr-4 rounded-xl border border-emerald-100 flex items-center gap-2">
+                                <AdmissionDialog
+                                    patientId={patientAny.id}
+                                    patientName={`${patientAny.first_name} ${patientAny.last_name}`}
+                                />
+                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-tighter italic">Outpatient</span>
+                            </div>
+                        ) : (
+                            <div className="h-10 px-4 flex items-center gap-2 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                <BedIcon className="h-4 w-4" />
+                                <div className="text-left">
+                                    <p className="text-[10px] font-black uppercase tracking-tighter leading-none">Admitted</p>
+                                    <p className="text-[11px] font-bold">{activeAdmission.ward} - Unit {activeAdmission.bed}</p>
+                                </div>
+                            </div>
+                        )}
                         <button className="h-10 px-4 flex items-center gap-2 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200 transition-all font-medium text-sm shadow-sm" title="Print Medical Record">
                             <FileText className="h-4 w-4" /> Print
                         </button>
