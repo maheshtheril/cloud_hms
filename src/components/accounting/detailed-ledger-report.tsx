@@ -42,9 +42,11 @@ export function DetailedLedgerReport({ type }: DetailedLedgerProps) {
             }
 
             if (res.success) {
-                setEntries(res.data || [])
-                setOpeningBalance((res as any).openingBalance || 0)
+                const result = res as any
+                setEntries(result.data || [])
+                setOpeningBalance(result.openingBalance || 0)
             }
+
 
         } catch (e) {
             console.error(e)
