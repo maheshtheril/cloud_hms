@@ -249,7 +249,7 @@ export function ReceptionActionCenter({
                         <div className="space-y-1">
                             <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Awaiting Billing</p>
                             <h3 className="text-xl font-black text-emerald-700 dark:text-emerald-400">
-                                {todayAppointments.filter(a => a.status === 'completed' && a.invoiceStatus !== 'paid').length}
+                                {todayAppointments.filter(a => (a.status === 'completed' || a.hasPrescription) && a.invoiceStatus !== 'paid').length}
                             </h3>
                         </div>
                         <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
@@ -260,7 +260,7 @@ export function ReceptionActionCenter({
             </div>
 
             {/* BILLING HUB - IMMEDIATE ACTION (NEW) */}
-            {todayAppointments.some(a => a.status === 'completed' && a.invoiceStatus !== 'paid') && (
+            {todayAppointments.some(a => (a.status === 'completed' || a.hasPrescription) && a.invoiceStatus !== 'paid') && (
                 <div className="bg-gradient-to-r from-orange-500 to-amber-600 rounded-3xl p-1 shadow-xl shadow-orange-200/50 animate-in slide-in-from-top-4 duration-500">
                     <div className="bg-white dark:bg-slate-950 rounded-[1.4rem] p-5 flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="flex items-center gap-5">
@@ -272,13 +272,13 @@ export function ReceptionActionCenter({
                                     Billing <span className="text-orange-600">Action Required</span>
                                 </h2>
                                 <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-                                    {todayAppointments.filter(a => a.status === 'completed' && a.invoiceStatus !== 'paid').length} Patients finished consultation & waiting for checkout
+                                    {todayAppointments.filter(a => (a.status === 'completed' || a.hasPrescription) && a.invoiceStatus !== 'paid').length} Patients finished consultation & waiting for checkout
                                 </p>
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-2 justify-center">
                             {todayAppointments
-                                .filter(a => a.status === 'completed' && a.invoiceStatus !== 'paid')
+                                .filter(a => (a.status === 'completed' || a.hasPrescription) && a.invoiceStatus !== 'paid')
                                 .slice(0, 3)
                                 .map(apt => (
                                     <Button
@@ -306,7 +306,7 @@ export function ReceptionActionCenter({
                                     onClick={() => router.push('/hms/billing?status=pending')}
                                     className="h-14 px-6 rounded-2xl font-black text-xs text-orange-500 hover:text-orange-700 uppercase tracking-widest"
                                 >
-                                    View All +{todayAppointments.filter(a => a.status === 'completed' && a.invoiceStatus !== 'paid').length - 3}
+                                    View All +{todayAppointments.filter(a => (a.status === 'completed' || a.hasPrescription) && a.invoiceStatus !== 'paid').length - 3}
                                 </Button>
                             )}
                         </div>
@@ -490,12 +490,12 @@ export function ReceptionActionCenter({
                                         3. Billing / Checkout
                                     </h3>
                                     <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-orange-50 dark:bg-orange-900/30 text-orange-600">
-                                        {filteredAppointments.filter(a => a.status === 'completed' && a.labStatus !== 'pending' && a.invoiceStatus !== 'paid').length}
+                                        {filteredAppointments.filter(a => (a.status === 'completed' || a.hasPrescription) && a.invoiceStatus !== 'paid').length}
                                     </Badge>
                                 </div>
                                 <div className="flex-1 bg-orange-50/30 dark:bg-orange-900/10 rounded-xl border border-orange-100 dark:border-orange-900/30 p-2 space-y-3 overflow-y-auto max-h-[700px] custom-scrollbar">
                                     {filteredAppointments
-                                        .filter(a => a.status === 'completed' && a.labStatus !== 'pending' && a.invoiceStatus !== 'paid')
+                                        .filter(a => (a.status === 'completed' || a.hasPrescription) && a.invoiceStatus !== 'paid')
                                         .sort((a, b) => new Date(a.start_time).getTime() - new Date(b.start_time).getTime())
                                         .map(apt => (
                                             <PatientCard
@@ -611,7 +611,7 @@ export function ReceptionActionCenter({
                                                                     }
                                                                 />
                                                                 <StatusBadge apt={apt} />
-                                                                {getSmartStatus(apt).label === 'Billing / Checkout' && (
+                                                                {((apt.status === 'completed' || apt.hasPrescription) && apt.invoiceStatus !== 'paid') && (
                                                                     <Button
                                                                         size="sm"
                                                                         onClick={() => router.push(`/hms/billing/new?appointmentId=${apt.id}&patientId=${apt.patient.id}`)}
@@ -936,13 +936,27 @@ function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, 
                     <Button size="sm" onClick={onAction} className="h-7 text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white">Send In</Button>
                 )}
                 {type === 'running' && (
-                    <Button size="sm" onClick={() => router.push(`/hms/prescriptions/${apt.id}`)} className="h-7 text-[10px] bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-100">
-                        View Rx
-                    </Button>
+                    <div className="flex gap-1">
+                        <Button size="sm" onClick={() => router.push(`/hms/prescriptions/${apt.id}`)} className="h-7 text-[10px] bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-100">
+                            View Rx
+                        </Button>
+                        {apt.hasPrescription && apt.invoiceStatus !== 'paid' && (
+                            <Button size="sm" onClick={() => router.push(`/hms/billing/new?appointmentId=${apt.id}&patientId=${apt.patient.id}`)} className="h-7 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm px-2">
+                                <IndianRupee className="h-3 w-3 mr-1" />
+                                Bill
+                            </Button>
+                        )}
+                    </div>
                 )}
                 {type === 'completed' && (
                     <div className="flex gap-1">
                         <Button size="sm" variant="ghost" onClick={() => router.push(`/hms/prescriptions/${apt.id}`)} className="h-7 text-[10px]">Rx</Button>
+                        {apt.invoiceStatus !== 'paid' && (
+                            <Button size="sm" onClick={() => router.push(`/hms/billing/new?appointmentId=${apt.id}&patientId=${apt.patient.id}`)} className="h-7 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm px-2">
+                                <IndianRupee className="h-3 w-3 mr-1" />
+                                Bill
+                            </Button>
+                        )}
                         <Button size="sm" onClick={() => handleStatusUpdate(apt.id, 'archived')} className="h-7 text-[10px] bg-slate-100 text-slate-500 hover:bg-slate-200">Archive</Button>
                     </div>
                 )}
