@@ -54,6 +54,13 @@ export function DashboardClient({ user, stats, appointments, patients, doctors, 
                                 <Users className="h-4 w-4" />
                                 Add Patient
                             </button>
+                            <Link
+                                href="/hms/analytics"
+                                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800 rounded-lg hover:bg-indigo-100 transition-all text-sm font-bold shadow-sm"
+                            >
+                                <Activity className="h-4 w-4" />
+                                View Analytics
+                            </Link>
                             <button
                                 onClick={() => setShowAppointmentModal(true)}
                                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg hover:scale-105 transition-all text-sm font-medium"

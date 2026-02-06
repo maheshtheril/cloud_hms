@@ -481,6 +481,7 @@ export async function ensureHmsMenus() {
     try {
         const hmsItems = [
             { key: 'hms-dashboard', label: 'Dashboard', url: '/hms/dashboard', icon: 'LayoutDashboard', sort: 10, permission: 'hms:admin' },
+            { key: 'hms-analytics', label: 'Analytics & Trends', url: '/hms/analytics', icon: 'BarChart3', sort: 11, permission: 'hms:admin' },
             { key: 'hms-reception', label: 'Reception', url: '/hms/reception/dashboard', icon: 'MonitorCheck', sort: 12, permission: 'hms:dashboard:reception' },
             { key: 'hms-patients', label: 'Patients', url: '/hms/patients', icon: 'UserCircle', sort: 20, permission: 'patients:view' },
             { key: 'hms-appointments', label: 'Appointments', url: '/hms/appointments', icon: 'Calendar', sort: 30, permission: 'appointments:view' },
