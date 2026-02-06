@@ -41,7 +41,7 @@ export function WardManager({ branches }: { branches: any[] }) {
     async function loadWards() {
         setLoading(true)
         const res = await getWards(selectedBranch)
-        if (res.success) setWards(res.data)
+        if (res.success) setWards(res.data || [])
         setLoading(false)
     }
 
@@ -74,7 +74,7 @@ export function WardManager({ branches }: { branches: any[] }) {
         setSelectedBed(bed)
         const res = await getActiveAdmissions()
         if (res.success) {
-            setAdmissions(res.data)
+            setAdmissions(res.data || [])
             setIsAssignOpen(true)
         } else {
             toast.error("Failed to load admissions")

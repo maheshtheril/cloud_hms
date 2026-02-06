@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache"
 
 export async function getWards(branchId?: string) {
     const session = await auth()
-    if (!session?.user?.tenantId) return { success: false, error: "Unauthorized" }
+    if (!session?.user?.tenantId) return { success: false, error: "Unauthorized", data: [] }
 
     const wards = await prisma.hms_ward.findMany({
         where: {
@@ -98,7 +98,7 @@ export async function createBed(wardId: string, bedNo: string) {
 
 export async function getActiveAdmissions() {
     const session = await auth()
-    if (!session?.user?.tenantId) return { success: false, error: "Unauthorized" }
+    if (!session?.user?.tenantId) return { success: false, error: "Unauthorized", data: [] }
 
     const admissions = await prisma.hms_admission.findMany({
         where: {
