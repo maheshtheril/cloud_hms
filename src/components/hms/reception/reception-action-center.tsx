@@ -6,7 +6,7 @@ import {
     UserPlus, CalendarPlus, LogIn, CreditCard,
     PhoneIncoming, IdCard, Users, Search,
     Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone, MoreVertical, Edit, Activity, IndianRupee,
-    Wallet, Banknote, Fingerprint, LayoutDashboard, Kanban, AlertTriangle, Syringe, Zap, Eye, EyeOff, Wifi
+    Printer, Wallet, Banknote, Fingerprint, LayoutDashboard, Kanban, AlertTriangle, Syringe, Zap, Eye, EyeOff, Wifi
 } from "lucide-react"
 import { ExpenseDialog } from "./expense-dialog"
 import { PettyCashVoucher } from "./petty-cash-voucher"
