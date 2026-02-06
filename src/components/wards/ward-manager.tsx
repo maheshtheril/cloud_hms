@@ -33,6 +33,9 @@ export function WardManager({ branches }: { branches: any[] }) {
     const [admissions, setAdmissions] = useState<any[]>([])
     const [selectedBed, setSelectedBed] = useState<any>(null)
     const [isAssignOpen, setIsAssignOpen] = useState(false)
+    const [isCreateBedOpen, setIsCreateBedOpen] = useState(false)
+    const [targetWardId, setTargetWardId] = useState('')
+    const [bedNo, setBedNo] = useState('')
 
     useEffect(() => {
         loadWards()
@@ -58,16 +61,24 @@ export function WardManager({ branches }: { branches: any[] }) {
         }
     }
 
-    async function handleAddBed(wardId: string) {
-        const bedNo = prompt("Enter Bed Number:")
-        if (!bedNo) return
-        const res = await createBed(wardId, bedNo)
+    function handleAddBed(wardId: string) {
+        setTargetWardId(wardId)
+        setBedNo('')
+        setIsCreateBedOpen(true)
+    }
+
+    async function submitAddBed() {
+        if (!bedNo || !targetWardId) return
+        setLoading(true)
+        const res = await createBed(targetWardId, bedNo)
         if (res.success) {
-            toast.success("Bed added")
+            toast.success("Bed added successfully")
+            setIsCreateBedOpen(false)
             loadWards()
         } else {
             toast.error(res.error)
         }
+        setLoading(false)
     }
 
     async function openAssignDialog(bed: any) {
@@ -217,9 +228,10 @@ export function WardManager({ branches }: { branches: any[] }) {
                                         ))}
                                         <button
                                             onClick={() => handleAddBed(ward.id)}
-                                            className="h-20 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 flex items-center justify-center transition-all group/add"
+                                            className="h-20 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 flex flex-col items-center justify-center transition-all group/add gap-1"
                                         >
-                                            <Plus className="h-6 w-6 text-slate-300 group-hover/add:text-slate-500 transition-colors" />
+                                            <Plus className="h-5 w-5 text-slate-300 group-hover/add:text-indigo-500 transition-colors" />
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover/add:text-indigo-600 transition-colors">Add Bed</span>
                                         </button>
                                     </div>
                                 </div>
@@ -286,6 +298,43 @@ export function WardManager({ branches }: { branches: any[] }) {
                             </div>
                         ))}
                     </div>
+                </DialogContent>
+            </Dialog>
+            <Dialog open={isCreateBedOpen} onOpenChange={setIsCreateBedOpen}>
+                <DialogContent className="max-w-md rounded-[2.5rem] p-8 border-none shadow-2xl dark:bg-slate-900">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-black">Provision New Bed</DialogTitle>
+                        <CardDescription>Register a new clinical bed in the selected ward</CardDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <label className="text-xs font-black uppercase text-slate-400 px-1">Bed Number / Label</label>
+                            <Input
+                                placeholder="e.g. B-101, VENT-01"
+                                value={bedNo}
+                                onChange={(e) => setBedNo(e.target.value)}
+                                className="h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 border-none font-bold text-lg px-6 dark:text-white"
+                                autoFocus
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="ghost"
+                            onClick={() => setIsCreateBedOpen(false)}
+                            className="h-14 rounded-2xl font-bold px-8"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={submitAddBed}
+                            disabled={loading || !bedNo}
+                            className="h-14 rounded-2xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black px-8 hover:shadow-xl transition-all"
+                        >
+                            {loading ? <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" /> : <Plus className="h-5 w-5 mr-2" />}
+                            Create Bed
+                        </Button>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>
