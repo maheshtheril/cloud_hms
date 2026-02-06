@@ -11,7 +11,7 @@ export async function getWards(branchId?: string) {
     const wards = await prisma.hms_ward.findMany({
         where: {
             tenant_id: session.user.tenantId,
-            branch_id: branchId || session.user.currentBranchId || undefined
+            branch_id: branchId || session.user.current_branch_id || undefined
         },
         include: {
             hms_bed: true
@@ -220,7 +220,7 @@ export async function createAdmission(patientId: string, doctorId?: string) {
                 patient_id: patientId,
                 admitting_doctor: doctorId,
                 status: 'admitted',
-                branch_id: session.user.currentBranchId
+                branch_id: session.user.current_branch_id
             }
         })
         revalidatePath('/hms/wards')

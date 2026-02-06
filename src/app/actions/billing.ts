@@ -1312,7 +1312,7 @@ export async function generateRegistrationInvoice(patientId: string) {
                     source: 'auto-registration-rcm',
                     description: 'Automatic registration billing sequence'
                 },
-                branch_id: session.user.currentBranchId,
+                branch_id: session.user.current_branch_id,
                 created_by: session.user.id,
                 hms_invoice_lines: {
                     create: {
