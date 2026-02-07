@@ -485,7 +485,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                 // Merge new metadata with existing to avoid losing data if AI returns nulls
                 // Ensure we handle 'null' prev state safely by defaulting to empty object if needed
                 setSupplierMeta((prev: any) => ({ ...(prev || {}), gstin: gstin || prev?.gstin, address: address || prev?.address }));
-                if (date) setReceivedDate(date);
+                if (date) setReceivedDate(normalizeDate(date));
                 if (ref) setReference(ref);
                 if (grandTotal) {
                     const parsedTotal = parseFloat(grandTotal);
@@ -533,7 +533,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                 receivedQty: qty,
                                 unitPrice: price,
                                 batch: item.batch || "",
-                                expiry: item.expiry || "",
+                                expiry: item.expiry ? normalizeDate(item.expiry) : "",
                                 mrp: Number(item.mrp) || price,
                                 salePrice: 0,
                                 marginPct: 0,
@@ -587,9 +587,39 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
         toast({ title: "Form Cleared", description: "All fields have been reset." });
     };
 
+    const normalizeDate = (dateStr: string): string => {
+        if (!dateStr) return new Date().toISOString().split('T')[0];
+
+        // If already YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+
+        // Handle DD-MM-YYYY or DD/MM/YYYY
+        const dmyMatch = dateStr.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+        if (dmyMatch) {
+            const [_, d, m, y] = dmyMatch;
+            return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+        }
+
+        // Try native parsing
+        const parsed = new Date(dateStr);
+        if (!isNaN(parsed.getTime())) {
+            return parsed.toISOString().split('T')[0];
+        }
+
+        return new Date().toISOString().split('T')[0];
+    };
+
     const handleSubmit = async () => {
         if (!supplierId || items.length === 0) {
             toast({ title: "Validation Error", description: "Please select a supplier and add at least one item.", variant: "destructive" });
+            return;
+        }
+
+        // Standardize Date
+        const cleanDate = normalizeDate(receivedDate);
+        const parsedDate = new Date(cleanDate);
+        if (isNaN(parsedDate.getTime())) {
+            toast({ title: "Invalid Date", description: "Please enter a valid invoice date.", variant: "destructive" });
             return;
         }
 
@@ -611,7 +641,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
             const payload = {
                 supplierId,
                 purchaseOrderId: poId,
-                receivedDate: new Date(receivedDate),
+                receivedDate: parsedDate,
                 reference,
                 notes,
                 attachmentUrl,

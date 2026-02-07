@@ -127,6 +127,12 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
     if (!data.supplierId) return { error: "Supplier is required." }
     if (!data.items || data.items.length === 0) return { error: "Receipt must have items" }
 
+    // Validate Date
+    const receiptDate = new Date(data.receivedDate);
+    if (isNaN(receiptDate.getTime())) {
+        return { error: "Invalid invoice date format. Please use YYYY-MM-DD or DD-MM-YYYY." };
+    }
+
     // Validate sale price for all items
     for (const item of data.items) {
         // 1. Sale price is required
@@ -179,6 +185,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
             const count = await tx.hms_purchase_receipt.count({ where: { company_id: companyId } })
             const receiptNumber = `GRN-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`
 
+            console.log(`[Receipt] Starting transaction for ${receiptNumber}`);
             // 2. Create Receipt Header
             const receipt = await tx.hms_purchase_receipt.create({
                 data: {
@@ -189,7 +196,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     supplier_id: data.supplierId, // Added missing supplier_id
                     name: receiptNumber,
                     received_by: session.user.id,
-                    receipt_date: data.receivedDate,
+                    receipt_date: receiptDate,
                     status: 'received' as any,
                     metadata: {
                         reference: data.reference,
@@ -244,6 +251,45 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
             const receiptLinesData: any[] = [];
             const productUpdates: Map<string, any> = new Map();
 
+            // --- 2c. PRE-CREATE MISSING BATCHES IN BULK ---
+            const newBatchesToCreate: any[] = [];
+            const seenNewBatches = new Set<string>();
+
+            for (const item of data.items) {
+                if (!item.productId || !item.batch) continue;
+                const key = `${item.productId}|${item.batch}`;
+                if (!batchMap.has(key) && !seenNewBatches.has(key)) {
+                    let validExpiry = null;
+                    if (item.expiry) {
+                        const d = new Date(item.expiry);
+                        if (!isNaN(d.getTime())) validExpiry = d;
+                    }
+
+                    const newId = crypto.randomUUID();
+                    newBatchesToCreate.push({
+                        id: newId,
+                        tenant_id: session.user.tenantId!,
+                        company_id: companyId!,
+                        product_id: item.productId,
+                        batch_no: item.batch,
+                        expiry_date: validExpiry,
+                        mrp: item.mrp || 0,
+                        cost: item.unitPrice || 0,
+                        sale_price: item.salePrice || 0,
+                        margin_percentage: item.marginPct || 0,
+                        markup_percentage: item.markupPct || 0,
+                        pricing_strategy: item.pricingStrategy || 'manual',
+                        qty_on_hand: 0
+                    });
+                    seenNewBatches.add(key);
+                    batchMap.set(key, newId); // Reserve in map so lines can use it
+                }
+            }
+
+            if (newBatchesToCreate.length > 0) {
+                await tx.hms_product_batch.createMany({ data: newBatchesToCreate });
+            }
+
             for (const item of data.items) {
                 if (!item.productId) throw new Error("Product ID is missing for one or more items.");
 
@@ -254,36 +300,8 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     if (match) resolvedTaxId = match.id;
                 }
 
-                // Handle Batch (Use pre-fetched map)
-                let batchId = batchMap.get(`${item.productId}|${item.batch}`);
-
-                if (!batchId && item.batch) {
-                    let validExpiry = null;
-                    if (item.expiry) {
-                        const d = new Date(item.expiry);
-                        if (!isNaN(d.getTime())) validExpiry = d;
-                    }
-
-                    const newBatch = await tx.hms_product_batch.create({
-                        data: {
-                            id: crypto.randomUUID(),
-                            tenant_id: session.user.tenantId!,
-                            company_id: companyId!,
-                            product_id: item.productId,
-                            batch_no: item.batch,
-                            expiry_date: validExpiry,
-                            mrp: item.mrp || 0,
-                            cost: item.unitPrice || 0,
-                            sale_price: item.salePrice,
-                            margin_percentage: item.marginPct,
-                            markup_percentage: item.markupPct,
-                            pricing_strategy: item.pricingStrategy,
-                            qty_on_hand: 0
-                        }
-                    });
-                    batchId = newBatch.id;
-                    batchMap.set(`${item.productId}|${item.batch}`, batchId);
-                }
+                // Handle Batch (Use pre-fetched map - now includes newly created ones)
+                let batchId = batchMap.get(`${item.productId}|${item.batch}`) || null;
 
                 const billedQty = Number(item.qtyReceived) || 0;
                 const freeQty = Number(item.freeQty) || 0;
@@ -424,8 +442,8 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     supplier_id: data.supplierId,
                     purchase_order_id: data.purchaseOrderId,
                     name: data.reference || receiptNumber.replace('GRN', 'BILL'),
-                    invoice_date: data.receivedDate,
-                    due_date: data.receivedDate,
+                    invoice_date: receiptDate,
+                    due_date: receiptDate,
                     status: 'posted',
                     currency: 'INR',
                     subtotal: invoiceSubtotal,
