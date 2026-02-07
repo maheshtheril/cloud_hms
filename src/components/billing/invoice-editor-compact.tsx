@@ -326,7 +326,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               const match = taxConfig.taxRates.find((tr: any) => Math.abs(Number(tr.rate) - Number(item.categoryTaxRate)) < 0.1);
               if (match) resolvedTaxId = match.id;
             }
-            updated.tax_rate_id = (resolvedTaxId !== undefined) ? resolvedTaxId : defaultTaxId;
+            updated.tax_rate_id = resolvedTaxId || defaultTaxId;
 
             // Metadata for complex items
             updated.metadata = item.metadata

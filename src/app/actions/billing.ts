@@ -157,27 +157,32 @@ export async function getBillableItems() {
             const category = categoryRel?.hms_product_category;
             const productTaxRule = item.product_tax_rules?.[0];
 
-            // Resolve newest procurement record
+            // 1. Resolve newest procurement record with reliable date comparison
             const piLine = lastInvoiceEntries.find(pi => pi.product_id === item.id);
             const receiptLine = lastReceiptEntries.find(rl => rl.product_id === item.id);
             const poLine = item.hms_purchase_order_line?.[0];
 
-            // Priority: Invoice Line > Receipt Line > PO Line
-            const latestPurchase: any = piLine || receiptLine || poLine;
+            const dateRank = [
+                { rec: piLine, date: piLine?.created_at ? new Date(piLine.created_at) : null },
+                { rec: receiptLine, date: receiptLine?.created_at ? new Date(receiptLine.created_at) : null },
+                { rec: poLine, date: poLine?.created_at ? new Date(poLine.created_at) : null }
+            ].filter(d => d.date !== null).sort((a, b) => b.date!.getTime() - a.date!.getTime());
+
+            const latestPurchase: any = dateRank.length > 0 ? dateRank[0].rec : (piLine || receiptLine || poLine);
 
             let purchaseTaxId = null;
             let purchaseTaxRate = 0;
 
-            // Extract tax from metadata OR direct columns (Receipts use metadata, Invoices/POs use 'tax' column)
+            // Robust tax extraction from the latest purchase record
             const taxSource = latestPurchase?.tax || latestPurchase?.metadata?.tax;
 
-            if (taxSource) {
+            if (taxSource && !(typeof taxSource === 'object' && Object.keys(taxSource).length === 0)) {
                 if (typeof taxSource === 'object' && !Array.isArray(taxSource)) {
                     purchaseTaxId = taxSource.id || null;
-                    purchaseTaxRate = Number(taxSource.rate) || 0;
+                    purchaseTaxRate = Number(taxSource.rate || 0);
                 } else if (Array.isArray(taxSource) && taxSource.length > 0) {
                     purchaseTaxId = taxSource[0].id;
-                    purchaseTaxRate = Number(taxSource[0].rate) || 0;
+                    purchaseTaxRate = Number(taxSource[0].rate || 0);
                 }
             }
 
@@ -205,18 +210,18 @@ export async function getBillableItems() {
             if (resolvedRateObj) {
                 finalTaxRate = Number(resolvedRateObj.rate);
             } else {
-                // FALLBACK: If ID is missing or invalid, try to resolve rate from values
+                // 3. FALLBACK: If ID is missing, resolve by rate values
                 const fallbackRate = Number(productTaxRule?.tax_rates?.rate) ||
                     purchaseTaxRate ||
                     Number(productMetadata.tax_rate) ||
                     Number(productMetadata.tax?.rate) ||
-                    (!item.is_service ? Number(category?.tax_rates?.rate) : 0) ||
+                    (!item.is_service ? (Number(category?.tax_rates?.rate) || Number(category?.tax_rate || 0)) : 0) ||
                     0;
 
                 if (fallbackRate > 0) {
                     finalTaxRate = fallbackRate;
-                    // RE-RESOLVE ID: If we have a rate but no ID, find the ID in company settings
-                    const matchedId = companyTaxRates.find(tr => Number(tr.rate) === fallbackRate)?.id;
+                    // RE-RESOLVE ID: Find matching ID by rate in company settings
+                    const matchedId = companyTaxRates.find(tr => Math.abs(Number(tr.rate) - fallbackRate) < 0.01)?.id;
                     if (matchedId) finalTaxId = matchedId;
                 }
             }
