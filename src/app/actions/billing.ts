@@ -123,24 +123,33 @@ export async function getBillableItems() {
 
         const itemIds = items.map(i => i.id);
 
-        // Manual lookup for last purchase entries (Invoices) since no relation exists in Prisma
+        // PROCUREMENT SYNC: Find the absolute latest purchase records (Invoices or Receipts)
         const lastInvoiceEntries = await prisma.hms_purchase_invoice_line.findMany({
             where: {
                 product_id: { in: itemIds },
                 tenant_id: session.user.tenantId,
-                company_id: companyId
+                hms_purchase_invoice: {
+                    status: { in: ['posted', 'finalized', 'paid'] }
+                }
             },
             orderBy: { created_at: 'desc' },
-            distinct: ['product_id']
         });
 
-        // Flatten price and tax logic for the terminal
+        const lastReceiptEntries = await prisma.hms_purchase_receipt_line.findMany({
+            where: {
+                product_id: { in: itemIds },
+                tenant_id: session.user.tenantId
+            },
+            orderBy: { created_at: 'desc' }
+        });
+
         // Pre-fetch company tax rates to resolve IDs from rates if needed
         const taxMaps = await prisma.company_tax_maps.findMany({
             where: { company_id: companyId },
             include: { tax_rates: true }
         });
         const companyTaxRates = taxMaps.map(m => m.tax_rates).filter(Boolean);
+        const defaultTaxId = taxMaps.find(m => m.is_default)?.tax_rate_id || null;
 
         const flatItems = items.map((item) => {
             const priceHistory = item.hms_product_price_history?.[0];
@@ -148,39 +157,27 @@ export async function getBillableItems() {
             const category = categoryRel?.hms_product_category;
             const productTaxRule = item.product_tax_rules?.[0];
 
-            // Procurement Sync: Check both POs and Direct Invoice Entries
-            const poLine = item.hms_purchase_order_line?.[0];
+            // Resolve newest procurement record
             const piLine = lastInvoiceEntries.find(pi => pi.product_id === item.id);
+            const receiptLine = lastReceiptEntries.find(rl => rl.product_id === item.id);
+            const poLine = item.hms_purchase_order_line?.[0];
 
-            // Choose the absolute latest procurement record to extract tax from
-            const latestPurchase: any = (!piLine || (poLine && poLine.created_at > piLine.created_at)) ? poLine : piLine;
+            // Priority: Invoice Line > Receipt Line > PO Line
+            const latestPurchase: any = piLine || receiptLine || poLine;
 
             let purchaseTaxId = null;
             let purchaseTaxRate = 0;
 
-            if (latestPurchase?.tax) {
-                const taxInfo = latestPurchase.tax;
-                // Scenario 1: Array of tax objects (Modern standard)
-                if (Array.isArray(taxInfo) && taxInfo.length > 0) {
-                    purchaseTaxId = taxInfo[0].id;
-                    purchaseTaxRate = Number(taxInfo[0].rate) || 0;
-                }
-                // Scenario 2: Single object with rate/id
-                else if (typeof taxInfo === 'object') {
-                    const info = taxInfo as any;
-                    purchaseTaxId = info.id || null;
-                    purchaseTaxRate = Number(info.rate) || 0;
+            // Extract tax from metadata OR direct columns (Receipts use metadata, Invoices/POs use 'tax' column)
+            const taxSource = latestPurchase?.tax || latestPurchase?.metadata?.tax;
 
-                    // Fallback for amount-only objects
-                    if (!purchaseTaxRate && info.amount && latestPurchase.unit_price) {
-                        const total = Number(latestPurchase.qty) * Number(latestPurchase.unit_price);
-                        if (total > 0) purchaseTaxRate = (Number(info.amount) / total) * 100;
-                    }
-                }
-                // Scenario 3: Legacy number (Amount only)
-                else if (typeof taxInfo === 'number' && latestPurchase.unit_price) {
-                    const total = Number(latestPurchase.qty) * Number(latestPurchase.unit_price);
-                    if (total > 0) purchaseTaxRate = (taxInfo / total) * 100;
+            if (taxSource) {
+                if (typeof taxSource === 'object' && !Array.isArray(taxSource)) {
+                    purchaseTaxId = taxSource.id || null;
+                    purchaseTaxRate = Number(taxSource.rate) || 0;
+                } else if (Array.isArray(taxSource) && taxSource.length > 0) {
+                    purchaseTaxId = taxSource[0].id;
+                    purchaseTaxRate = Number(taxSource[0].rate) || 0;
                 }
             }
 

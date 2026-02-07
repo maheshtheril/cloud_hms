@@ -1424,7 +1424,7 @@ export async function findOrCreateProduct(productName: string, additionalData?: 
                 tenant_id: tenantId,
                 company_id: companyId,
                 name: productName,
-                description: `Auto-created from invoice scan`,
+                description: productName, // Use actual name for description
                 price: additionalData?.mrp || 0,
                 default_cost: 0,
                 sku: `AUTO-${Date.now()}`,
@@ -1434,8 +1434,10 @@ export async function findOrCreateProduct(productName: string, additionalData?: 
                 metadata: {
                     ...(additionalData?.hsn && { hsn: additionalData.hsn }),
                     ...(additionalData?.packing && { packing: additionalData.packing }),
+                    tax_rate: additionalData?.taxRate, // Proactive tax capture
                     autoCreated: true,
-                    source: 'invoice_scan'
+                    created_from: 'invoice_scan',
+                    scan_details: additionalData
                 }
             }
         });

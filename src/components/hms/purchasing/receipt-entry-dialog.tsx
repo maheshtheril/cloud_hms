@@ -503,7 +503,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                     const productPayload = scannedItems.map(i => ({
                         productName: i.productName,
                         mrp: Number(i.mrp),
-                        hsn: i.hsn
+                        hsn: i.hsn,
+                        taxRate: Number(i.taxRate),
+                        packing: i.packing
                     }));
 
                     const productRes = await findOrCreateProductsBatch(productPayload) as any;
