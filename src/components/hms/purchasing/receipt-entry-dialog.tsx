@@ -104,7 +104,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
     const [scanProgress, setScanProgress] = useState('');
 
     // Window State
-    const [isMaximized, setIsMaximized] = useState(false);
+    const [isMaximized, setIsMaximized] = useState(true);
 
     // Company & Tax Logic
     const [companyDetails, setCompanyDetails] = useState<{ gstin?: string, state?: string } | null>(null);
