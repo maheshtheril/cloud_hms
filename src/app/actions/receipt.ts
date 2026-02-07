@@ -456,33 +456,8 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 }
 
                 // D. Update Main Product Stock (Synced from Ledger)
-                const existingStock = await tx.hms_stock_levels.findFirst({
-                    where: {
-                        company_id: companyId,
-                        product_id: item.productId,
-                        location_id: defaultLocation.id
-                    }
-                });
-
-                if (existingStock) {
-                    await tx.hms_stock_levels.update({
-                        where: { id: existingStock.id },
-                        data: {
-                            quantity: { increment: stockQty }
-                        }
-                    });
-                } else {
-                    await tx.hms_stock_levels.create({
-                        data: {
-                            id: crypto.randomUUID(), // Explicit ID Generation
-                            tenant_id: session.user.tenantId!,
-                            company_id: companyId!,
-                            product_id: item.productId,
-                            location_id: defaultLocation.id,
-                            quantity: stockQty
-                        }
-                    });
-                }
+                // DEPRECATED: Handled automatically by database trigger 'trg_hms_receipt_line_after_insert'
+                // to avoid double-counting and transaction timeouts.
             }
 
             // 4. Update PO Status if linked
@@ -568,7 +543,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
             }
 
             return { receipt, invoiceId: newInvoice.id };
-        })
+        }, { timeout: 30000 })
 
         if (result.invoiceId) {
             // Trigger Accounting Post via INVOICE (Correct Workflow for AP)

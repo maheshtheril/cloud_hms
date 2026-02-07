@@ -1,5 +1,5 @@
 
--- HMS STOCK LOGIC RESTORATION (UUID REFINED + EXPLICIT ID + TYPE SAFE + SCHEMA SAFE)
+-- HMS STOCK LOGIC RESTORATION (UUID REFINED + EXPLICIT ID + TYPE SAFE + SCHEMA SAFE + UOM CONVERSION)
 -- Ensures consistency between text-based receipt lines and uuid-based stock tables.
 
 BEGIN;
@@ -13,6 +13,8 @@ DECLARE
   v_tenant_id uuid;
   v_company_id uuid;
   v_product_id uuid;
+  v_conv_factor numeric := 1;
+  v_stock_qty numeric;
 BEGIN
   -- Cast inputs to uuid for safety to match hms_stock_ledger column types
   v_tenant_id := NULLIF(NEW.tenant_id, '')::uuid;
@@ -40,18 +42,27 @@ BEGIN
     END IF;
   END IF;
 
-  -- 2. Determine unit cost
+  -- 2. Determine conversion factor for UOM
+  -- In HMS, stock is always tracked in BASE units. Purchase units may vary.
+  IF (NEW.metadata->>'conversion_factor') IS NOT NULL AND (NEW.metadata->>'conversion_factor') <> '' THEN
+      v_conv_factor := (NEW.metadata->>'conversion_factor')::numeric;
+      IF v_conv_factor <= 0 THEN v_conv_factor := 1; END IF;
+  END IF;
+
+  v_stock_qty := COALESCE(NEW.qty, 0) * v_conv_factor;
+
+  -- 3. Determine unit cost (Normalized to BASE unit if conversion > 1)
   IF NEW.unit_price IS NOT NULL AND NEW.unit_price <> 0 THEN
-    computed_unit_cost := NEW.unit_price;
+    -- If price is provided in purchase UOM, convert it to base unit cost
+    computed_unit_cost := NEW.unit_price / v_conv_factor;
   ELSE
-    -- Use ::text cast for id check because product table might still be text
     SELECT COALESCE(default_cost,0) INTO computed_unit_cost FROM public.hms_product 
     WHERE id::text = v_product_id::text LIMIT 1;
   END IF;
 
-  computed_total_cost := computed_unit_cost * COALESCE(NEW.qty,0);
+  computed_total_cost := computed_unit_cost * v_stock_qty;
 
-  -- 3. Insert into hms_stock_ledger (Master Ledger)
+  -- 4. Insert into hms_stock_ledger (Master Ledger)
   -- PROVIDING 'id' EXPLICITLY via gen_random_uuid() to bypass any table default issues
   INSERT INTO public.hms_stock_ledger (
     id, tenant_id, company_id, product_id, related_type, related_id, movement_type,
@@ -64,7 +75,7 @@ BEGIN
     'purchase_receipt', 
     NULLIF(NEW.receipt_id, '')::uuid, 
     'in',
-    COALESCE(NEW.qty, 0), 
+    v_stock_qty, -- Store normalized quantity
     NEW.uom, 
     computed_unit_cost, 
     computed_total_cost, 
@@ -73,7 +84,7 @@ BEGIN
     now()
   );
 
-  -- 4. Update hms_stock_levels (UPSERT)
+  -- 5. Update hms_stock_levels (UPSERT)
   IF v_loc_to IS NOT NULL THEN
     INSERT INTO public.hms_stock_levels (
         id, tenant_id, company_id, product_id, location_id, batch_id, quantity, updated_at
@@ -85,7 +96,7 @@ BEGIN
         v_product_id, 
         v_loc_to, 
         NULLIF(NEW.batch_id, '')::uuid, 
-        COALESCE(NEW.qty, 0), 
+        v_stock_qty, -- Store normalized quantity
         now()
     )
     ON CONFLICT (tenant_id, company_id, product_id, location_id, batch_id) 
