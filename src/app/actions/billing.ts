@@ -215,7 +215,7 @@ export async function getBillableItems() {
                     purchaseTaxRate ||
                     Number(productMetadata.tax_rate) ||
                     Number(productMetadata.tax?.rate) ||
-                    (!item.is_service ? (Number(category?.tax_rates?.rate) || Number(category?.tax_rate || 0)) : 0) ||
+                    (!item.is_service ? Number(category?.tax_rates?.rate) : 0) ||
                     0;
 
                 if (fallbackRate > 0) {
