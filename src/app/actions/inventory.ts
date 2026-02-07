@@ -1431,6 +1431,22 @@ export async function findOrCreateProduct(productName: string, additionalData?: 
     }
 }
 
+export async function findOrCreateProductsBatch(items: { productName: string, mrp?: number, hsn?: string, packing?: string }[]) {
+    const session = await auth();
+    if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
+
+    const results: any[] = [];
+    const companyId = session.user.companyId;
+
+    // Process sequentially but in a single server call from the UI
+    for (const item of items) {
+        const res = await findOrCreateProduct(item.productName, item);
+        results.push({ ...res, originalName: item.productName });
+    }
+
+    return { success: true, data: results };
+}
+
 // Helper for CSV Parsing
 function parseCSVLine(line: string): string[] {
     const result = [];

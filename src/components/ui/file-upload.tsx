@@ -183,19 +183,24 @@ export function FileUpload({
 
             const formData = new FormData();
             formData.append('file', file);
+            console.log(`[Upload] Sending file to server: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
+
             const res = await uploadFile(formData, folder);
 
             if (res.error) {
+                console.error("[Upload] Server error:", res.error);
                 setError(res.error);
                 setPreviewUrl(null);
             } else if (res.url) {
+                console.log("[Upload] Success, triggering completion callback");
                 setPreviewUrl(res.url);
                 onUploadComplete(res.url, res);
             }
-        } catch (err) {
-            setError("Upload failed.");
-            console.error(err);
+        } catch (err: any) {
+            console.error("[Upload] Fatal error:", err);
+            setError(`Upload stalled or failed: ${err.message || "Connection error"}`);
         } finally {
+            console.log("[Upload] Finalizing state");
             setIsUploading(false);
         }
     };
@@ -262,7 +267,7 @@ export function FileUpload({
                 ) : isUploading ? (
                     <div className="py-6 flex flex-col items-center">
                         <RefreshCw className="h-10 w-10 text-indigo-500 animate-spin mb-3" />
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Encrypting...</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Processing File...</p>
                     </div>
                 ) : previewUrl ? (
                     <div className={`flex items-center gap-4 w-full bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 ${compact ? 'p-1.5' : 'p-2'}`}>

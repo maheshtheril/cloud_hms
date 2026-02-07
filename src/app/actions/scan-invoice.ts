@@ -50,10 +50,10 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
 
         // ... (Image loading logic same as before) ...
         if (fileUrl.startsWith('data:')) {
-            const match = fileUrl.match(/^data:([^;]+);base64,(.+)$/);
-            if (!match) return { error: "Invalid Data URI format" };
-            mimeType = match[1];
-            base64Image = match[2];
+            const parts = fileUrl.split(';base64,');
+            if (parts.length !== 2) return { error: "Invalid Data URI format" };
+            mimeType = parts[0].replace('data:', '');
+            base64Image = parts[1];
         } else {
             const relativePath = fileUrl.startsWith('/') ? `.${fileUrl}` : fileUrl;
             const fs = require('fs/promises');
@@ -150,11 +150,10 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
         `;
 
         const configurations = [
+            { name: "gemini-2.0-flash", version: "v1beta", useJsonMode: true },
             { name: "gemini-1.5-flash", version: "v1beta", useJsonMode: true },
             { name: "gemini-1.5-pro", version: "v1beta", useJsonMode: true },
             { name: "gemini-1.5-flash", version: "v1", useJsonMode: false },
-            { name: "gemini-1.5-pro", version: "v1", useJsonMode: false },
-            { name: "gemini-2.0-flash", version: "v1beta", useJsonMode: true },
         ];
 
         for (const config of configurations) {

@@ -20,8 +20,8 @@ export async function uploadFile(formData: FormData, folder: string = 'documents
         if (!file) {
             return { error: "No file uploaded" };
         }
-
-        console.log("Upload File Received:", file.name, file.type, file.size);
+        console.log(`[Upload] File Received: ${file.name}, Type: ${file.type}, Size: ${(file.size / 1024 / 1024).toFixed(2)} MB`);
+        const startTime = Date.now();
 
         // Validate file type (PDF, Image, CSV, Excel)
         const validTypes = [

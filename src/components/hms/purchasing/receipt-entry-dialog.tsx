@@ -16,7 +16,7 @@ import {
 import { useToast } from "@/components/ui/use-toast";
 import { SearchableSelect, type Option } from "@/components/ui/searchable-select";
 import { Toaster } from "@/components/ui/toaster";
-import { getSuppliersList, getProductsPremium, getProduct, findOrCreateProduct } from "@/app/actions/inventory";
+import { getSuppliersList, getProductsPremium, getProduct, findOrCreateProduct, findOrCreateProductsBatch } from "@/app/actions/inventory";
 import { getPendingPurchaseOrders, createPurchaseReceipt, getPurchaseOrder, getPurchaseReceipt, updatePurchaseReceipt } from "@/app/actions/receipt";
 import { motion } from "framer-motion";
 import { getCompanyDetails } from "@/app/actions/purchase";
@@ -496,15 +496,28 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                 }
                 if (scannedItems && Array.isArray(scannedItems)) {
                     console.log("Scanned Items:", scannedItems);
-                    const mapped = await Promise.all(scannedItems.map(async (item: any) => {
-                        try {
-                            let pId = item.productId;
-                            if (!pId && item.productName) {
-                                const pr = await findOrCreateProduct(item.productName, { mrp: Number(item.mrp), hsn: item.hsn });
-                                if (pr && !('error' in pr)) pId = pr.productId;
-                            }
+                    setScanProgress('Matching Products...');
 
-                            // Safe number parsing
+                    // 1. Batch resolve products to avoid N+1 parallel server calls
+                    const productPayload = scannedItems.map(i => ({
+                        productName: i.productName,
+                        mrp: Number(i.mrp),
+                        hsn: i.hsn
+                    }));
+
+                    const productRes = await findOrCreateProductsBatch(productPayload) as any;
+                    const productIdMap = new Map();
+                    if (productRes.success && Array.isArray(productRes.data)) {
+                        productRes.data.forEach((p: any) => {
+                            productIdMap.set(p.originalName, p.productId);
+                        });
+                    }
+
+                    // 2. Map scanned items to UI state
+                    const mapped = scannedItems.map((item: any) => {
+                        try {
+                            const pId = item.productId || productIdMap.get(item.productName) || "";
+
                             // Safe number parsing
                             const qty = !isNaN(parseFloat(item.qty)) ? parseFloat(item.qty) : 0;
                             const price = !isNaN(parseFloat(item.unitPrice)) ? parseFloat(item.unitPrice) : 0;
@@ -512,7 +525,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                             const freeQty = !isNaN(parseFloat(item.freeQty)) ? parseFloat(item.freeQty) : 0;
 
                             const rawItem = {
-                                productId: pId || "",
+                                productId: pId,
                                 productName: item.productName || "Unknown Item",
                                 poLineId: "",
                                 orderedQty: 0,
@@ -528,7 +541,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                 hsn: item.hsn || "",
                                 packing: item.packing || "",
                                 uom: item.uom || "",
-                                conversionFactor: 1, // Will be derived on the server or manually adjusted
+                                conversionFactor: 1,
                                 schemeDiscount: Number(item.schemeDiscount) || 0,
                                 discountPct: Number(item.discountPct) || 0,
                                 discountAmt: Number(item.discountAmt) || 0,
@@ -537,7 +550,6 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                             return updateLineItemCalcs(rawItem as any);
                         } catch (err) {
                             console.error("Error mapping scanned item:", item, err);
-                            // Return a safe dummy item to avoid crashing the whole list
                             return {
                                 productId: "",
                                 productName: "Error Importing Item",
@@ -546,8 +558,8 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                 taxAmount: 0
                             } as any;
                         }
-                    }));
-                    setItems(mapped.filter(i => i.productName !== "Error Importing Item")); // Filter out failed items
+                    });
+                    setItems(mapped.filter(i => i.productName !== "Error Importing Item"));
                 }
                 setMode('direct');
                 toast({ title: "Scan Success", description: "Details extracted from invoice." });
