@@ -1,5 +1,5 @@
 'use server';
-// Force Rebuild: 2025-12-29 10:25 AM
+// Force Rebuild Trigger: 2026-02-07 01:46 PM - Fix Scope Issue
 // -----------------------------------------------------------------------------
 // [LOCKED] INVOICE SCANNING LOGIC - DO NOT MODIFY WITHOUT PERMISSION
 // This file contains tuned prompts for India Pharma Invoice Scanning.
