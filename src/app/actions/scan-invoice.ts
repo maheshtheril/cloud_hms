@@ -295,6 +295,9 @@ async function processInvoiceData(session: any, data: any) {
     let supplierName = data.supplierName || data.SupplierName || data.vendor || data.VendorName || "";
     const tenantId = (session.user as any).tenantId || (session.user as any).tenant_id;
     const companyId = (session.user as any).companyId || (session.user as any).company_id;
+    const dbUrl = (session.user as any).dbUrl;
+
+    console.log(`[ScanInvoice] Processing for Supplier: ${supplierName} | Tenant: ${tenantId} | Company: ${companyId} | dbUrl: ${dbUrl ? 'DETECTED' : 'NONE'}`);
 
     if (supplierName && tenantId && companyId) {
         // Clean name for search (take first 2 words)
@@ -304,7 +307,6 @@ async function processInvoiceData(session: any, data: any) {
 
         // 1. Try finding by GSTIN first (High Confidence)
         if (data.gstin) {
-            // Check metadata->gstin in JSON field
             existingSupplier = await prisma.hms_supplier.findFirst({
                 where: {
                     company_id: companyId,
@@ -330,11 +332,16 @@ async function processInvoiceData(session: any, data: any) {
             supplierId = existingSupplier.id;
             supplierName = existingSupplier.name;
         } else {
+            console.log(`[ScanInvoice] Creating new supplier: ${supplierName}`);
+            const crypto = require('crypto');
+            const newId = crypto.randomUUID();
+
             const newSupplier = await prisma.hms_supplier.create({
                 data: {
+                    id: newId, // Explicitly provide ID to bypass DB default issues
                     tenant_id: tenantId,
                     company_id: companyId,
-                    name: supplierName.slice(0, 250), // Truncate if too long
+                    name: supplierName.slice(0, 250),
                     is_active: true,
                     metadata: {
                         gstin: data.gstin,
@@ -345,6 +352,7 @@ async function processInvoiceData(session: any, data: any) {
                 }
             });
             supplierId = newSupplier.id;
+            console.log(`[ScanInvoice] Supplier created with ID: ${supplierId}`);
         }
     }
 
