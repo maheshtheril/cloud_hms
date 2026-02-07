@@ -42,3 +42,19 @@ next-env.d.ts
 
 /src/generated/prisma
 .env
+/.agent/
+
+# Ignore root-level debug and temp files
+/*.js
+/*.sql
+/*.txt
+/*.pdf
+/*.patch
+/*.log
+# Keep essential JSONs but ignore others
+/*.json
+!/package.json
+!/package-lock.json
+!/tsconfig.json
+!/components.json
+!/vercel.json
