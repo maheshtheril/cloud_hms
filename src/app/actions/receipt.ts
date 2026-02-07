@@ -359,8 +359,12 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 // C. Prepare Product Update Data (if needed)
                 if (item.taxRate || item.salePrice) {
                     const salePricePerPCS = item.salePrice && effectiveConversion > 1 ? item.salePrice / effectiveConversion : item.salePrice;
+                    const mrpPerPCS = item.mrp && effectiveConversion > 1 ? item.mrp / effectiveConversion : (item.mrp || 0);
+
                     productUpdates.set(item.productId, {
                         price: salePricePerPCS,
+                        mrp: mrpPerPCS,
+                        pricingStrategy: item.pricingStrategy || 'manual',
                         default_cost: avgCostPerBaseUnit,
                         taxId: resolvedTaxId,
                         taxRate: item.taxRate,
@@ -370,6 +374,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                             conversion_factor: effectiveConversion,
                             pack_uom: effectiveUOM,
                             pack_price: item.salePrice,
+                            pack_mrp: item.mrp || 0
                         }
                     });
                 }
@@ -397,6 +402,9 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                             tax_rate: update.taxRate, // Explicit for billing
                             tax: { id: update.taxId, rate: update.taxRate },
                             last_purchase_date: new Date().toISOString(),
+                            last_mrp: update.mrp,
+                            last_sale_price: update.price,
+                            pricing_strategy: update.pricingStrategy,
                             uom_data: update.uomData
                         }
                     }

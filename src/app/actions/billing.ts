@@ -229,6 +229,19 @@ export async function getBillableItems() {
             // Extract UOM pricing data from metadata
             const metadata = item.metadata as any || {};
             const uomData = metadata.uom_data || {};
+            const pricingStrategy = metadata.pricing_strategy || 'manual';
+
+            // PRIORITY: Strategy-based Choice > Last Sale Price > History > Base Price
+            let finalPrice = priceHistory?.price?.toNumber() || Number(item.price) || 0;
+
+            if (pricingStrategy === 'mrp' && metadata.last_mrp) {
+                finalPrice = Number(metadata.last_mrp);
+            } else if (metadata.last_sale_price) {
+                // This covers 'manual' and 'mrp_discount' (where the intended bill price is the discounted one)
+                finalPrice = Number(metadata.last_sale_price);
+            } else if (metadata.last_mrp) {
+                finalPrice = Number(metadata.last_mrp);
+            }
 
             return {
                 id: item.id,
@@ -236,17 +249,20 @@ export async function getBillableItems() {
                 label: item.name, // UI friendly
                 description: item.description || '',
                 uom: item.uom || 'Unit',
-                price: priceHistory?.price?.toNumber() || Number(item.price) || 0,
+                price: finalPrice,
                 type: item.is_service ? 'service' : 'item',
                 metadata: {
                     ...metadata,
                     // UOM Pricing (Industry Standard)
                     baseUom: uomData.base_uom || item.uom || 'PCS',
-                    basePrice: uomData.base_price || Number(item.price) || 0,
+                    basePrice: finalPrice,
                     conversionFactor: uomData.conversion_factor || 1,
                     packUom: uomData.pack_uom || (uomData.conversion_factor > 1 ? `PACK-${uomData.conversion_factor}` : (item.uom || 'PCS')),
-                    packPrice: uomData.pack_price || (Number(item.price) * (uomData.conversion_factor || 1)),
-                    packSize: uomData.pack_size || uomData.conversion_factor || 1
+                    packPrice: uomData.pack_price || (finalPrice * (uomData.conversion_factor || 1)),
+                    packSize: uomData.pack_size || uomData.conversion_factor || 1,
+                    lastMrp: metadata.last_mrp,
+                    lastSalePrice: metadata.last_sale_price,
+                    pricingStrategy: pricingStrategy
                 },
                 // Extract tax for auto-suggest (prioritize rule > purchase > category)
                 categoryTaxId: effectiveTaxId,
