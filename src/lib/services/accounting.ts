@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ensureDefaultAccounts } from "@/lib/account-seeder";
 import { hms_invoice_status, hms_receipt_status } from "@prisma/client";
+import crypto from 'crypto'
 
 export class AccountingService {
 
@@ -111,6 +112,7 @@ export class AccountingService {
                 if (journalLines.length > 0) {
                     await prisma.journal_entries.create({
                         data: {
+                            id: crypto.randomUUID(),
                             tenant_id: invoice.tenant_id,
                             company_id: invoice.company_id,
                             invoice_id: invoice.id,
@@ -123,6 +125,7 @@ export class AccountingService {
                             ref: invoice.invoice_number,
                             journal_entry_lines: {
                                 create: journalLines.map(l => ({
+                                    id: crypto.randomUUID(),
                                     tenant_id: invoice.tenant_id,
                                     company_id: invoice.company_id,
                                     account_id: l.account_id,
@@ -169,6 +172,7 @@ export class AccountingService {
                     if (debitAccount && creditAccount) {
                         await prisma.journal_entries.create({
                             data: {
+                                id: crypto.randomUUID(),
                                 tenant_id: invoice.tenant_id,
                                 company_id: invoice.company_id,
                                 invoice_id: invoice.id,
@@ -182,6 +186,7 @@ export class AccountingService {
                                 journal_entry_lines: {
                                     create: [
                                         {
+                                            id: crypto.randomUUID(),
                                             tenant_id: invoice.tenant_id,
                                             company_id: invoice.company_id,
                                             account_id: debitAccount.id,
@@ -190,6 +195,7 @@ export class AccountingService {
                                             description: `Payment Recvd (${payment.method})`,
                                         },
                                         {
+                                            id: crypto.randomUUID(),
                                             tenant_id: invoice.tenant_id,
                                             company_id: invoice.company_id,
                                             account_id: creditAccount, // AR
@@ -371,6 +377,7 @@ export class AccountingService {
             await prisma.$transaction(async (tx) => {
                 const journal = await tx.journal_entries.create({
                     data: {
+                        id: crypto.randomUUID(),
                         tenant_id: payment.tenant_id || settings!.tenant_id,
                         company_id: payment.company_id,
                         date: journalDate,
@@ -382,6 +389,7 @@ export class AccountingService {
                         ref: payment.payment_number,
                         journal_entry_lines: {
                             create: journalLines.map(line => ({
+                                id: crypto.randomUUID(),
                                 tenant_id: payment.tenant_id || settings!.tenant_id,
                                 company_id: payment.company_id,
                                 account_id: line.account_id,
@@ -529,6 +537,7 @@ export class AccountingService {
             await prisma.$transaction(async (tx) => {
                 await tx.journal_entries.create({
                     data: {
+                        id: crypto.randomUUID(),
                         tenant_id: invoice.tenant_id,
                         company_id: invoice.company_id,
                         purchase_invoice_id: invoice.id,
@@ -541,6 +550,7 @@ export class AccountingService {
                         ref: invoice.name,
                         journal_entry_lines: {
                             create: journalLines.map(line => ({
+                                id: crypto.randomUUID(),
                                 tenant_id: invoice.tenant_id,
                                 company_id: invoice.company_id,
                                 account_id: line.account_id,
@@ -729,6 +739,7 @@ export class AccountingService {
             await prisma.$transaction(async (tx) => {
                 await tx.journal_entries.create({
                     data: {
+                        id: crypto.randomUUID(),
                         tenant_id: receipt.tenant_id,
                         company_id: receipt.company_id,
                         date: receipt.receipt_date || new Date(),
@@ -740,6 +751,7 @@ export class AccountingService {
                         ref: receipt.name,
                         journal_entry_lines: {
                             create: journalLines.map(line => ({
+                                id: crypto.randomUUID(),
                                 tenant_id: receipt.tenant_id,
                                 company_id: receipt.company_id,
                                 account_id: line.account_id,

@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { revalidatePath } from 'next/cache'
 import { AccountingService } from '@/lib/services/accounting'
 import { hms_purchase_status, hms_receipt_status } from "@prisma/client"
+import crypto from 'crypto'
 
 export type PurchaseReceiptData = {
     supplierId?: string
@@ -178,6 +179,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
             // 2. Create Receipt Header
             const receipt = await tx.hms_purchase_receipt.create({
                 data: {
+                    id: crypto.randomUUID(), // Explicit ID Generation
                     tenant_id: session.user.tenantId!,
                     company_id: companyId!,
                     purchase_order_id: data.purchaseOrderId,
@@ -202,6 +204,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
             if (!defaultLocation) {
                 defaultLocation = await tx.hms_stock_location.create({
                     data: {
+                        id: crypto.randomUUID(),
                         tenant_id: session.user.tenantId!,
                         company_id: companyId!,
                         name: 'Main Warehouse',
@@ -254,6 +257,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
 
                         const newBatch = await tx.hms_product_batch.create({
                             data: {
+                                id: crypto.randomUUID(), // Explicit ID Generation
                                 tenant_id: session.user.tenantId!,
                                 company_id: companyId!,
                                 product_id: item.productId,
@@ -376,6 +380,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 // C. Create Stock Ledger Entry (Inward) - Using BASE units
                 await tx.hms_product_stock_ledger.create({
                     data: {
+                        id: crypto.randomUUID(), // Explicit ID Generation
                         tenant_id: session.user.tenantId!,
                         company_id: companyId!,
                         product_id: item.productId,
@@ -469,6 +474,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 } else {
                     await tx.hms_stock_levels.create({
                         data: {
+                            id: crypto.randomUUID(), // Explicit ID Generation
                             tenant_id: session.user.tenantId!,
                             company_id: companyId!,
                             product_id: item.productId,
@@ -529,6 +535,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
             // Create Invoice Header
             const newInvoice = await tx.hms_purchase_invoice.create({
                 data: {
+                    id: crypto.randomUUID(), // Explicit ID Generation
                     tenant_id: session.user.tenantId!,
                     company_id: companyId!,
                     supplier_id: data.supplierId,
@@ -553,6 +560,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
             for (const line of invoiceLinesData) {
                 await tx.hms_purchase_invoice_line.create({
                     data: {
+                        id: crypto.randomUUID(), // Explicit ID Generation
                         ...line,
                         invoice_id: newInvoice.id
                     }
