@@ -592,55 +592,63 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
         }
 
         setIsSubmitting(true);
-        const payload = {
-            supplierId,
-            purchaseOrderId: poId,
-            receivedDate: new Date(receivedDate),
-            reference,
-            notes,
-            attachmentUrl,
-            items: items.map(i => ({
-                id: (i as any).id, // Pass ID for updates helps tracking
-                productId: i.productId,
-                poLineId: i.poLineId,
-                qtyReceived: i.receivedQty,
-                unitPrice: i.unitPrice,
-                batch: i.batch,
-                expiry: i.expiry,
-                mrp: i.mrp,
-                salePrice: i.salePrice,
-                taxRate: i.taxRate,
-                taxAmount: i.taxAmount,
-                hsn: i.hsn,
-                packing: i.packing,
-                purchaseUOM: i.uom,
-                conversionFactor: i.conversionFactor,
-                schemeDiscount: i.schemeDiscount,
-                discountPct: i.discountPct,
-                discountAmt: i.discountAmt,
-                freeQty: i.freeQty || 0
-            }))
-        } as any;
+        try {
+            const payload = {
+                supplierId,
+                purchaseOrderId: poId,
+                receivedDate: new Date(receivedDate),
+                reference,
+                notes,
+                attachmentUrl,
+                items: items.map(i => ({
+                    id: (i as any).id, // Pass ID for updates helps tracking
+                    productId: i.productId,
+                    poLineId: i.poLineId,
+                    qtyReceived: i.receivedQty,
+                    unitPrice: i.unitPrice,
+                    batch: i.batch,
+                    expiry: i.expiry,
+                    mrp: i.mrp,
+                    salePrice: i.salePrice,
+                    taxRate: i.taxRate,
+                    taxAmount: i.taxAmount,
+                    hsn: i.hsn,
+                    packing: i.packing,
+                    purchaseUOM: i.uom,
+                    conversionFactor: i.conversionFactor,
+                    schemeDiscount: i.schemeDiscount,
+                    discountPct: i.discountPct,
+                    discountAmt: i.discountAmt,
+                    freeQty: i.freeQty || 0
+                }))
+            } as any;
 
-        let res;
-        if (viewReceiptId) {
-            res = await updatePurchaseReceipt(viewReceiptId, payload) as any;
-        } else {
-            res = await createPurchaseReceipt(payload) as any;
-        }
+            let res;
+            if (viewReceiptId) {
+                res = await updatePurchaseReceipt(viewReceiptId, payload) as any;
+            } else {
+                res = await createPurchaseReceipt(payload) as any;
+            }
 
-        if (res.error) {
-            toast({ title: "Error", description: res.error, variant: "destructive" });
-        } else if (res.warning) {
-            toast({ title: "Completed with Warning", description: res.warning, variant: "destructive" });
-            onSuccess?.();
-            onClose();
-        } else {
-            toast({ title: "Success", description: viewReceiptId ? "Receipt updated successfully." : "Goods received successfully." });
-            onSuccess?.();
-            onClose();
+            if (!res) {
+                toast({ title: "Error", description: "No response from server", variant: "destructive" });
+            } else if (res.error) {
+                toast({ title: "Error", description: res.error, variant: "destructive" });
+            } else if (res.warning) {
+                toast({ title: "Completed with Warning", description: res.warning, variant: "destructive" });
+                onSuccess?.();
+                onClose();
+            } else {
+                toast({ title: "Success", description: viewReceiptId ? "Receipt updated successfully." : "Goods received successfully." });
+                onSuccess?.();
+                onClose();
+            }
+        } catch (error: any) {
+            console.error("Submit Error:", error);
+            toast({ title: "Submit Error", description: error.message || "Failed to submit request", variant: "destructive" });
+        } finally {
+            setIsSubmitting(false);
         }
-        setIsSubmitting(false);
     };
 
     const totalTaxable = items.reduce((sum, item) => {

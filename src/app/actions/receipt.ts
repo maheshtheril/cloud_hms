@@ -145,7 +145,10 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
         }
     }
 
-    console.log("createPurchaseReceipt payload:", JSON.stringify(data, null, 2));
+    if (data.attachmentUrl && data.attachmentUrl.startsWith('data:')) {
+        console.log(`📎 ATTACHMENT DETECTED: Base64 string, size: ${(data.attachmentUrl.length / 1024 / 1024).toFixed(2)} MB`);
+    }
+    console.log("createPurchaseReceipt payload size check:", JSON.stringify(data).length, "bytes");
 
     try {
         // 0. CHECK FOR DUPLICATES (Supplier + Reference)
@@ -190,8 +193,8 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     status: 'received' as any,
                     metadata: {
                         reference: data.reference,
-                        notes: data.notes,
-                        attachment_url: data.attachmentUrl
+                        notes: data.notes
+                        // attachment_url deferred to end of transaction to speed up initial insert
                     },
                 }
             })
@@ -222,6 +225,9 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
             const companyTaxRates = taxMaps.map(m => m.tax_rates).filter(Boolean);
 
             // 3. Create Receipt Lines & Update Stock
+            const receiptLinesData: any[] = [];
+            const productUpdates: Map<string, any> = new Map();
+
             for (const item of data.items) {
                 if (!item.productId) throw new Error("Product ID is missing for one or more items.");
 
@@ -235,7 +241,6 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 // Handle Batch (Create if new, or find)
                 let batchId = null;
                 if (item.batch) {
-                    // Try find
                     const existingBatch = await tx.hms_product_batch.findFirst({
                         where: {
                             company_id: companyId,
@@ -246,9 +251,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
 
                     if (existingBatch) {
                         batchId = existingBatch.id;
-                        // Update MRP/Cost if changed? optional.
                     } else {
-                        // Safe Expiry Parse
                         let validExpiry = null;
                         if (item.expiry) {
                             const d = new Date(item.expiry);
@@ -257,7 +260,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
 
                         const newBatch = await tx.hms_product_batch.create({
                             data: {
-                                id: crypto.randomUUID(), // Explicit ID Generation
+                                id: crypto.randomUUID(),
                                 tenant_id: session.user.tenantId!,
                                 company_id: companyId!,
                                 product_id: item.productId,
@@ -269,231 +272,137 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                                 margin_percentage: item.marginPct,
                                 markup_percentage: item.markupPct,
                                 pricing_strategy: item.pricingStrategy,
-                                qty_on_hand: 0 // Ledger will update calculation usually, or we initialize
+                                qty_on_hand: 0
                             }
                         });
                         batchId = newBatch.id;
                     }
                 }
 
-                // A. Create Receipt Line (Using Raw SQL to bypass Prisma null constraint issues)
+                // A. Create Receipt Line (Raw SQL to trigger DB logic)
                 const poLineIdVal = item.poLineId || null;
                 const batchIdVal = batchId || null;
 
-                await tx.$executeRaw`
-                    INSERT INTO "hms_purchase_receipt_line" (
-                        "id", 
-                        "tenant_id", 
-                        "company_id", 
-                        "receipt_id", 
-                        "product_id", 
-                        "po_line_id",
-                        "qty", 
-                        "unit_price", 
-                        "batch_id",
-                        "location_id",
-                        "metadata", 
-                        "created_at"
-                    ) VALUES (
-                        gen_random_uuid(),
-                        ${session.user.tenantId}::uuid,
-                        ${companyId}::uuid,
-                        ${receipt.id}::uuid,
-                        ${item.productId}::uuid,
-                        ${poLineIdVal}::uuid,
-                        ${Number(item.qtyReceived) || 0},
-                        ${Number(item.unitPrice) || 0},
-                        ${batchIdVal}::uuid,
-                        ${defaultLocation.id}::uuid,
-                        ${JSON.stringify({
-                    batch: item.batch,
-                    expiry: item.expiry,
-                    mrp: item.mrp,
-                    sale_price: item.salePrice,
-                    margin_pct: item.marginPct,
-                    markup_pct: item.markupPct,
-                    pricing_strategy: item.pricingStrategy,
-                    mrp_discount_pct: item.mrpDiscountPct,
-                    tax: {
-                        id: resolvedTaxId,
-                        rate: item.taxRate || 0,
-                        amount: item.taxAmount || 0
+                // A. Prepare Receipt Line Data
+                receiptLinesData.push({
+                    id: crypto.randomUUID(),
+                    tenant_id: session.user.tenantId!,
+                    company_id: companyId!,
+                    receipt_id: receipt.id,
+                    product_id: item.productId,
+                    po_line_id: poLineIdVal,
+                    qty: Number(item.qtyReceived) || 0,
+                    unit_price: Number(item.unitPrice) || 0,
+                    batch_id: batchIdVal,
+                    location_id: defaultLocation.id,
+                    metadata: {
+                        batch: item.batch,
+                        expiry: item.expiry,
+                        mrp: item.mrp,
+                        sale_price: item.salePrice,
+                        margin_pct: item.marginPct,
+                        markup_pct: item.markupPct,
+                        pricing_strategy: item.pricingStrategy,
+                        mrp_discount_pct: item.mrpDiscountPct,
+                        tax: { id: resolvedTaxId, rate: item.taxRate || 0, amount: item.taxAmount || 0 },
+                        hsn: item.hsn,
+                        packing: item.packing,
+                        purchase_uom: item.purchaseUOM,
+                        base_uom: item.baseUOM,
+                        conversion_factor: item.conversionFactor,
+                        sale_price_per_unit: item.salePricePerUnit,
+                        discount_pct: item.discountPct,
+                        discount_amt: item.discountAmt,
+                        scheme_discount: item.schemeDiscount,
+                        free_qty: item.freeQty
                     },
-                    hsn: item.hsn,
-                    packing: item.packing,
-                    // UOM data
-                    purchase_uom: item.purchaseUOM,
-                    base_uom: item.baseUOM,
-                    conversion_factor: item.conversionFactor,
-                    sale_price_per_unit: item.salePricePerUnit,
-                    discount_pct: item.discountPct,
-                    discount_amt: item.discountAmt,
-                    scheme_discount: item.schemeDiscount,
-                    free_qty: item.freeQty
-                })}::jsonb,
-                        NOW()
-                    )
-                `;
+                    created_at: new Date()
+                });
 
-                // B. Convert UOM to Base for Stock Tracking
+                // B. Prepare Stock Ledger Data
                 const billedQty = Number(item.qtyReceived) || 0;
                 const freeQty = Number(item.freeQty) || 0;
                 const totalQty = billedQty + freeQty;
-
-                let stockQty = totalQty;
-
-                // DERIVE CONVERSION FACTOR
                 let effectiveConversion = item.conversionFactor || 1;
                 const effectiveUOM = (item.purchaseUOM || 'PCS').toUpperCase();
 
+                // Simple pack detection logic
                 if (effectiveConversion === 1 && effectiveUOM !== 'PCS') {
-                    // 1. Try PACK-10, BOX-15 patterns
-                    const packMatch = effectiveUOM.match(/(?:PACK|BOX|STRIP|TRAY)-(\d+)/i);
-                    // 2. Try 10S, 10'S, 10X1 patterns
-                    const simpleMatch = effectiveUOM.match(/^(\d+)(?:'S|S|X\d+|X)?$/i);
-
-                    if (packMatch) {
-                        effectiveConversion = parseInt(packMatch[1]);
-                    } else if (simpleMatch) {
-                        effectiveConversion = parseInt(simpleMatch[1]);
-                    } else if (effectiveUOM === 'STRIP') {
-                        effectiveConversion = 10;
-                    } else if (effectiveUOM === 'BOX') {
-                        effectiveConversion = 1; // Default to 1 if no number
-                    }
-
-                    // 3. Fallback: Check packing string if UOM didn't yield anything
-                    if (effectiveConversion === 1 && item.packing) {
-                        const packMatch2 = item.packing.match(/^(\d+)/);
-                        if (packMatch2) effectiveConversion = parseInt(packMatch2[1]);
-                    }
+                    const packMatch = effectiveUOM.match(/(?:PACK|BOX|STRIP|TRAY)-(\d+)/i) || effectiveUOM.match(/^(\d+)(?:'S|S|X\d+|X)?$/i);
+                    if (packMatch) effectiveConversion = parseInt(packMatch[1]);
+                    else if (effectiveUOM === 'STRIP') effectiveConversion = 10;
                 }
 
-                let avgCostPerBaseUnit = billedQty > 0 ? (billedQty * (Number(item.unitPrice) || 0)) / (totalQty * effectiveConversion) : 0;
+                const stockQty = totalQty * effectiveConversion;
+                const avgCostPerBaseUnit = billedQty > 0 ? (billedQty * (Number(item.unitPrice) || 0)) / stockQty : 0;
 
-                // Adjust stock qty by conversion factor
-                if (effectiveConversion > 1) {
-                    stockQty = totalQty * effectiveConversion;
-                    console.log(`[UOM Conversion] ${totalQty} (Incl. ${freeQty} free) ${effectiveUOM} = ${stockQty} Units @ ₹${avgCostPerBaseUnit.toFixed(2)} per Unit`);
-                }
-
-                // C. Create Stock Ledger Entry (Inward) - Using BASE units
-                await tx.hms_product_stock_ledger.create({
-                    data: {
-                        id: crypto.randomUUID(), // Explicit ID Generation
-                        tenant_id: session.user.tenantId!,
-                        company_id: companyId!,
-                        product_id: item.productId,
-                        location: defaultLocation.id, // Schema uses 'location' (string)
-                        movement_type: 'in',
-                        change_qty: stockQty, // ← Stock tracked in BASE units (PCS)
-                        balance_qty: 0, // Placeholder, strict balance requires calc
-                        reference: receiptNumber,
-                        cost: avgCostPerBaseUnit, // ← Average cost per BASE unit
-                        batch_id: batchId,
-                        created_at: new Date(),
-                        metadata: {
-                            related_type: 'purchase_receipt',
-                            related_id: receipt.id,
-                            unit_cost: avgCostPerBaseUnit,
-                            // Store original purchase details
-                            purchase_qty: item.qtyReceived,
-                            purchase_uom: effectiveUOM,
-                            conversion_factor: effectiveConversion
-                        }
-                    }
-                })
-
-                // D. Update Product with Tax Rate AND UOM Pricing Data
+                // C. Prepare Product Update Data (if needed)
                 if (item.taxRate || item.salePrice) {
-                    const currentProduct = await tx.hms_product.findUnique({
-                        where: { id: item.productId },
-                        select: { metadata: true, price: true }
-                    });
-
-                    // Extract UOM and calculate conversion factor
-                    const purchaseUOM = effectiveUOM;
-                    const conversionFactor = effectiveConversion;
-
-                    // Calculate UOM pricing data for sales
-                    const salePricePerPCS = item.salePrice && conversionFactor > 1
-                        ? item.salePrice / conversionFactor
-                        : item.salePrice;
-                    const salePricePerPack = item.salePrice || null;
-
-                    console.log('💰 SAVING UOM PRICING:', {
-                        product: item.productId,
-                        purchaseUOM: purchaseUOM,
-                        conversionFactor: conversionFactor,
-                        salePricePerPack,
-                        salePricePerPCS
-                    });
-
-                    await tx.hms_product.update({
-                        where: { id: item.productId },
-                        data: {
-                            // Update base price (per PCS) and COST
-                            price: salePricePerPCS || currentProduct?.price,
-                            default_cost: avgCostPerBaseUnit, // Update Last Buy Cost
-                            metadata: {
-                                ...(currentProduct?.metadata as any || {}),
-                                purchase_tax_id: resolvedTaxId,
-                                purchase_tax_rate: item.taxRate,
-                                tax: { id: resolvedTaxId, rate: item.taxRate },
-                                last_purchase_date: new Date().toISOString(),
-                                // UOM Pricing Data (Industry Standard)
-                                uom_data: {
-                                    base_uom: 'PCS',
-                                    base_price: salePricePerPCS, // Price per PCS
-                                    conversion_factor: conversionFactor, // e.g., 10 for PACK-10
-                                    pack_uom: purchaseUOM, // e.g., PACK-10
-                                    pack_price: salePricePerPack, // Price per pack
-                                    pack_size: conversionFactor // Same as conversion factor
-                                }
-                            }
+                    const salePricePerPCS = item.salePrice && effectiveConversion > 1 ? item.salePrice / effectiveConversion : item.salePrice;
+                    productUpdates.set(item.productId, {
+                        price: salePricePerPCS,
+                        default_cost: avgCostPerBaseUnit,
+                        taxId: resolvedTaxId,
+                        taxRate: item.taxRate,
+                        uomData: {
+                            base_uom: 'PCS',
+                            base_price: salePricePerPCS,
+                            conversion_factor: effectiveConversion,
+                            pack_uom: effectiveUOM,
+                            pack_price: item.salePrice,
                         }
                     });
                 }
+            }
 
-                // D. Update Main Product Stock (Synced from Ledger)
-                // DEPRECATED: Handled automatically by database trigger 'trg_hms_receipt_line_after_insert'
-                // to avoid double-counting and transaction timeouts.
+            // Execute Batch Receipt Line Inserts
+            if (receiptLinesData.length > 0) {
+                // We use createMany which is faster and still triggers Postgres AFTER INSERT per row
+                await tx.hms_purchase_receipt_line.createMany({ data: receiptLinesData });
+            }
+
+            // Execute Batch Product Updates
+            for (const [productId, update] of productUpdates) {
+                const currentProduct = await tx.hms_product.findUnique({ where: { id: productId }, select: { metadata: true, price: true } });
+                await tx.hms_product.update({
+                    where: { id: productId },
+                    data: {
+                        price: update.price || currentProduct?.price,
+                        default_cost: update.default_cost,
+                        metadata: {
+                            ...(currentProduct?.metadata as any || {}),
+                            purchase_tax_id: update.taxId,
+                            purchase_tax_rate: update.taxRate,
+                            tax: { id: update.taxId, rate: update.taxRate },
+                            last_purchase_date: new Date().toISOString(),
+                            uom_data: update.uomData
+                        }
+                    }
+                });
             }
 
             // 4. Update PO Status if linked
             if (data.purchaseOrderId) {
-                // Simple logic: Mark as 'received' if linked. Real logic needs to check if ALL items fully received.
-                // For now, we'll set to 'partially_received' or 'received' based on manual check or just leave it.
-                // Let's set it to 'partially_received' as safe default.
                 await tx.hms_purchase_order.update({
                     where: { id: data.purchaseOrderId },
                     data: { status: 'partially_received' as any }
-                })
+                });
             }
 
-            // 6. AUTO-CREATE PURCHASE INVOICE (Bill)
-            // This ensures the receipt appears in the "Payments" module as a payable bill.
-
-            // Calculate Totals
+            // 6. AUTO-CREATE PURCHASE INVOICE
             let invoiceSubtotal = 0;
             let invoiceTaxTotal = 0;
-
             const invoiceLinesData = data.items.map(item => {
                 const qty = Number(item.qtyReceived) || 0;
                 const price = Number(item.unitPrice) || 0;
                 const tax = Number(item.taxAmount) || 0;
                 const discount = (Number(item.discountAmt) || 0) + (Number(item.schemeDiscount) || 0);
-
-                const lineTotal = (qty * price) - discount + tax;
                 const taxable = (qty * price) - discount;
-
                 invoiceSubtotal += taxable;
                 invoiceTaxTotal += tax;
-
-                // Resolve Tax ID again for the invoice line (could pass it through but simpler to re-find in this map context)
                 const lineResolvedTaxId = companyTaxRates.find(tr => Number(tr.rate) === Number(item.taxRate))?.id || null;
-
                 return {
+                    id: crypto.randomUUID(),
                     tenant_id: session.user.tenantId!,
                     company_id: companyId!,
                     product_id: item.productId,
@@ -501,16 +410,13 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     qty: qty,
                     unit_price: price,
                     tax: { id: lineResolvedTaxId, rate: item.taxRate, amount: tax },
-                    line_total: lineTotal
+                    line_total: taxable + tax
                 };
             });
 
-            const invoiceGrandTotal = invoiceSubtotal + invoiceTaxTotal;
-
-            // Create Invoice Header
             const newInvoice = await tx.hms_purchase_invoice.create({
                 data: {
-                    id: crypto.randomUUID(), // Explicit ID Generation
+                    id: crypto.randomUUID(),
                     tenant_id: session.user.tenantId!,
                     company_id: companyId!,
                     supplier_id: data.supplierId,
@@ -522,28 +428,34 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     currency: 'INR',
                     subtotal: invoiceSubtotal,
                     tax_total: invoiceTaxTotal,
-                    total_amount: invoiceGrandTotal,
+                    total_amount: invoiceSubtotal + invoiceTaxTotal,
                     paid_amount: 0,
-                    metadata: {
-                        source_receipt_id: receipt.id,
-                        notes: data.notes
-                    }
+                    metadata: { source_receipt_id: receipt.id, notes: data.notes }
                 }
             });
 
-            // Create Invoice Lines
-            for (const line of invoiceLinesData) {
-                await tx.hms_purchase_invoice_line.create({
+            if (invoiceLinesData.length > 0) {
+                await tx.hms_purchase_invoice_line.createMany({
+                    data: invoiceLinesData.map(l => ({ ...l, invoice_id: newInvoice.id }))
+                });
+            }
+
+            // 7. Update Attachment at the very end (if large, this minimizes lock time on header during the loop)
+            if (data.attachmentUrl) {
+                await tx.hms_purchase_receipt.update({
+                    where: { id: receipt.id },
                     data: {
-                        id: crypto.randomUUID(), // Explicit ID Generation
-                        ...line,
-                        invoice_id: newInvoice.id
+                        metadata: {
+                            ...(receipt.metadata as any || {}),
+                            attachment_url: data.attachmentUrl
+                        }
                     }
                 });
             }
 
             return { receipt, invoiceId: newInvoice.id };
-        }, { timeout: 30000 })
+        }, { timeout: 30000, maxWait: 10000 })
+
 
         if (result.invoiceId) {
             // Trigger Accounting Post via INVOICE (Correct Workflow for AP)
@@ -552,13 +464,13 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
 
             if (!accResult.success) {
                 console.error("Accounting Post Failed (Invoice):", accResult.error);
-                return { success: true, data: result.receipt, warning: `Receipt & Bill created, but Accounting failed: ${accResult.error}` };
+                return { success: true, data: JSON.parse(JSON.stringify(result.receipt)), warning: `Receipt & Bill created, but Accounting failed: ${accResult.error}` };
             }
         }
 
         revalidatePath('/hms/purchasing/receipts');
         revalidatePath('/hms/accounting/bills'); // Refresh bills page too
-        return { success: true, data: result.receipt };
+        return { success: true, data: JSON.parse(JSON.stringify(result.receipt)) };
 
     } catch (error: any) {
         console.error("Failed to create receipt (Full Error):", JSON.stringify(error, Object.getOwnPropertyNames(error)));
