@@ -23,10 +23,10 @@ BEGIN
   computed_total_cost := computed_unit_cost * COALESCE(NEW.qty,0);
 
   INSERT INTO public.hms_stock_ledger (
-    tenant_id, company_id, product_id, related_type, related_id, movement_type,
+    id, tenant_id, company_id, product_id, related_type, related_id, movement_type,
     qty, uom, unit_cost, total_cost, to_location_id, created_at
   ) VALUES (
-    NEW.tenant_id, NEW.company_id, NEW.product_id, 'purchase_receipt', NEW.receipt_id, 'in',
+    gen_random_uuid(), NEW.tenant_id, NEW.company_id, NEW.product_id, 'purchase_receipt', NEW.receipt_id, 'in',
     NEW.qty, NEW.uom, computed_unit_cost, computed_total_cost, loc_to, now()
   );
 

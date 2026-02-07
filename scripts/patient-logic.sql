@@ -14,14 +14,39 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION public.hms_patient_audit_trigger() RETURNS trigger AS $$
 BEGIN
   IF (TG_OP = 'DELETE') THEN
-    INSERT INTO public.hms_patient_audit (patient_id, operation, changed_at, row_data)
-    VALUES (OLD.id, TG_OP, now(), row_to_json(OLD));
+    INSERT INTO public.hms_patient_audit (id, patient_id, operation, changed_at, row_data)
+    VALUES (gen_random_uuid(), OLD.id, TG_OP, now(), row_to_json(OLD));
     RETURN OLD;
   ELSE
-    INSERT INTO public.hms_patient_audit (patient_id, operation, changed_at, row_data)
-    VALUES (COALESCE(NEW.id, OLD.id), TG_OP, now(), row_to_json(COALESCE(NEW, OLD)));
+    INSERT INTO public.hms_patient_audit (id, patient_id, operation, changed_at, row_data)
+    VALUES (gen_random_uuid(), COALESCE(NEW.id, OLD.id), TG_OP, now(), row_to_json(COALESCE(NEW, OLD)));
     RETURN NEW;
   END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.hms_invoice_audit_trigger() RETURNS trigger AS $$
+DECLARE
+  v_user_id UUID;
+BEGIN
+  -- Attempt to get user ID from session variable, default to a placeholder if not set
+  BEGIN
+    SELECT current_setting('app.user_id', true)::UUID INTO v_user_id;
+  EXCEPTION
+    WHEN OTHERS THEN
+      v_user_id := '00000000-0000-0000-0000-000000000000'; -- Placeholder for unknown user
+  END;
+
+  IF TG_OP = 'UPDATE' THEN
+    INSERT INTO public.hms_invoice_history (id, tenant_id, company_id, invoice_id, changed_by, change_type, delta, changed_at)
+    VALUES (gen_random_uuid(), NEW.tenant_id, NEW.company_id, NEW.id, v_user_id, 'update', jsonb_build_object('old', to_jsonb(OLD), 'new', to_jsonb(NEW)), now());
+    RETURN NEW;
+  ELSIF TG_OP = 'INSERT' THEN
+    INSERT INTO public.hms_invoice_history (id, tenant_id, company_id, invoice_id, changed_by, change_type, delta, changed_at)
+    VALUES (gen_random_uuid(), NEW.tenant_id, NEW.company_id, NEW.id, NEW.created_by, 'insert', jsonb_build_object('new', to_jsonb(NEW)), now());
+    RETURN NEW;
+  END IF;
+  RETURN NULL; -- Should not be reached for INSERT/UPDATE
 END;
 $$ LANGUAGE plpgsql;
 
