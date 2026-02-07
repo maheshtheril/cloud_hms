@@ -393,6 +393,8 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                             ...(currentProduct?.metadata as any || {}),
                             purchase_tax_id: update.taxId,
                             purchase_tax_rate: update.taxRate,
+                            tax_id: update.taxId, // Explicit for billing
+                            tax_rate: update.taxRate, // Explicit for billing
                             tax: { id: update.taxId, rate: update.taxRate },
                             last_purchase_date: new Date().toISOString(),
                             uom_data: update.uomData

@@ -192,8 +192,14 @@ export async function getBillableItems() {
                 }
             }
 
-            // FINAL TAX RESOLUTION: Specific Rule > Latest Purchase Identity > Category Default
-            let effectiveTaxId = productTaxRule?.tax_rate_id || purchaseTaxId || category?.default_tax_rate_id || null;
+            // FINAL TAX RESOLUTION: Specific Rule > Latest Purchase Identity > Product Metadata > Category Default
+            const productMetadata = item.metadata as any || {};
+            let effectiveTaxId = productTaxRule?.tax_rate_id ||
+                purchaseTaxId ||
+                productMetadata.tax_id ||
+                productMetadata.tax?.id ||
+                category?.default_tax_rate_id ||
+                null;
 
             // SERVICE OVERRIDE: Hospital services (Consultation, etc.) are typically tax-exempt (0%)
             // If it is a service and no specific product tax rule exists, we default to 0
@@ -212,6 +218,10 @@ export async function getBillableItems() {
                 effectiveTaxRate = Number(productTaxRule.tax_rates.rate);
             } else if (purchaseTaxRate > 0) {
                 effectiveTaxRate = purchaseTaxRate;
+            } else if (productMetadata.tax_rate !== undefined) {
+                effectiveTaxRate = Number(productMetadata.tax_rate);
+            } else if (productMetadata.tax?.rate !== undefined) {
+                effectiveTaxRate = Number(productMetadata.tax.rate);
             } else if (!item.is_service && category?.tax_rates?.rate) {
                 effectiveTaxRate = Number(category.tax_rates.rate);
             }
