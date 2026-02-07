@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
+import crypto from 'crypto';
 
 // --- Dashboard Stats ---
 
@@ -1442,6 +1443,34 @@ export async function findOrCreateProduct(productName: string, additionalData?: 
                 }
             }
         });
+
+        // 4. IMMEDIATE TAX RULE CREATION (Critical for Billing)
+        if (additionalData?.taxRate) {
+            const taxRateVal = Number(additionalData.taxRate);
+            if (taxRateVal > 0) {
+                // Find matching tax ID in company settings
+                const taxMaps = await prisma.company_tax_maps.findMany({
+                    where: { company_id: companyId },
+                    include: { tax_rates: true }
+                });
+                const match = taxMaps.find(m => Math.abs(Number(m.tax_rates.rate) - taxRateVal) < 0.1);
+
+                if (match) {
+                    await prisma.product_tax_rules.create({
+                        data: {
+                            id: crypto.randomUUID(),
+                            tenant_id: tenantId,
+                            company_id: companyId,
+                            product_id: newProduct.id,
+                            tax_rate_id: match.tax_rate_id,
+                            priority: 1,
+                            is_active: true
+                        }
+                    });
+                    console.log(`✅ Auto-created tax rule for product: ${productName}, Rate: ${taxRateVal}%`);
+                }
+            }
+        }
 
         console.log(`✅ Auto-created product: ${productName}`);
 
