@@ -68,6 +68,7 @@ interface ReceiptEntryDialogProps {
 }
 
 const TAX_OPTIONS = [0, 5, 12, 18, 28];
+const COMMON_UOMS = ['PCS', 'STRIP', 'BOX', 'PACK', 'TAB', 'CAP', 'VIAL', 'AMP', 'BOTTLE', 'TRAY', 'TUBE', 'BAG', 'NOS', 'KIT', 'ROLL', 'SET'];
 
 export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }: ReceiptEntryDialogProps) {
     const { toast } = useToast();
@@ -456,7 +457,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
     };
 
     const searchProducts = async (query: string) => {
-        const res = await getProductsPremium(query) as any;
+        const res = await getProductsPremium(query, 1, supplierId || undefined) as any;
         return res?.data?.map((p: any) => ({ id: p.id, label: p.name, subLabel: p.category })) || [];
     };
 
@@ -1108,10 +1109,9 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                                 <input value={item.packing || ''} onChange={(e) => { const n = [...items]; n[index].packing = e.target.value; setItems(n); }} className="w-full bg-transparent border-none text-[10px] font-bold p-0 focus:ring-0 text-foreground" />
                                             </td>
                                             <td className="py-1.5 px-2">
-                                                <input
-                                                    value={item.uom || ''}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value;
+                                                <Select
+                                                    value={item.uom || 'PCS'}
+                                                    onValueChange={(val) => {
                                                         const n = [...items];
                                                         n[index].uom = val;
                                                         // Try auto-derive conversion if not set
@@ -1122,9 +1122,16 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                                         }
                                                         setItems(n);
                                                     }}
-                                                    placeholder="PCS"
-                                                    className="w-full bg-transparent border-none text-[10px] font-black p-0 focus:ring-0 text-indigo-500 uppercase placeholder:text-muted-foreground/30"
-                                                />
+                                                >
+                                                    <SelectTrigger className="w-full bg-transparent border-none text-[10px] font-black p-0 h-auto focus:ring-0 text-indigo-500 uppercase inline-flex items-center gap-1 shadow-none">
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent className="min-w-[100px]">
+                                                        {COMMON_UOMS.map(uom => (
+                                                            <SelectItem key={uom} value={uom} className="text-[10px] font-bold">{uom}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
                                             </td>
                                             <td className="py-1.5 px-2">
                                                 <input

@@ -716,7 +716,7 @@ export async function deleteLocation(id: string) {
 
 // --- Product Management ---
 
-export async function getProductsPremium(query?: string, page: number = 1) {
+export async function getProductsPremium(query?: string, page: number = 1, supplierId?: string) {
     const session = await auth();
     if (!session?.user?.companyId) return { error: "Unauthorized" };
 
@@ -728,6 +728,29 @@ export async function getProductsPremium(query?: string, page: number = 1) {
             company_id: session.user.companyId,
             is_active: true
         };
+
+        // If supplierId is provided, filter products to only those bought from this supplier before
+        if (supplierId) {
+            const supplierProductIds = await prisma.hms_purchase_receipt_line.findMany({
+                where: {
+                    hms_purchase_receipt: {
+                        supplier_id: supplierId,
+                        company_id: session.user.companyId
+                    }
+                },
+                select: { product_id: true }
+            });
+
+            const uniqueIds = Array.from(new Set(supplierProductIds.map(sp => sp.product_id)));
+            if (uniqueIds.length > 0) {
+                where.id = { in: uniqueIds };
+            } else {
+                // If no items found for this supplier, we don't apply the filter strictly 
+                // but we could. User asked to "filter", but if 0 items, search yields 0.
+                // Let's stick to the request: filter.
+                where.id = "NOT_FOUND"; // Force zero results if strictly filtering and no purchase history
+            }
+        }
 
         if (query) {
             where.OR = [
