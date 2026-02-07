@@ -217,71 +217,77 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 });
             }
 
-            // Fetch company tax rates to resolve IDs for metadata
-            const taxMaps = await tx.company_tax_maps.findMany({
-                where: { company_id: companyId },
-                include: { tax_rates: true }
-            });
+            // --- BATCH FETCHING TO SOLVE N+1 ---
+            const productIds = Array.from(new Set(data.items.map(i => i.productId)));
+            const batchNos = Array.from(new Set(data.items.map(i => i.batch).filter(Boolean)));
+
+            const [existingProducts, existingBatches, taxMaps] = await Promise.all([
+                tx.hms_product.findMany({ where: { id: { in: productIds } }, select: { id: true, metadata: true, price: true } }),
+                tx.hms_product_batch.findMany({
+                    where: {
+                        company_id: companyId,
+                        product_id: { in: productIds },
+                        batch_no: { in: batchNos as string[] }
+                    }
+                }),
+                tx.company_tax_maps.findMany({
+                    where: { company_id: companyId },
+                    include: { tax_rates: true }
+                })
+            ]);
+
+            const productMap = new Map(existingProducts.map(p => [p.id, p]));
+            // Key format: productId|batchNo
+            const batchMap = new Map(existingBatches.map(b => [`${b.product_id}|${b.batch_no}`, b.id]));
             const companyTaxRates = taxMaps.map(m => m.tax_rates).filter(Boolean);
 
-            // 3. Create Receipt Lines & Update Stock
             const receiptLinesData: any[] = [];
             const productUpdates: Map<string, any> = new Map();
 
             for (const item of data.items) {
                 if (!item.productId) throw new Error("Product ID is missing for one or more items.");
 
-                // Resolve Tax ID from Rate if not provided
+                // Resolve Tax ID from Rate
                 let resolvedTaxId = (item as any).taxId || null;
                 if (!resolvedTaxId && item.taxRate) {
                     const match = companyTaxRates.find(tr => Number(tr.rate) === Number(item.taxRate));
                     if (match) resolvedTaxId = match.id;
                 }
 
-                // Handle Batch (Create if new, or find)
-                let batchId = null;
-                if (item.batch) {
-                    const existingBatch = await tx.hms_product_batch.findFirst({
-                        where: {
-                            company_id: companyId,
+                // Handle Batch (Use pre-fetched map)
+                let batchId = batchMap.get(`${item.productId}|${item.batch}`);
+
+                if (!batchId && item.batch) {
+                    let validExpiry = null;
+                    if (item.expiry) {
+                        const d = new Date(item.expiry);
+                        if (!isNaN(d.getTime())) validExpiry = d;
+                    }
+
+                    const newBatch = await tx.hms_product_batch.create({
+                        data: {
+                            id: crypto.randomUUID(),
+                            tenant_id: session.user.tenantId!,
+                            company_id: companyId!,
                             product_id: item.productId,
-                            batch_no: item.batch
+                            batch_no: item.batch,
+                            expiry_date: validExpiry,
+                            mrp: item.mrp || 0,
+                            cost: item.unitPrice || 0,
+                            sale_price: item.salePrice,
+                            margin_percentage: item.marginPct,
+                            markup_percentage: item.markupPct,
+                            pricing_strategy: item.pricingStrategy,
+                            qty_on_hand: 0
                         }
                     });
-
-                    if (existingBatch) {
-                        batchId = existingBatch.id;
-                    } else {
-                        let validExpiry = null;
-                        if (item.expiry) {
-                            const d = new Date(item.expiry);
-                            if (!isNaN(d.getTime())) validExpiry = d;
-                        }
-
-                        const newBatch = await tx.hms_product_batch.create({
-                            data: {
-                                id: crypto.randomUUID(),
-                                tenant_id: session.user.tenantId!,
-                                company_id: companyId!,
-                                product_id: item.productId,
-                                batch_no: item.batch,
-                                expiry_date: validExpiry,
-                                mrp: item.mrp || 0,
-                                cost: item.unitPrice || 0,
-                                sale_price: item.salePrice,
-                                margin_percentage: item.marginPct,
-                                markup_percentage: item.markupPct,
-                                pricing_strategy: item.pricingStrategy,
-                                qty_on_hand: 0
-                            }
-                        });
-                        batchId = newBatch.id;
-                    }
+                    batchId = newBatch.id;
+                    batchMap.set(`${item.productId}|${item.batch}`, batchId);
                 }
 
-                // A. Create Receipt Line (Raw SQL to trigger DB logic)
-                const poLineIdVal = item.poLineId || null;
-                const batchIdVal = batchId || null;
+                const billedQty = Number(item.qtyReceived) || 0;
+                const freeQty = Number(item.freeQty) || 0;
+                const totalQty = billedQty + freeQty;
 
                 // A. Prepare Receipt Line Data
                 receiptLinesData.push({
@@ -290,11 +296,11 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     company_id: companyId!,
                     receipt_id: receipt.id,
                     product_id: item.productId,
-                    po_line_id: poLineIdVal,
-                    qty: Number(item.qtyReceived) || 0,
+                    po_line_id: item.poLineId || null,
+                    qty: billedQty,
                     unit_price: Number(item.unitPrice) || 0,
-                    batch_id: batchIdVal,
-                    location_id: defaultLocation.id,
+                    batch_id: batchId || null,
+                    location_id: defaultLocation!.id,
                     metadata: {
                         batch: item.batch,
                         expiry: item.expiry,
@@ -314,15 +320,11 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                         discount_pct: item.discountPct,
                         discount_amt: item.discountAmt,
                         scheme_discount: item.schemeDiscount,
-                        free_qty: item.freeQty
+                        free_qty: freeQty
                     },
                     created_at: new Date()
                 });
 
-                // B. Prepare Stock Ledger Data
-                const billedQty = Number(item.qtyReceived) || 0;
-                const freeQty = Number(item.freeQty) || 0;
-                const totalQty = billedQty + freeQty;
                 let effectiveConversion = item.conversionFactor || 1;
                 const effectiveUOM = (item.purchaseUOM || 'PCS').toUpperCase();
 
@@ -361,9 +363,9 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 await tx.hms_purchase_receipt_line.createMany({ data: receiptLinesData });
             }
 
-            // Execute Batch Product Updates
+            // Execute Batch Product Updates (Optimized via pre-fetched map)
             for (const [productId, update] of productUpdates) {
-                const currentProduct = await tx.hms_product.findUnique({ where: { id: productId }, select: { metadata: true, price: true } });
+                const currentProduct = productMap.get(productId);
                 await tx.hms_product.update({
                     where: { id: productId },
                     data: {
@@ -464,13 +466,22 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
 
             if (!accResult.success) {
                 console.error("Accounting Post Failed (Invoice):", accResult.error);
-                return { success: true, data: JSON.parse(JSON.stringify(result.receipt)), warning: `Receipt & Bill created, but Accounting failed: ${accResult.error}` };
+                const warningData = JSON.parse(JSON.stringify(result.receipt));
+                if (warningData.metadata?.attachment_url) warningData.metadata.attachment_url = "EXCLUDED_FOR_PERFORMANCE";
+                return { success: true, data: warningData, warning: `Receipt & Bill created, but Accounting failed: ${accResult.error}` };
             }
         }
 
         revalidatePath('/hms/purchasing/receipts');
-        revalidatePath('/hms/accounting/bills'); // Refresh bills page too
-        return { success: true, data: JSON.parse(JSON.stringify(result.receipt)) };
+        revalidatePath('/hms/accounting/bills');
+
+        // STRATEGY: Strip large attachment from return data to prevent serialization hangs
+        const returnData = JSON.parse(JSON.stringify(result.receipt));
+        if (returnData.metadata?.attachment_url) {
+            returnData.metadata.attachment_url = "EXCLUDED_FOR_PERFORMANCE"; // Client already has it
+        }
+
+        return { success: true, data: returnData };
 
     } catch (error: any) {
         console.error("Failed to create receipt (Full Error):", JSON.stringify(error, Object.getOwnPropertyNames(error)));
