@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
         const base64Image = buffer.toString('base64')
 
         // Use Gemini to extract structured prescription data
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-002" })
+        const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" })
 
         const result = await model.generateContent([
             {

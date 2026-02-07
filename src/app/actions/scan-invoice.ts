@@ -84,13 +84,22 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
 
         const candidateModels = [
             "gemini-2.0-flash",           // Priority 1: 2026 Stable Flash
-            "gemini-1.5-pro-002",         // Priority 2: 1.5 Pro Stable 002
-            "gemini-1.5-flash-002",       // Priority 3: 1.5 Flash Stable 002
-            "gemini-1.5-pro-latest",      // Fallback
-            "gemini-1.5-flash-latest",    // Fallback
+            "gemini-1.5-flash",           // Priority 2: 1.5 Flash
+            "gemini-1.5-pro",             // Priority 3: 1.5 Pro
         ];
 
         let lastError = null;
+
+        console.log(`[ScanInvoice] Session User:`, JSON.stringify({
+            id: session.user.id,
+            email: session.user.email,
+            companyId: (session.user as any).companyId,
+            tenantId: (session.user as any).tenantId
+        }));
+
+        if (!(session.user as any).companyId || !(session.user as any).tenantId) {
+            return { error: "Unauthorized: Session missing tenant/company information. Please log out and log in again." };
+        }
 
         // Construct the prompt
         // Inject supplier rules if available
@@ -284,8 +293,10 @@ async function processInvoiceData(session: any, data: any) {
     let supplierId = null;
     // Robust key check
     let supplierName = data.supplierName || data.SupplierName || data.vendor || data.VendorName || "";
+    const tenantId = (session.user as any).tenantId || (session.user as any).tenant_id;
+    const companyId = (session.user as any).companyId || (session.user as any).company_id;
 
-    if (supplierName) {
+    if (supplierName && tenantId && companyId) {
         // Clean name for search (take first 2 words)
         const searchName = supplierName.split(' ').slice(0, 2).join(' ');
 
@@ -296,7 +307,7 @@ async function processInvoiceData(session: any, data: any) {
             // Check metadata->gstin in JSON field
             existingSupplier = await prisma.hms_supplier.findFirst({
                 where: {
-                    company_id: session.user.companyId,
+                    company_id: companyId,
                     metadata: {
                         path: ['gstin'],
                         equals: data.gstin
@@ -309,7 +320,7 @@ async function processInvoiceData(session: any, data: any) {
         if (!existingSupplier) {
             existingSupplier = await prisma.hms_supplier.findFirst({
                 where: {
-                    company_id: session.user.companyId,
+                    company_id: companyId,
                     name: { contains: searchName, mode: 'insensitive' }
                 }
             });
@@ -318,13 +329,12 @@ async function processInvoiceData(session: any, data: any) {
         if (existingSupplier) {
             supplierId = existingSupplier.id;
             supplierName = existingSupplier.name;
-            // Optional: Update metadata if missing? Skipping for now to avoid overwrites.
         } else {
             const newSupplier = await prisma.hms_supplier.create({
                 data: {
-                    tenant_id: session.user.tenantId!,
-                    company_id: session.user.companyId!,
-                    name: supplierName,
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    name: supplierName.slice(0, 250), // Truncate if too long
                     is_active: true,
                     metadata: {
                         gstin: data.gstin,
@@ -343,7 +353,7 @@ async function processInvoiceData(session: any, data: any) {
     // We select minimal fields to keep it lightweight
     const allProducts = await prisma.hms_product.findMany({
         where: {
-            company_id: session.user.companyId,
+            company_id: companyId,
             is_active: true
         },
         select: {
