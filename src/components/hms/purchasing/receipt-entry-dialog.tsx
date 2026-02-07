@@ -159,14 +159,16 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                         const r = res.data;
                         setSupplierId(r.supplierId);
                         setSupplierName(r.supplierName);
-                        // Fetch supplier meta for GSTIN
-                        // const supDetails = await getSupplier(r.supplierId) ... // Optional optimization
+                        if (r.hms_supplier?.metadata) {
+                            setSupplierMeta(r.hms_supplier.metadata);
+                        }
 
                         setReceivedDate(new Date(r.date).toISOString().split('T')[0]);
                         setReference(r.reference);
                         setNotes(r.notes);
                         setAttachmentUrl(r.attachmentUrl);
-                        setMode('direct'); // Load as direct for now, or check for PO link
+                        setMode(r.purchaseOrderId ? 'po' : 'direct');
+                        setPoId(r.purchaseOrderId || null);
 
                         // Map Items
                         const mappedItems = r.items.map((i: any) => ({
@@ -186,14 +188,15 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                             pricingStrategy: i.pricingStrategy,
                             mrpDiscountPct: i.mrpDiscountPct,
                             taxRate: i.taxRate,
-                            taxAmount: i.taxAmount || 0, // Will recalculate anyway
+                            taxAmount: i.taxAmount || 0,
                             hsn: i.hsn,
                             packing: i.pack,
-                            uom: '',
-                            schemeDiscount: 0,
-                            discountPct: 0,
-                            discountAmt: 0,
-                            freeQty: 0
+                            uom: i.uom || '',
+                            schemeDiscount: i.schemeDiscount || 0,
+                            discountPct: i.discountPct || 0,
+                            discountAmt: i.discountAmt || 0,
+                            freeQty: i.freeQty || 0,
+                            conversionFactor: i.conversionFactor || 1
                         }));
 
                         // Recalculate totals to be safe

@@ -501,7 +501,8 @@ export async function getPurchaseReceipts() {
             data: receipts.map(r => {
                 const totalAmount = r.hms_purchase_receipt_line.reduce((sum, line) => {
                     const meta = line.metadata as any || {};
-                    const lineTotal = (Number(line.qty) * Number(line.unit_price)) + (Number(meta.tax_amount) || 0);
+                    const taxAmount = meta.tax?.amount ?? meta.tax_amount ?? 0;
+                    const lineTotal = (Number(line.qty || 0) * Number(line.unit_price || 0)) + Number(taxAmount);
                     return sum + lineTotal;
                 }, 0);
 
@@ -574,16 +575,23 @@ export async function getPurchaseReceipt(id: string) {
             date: receipt.receipt_date,
             supplierId: receipt.supplier_id,
             supplierName: receipt.hms_supplier?.name || "Unknown",
+            purchaseOrderId: receipt.purchase_order_id,
+            hms_supplier: receipt.hms_supplier,
             reference: (receipt.metadata as any)?.reference || '',
             notes: (receipt.metadata as any)?.notes || '',
             attachmentUrl: (receipt.metadata as any)?.attachment_url || (receipt.metadata as any)?.attachmentUrl || '',
             items: receipt.hms_purchase_receipt_line.map(line => {
                 const meta = line.metadata as any || {};
+                // Handle nested tax object or flat keys for backward compatibility
+                const taxRate = meta.tax?.rate ?? meta.tax_rate ?? 0;
+                const taxAmount = meta.tax?.amount ?? meta.tax_amount ?? 0;
+
                 return {
                     id: line.id,
                     productId: line.product_id,
                     productName: productMap.get(line.product_id) || "Unknown",
                     qty: safeNum(line.qty),
+                    receivedQty: safeNum(line.qty), // UI often uses receivedQty
                     unitPrice: safeNum(line.unit_price),
                     batch: meta.batch || '',
                     batchId: line.batch_id,
@@ -595,8 +603,15 @@ export async function getPurchaseReceipt(id: string) {
                     pricingStrategy: meta.pricing_strategy || 'manual',
                     mrpDiscountPct: safeNum(meta.mrp_discount_pct),
                     pack: meta.packing || meta.purchase_uom || '',
-                    taxRate: safeNum(meta.tax_rate),
-                    hsn: meta.hsn || ''
+                    uom: meta.purchase_uom || meta.packing || '',
+                    taxRate: safeNum(taxRate),
+                    taxAmount: safeNum(taxAmount),
+                    hsn: meta.hsn || '',
+                    discountPct: safeNum(meta.discount_pct),
+                    discountAmt: safeNum(meta.discount_amt),
+                    schemeDiscount: safeNum(meta.scheme_discount),
+                    freeQty: safeNum(meta.free_qty),
+                    conversionFactor: safeNum(meta.conversion_factor || 1)
                 };
             })
         };
@@ -686,7 +701,11 @@ export async function updatePurchaseReceipt(id: string, data: PurchaseReceiptDat
                             purchase_uom: item.purchaseUOM,
                             base_uom: item.baseUOM,
                             conversion_factor: item.conversionFactor,
-                            sale_price_per_unit: item.salePricePerUnit
+                            sale_price_per_unit: item.salePricePerUnit,
+                            discount_pct: item.discountPct,
+                            discount_amt: item.discountAmt,
+                            scheme_discount: item.schemeDiscount,
+                            free_qty: item.freeQty
                         }
                     }
                 });
