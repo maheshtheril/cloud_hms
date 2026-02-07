@@ -82,11 +82,6 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
             }
         }
 
-        const candidateModels = [
-            "gemini-2.0-flash",           // Priority 1: 2026 Stable Flash
-            "gemini-1.5-flash",           // Priority 2: 1.5 Flash
-            "gemini-1.5-pro",             // Priority 3: 1.5 Pro
-        ];
 
         let lastError = null;
 
@@ -154,9 +149,19 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
                 - "packing": Packing format (e.g., "1x10", "10 TAB", "15 CAP").
         `;
 
-        for (const modelName of candidateModels) {
+        const configurations = [
+            { name: "gemini-1.5-flash", version: "v1" },      // Priority 1: Stable 1.5 Flash on V1
+            { name: "gemini-1.5-pro", version: "v1" },        // Priority 2: Stable 1.5 Pro on V1
+            { name: "gemini-2.0-flash", version: "v1beta" },  // Priority 3: 2.0 Flash on Beta
+            { name: "gemini-1.5-flash", version: "v1beta" },  // Fallback
+        ];
+
+        for (const config of configurations) {
+            const modelName = config.name;
+            const apiVersion = config.version;
+
             try {
-                console.log(`[ScanInvoice] Trying model: ${modelName}`);
+                console.log(`[ScanInvoice] Trying model: ${modelName} (${apiVersion})`);
                 // Zero-Temperature Config to ensure "Same Bill = Same Result"
                 const model = genAI.getGenerativeModel({
                     model: modelName,
@@ -166,7 +171,8 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
                         topK: 1,
                         responseMimeType: "application/json"
                     }
-                });
+                }, { apiVersion });
+
                 const result = await model.generateContent([
                     prompt,
                     {
