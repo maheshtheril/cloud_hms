@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
+import crypto from 'crypto'
 
 const STANDARD_PERMISSIONS = [
     // User Management -> System
@@ -278,6 +279,7 @@ export async function seedRolesAndPermissions() {
                 // Create role
                 const newRole = await prisma.role.create({
                     data: {
+                        id: crypto.randomUUID(), // Explicit ID generation
                         tenant_id: tenantId,
                         key: roleData.key,
                         name: roleData.name,
@@ -365,6 +367,7 @@ export async function createRole(data: { key: string; name: string; permissions:
 
         const role = await prisma.role.create({
             data: {
+                id: crypto.randomUUID(), // Explicit ID generation
                 tenant_id: tenantId,
                 key: data.key || data.name.toLowerCase().replace(/\s+/g, '_'),
                 name: data.name,
