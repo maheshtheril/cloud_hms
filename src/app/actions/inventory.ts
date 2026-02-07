@@ -1367,6 +1367,7 @@ export async function findOrCreateProduct(productName: string, additionalData?: 
     mrp?: number;
     hsn?: string;
     packing?: string;
+    taxRate?: number;
 }) {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) {
@@ -1456,7 +1457,7 @@ export async function findOrCreateProduct(productName: string, additionalData?: 
     }
 }
 
-export async function findOrCreateProductsBatch(items: { productName: string, mrp?: number, hsn?: string, packing?: string }[]) {
+export async function findOrCreateProductsBatch(items: { productName: string, mrp?: number, hsn?: string, packing?: string, taxRate?: number }[]) {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
 
