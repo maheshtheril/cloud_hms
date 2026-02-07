@@ -162,19 +162,19 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
             const apiVersion = config.version;
             const useJsonMode = config.useJsonMode;
 
+            const generationConfig: any = {
+                temperature: 0,
+                topP: 0.1,
+                topK: 1,
+            };
+
+            // Only add responseMimeType if useJsonMode is true (v1 often fails with this field)
+            if (useJsonMode) {
+                generationConfig.responseMimeType = "application/json";
+            }
+
             try {
                 console.log(`[ScanInvoice] Trying model: ${modelName} (${apiVersion}) | JSON Mode: ${useJsonMode}`);
-
-                const generationConfig: any = {
-                    temperature: 0,
-                    topP: 0.1,
-                    topK: 1,
-                };
-
-                // Only add responseMimeType if useJsonMode is true (v1 often fails with this field)
-                if (useJsonMode) {
-                    generationConfig.responseMimeType = "application/json";
-                }
 
                 const model = genAI.getGenerativeModel({
                     model: modelName,
