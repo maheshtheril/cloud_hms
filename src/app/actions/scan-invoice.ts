@@ -150,27 +150,35 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
         `;
 
         const configurations = [
-            { name: "gemini-1.5-flash", version: "v1" },      // Priority 1: Stable 1.5 Flash on V1
-            { name: "gemini-1.5-pro", version: "v1" },        // Priority 2: Stable 1.5 Pro on V1
-            { name: "gemini-2.0-flash", version: "v1beta" },  // Priority 3: 2.0 Flash on Beta
-            { name: "gemini-1.5-flash", version: "v1beta" },  // Fallback
+            { name: "gemini-1.5-flash", version: "v1beta", useJsonMode: true },
+            { name: "gemini-1.5-pro", version: "v1beta", useJsonMode: true },
+            { name: "gemini-1.5-flash", version: "v1", useJsonMode: false },
+            { name: "gemini-1.5-pro", version: "v1", useJsonMode: false },
+            { name: "gemini-2.0-flash", version: "v1beta", useJsonMode: true },
         ];
 
         for (const config of configurations) {
             const modelName = config.name;
             const apiVersion = config.version;
+            const useJsonMode = config.useJsonMode;
 
             try {
-                console.log(`[ScanInvoice] Trying model: ${modelName} (${apiVersion})`);
-                // Zero-Temperature Config to ensure "Same Bill = Same Result"
+                console.log(`[ScanInvoice] Trying model: ${modelName} (${apiVersion}) | JSON Mode: ${useJsonMode}`);
+
+                const generationConfig: any = {
+                    temperature: 0,
+                    topP: 0.1,
+                    topK: 1,
+                };
+
+                // Only add responseMimeType if useJsonMode is true (v1 often fails with this field)
+                if (useJsonMode) {
+                    generationConfig.responseMimeType = "application/json";
+                }
+
                 const model = genAI.getGenerativeModel({
                     model: modelName,
-                    generationConfig: {
-                        temperature: 0,
-                        topP: 0.1,
-                        topK: 1,
-                        responseMimeType: "application/json"
-                    }
+                    generationConfig
                 }, { apiVersion });
 
                 const result = await model.generateContent([
@@ -186,13 +194,32 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
                 const responseText = result.response.text();
                 console.log(`[ScanInvoice] Raw AI Response for ${modelName}: `, responseText);
 
-                const cleanedText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+                // Robust cleaning: Find JSON block or take whole text
+                let cleanedText = responseText;
+                if (responseText.includes('```json')) {
+                    cleanedText = responseText.split('```json')[1].split('```')[0].trim();
+                } else if (responseText.includes('```')) {
+                    cleanedText = responseText.split('```')[1].split('```')[0].trim();
+                } else {
+                    // Try to find first { and last }
+                    const firstBrace = responseText.indexOf('{');
+                    const lastBrace = responseText.lastIndexOf('}');
+                    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                        cleanedText = responseText.substring(firstBrace, lastBrace + 1);
+                    }
+                }
+
                 let data;
                 try {
                     data = JSON.parse(cleanedText);
                 } catch (jsonErr) {
-                    console.error(`[ScanInvoice] JSON Parse Failed for ${modelName}:`, jsonErr);
-                    throw new Error("AI returned invalid JSON");
+                    console.error(`[ScanInvoice] JSON Parse Failed for ${modelName}. Attempting to parse raw response...`);
+                    // If extraction failed, maybe it's just raw JSON without blocks
+                    try {
+                        data = JSON.parse(responseText.trim());
+                    } catch (e2) {
+                        throw new Error("AI returned invalid JSON structure.");
+                    }
                 }
 
                 // VALIDATION: Ensure we actually got items. If not, consider it a failure for this model and try next.
@@ -223,61 +250,76 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
                     }
                 }
 
-                console.log("[ScanInvoice] Processed Result:", JSON.stringify(processed, null, 2));
+                console.log("[ScanInvoice] Processed Result SUCCESS with model:", modelName);
                 return processed;
 
             } catch (error: any) {
                 const errMsg = error.message || String(error);
-                console.warn(`[ScanInvoice] Model ${modelName} failed:`, errMsg);
+                console.warn(`[ScanInvoice] Model ${modelName} (${apiVersion}) failed:`, errMsg);
 
                 lastError = error;
+
+                // If location is not supported, don't bother retrying this model
+                if (errMsg.includes("User location is not supported")) {
+                    console.log(`[ScanInvoice] Region restriction for ${modelName}. Skipping...`);
+                    continue;
+                }
+
+                // If 404, the model simply isn't available on this apiVersion
+                if (errMsg.includes("404") || errMsg.includes("not found")) {
+                    console.log(`[ScanInvoice] Model ${modelName} not found on ${apiVersion}. Skipping...`);
+                    continue;
+                }
 
                 // SPECIAL HANDLING: If 429 (Rate Limit) or Quota Exceeded, retry with exponential backoff
                 if (errMsg.includes("429") || errMsg.includes("Too Many Requests") || errMsg.includes("Quota exceeded") || errMsg.includes("limit")) {
                     console.log(`[ScanInvoice] Hit Rate Limit on ${modelName}. Starting retry sequence...`);
 
-                    const maxRetries = 3;
-                    // Waits: 5s, 15s, 45s. Cumulative > 60s to clear minute quota.
-                    const delays = [5000, 15000, 45000];
+                    const maxRetries = 2; // Reduced retries to avoid long hangs
+                    const delays = [3000, 8000];
 
                     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                        const delay = delays[attempt - 1] || 60000;
+                        const delay = delays[attempt - 1];
                         console.log(`[ScanInvoice] Retry attempt ${attempt}/${maxRetries} for ${modelName} after ${delay}ms...`);
 
                         await new Promise(resolve => setTimeout(resolve, delay));
 
                         try {
-                            const model = genAI.getGenerativeModel({ model: modelName });
+                            const model = genAI.getGenerativeModel({
+                                model: modelName,
+                                generationConfig
+                            }, { apiVersion });
                             const result = await model.generateContent([
                                 prompt,
                                 { inlineData: { data: base64Image, mimeType: mimeType } }
                             ]);
 
                             const responseText = result.response.text();
-                            const cleanedText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+
+                            // Use the same robust cleaning here
+                            let cleanedText = responseText;
+                            const firstBrace = responseText.indexOf('{');
+                            const lastBrace = responseText.lastIndexOf('}');
+                            if (firstBrace !== -1 && lastBrace !== -1) {
+                                cleanedText = responseText.substring(firstBrace, lastBrace + 1);
+                            }
+
                             const data = JSON.parse(cleanedText);
                             return await processInvoiceData(session, data);
 
                         } catch (retryErr: any) {
                             const retryMsg = retryErr.message || String(retryErr);
                             console.warn(`[ScanInvoice] Retry ${attempt} failed for ${modelName}:`, retryMsg);
-
-                            // If it is NOT a rate limit error anymore (e.g. 500 or 400), abort retries for this model
-                            const isRateLimit = retryMsg.includes("429") || retryMsg.includes("Too Many Requests") || retryMsg.includes("Quota") || retryMsg.includes("limit");
-                            if (!isRateLimit) {
-                                break;
-                            }
-                            // If still rate limit, continue to next longer wait
+                            if (!retryMsg.includes("429")) break;
                         }
                     }
-                    console.warn(`[ScanInvoice] All retries failed for ${modelName}. Moving to next model.`);
                 }
 
                 continue;
             }
         }
 
-        throw lastError || new Error("All models failed.");
+        throw lastError || new Error("All configured AI models failed to process this invoice.");
 
     } catch (error: any) {
         console.error("AI Scan Error Detailed:", error);
