@@ -83,9 +83,11 @@ export async function scanInvoiceFromUrl(fileUrl: string, supplierId?: string) {
         }
 
         const candidateModels = [
-            "gemini-1.5-pro",         // Priority 1: High intelligence, strict reasoning
-            "gemini-2.0-flash-exp",   // Priority 2: Newest experimental
-            "gemini-1.5-flash",       // Priority 3: Fast fallback
+            "gemini-2.0-flash",           // Priority 1: 2026 Stable Flash
+            "gemini-1.5-pro-002",         // Priority 2: 1.5 Pro Stable 002
+            "gemini-1.5-flash-002",       // Priority 3: 1.5 Flash Stable 002
+            "gemini-1.5-pro-latest",      // Fallback
+            "gemini-1.5-flash-latest",    // Fallback
         ];
 
         let lastError = null;
