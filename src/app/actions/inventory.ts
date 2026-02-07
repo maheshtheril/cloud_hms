@@ -1391,6 +1391,39 @@ export async function findOrCreateProduct(productName: string, additionalData?: 
         });
 
         if (product) {
+            // CRITICAL: Even if product exists, ensure it has a Tax Rule if the scan provided one
+            if (additionalData?.taxRate) {
+                const taxRateVal = Number(additionalData.taxRate);
+                if (taxRateVal > 0) {
+                    const existingRule = await prisma.product_tax_rules.findFirst({
+                        where: { product_id: product.id, is_active: true }
+                    });
+
+                    if (!existingRule) {
+                        const taxMaps = await prisma.company_tax_maps.findMany({
+                            where: { company_id: companyId },
+                            include: { tax_rates: true }
+                        });
+                        const match = taxMaps.find(m => Math.abs(Number(m.tax_rates.rate) - taxRateVal) < 0.1);
+
+                        if (match) {
+                            await prisma.product_tax_rules.create({
+                                data: {
+                                    id: crypto.randomUUID(),
+                                    tenant_id: tenantId,
+                                    company_id: companyId,
+                                    product_id: product.id,
+                                    tax_rate_id: match.tax_rate_id,
+                                    priority: 1,
+                                    is_active: true
+                                }
+                            });
+                            console.log(`✅ UPDATE: Auto-created tax rule for EXISTING product (Exact Match): ${product.name}, Rate: ${taxRateVal}%`);
+                        }
+                    }
+                }
+            }
+
             return {
                 productId: product.id,
                 productName: product.name,
@@ -1412,6 +1445,40 @@ export async function findOrCreateProduct(productName: string, additionalData?: 
 
         if (similarProducts.length > 0) {
             product = similarProducts[0];
+
+            // CRITICAL: Even if product exists, ensure it has a Tax Rule if the scan provided one
+            if (additionalData?.taxRate) {
+                const taxRateVal = Number(additionalData.taxRate);
+                if (taxRateVal > 0) {
+                    const existingRule = await prisma.product_tax_rules.findFirst({
+                        where: { product_id: product.id, is_active: true }
+                    });
+
+                    if (!existingRule) {
+                        const taxMaps = await prisma.company_tax_maps.findMany({
+                            where: { company_id: companyId },
+                            include: { tax_rates: true }
+                        });
+                        const match = taxMaps.find(m => Math.abs(Number(m.tax_rates.rate) - taxRateVal) < 0.1);
+
+                        if (match) {
+                            await prisma.product_tax_rules.create({
+                                data: {
+                                    id: crypto.randomUUID(),
+                                    tenant_id: tenantId,
+                                    company_id: companyId,
+                                    product_id: product.id,
+                                    tax_rate_id: match.tax_rate_id,
+                                    priority: 1,
+                                    is_active: true
+                                }
+                            });
+                            console.log(`✅ UPDATE: Auto-created tax rule for EXISTING product: ${product.name}, Rate: ${taxRateVal}%`);
+                        }
+                    }
+                }
+            }
+
             return {
                 productId: product.id,
                 productName: product.name,
