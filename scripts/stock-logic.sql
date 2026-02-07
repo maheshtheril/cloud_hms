@@ -8,12 +8,21 @@ DECLARE
   computed_unit_cost numeric := 0;
   computed_total_cost numeric := 0;
 BEGIN
+  -- Determine destination location
   IF NEW.location_id IS NOT NULL THEN
     loc_to := NEW.location_id;
   ELSE
-    SELECT id INTO loc_to FROM public.hms_stock_locations WHERE company_id = NEW.company_id AND is_default = true LIMIT 1;
+    -- Try both tables just in case, preferring hms_stock_location (Prisma's table)
+    SELECT id INTO loc_to FROM public.hms_stock_location 
+    WHERE company_id = NEW.company_id AND name = 'Main Warehouse' LIMIT 1;
+    
+    IF loc_to IS NULL THEN
+      SELECT id INTO loc_to FROM public.hms_stock_locations 
+      WHERE company_id = NEW.company_id AND is_default = true LIMIT 1;
+    END IF;
   END IF;
 
+  -- Determine unit cost
   IF NEW.unit_price IS NOT NULL AND NEW.unit_price <> 0 THEN
     computed_unit_cost := NEW.unit_price;
   ELSE
@@ -22,18 +31,33 @@ BEGIN
 
   computed_total_cost := computed_unit_cost * COALESCE(NEW.qty,0);
 
+  -- 1. Insert into hms_stock_ledger
   INSERT INTO public.hms_stock_ledger (
     id, tenant_id, company_id, product_id, related_type, related_id, movement_type,
     qty, uom, unit_cost, total_cost, to_location_id, created_at
   ) VALUES (
-    gen_random_uuid(), NEW.tenant_id, NEW.company_id, NEW.product_id, 'purchase_receipt', NEW.receipt_id, 'in',
-    NEW.qty, NEW.uom, computed_unit_cost, computed_total_cost, loc_to, now()
+    gen_random_uuid(), -- EXPLICIT ID
+    NEW.tenant_id, 
+    NEW.company_id, 
+    NEW.product_id, 
+    'purchase_receipt', 
+    NEW.receipt_id, 
+    'in',
+    NEW.qty, 
+    NEW.uom, 
+    computed_unit_cost, 
+    computed_total_cost, 
+    loc_to, 
+    now()
   );
 
-  INSERT INTO public.hms_stock_levels (id, tenant_id, company_id, product_id, location_id, quantity, updated_at)
-  VALUES (gen_random_uuid(), NEW.tenant_id, NEW.company_id, NEW.product_id, loc_to, NEW.qty, now())
-  ON CONFLICT (tenant_id, company_id, product_id, location_id) 
-  DO UPDATE SET quantity = public.hms_stock_levels.quantity + EXCLUDED.qty, updated_at = now();
+  -- 2. Update hms_stock_levels
+  IF loc_to IS NOT NULL THEN
+    INSERT INTO public.hms_stock_levels (id, tenant_id, company_id, product_id, location_id, quantity, updated_at)
+    VALUES (gen_random_uuid(), NEW.tenant_id, NEW.company_id, NEW.product_id, loc_to, NEW.qty, now())
+    ON CONFLICT (tenant_id, company_id, product_id, location_id) 
+    DO UPDATE SET quantity = public.hms_stock_levels.quantity + EXCLUDED.quantity, updated_at = now();
+  END IF;
 
   RETURN NEW;
 END;
