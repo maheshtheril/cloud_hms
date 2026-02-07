@@ -163,21 +163,29 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     // 2. If we have initial items passed (doctor prescriptions, nurse items, cons. fees)
     if (initialMedicines && initialMedicines.length > 0) {
       const initialMapped = initialMedicines.map((m: any) => {
-        const billable = billableItems.find(bi => bi.id === m.id || bi.label === m.name);
+        const billable = billableItems.find(bi => bi.id === (m.id || m.product_id) || bi.label === m.name);
         const taxId = billable?.categoryTaxId !== undefined ? billable.categoryTaxId : (m.type === 'service' ? null : defaultTaxId);
+        const finalPrice = billable?.price || Number(m.price || 0);
+
+        // Calculate initial tax
+        const taxRateObj = taxConfig.taxRates.find((t: any) => t.id === taxId);
+        const rate = taxRateObj ? Number(taxRateObj.rate) : 0;
+        const lineNet = (Number(m.quantity || 1) * finalPrice) - 0; // No discount initially
+        const taxAmt = (Math.max(0, lineNet) * rate) / 100;
 
         return {
           id: Math.random() + Date.now(),
-          product_id: billable?.id || '',
+          product_id: billable?.id || m.id || '',
           description: m.name || m.description || '',
           quantity: Number(m.quantity || 1),
-          uom: m.uom || 'PCS',
-          unit_price: Number(m.price || 0),
+          uom: m.uom || billable?.uom || 'PCS',
+          unit_price: finalPrice,
           tax_rate_id: taxId,
-          tax_amount: 0,
+          tax_amount: taxAmt,
           discount_amount: 0,
-          base_price: Number(m.price || 0),
-          item_type: m.type || 'item'
+          base_price: finalPrice,
+          item_type: m.type || billable?.type || 'item',
+          metadata: billable?.metadata || {}
         }
       });
 
@@ -300,7 +308,10 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         if (field === 'product_id') {
           const item = billableItems.find(bi => bi.id === value)
           if (item) {
-            updated.description = item.description || item.label || item.name
+            // Description Polish: Override generic auto-created labels
+            const rawDescription = item.description || item.label || item.name;
+            updated.description = rawDescription?.includes('Auto-created from') ? (item.label || item.name) : rawDescription;
+
             updated.item_type = item.type || 'item'
 
             // Extract Prices (Support for packing metadata)
@@ -308,7 +319,14 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             updated.base_price = basePrice
             updated.unit_price = basePrice
             updated.uom = item.metadata?.baseUom || 'PCS'
-            updated.tax_rate_id = (item.categoryTaxId !== undefined) ? item.categoryTaxId : defaultTaxId;
+
+            // INTELLIGENT TAX RESOLUTION (UI side fallback)
+            let resolvedTaxId = item.categoryTaxId;
+            if (!resolvedTaxId && item.categoryTaxRate > 0) {
+              const match = taxConfig.taxRates.find((tr: any) => Math.abs(Number(tr.rate) - Number(item.categoryTaxRate)) < 0.1);
+              if (match) resolvedTaxId = match.id;
+            }
+            updated.tax_rate_id = (resolvedTaxId !== undefined) ? resolvedTaxId : defaultTaxId;
 
             // Metadata for complex items
             updated.metadata = item.metadata
@@ -486,17 +504,30 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
       const res = await fetch(`/api/prescriptions/by-patient/${selectedPatientId}`)
       const data = await res.json()
       if (data.success && data.latest?.medicines?.length > 0) {
-        const newLines = data.latest.medicines.map((m: any) => ({
-          id: Math.random(),
-          product_id: m.id,
-          description: m.name || m.description,
-          quantity: m.quantity || 1,
-          unit_price: m.price || 0,
-          uom: 'PCS',
-          tax_rate_id: defaultTaxId,
-          tax_amount: 0,
-          item_type: 'item'
-        }))
+        const newLines = data.latest.medicines.map((m: any) => {
+          const billable = billableItems.find(bi => bi.id === m.id);
+          const taxId = billable?.categoryTaxId !== undefined ? billable.categoryTaxId : defaultTaxId;
+          const finalPrice = billable?.price || Number(m.price || 0);
+
+          // Calculate tax
+          const taxRateObj = taxConfig.taxRates.find((t: any) => t.id === taxId);
+          const rate = taxRateObj ? Number(taxRateObj.rate) : 0;
+          const lineNet = (Number(m.quantity || 1) * finalPrice);
+          const taxAmt = (Math.max(0, lineNet) * rate) / 100;
+
+          return {
+            id: Math.random(),
+            product_id: m.id,
+            description: m.name || m.description,
+            quantity: m.quantity || 1,
+            unit_price: finalPrice,
+            uom: billable?.uom || 'PCS',
+            tax_rate_id: taxId,
+            tax_amount: taxAmt,
+            item_type: 'item',
+            metadata: billable?.metadata || {}
+          };
+        });
         setLines(newLines)
         toast({ title: "History Loaded", description: "Pulled medicines from latest prescription." })
       }
