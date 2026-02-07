@@ -1,5 +1,5 @@
 
--- HMS STOCK LOGIC RESTORATION (UUID REFINED)
+-- HMS STOCK LOGIC RESTORATION (UUID REFINED + EXPLICIT ID + TYPE SAFE + SCHEMA SAFE)
 -- Ensures consistency between text-based receipt lines and uuid-based stock tables.
 
 BEGIN;
@@ -7,7 +7,7 @@ BEGIN;
 CREATE OR REPLACE FUNCTION public.hms_receipt_line_to_ledger_and_stock()
 RETURNS TRIGGER AS $$
 DECLARE
-  loc_to uuid := NULL;
+  v_loc_to uuid := NULL;
   computed_unit_cost numeric := 0;
   computed_total_cost numeric := 0;
   v_tenant_id uuid;
@@ -15,21 +15,28 @@ DECLARE
   v_product_id uuid;
 BEGIN
   -- Cast inputs to uuid for safety to match hms_stock_ledger column types
-  v_tenant_id := NEW.tenant_id::uuid;
-  v_company_id := NEW.company_id::uuid;
-  v_product_id := NEW.product_id::uuid;
+  v_tenant_id := NULLIF(NEW.tenant_id, '')::uuid;
+  v_company_id := NULLIF(NEW.company_id, '')::uuid;
+  v_product_id := NULLIF(NEW.product_id, '')::uuid;
 
   -- 1. Determine destination location
-  IF NEW.location_id IS NOT NULL THEN
-    loc_to := NEW.location_id::uuid;
+  IF NULLIF(NEW.location_id, '') IS NOT NULL THEN
+    v_loc_to := NEW.location_id::uuid;
   ELSE
-    -- Try to find main warehouse or default in both possible table names
-    SELECT id INTO loc_to FROM public.hms_stock_location 
-    WHERE company_id = v_company_id AND (name = 'Main Warehouse' OR is_default = true) LIMIT 1;
+    -- Try to find main warehouse in singular table
+    SELECT id INTO v_loc_to FROM public.hms_stock_location 
+    WHERE company_id::text = v_company_id::text AND name = 'Main Warehouse' LIMIT 1;
     
-    IF loc_to IS NULL THEN
-      SELECT id INTO loc_to FROM public.hms_stock_locations 
-      WHERE company_id = v_company_id AND (name = 'Main Warehouse' OR is_default = true) LIMIT 1;
+    -- If not found, try plural table which has is_default
+    IF v_loc_to IS NULL THEN
+      SELECT id INTO v_loc_to FROM public.hms_stock_locations 
+      WHERE company_id::text = v_company_id::text AND (name = 'Main Warehouse' OR is_default = true) LIMIT 1;
+    END IF;
+    
+    -- Final fallback: ANY location in singular table
+    IF v_loc_to IS NULL THEN
+        SELECT id INTO v_loc_to FROM public.hms_stock_location
+        WHERE company_id::text = v_company_id::text LIMIT 1;
     END IF;
   END IF;
 
@@ -37,43 +44,47 @@ BEGIN
   IF NEW.unit_price IS NOT NULL AND NEW.unit_price <> 0 THEN
     computed_unit_cost := NEW.unit_price;
   ELSE
-    SELECT COALESCE(default_cost,0) INTO computed_unit_cost FROM public.hms_product WHERE id = v_product_id LIMIT 1;
+    -- Use ::text cast for id check because product table might still be text
+    SELECT COALESCE(default_cost,0) INTO computed_unit_cost FROM public.hms_product 
+    WHERE id::text = v_product_id::text LIMIT 1;
   END IF;
 
   computed_total_cost := computed_unit_cost * COALESCE(NEW.qty,0);
 
   -- 3. Insert into hms_stock_ledger (Master Ledger)
-  -- NOT providing 'id' here, letting database DEFAULT gen_random_uuid() handle it
+  -- PROVIDING 'id' EXPLICITLY via gen_random_uuid() to bypass any table default issues
   INSERT INTO public.hms_stock_ledger (
-    tenant_id, company_id, product_id, related_type, related_id, movement_type,
+    id, tenant_id, company_id, product_id, related_type, related_id, movement_type,
     qty, uom, unit_cost, total_cost, to_location_id, batch_id, created_at
   ) VALUES (
+    gen_random_uuid(), -- Explicitly generate UUID here
     v_tenant_id, 
     v_company_id, 
     v_product_id, 
     'purchase_receipt', 
-    NEW.receipt_id::uuid, 
+    NULLIF(NEW.receipt_id, '')::uuid, 
     'in',
     COALESCE(NEW.qty, 0), 
     NEW.uom, 
     computed_unit_cost, 
     computed_total_cost, 
-    loc_to, 
-    NEW.batch_id::uuid,
+    v_loc_to, 
+    NULLIF(NEW.batch_id, '')::uuid,
     now()
   );
 
   -- 4. Update hms_stock_levels (UPSERT)
-  IF loc_to IS NOT NULL THEN
+  IF v_loc_to IS NOT NULL THEN
     INSERT INTO public.hms_stock_levels (
-        tenant_id, company_id, product_id, location_id, batch_id, quantity, updated_at
+        id, tenant_id, company_id, product_id, location_id, batch_id, quantity, updated_at
     )
     VALUES (
+        gen_random_uuid(), -- Explicitly generate UUID here too
         v_tenant_id, 
         v_company_id, 
         v_product_id, 
-        loc_to, 
-        NEW.batch_id::uuid, 
+        v_loc_to, 
+        NULLIF(NEW.batch_id, '')::uuid, 
         COALESCE(NEW.qty, 0), 
         now()
     )
