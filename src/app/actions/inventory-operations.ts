@@ -13,6 +13,7 @@ export type ReceiveStockItem = {
     unitCost: number
     batchNumber?: string
     expiryDate?: string
+    mrp?: number
 }
 
 export type ReceiveStockData = {
@@ -132,8 +133,15 @@ export async function receiveStock(data: ReceiveStockData) {
                                 product_id: item.productId,
                                 batch_no: item.batchNumber,
                                 expiry_date: item.expiryDate ? new Date(item.expiryDate) : null,
-                                cost: item.unitCost
+                                cost: item.unitCost,
+                                mrp: item.mrp
                             }
+                        })
+                    } else if (item.mrp) {
+                        // Update MRP if provided (correction/update)
+                        await tx.hms_product_batch.update({
+                            where: { id: batch.id },
+                            data: { mrp: item.mrp }
                         })
                     }
                     batchId = batch.id

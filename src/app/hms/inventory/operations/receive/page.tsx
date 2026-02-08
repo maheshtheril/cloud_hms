@@ -37,6 +37,7 @@ export default function ReceiveStockPage() {
         product: any
         quantity: number
         unitCost: number
+        mrp: number
         batchNumber: string
         expiryDate: string
     } | null>(null)
@@ -66,6 +67,7 @@ export default function ReceiveStockPage() {
             product,
             quantity: 1,
             unitCost: product.price || 0, // Default to price (should be cost, but fallback)
+            mrp: product.mrp || 0,
             batchNumber: '',
             expiryDate: ''
         })
@@ -92,6 +94,7 @@ export default function ReceiveStockPage() {
             productId: currentItem.product.id,
             quantity: currentItem.quantity,
             unitCost: currentItem.unitCost,
+            mrp: currentItem.mrp,
             batchNumber: currentItem.batchNumber || undefined,
             expiryDate: currentItem.expiryDate || undefined
         }
@@ -163,6 +166,22 @@ export default function ReceiveStockPage() {
                                     value={formData.date ? new Date(formData.date).toISOString().split('T')[0] : ''}
                                     onChange={e => setFormData(p => ({ ...p, date: new Date(e.target.value) }))}
                                 />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Type</Label>
+                                <select
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    onChange={(e) => {
+                                        const type = e.target.value;
+                                        setFormData(p => ({
+                                            ...p,
+                                            reference: type === 'opening' ? 'OPENING-STOCK' : ''
+                                        }));
+                                    }}
+                                >
+                                    <option value="purchase">Purchase Receipt</option>
+                                    <option value="opening">Opening Stock</option>
+                                </select>
                             </div>
                             <div className="space-y-2">
                                 <Label>Reference (Optional)</Label>
@@ -248,12 +267,22 @@ export default function ReceiveStockPage() {
                                         </div>
 
                                         <div className="space-y-1.5">
-                                            <Label className="text-xs">Unit Cost</Label>
+                                            <Label className="text-xs">Unit Cost (Buy Price)</Label>
                                             <Input
                                                 type="number"
                                                 min="0"
                                                 value={currentItem.unitCost}
                                                 onChange={e => setCurrentItem(p => p ? ({ ...p, unitCost: parseFloat(e.target.value) }) : null)}
+                                            />
+                                        </div>
+
+                                        <div className="space-y-1.5">
+                                            <Label className="text-xs">MRP (Sell Price)</Label>
+                                            <Input
+                                                type="number"
+                                                min="0"
+                                                value={currentItem.mrp}
+                                                onChange={e => setCurrentItem(p => p ? ({ ...p, mrp: parseFloat(e.target.value) }) : null)}
                                             />
                                         </div>
 
@@ -297,6 +326,7 @@ export default function ReceiveStockPage() {
                                                 <TableHead>Product</TableHead>
                                                 <TableHead>Qty</TableHead>
                                                 <TableHead>Cost</TableHead>
+                                                <TableHead>MRP</TableHead>
                                                 <TableHead>Batch Info</TableHead>
                                                 <TableHead className="w-10"></TableHead>
                                             </TableRow>
@@ -307,6 +337,7 @@ export default function ReceiveStockPage() {
                                                     <TableCell className="font-medium">{item._productName}</TableCell>
                                                     <TableCell>{item.quantity} {item._uom}</TableCell>
                                                     <TableCell>${item.unitCost.toFixed(2)}</TableCell>
+                                                    <TableCell>${(item.mrp || 0).toFixed(2)}</TableCell>
                                                     <TableCell>
                                                         {item.batchNumber ? (
                                                             <div className="flex flex-col">
