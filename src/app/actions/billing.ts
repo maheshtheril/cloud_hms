@@ -226,10 +226,12 @@ export async function getBillableItems() {
                 }
             }
 
-            // SERVICE OVERRIDE: Hospital services (Consultation, etc.) are typically tax-exempt (0%)
-            if (item.is_service && !productTaxRule?.tax_rate_id) {
-                finalTaxId = null;
-                finalTaxRate = 0;
+            // SERVICE OVERRIDE: Only if NO tax is explicitly found
+            // Previously we forced 0% for all services without a specific rule, which caused issues.
+            // Now we trust the resolution chain (Product Rule > Purchase > Category > Default).
+            if (item.is_service && !finalTaxId && !productTaxRule?.tax_rate_id) {
+                // Keep as is: No tax found, so 0% is correct.
+                // But do NOT clear it if finalTaxId is already set (e.g. from Category)
             }
 
             // Extract UOM pricing data from metadata
