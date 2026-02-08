@@ -66,7 +66,7 @@ export default function ReceiveStockPage() {
         setCurrentItem({
             product,
             quantity: 1,
-            unitCost: product.price || 0, // Default to price (should be cost, but fallback)
+            unitCost: product.default_cost || product.price || 0,
             mrp: product.mrp || 0,
             batchNumber: '',
             expiryDate: ''
