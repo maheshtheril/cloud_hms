@@ -137,6 +137,31 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     }
   }, [date, initialInvoice]);
 
+
+  const extendedTaxRates = useMemo(() => {
+    const rates = [...(taxConfig.taxRates || [])];
+    // Scan all billable items for missing rates
+    billableItems.forEach(item => {
+      const rate = Number(item.categoryTaxRate || 0);
+      if (rate > 0) {
+        const exists = rates.find(r => Math.abs(Number(r.rate) - rate) < 0.1);
+        if (!exists) {
+          // Check if we already added it
+          const alreadyAdded = rates.find(r => r.id === `AUTO_${rate}`);
+          if (!alreadyAdded) {
+            rates.push({
+              id: `AUTO_${rate}`,
+              name: `${rate}% (Detected)`,
+              rate: rate,
+              is_active: true
+            });
+          }
+        }
+      }
+    });
+    return rates.sort((a, b) => Number(a.rate) - Number(b.rate));
+  }, [taxConfig.taxRates, billableItems]);
+
   const defaultTaxId = taxConfig.defaultTax?.id || ''
 
   // Robust Line Item State
@@ -795,7 +820,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     <th className="px-4 py-4 w-28 text-center">Qty</th>
                     <th className="px-4 py-4 w-32">UOM</th>
                     <th className="px-4 py-4 w-32">Rate</th>
-                    {taxConfig.taxRates.length === 0 ? (
+                    {extendedTaxRates.length === 0 ? (
                       <th className="px-4 py-4 w-36">
                         <div className="flex flex-col items-center">
                           <span className="text-rose-500 animate-pulse text-[10px]">⚠️ NO TAX RATES</span>
@@ -918,7 +943,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                           <div className="flex flex-col gap-1">
                             <select className="w-full h-8 bg-transparent border border-slate-100 dark:border-slate-800 rounded-lg px-2 text-[8px] font-black outline-none" value={line.tax_rate_id || ''} onChange={e => updateLine(line.id, 'tax_rate_id', e.target.value)} disabled={isPaymentModalOpen || loading}>
                               <option value="">0% (No Tax)</option>
-                              {taxConfig.taxRates.map((t: any) => <option key={t.id} value={t.id}>{t.name} ({t.rate}%)</option>)}
+                              {extendedTaxRates.map((t: any) => <option key={t.id} value={t.id}>{t.name} ({t.rate}%)</option>)}
                             </select>
                             {line.tax_amount > 0 && (
                               <span className="text-[9px] font-bold text-emerald-600 text-right pr-1">

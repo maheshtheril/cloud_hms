@@ -1,6 +1,7 @@
 'use server'
 
 import { prisma } from "@/lib/prisma"
+import { randomUUID } from "crypto"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
@@ -393,7 +394,19 @@ export async function createInvoice(data: {
         const totalPaidCalc = payments.reduce((sum, p) => sum + safeNum(p.amount), 0);
         const outstandingCalc = (status === 'paid') ? 0 : Math.max(0, grandTotalCalc - totalPaidCalc);
 
-        // 4. Persistence with Manual ID Injection (Neon Compatibility)
+        // 4. Resolve AUTO Taxes (JIT Creation)
+        const resolvedLineItems = await Promise.all(line_items.map(async (l: any) => {
+            if (l.tax_rate_id && l.tax_rate_id.toString().startsWith('AUTO_')) {
+                const rate = parseFloat(l.tax_rate_id.replace('AUTO_', ''));
+                if (!isNaN(rate)) {
+                    const realId = await resolveAutoTax(rate, tenantId, companyId);
+                    if (realId) return { ...l, tax_rate_id: realId };
+                }
+            }
+            return l;
+        }));
+
+        // 5. Persistence with Manual ID Injection (Neon Compatibility)
         const result = await prisma.$transaction(async (tx) => {
             const invoiceId = crypto.randomUUID();
             const invoice = await tx.hms_invoice.create({
@@ -422,7 +435,7 @@ export async function createInvoice(data: {
                     branch_id: isUUID(branchId) ? branchId : null,
                     created_by: isUUID(userId) ? userId : null,
                     hms_invoice_lines: {
-                        create: line_items.map((l, idx) => ({
+                        create: resolvedLineItems.map((l, idx) => ({
                             id: crypto.randomUUID(),
                             tenant_id: tenantId,
                             company_id: companyId,
@@ -597,9 +610,18 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
                 where: { invoice_id: invoiceId }
             });
 
-            // 3. Create new lines
+            // 3. Resolve Taxes & Create new lines
+            const resolvedLineItems = await Promise.all(line_items.map(async (l: any) => {
+                if (l.tax_rate_id && l.tax_rate_id.toString().startsWith('AUTO_')) {
+                    const rate = parseFloat(l.tax_rate_id.replace('AUTO_', ''));
+                    const realId = await resolveAutoTax(rate, session.user.tenantId, companyId);
+                    if (realId) return { ...l, tax_rate_id: realId };
+                }
+                return l;
+            }));
+
             await tx.hms_invoice_lines.createMany({
-                data: line_items.map((item: any, index: number) => ({
+                data: resolvedLineItems.map((item: any, index: number) => ({
                     tenant_id: session.user.tenantId,
                     company_id: companyId,
                     invoice_id: invoiceId,
@@ -1376,5 +1398,81 @@ export async function generateRegistrationInvoice(patientId: string) {
     } catch (err: any) {
         console.error("FAILED_TO_GENERATE_REG_INVOICE:", err);
         return { error: err.message || "RCM_FAILURE: Could not generate auto-billing record." };
+    }
+}
+
+// Helper to JIT Create/Resolve Tax Rates
+async function resolveAutoTax(rate: number, tenant_id: string, company_id: string): Promise<string | null> {
+    if ((!rate && rate !== 0)) return null;
+    try {
+        // 1. Find existing rate in GLOBAL rates first
+        const map = await prisma.company_tax_maps.findFirst({
+            where: { company_id, tax_rates: { rate: rate } },
+            include: { tax_rates: true }
+        });
+        if (map && map.tax_rates) return map.tax_rates.id;
+
+        // 2. Find any rate with matching value
+        let existing = await prisma.tax_rates.findFirst({ where: { rate: rate, is_active: true } });
+
+        if (existing) {
+            const alreadyMapped = await prisma.company_tax_maps.findFirst({ where: { company_id, tax_rate_id: existing.id } });
+            if (!alreadyMapped) {
+                const mapData: any = {
+                    id: randomUUID(),
+                    tenant_id,
+                    company_id,
+                    tax_rate_id: existing.id,
+                    tax_type_id: existing.tax_type_id,
+                    is_default: false
+                };
+                await prisma.company_tax_maps.create({ data: mapData }).catch(e => console.error("Map create fail", e));
+            }
+            return existing.id;
+        }
+
+        // 3. Create NEW Type & Rate
+        const typeName = `AUTO_GST_${rate}`;
+        let taxType = await prisma.tax_types.findFirst({ where: { name: typeName } });
+
+        if (!taxType) {
+            const typeData: any = {
+                id: randomUUID(),
+                name: typeName,
+                description: `Auto Generated ${rate}%`,
+                is_active: true
+            };
+            try {
+                taxType = await prisma.tax_types.create({ data: typeData });
+            } catch (e) {
+                taxType = await prisma.tax_types.findFirst({ where: { name: 'GST' } });
+            }
+        }
+
+        if (!taxType) return null;
+
+        const rateData: any = {
+            id: randomUUID(),
+            tax_type_id: taxType.id,
+            name: `${rate}%`,
+            rate: rate,
+            is_active: true
+        };
+        const newRate = await prisma.tax_rates.create({ data: rateData });
+
+        const mapData: any = {
+            id: randomUUID(),
+            tenant_id,
+            company_id,
+            tax_rate_id: newRate.id,
+            tax_type_id: taxType.id,
+            is_default: false
+        };
+        await prisma.company_tax_maps.create({ data: mapData }).catch(e => { });
+
+        return newRate.id;
+    } catch (e) {
+        console.error("Auto Tax Resolve Error:", e);
+        return null;
     }
 }
