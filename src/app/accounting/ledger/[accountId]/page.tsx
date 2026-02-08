@@ -85,14 +85,14 @@ export default async function LedgerPage({ params }: { params: { accountId: stri
                         {lines?.map((line) => (
                             <tr key={line.id} className="hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors">
                                 <td className="px-6 py-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                                    {new Date(line.journal_entries.date).toLocaleDateString()}
+                                    {(line as any).journal_entries?.date ? new Date((line as any).journal_entries.date).toLocaleDateString() : 'N/A'}
                                 </td>
                                 <td className="px-6 py-3">
                                     <div className="font-medium text-slate-900 dark:text-white">
-                                        {line.journal_entries.ref || "No Ref"}
+                                        {(line as any).journal_entries?.ref || "No Ref"}
                                     </div>
                                     <div className="text-xs text-slate-400">
-                                        {line.journal_entries.journals?.code}
+                                        {(line as any).journal_entries?.journals?.code}
                                     </div>
                                 </td>
                                 <td className="px-6 py-3 text-slate-600 dark:text-slate-300">
