@@ -62,7 +62,7 @@ export default async function JournalsPage() {
                                         {entry.ref || 'NO REF'}
                                     </span>
                                     <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                                        {new Date(entry.date).toLocaleDateString()}
+                                        {entry.date ? new Date(entry.date).toLocaleDateString() : 'N/A'}
                                     </span>
                                 </div>
                                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-1">
