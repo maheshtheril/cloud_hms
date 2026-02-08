@@ -68,10 +68,11 @@ export async function getUsers(filters?: {
         const [usersRaw, total] = await Promise.all([
             prisma.app_user.findMany({
                 where,
-                include: {
-                    country: { select: { name: true, flag: true } },
-                    subdivision: { select: { name: true, type: true } }
-                },
+                // TODO: Add country and subdivision includes when geography tables are added
+                // include: {
+                //     country: { select: { name: true, flag: true } },
+                //     subdivision: { select: { name: true, type: true } }
+                // },
                 orderBy: { created_at: 'desc' },
                 take: limit,
                 skip,
