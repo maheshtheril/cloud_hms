@@ -96,7 +96,7 @@ export async function getPurchaseInvoices() {
         const session = await auth();
         if (!session?.user) throw new Error("Unauthorized");
 
-        return await prisma.hms_purchase_invoice.findMany({
+        return await (prisma.hms_purchase_invoice.findMany as any)({
             where: {
                 tenant_id: (session.user as any).tenantId,
                 company_id: (session.user as any).companyId,
