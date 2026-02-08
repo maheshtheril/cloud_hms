@@ -419,6 +419,22 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                                             </div>
                                         )}
 
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between items-center">
+                                                <label className="text-sm font-medium text-gray-700">Reorder Level (Alert Threshold)</label>
+                                                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 rounded-full uppercase tracking-tighter">Auto-Alert</span>
+                                            </div>
+                                            <input
+                                                name="reorderLevel"
+                                                type="number"
+                                                step="0.01"
+                                                defaultValue={Number(initialData?.reorder_level || 0)}
+                                                placeholder="Alert when stock falls below..."
+                                                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all font-semibold"
+                                            />
+                                            <p className="text-[10px] text-slate-400">System will trigger "Low Stock" alert when inventory dips below this value.</p>
+                                        </div>
+
                                         <div className="space-y-4">
                                             <div className="space-y-2">
                                                 <label className="text-sm font-medium text-gray-700">Tracking Method</label>

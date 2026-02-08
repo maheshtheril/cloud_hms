@@ -26,13 +26,24 @@ export default function LoginClient({ branding }: { branding: Branding | null })
         e.preventDefault()
         setIsLoading(true)
         try {
-            await signIn("credentials", {
+            const result = await signIn("credentials", {
                 email: formData.email,
                 password: formData.password,
-                callbackUrl: "/"
+                redirect: false,
             })
+
+            console.log("Login Result:", result);
+
+            if (result?.error) {
+                alert("Login Failed: " + result.error);
+                setIsLoading(false)
+            } else {
+                // Successful login
+                window.location.href = "/";
+            }
         } catch (error) {
             console.error(error)
+            alert("An unexpected error occurred: " + JSON.stringify(error));
             setIsLoading(false)
         }
     }
@@ -155,14 +166,14 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                     transition={{ delay: 0.3 }}
                                 >
                                     <h1 className={`text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r tracking-[0.2em] uppercase mb-3 filter contrast-125 ${isCRM
-                                            ? "from-emerald-400 via-teal-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]"
-                                            : "from-sky-300 via-cyan-400 to-indigo-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]"
+                                        ? "from-emerald-400 via-teal-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                                        : "from-sky-300 via-cyan-400 to-indigo-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]"
                                         }`}>
                                         {appName}
                                     </h1>
                                     <div className={`h-0.5 w-16 bg-gradient-to-r from-transparent to-transparent mx-auto mb-4 opacity-70 ${isCRM
-                                            ? "via-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]"
-                                            : "via-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]"
+                                        ? "via-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]"
+                                        : "via-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]"
                                         }`} />
                                     <p className="text-slate-400 text-xs font-semibold tracking-[0.3em] uppercase opacity-70">
                                         {theme.tagline}

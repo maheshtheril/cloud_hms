@@ -9,6 +9,7 @@ import {
   Copy, AlertTriangle
 } from 'lucide-react'
 import { createInvoice, updateInvoice, cancelInvoice, createQuickPatient, getPatientOutstandingBalance, getPatientLedger, getNextVoucherNumber } from '@/app/actions/billing'
+import { getBestBatch } from '@/app/actions/inventory'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { useToast } from '@/components/ui/use-toast'
 import { useSession } from 'next-auth/react'
@@ -257,6 +258,25 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     }
   }, []);
 
+  // WORLD CLASS FEFO: Auto-resolve batches for initial medicines
+  useEffect(() => {
+    const items = lines.filter(l => l.product_id && !l.batch_id && l.item_type === 'item');
+    items.forEach(line => {
+      getBestBatch(line.product_id).then(batch => {
+        if (batch) {
+          setLines(current => current.map(l =>
+            l.id === line.id ? {
+              ...l,
+              batch_id: batch.id,
+              batch_no: batch.batch_no,
+              unit_price: pricingMode === 'mrp' && batch.mrp ? Number(batch.mrp) : l.unit_price
+            } : l
+          ));
+        }
+      });
+    });
+  }, [lines.length]);
+
   const [payments, setPayments] = useState<Payment[]>([])
   const [activePaymentAmount, setActivePaymentAmount] = useState<string>('')
   const [globalDiscount, setGlobalDiscount] = useState(Number(initialInvoice?.total_discount || 0))
@@ -356,6 +376,23 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
             // Metadata for complex items
             updated.metadata = item.metadata
+
+            // WORLD CLASS FEFO: Auto-select best batch
+            if (item.type === 'item' || !item.type) {
+              getBestBatch(item.id).then(batch => {
+                if (batch) {
+                  setLines(current => current.map(l =>
+                    l.id === id ? {
+                      ...l,
+                      batch_id: batch.id,
+                      batch_no: batch.batch_no,
+                      // If MRP mode or if batch has MRP, use it
+                      unit_price: pricingMode === 'mrp' ? Number(batch.mrp || l.unit_price) : l.unit_price
+                    } : l
+                  ));
+                }
+              });
+            }
 
             // World Class UX: After item selection, move focus to quantity
             setTimeout(() => {
@@ -530,10 +567,13 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
       const res = await fetch(`/api/prescriptions/by-patient/${selectedPatientId}`)
       const data = await res.json()
       if (data.success && data.latest?.medicines?.length > 0) {
-        const newLines = data.latest.medicines.map((m: any) => {
+        const newLines = await Promise.all(data.latest.medicines.map(async (m: any) => {
           const billable = billableItems.find(bi => bi.id === m.id);
           const taxId = billable?.categoryTaxId !== undefined ? billable.categoryTaxId : defaultTaxId;
           const finalPrice = billable?.price || Number(m.price || 0);
+
+          // FEFO Batch Selection
+          const batch = await getBestBatch(m.id);
 
           // Calculate tax
           const taxRateObj = extendedTaxRates.find((t: any) => t.id === taxId);
@@ -542,22 +582,29 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
           const taxAmt = (Math.max(0, lineNet) * rate) / 100;
 
           return {
-            id: Math.random(),
+            id: Math.random() + Date.now(),
             product_id: m.id,
             description: m.name || m.description,
             quantity: m.quantity || 1,
-            unit_price: finalPrice,
+            unit_price: pricingMode === 'mrp' && batch?.mrp ? Number(batch.mrp) : finalPrice,
             uom: billable?.uom || 'PCS',
             tax_rate_id: taxId,
             tax_amount: taxAmt,
             item_type: 'item',
+            batch_id: batch?.id || null,
+            batch_no: batch?.batch_no || null,
             metadata: billable?.metadata || {}
           };
-        });
+        }));
         setLines(newLines)
-        toast({ title: "History Loaded", description: "Pulled medicines from latest prescription." })
+        toast({ title: "History Loaded", description: "Pulled medicines from latest prescription with FEFO batch selection." })
+      } else {
+        toast({ title: "No Records", description: "No unbilled prescriptions found for this patient." })
       }
-    } catch (e) { console.error(e) }
+    } catch (e) {
+      console.error(e)
+      toast({ title: "Load Failed", description: "A system error occurred while fetching prescriptions.", variant: "destructive" })
+    }
     setLoading(false)
   }
 
@@ -867,22 +914,29 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                           />
                         </td>
                         <td className="px-4 py-3">
-                          <button
-                            type="button"
-                            disabled={isPaymentModalOpen || loading}
-                            onClick={() => {
-                              const newType = line.item_type === 'service' ? 'item' : 'service';
-                              setLines(prev => prev.map(l => l.id === line.id ? {
-                                ...l,
-                                item_type: newType
-                                // FIX: Do not auto-clear tax when toggling to service.
-                                // Tax is now decoupled and preserved.
-                              } : l));
-                            }}
-                            className={`text-[8px] font-black px-1.5 py-0.5 rounded-md transition-all active:scale-95 ${line.item_type === 'service' ? 'bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20' : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'}`}
-                          >
-                            {(line.item_type || 'ITEM').toUpperCase()}
-                          </button>
+                          <div className="flex flex-col gap-1 items-start">
+                            <button
+                              type="button"
+                              disabled={isPaymentModalOpen || loading}
+                              onClick={() => {
+                                const newType = line.item_type === 'service' ? 'item' : 'service';
+                                setLines(prev => prev.map(l => l.id === line.id ? {
+                                  ...l,
+                                  item_type: newType
+                                  // FIX: Do not auto-clear tax when toggling to service.
+                                  // Tax is now decoupled and preserved.
+                                } : l));
+                              }}
+                              className={`text-[8px] font-black px-1.5 py-0.5 rounded-md transition-all active:scale-95 ${line.item_type === 'service' ? 'bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20' : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'}`}
+                            >
+                              {(line.item_type || 'ITEM').toUpperCase()}
+                            </button>
+                            {line.batch_no && (
+                              <span className="text-[8px] font-mono font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-1 rounded animate-in fade-in zoom-in-95">
+                                Lot: {line.batch_no}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
                           <Input

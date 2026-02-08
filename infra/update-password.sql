@@ -1,0 +1,1 @@
+UPDATE app_user SET password = '$2b$10$MgeJl5yVOoHYC30gJnuSaOOeW086m6/CTkIgOwffCuTHw9ORRYfiK' WHERE email = 'gmh@gmail.com';
