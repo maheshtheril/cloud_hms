@@ -422,7 +422,7 @@ model country_tax_mappings {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model currencies {
-  id         String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   code       String   @db.VarChar(3)
   name       String   @db.VarChar(100)
   symbol     String?  @db.VarChar(10)
@@ -431,7 +431,7 @@ model currencies {
   created_at DateTime @default(now()) @db.Timestamptz(6)
   updated_at DateTime @default(now()) @db.Timestamptz(6)
 
-  @@ignore
+  journal_entries journal_entries[]
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -1123,7 +1123,7 @@ model hms_imaging_study {
 /// This model contains an index with non-default null sort order and requires additional setup for migrations. Visit https://pris.ly/d/default-index-null-ordering for more info.
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model hms_invoice {
-  id                 String             @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id          String             @db.Uuid
   company_id         String             @db.Uuid
   patient_id         String?            @db.Uuid
@@ -1152,7 +1152,8 @@ model hms_invoice {
   posted_at          DateTime?          @db.Timestamptz(6)
   outstanding_amount Decimal?           @default(0) @db.Decimal
 
-  @@ignore
+  hms_patient     hms_patient?      @relation(fields: [patient_id], references: [id])
+  journal_entries journal_entries[]
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -1425,7 +1426,7 @@ model hms_outbox {
 /// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model hms_patient {
-  id             String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id      String    @db.Uuid
   company_id     String?   @db.Uuid
   patient_number String?
@@ -1446,7 +1447,7 @@ model hms_patient {
   updated_by     String?   @db.Uuid
   full_name      String?   @default(dbgenerated("TRIM(BOTH ' '::text FROM ((COALESCE(first_name, ''::text) || ' '::text) || COALESCE(last_name, ''::text)))"))
 
-  @@ignore
+  hms_invoice hms_invoice[]
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -2176,7 +2177,9 @@ model journal_entries {
   locked_at                  DateTime? @db.Timestamptz(6)
 
   journal_entry_lines journal_entry_lines[]
-  journals            journals? @relation(fields: [journal_id], references: [id])
+  journals            journals?    @relation(fields: [journal_id], references: [id])
+  hms_invoice         hms_invoice? @relation(fields: [invoice_id], references: [id])
+  currencies          currencies?  @relation(fields: [currency_id], references: [id])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
@@ -2249,7 +2252,7 @@ model journal_types {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model journals {
-  id                        String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id                 String    @db.Uuid
   company_id                String    @db.Uuid
   code                      String
@@ -2259,7 +2262,7 @@ model journals {
   default_credit_account_id String?   @db.Uuid
   created_at                DateTime? @default(now()) @db.Timestamptz(6)
 
-  @@ignore
+  journal_entries journal_entries[]
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
