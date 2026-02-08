@@ -1897,6 +1897,7 @@ model hms_uom_category {
   hms_uom    hms_uom[]
 
   @@index([company_id], map: "ix_hms_uom_category_company")
+  @@unique([tenant_id, company_id, name], name: "ux_hms_uom_category_name")
 }
 
 model hms_uom {
@@ -1915,6 +1916,7 @@ model hms_uom {
   hms_uom_category  hms_uom_category    @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([company_id], map: "ix_hms_uom_company")
+  @@unique([tenant_id, company_id, category_id, name], name: "ux_hms_uom_name")
 }
 
 model hms_product_image {

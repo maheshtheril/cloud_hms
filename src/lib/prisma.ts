@@ -7,7 +7,7 @@ const prismaClientSingleton = () => {
   console.log("[PRISMA] Initializing with:", connectionString.split('@')[1] || "DEFAULTS");
   const pool = new Pool({ connectionString });
 
-  pool.on('error', (err) => console.error('[PRISMA] Pool Error:', err));
+  pool.on('error', (err: Error) => console.error('[PRISMA] Pool Error:', err));
 
   const adapter = new PrismaPg(pool);
 

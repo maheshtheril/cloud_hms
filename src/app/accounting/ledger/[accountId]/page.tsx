@@ -22,8 +22,8 @@ export default async function LedgerPage({ params }: { params: { accountId: stri
         }).format(amount);
     }
 
-    const totalDebit = lines?.reduce((acc: number, curr: any) => acc + Number(curr.debit), 0) || 0;
-    const totalCredit = lines?.reduce((acc: number, curr: any) => acc + Number(curr.credit), 0) || 0;
+    const totalDebit = (lines ?? []).reduce((acc: number, curr: any) => acc + (Number(curr.debit) || 0), 0);
+    const totalCredit = (lines ?? []).reduce((acc: number, curr: any) => acc + (Number(curr.credit) || 0), 0);
     const netBalance = totalDebit - totalCredit;
 
     return (
@@ -82,7 +82,7 @@ export default async function LedgerPage({ params }: { params: { accountId: stri
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-zinc-800/50">
-                        {lines?.map((line) => (
+                        {lines?.map((line: any) => (
                             <tr key={line.id} className="hover:bg-slate-50 dark:hover:bg-zinc-900/50 transition-colors">
                                 <td className="px-6 py-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">
                                     {(line as any).journal_entries?.date ? new Date((line as any).journal_entries.date).toLocaleDateString() : 'N/A'}
