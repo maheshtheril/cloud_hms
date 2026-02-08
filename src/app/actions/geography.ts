@@ -56,16 +56,18 @@ export async function deleteSubdivision(subdivisionId: string) {
 
 export async function getCountries() {
     const session = await auth()
-    if (!session?.user) return { success: false, error: "Unauthorized" }
+    if (!session?.user) return []
 
-    return { success: true, countries: [] }
+    // TODO: Return actual countries when country table is added
+    return []
 }
 
 export async function getCompanyCountry() {
     const session = await auth()
-    if (!session?.user) return { success: false, error: "Unauthorized" }
+    if (!session?.user) return null
 
-    return { success: true, country: null }
+    // TODO: Return actual company country when geography tables are added
+    return null
 }
 
 export async function getSubdivisions(countryId?: string, parentId?: string | null) {
