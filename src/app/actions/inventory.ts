@@ -210,7 +210,7 @@ export async function getTaxRates() {
 
         logDebug(`getTaxRates: Found ${allTaxes.length} taxes before seeding`);
 
-        // Seeding if Empty
+        // Seeding if Empty - IMPROVED: Only seed if NO taxes exist at all in the mapping tables
         if (allTaxes.length === 0) {
             const gstRates = [0, 5, 12, 18, 28];
             const created = [];
@@ -226,7 +226,7 @@ export async function getTaxRates() {
                         type = await prisma.tax_types.create({
                             data: {
                                 name: typeName,
-                                description: `IGST ${r}%`,
+                                description: `GST ${r}% Rate Type`,
                                 is_active: true
                             }
                         });
@@ -237,7 +237,7 @@ export async function getTaxRates() {
                 }
 
                 if (type) {
-                    // Find or Create Rate
+                    // Find or Create Rate Row in global tax_rates
                     let rateRow = await prisma.tax_rates.findFirst({ where: { tax_type_id: type.id, rate: r } });
                     if (!rateRow) {
                         rateRow = await prisma.tax_rates.create({
@@ -252,8 +252,10 @@ export async function getTaxRates() {
 
                     // Map to Company
                     try {
-                        await prisma.company_tax_maps.create({
-                            data: {
+                        await prisma.company_tax_maps.upsert({
+                            where: { company_id_tax_type_id: { company_id: companyId, tax_type_id: type.id } },
+                            update: { is_active: true },
+                            create: {
                                 tenant_id: session.user.tenantId,
                                 company_id: companyId,
                                 tax_type_id: type.id,
@@ -262,7 +264,7 @@ export async function getTaxRates() {
                             }
                         });
                     } catch (e) {
-                        // Ignore duplicate mapping error
+                        console.error(`Failed to map tax rate ${r} to company:`, e);
                     }
 
                     created.push({ id: rateRow.id, name: rateRow.name, rate: r });
@@ -708,6 +710,9 @@ export async function createLocation(prevState: any, formData: FormData): Promis
     }
 }
 
+// --- Stock Location Management ---
+
+
 export async function updateLocation(formData: FormData) {
     const session = await auth();
     if (!session?.user?.companyId) return { error: "Unauthorized" };
@@ -892,6 +897,10 @@ export async function createProduct(formData: FormData) {
     const mrp = parseFloat(formData.get("mrp") as string) || 0;
     const openingStock = parseFloat(formData.get("openingStock") as string) || 0;
 
+    // Batch/Expiry for Opening Stock
+    const batchNo = formData.get("openingStockBatch") as string;
+    const expiryDate = formData.get("openingStockExpiry") as string;
+
     try {
         // Construct Metadata
         const metadata: Record<string, any> = {
@@ -935,8 +944,6 @@ export async function createProduct(formData: FormData) {
 
         // Link Tax Rate if provided
         if (taxRateId) {
-            // Check complexity of product_tax_rules, usually it needs more fields but let's try minimal
-            // Based on previous schema reading: tenant_id, company_id, product_id, tax_rate_id are key
             await prisma.product_tax_rules.create({
                 data: {
                     tenant_id: session.user.tenantId,
@@ -978,7 +985,10 @@ export async function createProduct(formData: FormData) {
                 items: [{
                     productId: newProduct.id,
                     quantity: openingStock,
-                    unitCost: costPrice || price, // Use cost or selling price as fallback
+                    unitCost: costPrice || price,
+                    batchNumber: batchNo || 'OPENING-BATCH',
+                    expiryDate: expiryDate || undefined,
+                    mrp: mrp || undefined
                 }],
                 reference: 'OPENING-STOCK',
                 notes: 'Initial Opening Stock from Product Master'
@@ -1177,11 +1187,55 @@ export async function updateProduct(formData: FormData) {
         }
 
         revalidatePath('/hms/inventory/products');
-        revalidatePath(`/hms/inventory/products/${id}`);
+        revalidatePath(`/hms/inventory/products/${id}/edit`);
         return { success: true };
     } catch (error) {
         console.error("Failed to update product:", error);
         return { error: "Failed to update product" };
+    }
+}
+
+export async function getProductBatches(productId: string) {
+    const session = await auth();
+    if (!session?.user?.companyId) return [];
+
+    try {
+        return await prisma.hms_product_batch.findMany({
+            where: {
+                product_id: productId,
+                company_id: session.user.companyId
+            },
+            orderBy: { expiry_date: 'asc' }
+        });
+    } catch (error) {
+        console.error("Failed to fetch product batches:", error);
+        return [];
+    }
+}
+
+export async function updateProductBatch(formData: FormData) {
+    const session = await auth();
+    if (!session?.user?.id || !session.user.companyId) return { error: "Unauthorized" };
+
+    const id = formData.get("id") as string;
+    const mrp = parseFloat(formData.get("mrp") as string) || 0;
+    const expiryDate = formData.get("expiryDate") as string;
+
+    if (!id) return { error: "Batch ID is required" };
+
+    try {
+        await prisma.hms_product_batch.update({
+            where: { id, company_id: session.user.companyId },
+            data: {
+                mrp,
+                expiry_date: expiryDate ? new Date(expiryDate) : null
+            }
+        });
+        revalidatePath('/hms/inventory/products');
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update batch:", error);
+        return { error: "Failed to update batch" };
     }
 }
 

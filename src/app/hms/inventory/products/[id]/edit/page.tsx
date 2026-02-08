@@ -1,5 +1,5 @@
 
-import { getProduct, getSuppliers, getTaxRates, getUOMs, getCategories, getManufacturers, getUOMCategories } from "@/app/actions/inventory"
+import { getProduct, getSuppliers, getTaxRates, getUOMs, getCategories, getManufacturers, getUOMCategories, getProductBatches } from "@/app/actions/inventory"
 import { ProductForm } from "@/components/inventory/product-form"
 import { X } from "lucide-react"
 import Link from "next/link"
@@ -17,12 +17,23 @@ export default async function EditProductPage({
         notFound();
     }
 
-    const suppliers = await getSuppliers();
-    const taxRates = await getTaxRates();
-    const uoms = await getUOMs();
-    const categories = await getCategories();
-    const manufacturers = await getManufacturers();
-    const uomCategories = await getUOMCategories();
+    const [
+        suppliers,
+        taxRates,
+        uoms,
+        categories,
+        manufacturers,
+        uomCategories,
+        batches
+    ] = await Promise.all([
+        getSuppliers(),
+        getTaxRates(),
+        getUOMs(),
+        getCategories(),
+        getManufacturers(),
+        getUOMCategories(),
+        getProductBatches(id)
+    ]);
 
     return (
         <div className="max-w-5xl mx-auto pb-12">
@@ -48,6 +59,7 @@ export default async function EditProductPage({
                 manufacturers={manufacturers}
                 uomCategories={uomCategories}
                 initialData={product}
+                batches={batches}
             />
         </div>
     )

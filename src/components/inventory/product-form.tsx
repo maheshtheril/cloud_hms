@@ -1,6 +1,6 @@
 'use client'
 
-import { createProduct, updateProduct, createUOM } from "@/app/actions/inventory"
+import { createProduct, updateProduct, createUOM, updateProductBatch } from "@/app/actions/inventory"
 import { uploadProductImage } from "@/app/actions/upload-image"
 import { useState, useRef, useEffect, useActionState } from "react"
 import { useRouter } from "next/navigation"
@@ -15,13 +15,14 @@ interface ProductFormProps {
     uoms: { id: string, name: string, category_id: string, ratio: any, uom_type: any }[];
     categories: { id: string, name: string, default_tax_rate_id: string | null }[];
     manufacturers: { id: string, name: string }[];
-    uomCategories: { id: string, name: string, hms_uom: any[] }[];
+    uomCategories: any[];
     initialData?: any;
+    batches?: any[];
     onSuccess?: () => void;
     onCancel?: () => void;
 }
 
-export function ProductForm({ suppliers, taxRates, uoms, categories, manufacturers, uomCategories, initialData, onSuccess, onCancel }: ProductFormProps) {
+export function ProductForm({ suppliers, taxRates, uoms, categories, manufacturers, uomCategories, initialData, batches: initialBatches = [], onSuccess, onCancel }: ProductFormProps) {
     const router = useRouter();
     const [activeSection, setActiveSection] = useState<'details' | 'logistics' | 'financials'>('details');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,6 +38,9 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
     // Form State for dynamic behavior
     const [selectedCategoryId, setSelectedCategoryId] = useState(initialData?.categoryId || "");
     const [selectedTaxId, setSelectedTaxId] = useState(initialData?.taxRateId || "");
+    const [trackingType, setTrackingType] = useState(initialData?.tracking || "none");
+    const [batches, setBatches] = useState(initialBatches);
+    const [editingBatch, setEditingBatch] = useState<any>(null);
 
     const isEditing = !!initialData;
     const category = categories.find(c => c.id === selectedCategoryId);
@@ -412,17 +416,41 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                                             </div>
                                         )}
 
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Tracking Method</label>
-                                            <select
-                                                name="tracking"
-                                                defaultValue={initialData?.tracking}
-                                                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-                                            >
-                                                <option value="none">No Tracking (Standard)</option>
-                                                <option value="batch">Batch / Lot Tracking (Expiry)</option>
-                                                <option value="serial">Serial Number Tracking (Unique)</option>
-                                            </select>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium text-gray-700">Tracking Method</label>
+                                                <select
+                                                    name="tracking"
+                                                    defaultValue={trackingType}
+                                                    onChange={(e) => setTrackingType(e.target.value)}
+                                                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                                                >
+                                                    <option value="none">No Tracking (Standard)</option>
+                                                    <option value="batch">Batch / Lot Tracking (Expiry)</option>
+                                                    <option value="serial">Serial Number Tracking (Unique)</option>
+                                                </select>
+                                            </div>
+
+                                            {!isEditing && trackingType === 'batch' && (
+                                                <div className="grid grid-cols-2 gap-4 border-l-2 border-blue-100 pl-4 py-2 bg-blue-50/30 rounded-r-lg">
+                                                    <div className="space-y-2">
+                                                        <label className="text-xs font-bold text-blue-700 uppercase">Opening Batch No</label>
+                                                        <input
+                                                            name="openingStockBatch"
+                                                            placeholder="B-001"
+                                                            className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm outline-none"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <label className="text-xs font-bold text-blue-700 uppercase">Expiry Date</label>
+                                                        <input
+                                                            name="openingStockExpiry"
+                                                            type="date"
+                                                            className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm outline-none"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -502,6 +530,66 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                                 </div>
                             </div>
                         </div>
+
+                        {/* BATCHES & STOCK DETAIL (Only for existing tracked products) */}
+                        {isEditing && trackingType === 'batch' && (
+                            <div className={activeSection === 'logistics' ? 'block' : 'hidden'}>
+                                <div className="mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 lg:p-8 animate-in fade-in slide-in-from-bottom-2">
+                                    <div className="flex items-center justify-between mb-6">
+                                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                            Active Batches
+                                            <span className="text-xs font-normal text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full ml-2">{batches.length} found</span>
+                                        </h2>
+                                    </div>
+
+                                    {batches.length === 0 ? (
+                                        <div className="text-center py-12 border-2 border-dashed border-gray-100 rounded-xl">
+                                            <p className="text-gray-400">No active batches for this product.</p>
+                                            <p className="text-xs text-gray-400 mt-1">Receive stock to create new batches.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="overflow-x-auto rounded-xl border border-gray-100">
+                                            <table className="w-full text-left">
+                                                <thead>
+                                                    <tr className="bg-gray-50 text-[10px] font-bold uppercase text-gray-500 tracking-wider">
+                                                        <th className="px-4 py-3">Batch No</th>
+                                                        <th className="px-4 py-3">Expiry</th>
+                                                        <th className="px-4 py-3">MRP (₹)</th>
+                                                        <th className="px-4 py-3">Stock</th>
+                                                        <th className="px-4 py-3 text-right">Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-gray-50 text-sm">
+                                                    {batches.map((batch: any) => (
+                                                        <tr key={batch.id}>
+                                                            <td className="px-4 py-3 font-mono text-xs">{batch.batch_no}</td>
+                                                            <td className="px-4 py-3">
+                                                                {batch.expiry_date ? new Date(batch.expiry_date).toLocaleDateString() : 'No Expiry'}
+                                                            </td>
+                                                            <td className="px-4 py-3 font-medium">{Number(batch.mrp || 0).toFixed(2)}</td>
+                                                            <td className="px-4 py-3">
+                                                                <span className="px-2 py-0.5 bg-green-50 text-green-700 rounded-full font-bold">
+                                                                    {Number(batch.qty_on_hand)}
+                                                                </span>
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right">
+                                                                <button
+                                                                    type="button"
+                                                                    className="text-blue-600 hover:text-blue-800 text-xs font-semibold bg-blue-50 px-2 py-1 rounded-md transition-colors"
+                                                                    onClick={() => setEditingBatch(batch)}
+                                                                >
+                                                                    Edit
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             </form >
@@ -539,6 +627,27 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                     </div>
                 )
             }
+
+            {/* BATCH EDIT MODAL */}
+            {editingBatch && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 m-4 animate-in zoom-in-95">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-bold text-gray-900">Edit Batch: {editingBatch.batch_no}</h3>
+                            <button onClick={() => setEditingBatch(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                                <X className="h-4 w-4 text-gray-500" />
+                            </button>
+                        </div>
+                        <BatchEditForm
+                            batch={editingBatch}
+                            onSuccess={() => {
+                                setEditingBatch(null);
+                                router.refresh();
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
         </div >
     )
 }
@@ -639,4 +748,56 @@ function UOMQuickCreate({ categories, uoms, onClose, onRefresh }: { categories: 
         </form>
     );
 }
+// --- Batch Management Component ---
 
+function BatchEditForm({ batch, onSuccess }: { batch: any, onSuccess: () => void }) {
+    const [state, action, isPending] = useActionState(updateProductBatch, { error: "" });
+
+    useEffect(() => {
+        if (state && !('error' in state)) {
+            onSuccess();
+        }
+    }, [state, onSuccess]);
+
+    return (
+        <form action={action} className="space-y-4">
+            <input type="hidden" name="id" value={batch.id} />
+
+            <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Market Retail Price (MRP)</label>
+                <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">₹</span>
+                    <input
+                        name="mrp"
+                        type="number"
+                        step="0.01"
+                        defaultValue={Number(batch.mrp || 0)}
+                        className="w-full pl-7 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-semibold"
+                    />
+                </div>
+            </div>
+
+            <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Expiry Date</label>
+                <input
+                    name="expiryDate"
+                    type="date"
+                    defaultValue={batch.expiry_date ? new Date(batch.expiry_date).toISOString().split('T')[0] : ''}
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                />
+            </div>
+
+            {state && 'error' in state && state.error && (
+                <p className="text-xs text-red-500 bg-red-50 p-2 rounded">{state.error}</p>
+            )}
+
+            <button
+                type="submit"
+                disabled={isPending}
+                className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50"
+            >
+                {isPending ? 'Updating...' : 'Save Changes'}
+            </button>
+        </form>
+    );
+}
