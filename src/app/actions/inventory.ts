@@ -1939,3 +1939,123 @@ export async function importProductsCSV(formData: FormData) {
     revalidatePath('/hms/inventory/products');
     return { success: true, count, errors };
 }
+
+export async function getBatchHistory(batchId: string) {
+    const session = await auth();
+    if (!session?.user?.companyId) return [];
+
+    try {
+        return await prisma.hms_stock_ledger.findMany({
+            where: {
+                batch_id: batchId,
+                company_id: session.user.companyId
+            },
+            orderBy: { created_at: 'desc' }
+        });
+    } catch (error) {
+        console.error("Failed to fetch batch history:", error);
+        return [];
+    }
+}
+
+export async function adjustStock(prevState: any, formData: FormData) {
+    const session = await auth();
+    if (!session?.user?.id || !session.user.companyId) return { error: "Unauthorized" };
+
+    const batchId = formData.get("batchId") as string;
+    const multiplier = parseFloat(formData.get("multiplier") as string) || 1;
+    const changeQty = (parseFloat(formData.get("changeQty") as string) || 0) * multiplier;
+    const reason = formData.get("reason") as string || "Manual Adjustment";
+
+    if (!batchId || changeQty === 0) return { error: "Invalid data" };
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            // 1. Get current batch and product info
+            const batch = await tx.hms_product_batch.findUnique({
+                where: { id: batchId, company_id: session.user.companyId }
+            });
+            if (!batch) throw new Error("Batch not found");
+
+            // 2. Find Main Warehouse
+            let warehouse = await tx.hms_stock_location.findFirst({
+                where: { company_id: session.user.companyId, code: 'WH-MAIN' }
+            });
+
+            if (!warehouse) {
+                warehouse = await tx.hms_stock_location.findFirst({
+                    where: { company_id: session.user.companyId }
+                });
+            }
+
+            if (!warehouse) throw new Error("No stock location found");
+
+            // 3. Update Batch Qty
+            const updatedBatch = await tx.hms_product_batch.update({
+                where: { id: batchId },
+                data: { qty_on_hand: { increment: changeQty } }
+            });
+
+            // 4. Update Stock Levels
+            const stockLevelWhere = {
+                tenant_id: session.user.tenantId,
+                company_id: session.user.companyId,
+                product_id: batch.product_id,
+                location_id: warehouse.id,
+                batch_id: batchId
+            }
+
+            const existingLevel = await tx.hms_stock_levels.findFirst({
+                where: stockLevelWhere as any
+            })
+
+            if (existingLevel) {
+                await tx.hms_stock_levels.update({
+                    where: { id: existingLevel.id },
+                    data: {
+                        quantity: { increment: changeQty },
+                        updated_at: new Date()
+                    }
+                })
+            } else {
+                await tx.hms_stock_levels.create({
+                    data: {
+                        tenant_id: session.user.tenantId as string,
+                        company_id: session.user.companyId as string,
+                        product_id: batch.product_id,
+                        location_id: warehouse.id,
+                        batch_id: batchId,
+                        quantity: changeQty,
+                        reserved: 0
+                    }
+                })
+            }
+
+            // 5. Create Ledger Entry
+            await tx.hms_stock_ledger.create({
+                data: {
+                    tenant_id: session.user.tenantId as string,
+                    company_id: session.user.companyId as string,
+                    product_id: batch.product_id,
+                    movement_type: changeQty > 0 ? 'adjustment-in' : 'adjustment-out',
+                    qty: Math.abs(changeQty),
+                    batch_id: batchId,
+                    reference: reason,
+                    to_location_id: changeQty > 0 ? warehouse.id : null,
+                    from_location_id: changeQty < 0 ? warehouse.id : null,
+                    metadata: {
+                        previous_qty: Number(batch.qty_on_hand),
+                        new_qty: Number(updatedBatch.qty_on_hand),
+                        adjusted_by: session.user.name
+                    }
+                }
+            });
+        });
+
+        revalidatePath('/hms/inventory/products');
+        return { success: true };
+    } catch (error) {
+        console.error("Adjustment failed:", error);
+        return { error: "Failed to process adjustment" };
+    }
+}

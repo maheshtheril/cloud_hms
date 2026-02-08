@@ -1,12 +1,12 @@
 'use client'
 
-import { createProduct, updateProduct, createUOM, updateProductBatch } from "@/app/actions/inventory"
+import { createProduct, updateProduct, createUOM, updateProductBatch, getBatchHistory, adjustStock } from "@/app/actions/inventory"
 import { uploadProductImage } from "@/app/actions/upload-image"
 import { useState, useRef, useEffect, useActionState } from "react"
 import { useRouter } from "next/navigation"
 import { QuickCategoryForm, QuickManufacturerForm } from "@/components/inventory/quick-create-wrappers"
 import {
-    Box, Tag, DollarSign, Layers, Image as ImageIcon, Barcode, Factory, Check, Zap, Info, Plus, X, Cpu
+    Box, Tag, DollarSign, Layers, Image as ImageIcon, Barcode, Factory, Check, Zap, Info, Plus, X, Cpu, History, ArrowUpDown, TrendingUp, TrendingDown
 } from "lucide-react"
 
 interface ProductFormProps {
@@ -41,6 +41,9 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
     const [trackingType, setTrackingType] = useState(initialData?.tracking || "none");
     const [batches, setBatches] = useState(initialBatches);
     const [editingBatch, setEditingBatch] = useState<any>(null);
+    const [adjustingBatch, setAdjustingBatch] = useState<any>(null);
+    const [historyBatch, setHistoryBatch] = useState<any>(null);
+    const [batchLedger, setBatchLedger] = useState<any[]>([]);
 
     const isEditing = !!initialData;
     const category = categories.find(c => c.id === selectedCategoryId);
@@ -573,13 +576,34 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                                                                 </span>
                                                             </td>
                                                             <td className="px-4 py-3 text-right">
-                                                                <button
-                                                                    type="button"
-                                                                    className="text-blue-600 hover:text-blue-800 text-xs font-semibold bg-blue-50 px-2 py-1 rounded-md transition-colors"
-                                                                    onClick={() => setEditingBatch(batch)}
-                                                                >
-                                                                    Edit
-                                                                </button>
+                                                                <div className="flex items-center justify-end gap-2">
+                                                                    <button
+                                                                        type="button"
+                                                                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                                                                        title="View History"
+                                                                        onClick={() => {
+                                                                            setHistoryBatch(batch);
+                                                                            getBatchHistory(batch.id).then(setBatchLedger);
+                                                                        }}
+                                                                    >
+                                                                        <History className="h-4 w-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
+                                                                        title="Adjust Stock"
+                                                                        onClick={() => setAdjustingBatch(batch)}
+                                                                    >
+                                                                        <ArrowUpDown className="h-4 w-4" />
+                                                                    </button>
+                                                                    <button
+                                                                        type="button"
+                                                                        className="text-blue-600 hover:text-blue-800 text-xs font-semibold bg-blue-50 px-2 py-1 rounded-md transition-colors ml-1"
+                                                                        onClick={() => setEditingBatch(batch)}
+                                                                    >
+                                                                        Edit
+                                                                    </button>
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     ))}
@@ -645,6 +669,93 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                                 router.refresh();
                             }}
                         />
+                    </div>
+                </div>
+            )}
+
+            {/* BATCH ADJUST MODAL */}
+            {adjustingBatch && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 m-4 animate-in zoom-in-95">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900">Adjust Batch Stock</h3>
+                                <p className="text-xs text-gray-500 font-mono">Lot: {adjustingBatch.batch_no}</p>
+                            </div>
+                            <button onClick={() => setAdjustingBatch(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                                <X className="h-4 w-4 text-gray-500" />
+                            </button>
+                        </div>
+                        <BatchAdjustForm
+                            batch={adjustingBatch}
+                            onSuccess={() => {
+                                setAdjustingBatch(null);
+                                router.refresh();
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
+
+            {/* BATCH HISTORY MODAL */}
+            {historyBatch && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 m-4 animate-in zoom-in-95">
+                        <div className="flex items-center justify-between mb-6">
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900">Batch Stock Ledger</h3>
+                                <p className="text-xs text-gray-500">History for Lot: {historyBatch.batch_no}</p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setHistoryBatch(null);
+                                    setBatchLedger([]);
+                                }}
+                                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                            >
+                                <X className="h-4 w-4 text-gray-500" />
+                            </button>
+                        </div>
+
+                        <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="space-y-3">
+                                {batchLedger.length === 0 ? (
+                                    <div className="text-center py-12">
+                                        <p className="text-gray-400 text-sm">No ledger entries found for this batch.</p>
+                                    </div>
+                                ) : (
+                                    batchLedger.map((entry: any) => (
+                                        <div key={entry.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`p-2 rounded-lg ${entry.movement_type.includes('in')
+                                                    ? 'bg-green-100 text-green-600'
+                                                    : 'bg-red-100 text-red-600'
+                                                    }`}>
+                                                    {entry.movement_type.includes('in') ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-bold text-gray-900 capitalize">
+                                                        {entry.movement_type.replace('-', ' ')}
+                                                    </p>
+                                                    <p className="text-[10px] text-gray-400 font-medium">
+                                                        {new Date(entry.created_at).toLocaleString()}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className={`text-sm font-bold ${entry.movement_type.includes('in') ? 'text-green-600' : 'text-red-600'
+                                                    }`}>
+                                                    {entry.movement_type.includes('in') ? '+' : '-'}{Number(entry.qty).toFixed(2)}
+                                                </p>
+                                                <p className="text-[10px] text-gray-400 font-mono">
+                                                    Ref: {entry.reference || 'N/A'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
@@ -797,6 +908,82 @@ function BatchEditForm({ batch, onSuccess }: { batch: any, onSuccess: () => void
                 className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all disabled:opacity-50"
             >
                 {isPending ? 'Updating...' : 'Save Changes'}
+            </button>
+        </form>
+    );
+}
+
+function BatchAdjustForm({ batch, onSuccess }: { batch: any, onSuccess: () => void }) {
+    const [state, action, isPending] = useActionState(adjustStock, { error: "" });
+    const [type, setType] = useState<'add' | 'remove'>('add');
+
+    useEffect(() => {
+        if (state && !('error' in state)) {
+            onSuccess();
+        }
+    }, [state, onSuccess]);
+
+    return (
+        <form action={action} className="space-y-4">
+            <input type="hidden" name="batchId" value={batch.id} />
+
+            <div className="flex p-1 bg-gray-100 rounded-xl">
+                <button
+                    type="button"
+                    onClick={() => setType('add')}
+                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${type === 'add' ? 'bg-white text-green-600 shadow-sm' : 'text-gray-500'
+                        }`}
+                >
+                    Add Stock
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setType('remove')}
+                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${type === 'remove' ? 'bg-white text-red-600 shadow-sm' : 'text-gray-500'
+                        }`}
+                >
+                    Remove Stock
+                </button>
+            </div>
+
+            <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Quantity to {type}</label>
+                <input
+                    name="changeQty"
+                    type="number"
+                    step="0.01"
+                    required
+                    placeholder={`Qty to ${type}...`}
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all font-semibold"
+                />
+                <input type="hidden" name="multiplier" value={type === 'add' ? "1" : "-1"} />
+            </div>
+
+            <div className="space-y-1">
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Reason</label>
+                <select
+                    name="reason"
+                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg outline-none cursor-pointer"
+                >
+                    <option value="Manual Adjustment">Manual Adjustment</option>
+                    <option value="Damage">Damage / Spillage</option>
+                    <option value="Expiry Return">Expiry Return</option>
+                    <option value="Audit Correction">Audit Correction</option>
+                    <option value="Sample / Gift">Sample / Gift</option>
+                </select>
+            </div>
+
+            {state && 'error' in state && state.error && (
+                <p className="text-xs text-red-500 bg-red-50 p-2 rounded">{state.error}</p>
+            )}
+
+            <button
+                type="submit"
+                disabled={isPending}
+                className={`w-full py-2.5 text-white rounded-lg font-bold shadow-lg transition-all disabled:opacity-50 ${type === 'add' ? 'bg-green-600 hover:bg-green-700 shadow-green-500/20' : 'bg-red-600 hover:bg-red-700 shadow-red-500/20'
+                    }`}
+            >
+                {isPending ? 'Processing...' : `Confirm ${type === 'add' ? 'Addition' : 'Removal'}`}
             </button>
         </form>
     );
