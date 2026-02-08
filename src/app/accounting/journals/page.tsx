@@ -52,7 +52,7 @@ export default async function JournalsPage() {
 
             {/* Journal Entries List */}
             <div className="space-y-4">
-                {entries?.map((entry) => (
+                {entries?.map((entry: any) => (
                     <div key={entry.id} className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all">
                         {/* Entry Header */}
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-100 dark:border-zinc-800">
