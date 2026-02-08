@@ -835,7 +835,8 @@ export async function getProductsPremium(query?: string, page: number = 1, suppl
                 category: p.hms_product_category_rel[0]?.hms_product_category?.name || 'Uncategorized',
                 brand: metadata.brand || '',
                 uom: p.uom,
-                default_cost: Number(p.default_cost || 0)
+                default_cost: Number(metadata.cost_price || p.default_cost || 0),
+                mrp: Number(metadata.mrp || p.price || 0)
             };
         });
 
