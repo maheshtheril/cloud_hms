@@ -59,7 +59,7 @@ export async function upsertPurchaseInvoice(data: any) {
                 });
             } else {
                 // Create new
-                invoice = await tx.hms_purchase_invoice.create({
+                invoice = await (tx.hms_purchase_invoice.create as any)({
                     data: {
                         ...invoiceData,
                         hms_purchase_invoice_line: {
