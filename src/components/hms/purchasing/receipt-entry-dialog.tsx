@@ -79,6 +79,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
 
     // Mode: 'po' (Linked to PO) | 'direct' (Ad-hoc)
     const [mode, setMode] = useState<'po' | 'direct'>('po');
+    const [isOpeningStock, setIsOpeningStock] = useState(false);
 
     // Header State
     const [supplierId, setSupplierId] = useState<string | null>(null);
@@ -168,7 +169,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                         setReference(r.reference);
                         setNotes(r.notes);
                         setAttachmentUrl(r.attachmentUrl);
-                        setMode(r.purchaseOrderId ? 'po' : 'direct');
+                        setIsOpeningStock(r.reference === 'OPENING-STOCK' || r.isOpening);
                         setPoId(r.purchaseOrderId || null);
 
                         // Map Items
@@ -613,8 +614,13 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
     };
 
     const handleSubmit = async () => {
-        if (!supplierId || items.length === 0) {
+        if (!isOpeningStock && (!supplierId || items.length === 0)) {
             toast({ title: "Validation Error", description: "Please select a supplier and add at least one item.", variant: "destructive" });
+            return;
+        }
+
+        if (isOpeningStock && items.length === 0) {
+            toast({ title: "Validation Error", description: "Please add at least one item for opening stock.", variant: "destructive" });
             return;
         }
 
@@ -645,9 +651,10 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                 supplierId,
                 purchaseOrderId: poId,
                 receivedDate: parsedDate,
-                reference,
+                reference: isOpeningStock ? (reference || 'OPENING-STOCK') : reference,
                 notes,
                 attachmentUrl,
+                isOpening: isOpeningStock,
                 items: items.map(i => ({
                     id: (i as any).id, // Pass ID for updates helps tracking
                     productId: i.productId,
@@ -838,119 +845,144 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                                 className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-500/5 to-transparent skew-x-12 z-0"
                             />
                         )}
-                        <div className="grid grid-cols-12 gap-8 items-start relative z-10">
-                            {/* Vendor Section */}
-                            <div className="col-span-12 lg:col-span-4 space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Master Supplier</label>
-                                    <Badge variant="outline" className="text-[8px] bg-indigo-500/5 text-indigo-500 border-indigo-500/20 px-2 py-0">KYC VERIFIED</Badge>
-                                </div>
-                                <div className="flex gap-4">
-                                    <div className="flex-1">
-                                        <SearchableSelect
-                                            value={supplierId}
-                                            valueLabel={supplierName}
-                                            onChange={(id, opt) => {
-                                                setSupplierId(id);
-                                                if (opt) {
-                                                    setSupplierName(opt.label);
-                                                    setSupplierMeta(opt.metadata);
-                                                }
-                                            }}
-                                            onSearch={searchSuppliers}
-                                            onCreate={async (q) => { setSupplierName(q); setSupplierId(null); return null; }}
-                                            options={supplierId
-                                                ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }]
-                                                : []
-                                            }
-                                            placeholder="Select Source Supplier..."
-                                            className="w-full bg-background border-border h-10 text-sm font-bold text-foreground"
-                                            variant="ghost"
-                                        />
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => setSupplierCreateOpen(true)}
-                                            className="h-10 w-10 rounded-xl border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
-                                            title="Create New Supplier"
-                                        >
-                                            <Plus className="h-5 w-5" />
-                                        </Button>
-                                    </div>
-                                </div>
-                                <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-all duration-300"></div>
-                                <div className="flex flex-col gap-1 pt-1.5">
-                                    <div className="flex flex-wrap gap-2">
-                                        {supplierMeta?.gstin && (
-                                            <Badge variant="outline" className="bg-indigo-500/10 border-indigo-500/20 text-indigo-400 font-mono text-[9px] px-1.5 py-0 h-5">
-                                                GST {supplierMeta.gstin}
-                                            </Badge>
-                                        )}
-                                        {supplierMeta?.address && (
-                                            <div className="text-[10px] text-muted-foreground font-medium line-clamp-1 flex items-center gap-1.5 opacity-60">
-                                                <span className="shrink-0 bg-muted px-1 rounded-[3px] text-[8px] border border-border text-muted-foreground">ADR</span>
-                                                {supplierMeta.address}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+                        {/* Main Header / Selection Area */}
+                        <div className="flex flex-col gap-8 mb-8">
+                            {/* Mode Selection Toggle */}
+                            <div className="flex items-center gap-1 bg-neutral-900 border border-border p-1 rounded-xl w-fit">
+                                <button
+                                    onClick={() => setIsOpeningStock(false)}
+                                    className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!isOpeningStock ? 'bg-indigo-500 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    Purchase Receipt
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setIsOpeningStock(true);
+                                        if (!reference) setReference('OPENING-STOCK');
+                                    }}
+                                    className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${isOpeningStock ? 'bg-orange-500 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+                                >
+                                    Opening Stock
+                                </button>
                             </div>
 
-                            {/* Stock Metadata */}
-                            <div className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-6">
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Invoice Date</label>
-                                    <Input
-                                        type="date"
-                                        value={receivedDate}
-                                        onChange={(e) => setReceivedDate(e.target.value)}
-                                        className="h-10 bg-background border-border text-foreground font-mono font-bold px-3 text-sm rounded-lg"
-                                    />
-                                </div>
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Invoice Number</label>
-                                    <div className="relative group">
-                                        <Receipt className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-indigo-400 transition-colors" />
-                                        <Input
-                                            placeholder="INV/24-25/..."
-                                            value={reference}
-                                            onChange={(e) => setReference(e.target.value)}
-                                            className="h-10 bg-background border-border text-foreground font-mono font-bold pl-10 pr-3 text-sm rounded-lg"
-                                        />
+                            <div className="grid grid-cols-12 gap-8 items-start">
+                                {/* Supplier Section (Hidden if Opening Block) */}
+                                <div className={`col-span-12 lg:col-span-4 space-y-4 transition-all duration-500 ${isOpeningStock ? 'opacity-30 grayscale pointer-events-none blur-[1px]' : ''}`}>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                                            Source Vendor
+                                            {!isOpeningStock && <span className="h-1 w-1 rounded-full bg-indigo-500 animate-pulse" />}
+                                        </label>
+                                        <div className="h-0.5 flex-1 mx-4 bg-border/30 rounded-full" />
                                     </div>
-                                </div>
-                            </div>
-                            {/* Method/Scan Section */}
-                            <div className="col-span-12 lg:col-span-4 space-y-3">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Intelligent Scan / Order</label>
-                                <div className="flex gap-4">
-                                    {mode === 'po' ? (
+                                    <div className="flex gap-4">
                                         <div className="flex-1">
                                             <SearchableSelect
-                                                value={poId}
-                                                onChange={(id) => handlePoSelect(id)}
-                                                onSearch={async (q) => poOptions.filter(o => o.label.toLowerCase().includes(q.toLowerCase()))}
-                                                placeholder="Select PO..."
-                                                className="w-full bg-background border-border h-10 text-sm font-mono font-bold text-foreground"
+                                                value={supplierId}
+                                                valueLabel={supplierName}
+                                                onChange={(id, opt) => {
+                                                    setSupplierId(id);
+                                                    if (opt) {
+                                                        setSupplierName(opt.label);
+                                                        setSupplierMeta(opt.metadata);
+                                                    }
+                                                }}
+                                                onSearch={searchSuppliers}
+                                                onCreate={async (q) => { setSupplierName(q); setSupplierId(null); return null; }}
+                                                options={supplierId
+                                                    ? [{ id: supplierId, label: supplierName, subLabel: supplierMeta?.gstin, metadata: supplierMeta }]
+                                                    : []
+                                                }
+                                                placeholder="Select Source Supplier..."
+                                                className="w-full bg-background border-border h-10 text-sm font-bold text-foreground"
                                                 variant="ghost"
                                             />
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => setSupplierCreateOpen(true)}
+                                                className="h-10 w-10 rounded-xl border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground shrink-0"
+                                                title="Create New Supplier"
+                                            >
+                                                <Plus className="h-5 w-5" />
+                                            </Button>
                                         </div>
-                                    ) : (
-                                        <div className="flex-1 h-10 flex items-center justify-between px-4 bg-emerald-500/[0.03] border border-emerald-500/10 rounded-lg">
-                                            <span className="text-[8px] font-black text-emerald-500/40 uppercase tracking-[0.2em]">Entry Mode</span>
-                                            <div className="flex items-center gap-2">
-                                                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                                                <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Direct</span>
-                                            </div>
+                                    </div>
+                                    <div className="h-px w-full bg-neutral-800 absolute bottom-0 left-0 group-focus-within:bg-indigo-500 transition-all duration-300"></div>
+                                    <div className="flex flex-col gap-1 pt-1.5">
+                                        <div className="flex flex-wrap gap-2">
+                                            {supplierMeta?.gstin && (
+                                                <Badge variant="outline" className="bg-indigo-500/10 border-indigo-500/20 text-indigo-400 font-mono text-[9px] px-1.5 py-0 h-5">
+                                                    GST {supplierMeta.gstin}
+                                                </Badge>
+                                            )}
+                                            {supplierMeta?.address && (
+                                                <div className="text-[10px] text-muted-foreground font-medium line-clamp-1 flex items-center gap-1.5 opacity-60">
+                                                    <span className="shrink-0 bg-muted px-1 rounded-[3px] text-[8px] border border-border text-muted-foreground">ADR</span>
+                                                    {supplierMeta.address}
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                    <div className="shrink-0 w-52 border border-border rounded-xl overflow-hidden group/scan shadow-2xl hover:shadow-indigo-500/20 transition-all bg-background">
-                                        <FileUpload
-                                            onUploadComplete={(url) => { if (url) handleScanInvoice(url); else setAttachmentUrl(''); }}
-                                            currentFileUrl={attachmentUrl}
-                                            label="AI MAGIC SCAN"
-                                            className="h-20 border-dashed border-indigo-500/30 bg-indigo-500/[0.04] hover:bg-indigo-500/10 transition-colors"
+                                    </div>
+                                </div>
+
+                                {/* Stock Metadata */}
+                                <div className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-6">
+                                    <div className="space-y-4">
+                                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Invoice Date</label>
+                                        <Input
+                                            type="date"
+                                            value={receivedDate}
+                                            onChange={(e) => setReceivedDate(e.target.value)}
+                                            className="h-10 bg-background border-border text-foreground font-mono font-bold px-3 text-sm rounded-lg"
                                         />
+                                    </div>
+                                    <div className="space-y-4">
+                                        <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Invoice Number</label>
+                                        <div className="relative group">
+                                            <Receipt className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-indigo-400 transition-colors" />
+                                            <Input
+                                                placeholder="INV/24-25/..."
+                                                value={reference}
+                                                onChange={(e) => setReference(e.target.value)}
+                                                className="h-10 bg-background border-border text-foreground font-mono font-bold pl-10 pr-3 text-sm rounded-lg"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* Method/Scan Section */}
+                                <div className="col-span-12 lg:col-span-4 space-y-3">
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Intelligent Scan / Order</label>
+                                    <div className="flex gap-4">
+                                        {mode === 'po' ? (
+                                            <div className="flex-1">
+                                                <SearchableSelect
+                                                    value={poId}
+                                                    onChange={(id) => handlePoSelect(id)}
+                                                    onSearch={async (q) => poOptions.filter(o => o.label.toLowerCase().includes(q.toLowerCase()))}
+                                                    placeholder="Select PO..."
+                                                    className="w-full bg-background border-border h-10 text-sm font-mono font-bold text-foreground"
+                                                    variant="ghost"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="flex-1 h-10 flex items-center justify-between px-4 bg-emerald-500/[0.03] border border-emerald-500/10 rounded-lg">
+                                                <span className="text-[8px] font-black text-emerald-500/40 uppercase tracking-[0.2em]">Entry Mode</span>
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                                    <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Direct</span>
+                                                </div>
+                                            </div>
+                                        )}
+                                        <div className="shrink-0 w-52 border border-border rounded-xl overflow-hidden group/scan shadow-2xl hover:shadow-indigo-500/20 transition-all bg-background">
+                                            <FileUpload
+                                                onUploadComplete={(url) => { if (url) handleScanInvoice(url); else setAttachmentUrl(''); }}
+                                                currentFileUrl={attachmentUrl}
+                                                label="AI MAGIC SCAN"
+                                                className="h-20 border-dashed border-indigo-500/30 bg-indigo-500/[0.04] hover:bg-indigo-500/10 transition-colors"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -14,6 +14,7 @@ export type PurchaseReceiptData = {
     reference?: string
     notes?: string
     attachmentUrl?: string
+    isOpening?: boolean
     items: {
         productId: string
         poLineId?: string
@@ -123,8 +124,9 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
     const session = await auth()
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized: Missing Company or Tenant ID. Please relogin." }
     const companyId = session.user.companyId;
+    const isOpening = data.isOpening || data.reference === 'OPENING-STOCK';
 
-    if (!data.supplierId) return { error: "Supplier is required." }
+    if (!isOpening && !data.supplierId) return { error: "Supplier is required." }
     if (!data.items || data.items.length === 0) return { error: "Receipt must have items" }
 
     // Validate Date
@@ -175,8 +177,31 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                 }
             });
 
-            if (existing) {
+            if (existing && !isOpening) {
                 return { error: `Duplicate: Invoice '${data.reference}' has already been recorded for this supplier in the last 60 days.` };
+            }
+        }
+
+        // If it's opening stock, we might need a dummy supplier or just let it be null 
+        // depending on the schema. hms_purchase_receipt.supplier_id is usually nullable?
+        // Let's check or create a system supplier if needed.
+        let finalSupplierId = data.supplierId;
+        if (isOpening && !finalSupplierId) {
+            const systemSupplier = await prisma.hms_supplier.findFirst({
+                where: { company_id: companyId, name: "SYSTEM: Opening Balance" }
+            });
+            if (systemSupplier) {
+                finalSupplierId = systemSupplier.id;
+            } else {
+                const newSupplier = await prisma.hms_supplier.create({
+                    data: {
+                        tenant_id: session.user.tenantId!,
+                        company_id: companyId,
+                        name: "SYSTEM: Opening Balance",
+                        metadata: { is_system: true, notes: "Automated supplier for opening balance entries" }
+                    }
+                });
+                finalSupplierId = newSupplier.id;
             }
         }
 
@@ -193,14 +218,15 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     tenant_id: session.user.tenantId!,
                     company_id: companyId!,
                     purchase_order_id: data.purchaseOrderId,
-                    supplier_id: data.supplierId, // Added missing supplier_id
+                    supplier_id: finalSupplierId,
                     name: receiptNumber,
                     received_by: session.user.id,
                     receipt_date: receiptDate,
                     status: 'received' as any,
                     metadata: {
                         reference: data.reference,
-                        notes: data.notes
+                        notes: data.notes,
+                        is_opening: data.isOpening
                         // attachment_url deferred to end of transaction to speed up initial insert
                     },
                 }
