@@ -164,7 +164,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     if (initialMedicines && initialMedicines.length > 0) {
       const initialMapped = initialMedicines.map((m: any) => {
         const billable = billableItems.find(bi => bi.id === (m.id || m.product_id) || bi.label === m.name);
-        const taxId = billable?.categoryTaxId !== undefined ? billable.categoryTaxId : (m.type === 'service' ? null : defaultTaxId);
+        // FIX: Do not auto-exempt services. Trust the Billable Item's tax ID, or fall back to Default Tax.
+        const taxId = billable?.categoryTaxId !== undefined ? billable.categoryTaxId : defaultTaxId;
         const finalPrice = billable?.price || Number(m.price || 0);
 
         // Calculate initial tax
@@ -848,9 +849,9 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                               const newType = line.item_type === 'service' ? 'item' : 'service';
                               setLines(prev => prev.map(l => l.id === line.id ? {
                                 ...l,
-                                item_type: newType,
-                                // Auto-exempt services from tax when toggled manually
-                                tax_rate_id: newType === 'service' ? null : (l.tax_rate_id || defaultTaxId)
+                                item_type: newType
+                                // FIX: Do not auto-clear tax when toggling to service.
+                                // Tax is now decoupled and preserved.
                               } : l));
                             }}
                             className={`text-[8px] font-black px-1.5 py-0.5 rounded-md transition-all active:scale-95 ${line.item_type === 'service' ? 'bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20' : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'}`}
