@@ -382,8 +382,8 @@ model contact {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model countries {
-  id         String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  iso2       String   @db.Char(2)
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  iso2       String   @unique @db.Char(2)
   iso3       String   @db.Char(3)
   name       String   @db.VarChar(150)
   flag       String   @db.Char(4)
@@ -392,8 +392,6 @@ model countries {
   is_active  Boolean  @default(true)
   created_at DateTime @default(now()) @db.Timestamptz(6)
   updated_at DateTime @default(now()) @db.Timestamptz(6)
-
-  @@ignore
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -423,7 +421,7 @@ model country_tax_mappings {
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model currencies {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  code       String   @db.VarChar(3)
+  code       String   @unique @db.VarChar(3)
   name       String   @db.VarChar(100)
   symbol     String?  @db.VarChar(10)
   precision  Int      @default(2) @db.SmallInt
@@ -2884,7 +2882,7 @@ model module_menu_map {
 }
 
 model modules {
-  id          String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   module_key  String    @unique
   name        String
   description String?
