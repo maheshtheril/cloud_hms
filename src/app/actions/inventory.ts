@@ -924,7 +924,6 @@ export async function createProduct(formData: FormData) {
                 uom_id: uomId || null,
                 manufacturer_id: manufacturerId || null,
                 default_barcode: barcode || null,
-                reorder_level: parseFloat(formData.get("reorderLevel") as string) || 0,
                 metadata,
                 created_by: session.user.id,
                 is_active: true
@@ -1120,7 +1119,6 @@ export async function updateProduct(formData: FormData) {
                 uom_id: uomId || null,
                 manufacturer_id: manufacturerId || null,
                 default_barcode: barcode || null,
-                reorder_level: parseFloat(formData.get("reorderLevel") as string) || 0,
                 metadata,
                 updated_by: session.user.id,
                 updated_at: new Date()
