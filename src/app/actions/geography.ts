@@ -61,6 +61,13 @@ export async function getCountries() {
     return { success: true, countries: [] }
 }
 
+export async function getCompanyCountry() {
+    const session = await auth()
+    if (!session?.user) return { success: false, error: "Unauthorized" }
+
+    return { success: true, country: null }
+}
+
 export async function getSubdivisions(countryId?: string, parentId?: string | null) {
     const session = await auth()
     if (!session?.user) return { success: false, error: "Unauthorized" }
