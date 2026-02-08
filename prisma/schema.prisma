@@ -190,7 +190,7 @@ model app_user {
   leads                     String[]
   doctor_notes              String[]
   email_verification_tokens String[]
-  hms_user_roles            String[]
+  hms_user_roles            hms_user_roles[]
   user_branches             String[]
   user_permission           String[]
   user_holidays             String[]
@@ -2178,6 +2178,7 @@ model hms_user_roles {
   id      String  @id
   user_id String?
   role_id String?
+  app_user app_user? @relation(fields: [user_id], references: [id])
 }
 
 model hms_vitals {
