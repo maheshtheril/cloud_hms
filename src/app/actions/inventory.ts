@@ -2005,7 +2005,10 @@ export async function adjustStock(prevState: any, formData: FormData) {
 
             // 2. Find Main Warehouse
             let warehouse = await tx.hms_stock_location.findFirst({
-                where: { company_id: session.user.companyId, code: 'WH-MAIN' }
+                where: {
+                    company_id: session.user.companyId,
+                    code: { equals: 'WH-MAIN' }
+                }
             });
 
             if (!warehouse) {
