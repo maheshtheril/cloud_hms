@@ -297,9 +297,10 @@ model company {
   country_id             String?   @db.Uuid
   industry               String?
   logo_url               String?
-  mode                   String    @default("trial")
+  mode                   String             @default("trial")
   company_menu_overrides String[]
-  company_settings       String?
+  company_settings_raw   String?            @map("company_settings")
+  company_settings       company_settings?
   company_taxes          String[]
   branches               String[]
   sessions               String[]
@@ -403,7 +404,8 @@ model company_menu_overrides {
 model company_settings {
   id                           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id                    String    @db.Uuid
-  company_id                   String    @db.Uuid
+  company_id                   String    @unique @db.Uuid
+  company                      company   @relation(fields: [company_id], references: [id])
   currency_id                  String    @db.Uuid
   default_tax_type_id          String?   @db.Uuid
   default_tax_rate_id          String?   @db.Uuid
