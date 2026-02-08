@@ -350,7 +350,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             // INTELLIGENT TAX RESOLUTION (UI side fallback)
             let resolvedTaxId = item.categoryTaxId;
             if (!resolvedTaxId && item.categoryTaxRate > 0) {
-              const match = taxConfig.taxRates.find((tr: any) => Math.abs(Number(tr.rate) - Number(item.categoryTaxRate)) < 0.1);
+              const match = extendedTaxRates.find((tr: any) => Math.abs(Number(tr.rate) - Number(item.categoryTaxRate)) < 0.1);
               if (match) resolvedTaxId = match.id;
             }
             updated.tax_rate_id = resolvedTaxId || defaultTaxId;
@@ -379,7 +379,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         }
 
         // Recalculate Tax
-        const taxRateObj = taxConfig.taxRates.find((t: any) => t.id === updated.tax_rate_id)
+        const taxRateObj = extendedTaxRates.find((t: any) => t.id === updated.tax_rate_id)
         const rate = taxRateObj ? taxRateObj.rate : 0
         const lineNet = (updated.quantity * updated.unit_price) - (updated.discount_amount || 0)
         updated.tax_amount = (Math.max(0, lineNet) * rate) / 100
@@ -512,7 +512,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
       }
 
       // Sync tax for the new price
-      const taxRateObj = taxConfig.taxRates.find((t: any) => t.id === line.tax_rate_id)
+      const taxRateObj = extendedTaxRates.find((t: any) => t.id === line.tax_rate_id)
       const rate = taxRateObj ? Number(taxRateObj.rate) : 0
       const lineNet = (line.quantity * newPrice) - (line.discount_amount || 0)
       const newTax = (Math.max(0, lineNet) * rate) / 100
@@ -537,7 +537,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
           const finalPrice = billable?.price || Number(m.price || 0);
 
           // Calculate tax
-          const taxRateObj = taxConfig.taxRates.find((t: any) => t.id === taxId);
+          const taxRateObj = extendedTaxRates.find((t: any) => t.id === taxId);
           const rate = taxRateObj ? Number(taxRateObj.rate) : 0;
           const lineNet = (Number(m.quantity || 1) * finalPrice);
           const taxAmt = (Math.max(0, lineNet) * rate) / 100;
