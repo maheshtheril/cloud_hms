@@ -130,7 +130,7 @@ export async function getBillableItems() {
                 product_id: { in: itemIds },
                 tenant_id: session.user.tenantId,
                 hms_purchase_invoice: {
-                    status: { in: ['posted', 'finalized', 'paid'] }
+                    status: { in: ['posted', 'finalized', 'paid', 'draft', 'approved'] }
                 }
             },
             orderBy: { created_at: 'desc' },
