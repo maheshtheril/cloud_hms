@@ -791,21 +791,40 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
 
 
                     <div className="flex items-center gap-4">
-                        <div className="flex bg-muted/50 rounded-lg p-1 border border-border">
+                        <div className="flex bg-muted/50 rounded-lg p-0.5 border border-border items-center">
                             <button
                                 onClick={() => setMode('po')}
-                                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${mode === 'po' ? 'bg-indigo-600 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+                                className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'po' ? 'bg-indigo-600 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
                             >
                                 PO LINKED
                             </button>
                             <button
                                 onClick={() => setMode('direct')}
-                                className={`px-4 py-1.5 rounded-md text-xs font-bold transition-all ${mode === 'direct' ? 'bg-emerald-600 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+                                className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${mode === 'direct' ? 'bg-emerald-600 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
                             >
                                 DIRECT
                             </button>
                         </div>
-                        <Separator orientation="vertical" className="h-8 bg-border" />
+
+                        <Separator orientation="vertical" className="h-6 bg-border" />
+
+                        <div className="flex bg-muted/50 rounded-lg p-0.5 border border-border items-center">
+                            <button
+                                onClick={() => setIsOpeningStock(false)}
+                                className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${!isOpeningStock ? 'bg-indigo-500 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                Standard
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setIsOpeningStock(true);
+                                    if (!reference) setReference('OPENING-STOCK');
+                                }}
+                                className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${isOpeningStock ? 'bg-orange-500 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
+                            >
+                                Opening Stock
+                            </button>
+                        </div>
                         <div className="flex items-center gap-1">
                             <Button
                                 variant="ghost"
@@ -846,25 +865,7 @@ export function ReceiptEntryDialog({ isOpen, onClose, onSuccess, viewReceiptId }
                             />
                         )}
                         {/* Main Header / Selection Area */}
-                        <div className="flex flex-col gap-8 mb-8">
-                            {/* Mode Selection Toggle */}
-                            <div className="flex items-center gap-1 bg-neutral-900 border border-border p-1 rounded-xl w-fit">
-                                <button
-                                    onClick={() => setIsOpeningStock(false)}
-                                    className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!isOpeningStock ? 'bg-indigo-500 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
-                                >
-                                    Purchase Receipt
-                                </button>
-                                <button
-                                    onClick={() => {
-                                        setIsOpeningStock(true);
-                                        if (!reference) setReference('OPENING-STOCK');
-                                    }}
-                                    className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${isOpeningStock ? 'bg-orange-500 text-white shadow-lg' : 'text-muted-foreground hover:text-foreground'}`}
-                                >
-                                    Opening Stock
-                                </button>
-                            </div>
+                        <div className="flex flex-col gap-4 mb-4">
 
                             <div className="grid grid-cols-12 gap-8 items-start">
                                 {/* Supplier Section (Hidden if Opening Block) */}
