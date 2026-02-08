@@ -288,7 +288,7 @@ model catalog_pipeline_template {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model company {
-  id                     String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                     String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id              String    @db.Uuid
   name                   String
   enabled                Boolean?  @default(true)
@@ -303,8 +303,6 @@ model company {
   company_taxes          String[]
   branches               String[]
   sessions               String[]
-
-  @@ignore
 }
 
 model hms_branch {
