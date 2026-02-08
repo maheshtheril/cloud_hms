@@ -20,16 +20,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     // Normalize email
                     const email = (credentials.email as string).toLowerCase()
 
-                    // Use raw query to fetch user (Case Insensitive Email)
-                    const users = await prisma.$queryRaw`
-                        SELECT id, email, name, is_admin, is_tenant_admin, tenant_id, company_id, current_branch_id, password, role, metadata
-                        FROM app_user
-                        WHERE LOWER(email) = ${email}
-                          AND is_active = true
-                    ` as any[];
+                    // Use standard Prisma findFirst for better compatibility with extensions
+                    console.log("[AUTH] Attempting login for:", email);
+                    const user = await prisma.app_user.findFirst({
+                        where: {
+                            email: email,
+                            is_active: true
+                        }
+                    }) as any;
 
-                    if (users && users.length > 0) {
-                        let user = users[0];
+                    console.log("[AUTH] User found:", user ? "YES" : "NO");
+
+                    if (user) {
 
                         const passwordsMatch = await bcrypt.compare(credentials.password as string, user.password);
                         if (!passwordsMatch) return null;

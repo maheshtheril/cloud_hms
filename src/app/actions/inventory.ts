@@ -21,17 +21,23 @@ export async function getInventoryDashboardStats() {
             where: { company_id: companyId, is_active: true }
         });
 
-        // 2. Low Stock Alerts (Concept: stock < 10)
-        // Since stock is in hms_stock_levels, we need to aggregate.
-        // For simplicity in this version, we will check products that have any stock level entry < 10
-        // A better approach would be to have 'min_stock_level' on the product itself.
-        // Let's assume a global threshold of 10 for now.
-        const lowStockCount = await prisma.hms_stock_levels.count({
+        // 2. Low Stock Alerts (Using product-specific reorder_level)
+        const lowStockItems = await prisma.hms_stock_levels.findMany({
             where: {
                 company_id: companyId,
-                quantity: { lt: 10 }
+            },
+            include: {
+                hms_product: {
+                    select: { reorder_level: true }
+                }
             }
         });
+
+        const lowStockCount = lowStockItems.filter(item => {
+            const qty = Number(item.quantity || 0);
+            const threshold = Number(item.hms_product?.reorder_level || 0);
+            return qty < threshold;
+        }).length;
 
         // 3. Inventory Value (Sum of Stock * Unit Cost)
         // We'll approximate this by summing hms_stock_ledger current value or
@@ -923,6 +929,7 @@ export async function createProduct(formData: FormData) {
                 uom_id: uomId || null,
                 manufacturer_id: manufacturerId || null,
                 default_barcode: barcode || null,
+                reorder_level: parseFloat(formData.get("reorderLevel") as string) || 0,
                 metadata,
                 created_by: session.user.id,
                 is_active: true
@@ -1118,6 +1125,7 @@ export async function updateProduct(formData: FormData) {
                 uom_id: uomId || null,
                 manufacturer_id: manufacturerId || null,
                 default_barcode: barcode || null,
+                reorder_level: parseFloat(formData.get("reorderLevel") as string) || 0,
                 metadata,
                 updated_by: session.user.id,
                 updated_at: new Date()
@@ -1210,6 +1218,28 @@ export async function getProductBatches(productId: string) {
     } catch (error) {
         console.error("Failed to fetch product batches:", error);
         return [];
+    }
+}
+
+export async function getBestBatch(productId: string) {
+    const session = await auth();
+    if (!session?.user?.companyId) return null;
+
+    try {
+        return await prisma.hms_product_batch.findFirst({
+            where: {
+                product_id: productId,
+                company_id: session.user.companyId,
+                qty_on_hand: { gt: 0 }
+            },
+            orderBy: [
+                { expiry_date: 'asc' },
+                { created_at: 'asc' }
+            ]
+        });
+    } catch (error) {
+        console.error("Failed to fetch best batch:", error);
+        return null;
     }
 }
 
@@ -1973,7 +2003,10 @@ export async function adjustStock(prevState: any, formData: FormData) {
         await prisma.$transaction(async (tx) => {
             // 1. Get current batch and product info
             const batch = await tx.hms_product_batch.findUnique({
-                where: { id: batchId, company_id: session.user.companyId }
+                where: {
+                    id: batchId,
+                    company_id: session.user.companyId as string
+                }
             });
             if (!batch) throw new Error("Batch not found");
 
