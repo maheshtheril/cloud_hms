@@ -1213,7 +1213,7 @@ export async function getProductBatches(productId: string) {
     }
 }
 
-export async function updateProductBatch(formData: FormData) {
+export async function updateProductBatch(prevState: any, formData: FormData) {
     const session = await auth();
     if (!session?.user?.id || !session.user.companyId) return { error: "Unauthorized" };
 
