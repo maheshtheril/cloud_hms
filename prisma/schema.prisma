@@ -1825,7 +1825,7 @@ model hms_purchase_receipt {
   created_at                DateTime? @db.Timestamptz(6)
   updated_at                DateTime? @db.Timestamptz(6)
   supplier_id               String?
-  hms_purchase_receipt_line String[]
+  hms_purchase_receipt_line hms_purchase_receipt_line[]
   hms_purchase_return       String[]
 }
 
@@ -1845,7 +1845,7 @@ model hms_purchase_receipt_line {
   lot_number               String?
   metadata                 Json?
   created_at               DateTime? @db.Timestamptz(6)
-  hms_purchase_return_line String[]
+  hms_purchase_receipt hms_purchase_receipt? @relation(fields: [receipt_id], references: [id])
 }
 
 model hms_purchase_return {
@@ -3099,6 +3099,7 @@ model crm_deals {
   company_id          String?
   activities          String[]
   commissions         String[]
+  crm_stages          crm_stages? @relation(fields: [stage_id], references: [id])
 }
 
 model crm_pipelines {
@@ -3122,7 +3123,7 @@ model crm_stages {
   probability Decimal?  @db.Decimal(20, 4)
   sort_order  Int?
   deleted_at  DateTime? @db.Timestamptz(6)
-  deals       String[]
+  deals       crm_deals[]
   leads       String[]
 }
 
