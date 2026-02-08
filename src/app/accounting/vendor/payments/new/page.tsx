@@ -10,10 +10,12 @@ export default async function NewPaymentPage() {
         take: 1000
     });
 
-    const partners = suppliers.map(s => ({
-        id: s.id,
-        name: s.name
-    }));
+    const partners = suppliers
+        .filter(s => s.name !== null)
+        .map(s => ({
+            id: s.id,
+            name: s.name as string
+        }));
 
     return <PaymentForm type="outbound" partners={partners} />
 }
