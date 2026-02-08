@@ -34,7 +34,7 @@ export async function upsertPurchaseInvoice(data: any) {
             let invoice;
             if (data.id) {
                 // Update existing
-                invoice = await tx.hms_purchase_invoice.update({
+                invoice = await (tx.hms_purchase_invoice.update as any)({
                     where: { id: data.id },
                     data: {
                         ...invoiceData,
