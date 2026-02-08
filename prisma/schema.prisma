@@ -52,6 +52,7 @@ model accounts {
   metadata        Json?     @default("{}")
   created_at      DateTime? @default(now()) @db.Timestamptz(6)
   updated_at      DateTime? @default(now()) @db.Timestamptz(6)
+  journal_entry_lines journal_entry_lines[]
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -262,9 +263,9 @@ model company {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model company_accounting_settings {
-  id                      String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id               String   @db.Uuid
-  company_id              String   @db.Uuid
+  company_id              String   @unique @db.Uuid
   default_sale_tax_id     String?  @db.Uuid
   default_purchase_tax_id String?  @db.Uuid
   currency_id             String?  @db.Uuid
@@ -288,8 +289,6 @@ model company_accounting_settings {
   enable_zero_rate        Boolean? @default(true)
   created_at              DateTime @default(now()) @db.Timestamptz(6)
   updated_at              DateTime @default(now()) @db.Timestamptz(6)
-
-  @@ignore
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -1693,7 +1692,7 @@ model hms_progress_notes {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model hms_purchase_invoice {
-  id                String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id         String    @db.Uuid
   company_id        String    @db.Uuid
   purchase_order_id String?   @db.Uuid
@@ -1712,12 +1711,12 @@ model hms_purchase_invoice {
   created_at        DateTime  @default(now()) @db.Timestamptz(6)
   updated_at        DateTime? @db.Timestamptz(6)
 
-  @@ignore
+  hms_purchase_invoice_line hms_purchase_invoice_line[]
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model hms_purchase_invoice_line {
-  id          String   @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id   String   @db.Uuid
   company_id  String   @db.Uuid
   invoice_id  String   @db.Uuid
@@ -1731,7 +1730,7 @@ model hms_purchase_invoice_line {
   metadata    Json?    @default("{}")
   created_at  DateTime @default(now()) @db.Timestamptz(6)
 
-  @@ignore
+  hms_purchase_invoice hms_purchase_invoice @relation(fields: [invoice_id], references: [id])
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -2157,7 +2156,7 @@ model invoice_sequences {
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model journal_entries {
-  id                         String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id                  String    @db.Uuid
   company_id                 String    @db.Uuid
   journal_id                 String?   @db.Uuid
@@ -2176,13 +2175,14 @@ model journal_entries {
   is_locked                  Boolean   @default(false)
   locked_at                  DateTime? @db.Timestamptz(6)
 
-  @@ignore
+  journal_entry_lines journal_entry_lines[]
+  journals            journals? @relation(fields: [journal_id], references: [id])
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model journal_entry_lines {
-  id                  String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id                  String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenant_id           String    @db.Uuid
   company_id          String    @db.Uuid
   journal_entry_id    String    @db.Uuid
@@ -2198,7 +2198,8 @@ model journal_entry_lines {
   analytic_tag_ids    String[]  @default([]) @db.Uuid
   is_tax_line         Boolean?  @default(false)
 
-  @@ignore
+  accounts        accounts        @relation(fields: [account_id], references: [id])
+  journal_entries journal_entries @relation(fields: [journal_entry_id], references: [id])
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -2840,7 +2841,7 @@ model menu_audit_log {
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model menu_items {
-  id              String    @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   parent_id       String?   @db.Uuid
   module_key      String
   key             String
@@ -2853,8 +2854,6 @@ model menu_items {
   is_global       Boolean   @default(true)
   created_at      DateTime? @default(now()) @db.Timestamptz(6)
   updated_at      DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@ignore
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
