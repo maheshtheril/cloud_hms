@@ -32,7 +32,7 @@ export async function getJournalEntries(filters?: {
 
         // ADAPTIVE FETCHING: Try full schema first, fallback to minimal if DB migration isn't ready
         try {
-            const entries = await prisma.journal_entries.findMany({
+            const entries = await (prisma.journal_entries.findMany as any)({
                 where,
                 select: {
                     id: true,
