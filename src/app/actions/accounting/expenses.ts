@@ -59,8 +59,8 @@ export async function recordExpense(data: {
                             await tx.hms_invoice.update({
                                 where: { id: line.invoice_id },
                                 data: {
-                                    total_paid: { decrement: line.amount },
-                                    outstanding: { increment: line.amount },
+                                    total_paid: { decrement: line.amount || 0 },
+                                    outstanding: { increment: line.amount || 0 },
                                     status: 'posted'
                                 }
                             });
@@ -72,7 +72,7 @@ export async function recordExpense(data: {
                             await tx.hms_purchase_invoice.update({
                                 where: { id: line.invoice_id },
                                 data: {
-                                    paid_amount: { decrement: line.amount },
+                                    paid_amount: { decrement: line.amount || 0 },
                                     status: 'billed'
                                 }
                             });
