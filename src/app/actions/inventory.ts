@@ -5,6 +5,7 @@ import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 import crypto from 'crypto';
+import { receiveStock } from "@/app/actions/inventory-operations";
 
 // --- Dashboard Stats ---
 
@@ -211,30 +212,63 @@ export async function getTaxRates() {
 
         // Seeding if Empty
         if (allTaxes.length === 0) {
-            const defaultRates = [
-                { name: 'Tax Exempt', rate: 0 },
-                { name: 'Standard Tax', rate: 10 }
-            ];
+            const gstRates = [0, 5, 12, 18, 28];
+            const created = [];
 
-            logDebug('getTaxRates: Seeding defaults into company_taxes');
-            // Seed into company_taxes for simplicity and isolation
-            for (const dr of defaultRates) {
-                await prisma.company_taxes.create({
-                    data: {
-                        company_id: companyId,
-                        name: dr.name,
-                        rate: dr.rate,
-                        is_active: true
+            logDebug('getTaxRates: Seeding Standard GST Rates');
+
+            for (const r of gstRates) {
+                const typeName = `GST_${r}`;
+                // Find or Create Tax Type
+                let type = await prisma.tax_types.findFirst({ where: { name: typeName } });
+                if (!type) {
+                    try {
+                        type = await prisma.tax_types.create({
+                            data: {
+                                name: typeName,
+                                description: `IGST ${r}%`,
+                                is_active: true
+                            }
+                        });
+                    } catch (e) {
+                        console.error(`Failed to create tax type ${typeName}:`, e);
+                        continue;
                     }
-                });
-            }
+                }
 
-            // Return the newly created taxes
-            const newTaxes = await prisma.company_taxes.findMany({
-                where: { company_id: companyId, is_active: true },
-                select: { id: true, name: true, rate: true }
-            });
-            return newTaxes.map(t => ({ ...t, rate: Number(t.rate) }));
+                if (type) {
+                    // Find or Create Rate
+                    let rateRow = await prisma.tax_rates.findFirst({ where: { tax_type_id: type.id, rate: r } });
+                    if (!rateRow) {
+                        rateRow = await prisma.tax_rates.create({
+                            data: {
+                                tax_type_id: type.id,
+                                name: `GST ${r}%`,
+                                rate: r,
+                                is_active: true
+                            }
+                        });
+                    }
+
+                    // Map to Company
+                    try {
+                        await prisma.company_tax_maps.create({
+                            data: {
+                                tenant_id: session.user.tenantId,
+                                company_id: companyId,
+                                tax_type_id: type.id,
+                                tax_rate_id: rateRow.id,
+                                is_default: r === 0
+                            }
+                        });
+                    } catch (e) {
+                        // Ignore duplicate mapping error
+                    }
+
+                    created.push({ id: rateRow.id, name: rateRow.name, rate: r });
+                }
+            }
+            return created;
         }
 
         return allTaxes;
@@ -853,11 +887,17 @@ export async function createProduct(formData: FormData) {
         return { error: "Name and SKU are required" };
     }
 
+    const costPrice = parseFloat(formData.get("costPrice") as string) || 0;
+    const mrp = parseFloat(formData.get("mrp") as string) || 0;
+    const openingStock = parseFloat(formData.get("openingStock") as string) || 0;
+
     try {
         // Construct Metadata
         const metadata: Record<string, any> = {
             brand: brand || null,
-            tracking: tracking // Store tracking preference
+            tracking: tracking, // Store tracking preference
+            cost_price: costPrice,
+            mrp: mrp
         };
 
         const newProduct = await prisma.hms_product.create({
@@ -927,6 +967,20 @@ export async function createProduct(formData: FormData) {
                     product_id: newProduct.id,
                     category_id: categoryId
                 }
+            });
+        }
+
+        // Handle Opening Stock
+        if (openingStock > 0) {
+            await receiveStock({
+                date: new Date(),
+                items: [{
+                    productId: newProduct.id,
+                    quantity: openingStock,
+                    unitCost: costPrice || price, // Use cost or selling price as fallback
+                }],
+                reference: 'OPENING-STOCK',
+                notes: 'Initial Opening Stock from Product Master'
             });
         }
 
@@ -1022,9 +1076,22 @@ export async function updateProduct(formData: FormData) {
     }
 
     try {
+        const existingProduct = await prisma.hms_product.findUnique({
+            where: { id, company_id: session.user.companyId },
+            select: { metadata: true }
+        });
+
+        const currentMetadata = (existingProduct?.metadata as Record<string, any>) || {};
+
+        const costPrice = parseFloat(formData.get("costPrice") as string) || 0;
+        const mrp = parseFloat(formData.get("mrp") as string) || 0;
+
         const metadata: Record<string, any> = {
+            ...currentMetadata,
             brand: brand || null,
-            tracking: tracking
+            tracking: tracking,
+            cost_price: costPrice,
+            mrp: mrp
         };
 
         await prisma.hms_product.update({

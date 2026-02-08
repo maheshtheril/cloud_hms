@@ -387,7 +387,7 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                                                     className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all flex-1"
                                                 >
                                                     {uoms.map(u => (
-                                                        <option key={u.id} value={u.id}>{u.name} ({Number(u.ratio)})</option>
+                                                        <option key={u.id} value={u.id}>{u.name}</option>
                                                     ))}
                                                 </select>
                                                 <button
@@ -399,6 +399,18 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                                                 </button>
                                             </div>
                                         </div>
+
+                                        {!isEditing && (
+                                            <div className="space-y-2">
+                                                <label className="text-sm font-medium text-gray-700">Opening Stock</label>
+                                                <input
+                                                    name="openingStock"
+                                                    type="number"
+                                                    defaultValue={0}
+                                                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                                                />
+                                            </div>
+                                        )}
 
                                         <div className="space-y-2">
                                             <label className="text-sm font-medium text-gray-700">Tracking Method</label>
@@ -438,6 +450,36 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                                                     defaultValue={initialData?.price}
                                                     placeholder="0.00"
                                                     className="w-full pl-8 pr-4 py-3 text-lg font-bold text-gray-900 bg-white border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-gray-700">Cost Price</label>
+                                            <div className="relative">
+                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-serif italic">₹</span>
+                                                <input
+                                                    name="costPrice"
+                                                    type="number"
+                                                    step="0.01"
+                                                    defaultValue={initialData?.default_cost}
+                                                    placeholder="0.00"
+                                                    className="w-full pl-8 pr-4 py-3 text-lg font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium text-gray-700">MRP</label>
+                                            <div className="relative">
+                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-serif italic">₹</span>
+                                                <input
+                                                    name="mrp"
+                                                    type="number"
+                                                    step="0.01"
+                                                    defaultValue={initialData?.mrp}
+                                                    placeholder="0.00"
+                                                    className="w-full pl-8 pr-4 py-3 text-lg font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
                                                 />
                                             </div>
                                         </div>
