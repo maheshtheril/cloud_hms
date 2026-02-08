@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { signOut } from "@/auth"
 import { headers } from "next/headers";
 import bcrypt from 'bcryptjs';
+import { initializeTenantMasters } from "@/lib/services/tenant-init";
 
 export async function logout() {
     console.log("[Auth Action] Logging out...");
@@ -388,37 +389,9 @@ export async function signup(prevState: any, formData: FormData) {
                 console.warn('[Signup WARNING] No valid modules found for keys:', Array.from(modulesToEnable));
             }
         }
-
         // 6. Auto-seed HMS master data if HMS module is enabled
         if (modulesToEnable.has('hms')) {
-            console.log('[Signup] HMS module detected - seeding master data...');
-
-            // Seed standard departments
-            const standardDepartments = [
-                { name: 'Emergency Department', code: 'ED', description: '24/7 emergency care' },
-                { name: 'Out Patient Department', code: 'OPD', description: 'Outpatient consultations' },
-                { name: 'In Patient Department', code: 'IPD', description: 'In-patient wards' },
-                { name: 'Intensive Care Unit', code: 'ICU', description: 'Critical care' },
-                { name: 'Operating Theatre', code: 'OT', description: 'Surgical procedures' },
-                { name: 'Radiology', code: 'RAD', description: 'Medical imaging' },
-                { name: 'Pathology', code: 'PATH', description: 'Laboratory diagnostics' },
-                { name: 'Pharmacy', code: 'PHAR', description: 'Medication dispensing' }
-            ];
-
-            await prisma.hms_departments.createMany({
-                data: standardDepartments.map(dept => ({
-                    id: crypto.randomUUID(), // Explicit ID
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    name: dept.name,
-                    code: dept.code,
-                    description: dept.description,
-                    is_active: true
-                })),
-                skipDuplicates: true
-            });
-
-            console.log('[Signup] Seeded 8 standard departments');
+            console.log('[Signup] HMS module detected - seeding lab tests and fees...');
 
             // Seed Standard Lab Tests
             const labTests = [
@@ -480,6 +453,9 @@ export async function signup(prevState: any, formData: FormData) {
             });
             console.log('[Signup] Seeded Registration and Consultation fees');
         }
+
+        // 7. Initialize Domain-Specific Master Data (UOMs, Locations, Specializations, etc.)
+        await initializeTenantMasters(tenantId, companyId);
 
         return { success: true };
 

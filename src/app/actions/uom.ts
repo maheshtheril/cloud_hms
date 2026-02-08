@@ -3,45 +3,34 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 
-export async function seedPharmacyUOMs() {
-    const session = await auth()
-    if (!session?.user?.tenantId || !session?.user?.companyId) {
-        return { error: 'Unauthorized' }
-    }
-
-    const tenantId = session.user.tenantId
-    const companyId = session.user.companyId
-
+export async function internalSeedUOMs(tenantId: string, companyId: string) {
     try {
-        // 1. Create or get UOM Category
-        let category = await prisma.hms_uom_category.findFirst({
-            where: {
-                tenant_id: tenantId,
-                company_id: companyId,
-                name: 'Pharmaceutical Packaging'
-            }
-        })
+        // 1. Create or get Categories
+        const pharmaCategory = await prisma.hms_uom_category.upsert({
+            where: { tenant_id_company_id_name: { tenant_id: tenantId, company_id: companyId, name: 'Pharmaceutical Packaging' } },
+            update: {},
+            create: { tenant_id: tenantId, company_id: companyId, name: 'Pharmaceutical Packaging' }
+        });
 
-        if (!category) {
-            category = await prisma.hms_uom_category.create({
-                data: {
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    name: 'Pharmaceutical Packaging'
-                }
-            })
-        }
+        const serviceCategory = await prisma.hms_uom_category.upsert({
+            where: { tenant_id_company_id_name: { tenant_id: tenantId, company_id: companyId, name: 'Services' } },
+            update: {},
+            create: { tenant_id: tenantId, company_id: companyId, name: 'Services' }
+        });
 
         // 2. Define common pharma UOMs
         const uoms = [
-            { name: 'PCS', type: 'reference', ratio: 1.0, description: 'Individual pieces/tablets' },
-            { name: 'PACK-10', type: 'bigger', ratio: 10.0, description: 'Pack of 10 pieces' },
-            { name: 'PACK-15', type: 'bigger', ratio: 15.0, description: 'Pack of 15 pieces' },
-            { name: 'PACK-20', type: 'bigger', ratio: 20.0, description: 'Pack of 20 pieces' },
-            { name: 'PACK-30', type: 'bigger', ratio: 30.0, description: 'Pack of 30 pieces' },
-            { name: 'STRIP', type: 'bigger', ratio: 10.0, description: 'Strip (typically 10)' },
-            { name: 'BOX', type: 'bigger', ratio: 100.0, description: 'Box (typically 100)' },
-            { name: 'BOTTLE', type: 'bigger', ratio: 1.0, description: 'Bottle (count as 1 unit)' },
+            { name: 'PCS', type: 'reference', ratio: 1.0, description: 'Individual pieces/tablets', categoryId: pharmaCategory.id },
+            { name: 'PACK-10', type: 'bigger', ratio: 10.0, description: 'Pack of 10 pieces', categoryId: pharmaCategory.id },
+            { name: 'PACK-15', type: 'bigger', ratio: 15.0, description: 'Pack of 15 pieces', categoryId: pharmaCategory.id },
+            { name: 'PACK-20', type: 'bigger', ratio: 20.0, description: 'Pack of 20 pieces', categoryId: pharmaCategory.id },
+            { name: 'PACK-30', type: 'bigger', ratio: 30.0, description: 'Pack of 30 pieces', categoryId: pharmaCategory.id },
+            { name: 'STRIP', type: 'bigger', ratio: 10.0, description: 'Strip (typically 10)', categoryId: pharmaCategory.id },
+            { name: 'BOX', type: 'bigger', ratio: 100.0, description: 'Box (typically 100)', categoryId: pharmaCategory.id },
+            { name: 'BOTTLE', type: 'bigger', ratio: 1.0, description: 'Bottle (count as 1 unit)', categoryId: pharmaCategory.id },
+            { name: 'UNIT', type: 'reference', ratio: 1.0, description: 'Standard unit', categoryId: serviceCategory.id },
+            { name: 'VISIT', type: 'reference', ratio: 1.0, description: 'Consultation visit', categoryId: serviceCategory.id },
+            { name: 'TEST', type: 'reference', ratio: 1.0, description: 'Lab test unit', categoryId: serviceCategory.id },
         ]
 
         let created = 0
@@ -52,7 +41,7 @@ export async function seedPharmacyUOMs() {
                 where: {
                     tenant_id: tenantId,
                     company_id: companyId,
-                    category_id: category.id,
+                    category_id: uom.categoryId,
                     name: uom.name
                 }
             })
@@ -62,7 +51,7 @@ export async function seedPharmacyUOMs() {
                     data: {
                         tenant_id: tenantId,
                         company_id: companyId,
-                        category_id: category.id,
+                        category_id: uom.categoryId,
                         name: uom.name,
                         uom_type: uom.type,
                         ratio: uom.ratio,
@@ -79,9 +68,21 @@ export async function seedPharmacyUOMs() {
             success: true,
             message: `Seeded ${created} UOMs (${skipped} already existed)`
         }
-
     } catch (error) {
-        console.error('Seed UOM error:', error)
+        console.error('Internal Seed UOM error:', error)
+        throw error
+    }
+}
+
+export async function seedPharmacyUOMs() {
+    const session = await auth()
+    if (!session?.user?.tenantId || !session?.user?.companyId) {
+        return { error: 'Unauthorized' }
+    }
+
+    try {
+        return await internalSeedUOMs(session.user.tenantId, session.user.companyId)
+    } catch (error) {
         return { error: 'Failed to seed UOMs' }
     }
 }
