@@ -69,7 +69,7 @@ export async function getJournalEntries(filters?: {
 
             try {
                 // Fallback 1: Safe Select (Standard)
-                const safeEntries = await prisma.journal_entries.findMany({
+                const safeEntries = await (prisma.journal_entries.findMany as any)({
                     where,
                     select: {
                         id: true,
