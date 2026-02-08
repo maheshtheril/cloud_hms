@@ -1992,13 +1992,15 @@ export async function adjustStock(prevState: any, formData: FormData) {
 
     if (!batchId || changeQty === 0) return { error: "Invalid data" };
 
+    const companyId = session.user.companyId; // Store after null check
+
     try {
         await prisma.$transaction(async (tx) => {
             // 1. Get current batch and product info
             const batch = await tx.hms_product_batch.findUnique({
                 where: {
                     id: batchId,
-                    company_id: session.user.companyId as string
+                    company_id: companyId
                 }
             });
             if (!batch) throw new Error("Batch not found");
@@ -2006,14 +2008,14 @@ export async function adjustStock(prevState: any, formData: FormData) {
             // 2. Find Main Warehouse
             let warehouse = await tx.hms_stock_location.findFirst({
                 where: {
-                    company_id: { equals: session.user.companyId },
+                    company_id: companyId,
                     code: { equals: 'WH-MAIN' }
                 }
             });
 
             if (!warehouse) {
                 warehouse = await tx.hms_stock_location.findFirst({
-                    where: { company_id: { equals: session.user.companyId } }
+                    where: { company_id: companyId }
                 });
             }
 
