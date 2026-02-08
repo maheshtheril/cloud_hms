@@ -793,7 +793,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     <th className="px-4 py-4 w-28 text-center">Qty</th>
                     <th className="px-4 py-4 w-32">UOM</th>
                     <th className="px-4 py-4 w-32">Rate</th>
-                    <th className="px-4 py-4 w-36">Tax</th>
+                    <th className="px-4 py-4 w-36">Tax %</th>
                     <th className="px-8 py-4 w-36 text-right italic">Total</th>
                     <th className="px-4 py-4 w-12"></th>
                   </tr>
@@ -889,14 +889,21 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                         </td>
                         <td className="px-4 py-3"><Input type="number" value={line.unit_price} onChange={e => updateLine(line.id, 'unit_price', parseFloat(e.target.value) || 0)} disabled={isPaymentModalOpen || loading} className="h-10 bg-transparent border-none font-mono font-black text-slate-400 text-sm focus:ring-0" /></td>
                         <td className="px-4 py-3">
-                          <select className="w-full h-10 bg-transparent border border-slate-100 dark:border-slate-800 rounded-lg px-2 text-[8px] font-black outline-none" value={line.tax_rate_id || ''} onChange={e => updateLine(line.id, 'tax_rate_id', e.target.value)} disabled={isPaymentModalOpen || loading}>
-                            <option value="">NO_TAX</option>
-                            {taxConfig.taxRates.map((t: any) => <option key={t.id} value={t.id}>{t.name} ({t.rate}%)</option>)}
-                          </select>
+                          <div className="flex flex-col gap-1">
+                            <select className="w-full h-8 bg-transparent border border-slate-100 dark:border-slate-800 rounded-lg px-2 text-[8px] font-black outline-none" value={line.tax_rate_id || ''} onChange={e => updateLine(line.id, 'tax_rate_id', e.target.value)} disabled={isPaymentModalOpen || loading}>
+                              <option value="">0% (No Tax)</option>
+                              {taxConfig.taxRates.map((t: any) => <option key={t.id} value={t.id}>{t.name} ({t.rate}%)</option>)}
+                            </select>
+                            {line.tax_amount > 0 && (
+                              <span className="text-[9px] font-bold text-emerald-600 text-right pr-1">
+                                + {currency}{line.tax_amount.toFixed(2)} Tax
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-8 py-3 text-right font-black text-lg italic tracking-tighter text-slate-800 dark:text-white">
                           <span className={isZeroLine ? 'text-rose-500 animate-pulse' : ''}>
-                            {currency}{lineTotal.toFixed(2)}
+                            {currency}{(lineTotal + (line.tax_amount || 0)).toFixed(2)}
                           </span>
                         </td>
                         <td className="px-4 py-3">
