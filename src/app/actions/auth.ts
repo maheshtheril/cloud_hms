@@ -1,4 +1,5 @@
 'use server'
+import crypto from 'crypto';
 
 import { prisma } from "@/lib/prisma"
 import { signOut } from "@/auth"

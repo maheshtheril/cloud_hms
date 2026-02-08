@@ -450,7 +450,10 @@ export async function createInvoice(data: {
                             product_id: isUUID(l.product_id) ? l.product_id : null,
                             tax_rate_id: isUUID(l.tax_rate_id) ? l.tax_rate_id : null,
                             uom: l.uom || 'Unit',
-                            metadata: {}
+                            metadata: {
+                                batch_id: l.batch_id,
+                                batch_no: l.batch_no
+                            }
                         }))
                     },
                     hms_invoice_payments: payments.length > 0 ? {
@@ -634,7 +637,11 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
                     // Tax details
                     tax_rate_id: item.tax_rate_id || null, // Convert empty string to null
                     tax_amount: item.tax_amount || 0,
-                    discount_amount: item.discount_amount || 0
+                    discount_amount: item.discount_amount || 0,
+                    metadata: {
+                        batch_id: item.batch_id,
+                        batch_no: item.batch_no
+                    }
                 }))
             });
 
