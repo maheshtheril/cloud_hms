@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
+import { fixTaxConfiguration } from '@/app/actions/tax-fix'
 
 export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice, onClose, currency = '₹' }: {
   patients: any[],
@@ -795,7 +796,27 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     <th className="px-4 py-4 w-32">UOM</th>
                     <th className="px-4 py-4 w-32">Rate</th>
                     {taxConfig.taxRates.length === 0 ? (
-                      <th className="px-4 py-4 w-36 text-rose-500 animate-pulse">⚠️ NO TAX RATES</th>
+                      <th className="px-4 py-4 w-36">
+                        <div className="flex flex-col items-center">
+                          <span className="text-rose-500 animate-pulse text-[10px]">⚠️ NO TAX RATES</span>
+                          <button
+                            onClick={async () => {
+                              if (confirm("Auto-Fix Tax Config? This creates standard GST rates.")) {
+                                const res = await fixTaxConfiguration();
+                                if (res.success) {
+                                  alert("Fixed! Reloading...");
+                                  window.location.reload();
+                                } else {
+                                  alert("Error: " + res.error);
+                                }
+                              }
+                            }}
+                            className="mt-1 bg-rose-500 hover:bg-rose-600 text-white text-[9px] px-2 py-0.5 rounded shadow-sm border border-rose-600"
+                          >
+                            FIX NOW
+                          </button>
+                        </div>
+                      </th>
                     ) : (
                       <th className="px-4 py-4 w-36">Tax %</th>
                     )}
