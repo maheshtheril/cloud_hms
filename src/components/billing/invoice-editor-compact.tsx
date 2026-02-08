@@ -794,7 +794,11 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     <th className="px-4 py-4 w-28 text-center">Qty</th>
                     <th className="px-4 py-4 w-32">UOM</th>
                     <th className="px-4 py-4 w-32">Rate</th>
-                    <th className="px-4 py-4 w-36">Tax %</th>
+                    {taxConfig.taxRates.length === 0 ? (
+                      <th className="px-4 py-4 w-36 text-rose-500 animate-pulse">⚠️ NO TAX RATES</th>
+                    ) : (
+                      <th className="px-4 py-4 w-36">Tax %</th>
+                    )}
                     <th className="px-8 py-4 w-36 text-right italic">Total</th>
                     <th className="px-4 py-4 w-12"></th>
                   </tr>
