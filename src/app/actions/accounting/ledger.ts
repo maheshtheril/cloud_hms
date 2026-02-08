@@ -29,7 +29,7 @@ export async function getAccountLedger(accountId: string, filters?: {
             };
         }
 
-        const lines = await prisma.journal_entry_lines.findMany({
+        const lines = await (prisma.journal_entry_lines.findMany as any)({
             where,
             include: {
                 journal_entries: {
@@ -44,7 +44,7 @@ export async function getAccountLedger(accountId: string, filters?: {
                 accounts: { select: { name: true, code: true } }
             },
             orderBy: {
-                journal_entries: { date: 'desc' }
+                created_at: 'desc' // Changed from journal_entries.date since relations can't be used in orderBy
             },
             take: filters?.limit || 100
         });
