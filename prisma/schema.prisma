@@ -1953,6 +1953,7 @@ model hms_uom_category {
   created_at DateTime  @default(now()) @db.Timestamptz(6)
   hms_uom    hms_uom[]
 
+  @@unique([tenant_id, company_id, name], name: "ux_hms_uom_category_name")
   @@index([company_id], map: "ix_hms_uom_category_company")
 }
 
@@ -1971,6 +1972,7 @@ model hms_uom {
   hms_product_batch hms_product_batch[]
   hms_uom_category  hms_uom_category    @relation(fields: [category_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
+  @@unique([tenant_id, company_id, category_id, name], name: "ux_hms_uom_name")
   @@index([company_id], map: "ix_hms_uom_company")
 }
 

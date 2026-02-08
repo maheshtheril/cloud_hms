@@ -162,6 +162,17 @@ async function sync() {
                 END LOOP;
             END $fix$;
 
+            -- UOM MASTER REPAIR: Ensure unique constraints exist for upserts
+            -- Category
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ux_hms_uom_category_name') THEN
+                ALTER TABLE public.hms_uom_category ADD CONSTRAINT ux_hms_uom_category_name UNIQUE (tenant_id, company_id, name);
+            END IF;
+
+            -- UOM
+            IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ux_hms_uom_name') THEN
+                ALTER TABLE public.hms_uom ADD CONSTRAINT ux_hms_uom_name UNIQUE (tenant_id, company_id, category_id, name);
+            END IF;
+
         EXCEPTION
             WHEN OTHERS THEN
                 RAISE NOTICE 'RCM Repair failed: %', SQLERRM;

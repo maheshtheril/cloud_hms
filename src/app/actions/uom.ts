@@ -7,13 +7,13 @@ export async function internalSeedUOMs(tenantId: string, companyId: string) {
     try {
         // 1. Create or get Categories
         const pharmaCategory = await prisma.hms_uom_category.upsert({
-            where: { tenant_id_company_id_name: { tenant_id: tenantId, company_id: companyId, name: 'Pharmaceutical Packaging' } },
+            where: { ux_hms_uom_category_name: { tenant_id: tenantId, company_id: companyId, name: 'Pharmaceutical Packaging' } },
             update: {},
             create: { tenant_id: tenantId, company_id: companyId, name: 'Pharmaceutical Packaging' }
         });
 
         const serviceCategory = await prisma.hms_uom_category.upsert({
-            where: { tenant_id_company_id_name: { tenant_id: tenantId, company_id: companyId, name: 'Services' } },
+            where: { ux_hms_uom_category_name: { tenant_id: tenantId, company_id: companyId, name: 'Services' } },
             update: {},
             create: { tenant_id: tenantId, company_id: companyId, name: 'Services' }
         });
@@ -37,31 +37,27 @@ export async function internalSeedUOMs(tenantId: string, companyId: string) {
         let skipped = 0
 
         for (const uom of uoms) {
-            const existing = await prisma.hms_uom.findFirst({
+            await prisma.hms_uom.upsert({
                 where: {
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    category_id: uom.categoryId,
-                    name: uom.name
-                }
-            })
-
-            if (!existing) {
-                await prisma.hms_uom.create({
-                    data: {
+                    ux_hms_uom_name: {
                         tenant_id: tenantId,
                         company_id: companyId,
                         category_id: uom.categoryId,
-                        name: uom.name,
-                        uom_type: uom.type,
-                        ratio: uom.ratio,
-                        is_active: true
+                        name: uom.name
                     }
-                })
-                created++
-            } else {
-                skipped++
-            }
+                },
+                update: {},
+                create: {
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    category_id: uom.categoryId,
+                    name: uom.name,
+                    uom_type: uom.type,
+                    ratio: uom.ratio,
+                    is_active: true
+                }
+            })
+            created++
         }
 
         return {
