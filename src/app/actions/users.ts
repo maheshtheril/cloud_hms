@@ -170,9 +170,10 @@ export async function inviteUser(data: InviteUserData) {
                 full_name: data.fullName || data.email.split('@')[0],
                 name: data.email.split('@')[0],
                 role: data.systemRole,
-                mobile: data.mobile,
-                country_id: data.countryId,
-                subdivision_id: data.subdivisionId,
+                // TODO: Add mobile, country_id, subdivision_id when schema is updated
+                // mobile: data.mobile,
+                // country_id: data.countryId,
+                // subdivision_id: data.subdivisionId,
                 is_active: false, // Must set password to activate
                 is_tenant_admin: data.systemRole === 'admin',
                 is_admin: data.systemRole === 'admin',
