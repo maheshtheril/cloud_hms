@@ -12,7 +12,7 @@ export function UOMQuickSetup() {
         setMessage('')
 
         try {
-            const result = await seedPharmacyUOMs()
+            const result = (await seedPharmacyUOMs()) as any
             if (result.success) {
                 setMessage('✅ Default UOMs created successfully!')
             } else {

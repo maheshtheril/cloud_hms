@@ -12,7 +12,7 @@ import { NotificationService } from "@/lib/services/notification";
 export async function getUoms() {
     const session = await auth();
     const companyId = session?.user?.companyId || session?.user?.tenantId;
-    if (!companyId) return { error: "Unauthorized" };
+    if (!companyId) return { success: false, error: "Unauthorized" };
 
     try {
         const uoms = await (prisma as any).hms_uom.findMany({
@@ -21,7 +21,7 @@ export async function getUoms() {
         });
         return { success: true, data: uoms };
     } catch (err: any) {
-        return { error: err.message };
+        return { success: false, error: err.message };
     }
 }
 
