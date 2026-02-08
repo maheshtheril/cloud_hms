@@ -22,8 +22,8 @@ export default async function LedgerPage({ params }: { params: { accountId: stri
         }).format(amount);
     }
 
-    const totalDebit = lines?.reduce((acc: number, curr) => acc + Number(curr.debit), 0) || 0;
-    const totalCredit = lines?.reduce((acc: number, curr) => acc + Number(curr.credit), 0) || 0;
+    const totalDebit = lines?.reduce((acc: number, curr: any) => acc + Number(curr.debit), 0) || 0;
+    const totalCredit = lines?.reduce((acc: number, curr: any) => acc + Number(curr.credit), 0) || 0;
     const netBalance = totalDebit - totalCredit;
 
     return (
