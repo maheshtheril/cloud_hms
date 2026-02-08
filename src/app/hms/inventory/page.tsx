@@ -140,6 +140,12 @@ export default async function InventoryDashboard() {
                                 </div>
                                 <span className="text-sm font-semibold text-gray-700 group-hover:text-blue-700">Product Lookup</span>
                             </Link>
+                            <Link href="/hms/inventory/operations/receive" className="p-4 rounded-xl bg-gray-50 hover:bg-green-50 border border-gray-100 hover:border-green-100 transition-all group text-center flex flex-col items-center gap-3">
+                                <div className="p-3 bg-white rounded-full shadow-sm text-gray-600 group-hover:text-green-600 group-hover:scale-110 transition-all">
+                                    <ArrowRight className="h-5 w-5 rotate-90" />
+                                </div>
+                                <span className="text-sm font-semibold text-gray-700 group-hover:text-green-700">Receive Stock</span>
+                            </Link>
                             <StockAdjustmentButton />
                             {/* Add more quick links */}
                         </div>
