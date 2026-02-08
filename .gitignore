@@ -58,3 +58,6 @@ next-env.d.ts
 !/tsconfig.json
 !/components.json
 !/vercel.json
+
+# Infrastructure
+/infra/certs

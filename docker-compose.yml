@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  # Database Server (Primary)
+  db:
+    image: postgres:15-alpine
+    container_name: hms-db-prod
+    restart: always
+    environment:
+      POSTGRES_DB: hms_prod
+      POSTGRES_USER: hms_admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - hms-db-data:/var/lib/postgresql/data
+      - ./infra/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    command: 
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+      - "-c"
+      - "max_replication_slots=5"
+      - "-c"
+      - "max_wal_senders=5"
+
+  # HMS Application
+  hms:
+    build: .
+    container_name: hms-app-prod
+    restart: always
+    depends_on:
+      - db
+    environment:
+      DATABASE_URL: postgresql://hms_admin:${DB_PASSWORD}@db:5432/hms_prod
+      NEXTAUTH_URL: ${LOCAL_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      # Replication config (Cloud Sync)
+      CLOUD_DATABASE_URL: ${CLOUD_DATABASE_URL}
+    ports:
+      - "3000:3000"
+
+  # Reverse Proxy (Nginx)
+  nginx:
+    image: nginx:alpine
+    container_name: hms-proxy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/certs:/etc/nginx/certs:ro
+    depends_on:
+      - hms
+
+volumes:
+  hms-db-data:
