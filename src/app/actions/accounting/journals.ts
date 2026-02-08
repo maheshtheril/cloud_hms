@@ -8,7 +8,7 @@ export async function getJournalEntries() {
     if (!session?.user?.companyId) return { error: "Unauthorized" };
 
     try {
-        const entries = await prisma.journal_entries.findMany({
+        const entries = await (prisma.journal_entries.findMany as any)({
             where: {
                 company_id: session.user.companyId
             },

@@ -1514,7 +1514,7 @@ export class AccountingService {
         endOfDay.setHours(23, 59, 59, 999);
 
         try {
-            const entries = await prisma.journal_entries.findMany({
+            const entries = await (prisma.journal_entries.findMany as any)({
                 where: {
                     company_id: companyId,
                     date: { gte: startOfDay, lte: endOfDay },
@@ -1569,7 +1569,7 @@ export class AccountingService {
             const openingBalance = obLines.reduce((sum, line) => sum + (Number(line.debit || 0) - Number(line.credit || 0)), 0);
 
             // 3. Fetch entries for the day
-            const entries = await prisma.journal_entries.findMany({
+            const entries = await (prisma.journal_entries.findMany as any)({
                 where: {
                     company_id: companyId,
                     date: { gte: startOfDay, lte: endOfDay },
