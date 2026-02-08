@@ -18,7 +18,7 @@ export default function UOMManagementPage() {
 
     async function loadUOMs() {
         setLoading(true)
-        const result = await getUOMs()
+        const result = (await getUOMs()) as any
         if (result.success && result.data) {
             setUoms(result.data)
         }
@@ -27,7 +27,7 @@ export default function UOMManagementPage() {
 
     async function handleSeed() {
         setSeeding(true)
-        const result = await seedPharmacyUOMs()
+        const result = (await seedPharmacyUOMs()) as any
         if (result.success) {
             toast({ title: 'Success', description: result.message })
             loadUOMs()

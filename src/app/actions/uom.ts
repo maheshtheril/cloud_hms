@@ -73,20 +73,20 @@ export async function internalSeedUOMs(tenantId: string, companyId: string) {
 export async function seedPharmacyUOMs() {
     const session = await auth()
     if (!session?.user?.tenantId || !session?.user?.companyId) {
-        return { error: 'Unauthorized' }
+        return { success: false, error: 'Unauthorized' }
     }
 
     try {
         return await internalSeedUOMs(session.user.tenantId, session.user.companyId)
     } catch (error) {
-        return { error: 'Failed to seed UOMs' }
+        return { success: false, error: 'Failed to seed UOMs' }
     }
 }
 
 export async function getUOMs() {
     const session = await auth()
     if (!session?.user?.tenantId || !session?.user?.companyId) {
-        return { error: 'Unauthorized' }
+        return { success: false, error: 'Unauthorized' }
     }
 
     const uoms = await prisma.hms_uom.findMany({
