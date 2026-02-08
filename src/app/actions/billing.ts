@@ -209,74 +209,80 @@ export async function getBillableItems() {
 
             if (resolvedRateObj) {
                 finalTaxRate = Number(resolvedRateObj.rate);
-            } else {
-                // 3. FALLBACK: If ID is missing, resolve by rate values
-                const fallbackRate = Number(productTaxRule?.tax_rates?.rate) ||
-                    purchaseTaxRate ||
-                    Number(productMetadata.tax_rate) ||
-                    Number(productMetadata.tax?.rate) ||
-                    (!item.is_service ? Number(category?.tax_rates?.rate) : 0) ||
-                    0;
+                if (resolvedRateObj) {
+                    finalTaxRate = Number(resolvedRateObj.rate);
+                } else {
+                    // 3. FALLBACK: If ID was set but not found in company map (Ghost ID), RESET it.
+                    // This is critical for data that might have been imported/restored with broken links.
+                    finalTaxId = null;
 
-                if (fallbackRate > 0) {
-                    finalTaxRate = fallbackRate;
-                    // RE-RESOLVE ID: Find matching ID by rate in company settings
-                    const matchedId = companyTaxRates.find(tr => Math.abs(Number(tr.rate) - fallbackRate) < 0.01)?.id;
-                    if (matchedId) finalTaxId = matchedId;
+                    // Resolve by rate values
+                    const fallbackRate = Number(productTaxRule?.tax_rates?.rate) ||
+                        purchaseTaxRate ||
+                        Number(productMetadata.tax_rate) ||
+                        Number(productMetadata.tax?.rate) ||
+                        (!item.is_service ? Number(category?.tax_rates?.rate) : 0) ||
+                        0;
+
+                    if (fallbackRate > 0) {
+                        finalTaxRate = fallbackRate;
+                        // RE-RESOLVE ID: Find matching ID by rate in company settings
+                        const matchedId = companyTaxRates.find(tr => Math.abs(Number(tr.rate) - fallbackRate) < 0.01)?.id;
+                        if (matchedId) finalTaxId = matchedId;
+                    }
                 }
-            }
 
-            // SERVICE OVERRIDE: Only if NO tax is explicitly found
-            // Previously we forced 0% for all services without a specific rule, which caused issues.
-            // Now we trust the resolution chain (Product Rule > Purchase > Category > Default).
-            if (item.is_service && !finalTaxId && !productTaxRule?.tax_rate_id) {
-                // Keep as is: No tax found, so 0% is correct.
-                // But do NOT clear it if finalTaxId is already set (e.g. from Category)
-            }
+                // SERVICE OVERRIDE: Only if NO tax is explicitly found
+                // Previously we forced 0% for all services without a specific rule, which caused issues.
+                // Now we trust the resolution chain (Product Rule > Purchase > Category > Default).
+                if (item.is_service && !finalTaxId && !productTaxRule?.tax_rate_id) {
+                    // Keep as is: No tax found, so 0% is correct.
+                    // But do NOT clear it if finalTaxId is already set (e.g. from Category)
+                }
 
-            // Extract UOM pricing data from metadata
-            const metadata = item.metadata as any || {};
-            const uomData = metadata.uom_data || {};
-            const pricingStrategy = metadata.pricing_strategy || 'manual';
+                // Extract UOM pricing data from metadata
+                const metadata = item.metadata as any || {};
+                const uomData = metadata.uom_data || {};
+                const pricingStrategy = metadata.pricing_strategy || 'manual';
 
-            // PRIORITY: Strategy-based Choice > Last Sale Price > History > Base Price
-            let finalPrice = priceHistory?.price?.toNumber() || Number(item.price) || 0;
+                // PRIORITY: Strategy-based Choice > Last Sale Price > History > Base Price
+                let finalPrice = priceHistory?.price?.toNumber() || Number(item.price) || 0;
 
-            if (pricingStrategy === 'mrp' && metadata.last_mrp) {
-                finalPrice = Number(metadata.last_mrp);
-            } else if (metadata.last_sale_price) {
-                // This covers 'manual' and 'mrp_discount' (where the intended bill price is the discounted one)
-                finalPrice = Number(metadata.last_sale_price);
-            } else if (metadata.last_mrp) {
-                finalPrice = Number(metadata.last_mrp);
-            }
+                if (pricingStrategy === 'mrp' && metadata.last_mrp) {
+                    finalPrice = Number(metadata.last_mrp);
+                } else if (metadata.last_sale_price) {
+                    // This covers 'manual' and 'mrp_discount' (where the intended bill price is the discounted one)
+                    finalPrice = Number(metadata.last_sale_price);
+                } else if (metadata.last_mrp) {
+                    finalPrice = Number(metadata.last_mrp);
+                }
 
-            return {
-                id: item.id,
-                sku: item.sku || '',
-                label: item.name, // UI friendly
-                description: item.description || '',
-                uom: item.uom || 'Unit',
-                price: finalPrice,
-                type: item.is_service ? 'service' : 'item',
-                metadata: {
-                    ...metadata,
-                    // UOM Pricing (Industry Standard)
-                    baseUom: uomData.base_uom || item.uom || 'PCS',
-                    basePrice: finalPrice,
-                    conversionFactor: uomData.conversion_factor || 1,
-                    packUom: uomData.pack_uom || (uomData.conversion_factor > 1 ? `PACK-${uomData.conversion_factor}` : (item.uom || 'PCS')),
-                    packPrice: uomData.pack_price || (finalPrice * (uomData.conversion_factor || 1)),
-                    packSize: uomData.pack_size || uomData.conversion_factor || 1,
-                    lastMrp: metadata.last_mrp,
-                    lastSalePrice: metadata.last_sale_price,
-                    pricingStrategy: pricingStrategy
-                },
-                // Extract tax for auto-suggest (prioritize rule > purchase > category)
-                categoryTaxId: finalTaxId,
-                categoryTaxRate: finalTaxRate
-            };
-        });
+                return {
+                    id: item.id,
+                    sku: item.sku || '',
+                    label: item.name, // UI friendly
+                    description: item.description || '',
+                    uom: item.uom || 'Unit',
+                    price: finalPrice,
+                    type: item.is_service ? 'service' : 'item',
+                    metadata: {
+                        ...metadata,
+                        // UOM Pricing (Industry Standard)
+                        baseUom: uomData.base_uom || item.uom || 'PCS',
+                        basePrice: finalPrice,
+                        conversionFactor: uomData.conversion_factor || 1,
+                        packUom: uomData.pack_uom || (uomData.conversion_factor > 1 ? `PACK-${uomData.conversion_factor}` : (item.uom || 'PCS')),
+                        packPrice: uomData.pack_price || (finalPrice * (uomData.conversion_factor || 1)),
+                        packSize: uomData.pack_size || uomData.conversion_factor || 1,
+                        lastMrp: metadata.last_mrp,
+                        lastSalePrice: metadata.last_sale_price,
+                        pricingStrategy: pricingStrategy
+                    },
+                    // Extract tax for auto-suggest (prioritize rule > purchase > category)
+                    categoryTaxId: finalTaxId,
+                    categoryTaxRate: finalTaxRate
+                };
+            });
 
         return { success: true, data: flatItems };
     } catch (error) {
