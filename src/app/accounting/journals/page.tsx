@@ -68,11 +68,11 @@ export default async function JournalsPage() {
                                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mt-1">
                                     {entry.ref || "Journal Entry"}
                                 </h3>
-                                {entry.hms_invoice && (
+                                {(entry as any).hms_invoice && (
                                     <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
                                         <FileText className="h-3 w-3" />
-                                        Invoice: {entry.hms_invoice.invoice_number}
-                                        {entry.hms_invoice.hms_patient && ` • ${entry.hms_invoice.hms_patient.first_name} ${entry.hms_invoice.hms_patient.last_name}`}
+                                        Invoice: {(entry as any).hms_invoice.invoice_number}
+                                        {(entry as any).hms_invoice.hms_patient && ` • ${(entry as any).hms_invoice.hms_patient.first_name} ${(entry as any).hms_invoice.hms_patient.last_name}`}
                                     </div>
                                 )}
                             </div>
