@@ -69,7 +69,7 @@ export async function searchSuppliers(query: string): Promise<SearchOption[]> {
             const meta = s.metadata as any;
             return {
                 id: s.id,
-                label: s.name,
+                label: s.name || 'Unnamed Supplier',
                 subLabel: meta?.gstin || meta?.email || undefined
             };
         });
