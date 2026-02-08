@@ -11,7 +11,7 @@ export async function lockAccountingPeriod(dateStr: string | null) {
     try {
         const lockDate = dateStr ? new Date(dateStr) : null;
 
-        await prisma.company_accounting_settings.upsert({
+        await (prisma.company_accounting_settings.upsert as any)({
             where: { company_id: session.user.companyId },
             create: {
                 tenant_id: session.user.tenantId!,
@@ -78,7 +78,7 @@ export async function updateAccountingSettings(data: any) {
         } = data;
 
         // Upsert settings for this company
-        await prisma.company_accounting_settings.upsert({
+        await (prisma.company_accounting_settings.upsert as any)({
             where: { company_id: session.user.companyId },
             create: {
                 tenant_id: session.user.tenantId!,
