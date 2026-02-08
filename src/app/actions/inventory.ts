@@ -21,21 +21,16 @@ export async function getInventoryDashboardStats() {
             where: { company_id: companyId, is_active: true }
         });
 
-        // 2. Low Stock Alerts (Using product-specific reorder_level)
+        // 2. Low Stock Alerts (Using default threshold of 10)
         const lowStockItems = await prisma.hms_stock_levels.findMany({
             where: {
                 company_id: companyId,
-            },
-            include: {
-                hms_product: {
-                    select: { reorder_level: true }
-                }
             }
         });
 
         const lowStockCount = lowStockItems.filter(item => {
             const qty = Number(item.quantity || 0);
-            const threshold = Number(item.hms_product?.reorder_level || 0);
+            const threshold = 10; // Default threshold
             return qty < threshold;
         }).length;
 
