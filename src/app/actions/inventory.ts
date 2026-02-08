@@ -1029,7 +1029,7 @@ export async function getProduct(id: string) {
         return {
             ...product,
             price: Number(product.price || 0),
-            mrp: Number(product.price || 0),
+            mrp: Number(metadata.mrp || product.price || 0),
             hsn: (metadata.hsn as string) || '',
             packing: (metadata.packing as string) || '',
             brand: metadata.brand || '',
@@ -1038,7 +1038,7 @@ export async function getProduct(id: string) {
             taxRateId: product.product_tax_rules[0]?.tax_rate_id || '',
             taxRate: Number(product.product_tax_rules[0]?.tax_rates?.rate || 0),
             imageUrl: product.hms_product_image[0]?.url || '',
-            default_cost: Number(product.default_cost || 0),
+            default_cost: Number(metadata.cost_price || product.default_cost || 0),
             categoryId: product.hms_product_category_rel[0]?.category_id || '',
             manufacturerId: product.manufacturer_id || '',
             stock_levels: product.hms_stock_levels
@@ -1063,7 +1063,7 @@ export async function updateProduct(formData: FormData) {
 
     const brand = formData.get("brand") as string;
     const barcode = formData.get("barcode") as string;
-    const uom = formData.get("uom") as string || 'each';
+    const uomId = formData.get("uomId") as string;
     const supplierId = formData.get("supplierId") as string;
     const taxRateId = formData.get("taxRateId") as string;
     const categoryId = formData.get("categoryId") as string;
@@ -1104,7 +1104,7 @@ export async function updateProduct(formData: FormData) {
                 sku,
                 price,
                 description,
-                uom,
+                uom_id: uomId || null,
                 manufacturer_id: manufacturerId || null,
                 default_barcode: barcode || null,
                 metadata,
