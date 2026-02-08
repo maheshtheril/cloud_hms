@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
     try {
         const company = await prisma.company.findFirst();
@@ -20,14 +22,14 @@ export async function GET() {
 
         // 2. Create Rates
         const rates = [
-            { name: 'GST 0%', rate: 0.0 },
-            { name: 'GST 5%', rate: 5.0 },
-            { name: 'GST 12%', rate: 12.0 },
-            { name: 'GST 18%', rate: 18.0 },
-            { name: 'GST 28%', rate: 28.0 }
+            { name: 'IGST 0%', rate: 0.0 },
+            { name: 'IGST 5%', rate: 5.0 },
+            { name: 'IGST 12%', rate: 12.0 },
+            { name: 'IGST 18%', rate: 18.0 },
+            { name: 'IGST 28%', rate: 28.0 }
         ];
 
-        const results = [];
+        const results: string[] = [];
 
         for (const r of rates) {
             let taxRate = await prisma.tax_rates.findFirst({
@@ -47,7 +49,12 @@ export async function GET() {
 
             if (!exists) {
                 await prisma.company_tax_maps.create({
-                    data: { tenant_id: tenantId, company_id: companyId, tax_rate_id: taxRate.id, is_default: r.rate === 0 }
+                    data: {
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        tax_rate_id: taxRate.id,
+                        is_default: r.rate === 0
+                    }
                 });
                 results.push(`Linked ${r.name}`);
             } else {
@@ -56,7 +63,7 @@ export async function GET() {
         }
 
         return NextResponse.json({ success: true, fixed: results });
-    } catch (e) {
-        return NextResponse.json({ error: e.message }, { status: 500 });
+    } catch (e: any) {
+        return NextResponse.json({ error: e.message || 'Unknown error' }, { status: 500 });
     }
 }
