@@ -426,9 +426,9 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     }))
   }
 
-  const handleSave = async (status: any) => {
+  const handleSave = async (status: any, paymentsOverride?: Payment[]) => {
     if (loading) return
-    const finalPayments = payments.filter(p => p.amount > 0)
+    const finalPayments = paymentsOverride || payments.filter(p => p.amount > 0)
 
     // Auto-paid if fully settled
     const effectiveStatus = (status === 'paid' && totalPaid < grandTotal) ? 'posted' : status;
@@ -1294,23 +1294,14 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                       e.preventDefault();
                       e.stopPropagation();
 
-                      // Safety: Check if there's an un-ledgered amount in the input box
                       const floatingAmt = parseFloat(activePaymentAmount) || 0;
-                      if (floatingAmt > 0) {
-                        return toast({
-                          title: "Unapplied Amount Detected",
-                          description: `You have ${currency}${floatingAmt} typed in the amount box that hasn't been ledgered. Please click a payment method (Cash/Card/etc) to apply it, or clear the box before finalizing.`,
-                          variant: "destructive"
-                        });
-                      }
 
-                      // World Class Confirmation Node
-                      if (isSurplus) {
-                        const confirmed = window.confirm(`AUDIT ALERT: Surplus of ${currency}${(totalPaid - settlementTarget).toFixed(2)} detected. This will be recorded as an ADVANCE deposit in the patient's internal wallet. Proceed with Ledger Entry?`);
-                        if (!confirmed) return;
-                      } else if (isDeficit && totalPaid > 0) {
-                        const confirmed = window.confirm(`AUDIT ALERT: Partial payment detected. ${currency}${(settlementTarget - totalPaid).toFixed(2)} will be carried forward as OUTSTANDING DEBT. Proceed?`);
-                        if (!confirmed) return;
+                      // World Class Auto-Apply: If only one payment node is expected and amount is typed but not applied
+                      if (floatingAmt > 0 && payments.length === 0) {
+                        const autoPayments: Payment[] = [{ method: 'cash', amount: floatingAmt }];
+                        setPayments(autoPayments);
+                        handleSave('paid', autoPayments);
+                        return;
                       }
 
                       handleSave('paid');

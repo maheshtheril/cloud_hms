@@ -1407,6 +1407,155 @@ export async function generateRegistrationInvoice(patientId: string) {
     }
 }
 
+export async function getInitialInvoiceData(appointmentId: string) {
+    const session = await auth();
+    if (!session?.user?.tenantId) return { error: "Unauthorized" };
+    const tenantId = session.user.tenantId;
+
+    try {
+        const appointment = await prisma.hms_appointments.findUnique({
+            where: { id: appointmentId },
+            include: {
+                hms_clinician: true,
+                hms_patient: true
+            }
+        });
+
+        if (!appointment) return { error: "Appointment not found" };
+
+        let initialItems: any[] = [];
+        let initialInvoice = null;
+
+        // 0. Check for EXISTING DRAFT INVOICE
+        const draftInvoice = await prisma.hms_invoice.findFirst({
+            where: {
+                appointment_id: appointmentId,
+                status: 'draft' as any
+            },
+            include: {
+                hms_invoice_lines: {
+                    include: { hms_product: true }
+                },
+                hms_patient: true
+            }
+        });
+
+        if (draftInvoice) {
+            initialInvoice = draftInvoice;
+        }
+
+        // 1. Add Consultation Fee
+        const consultationFee = Number(appointment.hms_clinician?.consultation_fee) || 0;
+        if (consultationFee > 0) {
+            const hasConsultation = draftInvoice?.hms_invoice_lines.some(l => l.description?.includes('Consultation Fee'));
+            if (!hasConsultation) {
+                initialItems.push({
+                    id: appointment.clinician_id,
+                    name: `Consultation Fee - Dr. ${appointment.hms_clinician?.first_name} ${appointment.hms_clinician?.last_name}`,
+                    price: consultationFee,
+                    quantity: 1,
+                    type: 'service'
+                });
+            }
+        }
+
+        // 2. Add Registration Fee
+        const registrationPaid = (appointment.hms_patient?.metadata as any)?.registration_fees_paid;
+        if (!registrationPaid) {
+            const hasRegFee = draftInvoice?.hms_invoice_lines.some(l => l.description === 'Registration Fee') || initialItems.some((i: any) => i.name === 'Registration Fee');
+            if (!hasRegFee) {
+                const regFeeRecord = await prisma.hms_patient_registration_fees.findFirst({
+                    where: { tenant_id: tenantId, is_active: true }
+                });
+                if (regFeeRecord) {
+                    initialItems.push({
+                        id: 'reg-fee',
+                        name: 'Registration Fee',
+                        price: Number(regFeeRecord.fee_amount),
+                        quantity: 1,
+                        type: 'service'
+                    });
+                }
+            }
+        }
+
+        // 3. Nurse Consumables
+        const stockMoves = await prisma.hms_stock_move.findMany({
+            where: { source_reference: appointmentId, source: 'Nursing Consumption' }
+        });
+
+        for (const move of stockMoves) {
+            const alreadyInDraft = draftInvoice?.hms_invoice_lines.some(l => l.product_id === move.product_id);
+            if (!alreadyInDraft) {
+                const product = await prisma.hms_product.findUnique({ where: { id: move.product_id } });
+                if (product) {
+                    initialItems.push({
+                        id: move.product_id,
+                        name: `(Nurse) ${product.name}`,
+                        price: Number(product.price) || 0,
+                        quantity: Number(move.qty),
+                        type: 'item'
+                    });
+                }
+            }
+        }
+
+        // 4. Prescriptions
+        const doctorPrescription: any = await (prisma as any).prescription.findFirst({
+            where: { appointment_id: appointmentId },
+            include: {
+                prescription_items: {
+                    include: {
+                        hms_product: {
+                            include: {
+                                hms_product_price_history: {
+                                    orderBy: { valid_from: 'desc' },
+                                    take: 1
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (doctorPrescription) {
+            doctorPrescription.prescription_items.forEach((item: any) => {
+                const alreadyInDraft = draftInvoice?.hms_invoice_lines.some(l => l.product_id === item.medicine_id);
+                if (!alreadyInDraft && item.hms_product) {
+                    const days = Number(item.days || 1);
+                    const dailyQty = Number(item.morning || 0) + Number(item.afternoon || 0) + Number(item.evening || 0) + Number(item.night || 0);
+                    const totalQty = (dailyQty > 0 ? dailyQty : 1) * days;
+                    const price = item.hms_product.hms_product_price_history?.[0]?.price ? Number(item.hms_product.hms_product_price_history[0].price) : (Number(item.hms_product.price) || 0);
+
+                    if (totalQty > 0) {
+                        initialItems.push({
+                            id: item.medicine_id,
+                            name: item.hms_product.name,
+                            price: price,
+                            quantity: totalQty,
+                            type: 'item'
+                        });
+                    }
+                }
+            });
+        }
+
+        return {
+            success: true,
+            data: {
+                initialItems,
+                initialInvoice,
+                patientId: appointment.patient_id
+            }
+        };
+
+    } catch (error: any) {
+        console.error("getInitialInvoiceData error:", error);
+        return { error: error.message };
+    }
+}
+
 // Helper to JIT Create/Resolve Tax Rates
 async function resolveAutoTax(rate: number, tenant_id: string, company_id: string): Promise<string | null> {
     if ((!rate && rate !== 0)) return null;

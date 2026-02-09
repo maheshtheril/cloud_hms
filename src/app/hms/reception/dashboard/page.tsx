@@ -3,6 +3,7 @@ import { auth } from "@/auth"
 import { ReceptionActionCenter } from "@/components/hms/reception/reception-action-center"
 import { redirect } from "next/navigation"
 import { getBranches } from "@/app/actions/company"
+import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/billing"
 
 export const dynamic = 'force-dynamic'
 
@@ -42,7 +43,11 @@ export default async function ReceptionDashboardPage() {
         todayExpensesList,
         draftCountVal,
         availableBedsCount,
-        activeAdmissions
+        activeAdmissions,
+        itemsRes,
+        taxRes,
+        uomsRes,
+        companySettings
     ] = await Promise.all([
         prisma.hms_appointments.findMany({
             where: {
@@ -118,8 +123,20 @@ export default async function ReceptionDashboardPage() {
         prisma.hms_admission.findMany({
             where: { tenant_id: tenantId, status: 'admitted' },
             select: { patient_id: true, ward: true, bed: true }
+        }),
+        getBillableItems(),
+        getTaxConfiguration(),
+        getUoms(),
+        prisma.company_settings.findUnique({
+            where: { company_id: companyId },
+            include: { currencies: true }
         })
     ]);
+
+    const billableItems = itemsRes.success ? itemsRes.data : [];
+    const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
+    const uoms = (uomsRes as any).success ? (uomsRes as any).data : [];
+    const currency = companySettings?.currencies?.symbol || '₹';
 
 
     // Fetch Vitals & Tags
@@ -202,6 +219,10 @@ export default async function ReceptionDashboardPage() {
                 availableBeds={availableBedsCount}
                 branches={branches || []}
                 isAdmin={isAdmin}
+                billableItems={billableItems}
+                taxConfig={taxConfig}
+                uoms={uoms}
+                currency={currency}
             />
         </div>
     )

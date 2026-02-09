@@ -23,6 +23,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { updateAppointmentStatus } from "@/app/actions/appointment"
+import { getInitialInvoiceData } from "@/app/actions/billing"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -32,6 +33,7 @@ import { MessageSquare } from "lucide-react"
 import { AdmissionDialog } from "@/components/hms/patients/admission-dialog"
 import { OpSlipDialog } from "./op-slip-dialog"
 import { WardManager } from "@/components/wards/ward-manager"
+import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 
 interface ReceptionActionCenterProps {
     todayAppointments: any[]
@@ -46,6 +48,10 @@ interface ReceptionActionCenterProps {
     availableBeds?: number
     branches?: any[]
     isAdmin?: boolean
+    billableItems?: any[]
+    taxConfig?: any
+    uoms?: any[]
+    currency?: string
 }
 
 export function ReceptionActionCenter({
@@ -60,7 +66,11 @@ export function ReceptionActionCenter({
     draftCount = 0,
     availableBeds = 0,
     branches = [],
-    isAdmin = false
+    isAdmin = false,
+    billableItems = [],
+    taxConfig = { defaultTax: null, taxRates: [] },
+    uoms = [],
+    currency = '₹'
 }: ReceptionActionCenterProps) {
     const router = useRouter()
     const { toast } = useToast()
@@ -75,6 +85,27 @@ export function ReceptionActionCenter({
     const [patientSearchQuery, setPatientSearchQuery] = useState("")
     const [statusLoading, setStatusLoading] = useState<string | null>(null)
     const [viewingPayment, setViewingPayment] = useState<any>(null)
+    const [selectedAptForBilling, setSelectedAptForBilling] = useState<any>(null)
+    const [billingData, setBillingData] = useState<any>(null)
+    const [isBillingLoading, setIsBillingLoading] = useState(false)
+
+    // Unified Billing Loader
+    useEffect(() => {
+        if (selectedAptForBilling) {
+            setIsBillingLoading(true)
+            getInitialInvoiceData(selectedAptForBilling.id).then(res => {
+                if (res.success) {
+                    setBillingData(res.data)
+                } else {
+                    toast({ title: "Quick Bill Failed", description: res.error, variant: "destructive" })
+                    setSelectedAptForBilling(null)
+                }
+                setIsBillingLoading(false)
+            })
+        } else {
+            setBillingData(null)
+        }
+    }, [selectedAptForBilling, toast])
 
     // Update time every minute for aging timers
     useEffect(() => {
@@ -539,7 +570,7 @@ export function ReceptionActionCenter({
                                                 currentTime={currentTime}
                                                 router={router}
                                                 handleStatusUpdate={handleStatusUpdate}
-                                                onAction={() => router.push(`/hms/billing/new?patientId=${apt.patient_id}&appointmentId=${apt.id}`)}
+                                                onAction={() => setSelectedAptForBilling(apt)}
                                                 onEdit={() => handleEditClick(apt)}
                                             />
                                         ))}
@@ -672,7 +703,7 @@ export function ReceptionActionCenter({
                                                                 {((apt.status === 'completed' || apt.hasPrescription) && apt.invoiceStatus !== 'paid') && (
                                                                     <Button
                                                                         size="sm"
-                                                                        onClick={() => router.push(`/hms/billing/new?appointmentId=${apt.id}&patientId=${apt.patient.id}`)}
+                                                                        onClick={() => setSelectedAptForBilling(apt)}
                                                                         className="bg-emerald-600 hover:bg-emerald-700 text-white font-black h-8 px-4 text-[10px] rounded-lg shadow-lg flex items-center gap-1"
                                                                     >
                                                                         <CreditCard className="h-3 w-3" />
@@ -762,7 +793,10 @@ export function ReceptionActionCenter({
                                                 size="sm"
                                                 variant="ghost"
                                                 className="h-7 px-2 text-[9px] font-black bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 border border-orange-100 uppercase tracking-tighter"
-                                                onClick={() => router.push(`/hms/billing/new?patientId=${p.id}&appointmentId=${todayAppointments.find(a => a.patient_id === p.id && a.status === 'completed' && a.invoiceStatus !== 'paid').id}`)}
+                                                onClick={() => {
+                                                    const apt = todayAppointments.find(a => a.patient_id === p.id && a.status === 'completed' && a.invoiceStatus !== 'paid');
+                                                    setSelectedAptForBilling(apt);
+                                                }}
                                             >
                                                 <CreditCard className="h-3 w-3 mr-1" />
                                                 Bill Pending
@@ -842,6 +876,38 @@ export function ReceptionActionCenter({
                     <div className="h-full overflow-y-auto custom-scrollbar">
                         <WardManager branches={branches} isAdmin={isAdmin} />
                     </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={!!selectedAptForBilling} onOpenChange={(open) => !open && setSelectedAptForBilling(null)}>
+                <DialogContent className="max-w-[98vw] w-full h-[95vh] p-0 overflow-hidden bg-white dark:bg-slate-900 border-none shadow-2xl rounded-[2.5rem]">
+                    {(selectedAptForBilling && (isBillingLoading || billingData)) && (
+                        <div className="h-full relative">
+                            {isBillingLoading ? (
+                                <div className="h-full flex flex-col items-center justify-center bg-white/80 backdrop-blur-md z-50">
+                                    <div className="h-20 w-20 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4" />
+                                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Preparing Billing Terminal...</h3>
+                                    <p className="text-slate-500 font-medium italic">Enriching clinical data and resolving taxes</p>
+                                </div>
+                            ) : (
+                                <CompactInvoiceEditor
+                                    patients={patients}
+                                    billableItems={billableItems}
+                                    uoms={uoms}
+                                    taxConfig={taxConfig}
+                                    initialPatientId={billingData?.patientId || selectedAptForBilling.patient_id}
+                                    initialMedicines={billingData?.initialItems}
+                                    initialInvoice={billingData?.initialInvoice}
+                                    appointmentId={selectedAptForBilling.id}
+                                    currency={currency}
+                                    onClose={() => {
+                                        setSelectedAptForBilling(null);
+                                        router.refresh();
+                                    }}
+                                />
+                            )}
+                        </div>
+                    )}
                 </DialogContent>
             </Dialog>
         </div >
