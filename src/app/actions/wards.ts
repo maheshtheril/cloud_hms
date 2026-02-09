@@ -43,6 +43,7 @@ export async function getWards(branchId?: string) {
             const admission = activeAdmissions.find(a => (a.metadata as any)?.bed_id === bed.id)
             return {
                 ...bed,
+                admissionId: admission?.id || null,
                 patient: admission?.hms_patient ? `${admission.hms_patient.first_name} ${admission.hms_patient.last_name}` : null
             }
         })
@@ -139,6 +140,59 @@ export async function assignBedToPatient(admissionId: string, bedId: string) {
             prisma.hms_bed.update({
                 where: { id: bedId },
                 data: { status: 'occupied' }
+            })
+        ])
+
+        revalidatePath('/hms/wards')
+        return { success: true }
+    } catch (e: any) {
+        return { success: false, error: e.message }
+    }
+}
+
+export async function transferBed(admissionId: string, newBedId: string) {
+    const session = await auth()
+    if (!session?.user?.tenantId) return { success: false, error: "Unauthorized" }
+
+    try {
+        const admission = await prisma.hms_admission.findUnique({
+            where: { id: admissionId }
+        })
+        if (!admission) throw new Error("Admission record not found")
+
+        const oldBedId = (admission.metadata as any)?.bed_id
+        const newBed = await prisma.hms_bed.findUnique({
+            where: { id: newBedId },
+            include: { hms_ward: true }
+        })
+
+        if (!newBed) throw new Error("Target bed not found")
+        if (newBed.status !== 'available') throw new Error("Target bed is already occupied")
+
+        await prisma.$transaction([
+            // 1. Vacate old bed
+            ...(oldBedId ? [prisma.hms_bed.update({
+                where: { id: oldBedId },
+                data: { status: 'available' }
+            })] : []),
+            // 2. Populate new bed
+            prisma.hms_bed.update({
+                where: { id: newBedId },
+                data: { status: 'occupied' }
+            }),
+            // 3. Update admission
+            prisma.hms_admission.update({
+                where: { id: admissionId },
+                data: {
+                    ward: newBed.hms_ward.name,
+                    bed: newBed.bed_no,
+                    metadata: {
+                        bed_id: newBedId,
+                        ward_id: newBed.ward_id,
+                        transferred_at: new Date(),
+                        previous_bed_id: oldBedId
+                    }
+                }
             })
         ])
 

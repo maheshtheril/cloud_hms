@@ -18,7 +18,7 @@ import {
     DropdownMenu, DropdownMenuContent,
     DropdownMenuItem, DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu"
-import { getWards, createWard, createBed, getActiveAdmissions, assignBedToPatient, releaseBed } from "@/app/actions/wards"
+import { getWards, createWard, createBed, getActiveAdmissions, assignBedToPatient, releaseBed, transferBed } from "@/app/actions/wards"
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from "sonner"
 
@@ -36,6 +36,11 @@ export function WardManager({ branches, isAdmin }: { branches: any[], isAdmin?: 
     const [isCreateBedOpen, setIsCreateBedOpen] = useState(false)
     const [targetWardId, setTargetWardId] = useState('')
     const [bedNo, setBedNo] = useState('')
+
+    // For Transfer
+    const [transferMode, setTransferMode] = useState(false)
+    const [sourceAdmissionId, setSourceAdmissionId] = useState('')
+    const [sourcePatientName, setSourcePatientName] = useState('')
 
     useEffect(() => {
         loadWards()
@@ -104,11 +109,44 @@ export function WardManager({ branches, isAdmin }: { branches: any[], isAdmin?: 
         }
     }
 
-    async function handleRelease(bedId: string, patientName?: string) {
+    async function handleRelease(bedId: string, patientName?: string, admissionId?: string) {
+        if (transferMode) {
+            setTransferMode(false)
+            setSourceAdmissionId('')
+            return
+        }
+
         if (!confirm(`Are you sure you want to release this bed? ${patientName ? `(Currently occupied by ${patientName})` : ''}`)) return
         const res = await releaseBed(bedId)
         if (res.success) {
             toast.success("Bed released and patient discharged")
+            loadWards()
+        } else {
+            toast.error(res.error)
+        }
+    }
+
+    async function startTransfer(bed: any) {
+        // We need the admission ID. getWards should ideally return it.
+        // Let's check how we get it. 
+        // I need to update getWards action to include admissionId in the enriched beds.
+        if (!bed.admissionId) {
+            toast.error("Admission data missing for this bed")
+            return
+        }
+        setTransferMode(true)
+        setSourceAdmissionId(bed.admissionId)
+        setSourcePatientName(bed.patient)
+        toast.info(`Transfer Mode: Select a vacant bed for ${bed.patient}`)
+    }
+
+    async function executeTransfer(targetBedId: string) {
+        const res = await transferBed(sourceAdmissionId, targetBedId)
+        if (res.success) {
+            toast.success(`${sourcePatientName} has been transferred`)
+            setTransferMode(false)
+            setSourceAdmissionId('')
+            setSourcePatientName('')
             loadWards()
         } else {
             toast.error(res.error)
@@ -132,6 +170,15 @@ export function WardManager({ branches, isAdmin }: { branches: any[], isAdmin?: 
                 </div>
 
                 <div className="flex flex-wrap items-center gap-4">
+                    {transferMode && (
+                        <Button
+                            variant="destructive"
+                            onClick={() => { setTransferMode(false); setSourceAdmissionId(''); }}
+                            className="h-12 px-6 rounded-xl font-bold animate-pulse"
+                        >
+                            Cancel Transfer ({sourcePatientName})
+                        </Button>
+                    )}
                     <select
                         value={selectedBranch}
                         onChange={(e) => setSelectedBranch(e.target.value)}
@@ -209,9 +256,17 @@ export function WardManager({ branches, isAdmin }: { branches: any[], isAdmin?: 
                                         {ward.hms_bed.map((bed: any) => (
                                             <div
                                                 key={bed.id}
-                                                onClick={() => bed.status === 'available' ? openAssignDialog(bed) : handleRelease(bed.id, bed.patient)}
+                                                onClick={() => {
+                                                    if (transferMode) {
+                                                        if (bed.status === 'available') executeTransfer(bed.id)
+                                                        else toast.error("Cannot transfer to an occupied bed")
+                                                    } else {
+                                                        bed.status === 'available' ? openAssignDialog(bed) : handleRelease(bed.id, bed.patient, bed.admissionId)
+                                                    }
+                                                }}
                                                 className={`
-                                                    relative h-20 rounded-2xl cursor-pointer transition-all flex flex-col items-center justify-center border-2 border-transparent group/bed
+                                                    relative h-20 rounded-2xl cursor-pointer transition-all flex flex-col items-center justify-center border-2 transition-all
+                                                    ${transferMode && bed.status === 'available' ? 'border-dashed border-emerald-500 bg-emerald-50/50 animate-pulse' : 'border-transparent'}
                                                     ${bed.status === 'available'
                                                         ? 'bg-slate-50 dark:bg-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800'
                                                         : 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-100 dark:border-indigo-800 shadow-sm'}
@@ -222,11 +277,22 @@ export function WardManager({ branches, isAdmin }: { branches: any[], isAdmin?: 
                                                 <span className={`text-[11px] font-black ${bed.status === 'available' ? 'text-slate-500' : 'text-indigo-900 dark:text-indigo-200'}`}>
                                                     {bed.bed_no}
                                                 </span>
-                                                {bed.status === 'occupied' && (
-                                                    <div className="absolute inset-0 bg-indigo-600/90 rounded-2xl flex items-center justify-center opacity-0 group-hover/bed:opacity-100 transition-opacity p-2 text-center pointer-events-none">
-                                                        <p className="text-[9px] font-black text-white leading-tight uppercase tracking-tighter">
-                                                            Release<br />{bed.patient}
-                                                        </p>
+                                                {bed.status === 'occupied' && !transferMode && (
+                                                    <div className="absolute inset-0 bg-indigo-600/90 rounded-2xl flex items-center justify-center opacity-0 group-hover/bed:opacity-100 transition-opacity p-2 text-center pointer-events-none group">
+                                                        <div className="flex flex-col gap-1 pointer-events-auto">
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); startTransfer(bed); }}
+                                                                className="text-[9px] font-black text-white leading-tight uppercase bg-white/20 hover:bg-white/40 p-1 px-2 rounded-md transition-colors"
+                                                            >
+                                                                Transfer
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); handleRelease(bed.id, bed.patient, bed.admissionId); }}
+                                                                className="text-[9px] font-black text-white leading-tight uppercase bg-rose-500/50 hover:bg-rose-500 p-1 px-2 rounded-md transition-colors"
+                                                            >
+                                                                Release
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
