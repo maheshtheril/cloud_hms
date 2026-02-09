@@ -31,6 +31,7 @@ import { VisitTypeBadge } from "../visit-type-badge"
 import { MessageSquare } from "lucide-react"
 import { AdmissionDialog } from "@/components/hms/patients/admission-dialog"
 import { OpSlipDialog } from "./op-slip-dialog"
+import { WardManager } from "@/components/wards/ward-manager"
 
 interface ReceptionActionCenterProps {
     todayAppointments: any[]
@@ -43,6 +44,8 @@ interface ReceptionActionCenterProps {
     totalExpenses?: number
     draftCount?: number
     availableBeds?: number
+    branches?: any[]
+    isAdmin?: boolean
 }
 
 export function ReceptionActionCenter({
@@ -55,7 +58,9 @@ export function ReceptionActionCenter({
     todayExpenses = [],
     totalExpenses = 0,
     draftCount = 0,
-    availableBeds = 0
+    availableBeds = 0,
+    branches = [],
+    isAdmin = false
 }: ReceptionActionCenterProps) {
     const router = useRouter()
     const { toast } = useToast()
@@ -114,7 +119,7 @@ export function ReceptionActionCenter({
             // Ctrl+Shift+B - Bed Management
             if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'B') {
                 e.preventDefault()
-                router.push('/hms/wards')
+                setActiveModal('beds')
                 toast({
                     title: "Opening Bed Management",
                     description: "Shortcut: Ctrl+Shift+B",
@@ -151,7 +156,7 @@ export function ReceptionActionCenter({
             return
         }
         if (actionId === 'beds') {
-            router.push('/hms/wards')
+            setActiveModal('beds')
             return
         }
         if (actionId === 'appointment') {
@@ -261,7 +266,7 @@ export function ReceptionActionCenter({
                         </div>
                     </Card>
                 </Link>
-                <Link href="/hms/wards" className="block cursor-pointer">
+                <div onClick={() => setActiveModal('beds')} className="block cursor-pointer">
                     <Card className="p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800 shadow-sm flex items-center justify-between group hover:shadow-md transition-all hover:ring-2 hover:ring-indigo-500/20">
                         <div className="space-y-1">
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Beds Vacant</p>
@@ -271,7 +276,7 @@ export function ReceptionActionCenter({
                             <BedIcon className="h-5 w-5 text-indigo-500" />
                         </div>
                     </Card>
-                </Link>
+                </div>
                 <Link href="/hms/billing?status=pending" className="block cursor-pointer">
                     <Card className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800 shadow-sm flex items-center justify-between group hover:shadow-md transition-all hover:ring-2 hover:ring-emerald-500/20">
                         <div className="space-y-1">
@@ -829,6 +834,14 @@ export function ReceptionActionCenter({
             <Dialog open={!!viewingPayment} onOpenChange={() => setViewingPayment(null)}>
                 <DialogContent className="max-w-[850px] p-0 overflow-hidden bg-white">
                     {viewingPayment && <PettyCashVoucher payment={viewingPayment} onClose={() => setViewingPayment(null)} />}
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={activeModal === 'beds'} onOpenChange={(open) => !open && setActiveModal(null)}>
+                <DialogContent className="max-w-[95vw] w-[1400px] h-[90vh] p-0 overflow-hidden bg-slate-50 dark:bg-slate-950 rounded-[3rem] border-none shadow-2xl">
+                    <div className="h-full overflow-y-auto custom-scrollbar">
+                        <WardManager branches={branches} isAdmin={isAdmin} />
+                    </div>
                 </DialogContent>
             </Dialog>
         </div >

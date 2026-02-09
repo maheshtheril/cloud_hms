@@ -2,8 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { ReceptionActionCenter } from "@/components/hms/reception/reception-action-center"
 import { redirect } from "next/navigation"
-import { ShiftManager } from "@/components/hms/reception/shift-manager"
-// Status enums refactored to strings
+import { getBranches } from "@/app/actions/company"
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +24,10 @@ export default async function ReceptionDashboardPage() {
             </div>
         )
     }
+
+    const branchesRes = await getBranches()
+    const branches = branchesRes.success ? branchesRes.data : []
+    const isAdmin = !!session?.user?.isAdmin || !!session?.user?.isTenantAdmin
     const todayStart = new Date()
     todayStart.setHours(0, 0, 0, 0)
     const todayEnd = new Date()
@@ -197,6 +200,8 @@ export default async function ReceptionDashboardPage() {
                 totalExpenses={totalExpenses}
                 draftCount={draftCountVal}
                 availableBeds={availableBedsCount}
+                branches={branches || []}
+                isAdmin={isAdmin}
             />
         </div>
     )
