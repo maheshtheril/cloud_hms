@@ -73,7 +73,8 @@ export async function getCompanyCountry() {
 
 export async function getSubdivisions(countryId?: string, parentId?: string | null) {
     const session = await auth()
-    if (!session?.user) return { success: false, error: "Unauthorized" }
+    if (!session?.user) return []
 
-    return { success: true, subdivisions: [] }
+    // TODO: Return actual subdivisions when geography tables are added
+    return []
 }
