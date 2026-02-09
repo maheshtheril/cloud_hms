@@ -579,6 +579,7 @@ export function ReceptionActionCenter({
                                             <th className="px-6 py-4">Patient</th>
                                             <th className="px-6 py-4">Type</th>
                                             <th className="px-6 py-4">Doctor</th>
+                                            <th className="px-6 py-4">Bed Unit</th>
                                             <th className="px-6 py-4 text-right">Status</th>
                                         </tr>
                                     </thead>
@@ -624,8 +625,23 @@ export function ReceptionActionCenter({
                                                             {isHigh && <Badge className="text-[8px] bg-amber-500 text-white w-fit px-1 h-3 label uppercase">High</Badge>}
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-5 text-xs font-bold text-slate-600">
-                                                        Dr. {apt.clinician?.first_name} {apt.clinician?.last_name}
+                                                    <td className="px-6 py-5">
+                                                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                                                            <Stethoscope className="h-3 w-3" />
+                                                            <span>Dr. {apt.clinician?.first_name} {apt.clinician?.last_name?.[0]}.</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-5">
+                                                        {apt.assigned_bed ? (
+                                                            <div className="flex items-center gap-1.5 p-1.5 px-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 w-fit">
+                                                                <BedIcon className="h-3.5 w-3.5" />
+                                                                <span className="text-[10px] font-black uppercase tracking-widest leading-none">
+                                                                    {apt.assigned_ward} / {apt.assigned_bed}
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-[10px] text-slate-300 italic font-medium uppercase tracking-widest">Out Patient</span>
+                                                        )}
                                                     </td>
                                                     <td className="px-6 py-5 text-right relative">
                                                         <div className="flex justify-end gap-2 items-center">
@@ -955,9 +971,19 @@ function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, 
                 )}
             </div>
 
-            <div className="flex items-center gap-1.5 mb-3 text-[10px] text-slate-500 relative z-10">
-                <Stethoscope className="h-3 w-3" />
-                <span className="truncate">Dr. {apt.clinician?.first_name} {apt.clinician?.last_name}</span>
+            <div className="flex flex-col gap-1.5 mb-3 relative z-10">
+                <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                    <Stethoscope className="h-3 w-3" />
+                    <span className="truncate">Dr. {apt.clinician?.first_name} {apt.clinician?.last_name}</span>
+                </div>
+                {apt.assigned_bed && (
+                    <div className="flex items-center gap-1.5 p-1 px-2 rounded-md bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 w-fit">
+                        <BedIcon className="h-3 w-3" />
+                        <span className="text-[9px] font-black uppercase tracking-tighter leading-none">
+                            {apt.assigned_ward} - {apt.assigned_bed}
+                        </span>
+                    </div>
+                )}
             </div>
 
             <div className="flex items-center justify-between pt-2 border-t border-slate-50 dark:border-slate-800 relative z-10">

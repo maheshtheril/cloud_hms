@@ -38,7 +38,8 @@ export default async function ReceptionDashboardPage() {
         todayPaymentsList,
         todayExpensesList,
         draftCountVal,
-        availableBedsCount
+        availableBedsCount,
+        activeAdmissions
     ] = await Promise.all([
         prisma.hms_appointments.findMany({
             where: {
@@ -110,6 +111,10 @@ export default async function ReceptionDashboardPage() {
         }),
         prisma.hms_bed.count({
             where: { tenant_id: tenantId, status: 'available' }
+        }),
+        prisma.hms_admission.findMany({
+            where: { tenant_id: tenantId, status: 'admitted' },
+            select: { patient_id: true, ward: true, bed: true }
         })
     ]);
 
@@ -152,6 +157,8 @@ export default async function ReceptionDashboardPage() {
         const isPaid = invoices.length > 0 && invoices.every(inv => inv.status === 'paid');
         const hasPendingLabs = labs.some(l => l.status !== 'completed' && l.status !== 'partial' && l.status !== 'verified');
 
+        const admission = activeAdmissions.find(a => a.patient_id === apt.patient_id);
+
         return {
             id: apt.id,
             patient_id: apt.patient_id,
@@ -169,6 +176,8 @@ export default async function ReceptionDashboardPage() {
             tags: tagsMap[apt.id] || [],
             invoiceStatus: hasPendingInvoice ? 'pending' : (isPaid ? 'paid' : 'none'),
             labStatus: labs.length > 0 ? (hasPendingLabs ? 'pending' : 'completed') : 'none',
+            assigned_ward: admission?.ward,
+            assigned_bed: admission?.bed
         };
     });
 
