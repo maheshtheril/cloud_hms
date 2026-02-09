@@ -212,25 +212,32 @@ export async function initializeDoctorProfile(_formData: FormData) {
     const lastName = rest.join(' ') || ''
 
     try {
-        const newClinician = await prisma.hms_clinicians.create({
-            data: {
-                id: randomUUID(),
-                tenant_id: tenantId,
-                company_id: companyId || tenantId, // Fallback if companyId missing
-                first_name: firstName,
-                last_name: lastName,
-                email: email,
-                user_id: userId, // Explicitly linking Identity to Profile
-                is_active: true,
-                role_id: defaultRole?.id, // Can be null
-                consultation_fee: 500, // Default generic fee
-                consultation_slot_duration: 30, // Default 20 mins
-                consultation_start_time: "09:00",
-                consultation_end_time: "17:00",
-                // TEMPORARY: Commented out until database migration is applied
-                // working_days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-            } as any
-        })
+        // WORLD-CLASS FIX: Use raw SQL to force a valid Postgres array format
+        // This bypasses the malformed default '[]' in the database
+        await prisma.$executeRawUnsafe(`
+            INSERT INTO hms_clinicians (
+                id, tenant_id, company_id, first_name, last_name, 
+                email, user_id, is_active, consultation_fee, 
+                consultation_slot_duration, consultation_start_time, 
+                consultation_end_time, working_days
+            ) VALUES (
+                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 
+                ARRAY['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']::text[]
+            )
+        `,
+            randomUUID(),
+            tenantId,
+            companyId || tenantId,
+            firstName,
+            lastName,
+            email,
+            userId,
+            true,
+            500,
+            30,
+            "09:00",
+            "17:00"
+        );
 
         revalidatePath('/hms/doctor/dashboard')
         redirect('/hms/doctor/dashboard')
