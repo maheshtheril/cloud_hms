@@ -27,10 +27,11 @@ export async function getAdministrativeHierarchy(countryId: string) {
     }
 }
 
-export async function toggleSubdivisionStatus(subdivisionId: string) {
+export async function toggleSubdivisionStatus(subdivisionId: string, status?: boolean, recursive?: boolean) {
     const session = await auth()
     if (!session?.user) return { success: false, error: "Unauthorized" }
 
+    // TODO: Implement actual status toggle when geography tables are added
     return { success: true }
 }
 
