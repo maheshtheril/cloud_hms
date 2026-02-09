@@ -74,7 +74,7 @@ export async function consumeStock(data: ConsumeStockData) {
         if (!locationId) return { error: "Stock Location not found or could not be created" }
 
         // 2. Transaction
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: any) => {
             // A. Verify Product
             const product = await tx.hms_product.findUnique({
                 where: { id: data.productId }
@@ -246,7 +246,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
         // Fetch Product Details deeply for both Inventory and Billing
         const productMap = new Map();
         const productIds = data.items.map(i => i.productId);
-        const products = await prisma.hms_product.findMany({
+        const products = await (prisma as any).hms_product.findMany({
             where: { id: { in: productIds } },
             include: {
                 hms_product_price_history: {
@@ -255,9 +255,9 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                 }
             }
         });
-        products.forEach(p => productMap.set(p.id, p));
+        products.forEach((p: any) => productMap.set(p.id, p));
 
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: any) => {
             // ---------------------------------------------------------
             // 1. INVENTORY MOVEMENT
             // ---------------------------------------------------------
@@ -356,7 +356,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                 SELECT id::text FROM hms_invoice 
                 WHERE company_id::text = CAST(${companyId} AS text)
                 AND appointment_id::text = CAST(${data.encounterId} AS text)
-                AND status = 'draft'::hms_invoice_status
+                AND status::text = 'draft'
                 LIMIT 1
             `;
 
@@ -387,7 +387,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                         ${invoiceNumber},
                         CURRENT_DATE,
                         NOW(),
-                        'draft'::hms_invoice_status,
+                        'draft',
                         'INR',
                         0, 0, 0, 0, 0,
                         CAST(${userId} AS uuid)
