@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react"
 import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/billing"
 import { auth } from "@/auth"
-import { hms_invoice_status } from "@prisma/client"
+// hms_invoice_status removed
 
 export default async function NewInvoicePage({
     searchParams

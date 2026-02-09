@@ -5,7 +5,7 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { hms_move_type, hms_receipt_status } from "@prisma/client"
+import { hms_receipt_status } from "@prisma/client"
 
 export type ReceiveStockItem = {
     productId: string

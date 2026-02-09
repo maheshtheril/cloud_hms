@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
 import { v4 as uuidv4 } from 'uuid'
-import { hms_invoice_status } from "@prisma/client"
+// hms_invoice_status removed (now String)
 import { AccountingService } from "@/lib/services/accounting"
 import { ensureDefaultAccounts } from "@/lib/account-seeder"
 

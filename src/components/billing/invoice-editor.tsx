@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Plus, Trash2, Search, Save, FileText, Calendar, User, DollarSign, Receipt, UserPlus } from 'lucide-react'
 import { createInvoice, updateInvoice } from '@/app/actions/billing'
 import { SearchableSelect } from '@/components/ui/searchable-select'
-import { hms_invoice_status } from "@prisma/client"
+// hms_invoice_status refactored to string
 
 export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice }: {
     patients: any[],

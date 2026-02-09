@@ -3,7 +3,7 @@ import { auth } from "@/auth"
 import { ReceptionActionCenter } from "@/components/hms/reception/reception-action-center"
 import { redirect } from "next/navigation"
 import { ShiftManager } from "@/components/hms/reception/shift-manager"
-import { hms_invoice_status } from "@prisma/client"
+// Status enums refactored to strings
 
 export const dynamic = 'force-dynamic'
 

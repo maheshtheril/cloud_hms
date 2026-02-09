@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { Plus, TrendingUp, AlertCircle, CheckCircle2, Search, FileText, Clock, Receipt } from "lucide-react"
 import { auth } from "@/auth"
-import { hms_invoice_status } from "@prisma/client"
+// hms_invoice_status refactored to string
 
 import SearchInput from "@/components/search-input"
 import { BillingActions } from "@/components/billing/billing-actions"

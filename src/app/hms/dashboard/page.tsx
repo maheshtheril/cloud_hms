@@ -5,7 +5,7 @@ import { ensureHmsMenus } from "@/lib/menu-seeder"
 import { getTenant } from "../../actions/tenant"
 import { getCurrentCompany } from "../../actions/company"
 import { redirect } from 'next/navigation'
-import { hms_invoice_status } from "@prisma/client"
+// hms_invoice_status removed
 import { getUserPermissions } from "@/app/actions/rbac"
 
 
