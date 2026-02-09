@@ -4,7 +4,6 @@ import { auth } from "@/auth"
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { hms_invoice_status, hms_move_type, hms_location_type } from "@prisma/client"
 import crypto from 'crypto'
 
 export type ConsumeStockData = {
@@ -63,7 +62,7 @@ export async function consumeStock(data: ConsumeStockData) {
                     CAST(${companyId} AS uuid),
                     'Main Warehouse',
                     'WH-MAIN',
-                    'warehouse'::hms_location_type
+                    'warehouse'
                 )
                 RETURNING *
             `;
@@ -96,7 +95,7 @@ export async function consumeStock(data: ConsumeStockData) {
                     NULL,
                     ${data.quantity},
                     ${product.uom || 'Unit'},
-                    'out'::hms_move_type,
+                    'out',
                     'Nursing Consumption',
                     CAST(${data.encounterId || null} AS uuid),
                     CAST(${userId || null} AS uuid)
@@ -233,7 +232,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                     CAST(${companyId} AS uuid),
                     'Main Warehouse',
                     'WH-MAIN',
-                    'warehouse'::hms_location_type
+                    'warehouse'
                 )
                 RETURNING *
             `;
@@ -282,7 +281,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                         NULL,
                         ${item.quantity},
                         ${product.uom || 'Unit'},
-                        'out'::hms_move_type,
+                        'out',
                         'Nursing Consumption',
                         CAST(${data.encounterId || null} AS uuid),
                         CAST(${userId || null} AS uuid)

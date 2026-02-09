@@ -1132,7 +1132,7 @@ model hms_credit_note {
   amount             Decimal             @db.Decimal(18, 2)
   reason             String?
   line_items         Json?               @default("[]")
-  status             hms_invoice_status? @default(draft)
+  status             String?             @default("draft")
   created_by         String?             @db.Uuid
   created_at         DateTime            @default(now()) @db.Timestamptz(6)
 
@@ -1304,7 +1304,7 @@ model hms_invoice {
   total_discount          Decimal                   @default(0) @db.Decimal(18, 2)
   total                   Decimal                   @default(0) @db.Decimal(18, 2)
   total_paid              Decimal                   @default(0) @db.Decimal(18, 2)
-  status                  hms_invoice_status        @default(draft)
+  status                  String                    @default("draft")
   line_items              Json                      @default("[]")
   billing_metadata        Json?                     @default("{}")
   locked                  Boolean                   @default(false)
@@ -2438,7 +2438,7 @@ model hms_stock_location {
   company_id                                                      String                      @db.Uuid
   code                                                            String
   name                                                            String
-  location_type                                                   hms_location_type           @default(warehouse)
+  location_type                                                   String                      @default("warehouse")
   metadata                                                        Json?                       @default("{}")
   created_at                                                      DateTime                    @default(now()) @db.Timestamptz(6)
   hms_stock_adjustment_line                                       hms_stock_adjustment_line[]
@@ -2492,7 +2492,7 @@ model hms_stock_move {
   lot_id                                                              String?               @db.Uuid
   qty                                                                 Decimal               @db.Decimal(14, 4)
   uom                                                                 String
-  move_type                                                           hms_move_type
+  move_type                                                           String
   source                                                              String?
   source_reference                                                    String?               @db.Uuid
   cost                                                                Decimal?              @db.Decimal(18, 4)
@@ -4653,33 +4653,6 @@ enum appointment_status {
   cancelled
   completed
   no_show
-}
-
-enum hms_invoice_status {
-  draft
-  posted
-  paid
-  cancelled
-  void
-}
-
-enum hms_location_type {
-  warehouse
-  pharmacy
-  ward
-  theatre
-  lab
-  transit
-  consumed
-}
-
-enum hms_move_type {
-  in
-  out
-  internal
-  adjustment
-  reservation
-  return
 }
 
 enum hms_payment_method {

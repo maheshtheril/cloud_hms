@@ -155,15 +155,15 @@ BEGIN
     -- determine status if not locked
     IF COALESCE(NEW.locked, false) = false THEN
       IF v_paid >= v_total AND v_total > 0 THEN
-        NEW.status := 'paid'::hms_invoice_status;
+        NEW.status := 'paid';
       ELSIF v_paid > 0 AND v_paid < v_total THEN
-        NEW.status := 'partially_paid'::hms_invoice_status;
+        NEW.status := 'partially_paid';
       ELSIF v_paid = 0 AND v_total > 0 THEN
-        NEW.status := 'unpaid'::hms_invoice_status;
+        NEW.status := 'unpaid';
       ELSE
         -- keep draft or other statuses as-is
         IF NEW.status IS NULL THEN
-          NEW.status := 'draft'::hms_invoice_status;
+          NEW.status := 'draft';
         END IF;
       END IF;
     END IF;

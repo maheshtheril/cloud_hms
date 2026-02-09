@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/prisma";
 import { ensureDefaultAccounts } from "@/lib/account-seeder";
-import { hms_invoice_status, hms_receipt_status } from "@prisma/client";
 import crypto from 'crypto'
 
 export class AccountingService {
