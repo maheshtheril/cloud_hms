@@ -166,6 +166,8 @@ export default async function DoctorDashboardPage() {
             tags: tagsMap[apt.id] || [],
             vitals_done: isVitalsDone,
             lab_status: labMap.get(apt.id) || null,
+            // @ts-ignore
+            working_days: (apt as any).working_days || [],
             invoiceStatus: apt.hms_invoice?.length > 0
                 ? (apt.hms_invoice.every((i: any) => i.status === 'paid') ? 'paid' : 'pending')
                 : 'none'
