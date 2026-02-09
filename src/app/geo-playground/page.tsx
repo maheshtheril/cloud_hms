@@ -23,10 +23,10 @@ export default function GeoPlaygroundPage() {
             const list = await getCountries()
             setCountries(list)
 
-            // Default to company country or first in list
+            // Default to company country
+            // TODO: Re-enable default selection when countries are available
             const defaultId = await getCompanyCountry()
             if (defaultId) setSelectedCountry(defaultId)
-            else if (list.length > 0) setSelectedCountry(list[0].id)
         }
         load()
     }, [])
