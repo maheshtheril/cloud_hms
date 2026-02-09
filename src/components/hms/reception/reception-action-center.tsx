@@ -6,7 +6,7 @@ import {
     UserPlus, CalendarPlus, LogIn, CreditCard,
     PhoneIncoming, IdCard, Users, Search,
     Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone, MoreVertical, Edit, Activity, IndianRupee,
-    Printer, Wallet, Banknote, Fingerprint, LayoutDashboard, Kanban, AlertTriangle, Syringe, Zap, Eye, EyeOff, Wifi
+    Printer, Wallet, Banknote, Fingerprint, LayoutDashboard, Kanban, AlertTriangle, Syringe, Zap, Eye, EyeOff, Wifi, Bed as BedIcon
 } from "lucide-react"
 import { ExpenseDialog } from "./expense-dialog"
 import { PettyCashVoucher } from "./petty-cash-voucher"
@@ -42,6 +42,7 @@ interface ReceptionActionCenterProps {
     todayExpenses?: any[]
     totalExpenses?: number
     draftCount?: number
+    availableBeds?: number
 }
 
 export function ReceptionActionCenter({
@@ -53,7 +54,8 @@ export function ReceptionActionCenter({
     todayPayments = [],
     todayExpenses = [],
     totalExpenses = 0,
-    draftCount = 0
+    draftCount = 0,
+    availableBeds = 0
 }: ReceptionActionCenterProps) {
     const router = useRouter()
     const { toast } = useToast()
@@ -109,6 +111,16 @@ export function ReceptionActionCenter({
                 })
             }
 
+            // Ctrl+Shift+B - Bed Management
+            if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'B') {
+                e.preventDefault()
+                router.push('/hms/wards')
+                toast({
+                    title: "Opening Bed Management",
+                    description: "Shortcut: Ctrl+Shift+B",
+                })
+            }
+
             // Escape - Close Modal
             if (e.key === 'Escape' && activeModal) {
                 setActiveModal(null)
@@ -136,6 +148,10 @@ export function ReceptionActionCenter({
         }
         if (actionId === 'billing') {
             router.push('/hms/billing')
+            return
+        }
+        if (actionId === 'beds') {
+            router.push('/hms/wards')
             return
         }
         if (actionId === 'appointment') {
@@ -196,6 +212,7 @@ export function ReceptionActionCenter({
         { id: 'voucher', title: 'Reg Voucher', icon: CreditCard, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20', border: 'border-orange-100 dark:border-orange-800' },
         { id: 'appointment', title: 'Book Appointment', icon: CalendarPlus, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-100 dark:border-blue-800' },
         { id: 'billing', title: 'IP/OP Billing', icon: CreditCard, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/20', border: 'border-violet-100 dark:border-violet-800' },
+        { id: 'beds', title: 'Bed Units', icon: BedIcon, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/20', border: 'border-indigo-100 dark:border-indigo-800' },
         { id: 'expense', title: 'Expense', icon: Wallet, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-100 dark:border-amber-800' },
         { id: 'shift', title: 'Cash Counter', icon: Banknote, color: 'text-slate-600', bg: 'bg-slate-50 dark:bg-slate-800/50', border: 'border-slate-200 dark:border-slate-700' },
     ]
@@ -241,6 +258,17 @@ export function ReceptionActionCenter({
                         </div>
                         <div className="h-10 w-10 rounded-xl bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center">
                             <Activity className="h-5 w-5 text-orange-500" />
+                        </div>
+                    </Card>
+                </Link>
+                <Link href="/hms/wards" className="block cursor-pointer">
+                    <Card className="p-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-white/20 dark:border-slate-800 shadow-sm flex items-center justify-between group hover:shadow-md transition-all hover:ring-2 hover:ring-indigo-500/20">
+                        <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Beds Vacant</p>
+                            <h3 className="text-xl font-black text-indigo-600">{availableBeds}</h3>
+                        </div>
+                        <div className="h-10 w-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-center">
+                            <BedIcon className="h-5 w-5 text-indigo-500" />
                         </div>
                     </Card>
                 </Link>

@@ -31,7 +31,15 @@ export default async function ReceptionDashboardPage() {
     todayEnd.setHours(23, 59, 59, 999)
 
     // Parallel Data Fetching
-    const [appointmentsRaw, patientsList, doctorsList, todayPaymentsList, todayExpensesList, draftCountVal] = await Promise.all([
+    const [
+        appointmentsRaw,
+        patientsList,
+        doctorsList,
+        todayPaymentsList,
+        todayExpensesList,
+        draftCountVal,
+        availableBedsCount
+    ] = await Promise.all([
         prisma.hms_appointments.findMany({
             where: {
                 tenant_id: tenantId,
@@ -99,8 +107,12 @@ export default async function ReceptionDashboardPage() {
         }),
         prisma.hms_invoice.count({
             where: { company_id: companyId, status: 'draft' as any }
+        }),
+        prisma.hms_bed.count({
+            where: { tenant_id: tenantId, status: 'available' }
         })
     ]);
+
 
     // Fetch Vitals & Tags
     const appointmentIds = appointmentsRaw.map(a => a.id);
@@ -175,6 +187,7 @@ export default async function ReceptionDashboardPage() {
                 todayExpenses={todayExpensesList}
                 totalExpenses={totalExpenses}
                 draftCount={draftCountVal}
+                availableBeds={availableBedsCount}
             />
         </div>
     )
