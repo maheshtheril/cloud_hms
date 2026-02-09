@@ -145,13 +145,13 @@ export default async function DoctorDetailPage({ params }: { params: Promise<{ i
                                 <p className="text-[10px] uppercase font-black text-gray-400 tracking-wider mb-2">Weekly Cadence</p>
                                 <div className="flex gap-1.5">
                                     {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => {
-                                        const isActive = doctor.working_days?.includes(day);
+                                        const isActive = (doctor as any).working_days?.includes(day);
                                         return (
                                             <div
                                                 key={day}
                                                 className={`h-9 w-9 rounded-lg flex items-center justify-center text-[10px] font-black border transition-all ${isActive
-                                                        ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100"
-                                                        : "bg-slate-50 border-slate-100 text-slate-300"
+                                                    ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100"
+                                                    : "bg-slate-50 border-slate-100 text-slate-300"
                                                     }`}
                                                 title={day}
                                             >

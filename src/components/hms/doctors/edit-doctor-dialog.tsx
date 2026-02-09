@@ -84,7 +84,7 @@ export function EditDoctorDialog({ isOpen, onClose, doctor, departments: initial
     const [newDeptName, setNewDeptName] = useState('')
     const [empId, setEmpId] = useState(doctor.employee_id || '')
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-    const [selectedDays, setSelectedDays] = useState<string[]>(doctor.working_days || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
+    const [selectedDays, setSelectedDays] = useState<string[]>((doctor as any).working_days || ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"])
     const [activeTab, setActiveTab] = useState<'general' | 'clinical' | 'documents'>('general')
     const [profileImageUrl, setProfileImageUrl] = useState(doctor.profile_image_url || '')
     const [signatureUrl, setSignatureUrl] = useState(doctor.signature_url || '')

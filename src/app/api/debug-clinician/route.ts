@@ -20,7 +20,6 @@ export async function POST(req: Request) {
                 first_name: 'Test',
                 last_name: 'User',
                 email: `test-${Date.now()}@example.com`,
-                working_days: ['Monday', 'Tuesday'],
                 document_urls: [], // Empty array
                 is_active: true,
             }

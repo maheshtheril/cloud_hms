@@ -219,7 +219,7 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                                     {/* Availability Pulse - WORLD CLASS */}
                                     <div className="pt-2.5 flex gap-0.5 border-t border-slate-100 mt-2">
                                         {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map(day => {
-                                            const isActive = doc.working_days?.includes(day);
+                                            const isActive = (doc as any).working_days?.includes(day);
                                             return (
                                                 <div
                                                     key={day}
