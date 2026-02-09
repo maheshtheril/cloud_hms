@@ -356,7 +356,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                 SELECT id::text FROM hms_invoice 
                 WHERE company_id::text = CAST(${companyId} AS text)
                 AND appointment_id::text = CAST(${data.encounterId} AS text)
-                AND status = 'draft'
+                AND status = 'draft'::hms_invoice_status
                 LIMIT 1
             `;
 
@@ -387,7 +387,7 @@ export async function consumeStockBulk(data: ConsumeBulkData) {
                         ${invoiceNumber},
                         CURRENT_DATE,
                         NOW(),
-                        'draft',
+                        'draft'::hms_invoice_status,
                         'INR',
                         0, 0, 0, 0, 0,
                         CAST(${userId} AS uuid)
