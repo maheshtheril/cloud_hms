@@ -187,7 +187,8 @@ export async function initializeDoctorProfile(_formData: FormData) {
     }
 
     if (existing) {
-        return { success: true, clinicianId: existing.id }
+        revalidatePath('/hms/doctor/dashboard')
+        redirect('/hms/doctor/dashboard')
     }
 
     // Attempt to get a default role
@@ -219,9 +220,10 @@ export async function initializeDoctorProfile(_formData: FormData) {
         })
 
         revalidatePath('/hms/doctor/dashboard')
-        return { success: true, clinicianId: newClinician.id }
+        redirect('/hms/doctor/dashboard')
     } catch (error: any) {
         console.error("Failed to auto-init doctor:", error)
         return { error: "Failed to initialize profile. " + error.message }
     }
 }
+
