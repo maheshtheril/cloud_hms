@@ -321,7 +321,8 @@ export async function seedRolesAndPermissions() {
             }
         }
 
-        revalidatePath('/settings/roles');
+        // Note: revalidatePath removed - this function is called during render
+        // and revalidation should happen in user-triggered actions only
 
         return {
             success: true,
