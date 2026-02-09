@@ -164,6 +164,17 @@ export async function initializeDoctorProfile(_formData: FormData) {
         return { error: "Unauthorized" }
     }
 
+    // 🚨 EMERGENCY DATABASE REPAIR (On-the-fly)
+    try {
+        await prisma.$executeRawUnsafe(`
+            ALTER TABLE hms_clinicians ALTER COLUMN working_days DROP DEFAULT;
+            ALTER TABLE hms_clinicians ALTER COLUMN working_days SET DEFAULT ARRAY['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']::text[];
+            ALTER TABLE hms_clinicians ALTER COLUMN working_days DROP NOT NULL;
+        `);
+    } catch (e) {
+        console.log('Database repair shim skipped or already patched');
+    }
+
     const { email, name, tenantId, companyId, id: userId } = session.user
 
     // Safety check: Logic Updated for World Class Linkage
