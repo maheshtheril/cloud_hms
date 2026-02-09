@@ -1,6 +1,7 @@
 import { getBranches } from "@/app/actions/company"
 import { WardManager } from "@/components/wards/ward-manager"
 import { Metadata } from "next"
+import { auth } from "@/auth"
 
 export const metadata: Metadata = {
     title: "Wards & Admissions | Operations",
