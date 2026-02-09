@@ -212,32 +212,29 @@ export async function initializeDoctorProfile(_formData: FormData) {
     const lastName = rest.join(' ') || ''
 
     try {
-        // WORLD-CLASS FIX: Use raw SQL to force a valid Postgres array format
-        // This bypasses the malformed default '[]' in the database
-        await prisma.$executeRawUnsafe(`
+        // WORLD-CLASS FIX: Use tagged template literal $executeRaw for safety
+        await prisma.$executeRaw`
             INSERT INTO hms_clinicians (
                 id, tenant_id, company_id, first_name, last_name, 
                 email, user_id, is_active, consultation_fee, 
                 consultation_slot_duration, consultation_start_time, 
                 consultation_end_time, working_days
             ) VALUES (
-                $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 
-                ARRAY['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']::text[]
+                ${randomUUID()}, 
+                ${tenantId}, 
+                ${companyId || tenantId}, 
+                ${firstName}, 
+                ${lastName}, 
+                ${email}, 
+                ${userId}, 
+                true, 
+                500, 
+                30, 
+                "09:00", 
+                "17:00",
+                ${['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']}
             )
-        `,
-            randomUUID(),
-            tenantId,
-            companyId || tenantId,
-            firstName,
-            lastName,
-            email,
-            userId,
-            true,
-            500,
-            30,
-            "09:00",
-            "17:00"
-        );
+        `;
 
         revalidatePath('/hms/doctor/dashboard')
         redirect('/hms/doctor/dashboard')
