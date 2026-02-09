@@ -56,7 +56,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   // SELF-HEALING: Ensuring menu items and permissions are standardized.
-  await auditAndFixMenuPermissions();
+  // await auditAndFixMenuPermissions();
 
   return (
     <html lang="en" suppressHydrationWarning className="dark">

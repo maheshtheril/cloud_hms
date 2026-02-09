@@ -39,18 +39,23 @@ export async function getTenantCompanies() {
 
 export async function getCurrentCompany() {
     const session = await auth();
-    if (!session?.user?.id) return null;
+    const companyId = session?.user?.companyId;
 
-    try {
+    if (!companyId) {
+        // Fallback or if not in session
+        if (!session?.user?.id) return null;
         const user = await prisma.app_user.findUnique({
             where: { id: session.user.id },
-            select: {
-                company_id: true,
-                tenant_id: true
-            }
+            select: { company_id: true }
         });
+        if (!user?.company_id) return null;
+        return await prisma.company.findUnique({ where: { id: user.company_id } });
+    }
 
-        if (!user || !user.company_id) return null;
+    try {
+        return await prisma.company.findUnique({
+            where: { id: companyId }
+        });
 
         const company = await prisma.company.findUnique({
             where: { id: user.company_id }

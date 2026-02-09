@@ -14,13 +14,25 @@ export async function getMenuItems() {
     // if (!session?.user) return []; 
 
     const isAdmin = session?.user?.isAdmin || (session?.user as any)?.isTenantAdmin;
+    const userId = session?.user?.id;
+    const tenantId = session?.user?.tenantId;
     let industry = ''; // we can fetch this if needed
 
     // EMERGENCY OVERRIDE REMOVED: Now fully dynamic based on RBAC permissions and Module Subscriptions.
-    // The previous hardcoded block for 'receptionist' is removed to respect the 'Roles & Permissions' configuration.
 
-    // FETCH USER PERMISSIONS
-    const userPermsRaw = session?.user?.id ? await getUserPermissions(session.user.id) : [];
+    // PARALLEL DATA FETCHING (Performance Optimization)
+    // We fetch everything at once to minimize database round-trips and latency.
+    const [userPermsRaw, globalActiveModules, tenantModules, strictSubsCount, allMenuItems] = await Promise.all([
+        userId ? getUserPermissions(userId) : Promise.resolve([]),
+        prisma.modules.findMany({ where: { is_active: true } }),
+        tenantId ? prisma.tenant_module.findMany({ where: { tenant_id: tenantId, enabled: true } }) : Promise.resolve([]),
+        tenantId ? prisma.tenant_module.count({ where: { tenant_id: tenantId, enabled: true } }) : Promise.resolve(0),
+        prisma.menu_items.findMany({
+            orderBy: { sort_order: 'asc' },
+            include: { module_menu_map: { include: { modules: true } } }
+        })
+    ]);
+
     // Convert to Set for easy lookup
     const userPerms = new Set(Array.isArray(userPermsRaw) ? userPermsRaw : []);
 
@@ -58,21 +70,12 @@ export async function getMenuItems() {
             industryName.toLowerCase().includes('medical') ||
             industryName.toLowerCase().includes('hms');
 
-        // Fetch active modules (Global)
-        const globalActiveModules = await prisma.modules.findMany({
-            where: { is_active: true }
-        });
-
         // DEFINED ALLOWED MODULES
         let allowedModuleKeys = new Set<string>();
 
-        if (session?.user?.tenantId) {
+        if (tenantId) {
 
             // 1. ADD SUBSCRIBED MODULES FIRST (Base Truth)
-            // We re-enable this to ensure paying attributes are respected.
-            const tenantModules = await prisma.tenant_module.findMany({
-                where: { tenant_id: session.user.tenantId, enabled: true }
-            });
             tenantModules.forEach(tm => allowedModuleKeys.add(tm.module_key));
 
             // 2. APPLY INDUSTRY DEFAULTS (Only if NO explicit subscriptions found)
@@ -104,7 +107,7 @@ export async function getMenuItems() {
         // 3. IMPLICIT PERMISSION-BASED MODULE ACCESS (Safety Net vs Strict Mode)
         // CRITICAL FIX: If the tenant has explicit subscriptions (hasStrictSubscriptions), 
         // we MUST NOT allow User Permissions (like Admin '*') to leak unrelated modules (like HMS in a CRM tenant).
-        const hasStrictSubscriptions = session?.user?.tenantId && (await prisma.tenant_module.count({ where: { tenant_id: session.user.tenantId, enabled: true } })) > 0;
+        const hasStrictSubscriptions = strictSubsCount > 0;
 
         if (!hasStrictSubscriptions) {
             // Only fall back to "Permission Guessing" if the tenant has NO configuration.
@@ -129,10 +132,7 @@ export async function getMenuItems() {
         // to handle data standardization. This prevents read-time mutation conflicts.
 
         // 1. FETCH ALL ITEMS
-        const allMenuItems = await prisma.menu_items.findMany({
-            orderBy: { sort_order: 'asc' },
-            include: { module_menu_map: { include: { modules: true } } }
-        });
+        // Moved to parallel block above
 
         // --- HARD Override for Nurse Role ---
         // CASE INSENSITIVE CHECK to ensure it catches 'Nurse', 'nurse', 'NURSE'

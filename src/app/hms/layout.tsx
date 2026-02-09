@@ -19,10 +19,14 @@ export default async function HMSLayout({
     children: React.ReactNode
     modal: React.ReactNode
 }) {
-    const menuItems = await getMenuItems();
-    const currentCompany = await getCurrentCompany();
-    const tenant = await getTenant();
     const session = await auth();
+
+    // Parallelize independent data fetches
+    const [menuItems, currentCompany, tenant] = await Promise.all([
+        getMenuItems(),
+        getCurrentCompany(),
+        getTenant()
+    ]);
 
     return (
         <AppSidebar

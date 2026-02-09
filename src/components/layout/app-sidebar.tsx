@@ -11,9 +11,8 @@ import {
 import { useTheme } from '@/contexts/theme-context';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { CompanySwitcher } from '@/components/company-switcher';
 import { logout } from '@/app/actions/auth';
-import { BranchSwitcher } from '@/components/branch-switcher';
+import { CompactOrgSwitcher } from '@/components/layout/compact-org-switcher';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -218,28 +217,24 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                 {!collapsed ? (
                     <div className="flex items-center justify-between w-full">
                         <div className="flex-1 min-w-0 mr-4">
-                            {canSwitchCompany ? (
-                                <CompanySwitcher initialActiveCompany={currentCompany} tenant={tenant} />
-                            ) : (
-                                <div className="flex items-center gap-3">
-                                    <div className="h-9 w-9 rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200 dark:ring-zinc-800 overflow-hidden shrink-0 flex items-center justify-center">
-                                        {currentCompany?.logo_url ? (
-                                            <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-full w-full object-contain" />
+                            <div className="flex items-center gap-3">
+                                <div className="h-9 w-9 rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200 dark:ring-zinc-800 overflow-hidden shrink-0 flex items-center justify-center">
+                                    {currentCompany?.logo_url ? (
+                                        <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-full w-full object-contain" />
+                                    ) : (
+                                        tenant?.logo_url ? (
+                                            <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-contain" />
                                         ) : (
-                                            tenant?.logo_url ? (
-                                                <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-contain" />
-                                            ) : (
-                                                <div className="h-full w-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-                                                    <Building2 size={16} />
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
-                                    <div className="font-bold text-lg tracking-tight text-slate-900 dark:text-white truncate">
-                                        {currentCompany?.name || tenant?.app_name || tenant?.name || "Enterprise"}
-                                    </div>
+                                            <div className="h-full w-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                                                <Building2 size={16} />
+                                            </div>
+                                        )
+                                    )}
                                 </div>
-                            )}
+                                <div className="font-bold text-lg tracking-tight text-slate-900 dark:text-white truncate">
+                                    {currentCompany?.name || tenant?.app_name || tenant?.name || "Enterprise"}
+                                </div>
+                            </div>
                         </div>
                         {isMobile && (
                             <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
@@ -264,8 +259,12 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                 )}
             </div>
 
-            {/* Branch Switcher (only show when expanded) */}
-            {!collapsed && <BranchSwitcher />}
+            {/* Compact Org & Branch Switcher */}
+            <CompactOrgSwitcher
+                initialActiveCompany={currentCompany}
+                tenant={tenant}
+                collapsed={collapsed}
+            />
 
             {/* Search (Only Expanded) */}
             {!collapsed && !isMobile && (
