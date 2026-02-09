@@ -360,8 +360,8 @@ export function HierarchyManager({
         const result = await createSubdivision({
             name: newRegionName,
             type: newRegionType,
-            countryId: country.id,
-            parentId: addParent.id,
+            country_id: country.id,
+            parent_id: addParent.id,
             code: newRegionCode
         })
 
