@@ -6,6 +6,7 @@ import { ensureHmsMenus } from "@/lib/menu-seeder"
 
 import { initializeDoctorProfile } from "@/app/actions/doctor"
 import { Stethoscope, CheckCircle2 } from "lucide-react"
+import { InitializeProfileButton } from "@/components/hms/doctor/initialize-profile-button"
 
 export const dynamic = 'force-dynamic'
 
@@ -56,18 +57,7 @@ export default async function DoctorDashboardPage() {
                             <p className="mt-2">Click below to automatically create your profile and access the dashboard.</p>
                         </div>
 
-                        <form action={async (formData) => {
-                            'use server'
-                            await initializeDoctorProfile(formData)
-                        }}>
-                            <button
-                                type="submit"
-                                className="w-full py-3 bg-slate-900 text-white font-bold rounded-xl shadow-lg hover:bg-black transition-all flex items-center justify-center gap-2"
-                            >
-                                <CheckCircle2 className="h-5 w-5" />
-                                Initialize Profile
-                            </button>
-                        </form>
+                        <InitializeProfileButton />
                     </div>
                 </div>
             </div>
