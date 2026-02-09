@@ -73,10 +73,10 @@ export async function createDoctor(formData: FormData) {
                 consultation_end_time: consultationEndTime,
                 consultation_slot_duration: consultationSlotDuration,
                 consultation_fee: consultationFee,
-                // DEFENSIVE: Ensure it is a proper array and filter out any empty strings
-                working_days: (Array.isArray(workingDays) && workingDays.length > 0)
-                    ? workingDays.filter(d => !!d)
-                    : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                // TEMPORARY: Commented out until database migration is applied
+                // working_days: (Array.isArray(workingDays) && workingDays.length > 0)
+                //     ? workingDays.filter(d => !!d)
+                //     : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
                 profile_image_url: profileImageUrl || null,
                 signature_url: signatureUrl || null,
                 // DEFENSIVE: Ensure it is a valid JSON array or object
@@ -142,7 +142,8 @@ export async function updateDoctor(formData: FormData) {
                 consultation_end_time: consultationEndTime,
                 consultation_slot_duration: consultationSlotDuration,
                 consultation_fee: consultationFee,
-                working_days: (Array.isArray(workingDays) && workingDays.length > 0) ? workingDays.filter(d => !!d) : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                // TEMPORARY: Commented out until database migration is applied
+                // working_days: (Array.isArray(workingDays) && workingDays.length > 0) ? workingDays.filter(d => !!d) : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
                 profile_image_url: profileImageUrl || null,
                 signature_url: signatureUrl || null,
                 document_urls: Array.isArray(documentUrls) ? documentUrls : [],
