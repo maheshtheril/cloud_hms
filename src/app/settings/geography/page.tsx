@@ -51,9 +51,9 @@ export default async function GeographySettingsPage({
         )
     }
 
-    const { success, data, error } = await getAdministrativeHierarchy(targetCountryId)
+    const { success, country, hierarchy, error } = await getAdministrativeHierarchy(targetCountryId)
 
-    if (!success || !data) {
+    if (!success || !country) {
         return (
             <div className="container mx-auto p-8 max-w-5xl">
                 <div className="bg-rose-50 border border-rose-200 rounded-xl p-6 flex items-start gap-4">
@@ -75,14 +75,14 @@ export default async function GeographySettingsPage({
             <header className="mb-8 pb-4">
                 <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Administrative Structure</h1>
                 <p className="text-slate-500 mt-2 text-lg">
-                    Define the granular regional hierarchy for <strong>{data.country.name}</strong> to align with your sales territories, tax jurisdictions, and logistics.
+                    Define the granular regional hierarchy for <strong>{country.name}</strong> to align with your sales territories, tax jurisdictions, and logistics.
                 </p>
             </header>
 
             <HierarchyManager
                 key={targetCountryId}
-                country={data.country}
-                hierarchy={data.hierarchy}
+                country={country}
+                hierarchy={hierarchy}
                 availableCountries={availableCountries}
                 currentCountryId={targetCountryId}
             />
