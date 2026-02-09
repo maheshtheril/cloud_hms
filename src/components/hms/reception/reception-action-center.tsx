@@ -630,6 +630,15 @@ export function ReceptionActionCenter({
                                                     <td className="px-6 py-5 text-right relative">
                                                         <div className="flex justify-end gap-2 items-center">
                                                             <div className="flex items-center gap-2">
+                                                                <AdmissionDialog
+                                                                    patientId={apt.patient.id}
+                                                                    patientName={`${apt.patient.first_name} ${apt.patient.last_name}`}
+                                                                    trigger={
+                                                                        <Button variant="outline" size="icon" className="h-8 w-8 text-slate-400 hover:text-indigo-600">
+                                                                            <BedIcon className="h-4 w-4" />
+                                                                        </Button>
+                                                                    }
+                                                                />
                                                                 <OpSlipDialog
                                                                     appointment={apt}
                                                                     trigger={
@@ -960,8 +969,17 @@ function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, 
                 {type === 'waiting' && apt.status === 'scheduled' && (
                     <Button size="sm" onClick={onAction} className="h-7 text-[10px] bg-blue-600 hover:bg-blue-700 text-white">Check In</Button>
                 )}
-                {type === 'waiting' && apt.status === 'arrived' && (
-                    <Button size="sm" onClick={onAction} className="h-7 text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white">Send In</Button>
+                {type === 'waiting' && (apt.status === 'arrived' || apt.status === 'checked_in') && (
+                    <div className="flex gap-1">
+                        <Button size="sm" onClick={onAction} className="h-7 text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white">Send In</Button>
+                        <AdmissionDialog
+                            patientId={apt.patient.id}
+                            patientName={`${apt.patient.first_name} ${apt.patient.last_name}`}
+                            trigger={
+                                <Button size="sm" variant="outline" className="h-7 text-[10px] border-emerald-100 text-emerald-600 hover:bg-emerald-50">Admit</Button>
+                            }
+                        />
+                    </div>
                 )}
                 {type === 'running' && (
                     <div className="flex gap-1">

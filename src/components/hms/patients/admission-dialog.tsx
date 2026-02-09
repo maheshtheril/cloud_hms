@@ -28,9 +28,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 interface AdmissionDialogProps {
     patientId: string
     patientName: string
+    trigger?: React.ReactNode
 }
 
-export function AdmissionDialog({ patientId, patientName }: AdmissionDialogProps) {
+export function AdmissionDialog({ patientId, patientName, trigger }: AdmissionDialogProps) {
     const [isOpen, setIsOpen] = useState(false)
     const [loading, setLoading] = useState(false)
     const [wards, setWards] = useState<any[]>([])
@@ -78,10 +79,12 @@ export function AdmissionDialog({ patientId, patientName }: AdmissionDialogProps
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
-                <button className="text-emerald-600 hover:text-emerald-800 font-bold text-xs uppercase tracking-wider transition-colors flex items-center gap-1 group">
-                    <Activity className="h-3 w-3 group-hover:scale-110 transition-transform" />
-                    IP Admission
-                </button>
+                {trigger || (
+                    <button className="text-emerald-600 hover:text-emerald-800 font-bold text-[10px] uppercase tracking-wider transition-colors flex items-center gap-1 group">
+                        <Activity className="h-3 w-3 group-hover:scale-110 transition-transform" />
+                        IP Admission
+                    </button>
+                )}
             </DialogTrigger>
             <DialogContent className="max-w-4xl rounded-[2.5rem] p-0 border-none shadow-2xl overflow-hidden bg-slate-50 dark:bg-slate-950">
                 <div className="flex flex-col h-[85vh]">

@@ -8,8 +8,9 @@ export const metadata: Metadata = {
 }
 
 export default async function WardsPage() {
+    const session = await auth()
     const branchesRes = await getBranches()
     const branches = branchesRes.success ? branchesRes.data : []
 
-    return <WardManager branches={branches || []} />
+    return <WardManager branches={branches || []} isAdmin={!!session?.user?.isAdmin || !!session?.user?.isTenantAdmin} />
 }

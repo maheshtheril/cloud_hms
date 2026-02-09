@@ -22,7 +22,7 @@ import { getWards, createWard, createBed, getActiveAdmissions, assignBedToPatien
 import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from "sonner"
 
-export function WardManager({ branches }: { branches: any[] }) {
+export function WardManager({ branches, isAdmin }: { branches: any[], isAdmin?: boolean }) {
     const [wards, setWards] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedBranch, setSelectedBranch] = useState(branches[0]?.id || '')
@@ -140,9 +140,11 @@ export function WardManager({ branches }: { branches: any[] }) {
                         {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                     </select>
 
-                    <Button onClick={() => setIsCreateWardOpen(true)} className="h-12 px-6 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:shadow-lg transition-all">
-                        <Plus className="h-5 w-5 mr-2" /> New Ward
-                    </Button>
+                    {isAdmin && (
+                        <Button onClick={() => setIsCreateWardOpen(true)} className="h-12 px-6 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold hover:shadow-lg transition-all">
+                            <Plus className="h-5 w-5 mr-2" /> New Ward
+                        </Button>
+                    )}
                 </div>
             </div>
 
@@ -188,12 +190,16 @@ export function WardManager({ branches }: { branches: any[] }) {
                                             </Button>
                                         </DropdownMenuTrigger>
                                         <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
-                                            <DropdownMenuItem onClick={() => handleAddBed(ward.id)} className="rounded-xl h-11 cursor-pointer">
-                                                <Plus className="h-4 w-4 mr-2" /> Add New Bed
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem className="rounded-xl h-11 cursor-pointer text-rose-600">
-                                                <Trash2 className="h-4 w-4 mr-2" /> Delete Ward
-                                            </DropdownMenuItem>
+                                            {isAdmin && (
+                                                <DropdownMenuItem onClick={() => handleAddBed(ward.id)} className="rounded-xl h-11 cursor-pointer">
+                                                    <Plus className="h-4 w-4 mr-2" /> Add New Bed
+                                                </DropdownMenuItem>
+                                            )}
+                                            {isAdmin && (
+                                                <DropdownMenuItem className="rounded-xl h-11 cursor-pointer text-rose-600">
+                                                    <Trash2 className="h-4 w-4 mr-2" /> Delete Ward
+                                                </DropdownMenuItem>
+                                            )}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
                                 </div>
@@ -226,13 +232,15 @@ export function WardManager({ branches }: { branches: any[] }) {
                                             </div>
 
                                         ))}
-                                        <button
-                                            onClick={() => handleAddBed(ward.id)}
-                                            className="h-20 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 flex flex-col items-center justify-center transition-all group/add gap-1"
-                                        >
-                                            <Plus className="h-5 w-5 text-slate-300 group-hover/add:text-indigo-500 transition-colors" />
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover/add:text-indigo-600 transition-colors">Add Bed</span>
-                                        </button>
+                                        {isAdmin && (
+                                            <button
+                                                onClick={() => handleAddBed(ward.id)}
+                                                className="h-20 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-600 flex flex-col items-center justify-center transition-all group/add gap-1"
+                                            >
+                                                <Plus className="h-5 w-5 text-slate-300 group-hover/add:text-indigo-500 transition-colors" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 group-hover/add:text-indigo-600 transition-colors">Add Bed</span>
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </motion.div>
