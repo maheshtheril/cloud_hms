@@ -215,7 +215,8 @@ export async function initializeDoctorProfile(_formData: FormData) {
                 consultation_slot_duration: 30, // Default 20 mins
                 consultation_start_time: "09:00",
                 consultation_end_time: "17:00",
-                working_days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+                // TEMPORARY: Commented out until database migration is applied
+                // working_days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
             } as any
         })
 
