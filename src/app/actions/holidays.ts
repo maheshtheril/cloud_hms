@@ -15,15 +15,51 @@ const holidaySchema = z.object({
 })
 
 export async function getHolidays(tenantId: string) {
-    // Cast to any because Prisma Client is not regenerated yet
-    return await (prisma as any).hms_holiday.findMany({
-        where: { tenant_id: tenantId },
-        include: {
-            country: true,
-            subdivision: true
-        },
-        orderBy: { date: 'asc' }
-    })
+    try {
+        // Fetch base holidays
+        const holidays = await (prisma as any).hms_holiday.findMany({
+            where: { tenant_id: tenantId },
+            orderBy: { date: 'asc' }
+        });
+
+        // Manual Enrichment for Country and Subdivision
+        // This is a safety net in case the Prisma 'include' fails or the model is not fully mapped.
+        const enriched = await Promise.all(holidays.map(async (h: any) => {
+            let country = null;
+            if (h.country_id) {
+                try {
+                    // Try plural 'countries' table first (standard in this DB)
+                    country = await (prisma as any).countries.findUnique({
+                        where: { id: h.country_id }
+                    });
+                } catch (e) {
+                    // Fallback to singular 'country' if plural fails
+                    try { country = await (prisma as any).country.findUnique({ where: { id: h.country_id } }); } catch (e2) { }
+                }
+            }
+
+            let subdivision = null;
+            if (h.subdivision_id) {
+                try {
+                    subdivision = await (prisma as any).country_subdivision.findUnique({
+                        where: { id: h.subdivision_id }
+                    });
+                } catch (e) { }
+            }
+
+            return {
+                ...h,
+                country,
+                subdivision
+            };
+        }));
+
+        return enriched;
+    } catch (error) {
+        console.error("Critical error in getHolidays:", error);
+        // Return empty array instead of crashing the whole page
+        return [];
+    }
 }
 
 export async function createHoliday(tenantId: string, data: z.infer<typeof holidaySchema>) {

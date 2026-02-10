@@ -2,7 +2,6 @@ import { getIntelligenceSummary } from "@/app/actions/crm/intelligence"
 import Link from "next/link"
 import {
     Brain,
-    Users,
     Network,
     Target,
     MapPin,
@@ -13,7 +12,6 @@ import {
     Zap,
     TrendingUp,
     AlertCircle,
-    Building2,
     Activity,
     ChevronRight,
     Search
@@ -23,11 +21,11 @@ export default async function IntelligenceDashboard() {
     const data = await getIntelligenceSummary()
 
     return (
-        <div className="min-h-screen bg-[#020617] text-slate-200 selection:bg-indigo-500/30">
+        <div className="min-h-screen bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-slate-200 selection:bg-indigo-500/30 transition-colors duration-500">
             {/* World-Class Background Bloom */}
             <div className="fixed inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/10 rounded-full blur-[120px] animate-pulse" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 rounded-full blur-[120px] animate-pulse animation-delay-2000" />
+                <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/10 dark:bg-indigo-500/10 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500/10 dark:bg-purple-500/10 rounded-full blur-[120px] animate-pulse animation-delay-2000" />
             </div>
 
             <div className="relative container mx-auto py-12 px-6 max-w-7xl space-y-12">
@@ -39,21 +37,21 @@ export default async function IntelligenceDashboard() {
                                 <Brain className="w-8 h-8 text-white animate-pulse" />
                             </div>
                             <div>
-                                <h1 className="text-5xl font-black tracking-tighter text-white uppercase italic">
+                                <h1 className="text-5xl font-black tracking-tighter text-slate-900 dark:text-white uppercase italic">
                                     Strategic Intelligence
                                 </h1>
                                 <div className="flex items-center gap-2 mt-1">
                                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-ping" />
-                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">System Live • Real-time Monitoring</span>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-600 dark:text-indigo-400">System Live • Real-time Monitoring</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     <div className="flex gap-4">
-                        <Link href="/crm/dashboard" className="px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all flex items-center gap-2 group">
-                            <Zap className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">Command Center</span>
+                        <Link href="/crm/dashboard" className="px-6 py-3 bg-white dark:bg-white/5 hover:bg-slate-100 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 rounded-2xl shadow-sm transition-all flex items-center gap-2 group">
+                            <Zap className="w-4 h-4 text-amber-500 dark:text-amber-400 group-hover:scale-110 transition-transform" />
+                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300">Command Center</span>
                         </Link>
                     </div>
                 </div>
@@ -63,34 +61,34 @@ export default async function IntelligenceDashboard() {
 
                     {/* 1. Org Architecture Core */}
                     <Link href="/crm/org-chart" className="group col-span-1 lg:col-span-2">
-                        <div className="h-full glass-card bg-gradient-to-br from-indigo-500/10 to-transparent p-8 rounded-[2rem] border border-white/10 hover:border-indigo-500/30 transition-all duration-500 relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/10 blur-[80px] rounded-full translate-x-1/2 -translate-y-1/2 group-hover:bg-indigo-600/20 transition-all" />
+                        <div className="h-full bg-white dark:bg-gradient-to-br dark:from-indigo-500/10 dark:to-transparent p-8 rounded-[2rem] border border-slate-200 dark:border-white/10 hover:border-indigo-500/30 transition-all duration-500 relative overflow-hidden shadow-sm hover:shadow-xl">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-600/5 dark:bg-indigo-600/10 blur-[80px] rounded-full translate-x-1/2 -translate-y-1/2 group-hover:bg-indigo-600/10 dark:group-hover:bg-indigo-600/20 transition-all" />
 
                             <div className="relative z-10 flex flex-col h-full justify-between gap-8">
                                 <div className="flex justify-between items-start">
-                                    <div className="p-4 bg-indigo-600/20 rounded-2xl border border-indigo-500/30 shadow-inner">
-                                        <Network className="w-8 h-8 text-indigo-400" />
+                                    <div className="p-4 bg-indigo-50 dark:bg-indigo-600/20 rounded-2xl border border-indigo-100 dark:border-indigo-500/30 shadow-inner">
+                                        <Network className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
                                     </div>
                                     <ArrowUpRight className="w-6 h-6 text-indigo-500 opacity-0 group-hover:opacity-100 -translate-y-2 group-hover:translate-y-0 translate-x-2 group-hover:translate-x-0 transition-all" />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <h2 className="text-3xl font-black text-white tracking-tight leading-none">Organizational<br />Hierarchy</h2>
-                                    <p className="text-slate-400 font-medium text-sm max-w-sm">Deconstruct the command structure. Manage reporting lines, department logic, and leadership flow.</p>
+                                    <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Organizational<br />Hierarchy</h2>
+                                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm max-w-sm">Deconstruct the command structure. Manage reporting lines, department logic, and leadership flow.</p>
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-white/5">
+                                <div className="grid grid-cols-3 gap-4 pt-4 border-t border-slate-100 dark:border-white/5">
                                     <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Human Assets</p>
-                                        <div className="text-2xl font-black text-white">{data.org.employees}</div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Human Assets</p>
+                                        <div className="text-2xl font-black text-slate-900 dark:text-white">{data.org.employees}</div>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Departments</p>
-                                        <div className="text-2xl font-black text-white">{data.org.departments}</div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Departments</p>
+                                        <div className="text-2xl font-black text-slate-900 dark:text-white">{data.org.departments}</div>
                                     </div>
                                     <div>
-                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Strategic Roles</p>
-                                        <div className="text-2xl font-black text-white">{data.org.designations}</div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1">Strategic Roles</p>
+                                        <div className="text-2xl font-black text-slate-900 dark:text-white">{data.org.designations}</div>
                                     </div>
                                 </div>
                             </div>
@@ -99,27 +97,27 @@ export default async function IntelligenceDashboard() {
 
                     {/* 2. Target Matrix */}
                     <Link href="/crm/targets" className="group">
-                        <div className="h-full glass-card bg-emerald-500/5 p-8 rounded-[2rem] border border-white/10 hover:border-emerald-500/30 transition-all duration-500 relative overflow-hidden">
+                        <div className="h-full bg-white dark:bg-emerald-500/5 p-8 rounded-[2rem] border border-slate-200 dark:border-white/10 hover:border-emerald-500/30 transition-all duration-500 relative overflow-hidden shadow-sm hover:shadow-xl">
                             <div className="relative z-10 flex flex-col h-full justify-between gap-8">
                                 <div className="flex justify-between items-start">
-                                    <div className="p-4 bg-emerald-600/20 rounded-2xl border border-emerald-500/30 shadow-inner">
-                                        <Target className="w-8 h-8 text-emerald-400" />
+                                    <div className="p-4 bg-emerald-50 dark:bg-emerald-600/20 rounded-2xl border border-emerald-100 dark:border-emerald-500/30 shadow-inner">
+                                        <Target className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
                                     </div>
                                     <Activity className="w-6 h-6 text-emerald-500 animate-pulse" />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <h2 className="text-3xl font-black text-white tracking-tight leading-none text-gradient-primary">Performance<br />Velocity</h2>
-                                    <p className="text-slate-400 font-medium text-sm">Gated target tracking. Real-time progression analysis and milestone enforcement.</p>
+                                    <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Performance<br />Velocity</h2>
+                                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Gated target tracking. Real-time progression analysis and milestone enforcement.</p>
                                 </div>
 
                                 <div className="space-y-4">
                                     <div className="space-y-1">
                                         <div className="flex justify-between items-end">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Global Progress</span>
-                                            <span className="text-lg font-black text-emerald-400">{data.performance.avgProgression}%</span>
+                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Global Progress</span>
+                                            <span className="text-lg font-black text-emerald-600 dark:text-emerald-400">{data.performance.avgProgression}%</span>
                                         </div>
-                                        <div className="w-full h-2 bg-white/5 rounded-full overflow-hidden">
+                                        <div className="w-full h-2 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
                                             <div className="h-full bg-emerald-500 rounded-full transition-all duration-1000" style={{ width: `${data.performance.avgProgression}%` }} />
                                         </div>
                                     </div>
@@ -135,38 +133,38 @@ export default async function IntelligenceDashboard() {
                     </Link>
 
                     {/* 3. Data Integrity & AI IQ */}
-                    <div className="group glass-card bg-amber-500/5 p-8 rounded-[2rem] border border-white/10 transition-all duration-500 relative overflow-hidden">
+                    <div className="group bg-white dark:bg-amber-500/5 p-8 rounded-[2rem] border border-slate-200 dark:border-white/10 transition-all duration-500 relative overflow-hidden shadow-sm hover:shadow-xl">
                         <div className="relative z-10 flex flex-col h-full gap-8">
                             <div className="flex justify-between items-start">
-                                <div className="p-4 bg-amber-600/20 rounded-2xl border border-amber-500/30 shadow-inner">
-                                    <ShieldCheck className="w-8 h-8 text-amber-400" />
+                                <div className="p-4 bg-amber-50 dark:bg-amber-600/20 rounded-2xl border border-amber-100 dark:border-amber-500/30 shadow-inner">
+                                    <ShieldCheck className="w-8 h-8 text-amber-600 dark:text-amber-400" />
                                 </div>
-                                <div className="px-3 py-1 bg-amber-500/20 rounded-full text-[8px] font-black text-amber-500 uppercase tracking-widest border border-amber-500/30">
+                                <div className="px-3 py-1 bg-amber-100 dark:bg-amber-500/20 rounded-full text-[8px] font-black text-amber-600 dark:text-amber-500 uppercase tracking-widest border border-amber-200 dark:border-amber-500/30">
                                     Active Guard
                                 </div>
                             </div>
 
                             <div className="space-y-2">
-                                <h2 className="text-2xl font-black text-white tracking-tight">Data Integrity</h2>
-                                <p className="text-slate-400 font-medium text-xs">Lead enrichment and duplicate intelligence monitoring.</p>
+                                <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Data Integrity</h2>
+                                <p className="text-slate-500 dark:text-slate-400 font-medium text-xs">Lead enrichment and duplicate intelligence monitoring.</p>
                             </div>
 
-                            <div className="space-y-6 pt-4 border-t border-white/5">
+                            <div className="space-y-6 pt-4 border-t border-slate-100 dark:border-white/5">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <Search className="w-4 h-4 text-slate-500" />
-                                        <span className="text-[10px] font-black uppercase text-slate-500">Duplicate Risk</span>
+                                        <Search className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                                        <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">Duplicate Risk</span>
                                     </div>
-                                    <span className={`text-sm font-black ${data.integrity.duplicateRisk > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                    <span className={`text-sm font-black ${data.integrity.duplicateRisk > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
                                         {data.integrity.duplicateRisk > 0 ? `${data.integrity.duplicateRisk} Flagged` : '0 Issues'}
                                     </span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <Workflow className="w-4 h-4 text-slate-500" />
-                                        <span className="text-[10px] font-black uppercase text-slate-500">AI Scoring Avg</span>
+                                        <Workflow className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                                        <span className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500">AI Scoring Avg</span>
                                     </div>
-                                    <span className="text-sm font-black text-indigo-400">{data.integrity.score}/100</span>
+                                    <span className="text-sm font-black text-indigo-600 dark:text-indigo-400">{data.integrity.score}/100</span>
                                 </div>
                             </div>
                         </div>
@@ -174,29 +172,29 @@ export default async function IntelligenceDashboard() {
 
                     {/* 4. Field Intelligence */}
                     <Link href="/crm/attendance" className="group">
-                        <div className="h-full glass-card bg-purple-500/5 p-8 rounded-[2rem] border border-white/10 hover:border-purple-500/30 transition-all duration-500 relative overflow-hidden">
+                        <div className="h-full bg-white dark:bg-purple-500/5 p-8 rounded-[2rem] border border-slate-200 dark:border-white/10 hover:border-purple-500/30 transition-all duration-500 relative overflow-hidden shadow-sm hover:shadow-xl">
                             <div className="relative z-10 flex flex-col h-full justify-between gap-8">
                                 <div className="flex justify-between items-start">
-                                    <div className="p-4 bg-purple-600/20 rounded-2xl border border-purple-500/30 shadow-inner">
-                                        <MapPin className="w-8 h-8 text-purple-400" />
+                                    <div className="p-4 bg-purple-50 dark:bg-purple-600/20 rounded-2xl border border-purple-100 dark:border-purple-500/30 shadow-inner">
+                                        <MapPin className="w-8 h-8 text-purple-600 dark:text-purple-400" />
                                     </div>
                                     <ArrowUpRight className="w-6 h-6 text-purple-500 opacity-0 group-hover:opacity-100 transition-all" />
                                 </div>
 
                                 <div className="space-y-2">
-                                    <h2 className="text-3xl font-black text-white tracking-tight leading-none text-gradient-primary">Field Intelligence</h2>
-                                    <p className="text-slate-400 font-medium text-sm">Active GPS tracking and field team synchronization metrics.</p>
+                                    <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-none">Field Intelligence</h2>
+                                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Active GPS tracking and field team synchronization metrics.</p>
                                 </div>
 
                                 <div className="flex items-center gap-6">
                                     <div className="space-y-1">
-                                        <div className="text-2xl font-black text-white">{data.field.activeClockIns}</div>
-                                        <p className="text-[8px] font-black uppercase tracking-widest text-slate-500">Active Check-ins</p>
+                                        <div className="text-2xl font-black text-slate-900 dark:text-white">{data.field.activeClockIns}</div>
+                                        <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Active Check-ins</p>
                                     </div>
-                                    <div className="h-10 w-px bg-white/10" />
+                                    <div className="h-10 w-px bg-slate-100 dark:bg-white/10" />
                                     <div className="space-y-1">
-                                        <div className="text-2xl font-black text-white">{data.field.coverage}%</div>
-                                        <p className="text-[8px] font-black uppercase tracking-widest text-slate-500">Region Coverage</p>
+                                        <div className="text-2xl font-black text-slate-900 dark:text-white">{data.field.coverage}%</div>
+                                        <p className="text-[8px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">Region Coverage</p>
                                     </div>
                                 </div>
                             </div>
@@ -204,7 +202,7 @@ export default async function IntelligenceDashboard() {
                     </Link>
 
                     {/* 5. Quick Sync Module */}
-                    <div className="group glass-card bg-slate-800/20 p-8 rounded-[2rem] border border-white/5 transition-all duration-500 flex flex-col justify-between gap-6">
+                    <div className="group bg-white dark:bg-slate-800/20 p-8 rounded-[2rem] border border-slate-200 dark:border-white/5 transition-all duration-500 flex flex-col justify-between gap-6 shadow-sm hover:shadow-xl">
                         <div className="space-y-2">
                             <div className="flex items-center gap-2 mb-4">
                                 <Boxes className="w-5 h-5 text-indigo-500" />
@@ -212,25 +210,25 @@ export default async function IntelligenceDashboard() {
                             </div>
                             <div className="space-y-4">
                                 <Link href="/crm/departments" className="flex items-center justify-between group/line">
-                                    <span className="text-xs font-bold text-slate-300 group-hover/line:text-indigo-400 transition-colors">Internal Departments</span>
-                                    <ChevronRight className="w-4 h-4 text-slate-700 group-hover/line:text-indigo-500 group-hover/line:translate-x-1 transition-all" />
+                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300 group-hover/line:text-indigo-600 dark:group-hover/line:text-indigo-400 transition-colors">Internal Departments</span>
+                                    <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-700 group-hover/line:text-indigo-600 dark:group-hover/line:text-indigo-500 group-hover/line:translate-x-1 transition-all" />
                                 </Link>
-                                <div className="h-px bg-white/5" />
+                                <div className="h-px bg-slate-100 dark:bg-white/5" />
                                 <Link href="/crm/employees" className="flex items-center justify-between group/line">
-                                    <span className="text-xs font-bold text-slate-300 group-hover/line:text-indigo-400 transition-colors">Personnel Directory</span>
-                                    <ChevronRight className="w-4 h-4 text-slate-700 group-hover/line:text-indigo-500 group-hover/line:translate-x-1 transition-all" />
+                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300 group-hover/line:text-indigo-600 dark:group-hover/line:text-indigo-400 transition-colors">Personnel Directory</span>
+                                    <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-700 group-hover/line:text-indigo-600 dark:group-hover/line:text-indigo-500 group-hover/line:translate-x-1 transition-all" />
                                 </Link>
-                                <div className="h-px bg-white/5" />
+                                <div className="h-px bg-slate-100 dark:bg-white/5" />
                                 <Link href="/crm/reports" className="flex items-center justify-between group/line">
-                                    <span className="text-xs font-bold text-slate-300 group-hover/line:text-indigo-400 transition-colors">Intelligence Reports</span>
-                                    <ChevronRight className="w-4 h-4 text-slate-700 group-hover/line:text-indigo-500 group-hover/line:translate-x-1 transition-all" />
+                                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300 group-hover/line:text-indigo-600 dark:group-hover/line:text-indigo-400 transition-colors">Intelligence Reports</span>
+                                    <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-700 group-hover/line:text-indigo-600 dark:group-hover/line:text-indigo-500 group-hover/line:translate-x-1 transition-all" />
                                 </Link>
                             </div>
                         </div>
 
-                        <div className="p-4 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
-                            <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest mb-1">Security Status</p>
-                            <p className="text-[10px] font-bold text-slate-400">All structural links encrypted and verified. Global sync active.</p>
+                        <div className="p-4 bg-indigo-50 dark:bg-indigo-500/10 rounded-2xl border border-indigo-100 dark:border-indigo-500/20">
+                            <p className="text-[8px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest mb-1">Security Status</p>
+                            <p className="text-[10px] font-bold text-slate-600 dark:text-slate-400">All structural links encrypted and verified. Global sync active.</p>
                         </div>
                     </div>
 
@@ -241,12 +239,12 @@ export default async function IntelligenceDashboard() {
                     <p className="text-[8px] font-black uppercase tracking-[0.5em] text-slate-500">Seeakk Intelligence Framework • v2.23.0</p>
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-2">
-                            <TrendingUp className="w-3 h-3" />
-                            <span className="text-[8px] font-black uppercase">High Fidelity Monitoring</span>
+                            <TrendingUp className="w-3 h-3 text-slate-600 dark:text-slate-400" />
+                            <span className="text-[8px] font-black uppercase text-slate-600 dark:text-slate-400">High Fidelity Monitoring</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <ShieldCheck className="w-3 h-3" />
-                            <span className="text-[8px] font-black uppercase">Data Integrity Secured</span>
+                            <ShieldCheck className="w-3 h-3 text-slate-600 dark:text-slate-400" />
+                            <span className="text-[8px] font-black uppercase text-slate-600 dark:text-slate-400">Data Integrity Secured</span>
                         </div>
                     </div>
                 </div>

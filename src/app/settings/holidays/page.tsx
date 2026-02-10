@@ -10,12 +10,12 @@ export default async function HolidaySettingsPage() {
 
     const holidays = await getHolidays(session.user.tenantId)
 
-    // Convert dates to string to avoid serialization warnings
+    // Convert dates to string to avoid serialization warnings and handle missing dates safely
     const safeHolidays = holidays.map((h: any) => ({
         ...h,
-        date: h.date.toISOString(),
+        date: h.date ? (typeof h.date === 'string' ? h.date : h.date.toISOString()) : new Date().toISOString(),
         country: h.country ? { name: h.country.name, flag: h.country.flag } : null,
-        subdivision: h.subdivision ? { name: h.subdivision.name } : null
+        subdivision: h.subdivision ? { name: h.subdivision.name || h.subdivision.label } : null
     }))
 
     // Fetch company default country
