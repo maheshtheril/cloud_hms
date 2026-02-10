@@ -135,7 +135,7 @@ export function DepartmentManager({ initialDepartments }: Props) {
     }, [departments])
 
     const renderDept = (dept: any, depth = 0) => {
-        const hasChildren = dept.children.length > 0 || (dept.designations && dept.designations.length > 0)
+        const hasChildren = dept.children.length > 0 || (dept.crm_designations && dept.crm_designations.length > 0)
         const isExpanded = expanded[dept.id]
         const isMatch = dept.name.toLowerCase().includes(search.toLowerCase()) ||
             (dept.code && dept.code.toLowerCase().includes(search.toLowerCase()))
@@ -175,7 +175,7 @@ export function DepartmentManager({ initialDepartments }: Props) {
                                     {dept.is_active ? 'Active' : 'Inactive'}
                                 </Badge>
                                 <span className="text-[10px] text-indigo-400 font-bold ml-2">
-                                    {dept.designations?.length || 0} ROLES
+                                    {dept.crm_designations?.length || 0} ROLES
                                 </span>
                             </h4>
                             <p className="text-xs text-slate-400 font-medium truncate max-w-[300px]">{dept.description || 'No description'}</p>
@@ -212,7 +212,7 @@ export function DepartmentManager({ initialDepartments }: Props) {
                 {isExpanded && (
                     <div className="animate-in fade-in slide-in-from-top-1 duration-300">
                         {/* Render Designations */}
-                        {dept.designations?.map((desig: any) => (
+                        {dept.crm_designations?.map((desig: any) => (
                             <div
                                 key={desig.id}
                                 className="flex items-center justify-between p-2 pl-8 ml-[36px] bg-slate-50/50 rounded-xl border border-transparent hover:border-slate-200 group-designation"

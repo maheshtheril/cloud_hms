@@ -16,7 +16,7 @@ export async function getDepartments() {
             deleted_at: null
         },
         include: {
-            designations: {
+            crm_designations: {
                 where: { is_active: true },
                 orderBy: { name: 'asc' }
             }
