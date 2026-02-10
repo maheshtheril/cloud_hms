@@ -7,12 +7,12 @@ import {
     Calendar,
     Phone,
     Mail,
-    CheckCircle2,
+    CheckSquare,
     Clock,
     BrainCircuit,
     MapPin,
     MessageSquare,
-    StickyNote,
+    FileText,
     Activity,
     Sparkles,
     ArrowRight,
@@ -52,8 +52,8 @@ export default async function ActivitiesPage() {
             case 'call': return <Phone className="w-5 h-5 text-indigo-500" />
             case 'meeting': return <Calendar className="w-5 h-5 text-purple-500" />
             case 'email': return <Mail className="w-5 h-5 text-cyan-500" />
-            case 'task': return <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-            case 'note': return <StickyNote className="w-5 h-5 text-amber-500" />
+            case 'task': return <CheckSquare className="w-5 h-5 text-emerald-500" />
+            case 'note': return <FileText className="w-5 h-5 text-amber-500" />
             default: return <MessageSquare className="w-5 h-5 text-slate-500" />
         }
     }

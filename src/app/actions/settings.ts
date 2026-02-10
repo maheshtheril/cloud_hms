@@ -510,6 +510,11 @@ export async function createBranch(data: {
     phone?: string;
     email?: string;
     address?: string;
+    city?: string;
+    state?: string;
+    district?: string;
+    country?: string;
+    pincode?: string;
 }) {
     const session = await auth();
     if (!session?.user?.id || !session.user.companyId || !session.user.tenantId) {
@@ -528,6 +533,11 @@ export async function createBranch(data: {
                 phone: data.phone,
                 email: data.email,
                 address: data.address,
+                city: data.city,
+                state: data.state,
+                country: data.country,
+                district: data.district,
+                pincode: data.pincode,
                 is_active: true
             }
         });
@@ -547,6 +557,11 @@ export async function updateBranch(id: string, data: {
     phone?: string;
     email?: string;
     address?: string;
+    city?: string;
+    state?: string;
+    district?: string;
+    country?: string;
+    pincode?: string;
     is_active?: boolean;
 }) {
     const session = await auth();
@@ -567,6 +582,11 @@ export async function updateBranch(id: string, data: {
                 phone: data.phone,
                 email: data.email,
                 address: data.address,
+                city: data.city,
+                state: data.state,
+                country: data.country,
+                district: data.district,
+                pincode: data.pincode,
                 is_active: data.is_active ?? true
             }
         });

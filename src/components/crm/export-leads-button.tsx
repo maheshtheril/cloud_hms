@@ -5,9 +5,11 @@ import { Download } from 'lucide-react'
 import { exportLeadsAction } from '@/app/actions/crm/export-leads'
 import { useSearchParams } from 'next/navigation'
 import { useState } from 'react'
+import { useToast } from '@/components/ui/use-toast'
 
 export function ExportLeadsButton() {
     const searchParams = useSearchParams()
+    const { toast } = useToast()
     const [isLoading, setIsLoading] = useState(false)
 
     const handleExport = async () => {
@@ -21,7 +23,7 @@ export function ExportLeadsButton() {
 
             const result = await exportLeadsAction(params)
 
-            if (result.success && result.data) {
+            if (result.success && result.data && result.data.length > 0) {
                 // Convert JSON to CSV
                 const headers = Object.keys(result.data[0])
                 const csvContent = [
@@ -43,8 +45,24 @@ export function ExportLeadsButton() {
                 document.body.appendChild(link)
                 link.click()
                 document.body.removeChild(link)
+
+                toast({
+                    title: "Export Successful",
+                    description: `Exported ${result.data.length} leads to CSV.`
+                })
+            } else if (result.success && result.data?.length === 0) {
+                toast({
+                    title: "Export Empty",
+                    description: "No leads found to export.",
+                    variant: "default"
+                })
             } else {
                 console.error("Export failed:", result.error)
+                toast({
+                    title: "Export Failed",
+                    description: result.error || "Unknown error occurred.",
+                    variant: "destructive"
+                })
             }
         } catch (error) {
             console.error("Export error:", error)

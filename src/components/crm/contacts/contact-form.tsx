@@ -12,16 +12,32 @@ import { useToast } from '@/components/ui/use-toast'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
+import { PhoneInputComponent } from '@/components/ui/phone-input'
+import { isValidPhoneNumber } from 'react-phone-number-input'
+
 export function ContactForm() {
     const [loading, setLoading] = useState(false)
+    const [phone, setPhone] = useState<any>()
     const { toast } = useToast()
     const router = useRouter()
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault()
+
+        if (phone && !isValidPhoneNumber(phone)) {
+            toast({
+                title: "Validation Error",
+                description: "Invalid phone number format.",
+                variant: "destructive"
+            })
+            return
+        }
+
         setLoading(true)
 
         const formData = new FormData(event.currentTarget)
+        if (phone) formData.set('phone', phone)
+
         const res = await createContact(formData)
 
         setLoading(false)
@@ -74,7 +90,12 @@ export function ContactForm() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="phone">Phone Number</Label>
-                            <Input id="phone" name="phone" type="tel" placeholder="+1 (555) 000-0000" />
+                            <PhoneInputComponent
+                                placeholder="Enter phone number"
+                                value={phone}
+                                onChange={setPhone}
+                                defaultCountry="US"
+                            />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="job_title">Job Title</Label>

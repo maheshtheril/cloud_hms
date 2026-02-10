@@ -116,7 +116,8 @@ export default async function LeadsPage(props: PageProps) {
                 },
                 owner: {
                     select: { id: true, name: true, email: true }
-                }
+                },
+                source: true
             } as any
         }),
         prisma.crm_leads.count({ where }),

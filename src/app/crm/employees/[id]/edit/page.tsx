@@ -21,6 +21,8 @@ export default async function EditEmployeePage(props: { params: Promise<{ id: st
             employee={employee}
             designations={masters.designations || []}
             branches={masters.branches || []}
+            departments={masters.departments || []}
+            supervisors={masters.supervisors || []}
         />
     )
 }

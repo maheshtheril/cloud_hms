@@ -28,9 +28,11 @@ interface EditEmployeeFormProps {
     employee: any;
     designations: any[];
     branches: any[];
+    departments: any[];
+    supervisors: any[];
 }
 
-export function EditEmployeeForm({ employee, designations, branches }: EditEmployeeFormProps) {
+export function EditEmployeeForm({ employee, designations, branches, departments, supervisors }: EditEmployeeFormProps) {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [deleting, setDeleting] = useState(false)
@@ -40,7 +42,11 @@ export function EditEmployeeForm({ employee, designations, branches }: EditEmplo
         email: employee.email || '',
         phone: employee.phone || '',
         designation_id: employee.designation_id || 'none',
+        department_id: employee.department_id || 'none',
+        supervisor_id: employee.supervisor_id || 'none',
         branch_id: employee.branch_id || 'none',
+        office: employee.office || '',
+        category: employee.category || '',
         status: employee.status || 'active'
     })
 
@@ -49,9 +55,13 @@ export function EditEmployeeForm({ employee, designations, branches }: EditEmplo
         setLoading(true)
 
         const payload = {
-            ...formData,
-            designation_id: formData.designation_id === 'none' ? undefined : formData.designation_id,
-            branch_id: formData.branch_id === 'none' ? undefined : formData.branch_id,
+            const payload = {
+                ...formData,
+                designation_id: formData.designation_id === 'none' ? null : formData.designation_id,
+                department_id: formData.department_id === 'none' ? null : formData.department_id,
+                supervisor_id: formData.supervisor_id === 'none' ? null : formData.supervisor_id,
+                branch_id: formData.branch_id === 'none' ? null : formData.branch_id,
+            }
         }
 
         const result = await updateEmployee(employee.id, payload)
@@ -151,59 +161,119 @@ export function EditEmployeeForm({ employee, designations, branches }: EditEmplo
                         <CardHeader className="pb-4">
                             <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
                                 <Briefcase className="h-4 w-4 text-indigo-600" />
-                                Employment & Access
+                                Employment & Hierarchy
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="space-y-2">
-                                <Label>Designation</Label>
-                                <Select
-                                    value={formData.designation_id}
-                                    onValueChange={val => setFormData({ ...formData, designation_id: val })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select role" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">None / Unassigned</SelectItem>
-                                        {designations.map(d => (
-                                            <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                        <CardContent className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label>Designation</Label>
+                                    <Select
+                                        value={formData.designation_id}
+                                        onValueChange={val => setFormData({ ...formData, designation_id: val })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select role" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">None / Unassigned</SelectItem>
+                                            {designations.map(d => (
+                                                <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Department</Label>
+                                    <Select
+                                        value={formData.department_id}
+                                        onValueChange={val => setFormData({ ...formData, department_id: val })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select department" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">None / Unassigned</SelectItem>
+                                            {departments.map(d => (
+                                                <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label>Assigned Branch</Label>
-                                <Select
-                                    value={formData.branch_id}
-                                    onValueChange={val => setFormData({ ...formData, branch_id: val })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select location" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="none">Global / All Branches</SelectItem>
-                                        {branches.map(b => (
-                                            <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label>Direct Supervisor</Label>
+                                    <Select
+                                        value={formData.supervisor_id}
+                                        onValueChange={val => setFormData({ ...formData, supervisor_id: val })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select supervisor" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">No Supervisor</SelectItem>
+                                            {supervisors.filter(s => s.id !== employee.id).map(s => (
+                                                <SelectItem key={s.id} value={s.id}>{s.first_name} {s.last_name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Assigned Branch</Label>
+                                    <Select
+                                        value={formData.branch_id}
+                                        onValueChange={val => setFormData({ ...formData, branch_id: val })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select location" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">Global / All Branches</SelectItem>
+                                            {branches.map(b => (
+                                                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label>Status</Label>
-                                <Select
-                                    value={formData.status}
-                                    onValueChange={val => setFormData({ ...formData, status: val })}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="active">Active</SelectItem>
-                                        <SelectItem value="inactive">Inactive</SelectItem>
-                                        <SelectItem value="suspended">Suspended</SelectItem>
-                                    </SelectContent>
-                                </Select>
+
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="category">Category</Label>
+                                    <Input
+                                        id="category"
+                                        placeholder="e.g. Developer, Marketing"
+                                        value={formData.category}
+                                        onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="office">Office / Cabin</Label>
+                                    <Input
+                                        id="office"
+                                        placeholder="Room 101"
+                                        value={formData.office}
+                                        onChange={e => setFormData({ ...formData, office: e.target.value })}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Status</Label>
+                                    <Select
+                                        value={formData.status}
+                                        onValueChange={val => setFormData({ ...formData, status: val })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="active">Active</SelectItem>
+                                            <SelectItem value="inactive">Inactive</SelectItem>
+                                            <SelectItem value="suspended">Suspended</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>

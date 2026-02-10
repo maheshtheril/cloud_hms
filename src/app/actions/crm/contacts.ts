@@ -6,6 +6,8 @@ import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
+import { isValidPhoneNumber } from 'react-phone-number-input'
+
 export async function createContact(formData: FormData) {
     const session = await auth()
     if (!session?.user?.id || !session?.user?.tenantId) {
@@ -23,6 +25,10 @@ export async function createContact(formData: FormData) {
 
     if (!firstName) {
         return { error: "First name is required" }
+    }
+
+    if (phone && !isValidPhoneNumber(phone)) {
+        return { error: "Invalid phone number format" }
     }
 
     try {

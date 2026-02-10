@@ -62,6 +62,7 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
                             <TableHead className="w-[280px] font-bold text-slate-800 dark:text-slate-200 py-5">Identities & Entity</TableHead>
                             <TableHead className="font-bold text-slate-800 dark:text-slate-200">Point of Contact</TableHead>
                             <TableHead className="font-bold text-slate-800 dark:text-slate-200 text-center">Assigned</TableHead>
+                            <TableHead className="font-bold text-slate-800 dark:text-slate-200 text-center">Source</TableHead>
                             <TableHead className="font-bold text-slate-800 dark:text-slate-200">Followup Date</TableHead>
                             <TableHead className="font-bold text-slate-800 dark:text-slate-200">Engagement & Sync</TableHead>
                             <TableHead className="font-bold text-slate-800 dark:text-slate-200 text-right">Potential Value</TableHead>
@@ -120,6 +121,17 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
                                             </span>
                                         </div>
                                     </TableCell>
+                                    <TableCell className="text-center">
+                                        <div className="flex justify-center">
+                                            {lead.source ? (
+                                                <Badge variant="outline" className="text-[10px] bg-cyan-500/5 text-cyan-600 border-cyan-200 dark:border-cyan-800 uppercase tracking-tight py-0.5 px-2 font-bold">
+                                                    {lead.source.name}
+                                                </Badge>
+                                            ) : (
+                                                <span className="text-[10px] text-slate-400 italic font-mono">-</span>
+                                            )}
+                                        </div>
+                                    </TableCell>
                                     <TableCell>
                                         {lead.next_followup_date ? (
                                             <div className="flex flex-col">
@@ -162,7 +174,8 @@ export function LeadTable({ data, totalOrCount, page, limit }: LeadTableProps) {
                                             rounded-lg py-1 px-3 border-none shadow-sm font-bold uppercase tracking-wider text-[10px]
                                             ${lead.status === 'new' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : ''}
                                             ${lead.status === 'contacted' ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' : ''}
-                                            ${lead.status === 'won' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : ''}
+                                            ${lead.status === 'qualified' ? 'bg-violet-500/10 text-violet-600 dark:text-violet-400' : ''}
+                                            ${lead.status === 'converted' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : ''}
                                             ${lead.status === 'lost' ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400' : ''}
                                         `}>
                                             {lead.stage?.name || lead.status}

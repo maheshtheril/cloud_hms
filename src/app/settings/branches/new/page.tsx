@@ -127,12 +127,81 @@ export default function NewBranchPage() {
                                 <Label htmlFor="address">Physical Address</Label>
                                 <Input
                                     id="address"
-                                    placeholder="Full street address, City, Country"
+                                    placeholder="Building, Street, Area"
                                     value={formData.address}
                                     onChange={e => setFormData({ ...formData, address: e.target.value })}
                                 />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="country">Country</Label>
+                                    <Select
+                                        value={(formData as any).country || 'India'}
+                                        onValueChange={v => setFormData({ ...formData, country: v } as any)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="India">India</SelectItem>
+                                            <SelectItem value="UAE">UAE</SelectItem>
+                                            <SelectItem value="USA">USA</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="state">State</Label>
+                                    <Select
+                                        value={(formData as any).state}
+                                        onValueChange={v => setFormData({ ...formData, state: v } as any)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select State" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Karnataka">Karnataka</SelectItem>
+                                            <SelectItem value="Kerala">Kerala</SelectItem>
+                                            <SelectItem value="Tamil Nadu">Tamil Nadu</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="district">District</Label>
+                                    <Select
+                                        value={(formData as any).district}
+                                        onValueChange={v => setFormData({ ...formData, district: v } as any)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select District" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Bangalore">Bangalore</SelectItem>
+                                            <SelectItem value="Mysore">Mysore</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="city">City</Label>
+                                    <Input
+                                        id="city"
+                                        placeholder="City"
+                                        value={(formData as any).city}
+                                        onChange={e => setFormData({ ...formData, city: e.target.value } as any)}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="pincode">Pincode</Label>
+                                    <Input
+                                        id="pincode"
+                                        placeholder="Zip/Pin code"
+                                        value={(formData as any).pincode}
+                                        onChange={e => setFormData({ ...formData, pincode: e.target.value } as any)}
+                                    />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 pt-2">
                                 <div className="space-y-2">
                                     <Label htmlFor="phone">Contact Phone</Label>
                                     <Input

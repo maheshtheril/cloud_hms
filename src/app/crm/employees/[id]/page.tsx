@@ -95,8 +95,40 @@ export default async function EmployeeViewPage(props: { params: Promise<{ id: st
                                     <p className="text-slate-900 dark:text-white font-bold text-lg mt-1">{employee.designation?.name || 'N/A'}</p>
                                 </div>
                                 <div className="p-4 bg-slate-50 dark:bg-zinc-900 rounded-xl border border-slate-100 dark:border-zinc-800">
+                                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Department</span>
+                                    <p className="text-slate-900 dark:text-white font-bold text-lg mt-1">{employee.department?.name || 'Unassigned'}</p>
+                                </div>
+                                <div className="p-4 bg-slate-50 dark:bg-zinc-900 rounded-xl border border-slate-100 dark:border-zinc-800">
+                                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Reporting To</span>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        {employee.supervisor ? (
+                                            <>
+                                                <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700">
+                                                    {employee.supervisor.first_name[0]}
+                                                </div>
+                                                <p className="text-slate-900 dark:text-white font-bold text-lg hover:text-indigo-600 transition-colors">
+                                                    <Link href={`/crm/employees/${employee.supervisor_id}`}>{employee.supervisor.first_name} {employee.supervisor.last_name}</Link>
+                                                </p>
+                                            </>
+                                        ) : (
+                                            <p className="text-slate-400 font-bold text-lg">No Supervisor</p>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="p-4 bg-slate-50 dark:bg-zinc-900 rounded-xl border border-slate-100 dark:border-zinc-800">
                                     <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Assigned Branch</span>
-                                    <p className="text-slate-900 dark:text-white font-bold text-lg mt-1">{employee.branch?.name || 'Main Office'}</p>
+                                    <p className="text-slate-900 dark:text-white font-bold text-lg mt-1">{employee.branch?.name || 'Global / All'}</p>
+                                </div>
+                                <div className="p-4 bg-slate-50 dark:bg-zinc-900 rounded-xl border border-slate-100 dark:border-zinc-800">
+                                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Office Location</span>
+                                    <p className="text-slate-900 dark:text-white font-bold text-lg mt-1 gap-2 flex items-center">
+                                        <MapPin className="w-4 h-4 text-slate-400" />
+                                        {employee.office || 'Not Specified'}
+                                    </p>
+                                </div>
+                                <div className="p-4 bg-slate-50 dark:bg-zinc-900 rounded-xl border border-slate-100 dark:border-zinc-800">
+                                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Category / Class</span>
+                                    <p className="text-slate-900 dark:text-white font-bold text-lg mt-1">{employee.category || 'General Staff'}</p>
                                 </div>
                             </div>
 

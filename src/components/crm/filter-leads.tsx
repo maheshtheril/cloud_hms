@@ -83,7 +83,7 @@ export function FilterLeads({ sources, users, branches }: FilterLeadsProps) {
                         <div className="space-y-2">
                             <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Status</Label>
                             <div className="grid grid-cols-2 gap-1 px-1">
-                                {['new', 'contacted', 'won', 'lost'].map((s) => (
+                                {['new', 'contacted', 'qualified', 'converted', 'lost'].map((s) => (
                                     <DropdownMenuCheckboxItem
                                         key={s}
                                         checked={status === s}

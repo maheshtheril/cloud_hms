@@ -324,6 +324,8 @@ export async function ensureCrmMenus() {
 
         const staffItems = [
             { key: 'crm-employees', label: 'Employee Directory', url: '/crm/employees', icon: 'Users', sort: 10, permission: 'hr:view' },
+            { key: 'crm-departments', label: 'Departments', url: '/crm/departments', icon: 'Network', sort: 15, permission: 'hr:view' },
+            { key: 'crm-org-chart', label: 'Org Chart', url: '/crm/org-chart', icon: 'GitGraph', sort: 16, permission: 'hr:view' },
             { key: 'crm-designations', label: 'Designations', url: '/settings/designations', icon: 'UserCheck', sort: 20, permission: 'roles:manage' },
         ];
 

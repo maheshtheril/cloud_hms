@@ -1,14 +1,14 @@
 'use client'
 
 import { useActionState, useState, useMemo, useEffect, useRef } from 'react'
-import { createLead, updateLead, LeadFormState } from '@/app/actions/crm/leads'
+import { createLead, updateLead, LeadFormState, checkLeadDuplicates, searchCompaniesByDomain } from '@/app/actions/crm/leads'
 import { PhoneInputComponent } from '@/components/ui/phone-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
-import { Sparkles, BarChart2, Calendar as CalendarIcon, Plus, Save } from 'lucide-react'
+import { Sparkles, BarChart2, Calendar as CalendarIcon, Plus, Save, AlertTriangle, Building2, UserCircle2, ArrowRight } from 'lucide-react'
 import { CustomFieldDefinition, CustomFieldRenderer } from './custom-field-renderer'
 import { SubmitButton } from '@/components/ui/submit-button'
 import {
@@ -40,6 +40,7 @@ export function LeadForm({
     supportedCurrencies = [],
     users = [],
     targetTypes = [],
+    lobs = [],
     isManager = false
 }: {
     customFields?: CustomFieldDefinition[],
@@ -52,6 +53,7 @@ export function LeadForm({
     supportedCurrencies?: CurrencyInfo[],
     users?: any[],
     targetTypes?: any[],
+    lobs?: any[],
     isManager?: boolean
 }) {
     const isAdmin = isManager || false
@@ -110,6 +112,51 @@ export function LeadForm({
             formRef.current?.reset()
         }
     }, [state.success, mode])
+
+    // --- LEADS INTELLIGENCE (Duplicate Check & Enrichment) ---
+    const [email, setEmail] = useState(initialData?.email || '')
+    const [companyName, setCompanyName] = useState(initialData?.company_name || '')
+    const [duplicates, setDuplicates] = useState<any[]>([])
+    const [recommendations, setRecommendations] = useState<string[]>([])
+    const [isChecking, setIsChecking] = useState(false)
+
+    // Check for Duplicates
+    useEffect(() => {
+        if (!email && !phone) {
+            setDuplicates([])
+            return
+        }
+
+        const timer = setTimeout(async () => {
+            if (email.length > 3 || (phone && phone.length > 5)) {
+                setIsChecking(true)
+                const result = await checkLeadDuplicates({ email, phone })
+                if (result.success && result.duplicates) {
+                    setDuplicates(result.duplicates)
+                }
+                setIsChecking(false)
+            }
+        }, 800)
+
+        return () => clearTimeout(timer)
+    }, [email, phone])
+
+    // Search for Company Recommendations
+    useEffect(() => {
+        if (!email || !email.includes('@')) {
+            setRecommendations([])
+            return
+        }
+
+        const timer = setTimeout(async () => {
+            const result = await searchCompaniesByDomain(email)
+            if (result.success && result.recommendations) {
+                setRecommendations(result.recommendations)
+            }
+        }, 600)
+
+        return () => clearTimeout(timer)
+    }, [email])
 
     return (
         <form ref={formRef} action={dispatch} className="flex flex-col h-full max-h-[85vh] overflow-hidden">
@@ -175,8 +222,50 @@ export function LeadForm({
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Email</Label>
-                                <Input id="email" name="email" type="email" placeholder="email@address.com" defaultValue={initialData?.email} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white" />
+                                <Label htmlFor="alt_phone" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Alt Number (Office)</Label>
+                                <Input id="alt_phone" name="alt_phone" placeholder="Landline or secondary" defaultValue={initialData?.alt_phone} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white" />
+                            </div>
+
+                            <div className="space-y-2 relative">
+                                <Label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Primary Email</Label>
+                                <Input id="email" name="email" type="email" placeholder="email@address.com" value={email} onChange={(e) => setEmail(e.target.value)} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white" />
+
+                                {/* Duplicate Warning Mini-Overlay */}
+                                {duplicates.length > 0 && (
+                                    <div className="absolute right-0 top-1/2 -translate-y-1/2 mr-2">
+                                        <div className="flex items-center gap-1 px-2 py-1 bg-rose-500 text-white rounded-lg text-[10px] font-black uppercase shadow-lg animate-bounce">
+                                            <AlertTriangle className="w-3 h-3" />
+                                            Duplicate Found
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="priority" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Priority</Label>
+                                <select
+                                    id="priority"
+                                    name="priority"
+                                    defaultValue={initialData?.priority || 'warm'}
+                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm focus:border-indigo-500 transition-all outline-none text-slate-900 dark:text-white font-medium"
+                                >
+                                    <option value="hot">🔥 Hot</option>
+                                    <option value="warm">⚡ Warm</option>
+                                    <option value="cold">❄️ Cold</option>
+                                </select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="lob_id" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">LOB (Line of Business)</Label>
+                                <select
+                                    id="lob_id"
+                                    name="lob_id"
+                                    defaultValue={initialData?.lob_id}
+                                    className="flex h-12 w-full rounded-xl border border-slate-200/50 bg-white/50 dark:bg-slate-900/50 px-3 py-2 text-sm focus:border-indigo-500 transition-all outline-none text-slate-900 dark:text-white font-medium"
+                                >
+                                    <option value="">Select LOB</option>
+                                    {lobs?.map((l: any) => <option key={l.id} value={l.id}>{l.name}</option>)}
+                                </select>
                             </div>
 
                             <div className="space-y-2">
@@ -228,6 +317,51 @@ export function LeadForm({
                                 {isHot && <div className="w-3 h-3 bg-white rounded-full" />}
                             </div>
                         </div>
+
+                        {/* Intelligence Alerts Section */}
+                        {duplicates.length > 0 && (
+                            <div className="mt-8 animate-in slide-in-from-right-4 duration-500">
+                                <div className="p-6 bg-rose-500/5 border border-rose-500/10 rounded-3xl relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
+                                        <AlertTriangle className="w-16 h-16 text-rose-500" />
+                                    </div>
+                                    <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-rose-500 mb-4 flex items-center gap-2">
+                                        <AlertTriangle className="w-3 h-3" />
+                                        Data Integrity Warning
+                                    </h4>
+                                    <div className="space-y-3">
+                                        {duplicates.map((dup: any) => (
+                                            <div key={dup.id} className="flex items-center justify-between p-3 bg-white/50 dark:bg-slate-900/50 rounded-2xl border border-rose-500/10 hover:border-rose-500/30 transition-all">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 flex items-center justify-center">
+                                                        <UserCircle2 className="w-6 h-6" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-black uppercase tracking-tight text-slate-900 dark:text-white">{dup.name}</p>
+                                                        <p className="text-[10px] font-medium text-slate-500">{dup.email || dup.phone} • {dup.company_name || 'Individual'}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <span className={`px-2 py-1 rounded text-[8px] font-black uppercase ${dup.status === 'won' ? 'bg-emerald-500 text-white' : 'bg-rose-500/10 text-rose-600'}`}>
+                                                        {dup.status}
+                                                    </span>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-8 px-3 rounded-lg text-[10px] font-black uppercase border border-rose-500/10 hover:bg-rose-500 hover:text-white"
+                                                        onClick={() => window.open(`/crm/leads/${dup.id}`, '_blank')}
+                                                    >
+                                                        Manage <ArrowRight className="w-3 h-3 ml-1" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <p className="text-[10px] text-slate-500 mt-4 font-bold italic">Potential collision detected. Verify data to avoid cross-rep engagement friction.</p>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     <div className={`mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300 ${activeTab === 'business' ? 'block' : 'hidden'}`}>
@@ -248,9 +382,35 @@ export function LeadForm({
                             )}
                             {companies.length === 1 && <input type="hidden" name="company_id" value={companies[0].id} />}
 
-                            <div className="space-y-2">
+                            <div className="space-y-2 relative">
                                 <Label htmlFor="company_name" className="text-xs font-bold uppercase tracking-widest text-slate-500 ml-1">Client Company / Organization</Label>
-                                <Input id="company_name" name="company_name" placeholder="e.g. Apex Global Corp" defaultValue={initialData?.company_name} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white font-medium" />
+                                <Input id="company_name" name="company_name" placeholder="e.g. Apex Global Corp" value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="h-12 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-xl text-slate-900 dark:text-white font-medium" />
+
+                                {/* AI Recommendations */}
+                                {recommendations.length > 0 && (
+                                    <div className="absolute top-full left-0 right-0 z-50 mt-1 p-2 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-indigo-500/20 animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <p className="text-[8px] font-black text-indigo-500 uppercase tracking-[0.2em] mb-2 px-2 flex items-center gap-1">
+                                            <Sparkles className="w-2 h-2" />
+                                            Intelligence Recommendations
+                                        </p>
+                                        <div className="flex flex-wrap gap-1">
+                                            {recommendations.map(name => (
+                                                <button
+                                                    key={name}
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setCompanyName(name)
+                                                        setRecommendations([])
+                                                    }}
+                                                    className="px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-800/50 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold rounded-lg transition-colors flex items-center gap-1"
+                                                >
+                                                    <Building2 className="w-3 h-3 opacity-50" />
+                                                    {name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="space-y-2">

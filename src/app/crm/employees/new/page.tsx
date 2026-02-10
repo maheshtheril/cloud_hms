@@ -13,25 +13,70 @@ import { toast } from '@/components/ui/use-toast'
 import { Badge } from '@/components/ui/badge'
 import { createEmployee, getEmployeeMasters } from '@/app/actions/crm/employees'
 
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { cn } from "@/lib/utils"
+
 export default function NewEmployeePage() {
     const router = useRouter()
     const [loading, setLoading] = useState(false)
-    const [masters, setMasters] = useState<{ designations: any[], branches: any[] }>({ designations: [], branches: [] })
+    const [masters, setMasters] = useState<{
+        designations: any[],
+        branches: any[],
+        departments: any[],
+        supervisors: any[]
+    }>({
+        designations: [],
+        branches: [],
+        departments: [],
+        supervisors: []
+    })
+
     const [formData, setFormData] = useState({
         first_name: '',
         last_name: '',
+        username: '',
         email: '',
         phone: '',
+        password: '',
+        confirmPassword: '',
+        role: 'user',
         designation_id: '',
+        department_id: '',
+        supervisor_id: 'none',
         branch_id: '',
-        status: 'active'
+        office: '',
+        category: '',
+        address: '',
+        city: '',
+        pincode: '',
+        country: 'India',
+        state: '',
+        district: '',
+        status: 'active',
+        // Target Settings
+        targetType: 'individual',
+        targetCycle: 'monthly',
+        targets: {
+            'January': '',
+            'February': '',
+            'March': '',
+            'April': '',
+            'May': '',
+            'June': '',
+            'July': '',
+            'August': '',
+            'September': '',
+            'October': '',
+            'November': '',
+            'December': ''
+        }
     })
 
     useEffect(() => {
         async function load() {
             const res = await getEmployeeMasters()
             if (res.success) {
-                setMasters({ designations: res.designations || [], branches: res.branches || [] })
+                setMasters(res as any)
             }
         }
         load()
@@ -39,174 +84,329 @@ export default function NewEmployeePage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        setLoading(true)
 
-        const result = await createEmployee(formData)
-
-        if (result.success) {
+        if (formData.password !== formData.confirmPassword) {
             toast({
-                title: "Employee added",
-                description: `${formData.first_name} has been added to the directory.`,
+                variant: "destructive",
+                title: "Validation Error",
+                description: "Passwords do not match."
             })
-            router.push('/crm/employees')
-        } else {
+            return
+        }
+
+        if (!formData.username || !formData.email || !formData.first_name) {
+            toast({
+                variant: "destructive",
+                title: "Validation Error",
+                description: "Please fill in all required fields."
+            })
+            return
+        }
+
+        setLoading(true)
+        try {
+            const result = await createEmployee(formData as any)
+            if (result.success) {
+                toast({
+                    title: "Success",
+                    description: "Employee created successfully."
+                })
+                router.push('/crm/employees')
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: result.error || "Failed to create employee"
+                })
+            }
+        } catch (error) {
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: result.error || "Failed to add employee"
+                description: "An unexpected error occurred."
             })
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6">
-            <header className="flex items-center justify-between border-b pb-6">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={() => router.back()} className="rounded-full">
-                        <X className="h-5 w-5" />
-                    </Button>
+        <div className="max-w-7xl mx-auto space-y-10 animate-in fade-in duration-700">
+            <header className="flex items-center justify-between border-b border-indigo-500/10 pb-10">
+                <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 rounded-[2rem] bg-indigo-600 flex items-center justify-center text-white shadow-2xl shadow-indigo-500/20">
+                        <UserPlus className="h-8 w-8" />
+                    </div>
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Add New Employee</h1>
-                        <p className="text-slate-500 dark:text-slate-400">Create a professional profile for your new team member.</p>
+                        <h1 className="text-4xl font-black tracking-tighter text-slate-900 leading-none">Initialize personnel</h1>
+                        <p className="text-slate-500 font-bold uppercase tracking-[0.3em] text-[10px] mt-3">Personnel Deployment & Hierarchy Mapping</p>
                     </div>
                 </div>
+                <Button variant="outline" onClick={() => router.back()} className="rounded-2xl border-slate-200 font-bold px-6 h-12 gap-2 text-slate-500 hover:bg-slate-50">
+                    <X className="h-4 w-4" /> Cancel Process
+                </Button>
             </header>
 
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-10">
-                <div className="md:col-span-2 space-y-6">
-                    <Card className="border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-                        <CardHeader className="bg-slate-50/50 dark:bg-zinc-900/50 border-b">
-                            <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
-                                <UserPlus className="h-4 w-4 text-indigo-600" />
-                                Personal Details
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="first_name">First Name</Label>
-                                    <Input
-                                        id="first_name"
-                                        placeholder="John"
-                                        value={formData.first_name}
-                                        onChange={e => setFormData({ ...formData, first_name: e.target.value })}
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="last_name">Last Name</Label>
-                                    <Input
-                                        id="last_name"
-                                        placeholder="Doe"
-                                        value={formData.last_name}
-                                        onChange={e => setFormData({ ...formData, last_name: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="email">Email Address</Label>
-                                    <Input
-                                        id="email"
-                                        type="email"
-                                        placeholder="john.doe@example.com"
-                                        value={formData.email}
-                                        onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="phone">Phone Number</Label>
-                                    <Input
-                                        id="phone"
-                                        placeholder="+1 234 567 890"
-                                        value={formData.phone}
-                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+            <form onSubmit={handleSubmit}>
+                <Tabs defaultValue="personal" className="w-full">
+                    <TabsList className="bg-slate-100/50 p-1 rounded-2xl mb-6">
+                        <TabsTrigger value="personal" className="rounded-xl px-8 font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">Personal Details</TabsTrigger>
+                        <TabsTrigger value="target" className="rounded-xl px-8 font-bold data-[state=active]:bg-white data-[state=active]:shadow-sm">Target Settings</TabsTrigger>
+                    </TabsList>
 
-                    <Card className="border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-                        <CardHeader className="bg-slate-50/50 dark:bg-zinc-900/50 border-b">
-                            <CardTitle className="text-lg flex items-center gap-2 text-slate-900 dark:text-white">
-                                <Briefcase className="h-4 w-4 text-indigo-600" />
-                                Employment Info
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6 space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label>Designation</Label>
-                                    <Select
-                                        value={formData.designation_id}
-                                        onValueChange={v => setFormData({ ...formData, designation_id: v })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select designation" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {masters.designations.map(d => (
-                                                <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Branch / Location</Label>
-                                    <Select
-                                        value={formData.branch_id}
-                                        onValueChange={v => setFormData({ ...formData, branch_id: v })}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select branch" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {masters.branches.map(b => (
-                                                <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                    <TabsContent value="personal">
+                        {/* same content as before, but without the extra Tabs wrap */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-10">
+                            <div className="md:col-span-2 space-y-6">
+                                <Card className="border-slate-200 shadow-sm overflow-hidden">
+                                    <CardHeader className="bg-slate-50 border-b">
+                                        <CardTitle className="text-lg flex items-center gap-2">
+                                            <UserPlus className="h-4 w-4 text-indigo-600" />
+                                            Identity & Security
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <Label>First Name <span className="text-red-500">*</span></Label>
+                                                <Input required placeholder="Karthick" value={formData.first_name} onChange={e => setFormData({ ...formData, first_name: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label>Last Name</Label>
+                                                <Input placeholder="Aravindh" value={formData.last_name} onChange={e => setFormData({ ...formData, last_name: e.target.value })} />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <Label>User Name <span className="text-red-500">*</span></Label>
+                                                <Input placeholder="karthick_a" value={formData.username} onChange={e => setFormData({ ...formData, username: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label>Mobile</Label>
+                                                <Input placeholder="9995679797" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <Label>Password</Label>
+                                                <Input type="password" placeholder="********" value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label>Confirm Password</Label>
+                                                <Input type="password" placeholder="********" value={formData.confirmPassword} onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })} />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <Label>Email <span className="text-red-500">*</span></Label>
+                                                <Input type="email" placeholder="pm@attestation.in" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label>Country</Label>
+                                                <Select value={formData.country} onValueChange={v => setFormData({ ...formData, country: v })}>
+                                                    <SelectTrigger><SelectValue placeholder="India" /></SelectTrigger>
+                                                    <SelectContent><SelectItem value="India">India</SelectItem></SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <Label>State</Label>
+                                                <Select value={formData.state} onValueChange={v => setFormData({ ...formData, state: v })}>
+                                                    <SelectTrigger><SelectValue placeholder="Select State" /></SelectTrigger>
+                                                    <SelectContent><SelectItem value="Karnataka">Karnataka</SelectItem><SelectItem value="Kerala">Kerala</SelectItem><SelectItem value="Tamil Nadu">Tamil Nadu</SelectItem></SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label>District</Label>
+                                                <Select value={formData.district} onValueChange={v => setFormData({ ...formData, district: v })}>
+                                                    <SelectTrigger><SelectValue placeholder="Select District" /></SelectTrigger>
+                                                    <SelectContent><SelectItem value="Bangalore">Bangalore</SelectItem><SelectItem value="Mysore">Mysore</SelectItem></SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label>Physical Address</Label>
+                                            <Input placeholder="Building, Street, Area" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <Label>City</Label>
+                                                <Input placeholder="City" value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label>Pincode</Label>
+                                                <Input placeholder="Zip/Pin code" value={formData.pincode} onChange={e => setFormData({ ...formData, pincode: e.target.value })} />
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                <Card className="border-slate-200 shadow-sm overflow-hidden">
+                                    <CardHeader className="bg-slate-50 border-b">
+                                        <CardTitle className="text-lg flex items-center gap-2">
+                                            <Briefcase className="h-4 w-4 text-indigo-600" />
+                                            Role & Access
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-6 space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <Label>Role</Label>
+                                                <Select value={formData.role} onValueChange={v => setFormData({ ...formData, role: v })}>
+                                                    <SelectTrigger><SelectValue placeholder="Select Role" /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="user">User / Agent</SelectItem>
+                                                        <SelectItem value="manager">Manager</SelectItem>
+                                                        <SelectItem value="admin">Administrator</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label>Designation</Label>
+                                                <Select value={formData.designation_id} onValueChange={v => setFormData({ ...formData, designation_id: v })}>
+                                                    <SelectTrigger><SelectValue placeholder="Select Designation" /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {masters.designations.map(d => (
+                                                            <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <Label>Department</Label>
+                                                <Select value={formData.department_id} onValueChange={v => setFormData({ ...formData, department_id: v })}>
+                                                    <SelectTrigger><SelectValue placeholder="Select Department" /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {masters.departments.map(d => (
+                                                            <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label>Office</Label>
+                                                <Select value={formData.office} onValueChange={v => setFormData({ ...formData, office: v })}>
+                                                    <SelectTrigger><SelectValue placeholder="Select Office" /></SelectTrigger>
+                                                    <SelectContent><SelectItem value="Bangalore">Bangalore</SelectItem><SelectItem value="Delhi">Delhi</SelectItem></SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1">
+                                            <div className="space-y-1">
+                                                <Label>Select Supervisor</Label>
+                                                <Select value={formData.supervisor_id} onValueChange={v => setFormData({ ...formData, supervisor_id: v })}>
+                                                    <SelectTrigger><SelectValue placeholder="Search" /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="none">No Supervisor</SelectItem>
+                                                        {masters.supervisors.map(s => (
+                                                            <SelectItem key={s.id} value={s.id}>{s.first_name} {s.last_name}</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+
+                            <div className="space-y-6">
+                                <div className="bg-indigo-600 rounded-[2rem] p-8 text-white shadow-2xl relative overflow-hidden">
+                                    <h4 className="text-xl font-bold mb-6">Review</h4>
+                                    <div className="space-y-3 text-xs font-medium">
+                                        <div className="flex justify-between border-b border-white/20 pb-2"><span>NAME:</span><span>{formData.first_name} {formData.last_name}</span></div>
+                                        <div className="flex justify-between border-b border-white/20 pb-2"><span>ROLE:</span><span>{formData.role.toUpperCase()}</span></div>
+                                        <div className="flex justify-between border-b border-white/20 pb-2"><span>EMAIL:</span><span>{formData.email}</span></div>
+                                    </div>
+                                    <Button type="submit" disabled={loading} className="w-full mt-8 bg-white text-indigo-700 hover:bg-slate-100 h-12 rounded-xl font-bold">
+                                        {loading ? "INITIALIZING..." : "CREATE USER"}
+                                    </Button>
+                                    <p className="text-[9px] mt-4 opacity-50 text-center leading-relaxed">By clicking create, you initialize the SSO account and link it to the CRM profile.</p>
                                 </div>
                             </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <div className="space-y-6">
-                    <div className="bg-indigo-600 rounded-xl p-6 text-white shadow-xl relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-10">
-                            <UserPlus className="h-24 w-24" />
                         </div>
-                        <h4 className="text-lg font-bold mb-4">Quick Summary</h4>
-                        <div className="space-y-4 text-sm relative z-10">
-                            <div className="flex justify-between items-center border-b border-white/20 pb-2">
-                                <span>Name:</span>
-                                <span className="font-bold">{formData.first_name || '...'} {formData.last_name}</span>
-                            </div>
-                            <div className="flex justify-between items-center border-b border-white/20 pb-2">
-                                <span>Status:</span>
-                                <Badge className="bg-white/20 border-0 text-white font-bold">{formData.status.toUpperCase()}</Badge>
-                            </div>
-                        </div>
-                        <Button
-                            type="submit"
-                            form="employee-form"
-                            className="w-full mt-8 bg-white text-indigo-600 hover:bg-slate-50 font-bold"
-                            disabled={loading || !formData.first_name}
-                        >
-                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Complete Onboarding"}
-                        </Button>
-                    </div>
+                    </TabsContent>
 
-                    <div className="bg-slate-100 dark:bg-zinc-900 p-4 rounded-xl text-xs text-slate-600 dark:text-slate-400 leading-relaxed border border-slate-200 dark:border-zinc-800">
-                        <Globe className="h-4 w-4 mb-2 text-slate-400" />
-                        <strong className="text-slate-900 dark:text-white font-bold">Onboarding Note:</strong> Adding an employee does not automatically create a system user account. To grant system access, please go to <strong>Settings &gt; Users</strong> after onboarding.
-                    </div>
-                </div>
+                    <TabsContent value="target">
+                        <Card className="border-slate-200 shadow-sm rounded-[2rem] overflow-hidden">
+                            <CardHeader className="bg-slate-50 p-8 border-b">
+                                <CardTitle className="text-2xl font-black">Target Settings</CardTitle>
+                                <CardDescription className="text-slate-500 font-medium">Configure performance benchmarks for this deployment cycle.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="p-8">
+                                <div className="grid grid-cols-2 gap-8 mb-8">
+                                    <div className="space-y-3">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Type of Target *</Label>
+                                        <Select value={formData.targetType} onValueChange={v => setFormData({ ...formData, targetType: v })}>
+                                            <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Individual Target" /></SelectTrigger>
+                                            <SelectContent><SelectItem value="individual">Individual Target</SelectItem><SelectItem value="team">Team Target</SelectItem></SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-3">
+                                        <Label className="text-xs font-bold uppercase tracking-widest text-slate-400">Target Cycle *</Label>
+                                        <Select value={formData.targetCycle} onValueChange={v => setFormData({ ...formData, targetCycle: v })}>
+                                            <SelectTrigger className="h-12 rounded-xl"><SelectValue placeholder="Monthly" /></SelectTrigger>
+                                            <SelectContent><SelectItem value="monthly">Monthly</SelectItem><SelectItem value="weekly">Weekly</SelectItem></SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+
+                                <div className="border border-slate-100 rounded-[2rem] p-8 bg-slate-50/50">
+                                    <h3 className="text-lg font-bold mb-4">Targets</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                        <div className="space-y-2">
+                                            {Object.keys(formData.targets).map(month => (
+                                                <div key={month} className="flex items-center justify-between p-3 bg-white rounded-xl shadow-sm border border-slate-100">
+                                                    <span className="text-sm font-bold text-slate-700">{month}</span>
+                                                    <Input
+                                                        type="number"
+                                                        className="w-24 h-8 text-right font-bold"
+                                                        placeholder="0"
+                                                        value={(formData.targets as any)[month]}
+                                                        onChange={e => setFormData({
+                                                            ...formData,
+                                                            targets: { ...formData.targets, [month]: e.target.value }
+                                                        })}
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="hidden md:block">
+                                            <div className="bg-white p-6 rounded-[2rem] shadow-xl border border-slate-100 h-full">
+                                                <div className="text-center font-bold mb-4">January 2024</div>
+                                                <div className="grid grid-cols-7 gap-2 text-center text-[10px] font-black text-slate-400">
+                                                    <span>MON</span><span>TUE</span><span>WED</span><span>THU</span><span>FRI</span><span>SAT</span><span>SUN</span>
+                                                </div>
+                                                <div className="grid grid-cols-7 gap-2 mt-4">
+                                                    {Array.from({ length: 31 }).map((_, i) => (
+                                                        <div key={i} className={cn(
+                                                            "h-8 flex items-center justify-center rounded-full font-bold text-xs transition-all",
+                                                            i % 7 === 6 ? "bg-emerald-500 text-white shadow-lg" : "text-slate-400 hover:bg-slate-50"
+                                                        )}>
+                                                            {i + 1}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                                <div className="mt-8 p-4 bg-indigo-50 rounded-2xl border border-indigo-100">
+                                                    <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-widest text-center">Cycle Overview</p>
+                                                    <p className="text-xs text-indigo-900/60 text-center mt-2 leading-relaxed font-medium">Configure specific milestones per month to track progress automatically.</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="mt-8 flex justify-end">
+                                    <Button type="submit" disabled={loading} className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold h-12 px-10 rounded-xl">
+                                        {loading ? "SAVING..." : "CREATE USER & TARGETS"}
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
+                </Tabs>
             </form>
-            <form id="employee-form" onSubmit={handleSubmit} className="hidden" />
-        </div>
+        </div >
     )
 }

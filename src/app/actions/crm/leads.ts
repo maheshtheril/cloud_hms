@@ -202,6 +202,9 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
     // Meta
     const ai_summary = formData.get('ai_summary') as string;
     const owner_id = formData.get('owner_id') as string || session.user.id;
+    const lob_id = formData.get('lob_id') as string || null;
+    const priority = formData.get('priority') as string || 'warm';
+    const alt_phone = formData.get('alt_phone') as string || null;
 
     // AI Scoring Implementation
     const lead_score = calculateAILeadScore({
@@ -245,7 +248,10 @@ export async function createLead(prevState: LeadFormState, formData: FormData): 
                 currency: currency,
                 is_hot: is_hot,
                 lead_score: lead_score,
-                status: 'new'
+                status: 'new',
+                lob_id,
+                priority,
+                alt_phone
             } as any
         });
 
@@ -431,4 +437,102 @@ function calculateAILeadScore(data: {
     }
 
     return Math.min(100, Math.round(score));
+}
+export async function getLobs() {
+    const session = await auth();
+    if (!session?.user?.tenantId) return [];
+
+    return prisma.crm_lob.findMany({
+        where: { tenant_id: session.user.tenantId, is_active: true },
+        orderBy: { name: 'asc' }
+    });
+}
+
+/**
+ * World-Class Lead Intelligence: Duplicate Detection
+ * Checks for existing leads or contacts with same email or phone
+ */
+export async function checkLeadDuplicates(params: { email?: string, phone?: string }) {
+    const session = await auth();
+    if (!session?.user?.tenantId) return { success: false, error: 'Unauthorized' };
+
+    const { email, phone } = params;
+    if (!email && !phone) return { success: true, duplicates: [] };
+
+    try {
+        const duplicates = await prisma.crm_leads.findMany({
+            where: {
+                tenant_id: session.user.tenantId,
+                deleted_at: null,
+                OR: [
+                    email ? { email: { equals: email, mode: 'insensitive' } } : undefined,
+                    phone ? { phone: { contains: phone } } : undefined
+                ].filter(Boolean) as any
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                phone: true,
+                company_name: true,
+                status: true,
+                created_at: true
+            },
+            take: 3
+        });
+
+        return { success: true, duplicates };
+    } catch (error) {
+        console.error("Duplicate check error:", error);
+        return { success: false, error: 'Database check failed' };
+    }
+}
+
+/**
+ * World-Class Lead Intelligence: Company Domain Discovery
+ * Suggests company names based on email domain or searches existing accounts
+ */
+export async function searchCompaniesByDomain(email: string) {
+    const session = await auth();
+    if (!session?.user?.tenantId) return { success: false, error: 'Unauthorized' };
+
+    if (!email || !email.includes('@')) return { success: true, recommendations: [] };
+
+    const domain = email.split('@')[1].toLowerCase();
+
+    // Skip public domains
+    const publicDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'me.com'];
+    if (publicDomains.includes(domain)) return { success: true, recommendations: [] };
+
+    try {
+        // Search in existing leads/accounts for this tenant
+        const existingCompanies = await prisma.crm_leads.findMany({
+            where: {
+                tenant_id: session.user.tenantId,
+                email: { contains: `@${domain}` },
+                company_name: { not: null }
+            },
+            select: { company_name: true },
+            distinct: ['company_name'],
+            take: 5
+        });
+
+        const recommendations = existingCompanies
+            .map(c => c.company_name)
+            .filter((name): name is string => !!name);
+
+        // Also suggest derived name from domain
+        const derivedName = domain.split('.')[0]
+            .split('-')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+
+        if (!recommendations.includes(derivedName)) {
+            recommendations.unshift(derivedName);
+        }
+
+        return { success: true, recommendations };
+    } catch (error) {
+        return { success: false, error: 'Search failed' };
+    }
 }

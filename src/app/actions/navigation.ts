@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { getUserPermissions, seedRolesAndPermissions } from "./rbac"
-import { ensureAdminMenus } from "@/lib/menu-seeder"
+import { ensureAdminMenus, ensureCrmMenus } from "@/lib/menu-seeder"
 import crypto from "crypto";
 
 import { unstable_noStore as noStore } from 'next/cache';

@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { SelectNative } from '@/components/ui/select-native'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
     Activity,
     MapPin,
@@ -16,10 +16,13 @@ import {
     TrendingUp,
     Calendar,
     MessageCircle,
-    CheckCircle2,
+    CheckSquare,
     Clock,
     Zap,
-    Target
+    Target,
+    Phone,
+    Mail,
+    FileText
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useState } from 'react'
@@ -92,9 +95,28 @@ export function ActivityForm() {
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <Label htmlFor="type" className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Vector Type</Label>
-                                    <SelectNative id="type" name="type" className="h-14 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl font-bold text-slate-900 dark:text-white">
-                                        {activityTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                                    </SelectNative>
+                                    <Select name="type" defaultValue="call">
+                                        <SelectTrigger className="h-14 bg-white/50 dark:bg-slate-900/50 border-slate-200/50 rounded-2xl font-bold text-slate-900 dark:text-white">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="call">
+                                                <div className="flex items-center gap-2"><Phone className="w-4 h-4 text-indigo-500" /> Neural Call</div>
+                                            </SelectItem>
+                                            <SelectItem value="meeting">
+                                                <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-purple-500" /> Strategic Meeting</div>
+                                            </SelectItem>
+                                            <SelectItem value="email">
+                                                <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-cyan-500" /> Encrypted Email</div>
+                                            </SelectItem>
+                                            <SelectItem value="task">
+                                                <div className="flex items-center gap-2"><CheckSquare className="w-4 h-4 text-emerald-500" /> Operational Task</div>
+                                            </SelectItem>
+                                            <SelectItem value="note">
+                                                <div className="flex items-center gap-2"><FileText className="w-4 h-4 text-amber-500" /> Intel Note</div>
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                 <div className="space-y-4">
                                     <Label htmlFor="due_date" className="text-xs font-black uppercase tracking-widest text-slate-500 ml-1">Temporal Anchor</Label>

@@ -342,6 +342,8 @@ model hms_branch {
   address           String?
   city              String?
   state             String?
+  district          String?
+  country           String?
   pincode           String?
   metadata          Json?                   @default("{}")
   created_at        DateTime                @default(now()) @db.Timestamptz(6)
@@ -3514,16 +3516,20 @@ model crm_leads {
   pipeline_id        String?           @db.Uuid
   stage_id           String?           @db.Uuid
   source_id          String?           @db.Uuid
-  /// Lead Name / Title
+  lob_id             String?           @db.Uuid
+  /// Lead Name / Organization Name
   name               String
-  /// Person Name
+  /// Customer Name
   contact_name       String?
-  /// Organization Name
+  /// Organization Name (redundant with name if name is Org)
   company_name       String?
   email              String?
   phone              String?
+  alt_phone          String?
   /// new, contacted, qualified, lost, converted
   status             String?           @default("new")
+  /// hot, warm, cold
+  priority           String?           @default("warm")
   estimated_value    Decimal?          @default(0) @db.Decimal(18, 2)
   probability        Decimal?          @default(0) @db.Decimal(5, 2)
   next_followup_date DateTime?         @db.Timestamptz(6)
@@ -3546,10 +3552,20 @@ model crm_leads {
   source             crm_sources?      @relation(fields: [source_id], references: [id])
   stage              crm_stages?       @relation(fields: [stage_id], references: [id])
   target_type        crm_target_types? @relation(fields: [target_type_id], references: [id])
+  lob                crm_lob?          @relation(fields: [lob_id], references: [id])
 
   @@index([tenant_id, status])
   @@index([next_followup_date])
   @@index([deleted_at])
+}
+
+model crm_lob {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id  String      @db.Uuid
+  name       String
+  is_active  Boolean     @default(true)
+  created_at DateTime    @default(now()) @db.Timestamptz(6)
+  leads      crm_leads[]
 }
 
 model crm_contacts {
@@ -3638,17 +3654,45 @@ model crm_pipelines {
 }
 
 model crm_stages {
-  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  pipeline_id String        @db.Uuid
-  name        String
+  id                   String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  pipeline_id          String            @db.Uuid
+  name                 String
   /// open, won, lost
-  type        String        @default("open")
-  probability Decimal       @default(0) @db.Decimal(5, 2)
-  sort_order  Int           @default(0)
-  deleted_at  DateTime?     @db.Timestamptz(6)
-  deals       crm_deals[]
-  leads       crm_leads[]
-  pipeline    crm_pipelines @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
+  type                 String            @default("open")
+  probability          Decimal           @default(0) @db.Decimal(5, 2)
+  sort_order           Int               @default(0)
+  color                String?           @default("#000000")
+  is_approval_required Boolean           @default(false)
+  is_lob               Boolean           @default(false)
+  permanent_stage      String?           // to map to reports
+  is_active            Boolean           @default(true)
+  deleted_at           DateTime?         @db.Timestamptz(6)
+  deals                crm_deals[]
+  leads                crm_leads[]
+  pipeline             crm_pipelines     @relation(fields: [pipeline_id], references: [id], onDelete: Cascade)
+  rules                crm_stage_rules[]
+  lost_reasons         crm_stage_lost_reasons[]
+}
+
+model crm_stage_lost_reasons {
+  id         String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stage_id   String     @db.Uuid
+  reason     String
+  is_active  Boolean    @default(true)
+  created_at DateTime   @default(now()) @db.Timestamptz(6)
+  stage      crm_stages @relation(fields: [stage_id], references: [id], onDelete: Cascade)
+}
+
+model crm_stage_rules {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  stage_id   String      @db.Uuid
+  name       String
+  /// text, number, select, boolean
+  input_type String
+  sort_order Int         @default(0)
+  is_active  Boolean     @default(true)
+  created_at DateTime    @default(now()) @db.Timestamptz(6)
+  stage      crm_stages? @relation(fields: [stage_id], references: [id], onDelete: Cascade)
 }
 
 model crm_sources {
@@ -3785,6 +3829,9 @@ model crm_employee {
   blood_group             String?          @db.VarChar(10)
   designation_id          String?          @db.Uuid
   department_id           String?          @db.Uuid
+  supervisor_id           String?          @db.Uuid
+  office                  String?
+  category                String?
   joining_date            DateTime?        @db.Date
   exit_date               DateTime?        @db.Date
   status                  String?          @default("active")
@@ -3807,6 +3854,8 @@ model crm_employee {
   department              hms_departments? @relation(fields: [department_id], references: [id])
   designation             crm_designation? @relation(fields: [designation_id], references: [id])
   user                    app_user?        @relation(fields: [user_id], references: [id])
+  supervisor              crm_employee?    @relation("crm_employeeTocrm_employee", fields: [supervisor_id], references: [id])
+  subordinates            crm_employee[]   @relation("crm_employeeTocrm_employee")
 }
 
 model crm_commission_rules {
