@@ -532,6 +532,7 @@ export async function auditAndFixMenuPermissions() {
         // 2. SPECIFIC OVERRIDES (Granular Control & Configuration Security)
         const specificOverrides = [
             // CRM Granular
+            { key: 'crm-intelligence', perm: 'crm:view' },
             { key: 'crm-targets', perm: 'crm:targets:view' },
             { key: 'crm-pipeline', perm: 'crm:pipeline:view' },
             { key: 'crm-scheduler', perm: 'crm:scheduler:view' },
