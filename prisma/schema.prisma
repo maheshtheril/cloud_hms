@@ -4738,4 +4738,45 @@ enum visit_status {
   cancelled
   no_show
 }
-$models
+
+model hms_holiday {
+  id             String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id      String      @db.Uuid
+  name           String
+  date           DateTime    @db.Timestamptz(6)
+  type           String
+  country_id     String?     @db.Uuid
+  subdivision_id String?     @db.Uuid
+  description    String?
+  created_at     DateTime?   @default(now()) @db.Timestamptz(6)
+  country        countries?  @relation(fields: [country_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  subdivision    country_subdivision? @relation(fields: [subdivision_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model countries {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  flag        String?
+  iso2        String?
+  iso3        String?
+  region      String?
+  subregion   String?
+  is_active   Boolean?       @default(true)
+  created_at  DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?      @default(now()) @db.Timestamptz(6)
+  holidays    hms_holiday[]
+}
+
+model country_subdivision {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  country_id  String?        @db.Uuid
+  parent_id   String?        @db.Uuid
+  name        String
+  code        String?
+  type        String?
+  is_active   Boolean?       @default(true)
+  created_at  DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime?      @default(now()) @db.Timestamptz(6)
+  holidays    hms_holiday[]
+}
+
