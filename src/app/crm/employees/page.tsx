@@ -18,14 +18,28 @@ export default async function EmployeesPage() {
     const tenantId = session.user.tenantId
     if (!tenantId) return <div>No tenant associated.</div>
 
-    const employees = await prisma.crm_employee.findMany({
-        where: { tenant_id: tenantId },
-        include: {
-            designation: true,
-            branch: true
-        },
-        orderBy: { first_name: 'asc' }
-    })
+    let employees = []
+    try {
+        employees = await prisma.crm_employee.findMany({
+            where: { tenant_id: tenantId },
+            include: {
+                designation: true,
+                branch: true
+            },
+            orderBy: { first_name: 'asc' }
+        })
+    } catch (error) {
+        console.error("Error fetching employees:", error)
+        return (
+            <div className="p-8 text-center bg-red-50 border border-red-200 rounded-xl">
+                <h2 className="text-red-800 font-bold text-lg">Unable to load employees</h2>
+                <p className="text-red-600 mt-2">There was an error connecting to the database. Please try again later.</p>
+                <Button variant="outline" className="mt-4 border-red-200 text-red-700 hover:bg-red-100" onClick={() => { }}>
+                    Retry (Reload Page)
+                </Button>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6">
@@ -75,7 +89,7 @@ export default async function EmployeesPage() {
                                     <div className="flex items-start justify-between mb-4">
                                         <div className="flex items-center gap-4">
                                             <div className="h-14 w-14 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 text-xl font-bold">
-                                                {emp.first_name[0]}{emp.last_name ? emp.last_name[0] : ''}
+                                                {emp.first_name?.[0] || '?'}{emp.last_name?.[0] || ''}
                                             </div>
                                             <div>
                                                 <h3 className="font-bold text-slate-900 text-lg group-hover:text-indigo-600 transition-colors capitalize">
