@@ -55,13 +55,11 @@ export function EditEmployeeForm({ employee, designations, branches, departments
         setLoading(true)
 
         const payload = {
-            const payload = {
-                ...formData,
-                designation_id: formData.designation_id === 'none' ? null : formData.designation_id,
-                department_id: formData.department_id === 'none' ? null : formData.department_id,
-                supervisor_id: formData.supervisor_id === 'none' ? null : formData.supervisor_id,
-                branch_id: formData.branch_id === 'none' ? null : formData.branch_id,
-            }
+            ...formData,
+            designation_id: formData.designation_id === 'none' ? null : formData.designation_id,
+            department_id: formData.department_id === 'none' ? null : formData.department_id,
+            supervisor_id: formData.supervisor_id === 'none' ? null : formData.supervisor_id,
+            branch_id: formData.branch_id === 'none' ? null : formData.branch_id,
         }
 
         const result = await updateEmployee(employee.id, payload)
