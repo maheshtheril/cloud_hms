@@ -263,8 +263,21 @@ export default function NewEmployeePage() {
                                                 </Select>
                                             </div>
                                             <div className="space-y-1">
-                                                <Label>Designation</Label>
-                                                <Select value={formData.designation_id} onValueChange={v => setFormData({ ...formData, designation_id: v })}>
+                                                <div className="flex items-center justify-between">
+                                                    <Label>Designation</Label>
+                                                    <a href="/settings/designations/new" className="text-[10px] font-bold text-indigo-600 hover:underline">QUICK ADD</a>
+                                                </div>
+                                                <Select
+                                                    value={formData.designation_id}
+                                                    onValueChange={v => {
+                                                        const desig = masters.designations.find(d => d.id === v);
+                                                        const update: any = { designation_id: v };
+                                                        if (desig?.department_id) {
+                                                            update.department_id = desig.department_id;
+                                                        }
+                                                        setFormData({ ...formData, ...update });
+                                                    }}
+                                                >
                                                     <SelectTrigger><SelectValue placeholder="Select Designation" /></SelectTrigger>
                                                     <SelectContent>
                                                         {masters.designations.map(d => (
@@ -276,7 +289,10 @@ export default function NewEmployeePage() {
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-1">
-                                                <Label>Department</Label>
+                                                <div className="flex items-center justify-between">
+                                                    <Label>Department</Label>
+                                                    <a href="/crm/departments" className="text-[10px] font-bold text-indigo-600 hover:underline">MANAGE</a>
+                                                </div>
                                                 <Select value={formData.department_id} onValueChange={v => setFormData({ ...formData, department_id: v })}>
                                                     <SelectTrigger><SelectValue placeholder="Select Department" /></SelectTrigger>
                                                     <SelectContent>

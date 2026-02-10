@@ -135,7 +135,7 @@ export function DepartmentManager({ initialDepartments }: Props) {
     }, [departments])
 
     const renderDept = (dept: any, depth = 0) => {
-        const hasChildren = dept.children.length > 0
+        const hasChildren = dept.children.length > 0 || (dept.designations && dept.designations.length > 0)
         const isExpanded = expanded[dept.id]
         const isMatch = dept.name.toLowerCase().includes(search.toLowerCase()) ||
             (dept.code && dept.code.toLowerCase().includes(search.toLowerCase()))
@@ -174,14 +174,22 @@ export function DepartmentManager({ initialDepartments }: Props) {
                                 <Badge variant={dept.is_active ? 'default' : 'secondary'} className="text-[8px] h-4 px-1 py-0 shadow-none border-none">
                                     {dept.is_active ? 'Active' : 'Inactive'}
                                 </Badge>
+                                <span className="text-[10px] text-indigo-400 font-bold ml-2">
+                                    {dept.designations?.length || 0} ROLES
+                                </span>
                             </h4>
                             <p className="text-xs text-slate-400 font-medium truncate max-w-[300px]">{dept.description || 'No description'}</p>
                         </div>
                     </div>
 
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenDialog(undefined, dept.id)} className="h-8 w-8 text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50">
+                        <Button variant="ghost" size="icon" title="Add Sub-Department" onClick={() => handleOpenDialog(undefined, dept.id)} className="h-8 w-8 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">
                             <Plus className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" title="Add Designation" asChild className="h-8 w-8 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50">
+                            <a href={`/settings/designations/new?department_id=${dept.id}`}>
+                                <Briefcase className="w-4 h-4" />
+                            </a>
                         </Button>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -191,7 +199,7 @@ export function DepartmentManager({ initialDepartments }: Props) {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="rounded-xl p-2 border-slate-100 shadow-2xl">
                                 <DropdownMenuItem onClick={() => handleOpenDialog(dept)} className="rounded-lg gap-2 cursor-pointer">
-                                    <Edit2 className="w-3.5 h-3.5" /> Edit
+                                    <Edit2 className="w-3.5 h-3.5" /> Edit Dept
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleDelete(dept.id)} className="rounded-lg gap-2 cursor-pointer text-red-600 focus:text-red-600">
                                     <Trash2 className="w-3.5 h-3.5" /> Delete
@@ -201,8 +209,33 @@ export function DepartmentManager({ initialDepartments }: Props) {
                     </div>
                 </div>
 
-                {hasChildren && isExpanded && (
+                {isExpanded && (
                     <div className="animate-in fade-in slide-in-from-top-1 duration-300">
+                        {/* Render Designations */}
+                        {dept.designations?.map((desig: any) => (
+                            <div
+                                key={desig.id}
+                                className="flex items-center justify-between p-2 pl-8 ml-[36px] bg-slate-50/50 rounded-xl border border-transparent hover:border-slate-200 group-designation"
+                                style={{ marginLeft: `${(depth + 1) * 24}px` }}
+                            >
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-indigo-400 mr-1" />
+                                    <div>
+                                        <p className="text-sm font-bold text-slate-700">{desig.name}</p>
+                                        <p className="text-[10px] text-slate-400 font-medium">{desig.description || 'No role description'}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 text-slate-400 hover:text-indigo-600" asChild>
+                                        <a href={`/settings/designations/${desig.id}`}>
+                                            <Edit2 className="h-3 w-3" />
+                                        </a>
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+
+                        {/* Render Sub-Departments */}
                         {dept.children.map((child: any) => renderDept(child, depth + 1))}
                     </div>
                 )}

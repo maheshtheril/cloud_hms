@@ -602,6 +602,8 @@ export async function updateBranch(id: string, data: {
 export async function createDesignation(data: {
     name: string;
     description?: string;
+    department_id?: string;
+    parent_id?: string;
 }) {
     const session = await auth();
     if (!session?.user?.id || !session.user.tenantId) {
@@ -614,6 +616,8 @@ export async function createDesignation(data: {
                 tenant_id: session.user.tenantId,
                 name: data.name,
                 description: data.description,
+                department_id: data.department_id || null,
+                parent_id: data.parent_id || null,
                 is_active: true
             }
         });
@@ -631,13 +635,16 @@ export async function getDesignation(id: string) {
     if (!session?.user?.id || !session.user.tenantId) return null;
 
     return prisma.crm_designation.findUnique({
-        where: { id, tenant_id: session.user.tenantId }
+        where: { id, tenant_id: session.user.tenantId },
+        include: { department: true, parent: true }
     });
 }
 
 export async function updateDesignation(id: string, data: {
     name: string;
     description?: string;
+    department_id?: string;
+    parent_id?: string;
     is_active?: boolean;
 }) {
     const session = await auth();
@@ -651,6 +658,8 @@ export async function updateDesignation(id: string, data: {
             data: {
                 name: data.name,
                 description: data.description,
+                department_id: data.department_id || null,
+                parent_id: data.parent_id || null,
                 is_active: data.is_active ?? true
             }
         });

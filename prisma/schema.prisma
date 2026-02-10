@@ -1159,6 +1159,7 @@ model hms_departments {
   crm_employees         crm_employee[]
   hms_departments       hms_departments?  @relation("hms_departmentsTohms_departments", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_parent_company")
   other_hms_departments hms_departments[] @relation("hms_departmentsTohms_departments")
+  crm_designations      crm_designation[]
 
   @@unique([company_id, name], map: "hms_departments_company_id_name_unique")
   @@unique([company_id, code], map: "unique_company_code")
@@ -3802,14 +3803,19 @@ model crm_target_milestones {
 }
 
 model crm_designation {
-  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenant_id   String         @db.Uuid
-  name        String
-  description String?
-  is_active   Boolean?       @default(true)
-  created_at  DateTime       @default(now()) @db.Timestamptz(6)
-  updated_at  DateTime       @default(now()) @db.Timestamptz(6)
-  employees   crm_employee[]
+  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenant_id     String            @db.Uuid
+  department_id String?           @db.Uuid
+  parent_id     String?           @db.Uuid
+  name          String
+  description   String?
+  is_active     Boolean?          @default(true)
+  created_at    DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime          @default(now()) @db.Timestamptz(6)
+  department    hms_departments?  @relation(fields: [department_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parent        crm_designation?  @relation("crm_designationTocrm_designation", fields: [parent_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children      crm_designation[] @relation("crm_designationTocrm_designation")
+  employees     crm_employee[]
 
   @@unique([tenant_id, name])
 }

@@ -9,11 +9,17 @@ export async function getDepartments() {
     const tid = session?.user?.tenantId
     if (!tid) return []
 
-    // Fetch all departments for the tenant
+    // Fetch all departments for the tenant with their designations
     const departments = await prisma.hms_departments.findMany({
         where: {
             tenant_id: tid,
             deleted_at: null
+        },
+        include: {
+            designations: {
+                where: { is_active: true },
+                orderBy: { name: 'asc' }
+            }
         },
         orderBy: { name: 'asc' }
     })
