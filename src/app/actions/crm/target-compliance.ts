@@ -98,13 +98,13 @@ export async function getUserComplianceStatus(userId: string) {
     }
 
     // World Class: Only block Sales roles
-    const isSales = user.role?.match(/sales/i) ||
-        user.hms_user_roles.some(ur => ur.hms_role.name.match(/sales/i))
+    const isSales = (user.role && user.role.match(/sales/i)) ||
+        (user.hms_user_roles && user.hms_user_roles.some(ur => ur.hms_role?.name?.match(/sales/i)))
 
     if (!isSales) return { isBlocked: false }
 
-    // Synchronize progress first
-    await updateTargetProgress(userId)
+    // PERFORMANCE: Don't synchronize progress on every page load (Layout logic)
+    // await updateTargetProgress(userId)
 
     // Check for any FAILED blocking milestone or CLOSED missed target
     const now = new Date()
@@ -134,12 +134,12 @@ export async function getUserComplianceStatus(userId: string) {
         }
     })
 
-    const complianceFailure = (potentialFailures as any[]).find(t => {
+    const complianceFailure = (potentialFailures || []).find(t => {
         // 1. Has failed blocking milestones
-        if (t.milestones?.length > 0) return true;
+        if (t.milestones && t.milestones.length > 0) return true;
 
         // 2. Is expired and achieved < goal
-        if (new Date(t.period_end) < now && Number(t.achieved_value || 0) < Number(t.target_value)) {
+        if (t.period_end && new Date(t.period_end) < now && Number(t.achieved_value || 0) < Number(t.target_value)) {
             return true;
         }
 

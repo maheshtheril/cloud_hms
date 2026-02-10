@@ -27,13 +27,17 @@ export default async function CRMLayout({
 
     // CRM Intelligence: Force Gated Compliance Check
     let compliance = { isBlocked: false, reason: '', targetId: '', deadline: '' };
-    if (session?.user?.id) {
-        compliance = await getUserComplianceStatus(session.user.id) as any;
+    try {
+        if (session?.user?.id) {
+            compliance = await getUserComplianceStatus(session.user.id) as any;
+        }
+    } catch (error) {
+        console.error("Compliance check failed:", error);
     }
 
     // Don't block the Targets page itself so they can see his failure details
     const isTargetPage = pathname.includes('/crm/targets');
-    const shouldShowLock = compliance.isBlocked && !isTargetPage;
+    const shouldShowLock = compliance?.isBlocked && !isTargetPage;
 
     return (
         <AppSidebar menuItems={menuItems} currentCompany={currentCompany} tenant={tenant} user={session?.user}>

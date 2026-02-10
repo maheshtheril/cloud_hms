@@ -17,67 +17,68 @@ export async function checkCrmLoginStatus(): Promise<LoginStatus> {
         return { blocked: false }
     }
 
-    const { id: userId, tenantId } = session.user
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    try {
+        const { id: userId, tenantId } = session.user
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
 
-    // 1. Check Attendance
-    const attendance = await prisma.crm_attendance.findFirst({
-        where: {
-            tenant_id: tenantId,
-            user_id: userId,
-            date: {
-                gte: today
-            },
-            check_in: { not: null }
-        }
-    })
-
-    if (!attendance) {
-        return { blocked: true, reason: 'attendance' }
-    }
-
-    // 2. Check Overdue Follow-ups
-    // Since there might be no direct relation in schema, we fetch raw followups
-    const overdueFollowups = await prisma.lead_followups.findMany({
-        where: {
-            tenant_id: tenantId,
-            // Assuming we only block for followups assigned to the user? 
-            // The schema for lead_followups doesn't expressly show an assignee.
-            // But it has `created_by` or `lead_id`.
-            // Let's assume we check followups for leads OWNED by the user.
-            // We need to fetch leads owned by user first.
-            lead_id: {
-                in: (await prisma.crm_leads.findMany({
-                    where: { owner_id: userId, tenant_id: tenantId },
-                    select: { id: true }
-                })).map(l => l.id)
-            },
-            status: { notIn: ['completed', 'cancelled'] },
-            due_at: { lt: new Date() }
-        },
-        take: 5,
-        orderBy: { due_at: 'asc' }
-    })
-
-    if (overdueFollowups.length > 0) {
-        // Fetch lead details manually for display
-        const leadIds = overdueFollowups.map(f => f.lead_id)
-        const leads = await prisma.crm_leads.findMany({
-            where: { id: { in: leadIds } },
-            select: { id: true, name: true, company_name: true }
+        // 1. Check Attendance
+        const attendance = await prisma.crm_attendance.findFirst({
+            where: {
+                tenant_id: tenantId,
+                user_id: userId,
+                date: {
+                    gte: today
+                },
+                check_in: { not: null }
+            }
         })
 
-        const enrichedFollowups = overdueFollowups.map(f => ({
-            ...f,
-            id: f.id.toString(),
-            lead: leads.find(l => l.id === f.lead_id)
-        }))
+        if (!attendance) {
+            return { blocked: true, reason: 'attendance' }
+        }
 
-        return { blocked: true, reason: 'followups', data: enrichedFollowups }
+        // 2. Check Overdue Follow-ups
+        const leads = await prisma.crm_leads.findMany({
+            where: { owner_id: userId, tenant_id: tenantId },
+            select: { id: true }
+        });
+
+        if (leads.length === 0) return { blocked: false };
+
+        const overdueFollowups = await prisma.lead_followups.findMany({
+            where: {
+                tenant_id: tenantId,
+                lead_id: { in: leads.map(l => l.id) },
+                status: { notIn: ['completed', 'cancelled'] },
+                due_at: { lt: new Date() }
+            },
+            take: 5,
+            orderBy: { due_at: 'asc' }
+        })
+
+        if (overdueFollowups.length > 0) {
+            // Fetch lead details manually for display
+            const leadIds = overdueFollowups.map(f => f.lead_id)
+            const leadsDetails = await prisma.crm_leads.findMany({
+                where: { id: { in: leadIds } },
+                select: { id: true, name: true, company_name: true }
+            })
+
+            const enrichedFollowups = overdueFollowups.map(f => ({
+                ...f,
+                id: f.id.toString(),
+                lead: leadsDetails.find(l => l.id === f.lead_id)
+            }))
+
+            return { blocked: true, reason: 'followups', data: enrichedFollowups }
+        }
+
+        return { blocked: false }
+    } catch (error) {
+        console.error("checkCrmLoginStatus failed:", error);
+        return { blocked: false }
     }
-
-    return { blocked: false }
 }
 
 export async function markAttendance(lat?: number, lng?: number, address?: string) {

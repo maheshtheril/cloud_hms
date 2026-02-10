@@ -20,22 +20,35 @@ export default async function EmployeesPage() {
 
     let employees = []
     try {
-        employees = await prisma.crm_employee.findMany({
+        const rawEmployees = await prisma.crm_employee.findMany({
             where: { tenant_id: tenantId },
             include: {
-                designation: true,
-                branch: true
+                designation: { select: { name: true } },
+                branch: { select: { name: true } }
             },
             orderBy: { first_name: 'asc' }
-        })
+        }) || []
+
+        // SANITIZE: Remove any non-serializable fields before rendering
+        employees = rawEmployees.map(emp => ({
+            id: emp.id,
+            first_name: emp.first_name || '',
+            last_name: emp.last_name || '',
+            email: emp.email || '',
+            phone: emp.phone || '',
+            status: emp.status || 'Active',
+            designation_name: emp.designation?.name || 'No Designation',
+            branch_name: emp.branch?.name || 'Global / All'
+        }))
+
     } catch (error) {
         console.error("Error fetching employees:", error)
         return (
             <div className="p-8 text-center bg-red-50 border border-red-200 rounded-xl">
                 <h2 className="text-red-800 font-bold text-lg">Unable to load employees</h2>
                 <p className="text-red-600 mt-2">There was an error connecting to the database. Please try again later.</p>
-                <Button variant="outline" className="mt-4 border-red-200 text-red-700 hover:bg-red-100" onClick={() => { }}>
-                    Retry (Reload Page)
+                <Button variant="outline" className="mt-4 border-red-200 text-red-700 hover:bg-red-100" asChild>
+                    <Link href="/crm/employees">Retry</Link>
                 </Button>
             </div>
         )
@@ -96,19 +109,19 @@ export default async function EmployeesPage() {
                                                     {emp.first_name} {emp.last_name}
                                                 </h3>
                                                 <Badge variant="secondary" className="mt-1 font-medium bg-slate-100 text-slate-600 border-0">
-                                                    {emp.designation?.name || 'No Designation'}
+                                                    {emp.designation_name}
                                                 </Badge>
                                             </div>
                                         </div>
-                                        <Badge variant={emp.status === 'active' ? 'success' : 'secondary'}>
-                                            {emp.status || 'Active'}
+                                        <Badge variant={emp.status.toLowerCase() === 'active' ? 'success' : 'secondary'}>
+                                            {emp.status}
                                         </Badge>
                                     </div>
 
                                     <div className="space-y-3 pt-2">
                                         <div className="flex items-center gap-3 text-sm text-slate-600">
                                             <Mail className="h-4 w-4 text-slate-400" />
-                                            <span>{emp.email || "No email"}</span>
+                                            <span className="truncate">{emp.email || "No email"}</span>
                                         </div>
                                         <div className="flex items-center gap-3 text-sm text-slate-600">
                                             <Phone className="h-4 w-4 text-slate-400" />
@@ -116,7 +129,7 @@ export default async function EmployeesPage() {
                                         </div>
                                         <div className="flex items-center gap-3 text-sm text-slate-600">
                                             <Building2 className="h-4 w-4 text-slate-400" />
-                                            <span>{emp.branch?.name || "Global / All"}</span>
+                                            <span className="truncate">{emp.branch_name}</span>
                                         </div>
                                     </div>
                                 </div>
