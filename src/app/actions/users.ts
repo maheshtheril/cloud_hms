@@ -531,36 +531,50 @@ export async function deleteUserPermanently(userId: string) {
     }
 
     try {
+        // Resolve Clinician ID if they exist in HMS
+        const clinician = await prisma.hms_clinicians.findFirst({
+            where: { user_id: userId, tenant_id: session.user.tenantId }
+        })
+
+        // Resolve CRM Employee if they exist
+        const employee = await prisma.crm_employee.findFirst({
+            where: { user_id: userId, tenant_id: session.user.tenantId }
+        })
+
         const [
-            encounters,
-            appointments,
+            clinicalEncounters,
+            clinicalAppointments,
             deals,
             contacts
         ] = await Promise.all([
-            prisma.hms_encounter.count({ where: { clinician_id: userId } }),
-            prisma.hms_appointments.count({ where: { clinician_id: userId } }),
+            clinician ? prisma.hms_encounter.count({ where: { clinician_id: clinician.id } }) : 0,
+            clinician ? prisma.hms_appointments.count({ where: { clinician_id: clinician.id } }) : 0,
             prisma.crm_deals.count({ where: { owner_id: userId } }),
             prisma.crm_contacts.count({ where: { owner_id: userId } }),
         ])
 
-        const totalTransactions = encounters + appointments + deals + contacts
+        const totalTransactions = clinicalEncounters + clinicalAppointments + deals + contacts
 
         if (totalTransactions > 0) {
             const details = [
-                encounters ? `${encounters} Encounters` : '',
-                appointments ? `${appointments} Appointments` : '',
-                deals ? `${deals} Deals` : '',
-                contacts ? `${contacts} Contacts` : ''
+                clinicalEncounters ? `${clinicalEncounters} Clinical Encounters` : '',
+                clinicalAppointments ? `${clinicalAppointments} Scheduled Appointments` : '',
+                deals ? `${deals} CRM Deals` : '',
+                contacts ? `${contacts} CRM Contacts` : ''
             ].filter(Boolean).join(', ')
 
             return {
-                error: `Cannot delete user. They have associated transactions: ${details}.`
+                error: `Action Blocked: This user has historical data that must be preserved. Permanent deletion failed. Details: ${details}. Please de-activate the user instead.`
             }
         }
 
         await prisma.hms_user_roles.deleteMany({ where: { user_id: userId } })
         await prisma.user_permission.deleteMany({ where: { user_id: userId } })
         await prisma.email_verification_tokens.deleteMany({ where: { user_id: userId } })
+
+        // Atomic cleanup of linked records if they exist without transactions
+        if (clinician) await prisma.hms_clinicians.delete({ where: { id: clinician.id } })
+        if (employee) await prisma.crm_employee.delete({ where: { id: employee.id } })
 
         await prisma.app_user.delete({ where: { id: userId } })
 

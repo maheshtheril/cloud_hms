@@ -819,7 +819,10 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
     try {
         const invoice = await prisma.hms_invoice.findUnique({
             where: { id: invoiceId },
-            include: { hms_invoice_payments: true }
+            include: {
+                hms_invoice_payments: true,
+                hms_invoice_lines: true
+            }
         });
         if (!invoice) return { error: "Invoice not found" };
 
@@ -877,6 +880,34 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
                 await tx.hms_appointments.update({
                     where: { id: updated.appointment_id },
                     data: { status: 'completed' }
+                });
+            }
+
+            // [WORLD CLASS] Registration Fee Audit Trigger
+            // If this invoice contains a Registration Fee, update the patient's expiry date
+            const regLine = invoice.hms_invoice_lines.find(l =>
+                l.description?.toLowerCase().includes('registration fee') ||
+                l.description?.toLowerCase().includes('identity service')
+            );
+
+            if (regLine && finalStatus === 'paid' && invoice.patient_id) {
+                const expiryDate = new Date();
+                expiryDate.setDate(expiryDate.getDate() + 365); // Standard 1 year validity
+
+                const patient = await tx.hms_patient.findUnique({ where: { id: invoice.patient_id } });
+                const currentMeta = (patient?.metadata as any) || {};
+
+                await tx.hms_patient.update({
+                    where: { id: invoice.patient_id },
+                    data: {
+                        metadata: {
+                            ...currentMeta,
+                            registration_expiry: expiryDate.toISOString(),
+                            registration_fees_paid: true,
+                            registration_fee_date: new Date().toISOString(),
+                            status: 'active'
+                        }
+                    }
                 });
             }
 

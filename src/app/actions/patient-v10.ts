@@ -90,8 +90,9 @@ export async function createPatientV10(patientId: string | null | any, formData:
         // MASTER PATIENT INDEX (UPSERT) - DIRECT MODE (No Transaction, No Others)
         // -----------------------------------------------------------------------------------
         const registrationDate = new Date();
+        // [AUDIT-FIX] Do NOT set future expiry by default. Patient must pay first.
         const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 365);
+        expiryDate.setFullYear(expiryDate.getFullYear() - 1); // Set to past to force payment
 
         const address = {
             street: formData.get('street') as string,
@@ -104,7 +105,8 @@ export async function createPatientV10(patientId: string | null | any, formData:
             registration_date: registrationDate.toISOString(),
             registration_expiry: expiryDate.toISOString(),
             title: formData.get("title") as string,
-            last_rcm_audit: new Date().toISOString()
+            last_rcm_audit: new Date().toISOString(),
+            status: 'awaiting_payment'
         };
 
         const upsertPayload = {

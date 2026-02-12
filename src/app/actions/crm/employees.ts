@@ -267,6 +267,27 @@ export async function deleteEmployee(id: string) {
     }
 
     try {
+        // [SAFETY] Check for history before deleting employee directly
+        const employee = await prisma.crm_employee.findUnique({
+            where: { id, tenant_id: session.user.tenantId }
+        });
+
+        if (employee?.user_id) {
+            const clinician = await prisma.hms_clinicians.findFirst({
+                where: { user_id: employee.user_id, tenant_id: session.user.tenantId }
+            });
+
+            const [clinicalHistory, deals, contacts] = await Promise.all([
+                clinician ? prisma.hms_appointments.count({ where: { clinician_id: clinician.id } }) : 0,
+                prisma.crm_deals.count({ where: { owner_id: employee.user_id } }),
+                prisma.crm_contacts.count({ where: { owner_id: employee.user_id } }),
+            ]);
+
+            if (clinicalHistory + deals + contacts > 0) {
+                return { error: "Action Blocked: Employee has historical clinical or CRM data and cannot be permanently removed. Please set status to 'Inactive' instead." };
+            }
+        }
+
         await prisma.crm_employee.delete({
             where: { id, tenant_id: session.user.tenantId }
         });

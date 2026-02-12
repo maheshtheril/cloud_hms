@@ -72,10 +72,10 @@ export async function createPatientEmergency(existingId: string | null | any, fo
         // Create New Only (Simple)
         const registrationDate = new Date();
         const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 365);
-
+        expiryDate.setFullYear(expiryDate.getFullYear() - 1); // Set to past to force payment
         metadata.registration_date = registrationDate.toISOString();
         metadata.registration_expiry = expiryDate.toISOString();
+        metadata.status = 'awaiting_payment';
 
         patient = await prisma.hms_patient.create({
             data: {

@@ -106,15 +106,16 @@ export async function createPatient(existingId: string | null | any, formData: F
 
             if (chargeRegistration) {
                 // Renewal / First Time Charge on Update
-                metadata.registration_date = registrationDate.toISOString();
+                const expiryDate = new Date();
+                expiryDate.setFullYear(expiryDate.getFullYear() - 1);
                 metadata.registration_expiry = expiryDate.toISOString();
+                metadata.status = 'awaiting_payment';
             } else if (currentMeta.registration_date) {
                 // Preserve existing valid registration
                 metadata.registration_date = currentMeta.registration_date;
                 metadata.registration_expiry = currentMeta.registration_expiry;
             } else {
                 // Fallback for old records that never had a date (optional, maybe don't set if not charging?)
-                // For data integrity, let's leave them null until they pay?
                 // Or set them to created_at logic? Let's leave them alone to avoid free renewals.
             }
 
@@ -134,9 +135,10 @@ export async function createPatient(existingId: string | null | any, formData: F
                 }
             });
         } else {
-            // Create New
-            metadata.registration_date = registrationDate.toISOString();
+            const expiryDate = new Date();
+            expiryDate.setFullYear(expiryDate.getFullYear() - 1);
             metadata.registration_expiry = expiryDate.toISOString();
+            metadata.status = 'awaiting_payment';
 
             patient = await prisma.hms_patient.create({
                 data: {
