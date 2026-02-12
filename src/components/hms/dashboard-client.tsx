@@ -28,8 +28,7 @@ interface DashboardClientProps {
 
 export function DashboardClient({ user, stats, appointments, patients, doctors, tenant, company }: DashboardClientProps) {
     const [showAppointmentModal, setShowAppointmentModal] = useState(false)
-
-    const pendingApts = appointments.filter(a => a.status.toLowerCase() === 'scheduled' || a.status.toLowerCase() === 'pending').length
+    const pendingApts = (appointments || []).filter(a => a?.status?.toLowerCase() === 'scheduled' || a?.status?.toLowerCase() === 'pending').length
     const dashboardTitle = company?.name || tenant?.app_name || 'Dashboard'
 
     return (

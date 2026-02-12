@@ -37,6 +37,7 @@ const getIcon = (iconName: string) => {
 
 export function AppSidebar({ menuItems, currentCompany, tenant, user: initialUser, children }: { menuItems: any[], currentCompany: any, tenant?: any, user?: any, children: React.ReactNode }) {
     const { data: session } = useSession();
+    const { theme } = useTheme();
     const [freshAvatar, setFreshAvatar] = useState<string | null>(null);
 
     // Get the base user from session or prop

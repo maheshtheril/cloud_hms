@@ -73,7 +73,7 @@ export function DetailedLedgerReport({ type }: DetailedLedgerProps) {
         e.ref?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         e.journal_entry_lines.some((l: any) =>
             l.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            l.accounts.name.toLowerCase().includes(searchTerm.toLowerCase())
+            l.accounts?.name?.toLowerCase().includes(searchTerm.toLowerCase())
         )
     )
 

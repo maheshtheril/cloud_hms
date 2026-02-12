@@ -57,8 +57,8 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
     const filteredDoctors = doctors.filter(doc =>
         `${doc.first_name} ${doc.last_name} ${doc.hms_roles?.name || ''}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
         doc.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.hms_specializations?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        doc.hms_roles?.name.toLowerCase().includes(searchQuery.toLowerCase())
+        doc.hms_specializations?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        doc.hms_roles?.name?.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
     return (

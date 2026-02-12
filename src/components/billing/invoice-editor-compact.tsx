@@ -221,7 +221,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
       initialMapped.forEach(m => {
         const exists = combinedLines.some(cl => {
           const productMatch = cl.product_id && m.product_id && cl.product_id === m.product_id;
-          const descMatch = cl.description?.toLowerCase().trim() === m.description?.toLowerCase().trim();
+          const descMatch = (cl.description?.toLowerCase() || '').trim() === (m.description?.toLowerCase() || '').trim();
           return productMatch || descMatch;
         });
         if (!exists) {
