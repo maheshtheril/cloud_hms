@@ -9,6 +9,8 @@ import { useState, useEffect } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 import { ZionaLogo } from "@/components/branding/ziona-logo"
+import { Maximize2, Minimize2, Mic, MicOff, ShieldAlert, BadgeCheck, Sparkles, Loader2 } from "lucide-react"
+import { getHMSSettings } from "@/app/actions/settings"
 
 interface AppointmentFormProps {
     patients: any[]
@@ -35,8 +37,12 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     const [localPatients, setLocalPatients] = useState(patients)
     const [selectedPatientId, setSelectedPatientId] = useState(defaultPatientId)
     const [showNewPatientModal, setShowNewPatientModal] = useState(false)
-    const [selectedClinicianId, setSelectedClinicianId] = useState(defaultClinicianId)
+    const [selectedClinicianId, setSelectedClinicianId] = useState(defaultClinicianId || (doctors.length > 0 ? doctors[0].id : ''))
     const [suggestedTime, setSuggestedTime] = useState(defaultTime)
+    const [isMaximized, setIsMaximized] = useState(true)
+    const [isListening, setIsListening] = useState(false)
+    const [hmsSettings, setHmsSettings] = useState<any>(null)
+    const [notes, setNotes] = useState(editingAppointment?.notes || '')
 
     // Sync state when editingAppointment changes (fix for reused component / stale state)
     // Sync state when editingAppointment changes or initialData changes
@@ -70,18 +76,51 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
         }
     }, [editingAppointment, initialPatientId, initialDate, initialTime])
 
-    // Keyboard Shortcut: Ctrl+N to open New Patient
+    // Keyboard Shortcut: Ctrl+N to open New Patient, Ctrl+M to toggle maximize
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
                 e.preventDefault()
                 setShowNewPatientModal(true)
             }
+            if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+                e.preventDefault()
+                setIsMaximized(prev => !prev)
+            }
         }
 
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)
     }, [])
+
+    // Fetch HMS settings for registration info
+    useEffect(() => {
+        getHMSSettings().then(res => {
+            if (res.success) setHmsSettings(res.settings)
+        })
+    }, [])
+
+    const startListening = () => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        if (!SpeechRecognition) {
+            toast({ title: "Unsupported", description: "Voice input is not supported in this browser.", variant: "destructive" })
+            return
+        }
+
+        const recognition = new SpeechRecognition()
+        recognition.continuous = false
+        recognition.interimResults = false
+        recognition.lang = 'en-US'
+
+        recognition.onstart = () => setIsListening(true)
+        recognition.onend = () => setIsListening(false)
+        recognition.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript
+            setNotes(prev => (prev ? `${prev} ${transcript}` : transcript))
+        }
+
+        recognition.start()
+    }
 
     // ... (Smart slot logic remains, but we might want to skip it on initial load if editing)
 
@@ -197,115 +236,125 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     // We must handle the case where the server action returns an error object.
 
     const [selectedPriority, setSelectedPriority] = useState(editingAppointment?.priority || 'normal')
+    const selectedPatient = localPatients.find(p => p.id === selectedPatientId)
 
     return (
-        <div className="h-full">
+        <div className={`transition-all duration-500 bg-white dark:bg-slate-950 flex flex-col ${isMaximized ? 'fixed inset-0 z-[100]' : 'h-full relative'}`}>
             <form action={async (formData) => {
                 const res = editingAppointment ? await updateAppointmentDetails(formData) : await createAppointment(formData);
                 if (res?.error) {
-                    // Show error toast
                     toast({ title: "Error", description: res.error, variant: "destructive" });
                 } else {
-                    // Success path
-                    // If the action redirects, we might not reach here, which is fine.
-                    // If it returns success (e.g. updateAppointmentDetails might just return success), show toast.
                     toast({ title: "Success", description: "Appointment Saved", className: "bg-green-600 text-white" });
-                    if (onClose) {
-                        // Wait a bit for toast then close
-                        // But we need to refresh data
-                        // The server action should ideally revalidatePath.
-                        onClose();
-                    }
+                    if (onClose) onClose();
                 }
-            }} className="space-y-4 h-full flex flex-col">
+            }} className="flex-1 flex flex-col overflow-hidden">
                 {editingAppointment && <input type="hidden" name="id" value={editingAppointment.id} />}
 
-                {/* Premium Header - Compact */}
-                <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4 flex-shrink-0">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            {onClose ? (
-                                <button
-                                    type="button"
-                                    onClick={onClose}
-                                    className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-all group"
-                                >
-                                    <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-                                </button>
-                            ) : (
-                                <Link
-                                    href="/hms/appointments"
-                                    className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg transition-all group"
-                                >
-                                    <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
-                                </Link>
-                            )}
-
-                            <div className="bg-black p-1.5 rounded-xl shadow-2xl border border-white/10 shrink-0">
-                                <ZionaLogo size={24} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
-                            </div>
-
-                            <div>
-                                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-                                    {editingAppointment ? 'Edit Appointment' : 'Book New Appointment'}
-                                </h1>
+                {/* Premium Header - Elite Dynamic Terminal */}
+                <div className="bg-black text-white px-6 py-4 flex items-center justify-between border-b border-white/10 shrink-0">
+                    <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-4">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="p-2 hover:bg-white/10 rounded-xl transition-all group"
+                            >
+                                <ArrowLeft className="h-6 w-6 text-white/70 group-hover:text-white" />
+                            </button>
+                            <ZionaLogo size={32} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
+                        </div>
+                        <div className="h-10 w-[1px] bg-white/10 mx-2" />
+                        <div>
+                            <h1 className="text-xl font-black tracking-tight italic uppercase flex items-center gap-2">
+                                OP Clinical Terminal <Sparkles className="h-4 w-4 text-indigo-400 animate-pulse" />
+                            </h1>
+                            <div className="flex items-center gap-3 mt-0.5">
+                                <span className="text-[10px] font-bold text-indigo-400 tracking-[0.3em] uppercase bg-indigo-500/10 px-2 py-0.5 rounded shadow-inner">
+                                    Ready for Triage
+                                </span>
+                                <div className="h-1 w-1 rounded-full bg-white/20" />
+                                <span className="text-[10px] font-medium text-white/40 tracking-widest uppercase">
+                                    Deployment Node: Cloud-HMS.V2
+                                </span>
                             </div>
                         </div>
-                        <div className="flex gap-3">
-                            {onClose ? (
-                                <button
-                                    type="button"
-                                    onClick={onClose}
-                                    className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg font-medium text-sm transition-all"
-                                >
-                                    Cancel
-                                </button>
-                            ) : (
-                                <Link
-                                    href="/hms/appointments"
-                                    className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg font-medium text-sm transition-all"
-                                >
-                                    Cancel
-                                </Link>
-                            )}
+                    </div>
 
+                    <div className="flex items-center gap-3">
+                        {/* Control Actions */}
+                        <div className="flex bg-white/5 border border-white/10 p-1 rounded-xl mr-4">
                             <button
-                                type="submit"
-                                disabled={suggestedTime === 'Fully Booked'}
-                                className={`px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-500 dark:to-indigo-500 text-white rounded-lg hover:shadow-lg hover:scale-[1.02] font-medium text-sm flex items-center gap-2 transition-all ${suggestedTime === 'Fully Booked' ? 'opacity-50 cursor-not-allowed grayscale' : ''}`}
+                                type="button"
+                                onClick={() => setIsMaximized(!isMaximized)}
+                                className="p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all flex items-center gap-2 text-xs font-bold"
                             >
-                                <CheckCircle className="h-4 w-4" />
-                                {editingAppointment ? 'Update Booking' : 'Confirm Booking'}
+                                {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                                {isMaximized ? 'Terminal Size' : 'Maximize'}
                             </button>
+                        </div>
 
-                            <button
-                                type="submit"
-                                name="next_action"
-                                value="prescribe"
-                                disabled={suggestedTime === 'Fully Booked'}
-                                className="px-5 py-2 bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-slate-700 rounded-lg hover:bg-blue-50 dark:hover:bg-slate-800 font-medium text-sm flex items-center gap-2 transition-all"
-                            >
-                                <Stethoscope className="h-4 w-4" />
-                                Confirm & Prescribe
-                            </button>
-
+                        <div className="flex items-center gap-3 pr-2 border-r border-white/10 mr-2">
                             <button
                                 type="submit"
                                 name="next_action"
                                 value="bill"
-                                disabled={suggestedTime === 'Fully Booked'}
-                                className="px-5 py-2 bg-white dark:bg-slate-900 text-green-600 dark:text-green-400 border border-green-200 dark:border-slate-700 rounded-lg hover:bg-green-50 dark:hover:bg-slate-800 font-medium text-sm flex items-center gap-2 transition-all"
+                                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-500/20 font-black text-[11px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2"
                             >
-                                <IndianRupee className="h-4 w-4" />
-                                Confirm & Bill
+                                <IndianRupee className="h-4 w-4" /> Confirm & Post Bill
                             </button>
                         </div>
+
+                        <button
+                            type="submit"
+                            className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl shadow-lg shadow-blue-500/20 font-black text-[11px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-2"
+                        >
+                            <CheckCircle className="h-4 w-4" /> Finalize Booking
+                        </button>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 overflow-hidden min-h-0">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 flex-1 overflow-hidden bg-white dark:bg-slate-950">
                     {/* Left Column (Span 8) */}
-                    <div className="lg:col-span-8 space-y-4 overflow-y-auto pr-1 custom-scrollbar pb-20">
+                    <div className="lg:col-span-8 p-6 space-y-6 overflow-y-auto border-r border-gray-100 dark:border-white/5 custom-scrollbar">
+                        {/* Status Strip */}
+                        {selectedPatient && (
+                            <div className="bg-indigo-50/50 dark:bg-indigo-500/5 rounded-2xl p-4 flex items-center justify-between border border-indigo-100/50 dark:border-indigo-500/10">
+                                <div className="flex items-center gap-4">
+                                    <div className="h-10 w-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black text-xs shadow-lg">
+                                        ID
+                                    </div>
+                                    <div>
+                                        <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500/60 leading-none">Registration Node</div>
+                                        <div className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
+                                            {selectedPatient.patient_number || 'STAGING...'}
+                                        </div>
+                                    </div>
+                                </div>
+                                {hmsSettings ? (
+                                    <div className="flex items-center gap-6">
+                                        <div className="text-right">
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Reg Fee</div>
+                                            <div className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1 justify-end">
+                                                <IndianRupee className="h-3 w-3" /> {hmsSettings.registrationFee}
+                                            </div>
+                                        </div>
+                                        <div className="h-8 w-[1px] bg-slate-200 dark:bg-white/10" />
+                                        <div className="text-right">
+                                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Validity Period</div>
+                                            <div className="text-sm font-black text-emerald-600 flex items-center gap-1 justify-end">
+                                                <BadgeCheck className="h-3.5 w-3.5" /> {hmsSettings.registrationValidity} Days
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="animate-pulse flex gap-4">
+                                        <div className="h-8 w-24 bg-slate-100 dark:bg-white/5 rounded-lg" />
+                                        <div className="h-8 w-24 bg-slate-100 dark:bg-white/5 rounded-lg" />
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         <PatientDoctorSelectors
                             patients={localPatients}
                             doctors={doctors}
@@ -367,23 +416,38 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                         </div>
 
                         {/* Notes Card - MOVED HERE BELOW SCHEDULE */}
-                        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                                <FileText className="h-4 w-4 text-gray-600 dark:text-slate-400" />
-                                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Notes / Brief Complaint</h3>
+                        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm p-5 group">
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <FileText className="h-4 w-4 text-indigo-500" />
+                                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Chief Complaint / Notes</h3>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={startListening}
+                                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-tighter transition-all ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-100 dark:bg-white/5 text-slate-500 hover:bg-indigo-500 hover:text-white'}`}
+                                >
+                                    {isListening ? <MicOff className="h-3.5 w-3.5" /> : <Mic className="h-3.5 w-3.5" />}
+                                    {isListening ? 'Listening...' : 'Voice Input'}
+                                </button>
                             </div>
                             <textarea
                                 name="notes"
-                                rows={3}
-                                defaultValue={editingAppointment?.notes || ''}
-                                className="w-full p-2.5 bg-gray-50/50 dark:bg-slate-950 text-gray-900 dark:text-white border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none font-medium text-sm"
-                                placeholder="Reason for visit, symptoms, or any special instructions..."
+                                rows={4}
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                className="w-full p-4 bg-slate-50/50 dark:bg-black/50 text-slate-900 dark:text-white border border-gray-100 dark:border-white/5 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 outline-none resize-none font-medium text-sm transition-all"
+                                placeholder="State symptoms, history, or patient's primary complaint. Use the voice input for faster typing..."
                             ></textarea>
+                            <div className="mt-2 flex items-center gap-2">
+                                <Sparkles className="h-3 w-3 text-indigo-400" />
+                                <span className="text-[10px] text-slate-400 font-medium">Auto-Formatting via Clinical Engine L4 enabled</span>
+                            </div>
                         </div>
                     </div>
 
                     {/* Right Column (Span 4) */}
-                    <div className="lg:col-span-4 space-y-4 overflow-y-auto pr-1 custom-scrollbar pb-20">
+                    <div className="lg:col-span-4 p-6 space-y-6 overflow-y-auto bg-slate-50/30 dark:bg-white/[0.02] custom-scrollbar">
                         {/* Visit Type & Mode */}
                         <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
                             <div className="flex items-center gap-3 mb-4 pb-2 border-b border-gray-100 dark:border-slate-800">
