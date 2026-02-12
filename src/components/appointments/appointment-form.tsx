@@ -44,7 +44,6 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     const [hmsSettings, setHmsSettings] = useState<any>(null)
     const [notes, setNotes] = useState(editingAppointment?.notes || '')
 
-    // Sync state when editingAppointment changes (fix for reused component / stale state)
     // Sync state when editingAppointment changes or initialData changes
     useEffect(() => {
         if (editingAppointment) {
@@ -69,12 +68,15 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                 })
             }
         } else {
-            // Reset to defaults if switching to "New Appointment" mode within same instance (rare but possible) or if initialData changes
+            // Reset to defaults
             setSelectedPatientId(initialPatientId || '')
-            setSelectedClinicianId('')
             setSuggestedTime(initialTime || '')
+            // AUTO-SELECT DOCTOR if none in initialData
+            if (!selectedClinicianId && doctors.length > 0) {
+                setSelectedClinicianId(doctors[0].id)
+            }
         }
-    }, [editingAppointment, initialPatientId, initialDate, initialTime])
+    }, [editingAppointment, initialPatientId, initialDate, initialTime, doctors])
 
     // Keyboard Shortcut: Ctrl+N to open New Patient, Ctrl+M to toggle maximize
     useEffect(() => {
@@ -248,21 +250,24 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                     toast({ title: "Success", description: "Appointment Saved", className: "bg-green-600 text-white" });
                     if (onClose) onClose();
                 }
-            }} className="flex-1 flex flex-col overflow-hidden">
+            }} className={`flex-1 flex flex-col overflow-hidden ${isMaximized ? 'w-full h-full' : ''}`}>
                 {editingAppointment && <input type="hidden" name="id" value={editingAppointment.id} />}
 
                 {/* Premium Header - Elite Dynamic Terminal */}
-                <div className="bg-black text-white px-6 py-4 flex items-center justify-between border-b border-white/10 shrink-0">
+                <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-white/10 shrink-0 shadow-2xl">
                     <div className="flex items-center gap-6">
                         <div className="flex items-center gap-4">
                             <button
                                 type="button"
                                 onClick={onClose}
                                 className="p-2 hover:bg-white/10 rounded-xl transition-all group"
+                                title="Exit Terminal (Esc)"
                             >
                                 <ArrowLeft className="h-6 w-6 text-white/70 group-hover:text-white" />
                             </button>
-                            <ZionaLogo size={32} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
+                            <div className="bg-white rounded-lg p-1">
+                                <ZionaLogo size={32} variant="icon" theme="light" speed="slow" colorScheme="signature" />
+                            </div>
                         </div>
                         <div className="h-10 w-[1px] bg-white/10 mx-2" />
                         <div>
@@ -274,7 +279,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                                     Ready for Triage
                                 </span>
                                 <div className="h-1 w-1 rounded-full bg-white/20" />
-                                <span className="text-[10px] font-medium text-white/40 tracking-widest uppercase">
+                                <span className="text-[10px] font-medium text-white/50 tracking-widest uppercase">
                                     Deployment Node: Cloud-HMS.V2
                                 </span>
                             </div>
@@ -317,44 +322,41 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 flex-1 overflow-hidden bg-white dark:bg-slate-950">
                     {/* Left Column (Span 8) */}
                     <div className="lg:col-span-8 p-6 space-y-6 overflow-y-auto border-r border-gray-100 dark:border-white/5 custom-scrollbar">
-                        {/* Status Strip */}
-                        {selectedPatient && (
-                            <div className="bg-indigo-50/50 dark:bg-indigo-500/5 rounded-2xl p-4 flex items-center justify-between border border-indigo-100/50 dark:border-indigo-500/10">
-                                <div className="flex items-center gap-4">
-                                    <div className="h-10 w-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-black text-xs shadow-lg">
-                                        ID
-                                    </div>
-                                    <div>
-                                        <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500/60 leading-none">Registration Node</div>
-                                        <div className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
-                                            {selectedPatient.patient_number || 'STAGING...'}
-                                        </div>
+                        {/* Status Strip - ALWAYS SHOW Billing/OP Ticket Info */}
+                        <div className="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-500/5 dark:to-slate-900 rounded-2xl p-4 flex items-center justify-between border border-indigo-100 dark:border-indigo-500/10 shadow-sm transition-all duration-300">
+                            <div className="flex items-center gap-4">
+                                <div className="h-12 w-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-xs shadow-lg shadow-indigo-500/30">
+                                    OP#
+                                </div>
+                                <div className="min-w-[120px]">
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-0.5">OP Ticket Number</div>
+                                    <div className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                                        {selectedPatient?.patient_number || <span className="text-slate-300 dark:text-slate-700 italic animate-pulse">AUTO-GENERATE</span>}
+                                        {selectedPatient && <BadgeCheck className="h-5 w-5 text-emerald-500" />}
                                     </div>
                                 </div>
-                                {hmsSettings ? (
-                                    <div className="flex items-center gap-6">
-                                        <div className="text-right">
-                                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Reg Fee</div>
-                                            <div className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1 justify-end">
-                                                <IndianRupee className="h-3 w-3" /> {hmsSettings.registrationFee}
-                                            </div>
-                                        </div>
-                                        <div className="h-8 w-[1px] bg-slate-200 dark:bg-white/10" />
-                                        <div className="text-right">
-                                            <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Validity Period</div>
-                                            <div className="text-sm font-black text-emerald-600 flex items-center gap-1 justify-end">
-                                                <BadgeCheck className="h-3.5 w-3.5" /> {hmsSettings.registrationValidity} Days
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="animate-pulse flex gap-4">
-                                        <div className="h-8 w-24 bg-slate-100 dark:bg-white/5 rounded-lg" />
-                                        <div className="h-8 w-24 bg-slate-100 dark:bg-white/5 rounded-lg" />
-                                    </div>
-                                )}
                             </div>
-                        )}
+
+                            <div className="flex items-center gap-8">
+                                <div className="h-10 w-[1px] bg-slate-200 dark:bg-white/10" />
+
+                                <div className="text-right">
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5 flex items-center justify-end gap-1">
+                                        <IndianRupee className="h-2.5 w-2.5" /> Registration Fee
+                                    </div>
+                                    <div className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                                        {hmsSettings ? `₹ ${hmsSettings.registrationFee}` : <Loader2 className="h-4 w-4 animate-spin inline ml-2" />}
+                                    </div>
+                                </div>
+
+                                <div className="text-right">
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Validity Period</div>
+                                    <div className="text-sm font-black text-emerald-600 dark:text-emerald-400 flex items-center gap-1 justify-end">
+                                        <BadgeCheck className="h-4 w-4" /> {hmsSettings ? `${hmsSettings.registrationValidity} Days` : '...'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <PatientDoctorSelectors
                             patients={localPatients}
                             doctors={doctors}
@@ -539,16 +541,18 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
             </form>
 
             {/* Quick Create Patient Modal */}
-            {showNewPatientModal && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="w-full max-w-4xl shadow-2xl animate-in zoom-in-95 duration-200">
-                        <CreatePatientForm
-                            onClose={() => setShowNewPatientModal(false)}
-                            onSuccess={handlePatientCreated}
-                        />
+            {
+                showNewPatientModal && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+                        <div className="w-full max-w-4xl shadow-2xl animate-in zoom-in-95 duration-200">
+                            <CreatePatientForm
+                                onClose={() => setShowNewPatientModal(false)}
+                                onSuccess={handlePatientCreated}
+                            />
+                        </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+        </div >
     )
 }

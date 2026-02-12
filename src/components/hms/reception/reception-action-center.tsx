@@ -826,7 +826,7 @@ export function ReceptionActionCenter({
             {/* MODALS */}
 
             <Dialog open={activeModal === 'appointment' || activeModal === 'edit-appointment'} onOpenChange={(open) => { if (!open) { setActiveModal(null); setEditingAppointment(null); } }}>
-                <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden p-0">
+                <DialogContent className="max-w-none w-screen h-screen border-none p-0 overflow-hidden bg-transparent shadow-none [&>button]:hidden [&>div]:h-full">
                     <AppointmentForm
                         key={activeModal + (editingAppointment?.id || 'new')}
                         onClose={() => setActiveModal(null)}
