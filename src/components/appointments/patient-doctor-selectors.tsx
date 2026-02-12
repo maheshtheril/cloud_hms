@@ -76,9 +76,8 @@ export function PatientDoctorSelectors({
                         }}
                         value={selectedClinicianId}
                         onChange={(e) => onClinicianSelect?.(e || '')}
-                        placeholder="Type to search doctor..."
+                        placeholder="Search doctor..."
                         inputId="clinician_select"
-                        autoFocus={true}
                     />
                     <input type="hidden" name="clinician_id" value={selectedClinicianId || ''} />
                 </div>
@@ -120,8 +119,13 @@ export function PatientDoctorSelectors({
                             }}
                             value={selectedPatientId}
                             onChange={(id) => onPatientSelect?.(id || '')}
-                            placeholder="Type to search patient..."
+                            placeholder="Search by Name, Mob or ID (Alt+S)"
                             inputId="patient_select"
+                            autoFocus={true}
+                            onCreate={async (q) => {
+                                onNewPatientClick?.()
+                                return null
+                            }}
                         />
                         <input type="hidden" name="patient_id" value={selectedPatientId} />
                     </div>

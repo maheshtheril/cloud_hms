@@ -23,9 +23,10 @@ interface AppointmentFormProps {
     }
     editingAppointment?: any // Pass full object for editing
     onClose?: () => void
+    onMinimize?: () => void
 }
 
-export function AppointmentForm({ patients, doctors, appointments = [], initialData = {}, editingAppointment, onClose }: AppointmentFormProps) {
+export function AppointmentForm({ patients, doctors, appointments = [], initialData = {}, editingAppointment, onClose, onMinimize }: AppointmentFormProps) {
     const { patient_id: initialPatientId, date: initialDate, time: initialTime } = initialData
 
     // Derived state for editing
@@ -84,13 +85,13 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     // Keyboard Shortcut: Ctrl+N to open New Patient, Ctrl+M to toggle maximize
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+            if ((e.ctrlKey || e.metaKey || e.altKey) && e.key === 'n') {
                 e.preventDefault()
                 setShowNewPatientModal(true)
             }
-            if ((e.ctrlKey || e.metaKey) && e.key === 'm') {
+            if ((e.ctrlKey || e.metaKey || e.altKey) && e.key === 'm') {
                 e.preventDefault()
-                setIsMaximized(prev => !prev)
+                if (onMinimize) onMinimize()
             }
         }
 
@@ -294,9 +295,9 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                         <div className="flex items-center bg-white/5 border border-white/10 p-1 rounded-xl mr-2 gap-1 px-2">
                             <button
                                 type="button"
-                                onClick={onClose}
+                                onClick={onMinimize || onClose}
                                 className="p-2 hover:bg-white/10 rounded-lg text-white/50 hover:text-white transition-all"
-                                title="Exit/Minimize Terminal"
+                                title="Minimize Terminal (Alt+M)"
                             >
                                 <Minus className="h-4 w-4" />
                             </button>

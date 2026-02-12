@@ -88,6 +88,7 @@ export function ReceptionActionCenter({
     const [selectedAptForBilling, setSelectedAptForBilling] = useState<any>(null)
     const [billingData, setBillingData] = useState<any>(null)
     const [isBillingLoading, setIsBillingLoading] = useState(false)
+    const [isTerminalMinimized, setIsTerminalMinimized] = useState(false)
 
     // Unified Billing Loader
     useEffect(() => {
@@ -117,13 +118,17 @@ export function ReceptionActionCenter({
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
             // Ctrl+N or Cmd+N - New Patient
-            if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+            if ((e.ctrlKey || e.metaKey || e.altKey) && e.key === 'n') {
                 e.preventDefault()
-                router.push('/hms/patients/new')
-                toast({
-                    title: "Opening New Patient Form",
-                    description: "Shortcut: Ctrl+N",
-                })
+                if (activeModal === 'appointment' || activeModal === 'edit-appointment') {
+                    // Handled inside form
+                } else {
+                    router.push('/hms/patients/new')
+                    toast({
+                        title: "Opening New Patient Form",
+                        description: "Shortcut: Alt+N",
+                    })
+                }
             }
 
             // Ctrl+A or Cmd+A - New Appointment
@@ -825,17 +830,68 @@ export function ReceptionActionCenter({
 
             {/* MODALS */}
 
-            <Dialog open={activeModal === 'appointment' || activeModal === 'edit-appointment'} onOpenChange={(open) => { if (!open) { setActiveModal(null); setEditingAppointment(null); } }}>
-                <DialogContent className="max-w-none w-screen h-screen border-none p-0 overflow-hidden bg-transparent shadow-none [&>button]:hidden [&>div]:h-full">
-                    <AppointmentForm
-                        key={activeModal + (editingAppointment?.id || 'new')}
-                        onClose={() => setActiveModal(null)}
-                        patients={patients}
-                        doctors={doctors}
-                        editingAppointment={editingAppointment}
-                    />
-                </DialogContent>
-            </Dialog>
+            {/* ELITE CLINICAL TERMINAL - PERSISTENT STATE ENGINE */}
+            <AnimatePresence>
+                {(activeModal === 'appointment' || activeModal === 'edit-appointment') && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{
+                            opacity: isTerminalMinimized ? 0 : 1,
+                            scale: isTerminalMinimized ? 0.9 : 1,
+                            pointerEvents: isTerminalMinimized ? 'none' : 'auto',
+                            translateY: isTerminalMinimized ? 100 : 0
+                        }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="fixed inset-0 z-[110] bg-slate-950/20 backdrop-blur-sm flex items-center justify-center p-0"
+                    >
+                        <div className="w-full h-full">
+                            <AppointmentForm
+                                key={(editingAppointment?.id || 'new')}
+                                onClose={() => {
+                                    setActiveModal(null);
+                                    setEditingAppointment(null);
+                                    setIsTerminalMinimized(false);
+                                }}
+                                onMinimize={() => setIsTerminalMinimized(true)}
+                                patients={patients}
+                                doctors={doctors}
+                                editingAppointment={editingAppointment}
+                            />
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* MINIMIZED TERMINAL DOCK */}
+            <AnimatePresence>
+                {isTerminalMinimized && (
+                    <motion.div
+                        initial={{ y: 100, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 100, opacity: 0 }}
+                        className="fixed bottom-6 right-6 z-[100]"
+                    >
+                        <Button
+                            onClick={() => setIsTerminalMinimized(false)}
+                            className="h-16 px-6 bg-slate-900 border-2 border-indigo-500 text-white rounded-2xl shadow-2xl flex items-center gap-4 hover:bg-slate-800 transition-all group"
+                        >
+                            <div className="bg-white rounded-lg p-1.5 shadow-lg group-hover:scale-110 transition-transform">
+                                <Stethoscope className="h-5 w-5 text-indigo-600" />
+                            </div>
+                            <div className="text-left mr-4">
+                                <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] leading-none mb-1">Active Terminal</p>
+                                <h3 className="text-sm font-black italic uppercase tracking-tighter">
+                                    {editingAppointment ? `Editing: ${editingAppointment.patient?.first_name}` : 'New OP Registration'}
+                                </h3>
+                            </div>
+                            <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-lg border border-white/10 uppercase text-[9px] font-bold">
+                                <Activity className="h-3 w-3 text-emerald-400 animate-pulse" />
+                                Resume
+                            </div>
+                        </Button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <Dialog open={activeModal === 'expense'} onOpenChange={() => setActiveModal(null)}>
                 <DialogContent className="w-screen h-screen max-w-none p-0 overflow-hidden bg-white">
