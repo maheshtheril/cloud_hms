@@ -178,6 +178,16 @@ export async function createPatientV10(patientId: string | null | any, formData:
     }
 }
 
-export async function createPatientQuick(formData: FormData) {
-    return createPatientV10(null, formData);
+export async function getPatientById(id: string) {
+    const session = await auth();
+    if (!session?.user?.tenantId) return { error: "Unauthorized" };
+
+    try {
+        const patient = await prisma.hms_patient.findUnique({
+            where: { id, tenant_id: session.user.tenantId }
+        });
+        return { success: true, data: patient };
+    } catch (err: any) {
+        return { error: err.message };
+    }
 }

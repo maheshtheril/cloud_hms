@@ -165,7 +165,7 @@ export async function createAppointment(formData: FormData) {
     if (source === 'dashboard') {
         revalidatePath("/hms/reception/dashboard")
         revalidatePath("/hms/dashboard")
-        return { success: true }
+        return { success: true, data: createdApt }
     }
 
     redirect("/hms/appointments")

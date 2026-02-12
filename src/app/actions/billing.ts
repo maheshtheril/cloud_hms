@@ -1407,6 +1407,81 @@ export async function generateRegistrationInvoice(patientId: string) {
     }
 }
 
+/**
+ * [RCM] Generate Consultation Invoice
+ * Creates a linked invoice for clinical consultation services.
+ */
+export async function generateConsultationInvoice(appointmentId: string) {
+    const session = await auth();
+    if (!session?.user?.tenantId) return { error: "Unauthorized" };
+    const tenantId = session.user.tenantId;
+    const companyId = session.user.companyId || tenantId;
+
+    try {
+        const appointment = await prisma.hms_appointments.findUnique({
+            where: { id: appointmentId },
+            include: {
+                hms_clinician: true,
+                hms_patient: true
+            }
+        });
+
+        if (!appointment) return { error: "Appointment not found" };
+
+        const consultationFee = Number(appointment.hms_clinician?.consultation_fee) || 0;
+
+        // 1. Check for existing invoice
+        const existing = await prisma.hms_invoice.findFirst({
+            where: { appointment_id: appointmentId, status: { not: 'cancelled' } }
+        });
+        if (existing) return { success: true, data: existing };
+
+        // 2. Generate Number
+        const invNoRes = await getNextVoucherNumber();
+        const invoiceNumber = invNoRes.success ? invNoRes.data : `INV-CONS-${Date.now().toString().slice(-6)}`;
+
+        // 3. Create Invoice
+        const invoice = await prisma.hms_invoice.create({
+            data: {
+                id: crypto.randomUUID(),
+                tenant_id: tenantId,
+                company_id: companyId,
+                patient_id: appointment.patient_id,
+                appointment_id: appointmentId,
+                invoice_number: invoiceNumber,
+                issued_at: new Date(),
+                subtotal: consultationFee,
+                total: consultationFee,
+                outstanding_amount: consultationFee,
+                status: 'draft',
+                billing_metadata: {
+                    source: 'op-clinical-terminal',
+                    encounter_id: appointmentId
+                },
+                branch_id: session.user.current_branch_id,
+                created_by: session.user.id,
+                hms_invoice_lines: {
+                    create: {
+                        id: crypto.randomUUID(),
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        line_idx: 1,
+                        description: `Consultation Fee - Dr. ${appointment.hms_clinician?.first_name} ${appointment.hms_clinician?.last_name}`,
+                        quantity: 1,
+                        unit_price: consultationFee,
+                        net_amount: consultationFee
+                    }
+                }
+            }
+        });
+
+        return { success: true, data: invoice };
+    } catch (err: any) {
+        console.error("FAILED_TO_GENERATE_CONS_INVOICE:", err);
+        return { error: err.message || "RCM_FAILURE: Could not generate consultation bill." };
+    }
+}
+
 export async function getInitialInvoiceData(appointmentId: string) {
     const session = await auth();
     if (!session?.user?.tenantId) return { error: "Unauthorized" };
