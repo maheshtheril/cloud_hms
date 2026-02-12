@@ -80,6 +80,27 @@ export async function createAppointment(formData: FormData) {
     // Combine date and time
     const startsAt = new Date(`${dateStr}T${timeStr}:00`)
 
+    // PREVENT DUPLICATES: Check if patient already has an appointment with this doctor today
+    const startOfDay = new Date(`${dateStr}T00:00:00`)
+    const endOfDay = new Date(`${dateStr}T23:59:59`)
+
+    const existing = await prisma.hms_appointments.findFirst({
+        where: {
+            patient_id: patientId,
+            clinician_id: clinicianId,
+            starts_at: {
+                gte: startOfDay,
+                lte: endOfDay
+            },
+            status: { notIn: ['cancelled'] },
+            deleted_at: null
+        }
+    })
+
+    if (existing) {
+        return { error: `DUPLICATE_ENTRY: This patient already has an active appointment with this doctor on ${dateStr}. Please reschedule or update the existing record.` }
+    }
+
     // Fetch doctor's slot duration
     const clinician = await prisma.hms_clinicians.findUnique({
         where: { id: clinicianId },
