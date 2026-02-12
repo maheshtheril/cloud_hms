@@ -141,17 +141,7 @@ export async function createPatientV10(patientId: string | null | any, formData:
                     }
                 });
 
-                // -----------------------------------------------------------------------------------
-                // AUTO-BILLING TRIGGER (RCM): Trigger invoice generation if requested
-                // -----------------------------------------------------------------------------------
-                const chargeRegistration = formData.get('charge_registration') === 'on' || formData.get('charge_registration') === 'true';
-                if (chargeRegistration) {
-                    const { generateRegistrationInvoice } = await import('./billing');
-                    const invRes = await generateRegistrationInvoice(patient.id);
-                    if (invRes.success) {
-                        invoiceId = (invRes.data as any).id;
-                    }
-                }
+                // [RCM-AUDIT] Automatic billing removed. Clinical terminal will now handle registration triggers.
             }
 
             return {
