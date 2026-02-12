@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { getDaybook, getCashBankBook } from "@/app/actions/accounting/reports"
+import { ZionaLogo } from '@/components/branding/ziona-logo'
 import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
 import React from 'react'
@@ -111,8 +112,8 @@ export function DetailedLedgerReport({ type }: DetailedLedgerProps) {
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-xl no-print">
                 <div>
                     <div className="flex items-center gap-3 mb-4">
-                        <div className={`p-3 ${colorMap[type]} rounded-2xl shadow-lg`}>
-                            {iconMap[type]}
+                        <div className="h-12 w-12 bg-black rounded-xl flex items-center justify-center shadow-2xl shadow-indigo-500/20 border border-white/10 shrink-0">
+                            <ZionaLogo size={32} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
                         </div>
                         <Badge variant="outline" className="uppercase tracking-widest text-[10px] font-bold border-slate-200">Accounting Oversight</Badge>
                     </div>

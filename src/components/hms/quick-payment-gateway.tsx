@@ -12,6 +12,7 @@ import {
     Smartphone, CheckCircle2, Printer,
     ArrowRight, Star, ShieldCheck
 } from "lucide-react"
+import { ZionaLogo } from "@/components/branding/ziona-logo"
 import { recordPayment } from "@/app/actions/billing"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
@@ -66,8 +67,8 @@ export function QuickPaymentGateway({
                             className="p-8"
                         >
                             <div className="flex items-center gap-4 mb-8">
-                                <div className="h-12 w-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 text-white">
-                                    <ShieldCheck className="h-6 w-6" />
+                                <div className="h-12 w-12 rounded-2xl bg-black flex items-center justify-center shadow-2xl shadow-indigo-500/20 border border-white/10 shrink-0">
+                                    <ZionaLogo size={32} variant="icon" theme="dark" colorScheme="signature" />
                                 </div>
                                 <div>
                                     <h2 className="text-2xl font-black text-slate-900 dark:text-white leading-tight">Secure Payment</h2>

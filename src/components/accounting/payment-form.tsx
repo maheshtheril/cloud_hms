@@ -24,6 +24,7 @@ import { upsertPayment, PaymentType } from "@/app/actions/accounting/payments"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { ZionaLogo } from "@/components/branding/ziona-logo"
 
 interface PaymentFormProps {
     type: PaymentType;
@@ -96,9 +97,16 @@ export function PaymentForm({ type, initialData, partners }: PaymentFormProps) {
                     <Link href={type === 'inbound' ? '/accounting/customer/receipts' : '/accounting/vendor/payments'} className="text-sm text-slate-500 hover:text-blue-600 flex items-center mb-2">
                         <ArrowLeft className="w-4 h-4 mr-1" /> Back to List
                     </Link>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
-                        {initialData ? `Edit ${title}` : `New ${title}`}
-                    </h1>
+                    <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 bg-black rounded-xl flex items-center justify-center shadow-2xl shadow-indigo-500/20 border border-white/10 shrink-0">
+                            <ZionaLogo size={32} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-600 bg-clip-text text-transparent">
+                                {initialData ? `Edit ${title}` : `New ${title}`}
+                            </h1>
+                        </div>
+                    </div>
                 </div>
                 <div className="flex gap-2">
                     {/* Print Button if editing */}

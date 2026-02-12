@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Link from "next/link"
 import { Stethoscope, Plus, Users, Award, TrendingUp, Sparkles, Mail, Phone, Shield, Search } from "lucide-react"
 import { AddDoctorDialog } from "@/components/hms/doctors/add-doctor-dialog"
+import { ZionaLogo } from "@/components/branding/ziona-logo"
 
 interface Doctor {
     id: string
@@ -67,13 +68,18 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                 {/* Futuristic Header */}
                 {/* Standard Enterprise Header */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-                            Staff Directory <span className="text-xs text-red-500">[v2.0]</span>
-                        </h1>
-                        <p className="text-slate-500 dark:text-slate-400 mt-1">
-                            Manage master list of doctors, nurses, and administrative personnel.
-                        </p>
+                    <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 bg-black rounded-xl flex items-center justify-center shadow-2xl shadow-indigo-500/20 border border-white/10 shrink-0">
+                            <ZionaLogo size={32} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
+                        </div>
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                                Staff Directory <span className="text-xs text-red-500">[v2.0]</span>
+                            </h1>
+                            <p className="text-slate-500 dark:text-slate-400 mt-1">
+                                Manage master list of doctors, nurses, and administrative personnel.
+                            </p>
+                        </div>
                     </div>
 
                     <button

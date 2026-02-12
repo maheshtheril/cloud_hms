@@ -9,6 +9,7 @@ import {
     ArrowRight, Check, Loader2, X, IndianRupee
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { ZionaLogo } from "@/components/branding/ziona-logo"
 import { updateLabOrderStatus, uploadAndAttachLabReport, deleteLabReport } from "@/app/actions/lab"
 import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 
@@ -102,18 +103,23 @@ export function LabDashboardClient({ labStaffName, orders, stats, patients, bill
 
                 {/* HEADER */}
                 <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <motion.h1
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight"
-                        >
-                            Lab Dashboard <span className="text-xl font-medium text-slate-400 block sm:inline sm:ml-2">| {labStaffName}</span>
-                        </motion.h1>
-                        <p className="text-slate-500 dark:text-slate-400 font-medium mt-1 flex items-center gap-2">
-                            <Calendar className="h-4 w-4" />
-                            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-                        </p>
+                    <div className="flex items-center gap-4">
+                        <div className="h-14 w-14 bg-black rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/20 border border-white/10 shrink-0">
+                            <ZionaLogo size={40} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
+                        </div>
+                        <div>
+                            <motion.h1
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight"
+                            >
+                                Lab Dashboard <span className="text-xl font-medium text-slate-400 block sm:inline sm:ml-2">| {labStaffName}</span>
+                            </motion.h1>
+                            <p className="text-slate-500 dark:text-slate-400 font-medium mt-1 flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                            </p>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-3">

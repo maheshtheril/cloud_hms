@@ -179,13 +179,13 @@ export function CreatePatientForm({
                 {/* Ultra-Modern Header */}
                 <div className="px-5 py-3 bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between z-10 relative shrink-0">
                     <div className="flex items-center gap-3">
-                        {appName?.includes('Ziona') ? (
-                            <ZionaLogo size={48} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
-                        ) : (
-                            <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30 text-white transform rotate-3">
-                                <User className="h-5 w-5" />
-                            </div>
-                        )}
+                        <div className="h-12 w-12 bg-black rounded-xl flex items-center justify-center shadow-2xl shadow-indigo-500/20 border border-white/10 shrink-0">
+                            {appName?.includes('Ziona') ? (
+                                <ZionaLogo size={32} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
+                            ) : (
+                                <User className="h-6 w-6 text-white" />
+                            )}
+                        </div>
                         <div>
                             <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
                                 {initialData ? 'Update Profile' : 'New Patient Registration'}

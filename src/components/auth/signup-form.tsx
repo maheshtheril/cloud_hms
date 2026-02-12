@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react"
 import { signup } from "@/app/actions/auth"
 import { getCountries, getCurrencies, getModules } from "@/app/actions/public"
 import { Check, ChevronRight, Building, Layers } from "lucide-react"
+import { ZionaLogo } from "@/components/branding/ziona-logo"
 
 export function SignupForm({ setIsLogin, branding }: { setIsLogin?: (v: boolean) => void, branding?: any }) {
     const [step, setStep] = useState(1)
@@ -93,11 +94,11 @@ export function SignupForm({ setIsLogin, branding }: { setIsLogin?: (v: boolean)
                 {/* Sidebar Progress */}
                 <div className="bg-slate-900 p-8 md:w-1/3 flex flex-col justify-between text-white">
                     <div>
-                        <div className="bg-blue-500/20 w-10 h-10 rounded-lg flex items-center justify-center mb-6 overflow-hidden">
+                        <div className="bg-black w-14 h-14 rounded-xl flex items-center justify-center mb-6 overflow-hidden shadow-2xl shadow-indigo-500/20 border border-white/10 shrink-0">
                             {branding?.logo_url ? (
-                                <img src={branding.logo_url} alt={branding.app_name || 'Logo'} className="h-full w-full object-cover" />
+                                <img src={branding.logo_url} alt={branding.app_name || 'Logo'} className="h-full w-full object-contain p-2" />
                             ) : (
-                                <Layers className="text-blue-400 h-6 w-6" />
+                                <ZionaLogo size={36} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
                             )}
                         </div>
                         <h2 className="text-xl font-bold mb-2">Join {branding?.app_name || branding?.name || 'Organization'}</h2>

@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
+import { ZionaLogo } from '@/components/branding/ziona-logo'
 
 export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice, onClose, currency = '₹' }: {
   patients: any[],
@@ -711,8 +712,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         {/* 1. Header Area */}
         <div className="flex items-center justify-between px-6 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 z-20">
           <div className="flex items-center gap-4">
-            <div className="bg-indigo-600 p-2 rounded-xl text-white shadow-xl shadow-indigo-500/20">
-              <Activity className="h-5 w-5 animate-pulse" />
+            <div className="bg-black p-1.5 rounded-xl text-white shadow-2xl shadow-indigo-500/20 border border-white/10">
+              <ZionaLogo size={24} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
             </div>
             <div>
               <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight italic">Financial Billing Terminal</h2>

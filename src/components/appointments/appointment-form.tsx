@@ -8,6 +8,7 @@ import { CreatePatientForm } from "@/components/hms/create-patient-form"
 import { useState, useEffect } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
+import { ZionaLogo } from "@/components/branding/ziona-logo"
 
 interface AppointmentFormProps {
     patients: any[]
@@ -239,6 +240,10 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                                     <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
                                 </Link>
                             )}
+
+                            <div className="bg-black p-1.5 rounded-xl shadow-2xl border border-white/10 shrink-0">
+                                <ZionaLogo size={24} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
+                            </div>
 
                             <div>
                                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">

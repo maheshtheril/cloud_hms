@@ -4,6 +4,7 @@ import { seedStandardDepartments, quickAddDepartment } from '@/app/actions/hms-s
 import { WORLD_CLASS_DESIGNATIONS, WORLD_CLASS_QUALIFICATIONS } from '@/app/hms/doctors/constants'
 import { X, Mail, Phone, Award, Calendar, Briefcase, GraduationCap, Shield, Building2, Clock, Plus, Sparkles, Loader2, CheckCircle2, AlertCircle, Hash, CreditCard, UserCheck, UserCog, Image, FileText, Fingerprint, Camera, FileCheck } from 'lucide-react'
 import { FileUpload } from '@/components/ui/file-upload'
+import { ZionaLogo } from '@/components/branding/ziona-logo'
 
 interface Department {
     id: string
@@ -120,8 +121,8 @@ export function AddDoctorDialog({ isOpen, onClose, departments: initialDepartmen
                 <div className="relative bg-gradient-to-br from-indigo-900 via-slate-900 to-indigo-950 p-6 flex items-center justify-between border-b border-indigo-500/20">
                     <div>
                         <h2 className="text-2xl font-black text-white tracking-tight flex items-center gap-3">
-                            <div className="h-10 w-10 bg-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                                <UserCheck className="h-6 w-6 text-white" />
+                            <div className="h-12 w-12 bg-black rounded-xl flex items-center justify-center shadow-2xl shadow-indigo-500/20 border border-white/10 shrink-0">
+                                <ZionaLogo size={32} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
                             </div>
                             New Staff Registration
                         </h2>
