@@ -11,10 +11,11 @@ import { useRouter } from "next/navigation"
 import { ZionaLogo } from "@/components/branding/ziona-logo"
 import { Maximize2, Minimize2, Mic, MicOff, ShieldAlert, BadgeCheck, Sparkles, Loader2, Minus } from "lucide-react"
 import { getHMSSettings } from "@/app/actions/settings"
-import { generateConsultationInvoice, generateRegistrationInvoice } from "@/app/actions/billing"
+import { generateConsultationInvoice, generateOPBookingInvoice, linkInvoiceToAppointment } from "@/app/actions/billing"
 import { getPatientById } from "@/app/actions/patient-v10"
 import { QuickPaymentGateway } from "@/components/hms/quick-payment-gateway"
-import { CreditCard as CardIcon, X } from "lucide-react"
+import { CreditCard as CardIcon, X, CheckCircle, Printer } from "lucide-react"
+import { OpSlipDialog } from "@/components/hms/reception/op-slip-dialog"
 
 interface AppointmentFormProps {
     patients: any[]
@@ -58,6 +59,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     const [hmsSettings, setHmsSettings] = useState<any>(null)
     const [notes, setNotes] = useState(editingAppointment?.notes || '')
     const [isPending, setIsPending] = useState(false)
+    const [saveSuccess, setSaveSuccess] = useState<any>(null) // [NEW] Track save results
 
     // RCM States
     const [isPaymentOpen, setIsPaymentOpen] = useState(false)
@@ -237,20 +239,23 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                 toast({ title: "Action Failed", description: res.error, variant: "destructive" });
             } else {
                 const aptId = editingAppointment?.id || res.data?.id;
+
+                // [NEW] Link pre-generated/paid invoice to appointment
+                if (invoiceForPayment?.id && aptId) {
+                    await linkInvoiceToAppointment(invoiceForPayment.id, aptId);
+                }
+
+                // Ensure consultation invoice exists if not pre-generated
                 if (aptId) await generateConsultationInvoice(aptId);
+
+                // [WORLD CLASS] Instead of immediate exit, show Success Stage
+                setSaveSuccess(editingAppointment ? { ...editingAppointment, id: aptId } : res.data);
 
                 toast({
                     title: "Medical Record Finalized",
                     description: editingAppointment ? "Clinical encounter updated." : "Session finalized and billing initiated.",
                     className: "bg-emerald-600 text-white"
                 });
-
-                if (onClose) {
-                    router.refresh();
-                    onClose();
-                } else {
-                    router.push("/hms/reception/dashboard");
-                }
             }
         } catch (error: any) {
             toast({ title: "Terminal Crash", description: error.message, variant: "destructive" })
@@ -269,18 +274,29 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
         try {
             if (!editingAppointment) {
                 const regStatus = checkRegistrationStatus();
-                if (regStatus.shouldCharge) {
+                const clinician = doctors.find(d => d.id === selectedClinicianId);
+                const consultationFee = Number(clinician?.consultation_fee) || 0;
+                const totalDue = (regStatus.shouldCharge ? 150 : 0) + consultationFee; // Rough estimate for check
+
+                if (totalDue > 0) {
                     setIsRCMProcessing(true);
-                    const invRes = await generateRegistrationInvoice(selectedPatientId) as any;
+                    const invRes = await generateOPBookingInvoice({
+                        patientId: selectedPatientId,
+                        clinicianId: selectedClinicianId,
+                        includeRegistration: regStatus.shouldCharge
+                    }) as any;
+
                     if (invRes.success) {
                         setInvoiceForPayment(invRes.data);
                         setPendingFormData(formData);
                         setIsPaymentOpen(true);
                         setIsPending(false);
                         return;
+                    } else if (invRes.error && invRes.error.includes("No fees due")) {
+                        // Fall through if it was just zero-fee validation
                     } else {
                         toast({ title: "RCM Error", description: invRes.error, variant: "destructive" });
-                        setIsPending(false); // [FIX] Clear loader on failure
+                        setIsPending(false);
                         setIsRCMProcessing(false);
                         return;
                     }
@@ -296,6 +312,71 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     const [selectedPriority, setSelectedPriority] = useState(editingAppointment?.priority || 'normal')
     const selectedPatient = localPatients.find(p => p.id === selectedPatientId)
     const activeRegStatus = checkRegistrationStatus();
+
+    // [NEW] SUCCESS STAGE VIEW
+    if (saveSuccess) {
+        return (
+            <div className="fixed inset-0 z-[200] bg-slate-950 flex items-center justify-center p-4">
+                <div className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden border border-white/10 p-10 text-center animate-in zoom-in-95 duration-300">
+                    <div className="h-24 w-24 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/20">
+                        <CheckCircle className="h-12 w-12 text-emerald-600 dark:text-emerald-400 animate-bounce" />
+                    </div>
+
+                    <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter mb-2">Saved <span className="text-emerald-600">Successfully</span></h2>
+                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mb-8">Patient flow initiated for OP Consultation</p>
+
+                    <div className="grid grid-cols-1 gap-4 mb-10">
+                        <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center justify-between">
+                            <div className="text-left">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Patient</p>
+                                <p className="text-lg font-black text-slate-900 dark:text-white">{saveSuccess.patient?.first_name || 'Record'} {saveSuccess.patient?.last_name || ''}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Token No</p>
+                                <p className="text-lg font-black text-indigo-600 font-mono">#{saveSuccess.id?.split('-')[0].toUpperCase()}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                        <div className="flex gap-3">
+                            <OpSlipDialog
+                                appointment={{ ...saveSuccess, patient: saveSuccess.patient || selectedPatientData, clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId) }}
+                                trigger={
+                                    <button className="flex-1 h-16 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-xl shadow-indigo-500/20 font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-active active:scale-95 text-sm">
+                                        <Printer className="h-6 w-6" /> Print OP Ticket
+                                    </button>
+                                }
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                onClick={() => {
+                                    setSaveSuccess(null);
+                                    setSelectedPatientId('');
+                                    setSelectedPatientData(null);
+                                    setNotes('');
+                                    router.refresh();
+                                }}
+                                className="h-14 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-slate-200 transition-all"
+                            >
+                                Register Next
+                            </button>
+                            <button
+                                onClick={() => {
+                                    router.refresh();
+                                    onClose?.();
+                                }}
+                                className="h-14 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:opacity-90 transition-all"
+                            >
+                                Dashboard View
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className={`relative bg-slate-900 border border-white/20 shadow-2xl overflow-hidden transition-all duration-500 ease-in-out ${isMaximized ? 'fixed inset-0 z-[100]' : 'w-full h-full relative'}`}>
