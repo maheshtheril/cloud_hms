@@ -113,7 +113,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
 
         // Base starting time for the day
         const [startH, startM] = defaultStart.split(':').map(Number);
-        const dayStart = new Date(now);
+        const dayStart = new Date(selectedDate);
         dayStart.setHours(startH, startM, 0, 0);
 
         let nextSlotTime: Date;
@@ -137,7 +137,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
         }
 
         const [endH, endM] = defaultEnd.split(':').map(Number);
-        const dayEnd = new Date(nextSlotTime);
+        const dayEnd = new Date(dayStart);
         dayEnd.setHours(endH, endM, 0, 0);
 
         if (nextSlotTime >= dayEnd) {
