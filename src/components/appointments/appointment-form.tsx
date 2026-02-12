@@ -9,7 +9,7 @@ import { useState, useEffect } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 import { ZionaLogo } from "@/components/branding/ziona-logo"
-import { Maximize2, Minimize2, Mic, MicOff, ShieldAlert, BadgeCheck, Sparkles, Loader2 } from "lucide-react"
+import { Maximize2, Minimize2, Mic, MicOff, ShieldAlert, BadgeCheck, Sparkles, Loader2, Minus } from "lucide-react"
 import { getHMSSettings } from "@/app/actions/settings"
 
 interface AppointmentFormProps {
@@ -37,7 +37,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     const [localPatients, setLocalPatients] = useState(patients)
     const [selectedPatientId, setSelectedPatientId] = useState(defaultPatientId)
     const [showNewPatientModal, setShowNewPatientModal] = useState(false)
-    const [selectedClinicianId, setSelectedClinicianId] = useState(defaultClinicianId || (doctors.length > 0 ? doctors[0].id : ''))
+    const [selectedClinicianId, setSelectedClinicianId] = useState(defaultClinicianId)
     const [suggestedTime, setSuggestedTime] = useState(defaultTime)
     const [isMaximized, setIsMaximized] = useState(true)
     const [isListening, setIsListening] = useState(false)
@@ -71,12 +71,15 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
             // Reset to defaults
             setSelectedPatientId(initialPatientId || '')
             setSuggestedTime(initialTime || '')
-            // AUTO-SELECT DOCTOR if none in initialData
-            if (!selectedClinicianId && doctors.length > 0) {
-                setSelectedClinicianId(doctors[0].id)
-            }
         }
-    }, [editingAppointment, initialPatientId, initialDate, initialTime, doctors])
+    }, [editingAppointment, initialPatientId, initialDate, initialTime])
+
+    // Aggressive Doctor Auto-Selection (Ensures it happens as soon as doctors load)
+    useEffect(() => {
+        if (!selectedClinicianId && doctors.length > 0) {
+            setSelectedClinicianId(doctors[0].id)
+        }
+    }, [doctors, selectedClinicianId])
 
     // Keyboard Shortcut: Ctrl+N to open New Patient, Ctrl+M to toggle maximize
     useEffect(() => {
@@ -118,7 +121,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
         recognition.onend = () => setIsListening(false)
         recognition.onresult = (event: any) => {
             const transcript = event.results[0][0].transcript
-            setNotes(prev => (prev ? `${prev} ${transcript}` : transcript))
+            setNotes((prev: string) => (prev ? `${prev} ${transcript}` : transcript))
         }
 
         recognition.start()
@@ -287,15 +290,24 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                     </div>
 
                     <div className="flex items-center gap-3">
-                        {/* Control Actions */}
-                        <div className="flex bg-white/5 border border-white/10 p-1 rounded-xl mr-4">
+                        {/* Window Controls */}
+                        <div className="flex items-center bg-white/5 border border-white/10 p-1 rounded-xl mr-2 gap-1 px-2">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="p-2 hover:bg-white/10 rounded-lg text-white/50 hover:text-white transition-all"
+                                title="Exit/Minimize Terminal"
+                            >
+                                <Minus className="h-4 w-4" />
+                            </button>
+                            <div className="h-4 w-[1px] bg-white/10" />
                             <button
                                 type="button"
                                 onClick={() => setIsMaximized(!isMaximized)}
-                                className="p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all flex items-center gap-2 text-xs font-bold"
+                                className="p-2 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest"
                             >
-                                {isMaximized ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-                                {isMaximized ? 'Terminal Size' : 'Maximize'}
+                                {isMaximized ? <Minimize2 className="h-3.5 w-3.5 text-indigo-400" /> : <Maximize2 className="h-3.5 w-3.5" />}
+                                {isMaximized ? 'Float Terminal' : 'Fullscreen'}
                             </button>
                         </div>
 

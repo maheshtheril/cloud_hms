@@ -241,7 +241,7 @@ export function ReceptionActionCenter({
 
     const actions = [
         { id: 'voucher', title: 'Reg Voucher', icon: CreditCard, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20', border: 'border-orange-100 dark:border-orange-800' },
-        { id: 'appointment', title: 'OP Booking/Registration', icon: CalendarPlus, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-100 dark:border-blue-800' },
+        { id: 'appointment', title: 'OP/IP Registration', icon: CalendarPlus, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-100 dark:border-blue-800' },
         { id: 'billing', title: 'IP/OP Billing', icon: CreditCard, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/20', border: 'border-violet-100 dark:border-violet-800' },
         { id: 'beds', title: 'Bed Units', icon: BedIcon, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/20', border: 'border-indigo-100 dark:border-indigo-800' },
         { id: 'expense', title: 'Expense', icon: Wallet, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-100 dark:border-amber-800' },
@@ -484,7 +484,7 @@ export function ReceptionActionCenter({
                                 <div className="flex items-center justify-between px-1">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-blue-500 animate-pulse"></div>
-                                        1. Waiting / Vitals
+                                        1. OP Waiting / Triage
                                     </h3>
                                     <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-slate-100 dark:bg-slate-800 text-slate-500">
                                         {filteredAppointments.filter(a => ['scheduled', 'arrived', 'checked_in'].includes(a.status)).length}
@@ -515,7 +515,7 @@ export function ReceptionActionCenter({
                                 <div className="flex items-center justify-between px-1">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-indigo-500 flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-indigo-500 animate-bounce"></div>
-                                        2. Doctor / Labs
+                                        2. Clinical Consultation
                                     </h3>
                                     <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600">
                                         {filteredAppointments.filter(a => ['confirmed', 'in_progress'].includes(a.status) || (a.status === 'completed' && a.labStatus === 'pending')).length}
@@ -546,7 +546,7 @@ export function ReceptionActionCenter({
                                 <div className="flex items-center justify-between px-1">
                                     <h3 className="text-xs font-black uppercase tracking-widest text-orange-500 flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-orange-500"></div>
-                                        3. Billing / Checkout
+                                        3. Billing / Discharge
                                     </h3>
                                     <Badge variant="secondary" className="text-[10px] h-5 px-1.5 bg-orange-50 dark:bg-orange-900/30 text-orange-600">
                                         {filteredAppointments.filter(a => (a.status === 'completed' || a.hasPrescription) && a.invoiceStatus !== 'paid').length}
