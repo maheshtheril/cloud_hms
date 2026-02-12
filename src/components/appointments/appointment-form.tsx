@@ -111,45 +111,52 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
         const now = new Date();
         const isToday = selectedDate === now.toISOString().split('T')[0];
 
-        // Base starting time for the day
+        // Match Date Safely (Local Time to avoid UTC shift)
+        const [year, month, dayOfMonth] = selectedDate.split('-').map(Number);
+        const dayStart = new Date(year, month - 1, dayOfMonth);
         const [startH, startM] = defaultStart.split(':').map(Number);
-        const dayStart = new Date(selectedDate);
         dayStart.setHours(startH, startM, 0, 0);
 
         let nextSlotTime: Date;
 
         if (doctorApts.length === 0) {
-            // Suggest start time or 'now' if it's today and already past start time
             nextSlotTime = (isToday && now > dayStart) ? now : dayStart;
         } else {
-            // Find latest end time
             const lastEndApt = doctorApts.reduce((latest, current) => {
                 return new Date(current.ends_at) > new Date(latest.ends_at) ? current : latest
             }, doctorApts[0])
 
-            const lastEnd = new Date(lastEndApt.ends_at);
-            nextSlotTime = new Date(lastEnd.getTime());
-
-            // If the next slot from past appointments is in the past, move to 'now'
-            if (isToday && nextSlotTime < now) {
-                nextSlotTime = now;
-            }
+            nextSlotTime = new Date(new Date(lastEndApt.ends_at).getTime());
+            if (isToday && nextSlotTime < now) nextSlotTime = now;
         }
 
         const [endH, endM] = defaultEnd.split(':').map(Number);
-        const dayEnd = new Date(dayStart);
+        const dayEnd = new Date(year, month - 1, dayOfMonth);
         dayEnd.setHours(endH, endM, 0, 0);
+
+        // Debug Log to reveal mismatch
+        console.log(`Slotting Logic [${selectedDate}]:`, {
+            nextSlot: nextSlotTime.toLocaleTimeString(),
+            dayEnd: dayEnd.toLocaleTimeString(),
+            isFullyBooked: nextSlotTime >= dayEnd
+        });
 
         if (nextSlotTime >= dayEnd) {
             setSuggestedTime('Fully Booked')
         } else {
-            // Round up to nearest 5 minutes for cleaner UI
+            // Round up to nearest 5 minutes
             const roundedMinutes = Math.ceil(nextSlotTime.getMinutes() / 5) * 5;
-            nextSlotTime.setMinutes(roundedMinutes);
+            const finalTime = new Date(nextSlotTime);
+            finalTime.setMinutes(roundedMinutes, 0, 0);
 
-            const hours = nextSlotTime.getHours().toString().padStart(2, '0')
-            const minutes = nextSlotTime.getMinutes().toString().padStart(2, '0')
-            setSuggestedTime(`${hours}:${minutes}`)
+            // If rounding pushed us past dayEnd, mark booked
+            if (finalTime >= dayEnd) {
+                setSuggestedTime('Fully Booked')
+            } else {
+                const hours = finalTime.getHours().toString().padStart(2, '0')
+                const minutes = finalTime.getMinutes().toString().padStart(2, '0')
+                setSuggestedTime(`${hours}:${minutes}`)
+            }
         }
     }, [selectedClinicianId, selectedDate, appointments, doctors, editingAppointment])
 
