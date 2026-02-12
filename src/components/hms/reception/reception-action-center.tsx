@@ -239,7 +239,7 @@ export function ReceptionActionCenter({
         { id: 'all', label: 'All Doctors', subLabel: 'Show full schedule' },
         ...doctors.map(d => ({
             id: d.id,
-            label: `Dr. ${d.first_name} ${d.last_name || ''}`.trim(),
+            label: `Dr. ${d.first_name} ${d.last_name || ''}`.trim() + (doctors.filter(doc => doc.first_name === d.first_name && doc.last_name === d.last_name).length > 1 ? ` (${d.id.slice(-4)})` : ''),
             subLabel: d.hms_specializations?.[0]?.name || d.role || 'General Practitioner'
         }))
     ]

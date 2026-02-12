@@ -84,12 +84,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
         }
     }, [selectedPatientId])
 
-    // Auto-select first doctor if none specified
-    useEffect(() => {
-        if (!selectedClinicianId && doctors.length > 0) {
-            setSelectedClinicianId(doctors[0].id)
-        }
-    }, [doctors, selectedClinicianId])
+    // Auto-select first doctor if none specified handled via component default now
 
     // CORE: Dynamic Time Selection Engine (Reactive Triage)
     useEffect(() => {
@@ -109,7 +104,8 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
         })
 
         const now = new Date();
-        const isToday = selectedDate === now.toISOString().split('T')[0];
+        const localDateStr = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+        const isToday = selectedDate === localDateStr;
 
         // Match Date Safely (Local Time to avoid UTC shift)
         const [year, month, dayOfMonth] = selectedDate.split('-').map(Number);

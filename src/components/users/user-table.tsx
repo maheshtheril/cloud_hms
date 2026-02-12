@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { Search, UserPlus, Filter, Edit, Power, Trash2, Mail, Shield, CheckCircle, XCircle, Check, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { updateUserStatus, deleteUser, resendInvitation } from '@/app/actions/users'
+import { updateUserStatus, deleteUser, deleteUserPermanently, resendInvitation } from '@/app/actions/users'
 import { useToast } from '@/components/ui/use-toast'
 import { cn } from '@/lib/utils'
 import Link from 'next/link'
@@ -114,7 +114,7 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
     }
 
     const handleDeleteUser = async (userId: string) => {
-        if (!confirm('Are you certain you want to suspend this user?')) return
+        if (!confirm('Are you certain you want to SUSPEND this user? They will still remain in the database but cannot login.')) return
 
         const result = await deleteUser(userId)
         if (result.error) {
@@ -128,6 +128,27 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
                 title: 'User Suspended',
                 description: result.message || 'User restricted successfully',
                 className: "bg-red-600 text-white border-none shadow-xl"
+            })
+            router.refresh()
+        }
+    }
+
+    const handleHardPurge = async (userId: string) => {
+        if (!confirm('CRITICAL: This will PERMANENTLY DELETE the user record. This cannot be undone. Proceed?')) return
+
+        const result = await deleteUserPermanently(userId)
+        if (result.error) {
+            toast({
+                title: 'Purge Failed',
+                description: result.error,
+                variant: 'destructive',
+                className: "bg-black text-white border-red-500 border-2 shadow-2xl"
+            })
+        } else {
+            toast({
+                title: 'User Purged',
+                description: 'User record removed from core database.',
+                className: "bg-emerald-600 text-white border-none shadow-xl"
             })
             router.refresh()
         }
@@ -313,9 +334,9 @@ export function UserTable({ users, total, pages, currentPage }: UserTableProps) 
                                             <Button
                                                 size="icon"
                                                 variant="ghost"
-                                                onClick={() => handleDeleteUser(user.id)}
+                                                onClick={() => handleHardPurge(user.id)}
                                                 className="h-10 w-10 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl"
-                                                title="Hard Purge"
+                                                title="Permanent Removal"
                                             >
                                                 <Trash2 className="h-4.5 w-4.5" />
                                             </Button>
