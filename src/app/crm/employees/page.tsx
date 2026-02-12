@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { EmployeeDeleteButton } from "@/components/crm/employees/employee-delete-button"
 
 export const dynamic = 'force-dynamic'
 
@@ -133,13 +134,14 @@ export default async function EmployeesPage() {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="bg-slate-50/50 p-3 border-t flex gap-2">
+                                <div className="bg-slate-50/50 p-3 border-t flex gap-2 items-center">
                                     <Button variant="ghost" className="flex-1 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-indigo-600 hover:bg-indigo-50" asChild>
                                         <Link href={`/crm/employees/${emp.id}`}>View Profile</Link>
                                     </Button>
                                     <Button variant="ghost" className="flex-1 text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-indigo-600 hover:bg-indigo-50" asChild>
                                         <Link href={`/crm/employees/${emp.id}/edit`}>Edit</Link>
                                     </Button>
+                                    <EmployeeDeleteButton employeeId={emp.id} />
                                 </div>
                             </CardContent>
                         </Card>

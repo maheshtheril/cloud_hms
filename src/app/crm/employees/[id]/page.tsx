@@ -9,6 +9,7 @@ import Link from "next/link"
 import { format } from "date-fns"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
+import { EmployeeDeleteButton } from "@/components/crm/employees/employee-delete-button"
 
 export const dynamic = 'force-dynamic'
 
@@ -36,12 +37,15 @@ export default async function EmployeeViewPage(props: { params: Promise<{ id: st
                         <p className="text-slate-500 font-medium">{employee.designation?.name || 'No Designation'}</p>
                     </div>
                 </div>
-                <Button asChild className="bg-indigo-600 hover:bg-indigo-700 shadow-sm">
-                    <Link href={`/crm/employees/${employee.id}/edit`}>
-                        <Edit2 className="mr-2 h-4 w-4" />
-                        Edit Profile
-                    </Link>
-                </Button>
+                <div className="flex items-center gap-3">
+                    <Button asChild className="bg-indigo-600 hover:bg-indigo-700 shadow-sm">
+                        <Link href={`/crm/employees/${employee.id}/edit`}>
+                            <Edit2 className="mr-2 h-4 w-4" />
+                            Edit Profile
+                        </Link>
+                    </Button>
+                    <EmployeeDeleteButton employeeId={employee.id} variant="outline" />
+                </div>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
