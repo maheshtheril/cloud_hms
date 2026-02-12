@@ -141,7 +141,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
             isFullyBooked: nextSlotTime >= dayEnd
         });
 
-        if (nextSlotTime >= dayEnd) {
+        if (nextSlotTime >= dayEnd && isToday) {
             setSuggestedTime('Fully Booked')
         } else {
             // Round up to nearest 5 minutes
@@ -387,15 +387,17 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                                 <div>
                                     <label className="block text-sm font-bold text-gray-900 dark:text-slate-300 mb-1.5 uppercase tracking-tighter"><Clock className="h-3.5 w-3.5 inline mr-1" /> Estimated Slot</label>
                                     <input
-                                        type={suggestedTime === 'Fully Booked' ? 'text' : 'time'}
+                                        type="time"
                                         name="time"
                                         required
                                         key={suggestedTime}
                                         defaultValue={suggestedTime === 'Fully Booked' ? '' : suggestedTime}
-                                        readOnly={suggestedTime === 'Fully Booked'}
-                                        placeholder={suggestedTime === 'Fully Booked' ? 'Fully Booked' : ''}
-                                        className={`w-full p-2.5 bg-white dark:bg-slate-950 border ${suggestedTime === 'Fully Booked' ? 'border-red-500' : 'border-gray-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-medium`}
+                                        placeholder={suggestedTime === 'Fully Booked' ? 'Overtime/Booked' : ''}
+                                        className={`w-full p-2.5 bg-white dark:bg-slate-950 border ${suggestedTime === 'Fully Booked' ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-gray-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-medium`}
                                     />
+                                    {suggestedTime === 'Fully Booked' && (
+                                        <p className="text-[10px] font-black text-amber-600 mt-1 uppercase tracking-widest animate-pulse">⚠️ Late Hours / Fully Booked (Override possible)</p>
+                                    )}
                                 </div>
                             </div>
                         </div>
