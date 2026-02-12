@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useSession } from 'next-auth/react';
 import { getUserProfile } from '@/app/actions/settings';
+import { ZionaLogo } from '@/components/branding/ziona-logo';
 
 // Dynamically retrieve icons
 const getIcon = (iconName: string) => {
@@ -160,20 +161,26 @@ export function AppSidebar({ menuItems, currentCompany, tenant, user: initialUse
                             <Menu className="h-6 w-6" />
                         </button>
                         <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-lg shadow-indigo-500/10 overflow-hidden ring-1 ring-slate-200 dark:ring-zinc-800 shrink-0">
-                                {currentCompany?.logo_url ? (
-                                    <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-full w-full object-contain p-1" />
-                                ) : tenant?.logo_url ? (
-                                    <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-contain p-1" />
-                                ) : (
-                                    <div className="bg-gradient-to-tr from-indigo-600 to-violet-600 w-full h-full flex items-center justify-center">
-                                        <Activity className="text-white h-4 w-4" />
+                            {tenant?.app_name?.includes('Ziona') || currentCompany?.name?.includes('Ziona') || tenant?.app_name === 'Ziona ERP' ? (
+                                <ZionaLogo size={32} theme={theme} colorScheme="signature" />
+                            ) : (
+                                <>
+                                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-lg shadow-indigo-500/10 overflow-hidden ring-1 ring-slate-200 dark:ring-zinc-800 shrink-0">
+                                        {currentCompany?.logo_url ? (
+                                            <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-full w-full object-contain p-1" />
+                                        ) : tenant?.logo_url ? (
+                                            <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-contain p-1" />
+                                        ) : (
+                                            <div className="bg-gradient-to-tr from-indigo-600 to-violet-600 w-full h-full flex items-center justify-center">
+                                                <Activity className="text-white h-4 w-4" />
+                                            </div>
+                                        )}
                                     </div>
-                                )}
-                            </div>
-                            <span className="font-bold text-slate-900 dark:text-white text-lg tracking-tight">
-                                {tenant?.app_name || tenant?.name || "Enterprise"}
-                            </span>
+                                    <span className="font-bold text-slate-900 dark:text-white text-lg tracking-tight">
+                                        {tenant?.app_name || tenant?.name || "Enterprise"}
+                                    </span>
+                                </>
+                            )}
                         </div>
                     </div>
                     <Avatar className="h-9 w-9 border-2 border-white dark:border-zinc-800 shadow-sm">
@@ -218,22 +225,28 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                     <div className="flex items-center justify-between w-full">
                         <div className="flex-1 min-w-0 mr-4">
                             <div className="flex items-center gap-3">
-                                <div className="h-9 w-9 rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200 dark:ring-zinc-800 overflow-hidden shrink-0 flex items-center justify-center">
-                                    {currentCompany?.logo_url ? (
-                                        <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-full w-full object-contain" />
-                                    ) : (
-                                        tenant?.logo_url ? (
-                                            <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-contain" />
+                                {tenant?.app_name?.includes('Ziona') || currentCompany?.name?.includes('Ziona') || tenant?.app_name === 'Ziona ERP' ? (
+                                    <ZionaLogo size={36} theme={theme} colorScheme="signature" />
+                                ) : (
+                                    <div className="h-9 w-9 rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200 dark:ring-zinc-800 overflow-hidden shrink-0 flex items-center justify-center">
+                                        {currentCompany?.logo_url ? (
+                                            <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-full w-full object-contain" />
                                         ) : (
-                                            <div className="h-full w-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
-                                                <Building2 size={16} />
-                                            </div>
-                                        )
-                                    )}
-                                </div>
-                                <div className="font-bold text-lg tracking-tight text-slate-900 dark:text-white truncate">
-                                    {currentCompany?.name || tenant?.app_name || tenant?.name || "Enterprise"}
-                                </div>
+                                            tenant?.logo_url ? (
+                                                <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-contain" />
+                                            ) : (
+                                                <div className="h-full w-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                                                    <Building2 size={16} />
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                )}
+                                {!tenant?.app_name?.includes('Ziona') && !currentCompany?.name?.includes('Ziona') && (
+                                    <div className="font-bold text-lg tracking-tight text-slate-900 dark:text-white truncate">
+                                        {currentCompany?.name || tenant?.app_name || tenant?.name || "Enterprise"}
+                                    </div>
+                                )}
                             </div>
                         </div>
                         {isMobile && (
@@ -243,8 +256,15 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                         )}
                     </div>
                 ) : (
-                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-600 shadow-lg shadow-indigo-500/30 text-white font-bold text-sm overflow-hidden">
-                        {tenant?.logo_url ? (
+                    <div className={cn(
+                        "flex items-center justify-center rounded-xl",
+                        tenant?.app_name?.includes('Ziona') || currentCompany?.name?.includes('Ziona')
+                            ? ""
+                            : "w-10 h-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-600 shadow-lg shadow-indigo-500/30 text-white font-bold text-sm overflow-hidden"
+                    )}>
+                        {tenant?.app_name?.includes('Ziona') || currentCompany?.name?.includes('Ziona') ? (
+                            <ZionaLogo size={32} theme={theme} variant="icon" />
+                        ) : tenant?.logo_url ? (
                             <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-cover" />
                         ) : (
                             currentCompany?.logo_url ? (

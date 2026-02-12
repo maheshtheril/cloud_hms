@@ -2,6 +2,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { User, Phone, Calendar, MapPin, Activity, IndianRupee, CreditCard, Wifi } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useToast } from "@/components/ui/use-toast"
+import { ZionaLogo } from '@/components/branding/ziona-logo'
 
 interface PatientIDCardProps {
     patient: {
@@ -175,9 +176,13 @@ export function PatientIDCard({
         <div className="space-y-6">
             {/* Patient ID Card */}
             <div ref={cardRef} className="card w-full max-w-[85.6mm] mx-auto" style={{ height: '53.98mm' }}>
-                <div className="header">
-                    <div className="hospital-name">{hospitalName}</div>
-                    <div className="text-xs font-bold text-indigo-600">Patient Identification Card</div>
+                <div className="header flex items-center justify-between !py-2">
+                    {hospitalName.includes('Ziona') || hospitalName.includes('Cloud') ? (
+                        <ZionaLogo size={24} colorScheme="signature" theme="light" />
+                    ) : (
+                        <div className="hospital-name !text-slate-900 !text-sm">{hospitalName}</div>
+                    )}
+                    <div className="text-[10px] font-black text-indigo-600 uppercase tracking-tighter">Digital ID</div>
                 </div>
                 <div className="content">
                     <div className="info">

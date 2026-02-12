@@ -35,7 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${appName} - Enterprise ERP`,
     description: `World-class ${appName} Management & ERP System`,
-    icons: branding?.logo_url ? { icon: branding.logo_url } : undefined,
+    icons: branding?.logo_url ? { icon: branding.logo_url } : { icon: "/logo-ziona.svg" },
     manifest: '/manifest.webmanifest',
     appleWebApp: {
       capable: true,

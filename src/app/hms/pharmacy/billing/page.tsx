@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/billing"
 import { auth } from "@/auth"
+import { ZionaLogo } from "@/components/branding/ziona-logo"
 
 export default async function PharmacyBillingPage({
     searchParams
@@ -78,9 +79,12 @@ export default async function PharmacyBillingPage({
 
     return (
         <div className="p-4 sm:p-8">
-            <div className="mb-6">
-                <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Pharmacy Billing</h1>
-                <p className="text-slate-500 text-sm">Create bills for prescribed medicines and OTC sales.</p>
+            <div className="mb-6 flex items-center gap-4">
+                <ZionaLogo size={40} variant="icon" speed="slow" />
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white leading-tight">Pharmacy Billing</h1>
+                    <p className="text-slate-500 text-sm">Create bills for prescribed medicines and OTC sales.</p>
+                </div>
             </div>
 
             <CompactInvoiceEditor

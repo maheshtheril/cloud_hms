@@ -12,10 +12,10 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
     const appBrand = process.env.NEXT_PUBLIC_APP_BRAND?.toUpperCase();
     if (appBrand === 'ZIONA' || appBrand === 'CLOUD_HMS' || host.toLowerCase().includes('cloud-hms')) {
         return {
-            app_name: "Ziona HMS",
-            logo_url: "/ziona.png",
-            name: "Ziona Health",
-            isPublic: true // Always public for main site
+            app_name: "Ziona ERP",
+            logo_url: "/logo-ziona.svg",
+            name: "Ziona Solutions",
+            isPublic: true
         };
     }
 
@@ -119,9 +119,9 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
         const isPublic = meta.registration_enabled !== false;
 
         return {
-            app_name: tenant?.app_name || null,
-            logo_url: tenant?.logo_url || (tenant?.company_settings?.[0]?.company?.logo_url) || null,
-            name: tenant?.name || null,
+            app_name: tenant?.app_name || "Ziona ERP",
+            logo_url: tenant?.logo_url || (tenant?.company_settings?.[0]?.company?.logo_url) || "/logo-ziona.svg",
+            name: tenant?.name || "Ziona Solutions",
             isPublic
         };
     } catch (error) {

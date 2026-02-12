@@ -10,6 +10,7 @@ import { VoiceWrapper } from "@/components/ui/voice-wrapper"
 import { getHMSSettings } from "@/app/actions/settings"
 import { PatientIDCard } from "@/components/hms/patient-id-card"
 import { QuickPaymentGateway } from "./quick-payment-gateway"
+import { ZionaLogo } from "@/components/branding/ziona-logo"
 
 
 interface CreatePatientFormProps {
@@ -178,16 +179,20 @@ export function CreatePatientForm({
                 {/* Ultra-Modern Header */}
                 <div className="px-5 py-3 bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between z-10 relative shrink-0">
                     <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30 text-white transform rotate-3">
-                            <User className="h-5 w-5" />
-                        </div>
+                        {appName?.includes('Ziona') ? (
+                            <ZionaLogo size={48} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
+                        ) : (
+                            <div className="h-10 w-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30 text-white transform rotate-3">
+                                <User className="h-5 w-5" />
+                            </div>
+                        )}
                         <div>
                             <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight">
                                 {initialData ? 'Update Profile' : 'New Patient Registration'}
                             </h2>
                             <p className="text-xs font-medium text-slate-500 flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                {appName} • Trusted Digital Registry
+                                {appName?.includes('Ziona') ? "Digital Registry • Powered by Ziona" : `${appName} • Trusted Digital Registry`}
                             </p>
                         </div>
                     </div>

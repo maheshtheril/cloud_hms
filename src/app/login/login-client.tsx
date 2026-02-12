@@ -4,6 +4,7 @@ import { useState } from "react"
 import { signIn } from "next-auth/react"
 import { Mail, Lock, ArrowRight, Loader2, Sparkles, Building2, Activity } from "lucide-react"
 import { motion } from "framer-motion"
+import { ZionaLogo } from "@/components/branding/ziona-logo"
 
 interface Branding {
     app_name: string | null;
@@ -129,7 +130,13 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                     transition={{ delay: 0.2 }}
                                     className="flex justify-center mb-6"
                                 >
-                                    {branding?.logo_url ? (
+                                    {appName.includes('Ziona') ? (
+                                        <div className="relative group">
+                                            {/* Advanced Glow */}
+                                            <div className="absolute inset-0 bg-indigo-500/20 blur-[60px] rounded-full group-hover:bg-indigo-500/30 transition-all duration-1000" />
+                                            <ZionaLogo size={120} colorScheme="signature" theme="dark" variant="icon" speed="slow" />
+                                        </div>
+                                    ) : branding?.logo_url ? (
                                         <div className="w-28 h-28 relative flex items-center justify-center">
                                             {/* Holographic Energy Glows */}
                                             <div className="absolute inset-0 bg-cyan-500/20 blur-[40px] rounded-full animate-pulse" />
@@ -137,7 +144,6 @@ export default function LoginClient({ branding }: { branding: Branding | null })
 
                                             {/* Stylized Logo Container */}
                                             <div className="relative z-10 w-24 h-24 flex items-center justify-center">
-                                                {/* Conditional Logo Rendering: Authentic Color for CRM, Holographic for HMS */}
                                                 <img
                                                     src={branding.logo_url}
                                                     alt={appName}
@@ -165,9 +171,9 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                     animate={{ y: 0, opacity: 1 }}
                                     transition={{ delay: 0.3 }}
                                 >
-                                    <h1 className={`text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r tracking-[0.2em] uppercase mb-3 filter contrast-125 ${isCRM
+                                    <h1 className={`text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r tracking-tighter mb-3 filter contrast-125 ${isCRM
                                         ? "from-emerald-400 via-teal-400 to-cyan-400 drop-shadow-[0_0_10px_rgba(16,185,129,0.5)]"
-                                        : "from-sky-300 via-cyan-400 to-indigo-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.5)]"
+                                        : "from-cyan-400 via-purple-500 to-emerald-400 drop-shadow-[0_0_20px_rgba(99,102,241,0.4)]"
                                         }`}>
                                         {appName}
                                     </h1>

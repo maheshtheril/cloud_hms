@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import { AppointmentForm } from "@/components/appointments/appointment-form"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
+import { ZionaLogo } from "@/components/branding/ziona-logo"
 
 interface DashboardClientProps {
     user: any
@@ -38,13 +39,18 @@ export function DashboardClient({ user, stats, appointments, patients, doctors, 
             <header className="sticky top-0 z-30 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-gray-200 dark:border-slate-800">
                 <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
-                        <div>
-                            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-                                {dashboardTitle}
-                            </h1>
-                            <p className="text-xs text-gray-500 dark:text-slate-400 font-medium">
-                                Welcome back, {user?.name || 'User'}
-                            </p>
+                        <div className="flex items-center gap-4">
+                            {(dashboardTitle.includes('Ziona') || tenant?.app_name === 'Ziona ERP') ? (
+                                <ZionaLogo size={44} variant="icon" speed="slow" colorScheme="signature" />
+                            ) : null}
+                            <div>
+                                <h1 className="text-2xl font-black bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 bg-clip-text text-transparent tracking-tighter leading-tight">
+                                    {dashboardTitle}
+                                </h1>
+                                <p className="text-xs text-gray-500 dark:text-slate-400 font-medium">
+                                    Welcome back, {user?.name || 'User'}
+                                </p>
+                            </div>
                         </div>
                         <div className="flex items-center gap-3">
                             <button
