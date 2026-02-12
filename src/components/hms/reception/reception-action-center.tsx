@@ -174,10 +174,6 @@ export function ReceptionActionCenter({
     }
 
     const handleAction = (actionId: string) => {
-        if (actionId === 'register') {
-            router.push('/hms/patients/new')
-            return
-        }
         if (actionId === 'voucher') {
             router.push('/hms/reception/registration-voucher')
             return
@@ -244,9 +240,8 @@ export function ReceptionActionCenter({
     ]
 
     const actions = [
-        { id: 'register', title: 'Quick Patient', icon: UserPlus, color: 'text-emerald-600', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-emerald-100 dark:border-emerald-800' },
         { id: 'voucher', title: 'Reg Voucher', icon: CreditCard, color: 'text-orange-600', bg: 'bg-orange-50 dark:bg-orange-900/20', border: 'border-orange-100 dark:border-orange-800' },
-        { id: 'appointment', title: 'Book Appointment', icon: CalendarPlus, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-100 dark:border-blue-800' },
+        { id: 'appointment', title: 'OP Booking/Registration', icon: CalendarPlus, color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/20', border: 'border-blue-100 dark:border-blue-800' },
         { id: 'billing', title: 'IP/OP Billing', icon: CreditCard, color: 'text-violet-600', bg: 'bg-violet-50 dark:bg-violet-900/20', border: 'border-violet-100 dark:border-violet-800' },
         { id: 'beds', title: 'Bed Units', icon: BedIcon, color: 'text-indigo-600', bg: 'bg-indigo-50 dark:bg-indigo-900/20', border: 'border-indigo-100 dark:border-indigo-800' },
         { id: 'expense', title: 'Expense', icon: Wallet, color: 'text-amber-600', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-amber-100 dark:border-amber-800' },
@@ -829,11 +824,6 @@ export function ReceptionActionCenter({
             </div >
 
             {/* MODALS */}
-            <Dialog open={activeModal === 'register'} onOpenChange={() => setActiveModal(null)}>
-                <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden p-0">
-                    <CreatePatientForm onClose={() => setActiveModal(null)} />
-                </DialogContent>
-            </Dialog>
 
             <Dialog open={activeModal === 'appointment' || activeModal === 'edit-appointment'} onOpenChange={(open) => { if (!open) { setActiveModal(null); setEditingAppointment(null); } }}>
                 <DialogContent className="max-w-5xl max-h-[95vh] overflow-hidden p-0">

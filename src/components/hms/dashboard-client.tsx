@@ -28,7 +28,6 @@ interface DashboardClientProps {
 
 export function DashboardClient({ user, stats, appointments, patients, doctors, tenant, company }: DashboardClientProps) {
     const [showAppointmentModal, setShowAppointmentModal] = useState(false)
-    const [showPatientModal, setShowPatientModal] = useState(false)
 
     const pendingApts = appointments.filter(a => a.status.toLowerCase() === 'scheduled' || a.status.toLowerCase() === 'pending').length
     const dashboardTitle = company?.name || tenant?.app_name || 'Dashboard'
@@ -58,13 +57,6 @@ export function DashboardClient({ user, stats, appointments, patients, doctors, 
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            <button
-                                onClick={() => setShowPatientModal(true)}
-                                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-all text-sm font-medium shadow-sm hover:shadow-md"
-                            >
-                                <Users className="h-4 w-4" />
-                                Add Patient
-                            </button>
                             <Link
                                 href="/hms/analytics"
                                 className="hidden sm:flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800 rounded-lg hover:bg-indigo-100 transition-all text-sm font-bold shadow-sm"
@@ -74,10 +66,10 @@ export function DashboardClient({ user, stats, appointments, patients, doctors, 
                             </Link>
                             <button
                                 onClick={() => setShowAppointmentModal(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg hover:scale-105 transition-all text-sm font-medium"
+                                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg hover:ring-2 hover:ring-blue-500/20 transition-all text-sm font-bold active:scale-95 shadow-lg shadow-blue-500/20"
                             >
-                                <Plus className="h-4 w-4" />
-                                New Appointment
+                                <Calendar className="h-4 w-4" />
+                                OP Booking/Registration
                             </button>
                         </div>
                     </div>
@@ -316,13 +308,6 @@ export function DashboardClient({ user, stats, appointments, patients, doctors, 
                         </div>
                     </div>
                 </div>
-            )}
-
-            {showPatientModal && (
-                <CreatePatientForm
-                    onClose={() => setShowPatientModal(false)}
-                    appName={dashboardTitle}
-                />
             )}
         </div>
     )
