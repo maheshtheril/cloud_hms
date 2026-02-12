@@ -1,7 +1,7 @@
 'use client'
 
 import { createAppointment, updateAppointmentDetails } from "@/app/actions/appointment"
-import { ArrowLeft, Calendar, Clock, FileText, CheckCircle, MapPin, Video, Phone, AlertCircle, Stethoscope, IndianRupee } from "lucide-react"
+import { ArrowLeft, Calendar, Clock, FileText, CheckCircle, MapPin, Video, Phone, AlertCircle, Stethoscope, IndianRupee, Save } from "lucide-react"
 import Link from "next/link"
 import { PatientDoctorSelectors } from "@/components/appointments/patient-doctor-selectors"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
@@ -14,7 +14,7 @@ import { getHMSSettings } from "@/app/actions/settings"
 import { generateConsultationInvoice, generateRegistrationInvoice } from "@/app/actions/billing"
 import { getPatientById } from "@/app/actions/patient-v10"
 import { QuickPaymentGateway } from "@/components/hms/quick-payment-gateway"
-import { CreditCard as CardIcon } from "lucide-react"
+import { CreditCard as CardIcon, X } from "lucide-react"
 
 interface AppointmentFormProps {
     patients: any[]
@@ -31,24 +31,33 @@ interface AppointmentFormProps {
 }
 
 export function AppointmentForm({ patients, doctors, appointments = [], initialData = {}, editingAppointment, onClose, onMinimize }: AppointmentFormProps) {
+    const { toast } = useToast()
+    const router = useRouter()
     const { patient_id: initialPatientId, date: initialDate, time: initialTime } = initialData
 
-    // Derived state for editing
+    // Derived values for initial state
     const defaultPatientId = editingAppointment?.patient?.id || editingAppointment?.patient_id || initialPatientId || ''
-    const defaultDate = editingAppointment ? new Date(editingAppointment.start_time).toISOString().split('T')[0] : (initialDate || new Date().toISOString().split('T')[0])
-    const defaultTime = editingAppointment ? new Date(editingAppointment.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : (initialTime || '')
+    const defaultDate = editingAppointment
+        ? new Date(editingAppointment.start_time).toISOString().split('T')[0]
+        : (initialDate || new Date().toISOString().split('T')[0])
+    const defaultTime = editingAppointment
+        ? new Date(editingAppointment.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+        : (initialTime || '')
     const defaultClinicianId = editingAppointment?.clinician?.id || editingAppointment?.clinician_id || ''
 
+    // State
     const [localPatients, setLocalPatients] = useState(patients)
     const [selectedPatientId, setSelectedPatientId] = useState(defaultPatientId)
     const [selectedPatientData, setSelectedPatientData] = useState<any>(null)
     const [showNewPatientModal, setShowNewPatientModal] = useState(false)
     const [selectedClinicianId, setSelectedClinicianId] = useState(defaultClinicianId)
+    const [selectedDate, setSelectedDate] = useState(defaultDate)
     const [suggestedTime, setSuggestedTime] = useState(defaultTime)
     const [isMaximized, setIsMaximized] = useState(true)
     const [isListening, setIsListening] = useState(false)
     const [hmsSettings, setHmsSettings] = useState<any>(null)
     const [notes, setNotes] = useState(editingAppointment?.notes || '')
+    const [isPending, setIsPending] = useState(false)
 
     // RCM States
     const [isPaymentOpen, setIsPaymentOpen] = useState(false)
@@ -56,72 +65,95 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     const [isRCMProcessing, setIsRCMProcessing] = useState(false)
     const [pendingFormData, setPendingFormData] = useState<FormData | null>(null)
 
-    // Sync state when editingAppointment changes or initialData changes
+    // Sync state when editingAppointment changes or prop updates
     useEffect(() => {
         if (editingAppointment) {
             setSelectedPatientId(editingAppointment.patient?.id || editingAppointment.patient_id || '')
             setSelectedClinicianId(editingAppointment.clinician?.id || editingAppointment.clinician_id || '')
+            setSelectedDate(new Date(editingAppointment.start_time).toISOString().split('T')[0])
             setSuggestedTime(new Date(editingAppointment.start_time).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }))
-
-            // Ensure patient exists in list (for correct display label)
-            if (editingAppointment.patient) {
-                setLocalPatients(prev => {
-                    const exists = prev.some(p => p.id === editingAppointment.patient.id)
-                    if (!exists) {
-                        return [{
-                            id: editingAppointment.patient.id,
-                            first_name: editingAppointment.patient.first_name,
-                            last_name: editingAppointment.patient.last_name,
-                            patient_number: editingAppointment.patient.patient_number,
-                            gender: editingAppointment.patient.gender
-                        }, ...prev]
-                    }
-                    return prev
-                })
-            }
-        } else {
-            // Reset to defaults
-            setSelectedPatientId(initialPatientId || '')
-            setSuggestedTime(initialTime || '')
         }
-    }, [editingAppointment, initialPatientId, initialDate, initialTime])
+    }, [editingAppointment])
 
-    // Fetch Full Patient Data for Audit
+    // Load Initial Patient Data for registration status checks
     useEffect(() => {
         if (selectedPatientId) {
             getPatientById(selectedPatientId).then(res => {
                 if (res.success) setSelectedPatientData(res.data)
             })
-        } else {
-            setSelectedPatientData(null)
         }
     }, [selectedPatientId])
 
-    // Aggressive Doctor Auto-Selection (Ensures it happens as soon as doctors load)
+    // Auto-select first doctor if none specified
     useEffect(() => {
         if (!selectedClinicianId && doctors.length > 0) {
             setSelectedClinicianId(doctors[0].id)
         }
     }, [doctors, selectedClinicianId])
 
-    // Keyboard Shortcut
+    // CORE: Dynamic Time Selection Engine (Reactive Triage)
     useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if ((e.ctrlKey || e.metaKey || e.altKey) && e.key === 'n') {
-                e.preventDefault()
-                setShowNewPatientModal(true)
-            }
-            if ((e.ctrlKey || e.metaKey || e.altKey) && e.key === 'm') {
-                e.preventDefault()
-                if (onMinimize) onMinimize()
+        // Only run for new appointments. If editing, we respect current time unless manually changed.
+        if (editingAppointment || !selectedClinicianId || !selectedDate || !doctors.length) return;
+
+        const doctor = doctors.find(d => d.id === selectedClinicianId)
+        if (!doctor) return;
+
+        const defaultStart = doctor.consultation_start_time || "09:00"
+        const defaultEnd = doctor.consultation_end_time || "17:00"
+
+        // Filter for this doctor on selected day
+        const doctorApts = appointments.filter(a => {
+            const aptDate = new Date(a.starts_at).toISOString().split('T')[0];
+            return a.clinician_id === selectedClinicianId && aptDate === selectedDate && a.status !== 'cancelled';
+        })
+
+        const now = new Date();
+        const isToday = selectedDate === now.toISOString().split('T')[0];
+
+        // Base starting time for the day
+        const [startH, startM] = defaultStart.split(':').map(Number);
+        const dayStart = new Date(now);
+        dayStart.setHours(startH, startM, 0, 0);
+
+        let nextSlotTime: Date;
+
+        if (doctorApts.length === 0) {
+            // Suggest start time or 'now' if it's today and already past start time
+            nextSlotTime = (isToday && now > dayStart) ? now : dayStart;
+        } else {
+            // Find latest end time
+            const lastEndApt = doctorApts.reduce((latest, current) => {
+                return new Date(current.ends_at) > new Date(latest.ends_at) ? current : latest
+            }, doctorApts[0])
+
+            const lastEnd = new Date(lastEndApt.ends_at);
+            nextSlotTime = new Date(lastEnd.getTime());
+
+            // If the next slot from past appointments is in the past, move to 'now'
+            if (isToday && nextSlotTime < now) {
+                nextSlotTime = now;
             }
         }
 
-        window.addEventListener('keydown', handleKeyDown)
-        return () => window.removeEventListener('keydown', handleKeyDown)
-    }, [])
+        const [endH, endM] = defaultEnd.split(':').map(Number);
+        const dayEnd = new Date(nextSlotTime);
+        dayEnd.setHours(endH, endM, 0, 0);
 
-    // Fetch HMS settings
+        if (nextSlotTime >= dayEnd) {
+            setSuggestedTime('Fully Booked')
+        } else {
+            // Round up to nearest 5 minutes for cleaner UI
+            const roundedMinutes = Math.ceil(nextSlotTime.getMinutes() / 5) * 5;
+            nextSlotTime.setMinutes(roundedMinutes);
+
+            const hours = nextSlotTime.getHours().toString().padStart(2, '0')
+            const minutes = nextSlotTime.getMinutes().toString().padStart(2, '0')
+            setSuggestedTime(`${hours}:${minutes}`)
+        }
+    }, [selectedClinicianId, selectedDate, appointments, doctors, editingAppointment])
+
+    // HMS Settings (Reg Fee, etc.)
     useEffect(() => {
         getHMSSettings().then(res => {
             if (res.success) setHmsSettings(res.settings)
@@ -130,116 +162,55 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
 
     const checkRegistrationStatus = () => {
         if (!selectedPatientData) return { shouldCharge: true, status: 'new' };
-
         const metadata = (selectedPatientData.metadata as any) || {};
         const expiryDateStr = metadata.registration_expiry;
-
         if (!expiryDateStr) return { shouldCharge: true, status: 'missing_date' };
-
         const expiryDate = new Date(expiryDateStr);
         const isExpired = expiryDate < new Date();
-
-        return {
-            shouldCharge: isExpired,
-            status: isExpired ? 'expired' : 'valid',
-            expiryDate: expiryDateStr
-        };
+        return { shouldCharge: isExpired, status: isExpired ? 'expired' : 'valid', expiryDate: expiryDateStr };
     };
 
-    const startListening = () => {
-        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-        if (!SpeechRecognition) {
-            toast({ title: "Unsupported", description: "Voice input is not supported in this browser.", variant: "destructive" })
-            return
-        }
-
-        const recognition = new SpeechRecognition()
-        recognition.continuous = false
-        recognition.interimResults = false
-        recognition.lang = 'en-US'
-
-        recognition.onstart = () => setIsListening(true)
-        recognition.onend = () => setIsListening(false)
-        recognition.onresult = (event: any) => {
-            const transcript = event.results[0][0].transcript
-            setNotes((prev: string) => (prev ? `${prev} ${transcript}` : transcript))
-        }
-
-        recognition.start()
-    }
-
-    const handleClinicianChange = (clinicianId: string) => {
-        setSelectedClinicianId(clinicianId)
-        if (!clinicianId) return
-
-        if (editingAppointment && clinicianId === editingAppointment.clinician?.id) {
-            setSuggestedTime(defaultTime)
-            return
-        }
-
-        const doctor = doctors.find(d => d.id === clinicianId)
-        const defaultStart = doctor?.consultation_start_time || "09:00"
-        const defaultEnd = doctor?.consultation_end_time || "17:00"
-        const doctorApts = appointments.filter(a => a.clinician_id === clinicianId)
-
-        if (doctorApts.length === 0) {
-            setSuggestedTime(defaultStart)
-            return
-        }
-
-        const lastApt = doctorApts.reduce((latest, current) => {
-            return new Date(current.ends_at) > new Date(latest.ends_at) ? current : latest
-        }, doctorApts[0])
-
-        if (lastApt && lastApt.ends_at) {
-            const lastEnd = new Date(lastApt.ends_at)
-            const nextSlotTime = new Date(lastEnd.getTime())
-            const [endH, endM] = defaultEnd.split(':').map(Number)
-            const endTimeObj = new Date(lastEnd)
-            endTimeObj.setHours(endH, endM, 0, 0)
-
-            if (nextSlotTime >= endTimeObj) {
-                setSuggestedTime('Fully Booked')
-            } else {
-                const hours = nextSlotTime.getHours().toString().padStart(2, '0')
-                const minutes = nextSlotTime.getMinutes().toString().padStart(2, '0')
-                setSuggestedTime(`${hours}:${minutes}`)
-            }
-        }
-    }
-
-    const { toast } = useToast()
-    const [isPending, setIsPending] = useState(false)
-    const router = useRouter()
-
     const handlePatientCreated = (newPatient: any) => {
-        setLocalPatients(prev => [newPatient, ...prev])
+        console.log("Terminal: Patient created, linking to session...", newPatient.id);
+
+        // 1. Update list and selection
+        setLocalPatients(prev => {
+            const exists = prev.some(p => p.id === newPatient.id);
+            if (exists) return prev;
+            return [newPatient, ...prev];
+        })
         setSelectedPatientId(newPatient.id)
+
+        // 2. SUCCESS-EXIT: Modal Closure
         setShowNewPatientModal(false)
+
+        // 3. User Feedback
+        toast({
+            title: "Patient Linked",
+            description: `${newPatient.first_name} is now active in the terminal.`,
+            className: "bg-indigo-600 text-white shadow-2xl"
+        })
+
+        // 4. Focus Management: Shift focus to the clinician selector for faster flow
+        setTimeout(() => {
+            const clinicianSelect = document.querySelector('[name="clinician_id"]') as HTMLElement;
+            clinicianSelect?.focus();
+        }, 300);
     }
 
     const executeSave = async (data: FormData) => {
         setIsPending(true)
         try {
-            let res;
-            if (editingAppointment) {
-                res = await updateAppointmentDetails(data);
-            } else {
-                res = await createAppointment(data);
-            }
-
+            const res = editingAppointment ? await updateAppointmentDetails(data) : await createAppointment(data);
             if (res?.error) {
                 toast({ title: "Action Failed", description: res.error, variant: "destructive" });
             } else {
-                // [RCM] Save to Bill
                 const aptId = editingAppointment?.id || res.data?.id;
-                if (aptId) {
-                    await generateConsultationInvoice(aptId);
-                }
+                if (aptId) await generateConsultationInvoice(aptId);
 
                 toast({
                     title: "Medical Record Finalized",
-                    description: editingAppointment ? "Clinical encounter updated successfully." : "Appointment and billing sequence initiated.",
+                    description: editingAppointment ? "Clinical encounter updated." : "Session finalized and billing initiated.",
                     className: "bg-emerald-600 text-white"
                 });
 
@@ -251,7 +222,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                 }
             }
         } catch (error: any) {
-            toast({ title: "Internal Terminal Error", description: error.message, variant: "destructive" })
+            toast({ title: "Terminal Crash", description: error.message, variant: "destructive" })
         } finally {
             setIsPending(false);
         }
@@ -259,7 +230,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
 
     async function handleSubmit(formData: FormData) {
         if (!selectedPatientId) {
-            toast({ title: "Patient Missing", description: "Please select a patient to finalize the encounter.", variant: "destructive" });
+            toast({ title: "Patient Missing", description: "Select a patient to finalize the session.", variant: "destructive" });
             return;
         }
 
@@ -269,7 +240,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                 const regStatus = checkRegistrationStatus();
                 if (regStatus.shouldCharge) {
                     setIsRCMProcessing(true);
-                    const invRes = await generateRegistrationInvoice(selectedPatientId);
+                    const invRes = await generateRegistrationInvoice(selectedPatientId) as any;
                     if (invRes.success) {
                         setInvoiceForPayment(invRes.data);
                         setPendingFormData(formData);
@@ -283,7 +254,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
             }
             await executeSave(formData);
         } catch (error: any) {
-            toast({ title: "Submission Error", description: error.message, variant: "destructive" })
+            toast({ title: "Finalization Error", description: error.message, variant: "destructive" })
             setIsPending(false)
         }
     }
@@ -294,7 +265,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
 
     return (
         <div className={`relative bg-slate-900 border border-white/20 shadow-2xl overflow-hidden transition-all duration-500 ease-in-out ${isMaximized ? 'fixed inset-0 z-[100]' : 'w-full h-full relative'}`}>
-            {/* Elite Header */}
+            {/* Elite Terminal Header */}
             <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-white/10 shrink-0 shadow-2xl relative z-30">
                 <div className="flex items-center gap-6">
                     <div className="flex items-center gap-4">
@@ -310,9 +281,9 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                             OP Clinical Terminal <Sparkles className="h-4 w-4 text-indigo-400 animate-pulse" />
                         </h1>
                         <div className="flex items-center gap-3 mt-0.5">
-                            <span className="text-[10px] font-bold text-indigo-400 tracking-[0.3em] uppercase bg-indigo-500/10 px-2 py-0.5 rounded shadow-inner">Ready for Triage</span>
+                            <span className="text-[10px] font-bold text-indigo-400 tracking-[0.3em] uppercase bg-indigo-500/10 px-2 py-0.5 rounded shadow-inner tracking-widest">Active Encounter</span>
                             <div className="h-1 w-1 rounded-full bg-white/20" />
-                            <span className="text-[10px] font-medium text-white/50 tracking-widest uppercase">Deployment Node: ZIONA-HMS.V10</span>
+                            <span className="text-[10px] font-medium text-white/50 tracking-widest uppercase">ZIONA-HMS Deployment: V10.2</span>
                         </div>
                     </div>
                 </div>
@@ -323,7 +294,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                         <div className="h-4 w-[1px] bg-white/10" />
                         <button type="button" onClick={() => setIsMaximized(!isMaximized)} className="p-2 hover:bg-white/10 rounded-lg text-white/70 transition-all flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
                             {isMaximized ? <Minimize2 className="h-3.5 w-3.5 text-indigo-400" /> : <Maximize2 className="h-3.5 w-3.5" />}
-                            {isMaximized ? 'Float' : 'Full'}
+                            {isMaximized ? 'Dock Terminal' : 'Fullscreen'}
                         </button>
                     </div>
 
@@ -334,10 +305,10 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                             if (form) form.requestSubmit();
                         }}
                         disabled={isPending}
-                        className="px-8 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-2xl shadow-xl shadow-emerald-500/20 font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center gap-3 border border-emerald-400/20 disabled:opacity-50"
+                        className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-500/20 font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center gap-3 border border-indigo-400/20 disabled:opacity-50"
                     >
-                        {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle className="h-5 w-5" />}
-                        {editingAppointment ? 'Update Encounter' : 'Finalize Session & Save'}
+                        {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+                        {editingAppointment ? 'Update Encounter' : 'Save'}
                     </button>
                 </div>
             </div>
@@ -352,14 +323,14 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 flex-1 overflow-hidden">
                     <div className="lg:col-span-8 p-6 space-y-6 overflow-y-auto border-r border-gray-100 dark:border-white/5 custom-scrollbar">
-                        {/* Status Strip */}
-                        <div className="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-500/5 dark:to-slate-900 rounded-2xl p-4 flex items-center justify-between border border-indigo-100 dark:border-indigo-500/10 shadow-sm transition-all duration-300">
+                        {/* Status Strip (RCM Snapshot) */}
+                        <div className="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-500/5 dark:to-slate-900 rounded-2xl p-4 flex items-center justify-between border border-indigo-100 dark:border-indigo-500/10 shadow-sm">
                             <div className="flex items-center gap-4">
-                                <div className="h-12 w-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-xs shadow-lg shadow-indigo-500/30">OP#</div>
+                                <div className="h-12 w-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black text-xs shadow-lg shadow-indigo-500/30 font-mono">OP</div>
                                 <div className="min-w-[120px]">
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-0.5">OP Ticket Number</div>
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-0.5">Patient Number</div>
                                     <div className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
-                                        {selectedPatient?.patient_number || <span className="text-slate-300 dark:text-slate-700 italic animate-pulse">AUTO-GENERATE</span>}
+                                        {selectedPatient?.patient_number || <span className="text-slate-300 dark:text-slate-700 italic animate-pulse">PENDING</span>}
                                         {selectedPatient && <BadgeCheck className="h-5 w-5 text-emerald-500" />}
                                     </div>
                                 </div>
@@ -368,16 +339,16 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                             <div className="flex items-center gap-8">
                                 <div className="h-10 w-[1px] bg-slate-200 dark:bg-white/10" />
                                 <div className="text-right">
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5 flex items-center justify-end gap-1">
-                                        <IndianRupee className="h-2.5 w-2.5" /> Reg Status
-                                    </div>
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5 flex items-center justify-end gap-1">Reg Audit</div>
                                     <div className={`text-sm font-black tracking-tight ${activeRegStatus.shouldCharge ? 'text-red-500' : 'text-emerald-500'}`}>
-                                        {activeRegStatus.shouldCharge ? 'FEES DUE' : 'VALID / PAID'}
+                                        {activeRegStatus.shouldCharge ? 'PAYMENT REQUIRED' : 'FEES CLEARED'}
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5">Expiry</div>
-                                    <div className="text-xs font-bold text-slate-500">{activeRegStatus.expiryDate ? new Date(activeRegStatus.expiryDate).toLocaleDateString() : 'New Patient'}</div>
+                                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5 uppercase">Validity Expiry</div>
+                                    <div className="text-xs font-bold text-slate-500">
+                                        {activeRegStatus.expiryDate ? new Date(activeRegStatus.expiryDate).toLocaleDateString() : 'N/A (New Record)'}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -387,61 +358,89 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                             doctors={doctors}
                             selectedPatientId={selectedPatientId}
                             selectedClinicianId={selectedClinicianId}
-                            onClinicianSelect={handleClinicianChange}
+                            onClinicianSelect={setSelectedClinicianId}
                             onPatientSelect={setSelectedPatientId}
                             onNewPatientClick={() => setShowNewPatientModal(true)}
                         />
 
-                        {/* Schedule */}
-                        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
+                        {/* Schedule & Slotting */}
+                        <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4 ring-1 ring-slate-100">
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-900 dark:text-slate-300 mb-1.5"><Calendar className="h-3.5 w-3.5 inline mr-1" /> Date</label>
-                                    <input type="date" name="date" required defaultValue={defaultDate} className="w-full p-2.5 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium" />
+                                    <label className="block text-sm font-bold text-gray-900 dark:text-slate-300 mb-1.5 uppercase tracking-tighter"><Calendar className="h-3.5 w-3.5 inline mr-1" /> Appointment Date</label>
+                                    <input
+                                        type="date"
+                                        name="date"
+                                        required
+                                        value={selectedDate}
+                                        onChange={(e) => setSelectedDate(e.target.value)}
+                                        className="w-full p-2.5 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-medium"
+                                    />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-900 dark:text-slate-300 mb-1.5"><Clock className="h-3.5 w-3.5 inline mr-1" /> Time</label>
-                                    <input type={suggestedTime === 'Fully Booked' ? 'text' : 'time'} name="time" required key={suggestedTime} defaultValue={suggestedTime === 'Fully Booked' ? '' : suggestedTime} readOnly={suggestedTime === 'Fully Booked'} placeholder={suggestedTime === 'Fully Booked' ? 'Fully Booked' : ''} className={`w-full p-2.5 bg-white dark:bg-slate-950 border ${suggestedTime === 'Fully Booked' ? 'border-red-500' : 'border-gray-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-green-500 outline-none font-medium`} />
+                                    <label className="block text-sm font-bold text-gray-900 dark:text-slate-300 mb-1.5 uppercase tracking-tighter"><Clock className="h-3.5 w-3.5 inline mr-1" /> Estimated Slot</label>
+                                    <input
+                                        type={suggestedTime === 'Fully Booked' ? 'text' : 'time'}
+                                        name="time"
+                                        required
+                                        key={suggestedTime}
+                                        defaultValue={suggestedTime === 'Fully Booked' ? '' : suggestedTime}
+                                        readOnly={suggestedTime === 'Fully Booked'}
+                                        placeholder={suggestedTime === 'Fully Booked' ? 'Fully Booked' : ''}
+                                        className={`w-full p-2.5 bg-white dark:bg-slate-950 border ${suggestedTime === 'Fully Booked' ? 'border-red-500' : 'border-gray-200 dark:border-slate-700'} rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none font-medium`}
+                                    />
                                 </div>
                             </div>
                         </div>
 
-                        {/* Notes */}
+                        {/* Clinical Notes (Voice-Enabled) */}
                         <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm p-5 group">
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
                                     <FileText className="h-4 w-4 text-indigo-500" />
-                                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Chief Complaint / Notes</h3>
+                                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Reason for Visit / History</h3>
                                 </div>
-                                <button type="button" onClick={startListening} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-100 dark:bg-white/5 text-slate-500'}`}>
-                                    {isListening ? 'Listening...' : 'Voice Input'}
+                                <button type="button" onClick={() => setIsListening(!isListening)} className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-100 dark:bg-white/5 text-slate-500 hover:bg-indigo-500 hover:text-white'}`}>
+                                    {isListening ? 'Stop Listening' : 'Voice Dictate'}
                                 </button>
                             </div>
-                            <textarea name="notes" rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} className="w-full p-4 bg-slate-50/50 dark:bg-black/50 border border-gray-100 dark:border-white/5 rounded-2xl focus:ring-indigo-500 outline-none resize-none font-medium text-sm transition-all" placeholder="State symptoms, history..."></textarea>
+                            <textarea
+                                name="notes"
+                                rows={4}
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                className="w-full p-4 bg-slate-50/50 dark:bg-black/50 border border-gray-100 dark:border-white/5 rounded-2xl focus:ring-indigo-500 focus:bg-white outline-none resize-none font-medium text-sm transition-all"
+                                placeholder="State symptoms, history, or patient complaint..."
+                            ></textarea>
+                            <div className="mt-2 flex items-center gap-2 opacity-50">
+                                <Sparkles className="h-3 w-3 text-indigo-400" />
+                                <span className="text-[10px] font-bold uppercase tracking-widest">Medical Transcription Engine L2 Active</span>
+                            </div>
                         </div>
                     </div>
 
                     <div className="lg:col-span-4 p-6 space-y-6 overflow-y-auto bg-slate-50/30 dark:bg-white/[0.02] custom-scrollbar">
                         <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
-                            <div className="space-y-3">
+                            <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-900 dark:text-slate-300 mb-1.5">Visit Type</label>
-                                    <select name="type" defaultValue={editingAppointment?.type || 'consultation'} className="w-full p-2.5 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-700 rounded-lg outline-none font-medium text-sm">
-                                        <option value="consultation">🩺 Initial Consultation</option>
-                                        <option value="follow_up">🔄 Follow Up Visit</option>
-                                        <option value="emergency">🚨 Emergency</option>
+                                    <label className="block text-sm font-black uppercase tracking-tighter text-slate-400 mb-1.5 ml-1">Visit Type</label>
+                                    <select name="type" defaultValue={editingAppointment?.type || 'consultation'} className="w-full p-3 bg-white dark:bg-slate-950 border border-gray-200 dark:border-slate-700 rounded-xl outline-none font-bold text-sm tracking-tight text-slate-800">
+                                        <option value="consultation">🩺 Consultation Visit</option>
+                                        <option value="follow_up">🔄 Follow-Up Session</option>
+                                        <option value="emergency">🚨 Emergency Admission</option>
+                                        <option value="procedure">💉 Clinical Procedure</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-900 dark:text-slate-300 mb-1.5">Consultation Mode</label>
+                                    <label className="block text-sm font-black uppercase tracking-tighter text-slate-400 mb-1.5 ml-1">Encounter Mode</label>
                                     <div className="grid grid-cols-1 gap-2">
-                                        <label className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer transition-all">
-                                            <input type="radio" name="mode" value="in_person" defaultChecked={!editingAppointment || editingAppointment.mode === 'in_person'} className="text-blue-600" />
-                                            <span className="text-sm font-medium">In-Person Visit</span>
+                                        <label className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl cursor-pointer transition-all hover:border-indigo-500 group">
+                                            <input type="radio" name="mode" value="in_person" defaultChecked={!editingAppointment || editingAppointment.mode === 'in_person'} className="text-indigo-600 focus:ring-0" />
+                                            <span className="text-sm font-black uppercase tracking-tighter text-slate-600 group-hover:text-indigo-600">On-Site Clinic Visit</span>
                                         </label>
-                                        <label className="flex items-center gap-3 p-2.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer transition-all">
-                                            <input type="radio" name="mode" value="video" defaultChecked={editingAppointment?.mode === 'video'} className="text-purple-600" />
-                                            <span className="text-sm font-medium">Video Call</span>
+                                        <label className="flex items-center gap-3 p-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl cursor-pointer transition-all hover:border-indigo-500 group">
+                                            <input type="radio" name="mode" value="video" defaultChecked={editingAppointment?.mode === 'video'} className="text-indigo-600 focus:ring-0" />
+                                            <span className="text-sm font-black uppercase tracking-tighter text-slate-600 group-hover:text-indigo-600">Video Consultation</span>
                                         </label>
                                     </div>
                                 </div>
@@ -449,12 +448,12 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                         </div>
 
                         <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4">
-                            <label className="block text-sm font-semibold mb-3">Priority</label>
+                            <label className="block text-xs font-black uppercase tracking-[0.2em] mb-3 text-slate-400 ml-1">Clinical Priority</label>
                             <div className="grid grid-cols-2 gap-2">
                                 {['low', 'normal', 'high', 'urgent'].map(p => (
-                                    <label key={p} className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer ${selectedPriority === p ? 'bg-indigo-50 border-indigo-500' : 'bg-gray-50 border-gray-100'}`} onClick={() => setSelectedPriority(p)}>
+                                    <label key={p} className={`flex items-center gap-2 p-3 rounded-xl border-2 transition-all cursor-pointer ${selectedPriority === p ? 'bg-indigo-50 border-indigo-500 shadow-md shadow-indigo-500/10' : 'bg-gray-50 border-gray-100'}`} onClick={() => setSelectedPriority(p)}>
                                         <input type="radio" name="priority" value={p} className="hidden" checked={selectedPriority === p} onChange={() => { }} />
-                                        <span className={`text-[10px] font-black uppercase tracking-wider ${selectedPriority === p ? 'text-indigo-700' : 'text-gray-400'}`}>{p}</span>
+                                        <span className={`text-[10px] font-black uppercase tracking-widest ${selectedPriority === p ? 'text-indigo-700' : 'text-slate-400'}`}>{p}</span>
                                     </label>
                                 ))}
                             </div>
@@ -463,19 +462,34 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                 </div>
             </form>
 
-            {/* Modals */}
+            {/* Overlays Bridge */}
             {showNewPatientModal && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="w-full max-w-4xl shadow-2xl animate-in zoom-in-95 duration-200">
-                        <CreatePatientForm onClose={() => setShowNewPatientModal(false)} onSuccess={handlePatientCreated} hideBilling={true} />
+                <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/80 backdrop-blur-lg p-4 animate-in fade-in duration-300">
+                    <div className="w-full max-w-5xl shadow-2xl relative">
+                        <button
+                            onClick={() => setShowNewPatientModal(false)}
+                            className="absolute -top-14 right-0 p-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl flex items-center gap-2 font-black uppercase text-[10px] tracking-widest transition-all backdrop-blur-xl border border-white/10"
+                        >
+                            <X className="h-4 w-4" /> Cancel Overlay (Esc)
+                        </button>
+                        <CreatePatientForm
+                            onClose={() => setShowNewPatientModal(false)}
+                            onSuccess={handlePatientCreated}
+                            hideBilling={true} // Triage terminal will handle fees on finalize
+                        />
                     </div>
                 </div>
             )}
 
             {isPaymentOpen && invoiceForPayment && (
-                <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/90 backdrop-blur-md p-4">
-                    <div className="w-full max-w-lg shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+                <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl p-4">
+                    <div className="w-full max-w-lg shadow-[0_0_100px_rgba(79,70,229,0.3)] animate-in fade-in zoom-in-95 duration-300 relative">
+                        <div className="absolute -top-16 left-1/2 -translate-x-1/2 text-white/50 text-center">
+                            <ShieldAlert className="h-10 w-10 mx-auto mb-2 text-indigo-400 animate-pulse" />
+                            <h2 className="text-sm font-black uppercase tracking-widest">Financial Clearance Required</h2>
+                        </div>
                         <QuickPaymentGateway
+                            isOpen={isPaymentOpen}
                             invoice={invoiceForPayment}
                             onSuccess={async () => {
                                 setIsPaymentOpen(false);
@@ -486,6 +500,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                             onClose={() => {
                                 setIsPaymentOpen(false);
                                 setIsRCMProcessing(false);
+                                toast({ title: "Session Deferred", description: "Payment must be completed to finalize encounter." });
                             }}
                         />
                     </div>

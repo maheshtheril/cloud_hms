@@ -136,7 +136,7 @@ export function CreatePatientForm({
     };
 
     const regStatus = checkRegistrationStatus();
-    const [chargeRegistration, setChargeRegistration] = useState(regStatus.shouldCharge);
+    const [chargeRegistration, setChargeRegistration] = useState(hideBilling ? false : regStatus.shouldCharge);
     const [waiveFee, setWaiveFee] = useState(false);
 
     // Payment Gateway State
@@ -375,7 +375,11 @@ export function CreatePatientForm({
                                 return; // Stop redirection/closing until payment is handled
                             }
 
-                            if (onSuccess) onSuccess(patient);
+                            if (onSuccess) {
+                                setIsPending(false);
+                                onSuccess(patient);
+                                return; // Stop here, parent modal will close
+                            }
                             else {
                                 setMessage({ type: 'success', text: initialData ? "Profile updated successfully." : "Patient registered successfully." });
 
