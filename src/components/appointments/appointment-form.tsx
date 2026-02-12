@@ -14,7 +14,7 @@ import { getHMSSettings } from "@/app/actions/settings"
 import { generateConsultationInvoice, generateOPBookingInvoice, linkInvoiceToAppointment } from "@/app/actions/billing"
 import { getPatientById } from "@/app/actions/patient-v10"
 import { QuickPaymentGateway } from "@/components/hms/quick-payment-gateway"
-import { CreditCard as CardIcon, X, CheckCircle, Printer } from "lucide-react"
+import { CreditCard as CardIcon, X, Printer } from "lucide-react"
 import { OpSlipDialog } from "@/components/hms/reception/op-slip-dialog"
 
 interface AppointmentFormProps {
