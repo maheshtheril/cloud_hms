@@ -78,11 +78,19 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     // Load Initial Patient Data for registration status checks
     useEffect(() => {
         if (selectedPatientId) {
+            // Avoid redundant fetch if we already have the data (e.g. from handlePatientCreated)
+            if (selectedPatientData?.id === selectedPatientId) return;
+
+            // Clear stale data before fetching new
+            setSelectedPatientData(null)
+
             getPatientById(selectedPatientId).then(res => {
                 if (res.success) setSelectedPatientData(res.data)
             })
+        } else {
+            setSelectedPatientData(null)
         }
-    }, [selectedPatientId])
+    }, [selectedPatientId]) // We check selectedPatientData internally to avoid loop
 
     // Auto-select first doctor if none specified handled via component default now
 
@@ -165,12 +173,25 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
 
     const checkRegistrationStatus = () => {
         if (!selectedPatientData) return { shouldCharge: true, status: 'new' };
+
         const metadata = (selectedPatientData.metadata as any) || {};
+
+        // [AUDIT] Explicit check for 'awaiting_payment' status set during creation
+        if (metadata.status === 'awaiting_payment') {
+            return { shouldCharge: true, status: 'awaiting_payment' };
+        }
+
         const expiryDateStr = metadata.registration_expiry;
         if (!expiryDateStr) return { shouldCharge: true, status: 'missing_date' };
+
         const expiryDate = new Date(expiryDateStr);
         const isExpired = expiryDate < new Date();
-        return { shouldCharge: isExpired, status: isExpired ? 'expired' : 'valid', expiryDate: expiryDateStr };
+
+        return {
+            shouldCharge: isExpired,
+            status: isExpired ? 'expired' : 'valid',
+            expiryDate: expiryDateStr
+        };
     };
 
     const handlePatientCreated = (newPatient: any) => {
@@ -183,6 +204,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
             return [newPatient, ...prev];
         })
         setSelectedPatientId(newPatient.id)
+        setSelectedPatientData(newPatient) // [FIX] Set data immediately to avoid stale checks
 
         // 2. SUCCESS-EXIT: Modal Closure
         setShowNewPatientModal(false)
