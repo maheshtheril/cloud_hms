@@ -40,7 +40,10 @@ export function DashboardClient({ user, stats, appointments, patients, doctors, 
                 <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
                         <div className="flex items-center gap-4">
-                            {(dashboardTitle.includes('Ziona') || tenant?.app_name === 'Ziona ERP') ? (
+                            {(dashboardTitle.toLowerCase().includes('ziona') ||
+                                dashboardTitle.toLowerCase().includes('cloud hms') ||
+                                tenant?.app_name === 'Ziona ERP' ||
+                                process.env.NEXT_PUBLIC_APP_BRAND === 'ZIONA') ? (
                                 <ZionaLogo size={44} variant="icon" speed="slow" colorScheme="signature" />
                             ) : null}
                             <div>

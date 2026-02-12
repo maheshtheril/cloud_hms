@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-// Version 1.0.4 - Triggering Redeploy
+// Version 1.0.5 - Cache Busting PWA Icons
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
@@ -35,8 +35,17 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${appName} - Enterprise ERP`,
     description: `World-class ${appName} Management & ERP System`,
-    icons: branding?.logo_url ? { icon: branding.logo_url } : { icon: "/logo-ziona.svg" },
-    manifest: '/manifest.webmanifest',
+    icons: {
+      icon: [
+        { url: `${branding?.logo_url || "/logo-ziona.svg"}?v=1.0.5`, type: "image/svg+xml" },
+      ],
+      shortcut: [`${branding?.logo_url || "/logo-ziona.svg"}?v=1.0.5`],
+      apple: [
+        { url: `${branding?.logo_url || "/logo-ziona.svg"}?v=1.0.5`, sizes: "180x180", type: "image/svg+xml" },
+      ],
+    },
+
+    manifest: '/manifest.webmanifest?v=1.0.5',
     appleWebApp: {
       capable: true,
       statusBarStyle: "default",
@@ -47,6 +56,7 @@ export async function generateMetadata(): Promise<Metadata> {
     },
   };
 }
+
 
 import { AuthProvider } from "@/components/auth-provider";
 

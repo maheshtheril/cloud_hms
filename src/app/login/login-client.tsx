@@ -130,7 +130,9 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                     transition={{ delay: 0.2 }}
                                     className="flex justify-center mb-6"
                                 >
-                                    {appName.includes('Ziona') ? (
+                                    {appName.toLowerCase().includes('ziona') ||
+                                        appName.toLowerCase().includes('cloud hms') ||
+                                        process.env.NEXT_PUBLIC_APP_BRAND === 'ZIONA' ? (
                                         <div className="relative group">
                                             {/* Advanced Glow */}
                                             <div className="absolute inset-0 bg-indigo-500/20 blur-[60px] rounded-full group-hover:bg-indigo-500/30 transition-all duration-1000" />

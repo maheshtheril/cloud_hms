@@ -161,7 +161,10 @@ export function AppSidebar({ menuItems, currentCompany, tenant, user: initialUse
                             <Menu className="h-6 w-6" />
                         </button>
                         <div className="flex items-center gap-2">
-                            {tenant?.app_name?.includes('Ziona') || currentCompany?.name?.includes('Ziona') || tenant?.app_name === 'Ziona ERP' ? (
+                            {tenant?.app_name?.toLowerCase().includes('ziona') ||
+                                currentCompany?.name?.toLowerCase().includes('ziona') ||
+                                tenant?.app_name?.toLowerCase().includes('cloud hms') ||
+                                process.env.NEXT_PUBLIC_APP_BRAND === 'ZIONA' ? (
                                 <ZionaLogo size={32} theme={theme} colorScheme="signature" />
                             ) : (
                                 <>
@@ -225,7 +228,10 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                     <div className="flex items-center justify-between w-full">
                         <div className="flex-1 min-w-0 mr-4">
                             <div className="flex items-center gap-3">
-                                {tenant?.app_name?.includes('Ziona') || currentCompany?.name?.includes('Ziona') || tenant?.app_name === 'Ziona ERP' ? (
+                                {tenant?.app_name?.toLowerCase().includes('ziona') ||
+                                    currentCompany?.name?.toLowerCase().includes('ziona') ||
+                                    tenant?.app_name?.toLowerCase().includes('cloud hms') ||
+                                    process.env.NEXT_PUBLIC_APP_BRAND === 'ZIONA' ? (
                                     <ZionaLogo size={36} theme={theme} colorScheme="signature" />
                                 ) : (
                                     <div className="h-9 w-9 rounded-lg bg-white p-1 shadow-sm ring-1 ring-slate-200 dark:ring-zinc-800 overflow-hidden shrink-0 flex items-center justify-center">
@@ -242,7 +248,7 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                                         )}
                                     </div>
                                 )}
-                                {!tenant?.app_name?.includes('Ziona') && !currentCompany?.name?.includes('Ziona') && (
+                                {!tenant?.app_name?.toLowerCase().includes('ziona') && !tenant?.app_name?.toLowerCase().includes('cloud hms') && (
                                     <div className="font-bold text-lg tracking-tight text-slate-900 dark:text-white truncate">
                                         {currentCompany?.name || tenant?.app_name || tenant?.name || "Enterprise"}
                                     </div>
@@ -258,11 +264,17 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                 ) : (
                     <div className={cn(
                         "flex items-center justify-center rounded-xl",
-                        tenant?.app_name?.includes('Ziona') || currentCompany?.name?.includes('Ziona')
+                        tenant?.app_name?.toLowerCase().includes('ziona') ||
+                            currentCompany?.name?.toLowerCase().includes('ziona') ||
+                            tenant?.app_name?.toLowerCase().includes('cloud hms') ||
+                            process.env.NEXT_PUBLIC_APP_BRAND === 'ZIONA'
                             ? ""
                             : "w-10 h-10 bg-gradient-to-br from-indigo-500 via-purple-500 to-indigo-600 shadow-lg shadow-indigo-500/30 text-white font-bold text-sm overflow-hidden"
                     )}>
-                        {tenant?.app_name?.includes('Ziona') || currentCompany?.name?.includes('Ziona') ? (
+                        {tenant?.app_name?.toLowerCase().includes('ziona') ||
+                            currentCompany?.name?.toLowerCase().includes('ziona') ||
+                            tenant?.app_name?.toLowerCase().includes('cloud hms') ||
+                            process.env.NEXT_PUBLIC_APP_BRAND === 'ZIONA' ? (
                             <ZionaLogo size={32} theme={theme} variant="icon" />
                         ) : tenant?.logo_url ? (
                             <img src={tenant.logo_url} alt={tenant.app_name || 'Logo'} className="h-full w-full object-cover" />
@@ -270,6 +282,7 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                             currentCompany?.logo_url ? (
                                 <img src={currentCompany.logo_url} alt={currentCompany.name} className="h-full w-full object-cover" />
                             ) : (
+
                                 <div className="h-full w-full flex items-center justify-center bg-indigo-600 text-white font-bold">
                                     {tenant?.app_name?.substring(0, 1).toUpperCase() || currentCompany?.name?.substring(0, 1).toUpperCase() || "E"}
                                 </div>
@@ -287,19 +300,21 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
             />
 
             {/* Search (Only Expanded) */}
-            {!collapsed && !isMobile && (
-                <div className="px-4 mb-4">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <Input
-                            placeholder="Search modules..."
-                            className="pl-9 bg-slate-100/50 dark:bg-zinc-800/50 border-slate-200 dark:border-zinc-800 h-9 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:bg-white dark:focus:bg-zinc-900 transition-all"
-                            value={searchText}
-                            onChange={(e) => setSearchText(e.target.value)}
-                        />
+            {
+                !collapsed && !isMobile && (
+                    <div className="px-4 mb-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                            <Input
+                                placeholder="Search modules..."
+                                className="pl-9 bg-slate-100/50 dark:bg-zinc-800/50 border-slate-200 dark:border-zinc-800 h-9 text-sm text-slate-900 dark:text-white placeholder:text-slate-500 dark:placeholder:text-slate-400 focus:bg-white dark:focus:bg-zinc-900 transition-all"
+                                value={searchText}
+                                onChange={(e) => setSearchText(e.target.value)}
+                            />
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Scrollable Navigation */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-8 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-zinc-800 scrollbar-track-transparent">
@@ -336,14 +351,16 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
             </div>
 
             {/* Desktop Collapse Toggle */}
-            {!isMobile && setCollapsed && (
-                <button
-                    onClick={setCollapsed}
-                    className="absolute -right-3 top-24 bg-white dark:bg-zinc-900 text-slate-400 dark:text-zinc-500 p-1.5 rounded-full border border-slate-200 dark:border-zinc-800 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-600 dark:hover:border-indigo-500 transition-all shadow-md z-50 hover:scale-110 active:scale-95"
-                >
-                    {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
-                </button>
-            )}
+            {
+                !isMobile && setCollapsed && (
+                    <button
+                        onClick={setCollapsed}
+                        className="absolute -right-3 top-24 bg-white dark:bg-zinc-900 text-slate-400 dark:text-zinc-500 p-1.5 rounded-full border border-slate-200 dark:border-zinc-800 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-600 dark:hover:border-indigo-500 transition-all shadow-md z-50 hover:scale-110 active:scale-95"
+                    >
+                        {collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+                    </button>
+                )
+            }
 
             {/* User Profile Footer */}
             <div className="p-4 border-t border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 backdrop-blur-sm">
@@ -431,7 +448,7 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
-        </div>
+        </div >
     )
 }
 function MenuItem({ item, level = 0, collapsed, onClick, setCollapsed }: { item: any, level?: number, collapsed: boolean, onClick?: () => void, setCollapsed?: (val: boolean) => void }) {
