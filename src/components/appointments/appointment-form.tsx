@@ -172,7 +172,10 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
     }, [])
 
     const checkRegistrationStatus = () => {
-        if (!selectedPatientData) return { shouldCharge: true, status: 'new' };
+        // [FIX] Ensure we are checking the CURRENTLY selected patient data
+        if (!selectedPatientData || selectedPatientData.id !== selectedPatientId) {
+            return { shouldCharge: true, status: 'loading' };
+        }
 
         const metadata = (selectedPatientData.metadata as any) || {};
 
@@ -185,6 +188,9 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
         if (!expiryDateStr) return { shouldCharge: true, status: 'missing_date' };
 
         const expiryDate = new Date(expiryDateStr);
+        // Handle Invalid Date strings
+        if (isNaN(expiryDate.getTime())) return { shouldCharge: true, status: 'invalid_date' };
+
         const isExpired = expiryDate < new Date();
 
         return {
