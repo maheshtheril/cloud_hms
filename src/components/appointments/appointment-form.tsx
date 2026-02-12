@@ -280,6 +280,9 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                         return;
                     } else {
                         toast({ title: "RCM Error", description: invRes.error, variant: "destructive" });
+                        setIsPending(false); // [FIX] Clear loader on failure
+                        setIsRCMProcessing(false);
+                        return;
                     }
                 }
             }
@@ -413,7 +416,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                                     <input
                                         type="time"
                                         name="time"
-                                        required
+                                        required={suggestedTime !== 'Fully Booked'} // [FIX] Don't require if fully booked (allowing override)
                                         key={suggestedTime}
                                         defaultValue={suggestedTime === 'Fully Booked' ? '' : suggestedTime}
                                         placeholder={suggestedTime === 'Fully Booked' ? 'Overtime/Booked' : ''}
@@ -493,6 +496,18 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                         </div>
                     </div>
                 </div>
+
+                {/* Secondary Save Trigger (Legacy Consistency) */}
+                <div className="p-4 bg-slate-50 dark:bg-white/[0.02] border-t border-gray-100 dark:border-white/5 flex justify-end shrink-0">
+                    <button
+                        type="submit"
+                        disabled={isPending}
+                        className="px-10 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-500/20 font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-3 disabled:opacity-50"
+                    >
+                        {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        {editingAppointment ? 'Update Record' : 'Finalize & Save'}
+                    </button>
+                </div>
             </form>
 
             {/* Overlays Bridge */}
@@ -530,6 +545,12 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                                     await executeSave(pendingFormData);
                                 }
                             }}
+                            onClearance={() => {
+                                setIsPaymentOpen(false);
+                                if (pendingFormData) {
+                                    executeSave(pendingFormData);
+                                }
+                            }}
                             onClose={() => {
                                 setIsPaymentOpen(false);
                                 setIsRCMProcessing(false);
@@ -539,6 +560,6 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                     </div>
                 </div>
             )}
-        </div >
+        </div>
     )
 }
