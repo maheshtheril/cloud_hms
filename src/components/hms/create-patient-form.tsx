@@ -2,7 +2,7 @@
 
 import { createPatientV10 as createPatient, createPatientQuick } from "@/app/actions/patient-v10"
 import { recordPayment } from "@/app/actions/billing"
-import { X, User, Phone, Calendar, Camera, FileText, Shield, MapPin, Mail, AlertCircle, CheckCircle2, Fingerprint, Activity, Printer, CreditCard, Banknote, Smartphone } from "lucide-react"
+import { X, User, Phone, Calendar, Camera, FileText, Shield, MapPin, Mail, AlertCircle, CheckCircle2, Fingerprint, Activity, Printer, CreditCard, Banknote, Smartphone, Mic, MicOff } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { FileUpload } from "@/components/ui/file-upload"
@@ -262,24 +262,26 @@ export function CreatePatientForm({
                             </p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            type="button"
-                            onClick={startListening}
-                            className={`h-10 px-4 rounded-xl flex items-center gap-2 transition-all font-black text-[10px] uppercase tracking-widest ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200'}`}
-                            title="Dictate Record (Alt+V)"
-                        >
-                            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
-                            {isListening ? 'Listening...' : 'Voice Register'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onClose || (() => router.back())}
-                            className="h-10 w-10 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-xl flex items-center justify-center transition-all active:scale-95"
-                        >
-                            <X className="h-4 w-4" />
-                        </button>
-                    </div>
+                    {(onClose || !isDialog) && (
+                        <div className="flex items-center gap-2">
+                            <button
+                                type="button"
+                                onClick={startListening}
+                                className={`h-10 px-4 rounded-xl flex items-center gap-2 transition-all font-black text-[10px] uppercase tracking-widest ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200'}`}
+                                title="Dictate Record (Alt+V)"
+                            >
+                                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                                {isListening ? 'Listening...' : 'Voice Register'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onClose || (() => router.back())}
+                                className="h-10 w-10 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-xl flex items-center justify-center transition-all active:scale-95"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* iPhone-style Segmented Control */}

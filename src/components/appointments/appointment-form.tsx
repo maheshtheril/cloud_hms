@@ -97,6 +97,10 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                 e.preventDefault()
                 startListening()
             }
+            if (e.altKey && e.key === 's') {
+                e.preventDefault()
+                document.getElementById('patient_select')?.focus()
+            }
         }
 
         window.addEventListener('keydown', handleKeyDown)
