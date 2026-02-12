@@ -73,16 +73,14 @@ export async function createDoctor(formData: FormData) {
                 consultation_end_time: consultationEndTime,
                 consultation_slot_duration: consultationSlotDuration,
                 consultation_fee: consultationFee,
-                // TEMPORARY: Commented out until database migration is applied
-                // working_days: (Array.isArray(workingDays) && workingDays.length > 0)
-                //     ? workingDays.filter(d => !!d)
-                //     : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                working_days: (Array.isArray(workingDays) && workingDays.length > 0)
+                    ? workingDays.filter(d => !!d)
+                    : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
                 profile_image_url: profileImageUrl || null,
                 signature_url: signatureUrl || null,
-                // DEFENSIVE: Ensure it is a valid JSON array or object
                 document_urls: Array.isArray(documentUrls) ? documentUrls : [],
                 is_active: true,
-            } as any
+            }
         })
 
         revalidatePath("/hms/doctors")
@@ -142,13 +140,12 @@ export async function updateDoctor(formData: FormData) {
                 consultation_end_time: consultationEndTime,
                 consultation_slot_duration: consultationSlotDuration,
                 consultation_fee: consultationFee,
-                // TEMPORARY: Commented out until database migration is applied
-                // working_days: (Array.isArray(workingDays) && workingDays.length > 0) ? workingDays.filter(d => !!d) : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+                working_days: (Array.isArray(workingDays) && workingDays.length > 0) ? workingDays.filter(d => !!d) : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
                 profile_image_url: profileImageUrl || null,
                 signature_url: signatureUrl || null,
                 document_urls: Array.isArray(documentUrls) ? documentUrls : [],
                 updated_at: new Date()
-            } as any
+            }
         })
         revalidatePath("/hms/doctors")
         return { success: true }

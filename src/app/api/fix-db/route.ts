@@ -8,12 +8,25 @@ export async function GET() {
         // 1. Fix hms_clinicians working_days
         await prisma.$executeRawUnsafe(`
             ALTER TABLE hms_clinicians ALTER COLUMN working_days DROP DEFAULT;
+            ALTER TABLE hms_clinicians ALTER COLUMN working_days TYPE text[] 
+            USING CASE 
+                WHEN working_days IS NULL THEN ARRAY['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']::text[]
+                WHEN working_days::text = '[]' THEN ARRAY['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']::text[]
+                ELSE working_days::text[]
+            END;
             ALTER TABLE hms_clinicians ALTER COLUMN working_days SET DEFAULT ARRAY['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']::text[];
         `);
 
-        // 2. Fix document_urls if needed
+        // 2. Fix document_urls
         await prisma.$executeRawUnsafe(`
-            ALTER TABLE hms_clinicians ALTER COLUMN document_urls SET DEFAULT '[]'::jsonb;
+            ALTER TABLE hms_clinicians ALTER COLUMN document_urls DROP DEFAULT;
+            ALTER TABLE hms_clinicians ALTER COLUMN document_urls TYPE text[] 
+            USING CASE 
+                WHEN document_urls IS NULL THEN ARRAY[]::text[]
+                WHEN document_urls::text = '[]' THEN ARRAY[]::text[]
+                ELSE document_urls::text[]
+            END;
+            ALTER TABLE hms_clinicians ALTER COLUMN document_urls SET DEFAULT ARRAY[]::text[];
         `);
 
         // 3. Optional: Fix the hms_invoice line_items which was the original problem
