@@ -91,6 +91,10 @@ export function CreatePatientForm({
                     form.requestSubmit()
                 }
             }
+            if (e.altKey && e.key === 'v') {
+                e.preventDefault()
+                startListening()
+            }
         }
 
         window.addEventListener('keydown', handleKeyDown)
@@ -141,6 +145,10 @@ export function CreatePatientForm({
 
     // Prompt for missing phone
     const [phone, setPhone] = useState(initialData?.contact?.phone || '');
+    const [firstName, setFirstName] = useState(initialData?.first_name || '');
+    const [lastName, setLastName] = useState(initialData?.last_name || '');
+    const [street, setStreet] = useState(initialData?.contact?.address?.street || '');
+    const [isListening, setIsListening] = useState(false);
 
 
     const handleAgeChange = (value: string, unit: string) => {
@@ -172,6 +180,64 @@ export function CreatePatientForm({
         }
     };
 
+    const startListening = () => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+        if (!SpeechRecognition) {
+            alert("Voice input is not supported in this browser.")
+            return
+        }
+
+        const recognition = new SpeechRecognition()
+        recognition.continuous = false
+        recognition.interimResults = false
+        recognition.lang = 'en-US'
+
+        recognition.onstart = () => setIsListening(true)
+        recognition.onend = () => setIsListening(false)
+        recognition.onresult = (event: any) => {
+            const transcript = event.results[0][0].transcript.toLowerCase()
+            console.log("Voice Registry Transcript:", transcript)
+
+            const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
+            // Name Parsing: "name mahesh theril" or "name mahesh"
+            const nameMatch = transcript.match(/(?:name|is|identify as)\s+([a-z]+)\s*([a-z]*)/i)
+            if (nameMatch) {
+                setFirstName(capitalize(nameMatch[1]))
+                if (nameMatch[2]) setLastName(capitalize(nameMatch[2]))
+            }
+
+            // Age Parsing: "age 25" or "is 25 years old"
+            const ageMatch = transcript.match(/(?:age|is)\s+(\d+)/i)
+            if (ageMatch) {
+                setAge(ageMatch[1])
+                setAgeUnit('Years')
+                // Trigger DOB calculation
+                const currentDate = new Date()
+                const birthYear = currentDate.getFullYear() - parseInt(ageMatch[1])
+                const calculatedDob = new Date(birthYear, currentDate.getMonth(), currentDate.getDate())
+                setDob(calculatedDob.toISOString().split('T')[0])
+            }
+
+            // Place/Address Parsing: "place calicut" or "live in calicut"
+            const placeMatch = transcript.match(/(?:place|address|location|at|from)\s+([a-z0-9\s]+)/i)
+            if (placeMatch) {
+                setStreet(capitalize(placeMatch[1].trim()))
+            }
+
+            // Mobile Parsing: "mobile 9456..." or just the number
+            const mobileMatch = transcript.match(/(?:mobile|phone|number|call)\s*(\d{10})/i)
+            if (mobileMatch) {
+                setPhone(mobileMatch[1])
+            } else {
+                const justNum = transcript.match(/(\d{10})/)
+                if (justNum) setPhone(justNum[1])
+            }
+        }
+
+        recognition.start()
+    }
+
     return (
         <div className={isDialog ? "h-full flex flex-col" : "fixed inset-0 bg-slate-900/60 backdrop-blur-xl flex items-center justify-center z-50 p-2"}>
             <div className={`bg-white dark:bg-slate-950 rounded-2xl shadow-2xl w-full max-w-[95vw] h-[90vh] overflow-hidden flex flex-col border border-white/20 dark:border-slate-800 ${isDialog ? 'h-full shadow-none border-none rounded-none' : 'shadow-[0_20px_50px_rgba(8,_112,_184,_0.7)]'}`}>
@@ -196,15 +262,24 @@ export function CreatePatientForm({
                             </p>
                         </div>
                     </div>
-                    {(onClose || !isDialog) && (
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={startListening}
+                            className={`h-10 px-4 rounded-xl flex items-center gap-2 transition-all font-black text-[10px] uppercase tracking-widest ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200'}`}
+                            title="Dictate Record (Alt+V)"
+                        >
+                            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                            {isListening ? 'Listening...' : 'Voice Register'}
+                        </button>
                         <button
                             type="button"
                             onClick={onClose || (() => router.back())}
-                            className="h-8 w-8 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-lg flex items-center justify-center transition-all active:scale-95"
+                            className="h-10 w-10 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 text-slate-400 hover:text-slate-900 rounded-xl flex items-center justify-center transition-all active:scale-95"
                         >
                             <X className="h-4 w-4" />
                         </button>
-                    )}
+                    </div>
                 </div>
 
                 {/* iPhone-style Segmented Control */}
@@ -370,15 +445,11 @@ export function CreatePatientForm({
                                                 <div className="col-span-9 grid grid-cols-2 gap-3">
                                                     <div>
                                                         <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wide">First Name</label>
-                                                        <VoiceWrapper>
-                                                            <input defaultValue={initialData?.first_name} name="first_name" type="text" placeholder="First Name" required onChange={(e) => e.target.value = e.target.value.replace(/\b\w/g, c => c.toUpperCase())} className="w-full h-10 px-3 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
-                                                        </VoiceWrapper>
+                                                        <input value={firstName} onChange={(e) => setFirstName(e.target.value.replace(/\b\w/g, c => c.toUpperCase()))} name="first_name" type="text" placeholder="First Name" required className="w-full h-10 px-3 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
                                                     </div>
                                                     <div>
                                                         <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wide">Last Name</label>
-                                                        <VoiceWrapper>
-                                                            <input defaultValue={initialData?.last_name} name="last_name" type="text" placeholder="Last Name" onChange={(e) => e.target.value = e.target.value.replace(/\b\w/g, c => c.toUpperCase())} className="w-full h-10 px-3 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
-                                                        </VoiceWrapper>
+                                                        <input value={lastName} onChange={(e) => setLastName(e.target.value.replace(/\b\w/g, c => c.toUpperCase()))} name="last_name" type="text" placeholder="Last Name" className="w-full h-10 px-3 pr-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 dark:text-slate-200 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 transition-all placeholder:text-slate-300" />
                                                     </div>
                                                 </div>
                                             </div>
@@ -474,9 +545,7 @@ export function CreatePatientForm({
                                                 </div>
                                                 <div>
                                                     <label className="block text-[10px] font-bold text-slate-500 mb-1 uppercase tracking-wide">Address</label>
-                                                    <VoiceWrapper>
-                                                        <textarea defaultValue={initialData?.contact?.address?.street} name="street" placeholder="Street Address, Area" className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-200 text-xs outline-none focus:border-indigo-500 transition-all min-h-[50px] resize-none" />
-                                                    </VoiceWrapper>
+                                                    <textarea value={street} onChange={(e) => setStreet(e.target.value)} name="street" placeholder="Street Address, Area" className="w-full p-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl font-bold text-slate-700 dark:text-slate-200 text-xs outline-none focus:border-indigo-500 transition-all min-h-[50px] resize-none" />
                                                     <div className="grid grid-cols-2 gap-2 mt-2">
                                                         <input defaultValue={initialData?.contact?.address?.city} name="city" type="text" placeholder="City" className="w-full h-9 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 outline-none focus:border-indigo-500 transition-all text-xs" />
                                                         <input defaultValue={initialData?.contact?.address?.zip} name="zip" type="text" placeholder="Pincode" className="w-full h-9 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg font-bold text-slate-700 outline-none focus:border-indigo-500 transition-all text-xs" />

@@ -93,6 +93,10 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                 e.preventDefault()
                 if (onMinimize) onMinimize()
             }
+            if (e.altKey && e.key === 'v') {
+                e.preventDefault()
+                startListening()
+            }
         }
 
         window.addEventListener('keydown', handleKeyDown)
@@ -122,6 +126,21 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
         recognition.onend = () => setIsListening(false)
         recognition.onresult = (event: any) => {
             const transcript = event.results[0][0].transcript
+            const lower = transcript.toLowerCase()
+
+            // SMART COMMANDS: Handle "New Patient" / "Add Patient" via Voice
+            if (lower.includes('new') || lower.includes('add') || lower.includes('register')) {
+                if (lower.includes('patient') || lower.includes('person') || lower.includes('entry')) {
+                    setShowNewPatientModal(true)
+                    toast({
+                        title: "Voice Command Recognized",
+                        description: `Opening New Patient Form for: "${transcript}"`,
+                        className: "bg-indigo-600 text-white"
+                    })
+                    return
+                }
+            }
+
             setNotes((prev: string) => (prev ? `${prev} ${transcript}` : transcript))
         }
 
