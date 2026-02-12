@@ -107,7 +107,8 @@ export async function createPatient(existingId: string | null | any, formData: F
             if (chargeRegistration) {
                 // Renewal / First Time Charge on Update
                 const expiryDate = new Date();
-                expiryDate.setFullYear(expiryDate.getFullYear() - 1);
+                // [AUDIT-FIX] Set to past to force payment. 10 years ago to avoid 1-year cycle confusion.
+                expiryDate.setFullYear(expiryDate.getFullYear() - 10);
                 metadata.registration_expiry = expiryDate.toISOString();
                 metadata.status = 'awaiting_payment';
             } else if (currentMeta.registration_date) {
@@ -136,7 +137,8 @@ export async function createPatient(existingId: string | null | any, formData: F
             });
         } else {
             const expiryDate = new Date();
-            expiryDate.setFullYear(expiryDate.getFullYear() - 1);
+            // [AUDIT-FIX] Set to past to force payment. 10 years ago to avoid 1-year cycle confusion.
+            expiryDate.setFullYear(expiryDate.getFullYear() - 10);
             metadata.registration_expiry = expiryDate.toISOString();
             metadata.status = 'awaiting_payment';
 

@@ -891,8 +891,19 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
             );
 
             if (regLine && finalStatus === 'paid' && invoice.patient_id) {
+                // [RCM-FIX] Fetch validity from settings instead of hardcoded 1 year
+                const hmsConfigRecord = await tx.hms_settings.findFirst({
+                    where: {
+                        company_id: companyId,
+                        tenant_id: session.user.tenantId,
+                        key: 'registration_config'
+                    }
+                });
+                const configData = (hmsConfigRecord?.value as any) || {};
+                const validityDays = parseInt(configData.validity || '365');
+
                 const expiryDate = new Date();
-                expiryDate.setDate(expiryDate.getDate() + 365); // Standard 1 year validity
+                expiryDate.setDate(expiryDate.getDate() + validityDays);
 
                 const patient = await tx.hms_patient.findUnique({ where: { id: invoice.patient_id } });
                 const currentMeta = (patient?.metadata as any) || {};

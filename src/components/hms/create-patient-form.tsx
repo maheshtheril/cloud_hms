@@ -55,7 +55,7 @@ export function CreatePatientForm({
 
     // Dynamic Settings State
     const [registrationFee, setRegistrationFee] = useState(propFee ?? 100);
-    const [registrationValidity, setRegistrationValidity] = useState(365);
+    const [registrationValidity, setRegistrationValidity] = useState(0); // [RCM-FIX] Start at 0, sync from settings
     const [registrationProductId, setRegistrationProductId] = useState(propId);
     const [registrationProductName, setRegistrationProductName] = useState(propName);
     const [registrationProductDescription, setRegistrationProductDescription] = useState(propDesc);
