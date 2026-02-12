@@ -584,6 +584,7 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                             <CreatePatientForm
                                 onClose={() => setShowNewPatientModal(false)}
                                 onSuccess={handlePatientCreated}
+                                hideBilling={false}
                             />
                         </div>
                     </div>

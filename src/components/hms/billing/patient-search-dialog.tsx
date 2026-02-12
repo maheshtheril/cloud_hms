@@ -200,7 +200,7 @@ export function PatientSearchWithCreate({ onSelect, selectedPatientId }: Patient
                     <CreatePatientForm
                         onClose={() => setDialogOpen(false)}
                         onSuccess={handlePatientCreated}
-                        hideBilling={true}
+                        hideBilling={false}
                         isDialog={true}
                     />
                 </DialogContent>

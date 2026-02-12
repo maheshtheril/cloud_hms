@@ -18,5 +18,6 @@ export default async function NewPatientPage() {
         registrationProductId={registrationProductId}
         registrationProductName={registrationProductName}
         registrationProductDescription={registrationProductDescription}
+        hideBilling={false}
     />
 }

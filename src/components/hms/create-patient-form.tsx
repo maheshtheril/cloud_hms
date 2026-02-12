@@ -556,6 +556,56 @@ export function CreatePatientForm({
                                             </div>
                                         </div>
                                     </div>
+
+                                    {/* Billing & Fees Node (RCM) */}
+                                    {!hideBilling && (
+                                        <div className="mt-6 bg-indigo-50 dark:bg-indigo-900/10 p-5 rounded-[2rem] border border-indigo-100 dark:border-indigo-900/30 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <h3 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                    <CreditCard className="h-4 w-4" /> Revenue Identity Node
+                                                </h3>
+                                                {regStatus.status === 'valid' && regStatus.expiryDate && (
+                                                    <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-2">
+                                                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                        <span className="text-[9px] font-black text-emerald-600 uppercase tracking-widest">ACTIVE TILL {new Date(regStatus.expiryDate).toLocaleDateString()}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-3xl border border-indigo-100 dark:border-slate-800 shadow-sm transition-all hover:shadow-md">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="h-12 w-12 bg-indigo-600/10 text-indigo-600 rounded-2xl flex items-center justify-center text-xl font-black italic border border-indigo-600/20 shadow-sm">₹</div>
+                                                    <div>
+                                                        <p className="text-sm font-black text-slate-900 dark:text-white tracking-tight uppercase">Registration & Identity Fee</p>
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Institutional Standard Service Charge</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-6">
+                                                    <div className="text-right">
+                                                        <p className="text-xl font-black text-indigo-600 italic">₹{registrationFee}</p>
+                                                    </div>
+                                                    <label className="relative inline-flex items-center cursor-pointer">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={chargeRegistration}
+                                                            onChange={(e) => setChargeRegistration(e.target.checked)}
+                                                            className="sr-only peer"
+                                                        />
+                                                        <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600"></div>
+                                                    </label>
+                                                </div>
+                                            </div>
+
+                                            {chargeRegistration && (
+                                                <div className="mt-4 flex items-center gap-3 px-2">
+                                                    <div className="h-2 w-2 rounded-full bg-indigo-400 animate-bounce" />
+                                                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest italic leading-relaxed">
+                                                        Automated Invoice Generation & Payment Terminal will initiate upon submission.
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
