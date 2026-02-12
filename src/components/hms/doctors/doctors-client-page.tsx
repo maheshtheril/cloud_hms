@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Stethoscope, Plus, Users, Award, TrendingUp, Sparkles, Mail, Phone, Shield, Search } from "lucide-react"
 import { AddDoctorDialog } from "@/components/hms/doctors/add-doctor-dialog"
 import { ZionaLogo } from "@/components/branding/ziona-logo"
+import { ClinicianDeleteButton } from "@/components/hms/doctors/clinician-delete-button"
 
 interface Doctor {
     id: string
@@ -171,17 +172,20 @@ export function DoctorsClientPage({ doctors, stats, departments, roles, speciali
                             >
                                 {/* Status Badge */}
                                 <div className="flex items-center justify-between mb-4">
-                                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${doc.is_active
-                                        ? 'bg-green-50 text-green-600'
-                                        : 'bg-red-50 text-red-600'
-                                        }`}>
-                                        {doc.is_active ? '● Active' : '○ Inactive'}
-                                    </span>
-                                    {doc.hms_specializations && (
-                                        <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-medium">
-                                            {doc.hms_specializations.name}
+                                    <div className="flex items-center gap-2">
+                                        <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${doc.is_active
+                                            ? 'bg-green-50 text-green-600'
+                                            : 'bg-red-50 text-red-600'
+                                            }`}>
+                                            {doc.is_active ? '● Active' : '○ Inactive'}
                                         </span>
-                                    )}
+                                        {doc.hms_specializations && (
+                                            <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[9px] font-medium">
+                                                {doc.hms_specializations.name}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <ClinicianDeleteButton clinicianId={doc.id} />
                                 </div>
 
                                 {/* Staff Info - Smarter Prefix Logic */}

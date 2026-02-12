@@ -4,6 +4,7 @@ import { notFound } from "next/navigation"
 import { ArrowLeft, Mail, Phone, Award, Briefcase, Calendar, Clock, User } from "lucide-react"
 
 import { DoctorProfileActions } from "@/components/hms/doctors/doctor-profile-actions"
+import { ClinicianDeleteButton } from "@/components/hms/doctors/clinician-delete-button"
 
 export default async function DoctorDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params
@@ -93,6 +94,7 @@ export default async function DoctorDetailPage({ params }: { params: Promise<{ i
                         <Calendar className="h-4 w-4" />
                         View Full Schedule
                     </button>
+                    <ClinicianDeleteButton clinicianId={doctor.id} />
                 </div>
             </div>
 

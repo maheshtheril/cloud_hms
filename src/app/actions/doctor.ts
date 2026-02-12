@@ -241,3 +241,38 @@ export async function initializeDoctorProfile(_formData: FormData) {
     }
 }
 
+export async function deleteClinician(id: string) {
+    const session = await auth()
+    const tenantId = session?.user?.tenantId
+    const isAdmin = session?.user?.isAdmin
+
+    if (!tenantId || !isAdmin) {
+        return { error: "Unauthorized: Admin access required for permanent removal" }
+    }
+
+    try {
+        // WORLD-CLASS SAFETY: Check for transaction history
+        const [appointmentCount, encounterCount] = await Promise.all([
+            prisma.hms_appointments.count({
+                where: { clinician_id: id, tenant_id: tenantId }
+            }),
+            prisma.hms_encounter.count({
+                where: { clinician_id: id, tenant_id: tenantId }
+            })
+        ])
+
+        if (appointmentCount > 0 || encounterCount > 0) {
+            return { error: "This personnel has clinical history (appointments/encounters). Permanent deletion is blocked to maintain record integrity. Please use 'Inactive' status instead." }
+        }
+
+        await prisma.hms_clinicians.delete({
+            where: { id, tenant_id: tenantId }
+        })
+
+        revalidatePath("/hms/doctors")
+        return { success: true }
+    } catch (error: any) {
+        console.error("Failed to delete clinician:", error)
+        return { error: "Internal Error: Could not remove record. They may have linked metadata." }
+    }
+}
