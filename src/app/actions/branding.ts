@@ -10,6 +10,25 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
     const appBrand = process.env.NEXT_PUBLIC_APP_BRAND?.toUpperCase();
 
     try {
+        // 1. Hardcoded System Brands (Highest Priority for Platform Continuity)
+        if (host.toLowerCase().includes('seeakk.com') || appBrand === 'SEEAKK') {
+            return {
+                app_name: "Seeakk CRM",
+                logo_url: "/branding/seeakk_logo.png",
+                name: "Seeakk Solutions",
+                isPublic: true
+            };
+        }
+
+        if (appBrand === 'ZIONA' || appBrand === 'CLOUD_HMS' || host.toLowerCase().includes('cloud-hms')) {
+            return {
+                app_name: "Ziona ERP",
+                logo_url: "/logo-ziona.svg",
+                name: "Ziona Solutions",
+                isPublic: true
+            };
+        }
+
         let tenant = null;
 
         // 1. Database Lookup for Custom Tenants (Highest Priority)
@@ -53,25 +72,6 @@ export async function getTenantBrandingByHost(slugOverride?: string) {
                 logo_url: tenant.logo_url || (tenant.company_settings?.[0]?.company?.logo_url) || "/logo-ziona.svg",
                 name: tenant.name || "Ziona Solutions",
                 isPublic
-            };
-        }
-
-        // 2. Hardcoded System Brands (Fallback/Optimization)
-        if (appBrand === 'ZIONA' || appBrand === 'CLOUD_HMS' || host.toLowerCase().includes('cloud-hms')) {
-            return {
-                app_name: "Ziona ERP",
-                logo_url: "/logo-ziona.svg",
-                name: "Ziona Solutions",
-                isPublic: true
-            };
-        }
-
-        if (host.toLowerCase().includes('seeakk.com') || appBrand === 'SEEAKK') {
-            return {
-                app_name: "Seeakk CRM",
-                logo_url: "/branding/seeakk_logo.png",
-                name: "Seeakk Solutions",
-                isPublic: true
             };
         }
 
