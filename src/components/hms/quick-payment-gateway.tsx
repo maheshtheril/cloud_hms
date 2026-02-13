@@ -73,7 +73,7 @@ export function QuickPaymentGateway({
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-2xl p-0 border-none rounded-[3rem] overflow-hidden shadow-2xl bg-white dark:bg-slate-950 ring-1 ring-slate-200 dark:ring-white/10">
+            <DialogContent className="max-w-2xl p-0 border-none rounded-[3rem] overflow-hidden shadow-2xl bg-white dark:bg-slate-950 ring-1 ring-slate-200 dark:ring-white/10 z-[300]">
                 <AnimatePresence mode="wait">
                     {step === 'pay' ? (
                         <motion.div
