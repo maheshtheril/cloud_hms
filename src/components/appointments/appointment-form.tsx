@@ -611,35 +611,21 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
             )}
 
             {isPaymentOpen && invoiceForPayment && (
-                <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl p-4">
-                    <div className="w-full max-w-lg shadow-[0_0_100px_rgba(79,70,229,0.3)] animate-in fade-in zoom-in-95 duration-300 relative">
-                        <div className="absolute -top-16 left-1/2 -translate-x-1/2 text-white/50 text-center">
-                            <ShieldAlert className="h-10 w-10 mx-auto mb-2 text-indigo-400 animate-pulse" />
-                            <h2 className="text-sm font-black uppercase tracking-widest">Financial Clearance Required</h2>
-                        </div>
-                        <QuickPaymentGateway
-                            isOpen={isPaymentOpen}
-                            invoice={invoiceForPayment}
-                            onSuccess={async () => {
-                                setIsPaymentOpen(false);
-                                if (pendingFormData) {
-                                    await executeSave(pendingFormData);
-                                }
-                            }}
-                            onClearance={() => {
-                                setIsPaymentOpen(false);
-                                if (pendingFormData) {
-                                    executeSave(pendingFormData);
-                                }
-                            }}
-                            onClose={() => {
-                                setIsPaymentOpen(false);
-                                setIsRCMProcessing(false);
-                                toast({ title: "Session Deferred", description: "Payment must be completed to finalize encounter." });
-                            }}
-                        />
-                    </div>
-                </div>
+                <QuickPaymentGateway
+                    isOpen={isPaymentOpen}
+                    invoice={invoiceForPayment}
+                    onSuccess={async () => {
+                        setIsPaymentOpen(false);
+                        if (pendingFormData) {
+                            await executeSave(pendingFormData);
+                        }
+                    }}
+                    onClose={() => {
+                        setIsPaymentOpen(false);
+                        setIsRCMProcessing(false);
+                        toast({ title: "Session Deferred", description: "Payment must be completed to finalize encounter." });
+                    }}
+                />
             )}
         </div>
     )

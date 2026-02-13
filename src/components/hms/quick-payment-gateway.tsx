@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import {
     CreditCard, Banknote as BanknoteIcon,
     Smartphone, CheckCircle2, Printer,
-    ArrowRight, Star, ShieldCheck
+    ArrowRight, Star, ShieldCheck, Loader2
 } from "lucide-react"
 import { ZionaLogo } from "@/components/branding/ziona-logo"
 import { recordPayment } from "@/app/actions/billing"
@@ -26,7 +26,7 @@ export function QuickPaymentGateway({
     isOpen: boolean,
     onClose: () => void,
     invoice: any,
-    onSuccess?: () => void
+    onSuccess: () => void
 }) {
     const [method, setMethod] = useState<'cash' | 'upi' | 'card' | 'bank_transfer'>('cash')
     const [amount, setAmount] = useState<string>(Number(invoice?.total || 0).toString())
@@ -59,7 +59,8 @@ export function QuickPaymentGateway({
 
             if (res.success) {
                 setStep('success')
-                if (onSuccess) onSuccess()
+                // We DON'T call onSuccess immediately here because we want to show the success state.
+                // The user will click "Done" to close and trigger the parent save.
             } else {
                 toast.error(res.error || "Payment recording failed")
             }
@@ -216,7 +217,10 @@ export function QuickPaymentGateway({
                                 </Button>
                                 <Button
                                     variant="ghost"
-                                    onClick={onClose}
+                                    onClick={() => {
+                                        onClose();
+                                        onSuccess();
+                                    }}
                                     className="flex-1 h-16 rounded-2xl text-slate-500 font-black uppercase tracking-widest hover:bg-slate-100"
                                 >
                                     Done
