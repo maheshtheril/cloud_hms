@@ -11,9 +11,9 @@ import { useRouter } from "next/navigation"
 import { ZionaLogo } from "@/components/branding/ziona-logo"
 import { Maximize2, Minimize2, Mic, MicOff, ShieldAlert, BadgeCheck, Sparkles, Loader2, Minus } from "lucide-react"
 import { getHMSSettings } from "@/app/actions/settings"
-import { generateConsultationInvoice, generateOPBookingInvoice, linkInvoiceToAppointment } from "@/app/actions/billing"
+import { generateConsultationInvoice } from "@/app/actions/billing"
 import { getPatientById } from "@/app/actions/patient-v10"
-import { QuickPaymentGateway } from "@/components/hms/quick-payment-gateway"
+import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 import { CreditCard as CardIcon, X, Printer } from "lucide-react"
 import { OpSlipDialog } from "@/components/hms/reception/op-slip-dialog"
 
@@ -21,6 +21,10 @@ interface AppointmentFormProps {
     patients: any[]
     doctors: any[]
     appointments?: any[]
+    billableItems?: any[]
+    taxConfig?: any
+    uoms?: any[]
+    currency?: string
     initialData?: {
         patient_id?: string
         date?: string
@@ -31,7 +35,19 @@ interface AppointmentFormProps {
     onMinimize?: () => void
 }
 
-export function AppointmentForm({ patients, doctors, appointments = [], initialData = {}, editingAppointment, onClose, onMinimize }: AppointmentFormProps) {
+export function AppointmentForm({
+    patients,
+    doctors,
+    appointments = [],
+    billableItems = [],
+    taxConfig = { defaultTax: null, taxRates: [] },
+    uoms = [],
+    currency = '₹',
+    initialData = {},
+    editingAppointment,
+    onClose,
+    onMinimize
+}: AppointmentFormProps) {
     const { toast } = useToast()
     const router = useRouter()
     const { patient_id: initialPatientId, date: initialDate, time: initialTime } = initialData
@@ -248,6 +264,27 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                 // Ensure consultation invoice exists if not pre-generated
                 if (aptId) await generateConsultationInvoice(aptId);
 
+                // [NEW] CHECK FOR FEES DUE (Registration only as requested)
+                const regStatus = checkRegistrationStatus();
+                if (regStatus.shouldCharge && !editingAppointment) {
+                    // Find registration product in billableItems
+                    const regProduct = billableItems.find(i =>
+                        (i.name?.toLowerCase().includes('registration') || i.label?.toLowerCase().includes('registration')) &&
+                        i.type === 'service'
+                    );
+
+                    const initialItems = [];
+                    if (regProduct) {
+                        initialItems.push({
+                            ...regProduct,
+                            quantity: 1
+                        });
+                    }
+
+                    setInvoiceForPayment({ initialItems, appointmentId: aptId });
+                    setIsPaymentOpen(true);
+                }
+
                 // [WORLD CLASS] Instead of immediate exit, show Success Stage
                 setSaveSuccess(editingAppointment ? { ...editingAppointment, id: aptId } : res.data);
 
@@ -272,36 +309,6 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
 
         setIsPending(true)
         try {
-            if (!editingAppointment) {
-                const regStatus = checkRegistrationStatus();
-                const clinician = doctors.find(d => d.id === selectedClinicianId);
-                const consultationFee = Number(clinician?.consultation_fee) || 0;
-                const totalDue = (regStatus.shouldCharge ? 150 : 0) + consultationFee; // Rough estimate for check
-
-                if (totalDue > 0) {
-                    setIsRCMProcessing(true);
-                    const invRes = await generateOPBookingInvoice({
-                        patientId: selectedPatientId,
-                        clinicianId: selectedClinicianId,
-                        includeRegistration: regStatus.shouldCharge
-                    }) as any;
-
-                    if (invRes.success) {
-                        setInvoiceForPayment(invRes.data);
-                        setPendingFormData(formData);
-                        setIsPaymentOpen(true);
-                        setIsPending(false);
-                        return;
-                    } else if (invRes.error && invRes.error.includes("No fees due")) {
-                        // Fall through if it was just zero-fee validation
-                    } else {
-                        toast({ title: "RCM Error", description: invRes.error, variant: "destructive" });
-                        setIsPending(false);
-                        setIsRCMProcessing(false);
-                        return;
-                    }
-                }
-            }
             await executeSave(formData);
         } catch (error: any) {
             toast({ title: "Finalization Error", description: error.message, variant: "destructive" })
@@ -618,22 +625,23 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                 </div>
             )}
 
-            {isPaymentOpen && invoiceForPayment && (
-                <QuickPaymentGateway
-                    isOpen={isPaymentOpen}
-                    invoice={invoiceForPayment}
-                    onSuccess={async () => {
-                        setIsPaymentOpen(false);
-                        if (pendingFormData) {
-                            await executeSave(pendingFormData);
-                        }
-                    }}
-                    onClose={() => {
-                        setIsPaymentOpen(false);
-                        setIsRCMProcessing(false);
-                        toast({ title: "Session Deferred", description: "Payment must be completed to finalize encounter." });
-                    }}
-                />
+            {isPaymentOpen && (
+                <div className="fixed inset-0 z-[300] bg-white dark:bg-slate-900 border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
+                    <CompactInvoiceEditor
+                        patients={patients}
+                        billableItems={billableItems}
+                        uoms={uoms}
+                        taxConfig={taxConfig}
+                        initialPatientId={selectedPatientId}
+                        initialMedicines={invoiceForPayment?.initialItems}
+                        appointmentId={invoiceForPayment?.appointmentId}
+                        currency={currency}
+                        onClose={() => {
+                            setIsPaymentOpen(false);
+                            setIsRCMProcessing(false);
+                        }}
+                    />
+                </div>
             )}
         </div>
     )

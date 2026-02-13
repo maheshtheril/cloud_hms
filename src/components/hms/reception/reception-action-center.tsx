@@ -856,6 +856,10 @@ export function ReceptionActionCenter({
                                 patients={patients}
                                 doctors={doctors}
                                 editingAppointment={editingAppointment}
+                                billableItems={billableItems}
+                                taxConfig={taxConfig}
+                                uoms={uoms}
+                                currency={currency}
                             />
                         </div>
                     </motion.div>
