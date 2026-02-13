@@ -619,21 +619,25 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
             )}
 
             {isPaymentOpen && invoiceForPayment && (
-                <QuickPaymentGateway
-                    isOpen={isPaymentOpen}
-                    invoice={invoiceForPayment}
-                    onSuccess={async () => {
-                        setIsPaymentOpen(false);
-                        if (pendingFormData) {
-                            await executeSave(pendingFormData);
-                        }
-                    }}
-                    onClose={() => {
-                        setIsPaymentOpen(false);
-                        setIsRCMProcessing(false);
-                        toast({ title: "Session Deferred", description: "Payment must be completed to finalize encounter." });
-                    }}
-                />
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
+                    <div className="w-full max-w-2xl animate-in zoom-in-95 duration-300">
+                        <QuickPaymentGateway
+                            isOpen={isPaymentOpen}
+                            invoice={invoiceForPayment}
+                            onSuccess={async () => {
+                                setIsPaymentOpen(false);
+                                if (pendingFormData) {
+                                    await executeSave(pendingFormData);
+                                }
+                            }}
+                            onClose={() => {
+                                setIsPaymentOpen(false);
+                                setIsRCMProcessing(false);
+                                toast({ title: "Session Deferred", description: "Payment must be completed to finalize encounter." });
+                            }}
+                        />
+                    </div>
+                </div>
             )}
         </div>
     )
