@@ -343,11 +343,19 @@ export function AppointmentForm({ patients, doctors, appointments = [], initialD
                             <OpSlipDialog
                                 appointment={{ ...saveSuccess, patient: saveSuccess.patient || selectedPatientData, clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId) }}
                                 trigger={
-                                    <button className="flex-1 h-16 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-xl shadow-indigo-500/20 font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-active active:scale-95 text-sm">
+                                    <button className="flex-[1.5] h-16 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-xl shadow-indigo-500/20 font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-active active:scale-95 text-sm">
                                         <Printer className="h-6 w-6" /> Print OP Ticket
                                     </button>
                                 }
                             />
+                            {invoiceForPayment && (
+                                <button
+                                    onClick={() => window.open(`/hms/billing/${invoiceForPayment.id}/print`, '_blank')}
+                                    className="flex-1 h-16 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl shadow-xl shadow-emerald-500/20 font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-active active:scale-95 text-sm"
+                                >
+                                    <IndianRupee className="h-5 w-5" /> Print Bill
+                                </button>
+                            )}
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <button

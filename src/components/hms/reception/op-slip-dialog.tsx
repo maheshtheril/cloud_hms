@@ -34,99 +34,187 @@ export function OpSlipDialog({ appointment, trigger }: OpSlipDialogProps) {
                 <head>
                     <title>OP Slip - ${patientName}</title>
                     <style>
+                        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
                         body { 
                             font-family: 'Inter', sans-serif; 
-                            line-height: 1.6; 
-                            padding: ${withLetterhead ? '4cm 2cm 2cm 2cm' : '2cm'};
+                            line-height: 1.4; 
+                            padding: ${withLetterhead ? '4.5cm 1.5cm 1.5cm 1.5cm' : '1.5cm'};
                             color: #1a202c;
+                            background: white;
                         }
                         @media print {
-                            @page { margin: 0; }
+                            @page { margin: 0; size: A4; }
                             body { margin: 0; }
                         }
                         .header { 
                             text-align: center; 
-                            margin-bottom: 2cm; 
+                            margin-bottom: 1cm; 
                             display: ${withLetterhead ? 'none' : 'block'};
+                            border-bottom: 3px solid #000;
+                            padding-bottom: 10px;
                         }
-                        .header h1 { margin: 0; text-transform: uppercase; letter-spacing: 2px; }
+                        .header h1 { margin: 0; font-size: 28px; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; }
+                        .header p { margin: 0; font-weight: 700; font-size: 12px; color: #4a5568; text-transform: uppercase; tracking: 2px; }
+                        
                         .ticket-info {
                             display: flex;
                             justify-content: space-between;
-                            border-bottom: 2px solid #000;
-                            padding-bottom: 10px;
-                            margin-bottom: 30px;
+                            align-items: center;
+                            margin-top: 20px;
+                            margin-bottom: 25px;
+                            background: #f7fafc;
+                            padding: 15px;
+                            border-radius: 8px;
                         }
+                        .token-box {
+                            background: #000;
+                            color: #white;
+                            padding: 10px 20px;
+                            border-radius: 6px;
+                            text-align: center;
+                        }
+                        .token-label { font-size: 10px; font-weight: 900; color: #cbd5e0; text-transform: uppercase; }
+                        .token-value { font-size: 24px; font-weight: 900; color: white; }
+
                         .info-grid {
                             display: grid;
-                            grid-template-cols: 1fr 1fr;
-                            gap: 20px;
-                            margin-bottom: 40px;
+                            grid-template-cols: 1.5fr 1fr;
+                            gap: 30px;
+                            margin-bottom: 30px;
                         }
-                        .label { font-weight: bold; text-transform: uppercase; font-size: 10px; color: #718096; }
-                        .value { font-weight: 900; font-size: 16px; margin-top: 4px; }
-                        .rx-section {
-                            border: 1px dashed #cbd5e0;
-                            height: 15cm;
+                        .section-title { 
+                            font-size: 11px; 
+                            font-weight: 900; 
+                            text-transform: uppercase; 
+                            color: white; 
+                            background: #2d3748;
+                            padding: 4px 10px;
+                            display: inline-block;
+                            margin-bottom: 10px;
+                            border-radius: 4px;
+                        }
+                        .label { font-weight: bold; text-transform: uppercase; font-size: 10px; color: #718096; display: block; }
+                        .value { font-weight: 900; font-size: 16px; margin-bottom: 4px; line-height: 1.1; }
+
+                        /* CLINICAL SECTIONS */
+                        .vitals-grid {
+                            display: grid;
+                            grid-template-cols: repeat(5, 1fr);
+                            gap: 10px;
+                            border: 2px solid #edf2f7;
+                            padding: 15px;
+                            border-radius: 12px;
+                            margin-bottom: 30px;
+                        }
+                        .vital-box {
+                            border-right: 1px solid #edf2f7;
+                            padding-right: 10px;
+                        }
+                        .vital-box:last-child { border: none; }
+                        .vital-input { border-bottom: 1px dashed #cbd5e0; height: 25px; margin-top: 5px; }
+
+                        .clinical-container {
+                            border: 2px solid #2d3748;
+                            border-radius: 12px;
+                            min-height: 16cm;
+                            padding: 20px;
                             position: relative;
-                            margin-top: 40px;
-                            display: flex;
-                            align-items: center;
-                            justify-content: center;
                         }
-                        .rx-section::after {
-                            content: '℞ (PRESCRIPTION SPACE)';
-                            font-size: 40px;
+                        .rx-symbol {
+                            font-size: 60px;
                             font-weight: 900;
                             color: #edf2f7;
+                            position: absolute;
+                            top: 10px;
+                            left: 20px;
                             font-style: italic;
+                            z-index: -1;
                         }
+                        
                         .footer {
-                            margin-top: 50px;
-                            text-align: right;
+                            margin-top: 30px;
+                            display: flex;
+                            justify-content: space-between;
                             font-size: 10px;
                             color: #a0aec0;
+                            border-top: 1px solid #edf2f7;
+                            padding-top: 10px;
                         }
                     </style>
                 </head>
                 <body>
                     <div class="header">
-                        <h1>Hospital Visit Slip</h1>
-                        <p>Clinical Out-Patient Department</p>
+                        <h1>Clinical OP Visit Slip</h1>
+                        <p>Ziona Medical Center - Outpatient Department</p>
                     </div>
                     
                     <div class="ticket-info">
                         <div>
-                            <span class="label">Token / OP No</span>
-                            <div class="value">${tokenNumber}</div>
+                            <span class="label">Patient Name & ID</span>
+                            <div class="value">${patientName}</div>
+                            <div style="font-size: 12px; font-weight: 700;">ID: ${appointment.patient?.patient_number} | ${appointment.patient?.gender || 'N/A'}</div>
                         </div>
-                        <div style="text-align: right;">
-                            <span class="label">Date & Time</span>
-                            <div class="value">${date} | ${time}</div>
+                        <div class="token-box">
+                            <span class="token-label">OP TOKEN</span>
+                            <div class="token-value">#${tokenNumber}</div>
                         </div>
                     </div>
 
                     <div class="info-grid">
                         <div>
-                            <span class="label">Patient Name</span>
-                            <div class="value">${patientName}</div>
-                            <div style="font-size: 11px; font-weight: bold; color: #4a5568;">
-                                ID: ${appointment.patient?.patient_number} | ${appointment.patient?.gender || 'N/A'}
+                            <span class="section-title">Encounter Details</span>
+                            <div style="display: grid; grid-template-cols: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <span class="label">Consulting With</span>
+                                    <div class="value">${doctorName}</div>
+                                    <div style="font-size: 10px; font-weight: bold;">${appointment.clinician?.role || 'Clinician'}</div>
+                                </div>
+                                <div>
+                                    <span class="label">Date & Time</span>
+                                    <div class="value">${date}</div>
+                                    <div style="font-size: 10px; font-weight: bold;">${time}</div>
+                                </div>
                             </div>
                         </div>
                         <div>
-                            <span class="label">Consulting Physician</span>
-                            <div class="value">${doctorName}</div>
-                            <div style="font-size: 11px; font-weight: bold; color: #4a5568;">
-                                ${appointment.clinician?.role || 'General Practitioner'}
-                            </div>
+                            <span class="section-title">Visit Protocol</span>
+                            <div class="value" style="text-transform: uppercase; font-size: 12px;">${appointment.type || 'Standard Consultation'}</div>
+                            <div style="font-size: 10px; font-weight: bold;">Priority: ${appointment.priority?.toUpperCase() || 'NORMAL'}</div>
                         </div>
                     </div>
 
-                    <div class="rx-section"></div>
+                    <span class="section-title">Nurse Vitals Audit</span>
+                    <div class="vitals-grid">
+                        <div class="vital-box">
+                            <span class="label">BP (mmHg)</span>
+                            <div class="vital-input"></div>
+                        </div>
+                        <div class="vital-box">
+                            <span class="label">Pulse (bpm)</span>
+                            <div class="vital-input"></div>
+                        </div>
+                        <div class="vital-box">
+                            <span class="label">Temp (°F)</span>
+                            <div class="vital-input"></div>
+                        </div>
+                        <div class="vital-box">
+                            <span class="label">SPO2 (%)</span>
+                            <div class="vital-input"></div>
+                        </div>
+                        <div class="vital-box">
+                            <span class="label">Weight (kg)</span>
+                            <div class="vital-input"></div>
+                        </div>
+                    </div>
+
+                    <span class="section-title">Clinical Consultation & Rx</span>
+                    <div class="clinical-container">
+                        <div class="rx-symbol">℞</div>
+                    </div>
 
                     <div class="footer">
-                        System Generated Document. Valid for 24 hours.
+                        <div>V10-OPP-PROTOCOL | SYSTEM GENERATED</div>
+                        <div>SIGNATURE: __________________________</div>
                     </div>
 
                     <script>
