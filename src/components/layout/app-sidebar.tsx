@@ -363,6 +363,15 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
                 )
             }
 
+            {/* DEBUG VERSION BADGE */}
+            {!collapsed && (
+                <div className="px-6 py-2">
+                    <div className="bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded text-center animate-pulse">
+                        DEBUG BUILD: 73fa25e
+                    </div>
+                </div>
+            )}
+
             {/* User Profile Footer */}
             <div className="p-4 border-t border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-zinc-900/50 backdrop-blur-sm">
                 <DropdownMenu>
