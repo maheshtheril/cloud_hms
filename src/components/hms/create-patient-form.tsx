@@ -9,7 +9,6 @@ import { FileUpload } from "@/components/ui/file-upload"
 import { VoiceWrapper } from "@/components/ui/voice-wrapper"
 import { getHMSSettings } from "@/app/actions/settings"
 import { PatientIDCard } from "@/components/hms/patient-id-card"
-import { QuickPaymentGateway } from "./quick-payment-gateway"
 import { ZionaLogo } from "@/components/branding/ziona-logo"
 
 
@@ -139,9 +138,6 @@ export function CreatePatientForm({
     const [chargeRegistration, setChargeRegistration] = useState(hideBilling ? false : regStatus.shouldCharge);
     const [waiveFee, setWaiveFee] = useState(false);
 
-    // Payment Gateway State
-    const [isPaymentOpen, setIsPaymentOpen] = useState(false);
-    const [invoiceForPayment, setInvoiceForPayment] = useState<any>(null);
 
     // Prompt for missing phone
     const [phone, setPhone] = useState(initialData?.contact?.phone || '');
@@ -366,14 +362,6 @@ export function CreatePatientForm({
                             // Success BRANCH: Just Save & Close/Print ID
                             setSavedPatient(patient);
 
-                            // -----------------------------------------------------------------------------------
-                            // RCM OVERRIDE: If an invoice was generated, interupt the flow with Payment Gateway
-                            // -----------------------------------------------------------------------------------
-                            if (invoiceId) {
-                                setInvoiceForPayment({ id: invoiceId, total: registrationFee, invoice_number: 'PENDING' });
-                                setIsPaymentOpen(true);
-                                return; // Stop redirection/closing until payment is handled
-                            }
 
                             if (onSuccess) {
                                 setIsPending(false);
@@ -699,23 +687,6 @@ export function CreatePatientForm({
                 )
             }
 
-            <QuickPaymentGateway
-                isOpen={isPaymentOpen}
-                onClose={() => {
-                    setIsPaymentOpen(false);
-                    // After payment, follow the usual success flow (Show ID card or redirect)
-                    if (printIDCard) {
-                        setShowIDCard(true);
-                    } else {
-                        if (onSuccess) onSuccess(savedPatient);
-                        else router.push('/hms/patients');
-                    }
-                }}
-                invoice={invoiceForPayment}
-                onSuccess={() => {
-                    // This is handled by the gateway's success step, but we can do extra here if needed
-                }}
-            />
 
         </div >
 

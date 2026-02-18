@@ -908,9 +908,7 @@ export function ReceptionActionCenter({
                     </div>
                 </DialogContent>
             </Dialog>
-
-        </Dialog>
-        </div >
+        </div>
     )
 }
 
