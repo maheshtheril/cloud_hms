@@ -33,7 +33,7 @@ import { MessageSquare } from "lucide-react"
 import { AdmissionDialog } from "@/components/hms/patients/admission-dialog"
 import { OpSlipDialog } from "./op-slip-dialog"
 import { WardManager } from "@/components/wards/ward-manager"
-import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
+import { WardManager } from "@/components/wards/ward-manager"
 
 interface ReceptionActionCenterProps {
     todayAppointments: any[]
@@ -85,28 +85,8 @@ export function ReceptionActionCenter({
     const [patientSearchQuery, setPatientSearchQuery] = useState("")
     const [statusLoading, setStatusLoading] = useState<string | null>(null)
     const [viewingPayment, setViewingPayment] = useState<any>(null)
-    const [selectedAptForBilling, setSelectedAptForBilling] = useState<any>(null)
-    const [billingData, setBillingData] = useState<any>(null)
-    const [isBillingLoading, setIsBillingLoading] = useState(false)
+    const [viewingPayment, setViewingPayment] = useState<any>(null)
     const [isTerminalMinimized, setIsTerminalMinimized] = useState(false)
-
-    // Unified Billing Loader
-    useEffect(() => {
-        if (selectedAptForBilling) {
-            setIsBillingLoading(true)
-            getInitialInvoiceData(selectedAptForBilling.id).then(res => {
-                if (res.success) {
-                    setBillingData(res.data)
-                } else {
-                    toast({ title: "Quick Bill Failed", description: res.error, variant: "destructive" })
-                    setSelectedAptForBilling(null)
-                }
-                setIsBillingLoading(false)
-            })
-        } else {
-            setBillingData(null)
-        }
-    }, [selectedAptForBilling, toast])
 
     // Update time every minute for aging timers
     useEffect(() => {
@@ -570,7 +550,7 @@ export function ReceptionActionCenter({
                                                 currentTime={currentTime}
                                                 router={router}
                                                 handleStatusUpdate={handleStatusUpdate}
-                                                onAction={() => setSelectedAptForBilling(apt)}
+                                                onAction={() => router.push(`/hms/billing/new?appointmentId=${apt.id}&patientId=${apt.patient.id}`)}
                                                 onEdit={() => handleEditClick(apt)}
                                             />
                                         ))}
@@ -929,37 +909,7 @@ export function ReceptionActionCenter({
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={!!selectedAptForBilling} onOpenChange={(open) => !open && setSelectedAptForBilling(null)}>
-                <DialogContent className="max-w-[98vw] w-full h-[95vh] p-0 overflow-hidden bg-white dark:bg-slate-900 border-none shadow-2xl rounded-[2.5rem]">
-                    {(selectedAptForBilling && (isBillingLoading || billingData)) && (
-                        <div className="h-full relative">
-                            {isBillingLoading ? (
-                                <div className="h-full flex flex-col items-center justify-center bg-white/80 backdrop-blur-md z-50">
-                                    <div className="h-20 w-20 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mb-4" />
-                                    <h3 className="text-xl font-black text-slate-900 tracking-tight">Preparing Billing Terminal...</h3>
-                                    <p className="text-slate-500 font-medium italic">Enriching clinical data and resolving taxes</p>
-                                </div>
-                            ) : (
-                                <CompactInvoiceEditor
-                                    patients={patients}
-                                    billableItems={billableItems}
-                                    uoms={uoms}
-                                    taxConfig={taxConfig}
-                                    initialPatientId={billingData?.patientId || selectedAptForBilling.patient_id}
-                                    initialMedicines={billingData?.initialItems}
-                                    initialInvoice={billingData?.initialInvoice}
-                                    appointmentId={selectedAptForBilling.id}
-                                    currency={currency}
-                                    onClose={() => {
-                                        setSelectedAptForBilling(null);
-                                        router.refresh();
-                                    }}
-                                />
-                            )}
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
+        </Dialog>
         </div >
     )
 }
