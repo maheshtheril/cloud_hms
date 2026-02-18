@@ -33,7 +33,6 @@ import { MessageSquare } from "lucide-react"
 import { AdmissionDialog } from "@/components/hms/patients/admission-dialog"
 import { OpSlipDialog } from "./op-slip-dialog"
 import { WardManager } from "@/components/wards/ward-manager"
-import { WardManager } from "@/components/wards/ward-manager"
 
 interface ReceptionActionCenterProps {
     todayAppointments: any[]
@@ -84,7 +83,6 @@ export function ReceptionActionCenter({
     const [searchQuery, setSearchQuery] = useState("")
     const [patientSearchQuery, setPatientSearchQuery] = useState("")
     const [statusLoading, setStatusLoading] = useState<string | null>(null)
-    const [viewingPayment, setViewingPayment] = useState<any>(null)
     const [viewingPayment, setViewingPayment] = useState<any>(null)
     const [isTerminalMinimized, setIsTerminalMinimized] = useState(false)
 
