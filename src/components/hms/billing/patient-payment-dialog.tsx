@@ -23,13 +23,15 @@ interface PatientPaymentDialogProps {
     patientName: string;
     onPaymentSuccess?: () => void;
     trigger?: React.ReactNode;
+    fixedAmount?: number; // [NEW] Allow overriding balance for specific fee collection
 }
 
 export function PatientPaymentDialog({
     patientId,
     patientName,
     onPaymentSuccess,
-    trigger
+    trigger,
+    fixedAmount
 }: PatientPaymentDialogProps) {
     const { toast } = useToast();
     const [isOpen, setIsOpen] = useState(false);
@@ -49,6 +51,11 @@ export function PatientPaymentDialog({
         if (isOpen && patientId) {
             setIsLoading(true);
 
+            // [LOGIC] If fixedAmount is provided, use it. Otherwise fetch balance.
+            if (fixedAmount) {
+                setAmount(fixedAmount.toString());
+            }
+
             Promise.all([
                 getPatientBalance(patientId),
                 getPatientUnbilledItems(patientId)
@@ -57,7 +64,8 @@ export function PatientPaymentDialog({
                     // Handle Balance
                     if (resBalance.success) {
                         setBalance(resBalance.type === 'due' ? resBalance.balance : 0);
-                        if (resBalance.type === 'due' && resBalance.balance) {
+                        // Only auto-fill from balance if NO fixed amount was requested
+                        if (!fixedAmount && resBalance.type === 'due' && resBalance.balance) {
                             setAmount(resBalance.balance.toString());
                         }
                     }

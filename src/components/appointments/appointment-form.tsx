@@ -329,79 +329,87 @@ export function AppointmentForm({
                     <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter mb-2">Saved <span className="text-emerald-600">Successfully</span></h2>
                     <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mb-8">Patient flow initiated for OP Consultation</p>
 
-                    {/* [PRACTICAL-FIX] Unified Payment Action Center */}
-                    {(() => {
-                        const doctor = doctors.find(d => d.id === selectedClinicianId);
-                        const consultationFee = Number(doctor?.consultation_fee || 0);
-                        const registrationFee = regFeePending ? 150 : 0; // Standard Reg Fee
-                        const totalDue = consultationFee + registrationFee;
-
-                        return (
-                            <div className="mb-8 space-y-4">
-                                <div className="bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl p-6">
-                                    <div className="flex items-center justify-between mb-2">
-                                        <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Amount Due</span>
-                                        <span className="text-3xl font-black text-slate-900 dark:text-white">₹{totalDue}</span>
-                                    </div>
-
-                                    <div className="space-y-1 mb-4">
-                                        {consultationFee > 0 && (
-                                            <div className="flex justify-between text-xs font-medium text-slate-500">
-                                                <span>Consultation Fee</span>
-                                                <span>₹{consultationFee}</span>
-                                            </div>
-                                        )}
-                                        {registrationFee > 0 && (
-                                            <div className="flex justify-between text-xs font-medium text-amber-600">
-                                                <span className="flex items-center gap-1"><AlertCircle className="h-3 w-3" /> Registration Fee</span>
-                                                <span>₹{registrationFee}</span>
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="grid grid-cols-1 gap-3">
-                                        <PatientPaymentDialog
-                                            patientId={saveSuccess.patient_id}
-                                            patientName={saveSuccess.patient?.first_name}
-                                            onPaymentSuccess={() => {
-                                                setRegFeePending(false);
-                                                toast({ title: "Payment Recorded", description: "Full settlement complete.", className: "bg-green-600 text-white" });
-                                                // Ideally refresh the view or show "Paid" state
-                                            }}
-                                            trigger={
-                                                <button className="w-full h-14 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-500 hover:to-emerald-600 text-white rounded-xl shadow-lg shadow-emerald-500/30 font-black uppercase text-sm tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2">
-                                                    Collect ₹{totalDue} Now <IndianRupee className="h-4 w-4" />
-                                                </button>
-                                            }
-                                        />
-                                    </div>
+                    {/* [PRACTICAL-FIX] Registration Fee Collection Only (Consultation is Post-Paid) */}
+                    {regFeePending ? (
+                        <div className="mb-8 p-6 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-700/30 rounded-2xl animate-in slide-in-from-top-4 text-left">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 className="text-lg font-black text-amber-900 dark:text-amber-100 uppercase tracking-tight flex items-center gap-2">
+                                        <AlertCircle className="h-5 w-5" /> Registration Fee Due
+                                    </h3>
+                                    <p className="text-xs font-bold text-amber-700 dark:text-amber-300 uppercase tracking-widest mt-1">
+                                        New Patient / Validity Expired
+                                    </p>
                                 </div>
-
-                                <div className="grid grid-cols-2 gap-3">
-                                    <OpSlipDialog
-                                        appointment={{ ...saveSuccess, patient: saveSuccess.patient || selectedPatientData, clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId) }}
-                                        trigger={
-                                            <button className="h-12 bg-indigo-50 dark:bg-white/5 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all">
-                                                <Printer className="h-4 w-4" /> Print Ticket Only
-                                            </button>
-                                        }
-                                    />
-                                    <button
-                                        onClick={() => {
-                                            setSaveSuccess(null);
-                                            setSelectedPatientId('');
-                                            setSelectedPatientData(null);
-                                            setNotes('');
-                                            router.refresh();
-                                        }}
-                                        className="h-12 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all"
-                                    >
-                                        Register Next
-                                    </button>
+                                <div className="text-right">
+                                    <span className="text-3xl font-black text-amber-600 dark:text-amber-400">₹150</span>
                                 </div>
                             </div>
-                        );
-                    })()}
+
+                            <div className="space-y-3">
+                                <PatientPaymentDialog
+                                    patientId={saveSuccess.patient_id}
+                                    patientName={saveSuccess.patient?.first_name}
+                                    fixedAmount={150} // [FIX] Force exact registration amount
+                                    onPaymentSuccess={() => {
+                                        setRegFeePending(false);
+                                        toast({ title: "Registration Paid", description: "Receipt generated.", className: "bg-green-600 text-white" });
+                                    }}
+                                    trigger={
+                                        <button className="w-full h-14 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl shadow-lg shadow-amber-500/30 font-black uppercase text-sm tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2">
+                                            Collect ₹150 Registration <IndianRupee className="h-4 w-4" />
+                                        </button>
+                                    }
+                                />
+                                <p className="text-[10px] text-center font-bold text-amber-600/60 uppercase tracking-widest">
+                                    * Protocol: Doctor Consultation fees are collected post-visit
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="mb-8 p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 text-center">
+                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No Immediate Fees Due</p>
+                            <p className="text-[10px] text-slate-300 uppercase tracking-widest mt-1 leading-relaxed">
+                                Registration Validity Active.<br />Consultation fees will be billed after the session.
+                            </p>
+                        </div>
+                    )}
+
+                    <div className="grid grid-cols-1 gap-4 mb-10">
+                        <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center justify-between">
+                            <div className="text-left">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Patient</p>
+                                <p className="text-lg font-black text-slate-900 dark:text-white">{saveSuccess.patient?.first_name || 'Record'} {saveSuccess.patient?.last_name || ''}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Token No</p>
+                                <p className="text-lg font-black text-indigo-600 font-mono">#{saveSuccess.id?.split('-')[0].toUpperCase()}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <OpSlipDialog
+                            appointment={{ ...saveSuccess, patient: saveSuccess.patient || selectedPatientData, clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId) }}
+                            trigger={
+                                <button className="h-14 bg-indigo-50 dark:bg-white/5 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all">
+                                    <Printer className="h-4 w-4" /> Print Ticket Only
+                                </button>
+                            }
+                        />
+                        <button
+                            onClick={() => {
+                                setSaveSuccess(null);
+                                setSelectedPatientId('');
+                                setSelectedPatientData(null);
+                                setNotes('');
+                                router.refresh();
+                            }}
+                            className="h-14 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all"
+                        >
+                            Register Next
+                        </button>
+                    </div>
                 </div>
             </div>
         )
