@@ -13,7 +13,6 @@ import { Maximize2, Minimize2, Mic, MicOff, ShieldAlert, BadgeCheck, Sparkles, L
 import { getHMSSettings } from "@/app/actions/settings"
 import { generateConsultationInvoice } from "@/app/actions/billing"
 import { getPatientById } from "@/app/actions/patient-v10"
-import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 import { CreditCard as CardIcon, X, Printer } from "lucide-react"
 import { OpSlipDialog } from "@/components/hms/reception/op-slip-dialog"
 
@@ -78,8 +77,6 @@ export function AppointmentForm({
     const [saveSuccess, setSaveSuccess] = useState<any>(null) // [NEW] Track save results
 
     // RCM States
-    const [isPaymentOpen, setIsPaymentOpen] = useState(false)
-    const [invoiceForPayment, setInvoiceForPayment] = useState<any>(null)
     const [isRCMProcessing, setIsRCMProcessing] = useState(false)
     const [pendingFormData, setPendingFormData] = useState<FormData | null>(null)
 
@@ -267,22 +264,16 @@ export function AppointmentForm({
                 // [NEW] CHECK FOR FEES DUE (Registration only as requested)
                 const regStatus = checkRegistrationStatus();
                 if (regStatus.shouldCharge && !editingAppointment) {
-                    // Find registration product in billableItems
-                    const regProduct = billableItems.find(i =>
-                        (i.name?.toLowerCase().includes('registration') || i.label?.toLowerCase().includes('registration')) &&
-                        i.type === 'service'
-                    );
-
-                    const initialItems = [];
-                    if (regProduct) {
-                        initialItems.push({
-                            ...regProduct,
-                            quantity: 1
-                        });
-                    }
-
-                    setInvoiceForPayment({ initialItems, appointmentId: aptId });
-                    setIsPaymentOpen(true);
+                    // [REDIRECT-FIX] Redirect to billing immediately for Payment
+                    toast({
+                        title: "Registration Fee Due",
+                        description: "Redirecting to billing for initial payment...",
+                        className: "bg-amber-600 text-white"
+                    });
+                    setTimeout(() => {
+                        router.push(`/hms/billing/new?appointmentId=${aptId}`);
+                    }, 1000);
+                    return;
                 }
 
                 // [WORLD CLASS] Instead of immediate exit, show Success Stage
@@ -355,14 +346,6 @@ export function AppointmentForm({
                                     </button>
                                 }
                             />
-                            {invoiceForPayment && (
-                                <button
-                                    onClick={() => window.open(`/hms/billing/${invoiceForPayment.id}/print`, '_blank')}
-                                    className="flex-1 h-16 bg-emerald-600 hover:bg-emerald-500 text-white rounded-2xl shadow-xl shadow-emerald-500/20 font-black uppercase tracking-widest flex items-center justify-center gap-3 transition-active active:scale-95 text-sm"
-                                >
-                                    <IndianRupee className="h-5 w-5" /> Print Bill
-                                </button>
-                            )}
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                             <button
@@ -625,24 +608,6 @@ export function AppointmentForm({
                 </div>
             )}
 
-            {isPaymentOpen && (
-                <div className="fixed inset-0 z-[300] bg-white dark:bg-slate-900 border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
-                    <CompactInvoiceEditor
-                        patients={patients}
-                        billableItems={billableItems}
-                        uoms={uoms}
-                        taxConfig={taxConfig}
-                        initialPatientId={selectedPatientId}
-                        initialMedicines={invoiceForPayment?.initialItems}
-                        appointmentId={invoiceForPayment?.appointmentId}
-                        currency={currency}
-                        onClose={() => {
-                            setIsPaymentOpen(false);
-                            setIsRCMProcessing(false);
-                        }}
-                    />
-                </div>
-            )}
         </div>
     )
 }

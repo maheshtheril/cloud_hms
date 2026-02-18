@@ -247,8 +247,30 @@ export default async function NewInvoicePage({
 
             // 5. [EXCLUDED] Lab Orders for this Encounter (Removed as per Reception Final Bill Standard)
         }
+    } else if (effectivePatientId) {
+        // [REF-FIX] Handle Direct Patient Billing (No Appointment) - Check for Registration Fee
+        const patient = patients.find(p => p.id === effectivePatientId);
+        if (patient) {
+            const registrationPaid = (patient.metadata as any)?.registration_fees_paid;
+            if (!registrationPaid) {
+                const hasRegFee = initialItems.some((i: any) => i.name === 'Registration Fee');
+                if (!hasRegFee) {
+                    const regFeeRecord = await prisma.hms_patient_registration_fees.findFirst({
+                        where: { tenant_id: tenantId, is_active: true }
+                    });
+                    if (regFeeRecord) {
+                        initialItems.push({
+                            id: 'reg-fee',
+                            name: 'Registration Fee',
+                            price: Number(regFeeRecord.fee_amount),
+                            quantity: 1,
+                            type: 'service'
+                        });
+                    }
+                }
+            }
+        }
     }
-
     // [EXCLUDED] Direct Lab Order Billing (Reception skips this for Final Bill #2)
     /*
     if (labOrderId) {
