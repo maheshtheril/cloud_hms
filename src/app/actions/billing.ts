@@ -1415,7 +1415,7 @@ export async function generateRegistrationInvoice(patientId: string) {
                 total_tax: 0,
                 total: product.price || 0,
                 outstanding_amount: product.price || 0,
-                status: 'draft',
+                status: 'posted', // [FIX] Immediate validity for finding in settlement
                 billing_metadata: {
                     source: 'auto-registration-rcm',
                     description: 'Automatic registration billing sequence'

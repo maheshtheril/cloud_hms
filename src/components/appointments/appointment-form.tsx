@@ -269,15 +269,20 @@ export function AppointmentForm({
                 const currentPatientId = editingAppointment?.patient_id || res.data?.patient_id || selectedPatientId;
 
                 if (regStatus.shouldCharge && !editingAppointment) {
-                    // [PRACTICAL-FIX] No Redirect. Generate Invoice in background and show "Collect" modal.
-                    generateRegistrationInvoice(currentPatientId).catch(err => console.error("Reg Invoice Gen Failed", err));
-                    setRegFeePending(true);
-
-                    toast({
-                        title: "Registration Fee Pending",
-                        description: "Fee added to bill. Collect now or pay later.",
-                        className: "bg-amber-50 border-amber-200 text-amber-900"
-                    });
+                    // [PRACTICAL-FIX] Await Generation to prevent Race Condition
+                    try {
+                        await generateRegistrationInvoice(currentPatientId);
+                        setRegFeePending(true);
+                        toast({
+                            title: "Registration Fee Pending",
+                            description: "Fee added to bill. Collect now or pay later.",
+                            className: "bg-amber-50 border-amber-200 text-amber-900"
+                        });
+                    } catch (err) {
+                        console.error("Reg Invoice Gen Failed", err);
+                        // Still show success but warn about billing
+                        toast({ title: "Billing Warning", description: "Could not generate registration fee invoice.", variant: "destructive" });
+                    }
                 } else {
                     setRegFeePending(false);
                 }
