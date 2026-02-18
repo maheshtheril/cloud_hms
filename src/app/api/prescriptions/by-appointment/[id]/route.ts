@@ -58,7 +58,7 @@ export async function GET(
                         'name', lt.name,
                         'price', lol.price
                     )) FILTER (WHERE lt.id IS NOT NULL),
-                    '[]'
+                    '[]'::json
                 ) as tests
             FROM hms_lab_order lo
             LEFT JOIN hms_lab_order_line lol ON lo.id = lol.order_id

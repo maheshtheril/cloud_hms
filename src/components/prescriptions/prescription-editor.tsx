@@ -174,7 +174,7 @@ export function PrescriptionEditor({ isModal = false, onClose }: PrescriptionEdi
                             plan: pr.plan || ''
                         });
                         setSelectedMedicines(pr.medicines || []);
-                        setSelectedLabs(pr.labTests || []);
+                        setSelectedLabs(Array.isArray(pr.labTests) ? pr.labTests : []);
 
                         if (!patientId && pr.patient_id) {
                             setResolvedPatientId(pr.patient_id);
