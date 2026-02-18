@@ -255,10 +255,10 @@ export function AppointmentForm({
             } else {
                 const aptId = editingAppointment?.id || res.data?.id;
 
-                // [NEW] Link pre-generated/paid invoice to appointment
-                if (invoiceForPayment?.id && aptId) {
-                    await linkInvoiceToAppointment(invoiceForPayment.id, aptId);
-                }
+                // [NEW] Link pre-generated/paid invoice to appointment - REMOVED due to undefined reference
+                // if (invoiceForPayment?.id && aptId) {
+                //     await linkInvoiceToAppointment(invoiceForPayment.id, aptId);
+                // }
 
                 // Ensure consultation invoice exists if not pre-generated
                 if (aptId) await generateConsultationInvoice(aptId);
