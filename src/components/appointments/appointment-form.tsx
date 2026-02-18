@@ -11,7 +11,8 @@ import { useRouter } from "next/navigation"
 import { ZionaLogo } from "@/components/branding/ziona-logo"
 import { Maximize2, Minimize2, Mic, MicOff, ShieldAlert, BadgeCheck, Sparkles, Loader2, Minus } from "lucide-react"
 import { getHMSSettings } from "@/app/actions/settings"
-import { generateConsultationInvoice } from "@/app/actions/billing"
+import { generateConsultationInvoice, generateRegistrationInvoice } from "@/app/actions/billing"
+import { PatientPaymentDialog } from "@/components/hms/billing/patient-payment-dialog";
 import { getPatientById } from "@/app/actions/patient-v10"
 import { CreditCard as CardIcon, X, Printer } from "lucide-react"
 import { OpSlipDialog } from "@/components/hms/reception/op-slip-dialog"
@@ -79,6 +80,7 @@ export function AppointmentForm({
     // RCM States
     const [isRCMProcessing, setIsRCMProcessing] = useState(false)
     const [pendingFormData, setPendingFormData] = useState<FormData | null>(null)
+    const [regFeePending, setRegFeePending] = useState(false);
 
     // Sync state when editingAppointment changes or prop updates
     useEffect(() => {
@@ -263,17 +265,21 @@ export function AppointmentForm({
 
                 // [NEW] CHECK FOR FEES DUE (Registration only as requested)
                 const regStatus = checkRegistrationStatus();
+                // We use the effective Patient ID (from result or logic)
+                const currentPatientId = editingAppointment?.patient_id || res.data?.patient_id || selectedPatientId;
+
                 if (regStatus.shouldCharge && !editingAppointment) {
-                    // [REDIRECT-FIX] Redirect to billing immediately for Payment
+                    // [PRACTICAL-FIX] No Redirect. Generate Invoice in background and show "Collect" modal.
+                    generateRegistrationInvoice(currentPatientId).catch(err => console.error("Reg Invoice Gen Failed", err));
+                    setRegFeePending(true);
+
                     toast({
-                        title: "Registration Fee Due",
-                        description: "Redirecting to billing for initial payment...",
-                        className: "bg-amber-600 text-white"
+                        title: "Registration Fee Pending",
+                        description: "Fee added to bill. Collect now or pay later.",
+                        className: "bg-amber-50 border-amber-200 text-amber-900"
                     });
-                    setTimeout(() => {
-                        router.push(`/hms/billing/new?appointmentId=${aptId}`);
-                    }, 1000);
-                    return;
+                } else {
+                    setRegFeePending(false);
                 }
 
                 // [WORLD CLASS] Instead of immediate exit, show Success Stage
@@ -322,6 +328,33 @@ export function AppointmentForm({
 
                     <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter mb-2">Saved <span className="text-emerald-600">Successfully</span></h2>
                     <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mb-8">Patient flow initiated for OP Consultation</p>
+
+                    {regFeePending && (
+                        <div className="mb-6 mx-auto max-w-sm bg-amber-50 border border-amber-200 rounded-2xl p-4 shadow-xl shadow-amber-500/10 animate-in slide-in-from-top-4 duration-500">
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="text-left">
+                                    <div className="flex items-center gap-2">
+                                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-amber-700">Registration Due</p>
+                                    </div>
+                                    <p className="text-xl font-black text-amber-900 tracking-tighter">₹150.00</p>
+                                </div>
+                                <PatientPaymentDialog
+                                    patientId={saveSuccess.patient_id}
+                                    patientName={saveSuccess.patient?.first_name}
+                                    onPaymentSuccess={() => {
+                                        setRegFeePending(false);
+                                        toast({ title: "Registration Paid", description: "Receipt generated.", className: "bg-green-600 text-white" });
+                                    }}
+                                    trigger={
+                                        <button className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl shadow-lg shadow-amber-500/30 font-black uppercase text-[10px] tracking-widest transition-all active:scale-95 flex items-center gap-2">
+                                            Collect Now <IndianRupee className="h-3 w-3" />
+                                        </button>
+                                    }
+                                />
+                            </div>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-1 gap-4 mb-10">
                         <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center justify-between">
