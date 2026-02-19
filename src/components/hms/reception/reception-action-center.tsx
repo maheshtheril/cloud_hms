@@ -33,6 +33,7 @@ import { MessageSquare } from "lucide-react"
 import { AdmissionDialog } from "@/components/hms/patients/admission-dialog"
 import { OpSlipDialog } from "./op-slip-dialog"
 import { WardManager } from "@/components/wards/ward-manager"
+import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 
 interface ReceptionActionCenterProps {
     todayAppointments: any[]
@@ -85,6 +86,7 @@ export function ReceptionActionCenter({
     const [statusLoading, setStatusLoading] = useState<string | null>(null)
     const [viewingPayment, setViewingPayment] = useState<any>(null)
     const [isTerminalMinimized, setIsTerminalMinimized] = useState(false)
+    const [selectedAptForBilling, setSelectedAptForBilling] = useState<any>(null)
 
     // Update time every minute for aging timers
     useEffect(() => {
@@ -906,6 +908,26 @@ export function ReceptionActionCenter({
                     </div>
                 </DialogContent>
             </Dialog>
+            {/* Modal for Billing */}
+            <Dialog open={!!selectedAptForBilling} onOpenChange={(open) => !open && setSelectedAptForBilling(null)}>
+                <DialogContent className="max-w-[95vw] h-[95vh] flex flex-col p-0 overflow-hidden bg-slate-50/95 backdrop-blur-xl border-slate-200 focus:outline-none">
+                    {selectedAptForBilling && (
+                        <CompactInvoiceEditor
+                            patients={patients}
+                            billableItems={billableItems}
+                            uoms={uoms}
+                            taxConfig={taxConfig}
+                            initialPatientId={selectedAptForBilling.patient?.id}
+                            appointmentId={selectedAptForBilling.id}
+                            onClose={() => {
+                                setSelectedAptForBilling(null);
+                                router.refresh();
+                            }}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
+
         </div>
     )
 }

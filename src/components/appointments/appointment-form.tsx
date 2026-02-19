@@ -49,6 +49,7 @@ export function AppointmentForm({
     onMinimize
 }: AppointmentFormProps) {
     const { toast } = useToast()
+    console.log("DEBUG: Appointment Form Component Loaded - VERSION-FIX-APPLIED");
     const router = useRouter()
     const { patient_id: initialPatientId, date: initialDate, time: initialTime } = initialData
 
@@ -256,10 +257,15 @@ export function AppointmentForm({
                 const aptId = editingAppointment?.id || res.data?.id;
 
                 // Ensure consultation invoice exists if not pre-generated
-                console.log("Finalizing appointment", aptId);
-
-                // Ensure consultation invoice exists if not pre-generated
-                if (aptId) await generateConsultationInvoice(aptId);
+                console.log("DEBUG: Finalizing appointment", aptId);
+                console.log("DEBUG: Calling generateConsultationInvoice");
+                try {
+                    if (aptId) await generateConsultationInvoice(aptId);
+                    console.log("DEBUG: Invoice generated successfully");
+                } catch (invError: any) {
+                    console.error("DEBUG: Invoice generation failed", invError);
+                    // Do not block flow, just log
+                }
 
                 // [NEW] CHECK FOR FEES DUE (Registration only as requested)
                 const regStatus = checkRegistrationStatus();

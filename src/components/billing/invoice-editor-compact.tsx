@@ -138,6 +138,46 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     }
   }, [date, initialInvoice]);
 
+  // AUTO-LOAD INITIAL DATA FROM APPOINTMENT (Registration Fee, etc)
+  useEffect(() => {
+    if (appointmentId && (!initialInvoice && (!initialMedicines || initialMedicines.length === 0))) {
+      import('@/app/actions/billing').then(mod => {
+        mod.getInitialInvoiceData(appointmentId).then(res => {
+          if (res && Array.isArray(res)) {
+            // Map the items to lines
+            const newLines = res.map((m: any) => {
+              const billable = billableItems.find(bi => bi.id === (m.id || m.product_id) || bi.label === m.name);
+              const taxId = billable?.categoryTaxId !== undefined ? billable.categoryTaxId : defaultTaxId;
+              const finalPrice = billable?.price || Number(m.price || 0);
+
+              // Calculate initial tax
+              const taxRateObj = taxConfig.taxRates.find((t: any) => t.id === taxId);
+              const rate = taxRateObj ? Number(taxRateObj.rate) : 0;
+              const lineNet = (Number(m.quantity || 1) * finalPrice);
+              const taxAmt = (Math.max(0, lineNet) * rate) / 100;
+
+              return {
+                id: Math.random() + Date.now(),
+                product_id: billable?.id || m.id || '',
+                description: m.name || m.description || '',
+                quantity: Number(m.quantity || 1),
+                uom: m.uom || billable?.uom || 'PCS',
+                unit_price: finalPrice,
+                tax_rate_id: taxId,
+                tax_amount: taxAmt,
+                discount_amount: 0,
+                base_price: finalPrice,
+                item_type: m.type || billable?.type || 'item',
+                metadata: billable?.metadata || {}
+              }
+            });
+            if (newLines.length > 0) setLines(newLines);
+          }
+        });
+      });
+    }
+  }, [appointmentId, initialInvoice, initialMedicines]);
+
 
   const extendedTaxRates = useMemo(() => {
     const rates = [...(taxConfig.taxRates || [])];
