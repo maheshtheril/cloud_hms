@@ -521,6 +521,7 @@ export function ReceptionActionCenter({
                                                 handleStatusUpdate={handleStatusUpdate}
                                                 onAction={() => { }}
                                                 onEdit={() => handleEditClick(apt)}
+                                                onBill={() => setSelectedAptForBilling(apt)}
                                             />
                                         ))}
                                 </div>
@@ -550,8 +551,9 @@ export function ReceptionActionCenter({
                                                 currentTime={currentTime}
                                                 router={router}
                                                 handleStatusUpdate={handleStatusUpdate}
-                                                onAction={() => router.push(`/hms/billing/new?appointmentId=${apt.id}&patientId=${apt.patient.id}`)}
+                                                onAction={() => setSelectedAptForBilling(apt)}
                                                 onEdit={() => handleEditClick(apt)}
+                                                onBill={() => setSelectedAptForBilling(apt)}
                                             />
                                         ))}
                                 </div>
@@ -580,6 +582,7 @@ export function ReceptionActionCenter({
                                             handleStatusUpdate={handleStatusUpdate}
                                             onAction={() => { }}
                                             onEdit={() => handleEditClick(apt)}
+                                            onBill={() => setSelectedAptForBilling(apt)}
                                         />
                                     ))}
                                 </div>
@@ -971,7 +974,7 @@ const StatusBadge = ({ apt }: { apt: any }) => {
 
 
 
-function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, router, handleStatusUpdate }: { apt: any, type: 'waiting' | 'running' | 'billing' | 'completed', onAction: () => void, onEdit: () => void, isPrivacyMode: boolean, currentTime: Date, router: any, handleStatusUpdate: (id: string, status: string) => void }) {
+function PatientCard({ apt, type, onAction, onEdit, onBill, isPrivacyMode, currentTime, router, handleStatusUpdate }: { apt: any, type: 'waiting' | 'running' | 'billing' | 'completed', onAction: () => void, onEdit: () => void, onBill?: () => void, isPrivacyMode: boolean, currentTime: Date, router: any, handleStatusUpdate: (id: string, status: string) => void }) {
     const isEmergency = apt.type === 'emergency' || apt.tags?.includes('EMERGENCY');
     const isUrgent = apt.priority === 'urgent';
     const isHigh = apt.priority === 'high';
@@ -1110,7 +1113,7 @@ function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, 
                             View Rx
                         </Button>
                         {apt.hasPrescription && apt.invoiceStatus !== 'paid' && (
-                            <Button size="sm" onClick={() => router.push(`/hms/billing/new?appointmentId=${apt.id}&patientId=${apt.patient.id}`)} className="h-7 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm px-2">
+                            <Button size="sm" onClick={onBill} className="h-7 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm px-2">
                                 <IndianRupee className="h-3 w-3 mr-1" />
                                 Bill
                             </Button>
@@ -1121,7 +1124,7 @@ function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, 
                     <div className="flex gap-1">
                         <Button size="sm" variant="ghost" onClick={() => router.push(`/hms/prescriptions/${apt.id}`)} className="h-7 text-[10px]">Rx</Button>
                         {apt.invoiceStatus !== 'paid' && (
-                            <Button size="sm" onClick={() => router.push(`/hms/billing/new?appointmentId=${apt.id}&patientId=${apt.patient.id}`)} className="h-7 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm px-2">
+                            <Button size="sm" onClick={onBill} className="h-7 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm px-2">
                                 <IndianRupee className="h-3 w-3 mr-1" />
                                 Bill
                             </Button>
