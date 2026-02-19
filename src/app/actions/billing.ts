@@ -1768,31 +1768,3 @@ async function resolveAutoTax(rate: number, tenant_id: string, company_id: strin
     }
 }
 
-export async function getInitialInvoiceData(appointmentId: string) {
-    const session = await auth();
-    const companyId = session?.user?.companyId || session?.user?.tenantId;
-    if (!companyId) return [];
-
-    try {
-        const apt = await prisma.hms_appointments.findUnique({
-            where: { id: appointmentId },
-            include: {
-                patient: true,
-                doctor: {
-                    include: {
-                        employee_profile: true
-                    }
-                }
-            }
-        });
-
-        if (!apt) return [];
-
-        const items: any[] = [];
-        return items;
-
-    } catch (e) {
-        console.error("Error in getInitialInvoiceData:", e);
-        return [];
-    }
-}
