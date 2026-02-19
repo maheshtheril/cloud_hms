@@ -686,8 +686,18 @@ export function ReceptionActionCenter({
                                                                 {((apt.status === 'completed' || apt.hasPrescription) && apt.invoiceStatus !== 'paid') && (
                                                                     <Button
                                                                         size="sm"
-                                                                        onClick={() => setSelectedAptForBilling(apt)}
-                                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-black h-8 px-4 text-[10px] rounded-lg shadow-lg flex items-center gap-1"
+                                                                        onClick={(e) => {
+                                                                            e.preventDefault();
+                                                                            e.stopPropagation();
+                                                                            console.log("DEBUG: TABLE CLICK COLLECT", apt.id);
+                                                                            try {
+                                                                                setSelectedAptForBilling(apt);
+                                                                                console.log("DEBUG: State set for billing", apt.id);
+                                                                            } catch (err) {
+                                                                                console.error("DEBUG: Failed to set billing state", err);
+                                                                            }
+                                                                        }}
+                                                                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-black h-8 px-4 text-[10px] rounded-lg shadow-lg flex items-center gap-1 active:scale-95 transition-transform"
                                                                     >
                                                                         <CreditCard className="h-3 w-3" />
                                                                         COLLECT
@@ -912,21 +922,28 @@ export function ReceptionActionCenter({
                 </DialogContent>
             </Dialog>
             {/* Modal for Billing */}
-            <Dialog open={!!selectedAptForBilling} onOpenChange={(open) => !open && setSelectedAptForBilling(null)}>
+            <Dialog open={!!selectedAptForBilling} onOpenChange={(open) => {
+                console.log("DEBUG: Dialog Open Change", open);
+                if (!open) setSelectedAptForBilling(null);
+            }}>
                 <DialogContent className="max-w-[95vw] h-[95vh] flex flex-col p-0 overflow-hidden bg-slate-50/95 backdrop-blur-xl border-slate-200 focus:outline-none">
                     {selectedAptForBilling && (
-                        <CompactInvoiceEditor
-                            patients={patients}
-                            billableItems={billableItems}
-                            uoms={uoms}
-                            taxConfig={taxConfig}
-                            initialPatientId={selectedAptForBilling.patient?.id}
-                            appointmentId={selectedAptForBilling.id}
-                            onClose={() => {
-                                setSelectedAptForBilling(null);
-                                router.refresh();
-                            }}
-                        />
+                        <>
+                            {console.log("DEBUG: Rendering Invoice Editor for", selectedAptForBilling.id)}
+                            <CompactInvoiceEditor
+                                patients={patients}
+                                billableItems={billableItems}
+                                uoms={uoms}
+                                taxConfig={taxConfig}
+                                initialPatientId={selectedAptForBilling.patient?.id}
+                                appointmentId={selectedAptForBilling.id}
+                                onClose={() => {
+                                    console.log("DEBUG: Closing Invoice Editor");
+                                    setSelectedAptForBilling(null);
+                                    router.refresh();
+                                }}
+                            />
+                        </>
                     )}
                 </DialogContent>
             </Dialog>
