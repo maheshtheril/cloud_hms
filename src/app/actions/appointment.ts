@@ -283,3 +283,44 @@ export async function updateAppointmentDetails(formData: FormData) {
     }
     redirect("/hms/appointments")
 }
+
+export async function getAppointmentsByClinician(clinicianId: string, date: string) {
+    const session = await auth();
+    // Allow if tenantId is present. Fallback companyId to tenantId if missing.
+    if (!session?.user?.id || !session?.user?.tenantId) {
+        return { success: false, error: "Unauthorized" }
+    }
+
+    try {
+        // Parse date for day range (UTC safe approach for local comparison)
+        const startOfDay = new Date(`${date}T00:00:00`)
+        const endOfDay = new Date(`${date}T23:59:59`)
+
+        const appointments = await prisma.hms_appointments.findMany({
+            where: {
+                tenant_id: session.user.tenantId,
+                clinician_id: clinicianId,
+                starts_at: {
+                    gte: startOfDay,
+                    lte: endOfDay
+                },
+                status: { not: 'cancelled' },
+                deleted_at: null
+            },
+            select: {
+                id: true,
+                starts_at: true,
+                ends_at: true,
+                status: true,
+                clinician_id: true,
+                patient_id: true
+            }
+        });
+
+        return { success: true, data: appointments }
+    } catch (error: any) {
+        console.error("Failed to fetch clinician appointments:", error)
+        return { success: false, error: "Failed to fetch appointments" }
+    }
+}
+

@@ -8,6 +8,7 @@ import {
     Phone,
     Mail,
     CheckSquare,
+    CheckCircle,
     Clock,
     BrainCircuit,
     MapPin,
@@ -116,7 +117,7 @@ export default async function ActivitiesPage() {
 
                     <div className="glass p-6 rounded-3xl border border-white/20 relative overflow-hidden group">
                         <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                            <CheckCircle2 className="w-24 h-24 text-emerald-500" />
+                            <CheckCircle className="w-24 h-24 text-emerald-500" />
                         </div>
                         <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-500 mb-4">Completion Rate</h4>
                         <div className="flex items-end justify-between">

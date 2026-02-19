@@ -111,6 +111,22 @@ export function AppointmentForm({
     }, [selectedPatientId]) // We check selectedPatientData internally to avoid loop
 
     // Auto-select first doctor if none specified handled via component default now
+    const [appointmentsList, setAppointmentsList] = useState<any[]>(appointments);
+
+    // [FIX] Fetch Appointments Dynamically when Doctor/Date changes
+    // This is crucial because "appointments" prop is static and empty in new/page.tsx
+    useEffect(() => {
+        if (selectedClinicianId && selectedDate) {
+            import('@/app/actions/appointment').then(mod => {
+                (mod as any).getAppointmentsByClinician(selectedClinicianId, selectedDate).then((res: any) => {
+                    if (res && res.success && Array.isArray(res.data)) {
+                        console.log("DEBUG: Dynamic Appointments Fetched", res.data.length);
+                        setAppointmentsList(res.data);
+                    }
+                })
+            })
+        }
+    }, [selectedClinicianId, selectedDate]);
 
     // CORE: Dynamic Time Selection Engine (Reactive Triage)
     useEffect(() => {
@@ -124,7 +140,8 @@ export function AppointmentForm({
         const defaultEnd = doctor.consultation_end_time || "17:00"
 
         // Filter for this doctor on selected day
-        const doctorApts = appointments.filter(a => {
+        // Filter for this doctor on selected day using DYNAMIC LIST
+        const doctorApts = appointmentsList.filter(a => {
             const aptDate = new Date(a.starts_at).toISOString().split('T')[0];
             return a.clinician_id === selectedClinicianId && aptDate === selectedDate && a.status !== 'cancelled';
         })
@@ -206,7 +223,7 @@ export function AppointmentForm({
                 setSuggestedTime(`${hours}:${minutes}`)
             }
         }
-    }, [selectedClinicianId, selectedDate, appointments, doctors, editingAppointment])
+    }, [selectedClinicianId, selectedDate, appointmentsList, doctors, editingAppointment])
 
     // HMS Settings (Reg Fee, etc.)
     useEffect(() => {
@@ -276,7 +293,7 @@ export function AppointmentForm({
     const executeSave = async (data: FormData) => {
         setIsPending(true)
         try {
-            const res = editingAppointment ? await updateAppointmentDetails(data) : await createAppointment(data);
+            const res = editingAppointment ? await updateAppointmentDetails(data) : await createAppointment(data) as any;
             if (res?.error) {
                 toast({ title: "Action Failed", description: res.error, variant: "destructive" });
             } else {

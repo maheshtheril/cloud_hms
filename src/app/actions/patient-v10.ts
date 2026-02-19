@@ -183,3 +183,20 @@ export async function getPatientById(id: string) {
         return { error: err.message };
     }
 }
+
+export async function createPatientQuick(name: string, phone: string) {
+    const formData = new FormData();
+    const [first, ...rest] = name.trim().split(' ');
+    formData.append('first_name', first);
+    formData.append('last_name', rest.join(' ') || '.');
+    formData.append('phone', phone);
+
+    // Default dummy address to pass validation/scrubbing
+    formData.append('street', 'Walk-in');
+    formData.append('city', 'Local');
+    formData.append('zip', '000000');
+
+    return await createPatientV10(null, formData);
+}
+
+

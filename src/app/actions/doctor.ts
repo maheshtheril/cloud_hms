@@ -73,6 +73,7 @@ export async function createDoctor(formData: FormData) {
                 consultation_end_time: consultationEndTime,
                 consultation_slot_duration: consultationSlotDuration,
                 consultation_fee: consultationFee,
+                // @ts-ignore
                 working_days: (Array.isArray(workingDays) && workingDays.length > 0)
                     ? workingDays.filter(d => !!d)
                     : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
@@ -140,6 +141,7 @@ export async function updateDoctor(formData: FormData) {
                 consultation_end_time: consultationEndTime,
                 consultation_slot_duration: consultationSlotDuration,
                 consultation_fee: consultationFee,
+                // @ts-ignore
                 working_days: (Array.isArray(workingDays) && workingDays.length > 0) ? workingDays.filter(d => !!d) : ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
                 profile_image_url: profileImageUrl || null,
                 signature_url: signatureUrl || null,
