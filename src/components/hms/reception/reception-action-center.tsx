@@ -1132,8 +1132,22 @@ function PatientCard({ apt, type, onAction, onEdit, isPrivacyMode, currentTime, 
                 {type === 'billing' && (
                     <Button
                         size="sm"
-                        onClick={onAction}
-                        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black h-8 px-4 text-[10px] rounded-lg shadow-lg"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            console.log("DEBUG: CLICKED COLLECT BUTTON", apt.id);
+                            try {
+                                if (onAction) {
+                                    console.log("DEBUG: Calling onAction prop");
+                                    onAction();
+                                } else {
+                                    console.error("DEBUG: onAction prop is MISSING");
+                                }
+                            } catch (err) {
+                                console.error("DEBUG: CRASH inside Collect Handler", err);
+                            }
+                        }}
+                        className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-black h-8 px-4 text-[10px] rounded-lg shadow-lg relative z-50 pointer-events-auto"
                     >
                         <CreditCard className="h-3 w-3 mr-1" />
                         COLLECT

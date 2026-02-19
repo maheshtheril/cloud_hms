@@ -142,14 +142,32 @@ export function AppointmentForm({
         let nextSlotTime: Date;
 
         if (doctorApts.length === 0) {
-            nextSlotTime = (isToday && now > dayStart) ? now : dayStart;
+            // BASE: Start at doctor's official start time
+            let baseTime = dayStart;
+
+            // IF TODAY: Don't suggest past times. Jump to "Now" rounded up to next 15m
+            if (isToday) {
+                const nowRound = new Date(Math.ceil(new Date().getTime() / (15 * 60 * 1000)) * (15 * 60 * 1000));
+                if (nowRound > dayStart) {
+                    baseTime = nowRound;
+                }
+            }
+            nextSlotTime = baseTime;
         } else {
+            // Find the latest ending appointment
             const lastEndApt = doctorApts.reduce((latest, current) => {
-                return new Date(current.ends_at) > new Date(latest.ends_at) ? current : latest
+                const latestEnd = new Date(latest.ends_at).getTime();
+                const currentEnd = new Date(current.ends_at).getTime();
+                return currentEnd > latestEnd ? current : latest
             }, doctorApts[0])
 
-            nextSlotTime = new Date(new Date(lastEndApt.ends_at).getTime());
-            if (isToday && nextSlotTime < now) nextSlotTime = now;
+            // Start AFTER the last one finishes
+            nextSlotTime = new Date(lastEndApt.ends_at);
+        }
+
+        // Final Safety: If for some reason nextSlotTime < now (on today), bump it
+        if (isToday && nextSlotTime < now) {
+            nextSlotTime = new Date(Math.ceil(new Date().getTime() / (15 * 60 * 1000)) * (15 * 60 * 1000));
         }
 
         const [endH, endM] = defaultEnd.split(':').map(Number);
