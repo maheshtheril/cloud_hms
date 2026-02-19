@@ -367,7 +367,7 @@ function SidebarContent({ menuItems, currentCompany, tenant, user, collapsed, se
             {!collapsed && (
                 <div className="px-6 py-2">
                     <div className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-1 rounded text-center animate-pulse">
-                        FIX-TABLE-COLLECT
+                        FIX-DOC-SLOTS
                     </div>
                 </div>
             )}
