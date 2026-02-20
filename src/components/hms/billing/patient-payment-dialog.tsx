@@ -66,6 +66,13 @@ export function PatientPaymentDialog({
                     // But for now, let's just open the editor. The editor has robust "create" logic.
                     // IMPORTANT: We need to pass the "Registration Fee" as an initial item if it's the intent.
 
+                }).catch(err => {
+                    console.error("Failed to load billing dependencies", err);
+                    toast({
+                        title: "Warning",
+                        description: "Could not load some billing configurations. You can still proceed.",
+                        variant: "destructive"
+                    });
                 }).finally(() => setIsLoading(false));
             });
         }
@@ -100,20 +107,18 @@ export function PatientPaymentDialog({
                 ) : (
                     <div className="w-full h-full bg-white rounded-[2rem] overflow-hidden shadow-2xl">
                         {/* Dynamic Import to avoid SSR issues with heavy component */}
-                        {billableItems.length > 0 && (
-                            <CompactInvoiceEditorWithNoSSR
-                                patients={patients}
-                                billableItems={billableItems}
-                                uoms={uoms}
-                                taxConfig={taxConfig}
-                                initialPatientId={patientId}
-                                initialMedicines={initialMedicines}
-                                onClose={() => {
-                                    setIsOpen(false);
-                                    onPaymentSuccess?.();
-                                }}
-                            />
-                        )}
+                        <CompactInvoiceEditorWithNoSSR
+                            patients={patients}
+                            billableItems={billableItems}
+                            uoms={uoms}
+                            taxConfig={taxConfig}
+                            initialPatientId={patientId}
+                            initialMedicines={initialMedicines}
+                            onClose={() => {
+                                setIsOpen(false);
+                                onPaymentSuccess?.();
+                            }}
+                        />
                     </div>
                 )}
             </DialogContent>
