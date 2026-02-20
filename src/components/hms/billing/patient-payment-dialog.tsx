@@ -116,6 +116,9 @@ export function PatientPaymentDialog({
                             initialMedicines={initialMedicines}
                             onClose={() => {
                                 setIsOpen(false);
+                            }}
+                            onPaymentSuccess={() => {
+                                setIsOpen(false);
                                 onPaymentSuccess?.();
                             }}
                         />

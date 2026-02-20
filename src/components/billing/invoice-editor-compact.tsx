@@ -29,6 +29,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   appointmentId?: string,
   initialInvoice?: any,
   onClose?: () => void,
+  onPaymentSuccess?: (invoiceData: any) => void,
   currency?: string
 }) {
 
@@ -517,7 +518,14 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         setLastSavedId(res.data?.id || null)
         setIsSuccess(true)
         setLoading(false)
-        setIsPaymentModalOpen(false)
+        if (onPaymentSuccess) {
+          onPaymentSuccess(res.data);
+        }
+        // Do NOT close modal automatically if success screen is desired.
+        // But if onPaymentSuccess is provided (like in popup mode), we might want to auto-close or show success within the popup?
+        // The current design shows a "Transaction Finalized" screen within the editor.
+        // So we keep it open to show that screen.
+        // setIsPaymentModalOpen(false) // This closes the payment sub-modal, not the EDITOR.
       } else {
         setLoading(false)
         const errorMsg = res.error || "The server rejected the transaction. Please check your data and retry.";
