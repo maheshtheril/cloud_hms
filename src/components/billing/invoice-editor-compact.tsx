@@ -1153,7 +1153,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             onInteractOutside={(e) => e.preventDefault()}
             onPointerDownOutside={(e) => e.preventDefault()}
             onEscapeKeyDown={(e) => e.preventDefault()}
-            className="max-w-4xl p-0 overflow-hidden bg-white dark:bg-[#0a0f1e] border-none shadow-[0_60px_200px_rgba(0,0,0,0.2)] dark:shadow-[0_60px_200px_rgba(0,0,0,1)] rounded-[3rem] ring-1 ring-slate-200 dark:ring-white/10"
+            className="z-[400] max-w-4xl p-0 overflow-hidden bg-white dark:bg-[#0a0f1e] border-none shadow-[0_60px_200px_rgba(0,0,0,0.2)] dark:shadow-[0_60px_200px_rgba(0,0,0,1)] rounded-[3rem] ring-1 ring-slate-200 dark:ring-white/10"
           >
             <div className="flex flex-col md:flex-row min-h-[500px]">
               {/* COLUMN 1: Audit & Reconciliation (Left) */}
@@ -1382,7 +1382,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
         {/* QUICK PATIENT DIALOG */}
         <Dialog open={isQuickPatientOpen} onOpenChange={setIsQuickPatientOpen}>
-          <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 rounded-[3rem] border-none p-12 shadow-[0_50px_100px_rgba(0,0,0,0.5)]">
+          <DialogContent className="z-[400] max-w-md bg-white dark:bg-[#0a0f1e] text-slate-900 dark:text-white rounded-[2rem] border-none p-12 shadow-[0_50px_100px_rgba(0,0,0,0.5)]">
             <DialogHeader><DialogTitle className="text-3xl font-black italic tracking-tighter text-slate-900 dark:text-white">Quick Identification</DialogTitle><DialogDescription className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Register new medical identity node for {quickPatientName}</DialogDescription></DialogHeader>
             <div className="grid gap-8 py-8">
               <div className="space-y-3">
@@ -1400,12 +1400,12 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
         {/* FINANCIAL LEDGER DIALOG */}
         <Dialog open={isLedgerOpen} onOpenChange={setIsLedgerOpen}>
-          <DialogContent className="max-w-4xl bg-white dark:bg-slate-950 rounded-[3rem] border-none p-0 overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.4)]">
+          <DialogContent className="z-[400] max-w-4xl p-6 bg-white dark:bg-[#0a0f1e] text-slate-900 dark:text-white rounded-[2rem] border-none p-0 overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.4)]">
             <div className="p-10">
               <DialogHeader className="mb-8">
                 <div className="flex justify-between items-start">
                   <div>
-                    <DialogTitle className="text-4xl font-black italic tracking-tighter text-slate-900 dark:text-white">Patient Ledger Audit</DialogTitle>
+                    <DialogTitle className="4xl font-black italic tracking-tighter text-slate-900 dark:text-white">Patient Ledger Audit</DialogTitle>
                     <DialogDescription className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mt-2">Full financial reconciliation for patient identity node</DialogDescription>
                   </div>
                   <div className="bg-amber-500/10 border border-amber-500/20 px-4 py-2 rounded-2xl text-right">
@@ -1472,7 +1472,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
         {/* CRITICAL ERROR DIALOG */}
         <Dialog open={isErrorDialogOpen} onOpenChange={setIsErrorDialogOpen}>
-          <DialogContent className="sm:max-w-lg bg-white dark:bg-slate-900 rounded-[2rem] border-none p-0 overflow-hidden shadow-[0_50px_100px_rgba(255,0,0,0.5)]">
+          <DialogContent className="z-[400] max-w-md p-6 bg-white dark:bg-slate-900 border-rose-500/30 rounded-[2rem] shadow-2xl shadow-rose-500/20 text-center flex flex-col items-center border-none overflow-hidden shadow-[0_50px_100px_rgba(255,0,0,0.5)]">
             <div className="bg-rose-600 p-8 flex items-center gap-4">
               <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md">
                 <AlertTriangle className="h-8 w-8 text-white" />

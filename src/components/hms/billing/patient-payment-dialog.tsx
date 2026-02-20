@@ -98,31 +98,28 @@ export function PatientPaymentDialog({
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="max-w-[95vw] w-full h-[95vh] p-0 bg-transparent border-none shadow-none flex items-center justify-center z-[300]">
+            <DialogContent className="max-w-[95vw] w-full h-[95vh] p-0 bg-transparent border-none shadow-none flex items-center justify-center z-[400] focus:outline-none">
                 {isLoading ? (
                     <div className="bg-white p-8 rounded-3xl flex flex-col items-center gap-4 shadow-2xl">
                         <Loader2 className="h-12 w-12 text-emerald-600 animate-spin" />
                         <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Loading Terminal...</p>
                     </div>
                 ) : (
-                    <div className="w-full h-full bg-white rounded-[2rem] overflow-hidden shadow-2xl">
-                        {/* Dynamic Import to avoid SSR issues with heavy component */}
-                        <CompactInvoiceEditorWithNoSSR
-                            patients={patients}
-                            billableItems={billableItems}
-                            uoms={uoms}
-                            taxConfig={taxConfig}
-                            initialPatientId={patientId}
-                            initialMedicines={initialMedicines}
-                            onClose={() => {
-                                setIsOpen(false);
-                            }}
-                            onPaymentSuccess={() => {
-                                setIsOpen(false);
-                                onPaymentSuccess?.();
-                            }}
-                        />
-                    </div>
+                    <CompactInvoiceEditorWithNoSSR
+                        patients={patients}
+                        billableItems={billableItems}
+                        uoms={uoms}
+                        taxConfig={taxConfig}
+                        initialPatientId={patientId}
+                        initialMedicines={initialMedicines}
+                        onClose={() => {
+                            setIsOpen(false);
+                        }}
+                        onPaymentSuccess={() => {
+                            setIsOpen(false);
+                            onPaymentSuccess?.();
+                        }}
+                    />
                 )}
             </DialogContent>
         </Dialog>
