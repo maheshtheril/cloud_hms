@@ -400,8 +400,8 @@ export function AppointmentForm({
 
                             <div className="space-y-3">
                                 <PatientPaymentDialog
-                                    patientId={saveSuccess.patient_id}
-                                    patientName={`${saveSuccess.patient?.first_name || ''} ${saveSuccess.patient?.last_name || ''}`.trim() || 'Valued Patient'}
+                                    patientId={saveSuccess.patient_id || selectedPatientData?.id || selectedPatientId}
+                                    patientName={`${(saveSuccess.patient || selectedPatientData || selectedPatient)?.first_name || ''} ${(saveSuccess.patient || selectedPatientData || selectedPatient)?.last_name || ''}`.trim() || 'Unnamed Patient'}
                                     fixedAmount={150} // [FIX] Force exact registration amount
                                     onPaymentSuccess={() => {
                                         setRegFeePending(false);
