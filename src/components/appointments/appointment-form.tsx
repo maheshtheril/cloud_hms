@@ -401,7 +401,7 @@ export function AppointmentForm({
                             <div className="space-y-3">
                                 <PatientPaymentDialog
                                     patientId={saveSuccess.patient_id}
-                                    patientName={saveSuccess.patient?.first_name}
+                                    patientName={`${saveSuccess.patient?.first_name || ''} ${saveSuccess.patient?.last_name || ''}`.trim() || 'Valued Patient'}
                                     fixedAmount={150} // [FIX] Force exact registration amount
                                     onPaymentSuccess={() => {
                                         setRegFeePending(false);
@@ -431,7 +431,7 @@ export function AppointmentForm({
                         <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center justify-between">
                             <div className="text-left">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Patient</p>
-                                <p className="text-lg font-black text-slate-900 dark:text-white">{saveSuccess.patient?.first_name || 'Record'} {saveSuccess.patient?.last_name || ''}</p>
+                                <p className="text-lg font-black text-slate-900 dark:text-white">{saveSuccess.patient?.first_name || ''} {saveSuccess.patient?.last_name || ''}</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Token No</p>
