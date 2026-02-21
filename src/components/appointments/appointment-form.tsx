@@ -242,6 +242,7 @@ export function AppointmentForm({
         }
 
         const metadata = (selectedPatientData.metadata as any) || {};
+        const createdAt = new Date(selectedPatientData.created_at);
 
         // [AUDIT] Explicit check for 'awaiting_payment' status set during creation
         if (metadata.status === 'awaiting_payment') {
@@ -255,9 +256,19 @@ export function AppointmentForm({
 
         const expiryDateStr = metadata.registration_expiry;
         if (!expiryDateStr) {
-            // If they have registration_fee_date but no expiry, they might be legacy
-            if (metadata.registration_fee_date) return { shouldCharge: false, status: 'legacy_valid' };
-            return { shouldCharge: true, status: 'missing_date' };
+            // [LEGACY-FIX] If metadata is missing, check creation date vs 1 year period
+            // If the patient was created recently (within last 365 days), assume they are valid 
+            // unless metadata explicitly says otherwise (handled above).
+            const oneYearAgo = new Date();
+            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+
+            if (createdAt > oneYearAgo) {
+                // Return 'valid' but we could make it 'legacy_valid' to be clear
+                return { shouldCharge: false, status: 'valid' };
+            }
+
+            // If they are older than 1 year and have no payment metadata, they likely need to pay/renew
+            return { shouldCharge: true, status: 'expired', reason: 'Legacy record (1yr+)' };
         }
 
         const expiryDate = new Date(expiryDateStr);
@@ -567,6 +578,12 @@ export function AppointmentForm({
                                     <div className={`text-sm font-black tracking-tight ${activeRegStatus.status === 'loading' ? 'text-slate-400 animate-pulse' : activeRegStatus.status === 'none' ? 'text-slate-300' : activeRegStatus.shouldCharge ? 'text-red-500' : 'text-emerald-500'}`}>
                                         {activeRegStatus.status === 'loading' ? 'CHECKING...' : activeRegStatus.status === 'none' ? '---' : activeRegStatus.shouldCharge ? 'PAYMENT REQUIRED' : 'FEES CLEARED'}
                                     </div>
+                                    {activeRegStatus.status !== 'none' && (
+                                        <div className="text-[9px] font-medium text-slate-400 leading-none mt-1">
+                                            {activeRegStatus.expiryDate ? `Expires: ${new Date(activeRegStatus.expiryDate).toLocaleDateString()}` :
+                                                activeRegStatus.status === 'expired' && (activeRegStatus as any).reason ? (activeRegStatus as any).reason : ''}
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="text-right">
                                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5 uppercase">Validity Expiry</div>
