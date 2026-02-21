@@ -288,6 +288,8 @@ export async function signup(prevState: any, formData: FormData) {
 
             // 7. Domain Masters
             await initializeTenantMasters(tenantId, companyId, tx);
+        }, {
+            timeout: 30000 // 30 seconds to allow for network latency and extensive seeding
         });
 
         return { success: true };
