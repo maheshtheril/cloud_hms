@@ -234,8 +234,10 @@ export function AppointmentForm({
 
     const checkRegistrationStatus = () => {
         // [FIX] Ensure we are checking the CURRENTLY selected patient data
+        if (!selectedPatientId) return { shouldCharge: false, status: 'none' };
+
         if (!selectedPatientData || selectedPatientData.id !== selectedPatientId) {
-            return { shouldCharge: true, status: 'loading' };
+            return { shouldCharge: false, status: 'loading' };
         }
 
         const metadata = (selectedPatientData.metadata as any) || {};
@@ -245,8 +247,17 @@ export function AppointmentForm({
             return { shouldCharge: true, status: 'awaiting_payment' };
         }
 
+        // Check for the explicit flag first
+        if (metadata.registration_fees_paid === false) {
+            return { shouldCharge: true, status: 'not_paid' };
+        }
+
         const expiryDateStr = metadata.registration_expiry;
-        if (!expiryDateStr) return { shouldCharge: true, status: 'missing_date' };
+        if (!expiryDateStr) {
+            // If they have registration_fee_date but no expiry, they might be legacy
+            if (metadata.registration_fee_date) return { shouldCharge: false, status: 'legacy_valid' };
+            return { shouldCharge: true, status: 'missing_date' };
+        }
 
         const expiryDate = new Date(expiryDateStr);
         // Handle Invalid Date strings
@@ -405,7 +416,15 @@ export function AppointmentForm({
                                     fixedAmount={150} // [FIX] Force exact registration amount
                                     onPaymentSuccess={() => {
                                         setRegFeePending(false);
-                                        toast({ title: "Registration Paid", description: "Receipt generated.", className: "bg-green-600 text-white" });
+                                        toast({ title: "Registration Paid", description: "Receipt generated. Refreshing status...", className: "bg-green-600 text-white" });
+
+                                        // [FIX] Force re-fetch of patient record to clear "PAYMENT REQUIRED"
+                                        const pid = saveSuccess.patient_id || selectedPatientData?.id || selectedPatientId;
+                                        if (pid) {
+                                            getPatientById(pid).then(res => {
+                                                if (res.success) setSelectedPatientData(res.data);
+                                            });
+                                        }
                                     }}
                                     trigger={
                                         <button className="w-full h-14 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl shadow-lg shadow-amber-500/30 font-black uppercase text-sm tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2">
@@ -416,17 +435,6 @@ export function AppointmentForm({
                                 <p className="text-[10px] text-center font-bold text-amber-600/60 uppercase tracking-widest">
                                     * Protocol: Doctor Consultation fees are collected post-visit
                                 </p>
-
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setRegFeePending(false);
-                                        toast({ title: "Payment Skipped", description: "Registration fee added to pending bill.", className: "bg-slate-600 text-white" });
-                                    }}
-                                    className="w-full mt-2 h-10 bg-transparent text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all"
-                                >
-                                    Skip & Bill Later
-                                </button>
                             </div>
                         </div>
                     ) : (
@@ -555,14 +563,14 @@ export function AppointmentForm({
                                 <div className="h-10 w-[1px] bg-slate-200 dark:bg-white/10" />
                                 <div className="text-right">
                                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5 flex items-center justify-end gap-1">Reg Audit</div>
-                                    <div className={`text-sm font-black tracking-tight ${activeRegStatus.shouldCharge ? 'text-red-500' : 'text-emerald-500'}`}>
-                                        {activeRegStatus.shouldCharge ? 'PAYMENT REQUIRED' : 'FEES CLEARED'}
+                                    <div className={`text-sm font-black tracking-tight ${activeRegStatus.status === 'loading' ? 'text-slate-400 animate-pulse' : activeRegStatus.shouldCharge ? 'text-red-500' : 'text-emerald-500'}`}>
+                                        {activeRegStatus.status === 'loading' ? 'CHECKING...' : activeRegStatus.shouldCharge ? 'PAYMENT REQUIRED' : 'FEES CLEARED'}
                                     </div>
                                 </div>
                                 <div className="text-right">
                                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5 uppercase">Validity Expiry</div>
-                                    <div className="text-xs font-bold text-slate-500">
-                                        {activeRegStatus.expiryDate ? new Date(activeRegStatus.expiryDate).toLocaleDateString() : 'N/A (New Record)'}
+                                    <div className={`text-xs font-bold ${activeRegStatus.status === 'loading' ? 'text-slate-400 animate-pulse' : 'text-slate-500'}`}>
+                                        {activeRegStatus.status === 'loading' ? 'FETCHING...' : (activeRegStatus.expiryDate ? new Date(activeRegStatus.expiryDate).toLocaleDateString() : 'N/A (New Record)')}
                                     </div>
                                 </div>
                             </div>

@@ -475,6 +475,15 @@ export async function createInvoice(data: {
                 await tx.hms_appointments.update({ where: { id: data.appointment_id }, data: { status: 'completed' } });
             }
 
+            // [NEW] Registration Fee Tracking
+            const hasRegistrationFee = line_items.some((l: any) => {
+                const desc = (l.description || l.name || "").toLowerCase();
+                return desc.includes('registration fee') || desc.includes('registration & identity service');
+            });
+            if (hasRegistrationFee && resolvedPatientId && (status === 'posted' || status === 'paid')) {
+                await trackRegistrationPayment(tx, resolvedPatientId, tenantId, companyId);
+            }
+
             return invoice;
         }, { timeout: 40000 });
 
@@ -705,20 +714,12 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
             }
 
             // [WORLD CLASS] Registration Fee Tracking
-            const hasRegistrationFee = line_items.some((l: any) => l.description === 'Registration Fee');
+            const hasRegistrationFee = line_items.some((l: any) => {
+                const desc = (l.description || l.name || "").toLowerCase();
+                return desc.includes('registration fee') || desc.includes('registration & identity service');
+            });
             if (hasRegistrationFee && patient_id && (status === 'posted' || status === 'paid')) {
-                const patient = await tx.hms_patient.findUnique({ where: { id: patient_id as string } });
-                const currentMeta = (patient?.metadata as any) || {};
-                await tx.hms_patient.update({
-                    where: { id: patient_id as string },
-                    data: {
-                        metadata: {
-                            ...currentMeta,
-                            registration_fees_paid: true,
-                            registration_fee_date: new Date().toISOString()
-                        }
-                    }
-                });
+                await trackRegistrationPayment(tx, patient_id as string, session.user.tenantId, companyId);
             }
 
             // FORCE UPDATE TOTAL: Ensure DB triggers didn't override the total to 0
@@ -1768,3 +1769,47 @@ async function resolveAutoTax(rate: number, tenant_id: string, company_id: strin
     }
 }
 
+
+// Helper for unified registration tracking
+async function trackRegistrationPayment(tx: any, patientId: string, tenantId: string, companyId: string) {
+    try {
+        // 1. Get validity period from settings
+        const hmsConfigRecord = await tx.hms_settings.findFirst({
+            where: { company_id: companyId, tenant_id: tenantId, key: 'registration_config' }
+        });
+        const configData = (hmsConfigRecord?.value as any) || {};
+
+        // Fallback to history check if config is missing
+        const activeFee = await tx.hms_patient_registration_fees.findFirst({
+            where: { tenant_id: tenantId, company_id: companyId, is_active: true }
+        });
+
+        const validityDays = activeFee?.validity_days || configData.validity || 365;
+
+        // 2. Calculate expiry
+        const now = new Date();
+        const expiryDate = new Date();
+        expiryDate.setDate(now.getDate() + validityDays);
+
+        // 3. Update Patient Metadata
+        const patient = await tx.hms_patient.findUnique({ where: { id: patientId } });
+        if (!patient) return;
+
+        const currentMeta = (patient.metadata as any) || {};
+        await tx.hms_patient.update({
+            where: { id: patientId },
+            data: {
+                metadata: {
+                    ...currentMeta,
+                    registration_fees_paid: true,
+                    registration_fee_date: now.toISOString(),
+                    registration_expiry: expiryDate.toISOString(),
+                    status: 'active' // Clear 'awaiting_payment' if present
+                }
+            }
+        });
+        console.log(`[REG-TRACK] Updated patient ${patientId} registration. Expiry: ${expiryDate.toISOString()}`);
+    } catch (err) {
+        console.error("[REG-TRACK] Failed to update patient registration status", err);
+    }
+}
