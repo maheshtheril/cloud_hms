@@ -56,7 +56,7 @@ export async function createPatient(existingId: string | null | any, formData: F
     // Dynamic Expiry Calculation
     const { getHMSSettings } = await import('./settings');
     const hmsSettings = await getHMSSettings();
-    const validity = (hmsSettings as any).settings?.registrationValidity || 365;
+    const validity = (hmsSettings as any).settings?.registrationValidity || 7;
     const registrationDate = new Date();
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + Number(validity));

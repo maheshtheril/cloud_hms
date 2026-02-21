@@ -317,7 +317,7 @@ export async function getHMSSettings() {
                 registrationProductId: configData.productId || finalProduct?.id || null,
                 registrationProductName: finalProduct?.name || 'Patient Registration Fee',
                 registrationProductDescription: finalProduct?.description || 'Standard Registration Service',
-                registrationValidity: activeFee?.validity_days || configData.validity || 365,
+                registrationValidity: activeFee?.validity_days || configData.validity || 7,
                 enableCardIssuance: configData.enableCardIssuance ?? true,
                 feeHistory: feeHistory.map(f => ({
                     id: f.id,
@@ -352,7 +352,7 @@ export async function updateHMSSettings(data: any) {
 
     try {
         const feeAmount = parseFloat(String(data.registrationFee || '0'));
-        const validityDays = parseInt(String(data.registrationValidity || '365'));
+        const validityDays = parseInt(String(data.registrationValidity || '7'));
 
         console.log(`[HMS SAVE DIAGNOSTIC] User: ${userId} | Co: ${companyId} | Ten: ${tenantId}`);
         console.log(`[HMS SAVE DIAGNOSTIC] Types: Co=${typeof companyId} | Ten=${typeof tenantId} | User=${typeof userId}`);

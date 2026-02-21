@@ -901,7 +901,7 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
                     }
                 });
                 const configData = (hmsConfigRecord?.value as any) || {};
-                const validityDays = parseInt(configData.validity || '365');
+                const validityDays = parseInt(configData.validity || '7');
 
                 const expiryDate = new Date();
                 expiryDate.setDate(expiryDate.getDate() + validityDays);
@@ -1784,7 +1784,7 @@ async function trackRegistrationPayment(tx: any, patientId: string, tenantId: st
             where: { tenant_id: tenantId, company_id: companyId, is_active: true }
         });
 
-        const validityDays = activeFee?.validity_days || configData.validity || 365;
+        const validityDays = activeFee?.validity_days || configData.validity || 7;
 
         // 2. Calculate expiry
         const now = new Date();

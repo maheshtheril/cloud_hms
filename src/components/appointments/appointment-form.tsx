@@ -243,6 +243,7 @@ export function AppointmentForm({
 
         const metadata = (selectedPatientData.metadata as any) || {};
         const createdAt = new Date(selectedPatientData.created_at);
+        const validityDays = hmsSettings?.registrationValidity || 7;
 
         // [AUDIT] Explicit check for 'awaiting_payment' status set during creation
         if (metadata.status === 'awaiting_payment') {
@@ -256,19 +257,20 @@ export function AppointmentForm({
 
         const expiryDateStr = metadata.registration_expiry;
         if (!expiryDateStr) {
-            // [LEGACY-FIX] If metadata is missing, check creation date vs 1 year period
-            // If the patient was created recently (within last 365 days), assume they are valid 
-            // unless metadata explicitly says otherwise (handled above).
-            const oneYearAgo = new Date();
-            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+            // [LEGACY-FIX] Check creation date vs validity period (default 7 days)
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - validityDays);
 
-            if (createdAt > oneYearAgo) {
-                // Return 'valid' but we could make it 'legacy_valid' to be clear
+            if (createdAt > cutoffDate) {
                 return { shouldCharge: false, status: 'valid' };
             }
 
-            // If they are older than 1 year and have no payment metadata, they likely need to pay/renew
-            return { shouldCharge: true, status: 'expired', reason: 'Legacy record (1yr+)' };
+            // If they are older than the validity period and have no payment metadata, renewal is due
+            return {
+                shouldCharge: true,
+                status: 'expired',
+                reason: `Legacy record (${validityDays} days+)`
+            };
         }
 
         const expiryDate = new Date(expiryDateStr);
