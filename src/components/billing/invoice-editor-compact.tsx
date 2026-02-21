@@ -1101,7 +1101,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                       e.preventDefault();
 
                       // WORLD STANDARD VALIDATION: Prevent settlement if zero-price items exist
-                      const zeroLines = lines.filter(l => (l.product_id || l.description) && (l.quantity * l.unit_price) === 0 && l.id !== 'REG-FEE');
+                      const zeroLines = lines.filter(l => (l.product_id || l.description) && (l.quantity * l.unit_price) === 0 && l.product_id !== 'REG-FEE');
                       if (zeroLines.length > 0) {
                         return toast({
                           title: "Settlement Blocked",

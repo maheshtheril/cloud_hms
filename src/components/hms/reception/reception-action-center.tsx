@@ -926,7 +926,11 @@ export function ReceptionActionCenter({
                 console.log("DEBUG: Dialog Open Change", open);
                 if (!open) setSelectedAptForBilling(null);
             }}>
-                <DialogContent className="max-w-[95vw] h-[95vh] flex flex-col p-0 overflow-hidden bg-slate-50/95 backdrop-blur-xl border-slate-200 focus:outline-none">
+                <DialogContent
+                    onInteractOutside={(e) => e.preventDefault()}
+                    onEscapeKeyDown={(e) => e.preventDefault()}
+                    className="max-w-[95vw] h-[95vh] flex flex-col p-0 overflow-hidden bg-slate-50/95 backdrop-blur-xl border-slate-200 focus:outline-none"
+                >
                     {selectedAptForBilling && (
                         <>
                             {console.log("DEBUG: Rendering Invoice Editor for", selectedAptForBilling.id)}
