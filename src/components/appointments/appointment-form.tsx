@@ -416,6 +416,17 @@ export function AppointmentForm({
                                 <p className="text-[10px] text-center font-bold text-amber-600/60 uppercase tracking-widest">
                                     * Protocol: Doctor Consultation fees are collected post-visit
                                 </p>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setRegFeePending(false);
+                                        toast({ title: "Payment Skipped", description: "Registration fee added to pending bill.", className: "bg-slate-600 text-white" });
+                                    }}
+                                    className="w-full mt-2 h-10 bg-transparent text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/40 rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all"
+                                >
+                                    Skip & Bill Later
+                                </button>
                             </div>
                         </div>
                     ) : (
