@@ -234,7 +234,8 @@ export function AppointmentForm({
 
     const checkRegistrationStatus = () => {
         // [FIX] Ensure we are checking the CURRENTLY selected patient data
-        if (!selectedPatientId) return { shouldCharge: false, status: 'none' };
+        const id = selectedPatientId?.toString().trim();
+        if (!id || id === 'undefined' || id === 'null') return { shouldCharge: false, status: 'none' };
 
         if (!selectedPatientData || selectedPatientData.id !== selectedPatientId) {
             return { shouldCharge: false, status: 'loading' };
@@ -563,8 +564,8 @@ export function AppointmentForm({
                                 <div className="h-10 w-[1px] bg-slate-200 dark:bg-white/10" />
                                 <div className="text-right">
                                     <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-0.5 flex items-center justify-end gap-1">Reg Audit</div>
-                                    <div className={`text-sm font-black tracking-tight ${activeRegStatus.status === 'loading' ? 'text-slate-400 animate-pulse' : activeRegStatus.shouldCharge ? 'text-red-500' : 'text-emerald-500'}`}>
-                                        {activeRegStatus.status === 'loading' ? 'CHECKING...' : activeRegStatus.shouldCharge ? 'PAYMENT REQUIRED' : 'FEES CLEARED'}
+                                    <div className={`text-sm font-black tracking-tight ${activeRegStatus.status === 'loading' ? 'text-slate-400 animate-pulse' : activeRegStatus.status === 'none' ? 'text-slate-300' : activeRegStatus.shouldCharge ? 'text-red-500' : 'text-emerald-500'}`}>
+                                        {activeRegStatus.status === 'loading' ? 'CHECKING...' : activeRegStatus.status === 'none' ? '---' : activeRegStatus.shouldCharge ? 'PAYMENT REQUIRED' : 'FEES CLEARED'}
                                     </div>
                                 </div>
                                 <div className="text-right">
