@@ -45,6 +45,19 @@ export async function signup(prevState: any, formData: FormData) {
 
     try {
         const existing = await prisma.app_user.findFirst({ where: { email } })
+        const countryId = rawData.countryId as string;
+        let resolvedCountryId = countryId;
+
+        // Defensive check: if countryId is an ISO code (e.g. "IN"), resolve it to UUID
+        if (countryId && (countryId.length === 2 || countryId.length === 3)) {
+            const countryDoc = await prisma.countries.findFirst({
+                where: { OR: [{ iso2: countryId }, { iso3: countryId }] },
+                select: { id: true }
+            });
+            if (countryDoc) resolvedCountryId = countryDoc.id;
+            else resolvedCountryId = ""; // Invalid ISO code
+        }
+
         if (existing) return { error: "User already exists" }
 
         const tenantId = crypto.randomUUID();
@@ -69,7 +82,7 @@ export async function signup(prevState: any, formData: FormData) {
                     id: companyId,
                     tenant_id: tenantId,
                     name: companyName,
-                    country_id: countryId || undefined,
+                    country_id: resolvedCountryId || undefined,
                     industry: industry,
                     enabled: true
                 }
@@ -100,9 +113,9 @@ export async function signup(prevState: any, formData: FormData) {
             }
 
             // 3b. Copy Default Tax Mappings
-            if (countryId) {
+            if (resolvedCountryId) {
                 const defaultMappings = await tx.country_tax_mappings.findMany({
-                    where: { country_id: countryId, is_active: true }
+                    where: { country_id: resolvedCountryId, is_active: true }
                 });
 
                 if (defaultMappings.length > 0) {
@@ -111,7 +124,7 @@ export async function signup(prevState: any, formData: FormData) {
                             id: crypto.randomUUID(),
                             tenant_id: tenantId,
                             company_id: companyId,
-                            country_id: countryId,
+                            country_id: resolvedCountryId,
                             tax_type_id: dm.tax_type_id,
                             tax_rate_id: dm.tax_rate_id,
                             is_default: false,

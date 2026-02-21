@@ -37,8 +37,10 @@ export async function getCountries() {
     } catch (error) {
         console.error("Failed to fetch countries, returning static fallback:", error);
         // Fallback to static data so UI doesn't break
+        // NOTE: We return iso2 as 'id' here. Downstream actions (like signup) 
+        // must handle these short IDs by resolving them to DB UUIDs.
         return countriesList.map(c => ({
-            id: c.iso2, // Use iso2 as fake ID for UI
+            id: c.iso2, // Use iso2 as short ID for UI fallback
             name: c.name,
             iso2: c.iso2
         }));
