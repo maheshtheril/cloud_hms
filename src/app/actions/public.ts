@@ -77,8 +77,11 @@ export async function getCurrencies() {
         return currencies;
     } catch (error) {
         console.error("Failed to fetch currencies, returning static fallback:", error);
+        // Fallback to static data so UI doesn't break
+        // NOTE: We return code as 'id' here. Downstream actions (like signup) 
+        // must handle these short IDs by resolving them to DB UUIDs.
         return currenciesList.map(c => ({
-            id: c.code, // Use code as fake ID
+            id: c.code, // Use code as short ID for UI fallback
             code: c.code,
             name: c.name,
             symbol: c.symbol

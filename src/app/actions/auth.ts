@@ -58,6 +58,18 @@ export async function signup(prevState: any, formData: FormData) {
             else resolvedCountryId = ""; // Invalid ISO code
         }
 
+        const currencyId = rawData.currencyId as string;
+        let resolvedCurrencyId = currencyId;
+
+        // Defensive check: if currencyId is a code (e.g. "INR"), resolve it to UUID
+        if (currencyId && currencyId.length === 3 && !/^[0-9a-fA-F-]{36}$/.test(currencyId)) {
+            const currencyDoc = await prisma.currencies.findFirst({
+                where: { code: currencyId },
+                select: { id: true }
+            });
+            if (currencyDoc) resolvedCurrencyId = currencyDoc.id;
+        }
+
         if (existing) return { error: "User already exists" }
 
         const tenantId = crypto.randomUUID();
@@ -102,12 +114,12 @@ export async function signup(prevState: any, formData: FormData) {
             });
 
             // 3. Create Company Settings
-            if (currencyId) {
+            if (resolvedCurrencyId) {
                 await tx.company_settings.create({
                     data: {
                         tenant_id: tenantId,
                         company_id: companyId,
-                        currency_id: currencyId,
+                        currency_id: resolvedCurrencyId,
                     }
                 });
             }
