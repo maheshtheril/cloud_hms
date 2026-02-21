@@ -52,411 +52,218 @@ export async function signup(prevState: any, formData: FormData) {
         const branchId = crypto.randomUUID();
         const userId = crypto.randomUUID();
 
-        // 1. Create Tenant
-        await prisma.tenant.create({
-            data: {
-                id: tenantId,
-                name: `${companyName} (Tenant)`,
-                slug: companyName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-            }
-        });
-
-        // 2. Create Company
-        await prisma.company.create({
-            data: {
-                id: companyId,
-                tenant_id: tenantId,
-                name: companyName,
-                country_id: countryId || undefined,
-                industry: industry,
-                // Default settings can be set later or via triggers
-                enabled: true
-            }
-        });
-
-        // 2b. Create Default Main Branch (World Class Standard)
-        await prisma.hms_branch.create({
-            data: {
-                id: branchId,
-                tenant_id: tenantId,
-                company_id: companyId,
-                name: "Main Branch",
-                code: "MAIN",
-                is_active: true,
-                type: "clinic"
-            }
-        });
-
-        // 3. Create Company Settings (Currency, Tax)
-        if (currencyId) {
-            await prisma.company_settings.create({
+        // WRAP EVERYTHING IN A TRANSACTION (World-Class Reliability)
+        await prisma.$transaction(async (tx) => {
+            // 1. Create Tenant
+            await tx.tenant.create({
                 data: {
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    currency_id: currencyId,
-                    // address_country_id: countryId, // Schema might have this
+                    id: tenantId,
+                    name: `${companyName} (Tenant)`,
+                    slug: companyName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
                 }
             });
-        }
 
-        // 3b. Copy Default Tax Mappings from Country
-        if (countryId) {
-            const defaultMappings = await prisma.country_tax_mappings.findMany({
-                where: { country_id: countryId, is_active: true }
+            // 2. Create Company
+            await tx.company.create({
+                data: {
+                    id: companyId,
+                    tenant_id: tenantId,
+                    name: companyName,
+                    country_id: countryId || undefined,
+                    industry: industry,
+                    enabled: true
+                }
             });
 
-            if (defaultMappings.length > 0) {
-                await prisma.company_tax_maps.createMany({
-                    data: defaultMappings.map(dm => ({
-                        id: crypto.randomUUID(), // Explicit ID
+            // 2b. Create Default Main Branch
+            await tx.hms_branch.create({
+                data: {
+                    id: branchId,
+                    tenant_id: tenantId,
+                    company_id: companyId,
+                    name: "Main Branch",
+                    code: "MAIN",
+                    is_active: true,
+                    type: "clinic"
+                }
+            });
+
+            // 3. Create Company Settings
+            if (currencyId) {
+                await tx.company_settings.create({
+                    data: {
                         tenant_id: tenantId,
                         company_id: companyId,
-                        country_id: countryId,
-                        tax_type_id: dm.tax_type_id,
-                        tax_rate_id: dm.tax_rate_id,
-                        is_default: false, // Or true, depending on business logic, usually false until verified
+                        currency_id: currencyId,
+                    }
+                });
+            }
+
+            // 3b. Copy Default Tax Mappings
+            if (countryId) {
+                const defaultMappings = await tx.country_tax_mappings.findMany({
+                    where: { country_id: countryId, is_active: true }
+                });
+
+                if (defaultMappings.length > 0) {
+                    await tx.company_tax_maps.createMany({
+                        data: defaultMappings.map(dm => ({
+                            id: crypto.randomUUID(),
+                            tenant_id: tenantId,
+                            company_id: companyId,
+                            country_id: countryId,
+                            tax_type_id: dm.tax_type_id,
+                            tax_rate_id: dm.tax_rate_id,
+                            is_default: false,
+                            is_active: true
+                        }))
+                    });
+                }
+            }
+
+            // 3c. Seed Chart of Accounts
+            if (currencyId) {
+                const coaTemplate = [
+                    { code: '1000', name: 'Cash on Hand', type: 'Asset' },
+                    { code: '1010', name: 'Bank Account', type: 'Asset' },
+                    { code: '1200', name: 'Accounts Receivable', type: 'Asset' },
+                    { code: '1400', name: 'Inventory / Stock', type: 'Asset' },
+                    { code: '2000', name: 'Accounts Payable', type: 'Liability' },
+                    { code: '2200', name: `Tax Output (Sales)`, type: 'Liability' },
+                    { code: '2210', name: `Tax Input (Purchase)`, type: 'Liability' },
+                    { code: '3000', name: 'Owner Capital / Equity', type: 'Equity' },
+                    { code: '4000', name: 'Product Sales', type: 'Revenue' },
+                    { code: '4100', name: 'Service Revenue', type: 'Revenue' },
+                    { code: '5000', name: 'Cost of Goods Sold (COGS)', type: 'Expense' },
+                    { code: '5100', name: 'Inventory Adjmnt', type: 'Expense' },
+                ];
+
+                await tx.accounts.createMany({
+                    data: coaTemplate.map(acc => ({
+                        id: crypto.randomUUID(),
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        code: acc.code,
+                        name: acc.name,
+                        type: acc.type,
                         is_active: true
                     }))
                 });
+
+                const createdAccounts = await tx.accounts.findMany({ where: { company_id: companyId } });
+                const findId = (code: string) => createdAccounts.find(a => a.code === code)?.id;
+
+                await tx.company_accounting_settings.create({
+                    data: {
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        currency_id: currencyId,
+                        ar_account_id: findId('1200'),
+                        ap_account_id: findId('2000'),
+                        sales_account_id: findId('4000'),
+                        purchase_account_id: findId('5000'),
+                        inventory_asset_account_id: findId('1400'),
+                        output_tax_account_id: findId('2200'),
+                        input_tax_account_id: findId('2210'),
+                        stock_adjustment_account_id: findId('5100'),
+                        fiscal_year_start: new Date(new Date().getFullYear(), 0, 1),
+                        fiscal_year_end: new Date(new Date().getFullYear(), 11, 31),
+                    }
+                });
             }
-        }
 
-        // 3c. Seed Chart of Accounts and Accounting Settings (World Class Standard)
-        // We do this inside the transaction so the user is "Revenue Ready" instantly.
-        if (currencyId) {
-            // Determine Tax Label
-            let taxLabel = "Tax";
-
-            const coaTemplate = [
-                { code: '1000', name: 'Cash on Hand', type: 'Asset' },
-                { code: '1010', name: 'Bank Account', type: 'Asset' },
-                { code: '1200', name: 'Accounts Receivable', type: 'Asset' },
-                { code: '1400', name: 'Inventory / Stock', type: 'Asset' },
-                { code: '2000', name: 'Accounts Payable', type: 'Liability' },
-                { code: '2200', name: `${taxLabel} Output (Sales)`, type: 'Liability' },
-                { code: '2210', name: `${taxLabel} Input (Purchase)`, type: 'Liability' },
-                { code: '3000', name: 'Owner Capital / Equity', type: 'Equity' },
-                { code: '4000', name: 'Product Sales', type: 'Revenue' },
-                { code: '4100', name: 'Service Revenue', type: 'Revenue' },
-                { code: '5000', name: 'Cost of Goods Sold (COGS)', type: 'Expense' },
-                { code: '5100', name: 'Inventory Adjmnt', type: 'Expense' },
-            ];
-
-            await prisma.accounts.createMany({
-                data: coaTemplate.map(acc => ({
-                    id: crypto.randomUUID(),
+            // 4. Create User
+            const hashedPassword = await bcrypt.hash(password, 10);
+            await tx.app_user.create({
+                data: {
+                    id: userId,
                     tenant_id: tenantId,
                     company_id: companyId,
-                    code: acc.code,
-                    name: acc.name,
-                    type: acc.type,
+                    current_branch_id: branchId,
+                    email: email,
+                    password: hashedPassword,
+                    name: name,
+                    is_admin: true,
                     is_active: true
+                }
+            });
+
+            await tx.user_branch.create({
+                data: { user_id: userId, branch_id: branchId, is_default: true }
+            });
+
+            // 4b. Create Roles (BULK OPTIMIZATION)
+            const superAdminRoleId = crypto.randomUUID();
+            const defaultRoles = [
+                { id: superAdminRoleId, key: 'super_admin', name: 'Super Administrator', permissions: ['*'] },
+                { key: 'admin', name: 'Administrator', permissions: ['users:view', 'users:create', 'users:edit', 'hms:admin', 'crm:admin'] },
+                { key: 'hms_admin', name: 'HMS Administrator', permissions: ['hms:view', 'patients:view', 'billing:view'] },
+                { key: 'doctor', name: 'Doctor', permissions: ['patients:view', 'appointments:view', 'prescriptions:create'] },
+                { key: 'nurse', name: 'Nurse', permissions: ['patients:view', 'vitals:create'] },
+                { key: 'receptionist', name: 'Receptionist', permissions: ['patients:create', 'appointments:create', 'billing:create'] },
+                { key: 'sales_executive', name: 'Sales Executive', permissions: ['crm:view_own', 'leads:create'] },
+            ];
+
+            await tx.role.createMany({
+                data: defaultRoles.map(r => ({
+                    id: r.id || crypto.randomUUID(),
+                    tenant_id: tenantId,
+                    key: r.key,
+                    name: r.name,
+                    permissions: r.permissions
                 }))
             });
 
-            // Fetch back to get IDs
-            const createdAccounts = await prisma.accounts.findMany({
-                where: { company_id: companyId }
+            await tx.user_role.create({
+                data: { id: crypto.randomUUID(), user_id: userId, role_id: superAdminRoleId, tenant_id: tenantId }
             });
-            const findId = (code: string) => createdAccounts.find(a => a.code === code)?.id;
 
-            await prisma.company_accounting_settings.create({
-                data: {
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    currency_id: currencyId,
-                    ar_account_id: findId('1200'),
-                    ap_account_id: findId('2000'),
-                    sales_account_id: findId('4000'),
-                    purchase_account_id: findId('5000'),
-                    inventory_asset_account_id: findId('1400'),
-                    output_tax_account_id: findId('2200'),
-                    input_tax_account_id: findId('2210'),
-                    stock_adjustment_account_id: findId('5100'),
-                    fiscal_year_start: new Date(new Date().getFullYear(), 0, 1),
-                    fiscal_year_end: new Date(new Date().getFullYear(), 11, 31),
-                }
-            });
-            console.log('[Signup] Seeded Financial Accounts and Settings');
-        }
-
-        // 4. Create User (Admin) - Linked to Branch
-        // Hash password with bcryptjs instead of relying on pgcrypto
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        await prisma.app_user.create({
-            data: {
-                id: userId,
-                tenant_id: tenantId,
-                company_id: companyId,
-                current_branch_id: branchId,
-                email: email,
-                password: hashedPassword,
-                name: name,
-                is_admin: true,
-                is_tenant_admin: true,
-                is_active: true
-            }
-        });
-
-        // 4a. Link User to Branch (Explicit Access)
-        await prisma.user_branch.create({
-            data: {
-                user_id: userId,
-                branch_id: branchId,
-                is_default: true
-            }
-        });
-
-        // 4b. Create RBAC Roles and Assign to User
-        const roleId = crypto.randomUUID();
-        const hmsRoleId = crypto.randomUUID();
-
-        // Create HMS Role (for HMS module - legacy)
-        await prisma.hms_role.create({
-            data: {
-                id: hmsRoleId,
-                tenant_id: tenantId,
-                name: 'Admin',
-                description: 'Full Access Administrator'
-            }
-        });
-
-        // Explicitly generate ID for hms_user_roles to avoid DB default issues if pgcrypto is missing
-        await prisma.hms_user_roles.create({
-            data: {
-                id: crypto.randomUUID(),
-                user_id: userId,
-                role_id: hmsRoleId
-            }
-        });
-
-        // Seed ALL default RBAC roles for the tenant
-        const defaultRoles = [
-            {
-                id: roleId, // Super admin - will be assigned to first user
-                key: 'super_admin',
-                name: 'Super Administrator',
-                permissions: ['*']
-            },
-            {
-                key: 'admin',
-                name: 'Administrator',
-                permissions: [
-                    'users:view', 'users:create', 'users:edit', 'users:delete',
-                    'roles:view', 'roles:manage',
-                    'settings:view', 'settings:edit',
-                    'hms:admin', 'crm:admin', 'inventory:admin'
-                ]
-            },
-            {
-                key: 'hms_admin',
-                name: 'HMS Administrator',
-                permissions: [
-                    'hms:view', 'hms:create', 'hms:edit', 'hms:delete',
-                    'patients:view', 'patients:create', 'patients:edit',
-                    'appointments:view', 'appointments:create', 'appointments:edit',
-                    'billing:view', 'billing:create', 'pharmacy:view'
-                ]
-            },
-            {
-                key: 'doctor',
-                name: 'Doctor',
-                permissions: [
-                    'patients:view', 'patients:edit',
-                    'appointments:view', 'appointments:create',
-                    'prescriptions:view', 'prescriptions:create', 'prescriptions:edit',
-                    'hms:view'
-                ]
-            },
-            {
-                key: 'nurse',
-                name: 'Nurse',
-                permissions: [
-                    'patients:view', 'appointments:view',
-                    'vitals:view', 'vitals:create', 'vitals:edit',
-                    'hms:view'
-                ]
-            },
-            {
-                key: 'pharmacist',
-                name: 'Pharmacist',
-                permissions: [
-                    'pharmacy:view', 'pharmacy:create', 'pharmacy:edit',
-                    'inventory:view', 'prescriptions:view', 'hms:view'
-                ]
-            },
-            {
-                key: 'receptionist',
-                name: 'Receptionist',
-                permissions: [
-                    'patients:view', 'patients:create', 'patients:edit',
-                    'appointments:view', 'appointments:create', 'appointments:edit',
-                    'billing:view', 'billing:create', 'hms:view'
-                ]
-            },
-            {
-                key: 'crm_supervisor',
-                name: 'CRM Supervisor',
-                permissions: ['crm:admin', 'crm:view_all', 'crm:reports', 'leads:view', 'leads:edit', 'deals:view', 'deals:edit']
-            },
-            {
-                key: 'crm_manager',
-                name: 'CRM Manager',
-                permissions: ['crm:view_team', 'crm:manage_deals', 'crm:assign_leads', 'leads:view', 'leads:edit', 'deals:view', 'deals:edit']
-            },
-            {
-                key: 'sales_executive',
-                name: 'Sales Executive',
-                permissions: ['crm:view_own', 'crm:create_leads', 'crm:manage_own_deals', 'leads:view', 'leads:create', 'deals:view', 'deals:create']
-            },
-            {
-                key: 'inventory_manager',
-                name: 'Inventory Manager',
-                permissions: [
-                    'inventory:view', 'inventory:create', 'inventory:edit', 'inventory:delete',
-                    'purchasing:view', 'purchasing:create', 'purchasing:edit',
-                    'suppliers:view', 'suppliers:create', 'suppliers:edit'
-                ]
-            },
-            {
-                key: 'readonly',
-                name: 'Read Only User',
-                permissions: ['*.view']
-            }
-        ];
-
-        // Create all roles
-        for (const roleData of defaultRoles) {
-            await prisma.role.create({
-                data: {
-                    id: roleData.id || crypto.randomUUID(),
-                    tenant_id: tenantId,
-                    key: roleData.key,
-                    name: roleData.name,
-                    permissions: roleData.permissions
-                }
-            });
-        }
-
-        console.log(`[Signup] Created ${defaultRoles.length} default RBAC roles for tenant`);
-
-        // Assign Super Administrator role to first user
-        await prisma.user_role.create({
-            data: {
-                id: crypto.randomUUID(),
-                user_id: userId,
-                role_id: roleId, // Super admin role ID
-                tenant_id: tenantId
-            }
-        });
-
-        console.log('[Signup] Assigned Super Administrator role to first user');
-
-        // 5. Activate Modules
-        // Logic: If 'crm' is selected, ensure 'admin' is also active.
-        console.log('[Signup DEBUG] Industry:', industry, 'Modules Selected:', selectedModules);
-        let modulesToEnable = new Set(selectedModules);
-
-        // Always enforce System module (Core)
-        modulesToEnable.add('system');
-
-        // If CRM is selected, enforce System (redundant but safe)
-        if (modulesToEnable.has('crm')) {
-            modulesToEnable.add('system');
-        }
-
-        console.log('[Signup DEBUG] Final Modules to Enable:', Array.from(modulesToEnable));
-
-        if (modulesToEnable.size > 0) {
-            // Fetch valid module definitions to get IDs
-            const validModules = await prisma.modules.findMany({
+            // 5. Activate Modules (BULK OPTIMIZATION)
+            let modulesToEnable = new Set(['system', ...selectedModules]);
+            const validModules = await tx.modules.findMany({
                 where: { module_key: { in: Array.from(modulesToEnable) } }
             });
 
             if (validModules.length > 0) {
-                await prisma.tenant_module.createMany({
+                await tx.tenant_module.createMany({
                     data: validModules.map(m => ({
-                        id: crypto.randomUUID(), // Explicit ID
+                        id: crypto.randomUUID(),
                         tenant_id: tenantId,
                         module_key: m.module_key,
-                        module_id: m.id, // Explicitly linking FK
+                        module_id: m.id,
                         enabled: true
                     })),
                     skipDuplicates: true
                 });
-                console.log('[Signup DEBUG] Inserted modules:', validModules.map(m => m.module_key));
-            } else {
-                console.warn('[Signup WARNING] No valid modules found for keys:', Array.from(modulesToEnable));
             }
-        }
-        // 6. Auto-seed HMS master data if HMS module is enabled
-        if (modulesToEnable.has('hms')) {
-            console.log('[Signup] HMS module detected - seeding lab tests and fees...');
 
-            // Seed Standard Lab Tests
-            const labTests = [
-                { sku: 'LAB001', name: 'Complete Blood Count (CBC)', price: 450, description: 'Hemogram, TLC, DLC, Platelets' },
-                { sku: 'LAB002', name: 'Lipid Profile', price: 900, description: 'Cholesterol, Triglycerides, HDL, LDL' },
-                { sku: 'LAB003', name: 'Liver Function Test (LFT)', price: 850, description: 'Bilirubin, SGOT, SGPT, ALP' },
-                { sku: 'LAB004', name: 'Kidney Function Test (KFT)', price: 950, description: 'Urea, Creatinine, Uric Acid' },
-                { sku: 'LAB005', name: 'Thyroid Profile (T3, T4, TSH)', price: 1200, description: 'Thyroid Function Test' },
-                { sku: 'LAB006', name: 'HbA1c', price: 600, description: '3 Month Average Blood Sugar' },
-                { sku: 'LAB007', name: 'Blood Sugar (Fasting)', price: 150, description: 'Glucose - Fasting' },
-                { sku: 'LAB008', name: 'Blood Sugar (PP)', price: 150, description: 'Glucose - Post Prandial' },
-                { sku: 'LAB009', name: 'Urine Routine', price: 200, description: 'Urine R/M' },
-                { sku: 'LAB010', name: 'Vitamin D Total', price: 1800, description: '25-Hydroxy Vitamin D' },
-            ];
+            // 6. HMS Specific Seeding (IF ENABLED)
+            if (modulesToEnable.has('hms')) {
+                const labTests = [
+                    { sku: 'LAB001', name: 'Complete Blood Count (CBC)', price: 450 },
+                    { sku: 'LAB002', name: 'Lipid Profile', price: 900 },
+                    { sku: 'CON001', name: 'Consultation Fee', price: 500 },
+                ];
 
-            await prisma.hms_product.createMany({
-                data: labTests.map(test => ({
-                    id: crypto.randomUUID(), // Explicit ID
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    sku: test.sku,
-                    name: test.name,
-                    description: test.description,
-                    is_service: true,
-                    is_stockable: false,
-                    uom: 'TEST',
-                    price: test.price,
-                    currency: 'INR',
-                    is_active: true,
-                    metadata: { type: 'lab_test', tax_exempt: true }
-                })),
-                skipDuplicates: true
-            });
-            console.log('[Signup] Seeded 10 standard lab tests');
+                await tx.hms_product.createMany({
+                    data: labTests.map(test => ({
+                        id: crypto.randomUUID(),
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        sku: test.sku,
+                        name: test.name,
+                        is_service: true,
+                        price: test.price,
+                        currency: 'INR',
+                        is_active: true,
+                        metadata: { type: 'fee', tax_exempt: true }
+                    }))
+                });
+            }
 
-            // Seed Standard Fees (Registration, Consultation)
-            const stdFees = [
-                { sku: 'REG001', name: 'Registration Fee', price: 100, description: 'One-time patient registration fee', uom: 'UNIT' },
-                { sku: 'CON001', name: 'Consultation Fee', price: 500, description: 'General Doctor Consultation', uom: 'VISIT' },
-            ];
-
-            await prisma.hms_product.createMany({
-                data: stdFees.map(item => ({
-                    id: crypto.randomUUID(), // Explicit ID
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    sku: item.sku,
-                    name: item.name,
-                    description: item.description,
-                    is_service: true,
-                    is_stockable: false,
-                    uom: item.uom,
-                    price: item.price,
-                    currency: 'INR',
-                    is_active: true,
-                    metadata: { type: 'fee', tax_exempt: true }
-                })),
-                skipDuplicates: true
-            });
-            console.log('[Signup] Seeded Registration and Consultation fees');
-        }
-
-        // 7. Initialize Domain-Specific Master Data (UOMs, Locations, Specializations, etc.)
-        await initializeTenantMasters(tenantId, companyId);
+            // 7. Domain Masters
+            await initializeTenantMasters(tenantId, companyId, tx);
+        });
 
         return { success: true };
 

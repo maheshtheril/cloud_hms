@@ -6,7 +6,8 @@ import {
     UserPlus, CalendarPlus, LogIn, CreditCard,
     PhoneIncoming, IdCard, Users, Search,
     Clock, Stethoscope, ChevronRight, Filter, ChevronDown, CheckCircle, Smartphone, MoreVertical, Edit, Activity, IndianRupee,
-    Printer, Wallet, Banknote, Fingerprint, LayoutDashboard, Kanban, AlertTriangle, Syringe, Zap, Eye, EyeOff, Wifi, Bed as BedIcon
+    Printer, Wallet, Banknote, Fingerprint, LayoutDashboard, Kanban, AlertTriangle, Syringe, Zap, Eye, EyeOff, Wifi, Bed as BedIcon,
+    RotateCcw, ShieldAlert, Trash2, Loader2, History
 } from "lucide-react"
 import { ExpenseDialog } from "./expense-dialog"
 import { PettyCashVoucher } from "./petty-cash-voucher"
@@ -23,7 +24,7 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { updateAppointmentStatus } from "@/app/actions/appointment"
-import { getInitialInvoiceData } from "@/app/actions/billing"
+import { getInitialInvoiceData, voidPayment } from "@/app/actions/billing"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -87,6 +88,8 @@ export function ReceptionActionCenter({
     const [viewingPayment, setViewingPayment] = useState<any>(null)
     const [isTerminalMinimized, setIsTerminalMinimized] = useState(false)
     const [selectedAptForBilling, setSelectedAptForBilling] = useState<any>(null)
+    const [isPaymentsOpen, setIsPaymentsOpen] = useState(false)
+    const [voidingId, setVoidingId] = useState<string | null>(null)
 
     // Update time every minute for aging timers
     useEffect(() => {
@@ -206,6 +209,25 @@ export function ReceptionActionCenter({
             router.refresh()
         } else {
             toast({ title: "Error", description: "Failed to update status", variant: "destructive" })
+        }
+    }
+
+    const handleVoidPayment = async (paymentId: string) => {
+        if (!confirm("Are you sure you want to VOID this payment? This will reopen the invoice and revert registration status if applicable.")) return;
+
+        setVoidingId(paymentId);
+        try {
+            const res = await voidPayment(paymentId, "Voided from Reception Dashboard");
+            if (res.success) {
+                toast({ title: "Payment Voided", description: "Invoice reopened and patient status updated." });
+                router.refresh();
+            } else {
+                toast({ title: "Void Failed", description: res.error || "Unknown error", variant: "destructive" });
+            }
+        } catch (err: any) {
+            toast({ title: "Error", description: err.message, variant: "destructive" });
+        } finally {
+            setVoidingId(null);
         }
     }
 
@@ -812,10 +834,18 @@ export function ReceptionActionCenter({
                         <div className="flex items-center border-b border-slate-100 dark:border-slate-800 pb-2">
                             <h3 className="text-xs font-black uppercase tracking-widest text-slate-500">Revenue Pulse</h3>
                         </div>
-                        <div className="p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50">
+                        <div className="p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/50 relative group">
                             <IndianRupee className="h-5 w-5 text-emerald-600 mb-2" />
                             <div className="text-2xl font-black text-emerald-700 dark:text-emerald-400">₹{dailyCollection.toLocaleString()}</div>
                             <div className="text-[10px] font-bold text-emerald-600/60 uppercase">Today's Total</div>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setIsPaymentsOpen(true)}
+                                className="absolute top-2 right-2 text-[8px] font-black uppercase tracking-widest text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                                View Details
+                            </Button>
                         </div>
                     </div>
                 </div >
@@ -949,6 +979,116 @@ export function ReceptionActionCenter({
                             />
                         </>
                     )}
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isPaymentsOpen} onOpenChange={setIsPaymentsOpen}>
+                <DialogContent className="max-w-4xl p-0 overflow-hidden bg-white dark:bg-[#0a0f1e] rounded-[3rem] border-none shadow-[0_50px_100px_rgba(0,0,0,0.3)]">
+                    <div className="bg-gradient-to-br from-emerald-600 to-teal-700 p-8 text-white">
+                        <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-4">
+                                <div className="h-14 w-14 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center">
+                                    <IndianRupee className="h-8 w-8 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-2xl font-black italic uppercase tracking-tighter">Daily Revenue Ledger</h3>
+                                    <p className="text-[10px] font-black uppercase text-emerald-100 tracking-widest">Real-time Financial Pulse</p>
+                                </div>
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] font-black uppercase text-emerald-100 tracking-widest">Total Collection</p>
+                                <p className="text-3xl font-black italic tracking-tighter">₹{dailyCollection.toLocaleString()}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="p-8 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                        <table className="w-full text-left">
+                            <thead>
+                                <tr className="text-[10px] font-black uppercase text-slate-400 border-b border-slate-100 dark:border-slate-800 pb-4">
+                                    <th className="pb-4 px-2">Time</th>
+                                    <th className="pb-4 px-2">Patient</th>
+                                    <th className="pb-4 px-2">Reference</th>
+                                    <th className="pb-4 px-2">Method</th>
+                                    <th className="pb-4 px-2">Amount</th>
+                                    <th className="pb-4 px-2 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
+                                {todayPayments.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={6} className="py-20 text-center">
+                                            <div className="flex flex-col items-center gap-2 opacity-20">
+                                                <History className="h-12 w-12" />
+                                                <p className="text-xs font-black uppercase tracking-widest">No transactions recorded yet</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    todayPayments.map((p: any) => (
+                                        <tr key={p.id} className="group hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
+                                            <td className="py-5 px-2 text-xs font-black text-indigo-500 font-mono">
+                                                {new Date(p.paid_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </td>
+                                            <td className="py-5 px-2">
+                                                <p className="text-xs font-bold leading-none">{p.hms_invoice?.hms_patient?.first_name} {p.hms_invoice?.hms_patient?.last_name}</p>
+                                                <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-tighter">INV: {p.hms_invoice?.invoice_number}</p>
+                                            </td>
+                                            <td className="py-5 px-2 text-[10px] font-mono text-slate-500 uppercase">
+                                                {p.payment_reference || 'Ref-None'}
+                                            </td>
+                                            <td className="py-5 px-2">
+                                                <Badge variant="outline" className="text-[9px] font-black uppercase tracking-tighter bg-white dark:bg-slate-900">
+                                                    {p.method}
+                                                </Badge>
+                                            </td>
+                                            <td className="py-5 px-2 font-black text-slate-900 dark:text-white">
+                                                ₹{Number(p.amount).toLocaleString()}
+                                            </td>
+                                            <td className="py-5 px-2 text-right">
+                                                <div className="flex justify-end gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => setViewingPayment(p)}
+                                                        className="h-8 px-3 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600"
+                                                    >
+                                                        Receipt
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        disabled={voidingId === p.id}
+                                                        onClick={() => handleVoidPayment(p.id)}
+                                                        className="h-8 px-3 text-[9px] font-black uppercase tracking-widest text-rose-400 hover:bg-rose-50 hover:text-rose-600"
+                                                    >
+                                                        {voidingId === p.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ShieldAlert className="h-3 w-3 mr-1" />}
+                                                        Void
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="p-8 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                        <div className="flex items-center gap-2 text-rose-500">
+                            <ShieldAlert className="h-4 w-4" />
+                            <p className="text-[10px] font-bold uppercase tracking-tight max-w-[400px]">
+                                Use 'Void' to reconcile transactions that failed at the bank or were made in error. This will reopen the invoice for reprocessing.
+                            </p>
+                        </div>
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsPaymentsOpen(false)}
+                            className="rounded-2xl h-12 px-8 text-xs font-black uppercase tracking-widest"
+                        >
+                            Close Ledger
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
 

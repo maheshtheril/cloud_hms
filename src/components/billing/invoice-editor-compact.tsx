@@ -8,6 +8,8 @@ import {
   Minimize2, Check, QrCode, Clock, ArrowRight, Activity, Package, Landmark,
   Copy, AlertTriangle
 } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
+import { posService } from '@/lib/services/pos-device'
 import { createInvoice, updateInvoice, cancelInvoice, createQuickPatient, getPatientOutstandingBalance, getPatientLedger, getNextVoucherNumber } from '@/app/actions/billing'
 import { getBestBatch } from '@/app/actions/inventory'
 import { SearchableSelect } from '@/components/ui/searchable-select'
@@ -80,11 +82,13 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const finalizeButtonRef = useRef<HTMLButtonElement>(null)
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false)
   const [errorDetails, setErrorDetails] = useState({ title: '', message: '' })
+  const [posStatus, setPosStatus] = useState<'connected' | 'offline' | 'searching'>('searching')
+  const [isPOSLoading, setIsPOSLoading] = useState(false)
 
-  // Focus management for modal
   useEffect(() => {
     if (isPaymentModalOpen) {
       setTimeout(() => amountInputRef.current?.focus(), 150);
+      setPosStatus(posService.getStatus() as any);
     }
   }, [isPaymentModalOpen]);
 
@@ -320,6 +324,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   }, [lines.length]);
 
   const [payments, setPayments] = useState<Payment[]>([])
+  const [isFinalizing, setIsFinalizing] = useState(false)
+  const [showUPIQR, setShowUPIQR] = useState<{ amount: number, vpa: string } | null>(null)
   const [activePaymentAmount, setActivePaymentAmount] = useState<string>('')
   const [globalDiscount, setGlobalDiscount] = useState(Number(initialInvoice?.total_discount || 0))
 
@@ -581,6 +587,38 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
       setLoading(false)
     }
   }
+
+  const handlePOSPayment = async (method: 'CARD' | 'UPI', amount: number) => {
+    setIsPOSLoading(true);
+    try {
+      const res = await posService.initiatePayment({
+        amount,
+        invoiceId: provisionalNo || 'BILL-TEMP',
+        method
+      });
+
+      if (res.success) {
+        toast({ title: "Payment Successful", description: `Received ${currency}${amount} via Device` });
+        setPayments(prev => {
+          const newPayments: Payment[] = [...prev, { method: method.toLowerCase() as any, amount, reference: res.reference } as Payment];
+          const currentTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
+          const remaining = Math.max(0, grandTotal - currentTotalPaid);
+          setTimeout(() => setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : ''), 0);
+          return newPayments;
+        });
+      } else {
+        toast({ title: "Device Error", description: res.error || "Transaction failed on machine", variant: "destructive" });
+        if (method === 'UPI') {
+          // Fallback to static QR
+          setShowUPIQR({ amount, vpa: 'hospital@upi' });
+        }
+      }
+    } catch (err: any) {
+      toast({ title: "Sync Error", description: "Could not reach POS service", variant: "destructive" });
+    } finally {
+      setIsPOSLoading(false);
+    }
+  };
 
   const applyPricingMode = (mode: 'standard' | 'mrp') => {
     setPricingMode(mode)
@@ -1288,15 +1326,25 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     <button
                       key={m.id}
                       type="button"
+                      disabled={isPOSLoading}
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         const amt = parseFloat(activePaymentAmount) || 0;
                         if (amt > 0) {
+                          // Plug-n-Play Logic: If device is connected and it's Card/UPI, try POS first
+                          if (posStatus === 'connected' && (m.id === 'card' || m.id === 'upi')) {
+                            handlePOSPayment(m.id.toUpperCase() as any, amt);
+                            return;
+                          }
+
+                          if (m.id === 'upi') {
+                            setShowUPIQR({ amount: amt, vpa: 'hospital@upi' }); // Default VPA, ideally from settings
+                          }
                           setPayments(prev => {
                             const newPayments: Payment[] = [...prev, { method: m.id as any, amount: amt } as Payment];
                             const currentTotalPaid = newPayments.reduce((sum, p) => sum + p.amount, 0);
-                            const remaining = Math.max(0, grandTotal - currentTotalPaid);
+                            const remaining = Math.max(0, (grandTotal + (includePrevBalance ? patientBalance : 0)) - currentTotalPaid);
                             setTimeout(() => setActivePaymentAmount(remaining > 0 ? remaining.toFixed(2) : ''), 0);
                             return newPayments;
                           });
@@ -1304,12 +1352,19 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                           toast({ title: "Amount Required", description: "Enter an amount before selecting a payment method.", variant: "destructive" });
                         }
                       }}
-                      className="group relative py-4 bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-white/5 rounded-2xl flex flex-col items-center justify-center gap-2 transition-all hover:bg-slate-50 dark:hover:bg-slate-800 hover:border-indigo-600 active:scale-95 shadow-sm dark:shadow-none"
+                      className={`group relative py-4 bg-white dark:bg-slate-900/50 border rounded-2xl flex flex-col items-center justify-center gap-2 transition-all hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 shadow-sm dark:shadow-none ${isPOSLoading ? 'opacity-50 cursor-not-allowed' : 'border-slate-200 dark:border-white/5 hover:border-indigo-600'}`}
                     >
+                      {/* POS Connected Badge */}
+                      {posStatus === 'connected' && (m.id === 'card' || m.id === 'upi') && (
+                        <div className="absolute -top-2 -right-2 bg-emerald-500 text-white text-[6px] font-black px-1.5 py-0.5 rounded-full shadow-lg animate-pulse uppercase">Device Active</div>
+                      )}
+
                       <div className="p-2 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-white/10 group-hover:border-current transition-all">
-                        <m.icon className={`h-4 w-4 ${m.color}`} />
+                        {isPOSLoading && (m.id === 'card' || m.id === 'upi') ? <Loader2 className="h-4 w-4 animate-spin text-indigo-500" /> : <m.icon className={`h-4 w-4 ${m.color}`} />}
                       </div>
-                      <span className="text-[8px] font-black tracking-[0.2em] text-slate-500 dark:text-white opacity-60 group-hover:opacity-100 uppercase">{m.label}</span>
+                      <span className="text-[8px] font-black tracking-[0.2em] text-slate-500 dark:text-white opacity-60 group-hover:opacity-100 uppercase">
+                        {isPOSLoading && (m.id === 'card' || m.id === 'upi') ? 'PROCESSING...' : m.label}
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -1466,6 +1521,57 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               <Button onClick={() => setIsLedgerOpen(false)} variant="secondary" className="px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest py-6">
                 Close Audit Terminal
               </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+
+        {/* UPI QR MODAL */}
+        <Dialog open={!!showUPIQR} onOpenChange={() => setShowUPIQR(null)}>
+          <DialogContent className="z-[500] max-w-sm p-0 bg-white dark:bg-[#0a0f1e] rounded-[2.5rem] border-none shadow-[0_50px_100px_rgba(99,102,241,0.2)] overflow-hidden">
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-700 p-8 text-center relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+                <div className="absolute top-[-50%] left-[-50%] w-[200%] h-[200%] animate-spin-slow bg-[radial-gradient(circle,white_0%,transparent_70%)]" />
+              </div>
+              <div className="relative z-10">
+                <div className="bg-white/20 p-3 rounded-2xl backdrop-blur-md inline-flex mb-4">
+                  <QrCode className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-xl font-black text-white italic tracking-tighter uppercase mb-1">UPI Smart Pay</h3>
+                <p className="text-[10px] font-black text-indigo-100 uppercase tracking-widest opacity-80">Scan with any UPI App</p>
+              </div>
+            </div>
+
+            <div className="p-10 flex flex-col items-center gap-8">
+              <div className="p-4 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.05)] border border-slate-50 relative group">
+                {showUPIQR && (
+                  <QRCodeSVG
+                    value={`upi://pay?pa=${showUPIQR.vpa}&pn=Hospital&am=${showUPIQR.amount}&cu=INR&tn=Invoice`}
+                    size={220}
+                    level="H"
+                    includeMargin={true}
+                  />
+                )}
+                <div className="absolute inset-0 bg-indigo-600/5 opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl pointer-events-none" />
+              </div>
+
+              <div className="text-center">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Settlement Amount</p>
+                <p className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter italic">
+                  {currency}{showUPIQR?.amount.toFixed(2)}
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowUPIQR(null)}
+                className="w-full h-14 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all"
+              >
+                Done / Paid
+              </button>
+
+              <p className="text-[9px] font-bold text-slate-400 max-w-[200px] text-center uppercase tracking-tight leading-relaxed">
+                Please verify payment success on your mobile / machine before closing this terminal.
+              </p>
             </div>
           </DialogContent>
         </Dialog>

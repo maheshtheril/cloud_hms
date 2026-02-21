@@ -1068,6 +1068,112 @@ export async function settlePatientDues(patientId: string, amount: number, metho
     }
 }
 
+export async function voidPayment(paymentId: string, reason: string = "Payment Failed/Reversed") {
+    const session = await auth();
+    const companyId = session?.user?.companyId || session?.user?.tenantId;
+    if (!companyId) return { error: "Unauthorized" };
+
+    try {
+        const payment = await prisma.hms_invoice_payments.findUnique({
+            where: { id: paymentId },
+            include: { hms_invoice: true }
+        });
+
+        if (!payment) return { error: "Payment record not found" };
+
+        const result = await prisma.$transaction(async (tx) => {
+            // 1. Update Invoice Totals
+            const invoice = payment.hms_invoice;
+            const newTotalPaid = Math.max(0, Number(invoice.total_paid || 0) - Number(payment.amount));
+            const newOutstanding = Math.min(Number(invoice.total), Number(invoice.outstanding_amount || 0) + Number(payment.amount));
+
+            // Revert status to posted if it was paid
+            const newStatus = newOutstanding > 0 ? 'posted' : 'paid';
+
+            await tx.hms_invoice.update({
+                where: { id: payment.invoice_id },
+                data: {
+                    total_paid: newTotalPaid,
+                    outstanding_amount: newOutstanding,
+                    status: newStatus as any,
+                    updated_at: new Date()
+                }
+            });
+
+            // 2. Log in History
+            await tx.hms_invoice_history.create({
+                data: {
+                    tenant_id: session.user.tenantId,
+                    company_id: companyId,
+                    invoice_id: payment.invoice_id,
+                    changed_by: session.user.id,
+                    change_type: 'payment_voided',
+                    delta: {
+                        payment_id: paymentId,
+                        amount: payment.amount,
+                        method: payment.method,
+                        reason: reason
+                    }
+                }
+            });
+
+            // 3. Reverse Registration Status if applicable
+            const regLine = await tx.hms_invoice_lines.findFirst({
+                where: {
+                    invoice_id: payment.invoice_id,
+                    OR: [
+                        { description: { contains: 'Registration Fee', mode: 'insensitive' } },
+                        { description: { contains: 'Identity Service', mode: 'insensitive' } }
+                    ]
+                }
+            });
+
+            if (regLine && invoice.patient_id) {
+                const patient = await tx.hms_patient.findUnique({ where: { id: invoice.patient_id } });
+                const currentMeta = (patient?.metadata as any) || {};
+
+                if (currentMeta.registration_fees_paid) {
+                    await tx.hms_patient.update({
+                        where: { id: invoice.patient_id },
+                        data: {
+                            metadata: {
+                                ...currentMeta,
+                                registration_fees_paid: false,
+                                status: 'inactive'
+                            }
+                        }
+                    });
+                }
+            }
+
+            // 4. Delete accounting journal if exists
+            const paymentRef = `PMT-${paymentId}`;
+            await tx.journal_entries.deleteMany({
+                where: {
+                    company_id: companyId,
+                    ref: paymentRef
+                }
+            });
+
+            // 5. Delete the specific payment record
+            await tx.hms_invoice_payments.delete({
+                where: { id: paymentId }
+            });
+
+            return { success: true };
+        });
+
+        revalidatePath(`/hms/billing/${payment.invoice_id}`);
+        revalidatePath('/hms/billing');
+        revalidatePath('/hms/reception/dashboard');
+
+        return result;
+
+    } catch (error: any) {
+        console.error("Failed to void payment:", error);
+        return { error: error.message || "Failed to void payment" };
+    }
+}
 
 
 export async function shareInvoiceWhatsapp(invoiceId: string, pdfBase64?: string) {

@@ -1,12 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { internalSeedUOMs } from "@/app/actions/uom";
 
-export async function initializeTenantMasters(tenantId: string, companyId: string) {
+export async function initializeTenantMasters(tenantId: string, companyId: string, tx?: any) {
+    const db = tx || prisma;
     console.log(`[TenantInit] Initializing masters for Tenant: ${tenantId}, Company: ${companyId}`);
 
     try {
         // 0. Seed Standard Departments (World-Class Comprehensive List)
-        const deptCount = await prisma.hms_departments.count({
+        const deptCount = await db.hms_departments.count({
             where: { company_id: companyId }
         });
 
@@ -26,7 +27,7 @@ export async function initializeTenantMasters(tenantId: string, companyId: strin
                 { name: 'Cardiology', code: 'CARD', description: 'Heart care' }
             ];
 
-            await prisma.hms_departments.createMany({
+            await db.hms_departments.createMany({
                 data: standardDepartments.map(dept => ({
                     id: crypto.randomUUID(),
                     tenant_id: tenantId,
@@ -41,16 +42,16 @@ export async function initializeTenantMasters(tenantId: string, companyId: strin
         }
 
         // 1. Seed UOMs (Crucial for inventory/billing)
-        await internalSeedUOMs(tenantId, companyId);
+        await internalSeedUOMs(tenantId, companyId, db);
         console.log('[TenantInit] Seeded UOMs');
 
         // 2. Seed Default Stock Location (Professional Standard)
-        const locationCount = await prisma.hms_stock_location.count({
+        const locationCount = await db.hms_stock_location.count({
             where: { company_id: companyId }
         });
 
         if (locationCount === 0) {
-            await prisma.hms_stock_location.create({
+            await db.hms_stock_location.create({
                 data: {
                     id: crypto.randomUUID(),
                     tenant_id: tenantId,
@@ -65,7 +66,7 @@ export async function initializeTenantMasters(tenantId: string, companyId: strin
         }
 
         // 3. Seed Standard HMS Roles (Physician, Nurse, etc. - in addition to RBAC roles)
-        const roleCount = await prisma.hms_roles.count({
+        const roleCount = await db.hms_roles.count({
             where: { tenant_id: tenantId }
         });
 
@@ -76,7 +77,7 @@ export async function initializeTenantMasters(tenantId: string, companyId: strin
                 "Pharmacist", "Lab Technician", "Administrative Specialist"
             ];
 
-            await prisma.hms_roles.createMany({
+            await db.hms_roles.createMany({
                 data: standardRoles.map(name => ({
                     id: crypto.randomUUID(),
                     tenant_id: tenantId,
@@ -90,7 +91,7 @@ export async function initializeTenantMasters(tenantId: string, companyId: strin
         }
 
         // 4. Seed Standard Specializations
-        const specCount = await prisma.hms_specializations.count({
+        const specCount = await db.hms_specializations.count({
             where: { tenant_id: tenantId }
         });
 
@@ -101,7 +102,7 @@ export async function initializeTenantMasters(tenantId: string, companyId: strin
                 "Ophthalmology", "ENT", "Oncology", "Urology", "Nephrology"
             ];
 
-            await prisma.hms_specializations.createMany({
+            await db.hms_specializations.createMany({
                 data: standardSpecs.map(name => ({
                     id: crypto.randomUUID(),
                     tenant_id: tenantId,
@@ -114,13 +115,13 @@ export async function initializeTenantMasters(tenantId: string, companyId: strin
         }
 
         // 5. Seed Placeholder Manufacturers
-        const mfgCount = await prisma.hms_manufacturer.count({
+        const mfgCount = await db.hms_manufacturer.count({
             where: { company_id: companyId }
         });
 
         if (mfgCount === 0) {
             const commonMfgs = ["Pfizer", "Novartis", "Roche", "Merck", "GSK", "Sanofi", "AstraZeneca"];
-            await prisma.hms_manufacturer.createMany({
+            await db.hms_manufacturer.createMany({
                 data: commonMfgs.map(name => ({
                     id: crypto.randomUUID(),
                     tenant_id: tenantId,

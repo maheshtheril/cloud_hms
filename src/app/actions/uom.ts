@@ -3,16 +3,17 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 
-export async function internalSeedUOMs(tenantId: string, companyId: string) {
+export async function internalSeedUOMs(tenantId: string, companyId: string, tx?: any) {
+    const db = tx || prisma;
     try {
         // 1. Create or get Categories
-        const pharmaCategory = await prisma.hms_uom_category.upsert({
+        const pharmaCategory = await db.hms_uom_category.upsert({
             where: { ux_hms_uom_category_name: { tenant_id: tenantId, company_id: companyId, name: 'Pharmaceutical Packaging' } },
             update: {},
             create: { tenant_id: tenantId, company_id: companyId, name: 'Pharmaceutical Packaging' }
         });
 
-        const serviceCategory = await prisma.hms_uom_category.upsert({
+        const serviceCategory = await db.hms_uom_category.upsert({
             where: { ux_hms_uom_category_name: { tenant_id: tenantId, company_id: companyId, name: 'Services' } },
             update: {},
             create: { tenant_id: tenantId, company_id: companyId, name: 'Services' }
@@ -37,7 +38,7 @@ export async function internalSeedUOMs(tenantId: string, companyId: string) {
         let skipped = 0
 
         for (const uom of uoms) {
-            await prisma.hms_uom.upsert({
+            await db.hms_uom.upsert({
                 where: {
                     ux_hms_uom_name: {
                         tenant_id: tenantId,
