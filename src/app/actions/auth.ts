@@ -78,6 +78,7 @@ export async function signup(prevState: any, formData: FormData) {
         const userId = crypto.randomUUID();
 
         // WRAP EVERYTHING IN A TRANSACTION (World-Class Reliability)
+        console.log(`[AUTH] Starting signup transaction for ${email} (Timeout: 60s)`);
         await prisma.$transaction(async (tx) => {
             // 1. Create Tenant
             await tx.tenant.create({
@@ -286,11 +287,13 @@ export async function signup(prevState: any, formData: FormData) {
                 });
             }
 
-            // 7. Domain Masters
             await initializeTenantMasters(tenantId, companyId, tx);
         }, {
-            timeout: 30000 // 30 seconds to allow for network latency and extensive seeding
+            maxWait: 20000,
+            timeout: 60000
         });
+
+        console.log(`[AUTH] Signup transaction successful for ${email}`);
 
         return { success: true };
 
