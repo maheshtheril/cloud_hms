@@ -19,27 +19,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 try {
                     const email = (credentials.email as string || '').toLowerCase()
 
-                    // 1. DEBUG BACKDOOR (Temporary)
-                    if (email === 'debug@ziona.com' && credentials.password === 'debug123') {
-                        console.log("[AUTH] DEBUG BACKDOOR TRIGGERED");
-                        return {
-                            id: 'debug-user-uuid',
-                            email: 'debug@ziona.com',
-                            name: 'Debug User',
-                            role: 'ADMIN',
-                            isAdmin: true,
-                            isTenantAdmin: true,
-                            tenantId: 'debug-tenant-uuid',
-                            companyId: 'debug-company-uuid',
-                            companyName: 'Debug Company',
-                            modules: ['hms', 'crm', 'inventory', 'finance'],
-                            currencyCode: 'INR',
-                            currencySymbol: '₹',
-                            industry: 'Technology',
-                            hasCRM: true,
-                            hasHMS: true
-                        } as any;
-                    }
 
                     console.log("[AUTH] Authorizing user:", email);
 
@@ -62,11 +41,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     console.log("[AUTH] Comparing passwords...");
                     let passwordsMatch = await bcrypt.compare(credentials.password as string, user.password);
 
-                    // EMERGENCY DEMO BYPASS
-                    if (credentials.password === 'admin123' || credentials.password === '123456' || credentials.password === 'master123') {
-                        passwordsMatch = true;
-                        console.log("[AUTH] EMERGENCY DEMO BYPASS: Password matched via universal key.");
-                    }
 
                     console.log("[AUTH] Passwords match:", passwordsMatch);
 
