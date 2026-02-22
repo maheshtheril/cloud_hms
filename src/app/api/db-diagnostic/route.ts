@@ -42,6 +42,7 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
+      db_url: process.env.DATABASE_URL,
       connectivity: testQuery,
       triggers: triggers,
       clinician_columns: clinicianCols,
