@@ -51,16 +51,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         }
                     }) as any;
 
-                    console.log("[AUTH] User found in DB:", user ? "YES" : "NO");
+                    console.log("[AUTH] User found in DB:", user ? "YES (ID: " + user.id + ")" : "NO");
 
-                    if (!user) return null;
+                    if (!user) {
+                        console.log("[AUTH] REJECTED: User not found or not active.");
+                        return null;
+                    }
 
                     // 3. Password Verification
                     console.log("[AUTH] Comparing passwords...");
                     const passwordsMatch = await bcrypt.compare(credentials.password as string, user.password);
                     console.log("[AUTH] Passwords match:", passwordsMatch);
 
-                    if (!passwordsMatch) return null;
+                    if (!passwordsMatch) {
+                        console.log("[AUTH] REJECTED: Password mismatch.");
+                        return null;
+                    }
 
                     // 4. Session Enrichment (Robust)
                     try {
