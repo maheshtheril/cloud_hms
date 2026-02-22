@@ -10,6 +10,7 @@ import { ZionaLogo } from "@/components/branding/ziona-logo"
 export function SignupForm({ setIsLogin, branding }: { setIsLogin?: (v: boolean) => void, branding?: any }) {
     const [step, setStep] = useState(1)
     const [state, formAction, isPending] = useActionState(signup, null)
+    const [signingIn, setSigningIn] = useState(false)
 
     // Data constraints
     const [countries, setCountries] = useState<any[]>([])
@@ -55,7 +56,8 @@ export function SignupForm({ setIsLogin, branding }: { setIsLogin?: (v: boolean)
 
     // Auto-login on success
     useEffect(() => {
-        if (state && !('error' in state) && formData.email && formData.password) {
+        if (state && !('error' in state) && formData.email && formData.password && !signingIn) {
+            setSigningIn(true);
             let callbackUrl = "/";
             if (formData.modules.includes('crm') && !formData.modules.includes('hms')) {
                 callbackUrl = "/crm/dashboard";
@@ -69,7 +71,7 @@ export function SignupForm({ setIsLogin, branding }: { setIsLogin?: (v: boolean)
                 callbackUrl
             });
         }
-    }, [state, formData.email, formData.password, formData.modules]);
+    }, [state, formData.email, formData.password, formData.modules, signingIn]);
 
     // Auto-select currency based on country
     useEffect(() => {

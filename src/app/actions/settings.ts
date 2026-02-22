@@ -287,11 +287,11 @@ export async function getHMSSettings() {
         // 4. Finalize Fee (Priority: Active Table Entry > Config JSON Value > Product Price > Fallback 100)
         let finalFee = 100;
         if (activeFee) {
-            finalFee = parseFloat(activeFee.fee_amount.toString());
+            finalFee = Number(activeFee.fee_amount);
         } else if (configData.fee !== undefined) {
-            finalFee = parseFloat(configData.fee);
+            finalFee = Number(configData.fee);
         } else if (finalProduct) {
-            finalFee = parseFloat(finalProduct.price?.toString() || '100');
+            finalFee = Number(finalProduct.price || '100');
         }
 
         // 4. Fetch All Available Service Products (for mapping)
@@ -310,6 +310,11 @@ export async function getHMSSettings() {
             orderBy: { name: 'asc' }
         });
 
+        const serializedProducts = availableProducts.map(p => ({
+            ...p,
+            price: Number(p.price || 0)
+        }));
+
         return {
             success: true,
             settings: {
@@ -321,13 +326,13 @@ export async function getHMSSettings() {
                 enableCardIssuance: configData.enableCardIssuance ?? true,
                 feeHistory: feeHistory.map(f => ({
                     id: f.id,
-                    amount: f.fee_amount,
+                    amount: Number(f.fee_amount),
                     validity: f.validity_days,
                     active: f.is_active,
                     date: f.created_at
                 }))
             },
-            availableProducts
+            availableProducts: serializedProducts
         };
     } catch (error: any) {
         return { error: error.message };

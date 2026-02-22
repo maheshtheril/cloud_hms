@@ -296,8 +296,15 @@ export async function getUOMs() {
         let uoms = await prisma.hms_uom.findMany({
             where: { company_id: session.user.companyId, is_active: true },
             orderBy: { name: 'asc' },
-            select: { id: true, name: true, category_id: true, ratio: true, uom_type: true }
+            select: { id: true, name: true, category_id: true, ratio: true, rounding: true, uom_type: true }
         });
+
+        // Serialization fix: convert Decimals to numbers
+        uoms = uoms.map(u => ({
+            ...u,
+            ratio: Number(u.ratio),
+            rounding: Number(u.rounding || 0)
+        }));
 
         // Enrich if we have very few UOMs (e.g. only 'Each')
         if (uoms.length < 10) {
@@ -384,6 +391,12 @@ export async function getUOMs() {
                 orderBy: { name: 'asc' },
                 select: { id: true, name: true, category_id: true, ratio: true, uom_type: true }
             });
+
+            // Serialization fix: convert Decimals to numbers
+            uoms = uoms.map(u => ({
+                ...u,
+                ratio: Number(u.ratio)
+            }));
         }
         return uoms;
     } catch (error) {
@@ -402,6 +415,16 @@ export async function getUOMCategories() {
             include: { hms_uom: true }
         });
 
+        // Serialization fix for Nested UOM records
+        const serialized = categories.map(cat => ({
+            ...cat,
+            hms_uom: cat.hms_uom.map(u => ({
+                ...u,
+                ratio: Number(u.ratio),
+                rounding: Number(u.rounding || 0)
+            }))
+        }));
+
         if (categories.length === 0 && session.user.tenantId) {
             // Seed defaults
             const defaults = ['Unit', 'Weight', 'Working Time', 'Volume', 'Length'];
@@ -413,13 +436,22 @@ export async function getUOMCategories() {
                 }))
             });
             // Re-fetch
-            return await prisma.hms_uom_category.findMany({
+            const cats = await prisma.hms_uom_category.findMany({
                 where: { company_id: session.user.companyId },
                 include: { hms_uom: true }
             });
+
+            return cats.map(cat => ({
+                ...cat,
+                hms_uom: cat.hms_uom.map(u => ({
+                    ...u,
+                    ratio: Number(u.ratio),
+                    rounding: Number(u.rounding || 0)
+                }))
+            }));
         }
 
-        return categories;
+        return serialized;
     } catch (error) {
         console.error("Failed to fetch UOM categories:", error);
         return [];
@@ -847,7 +879,7 @@ export async function getProductsPremium(query?: string, page: number = 1, suppl
         });
 
         // Default to ₹ if not set, as user context implies India
-        const currencySymbol = companySettings?.currencies?.symbol || '$';
+        const currencySymbol = companySettings?.currencies?.symbol || '₹';
 
         return {
             success: true,

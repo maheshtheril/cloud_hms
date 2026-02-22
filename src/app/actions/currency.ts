@@ -29,7 +29,7 @@ export async function getCompanyDefaultCurrency(companyId?: string): Promise<Cur
     try {
         const session = await auth()
         if (!session?.user?.tenantId) {
-            return { code: 'USD', symbol: '$', name: 'US Dollar' }
+            return { code: 'INR', symbol: '₹', name: 'Indian Rupee' }
         }
 
         // First, try to get from accounting settings
@@ -55,7 +55,7 @@ export async function getCompanyDefaultCurrency(companyId?: string): Promise<Cur
         if (accountingSettings?.currencies) {
             return {
                 code: accountingSettings.currencies.code,
-                symbol: accountingSettings.currencies.symbol || '$',
+                symbol: accountingSettings.currencies.symbol || '₹',
                 name: accountingSettings.currencies.name,
             }
         }
@@ -105,7 +105,7 @@ export async function getCompanyDefaultCurrency(companyId?: string): Promise<Cur
 
     } catch (error) {
         console.error('Error fetching company default currency:', error)
-        return { code: 'USD', symbol: '$', name: 'US Dollar' }
+        return { code: 'INR', symbol: '₹', name: 'Indian Rupee' }
     }
 }
 
@@ -161,5 +161,5 @@ function getCurrencySymbol(code: string): string {
         'AED': 'د.إ',
         'SAR': '﷼',
     }
-    return symbols[code] || '$'
+    return symbols[code] || '₹'
 }

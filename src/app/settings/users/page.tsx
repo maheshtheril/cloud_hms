@@ -15,11 +15,12 @@ interface PageProps {
 }
 
 export default async function UsersPage({ searchParams }: PageProps) {
-    const page = parseInt(searchParams.page || '1')
+    const params = await searchParams;
+    const page = parseInt(params.page || '1')
     const result = await getUsers({
-        search: searchParams.search,
-        role: searchParams.role,
-        status: searchParams.status,
+        search: params.search,
+        role: params.role,
+        status: params.status,
         page,
         limit: 20
     })

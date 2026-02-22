@@ -31,10 +31,10 @@ export function DealForm({
     const [state, dispatch] = useFormState(mode === 'edit' ? updateDeal : createDeal, initialState)
     const [selectedPipelineId, setSelectedPipelineId] = useState<string>(initialData?.pipeline_id || pipelines[0]?.id || '')
 
-    const [currency, setCurrency] = useState(initialData?.currency || defaultCurrency?.code || 'USD')
+    const [currency, setCurrency] = useState(initialData?.currency || defaultCurrency?.code || 'INR')
 
     // Get symbol for current currency
-    const currentCurrencySymbol = supportedCurrencies.find(c => c.code === currency)?.symbol || '$'
+    const currentCurrencySymbol = supportedCurrencies.find(c => c.code === currency)?.symbol || '₹'
 
     // Get stages for selected pipeline
     const selectedPipeline = pipelines.find(p => p.id === selectedPipelineId)

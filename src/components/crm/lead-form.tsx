@@ -76,8 +76,8 @@ export function LeadForm({
         setIsSavingTargetType(false)
     }
 
-    const [currency, setCurrency] = useState(initialData?.currency || defaultCurrency?.code || 'USD')
-    const currentCurrencySymbol = supportedCurrencies.find(c => c.code === currency)?.symbol || defaultCurrency?.symbol || '$'
+    const [currency, setCurrency] = useState(initialData?.currency || defaultCurrency?.code || 'INR')
+    const currentCurrencySymbol = supportedCurrencies.find(c => c.code === currency)?.symbol || defaultCurrency?.symbol || '₹'
 
     const defaultPipeline = pipelines.find(p => p.is_default) || pipelines[0]
     const defaultCompany = companies[0]
