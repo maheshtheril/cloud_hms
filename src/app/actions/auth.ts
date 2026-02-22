@@ -314,7 +314,11 @@ export async function signup(prevState: any, formData: FormData) {
         return { success: true };
 
     } catch (error) {
-        console.error("Signup error:", error)
-        return { error: "Failed to create account. " + (error as Error).message }
+        // WORLD-CLASS ERROR REPORTING: Prevent generic 500s
+        const err = error as Error;
+        console.error("[AUTH] Fatal signup error:", err);
+        return {
+            error: `Registration failed: ${err.message || "Unknown error"}. Please check server logs for Digest: 1401391270 correlate.`
+        };
     }
 }

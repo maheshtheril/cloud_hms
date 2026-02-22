@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { internalSeedUOMs } from "@/app/actions/uom";
+import { internalSeedUOMs } from "@/lib/services/uom";
 import crypto from 'crypto';
 
 export async function initializeTenantMasters(tenantId: string, companyId: string, tx?: any) {
