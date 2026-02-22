@@ -183,7 +183,7 @@ export async function signup(prevState: any, formData: FormData) {
                     data: {
                         tenant_id: tenantId,
                         company_id: companyId,
-                        currency_id: currencyId,
+                        currency_id: resolvedCurrencyId,
                         ar_account_id: findId('1200'),
                         ap_account_id: findId('2000'),
                         sales_account_id: findId('4000'),
