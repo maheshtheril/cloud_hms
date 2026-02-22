@@ -142,28 +142,21 @@ export default function LoginClient({ branding }: { branding: Branding | null })
                                             <div className="absolute inset-0 bg-indigo-500/20 blur-[60px] rounded-full group-hover:bg-indigo-500/30 transition-all duration-1000" />
                                             <ZionaLogo size={120} colorScheme="signature" theme="dark" variant="icon" speed="slow" />
                                         </div>
-                                    ) : branding?.logo_url ? (
-                                        <div className="w-28 h-28 relative flex items-center justify-center">
-                                            {/* Holographic Energy Glows */}
-                                            <div className="absolute inset-0 bg-cyan-500/20 blur-[40px] rounded-full animate-pulse" />
-                                            <div className="absolute inset-0 bg-indigo-500/20 blur-[30px] rounded-full" />
+                                    ) : (
+                                        <div className="w-32 h-32 relative flex items-center justify-center">
+                                            {/* Glows for context */}
+                                            <div className="absolute inset-0 bg-blue-500/10 blur-[40px] rounded-full" />
 
                                             {/* Stylized Logo Container */}
-                                            <div className="relative z-10 w-24 h-24 flex items-center justify-center">
-                                                <img src={branding.logo_url}
-                                                alt={appName}
-                                                className="w-full h-full object-contain relative z-20 mix-blend-screen"
-                                                style={{
-                                                    filter: 'drop-shadow(0 0 5px rgba(34,211,238,0.8))'
-                                                }}
-                                                />
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-cyan-400 to-indigo-600 p-[1px] shadow-2xl shadow-cyan-500/30">
-                                            <div className="w-full h-full bg-slate-900/90 backdrop-blur-xl rounded-3xl flex items-center justify-center border border-white/10 relative overflow-hidden">
-                                                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50" />
-                                                <Activity className="w-10 h-10 text-white relative z-10" />
+                                            <div className="relative z-10 w-28 h-28 bg-white rounded-2xl p-4 shadow-2xl flex items-center justify-center border border-white/20">
+                                                {branding?.logo_url ? (
+                                                    <img src={branding.logo_url}
+                                                        alt={appName}
+                                                        className="w-full h-full object-contain"
+                                                    />
+                                                ) : (
+                                                    <Activity className="w-12 h-12 text-blue-600" />
+                                                )}
                                             </div>
                                         </div>
                                     )}
