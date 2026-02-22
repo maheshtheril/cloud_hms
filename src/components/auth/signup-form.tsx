@@ -66,7 +66,7 @@ export function SignupForm({ setIsLogin, branding }: { setIsLogin?: (v: boolean)
             }
 
             signIn("credentials", {
-                email: formData.email,
+                email: formData.email.toLowerCase(),
                 password: formData.password,
                 callbackUrl
             });
@@ -144,15 +144,15 @@ export function SignupForm({ setIsLogin, branding }: { setIsLogin?: (v: boolean)
                                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">You Details</h3>
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Full Name</label>
-                                    <input name="name" value={formData.name} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" placeholder="Enter your full name" />
+                                    <input value={formData.name} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, name: e.target.value })} required className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" placeholder="Enter your full name" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Work Email</label>
-                                    <input name="email" type="email" value={formData.email} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" placeholder="name@company.com" />
+                                    <input type="email" value={formData.email} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, email: e.target.value })} required className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" placeholder="name@company.com" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Password</label>
-                                    <input name="password" type="password" value={formData.password} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, password: e.target.value })} required className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" placeholder="Min. 8 characters" />
+                                    <input type="password" value={formData.password} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, password: e.target.value })} required className="w-full border border-gray-200 dark:border-slate-800 rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" placeholder="Min. 8 characters" />
                                 </div>
                             </div>
                         )}
@@ -165,14 +165,13 @@ export function SignupForm({ setIsLogin, branding }: { setIsLogin?: (v: boolean)
                                     <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Company Name</label>
                                     <div className="relative">
                                         <Building className="absolute left-3 top-3.5 h-4 w-4 text-gray-400" />
-                                        <input name="companyName" value={formData.companyName} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, companyName: e.target.value })} required className="w-full border border-gray-200 dark:border-slate-800 rounded-lg pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" placeholder="My Organization Ltd." />
+                                        <input value={formData.companyName} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={e => setFormData({ ...formData, companyName: e.target.value })} required className="w-full border border-gray-200 dark:border-slate-800 rounded-lg pl-10 pr-4 py-3 focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-900 text-gray-900 dark:text-white" placeholder="My Organization Ltd." />
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
                                         <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Country</label>
                                         <select
-                                            name="countryId"
                                             value={formData.countryId}
                                             onChange={e => setFormData({ ...formData, countryId: e.target.value })}
                                             required
@@ -188,7 +187,6 @@ export function SignupForm({ setIsLogin, branding }: { setIsLogin?: (v: boolean)
                                     <div>
                                         <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Currency</label>
                                         <select
-                                            name="currencyId"
                                             value={formData.currencyId}
                                             onChange={e => setFormData({ ...formData, currencyId: e.target.value })}
                                             required
@@ -204,7 +202,7 @@ export function SignupForm({ setIsLogin, branding }: { setIsLogin?: (v: boolean)
                                 </div>
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase mb-1">Industry</label>
-                                    <select name="industry" value={formData.industry} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={(e) => {
+                                    <select value={formData.industry} onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }} onChange={(e) => {
                                         const val = e.target.value;
                                         // RESET modules to ensure clean slate for the new industry
                                         let newModules: string[] = [];

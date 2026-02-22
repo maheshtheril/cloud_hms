@@ -18,7 +18,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
                 try {
                     // Normalize email
-                    const email = (credentials.email as string).toLowerCase()
+                    const email = (credentials.email as string || '').toLowerCase()
+
+                    console.log("[AUTH] Authorizing user:", email);
 
                     // Use standard Prisma findFirst for better compatibility with extensions
                     console.log("[AUTH] Attempting login for:", email);
@@ -29,11 +31,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         }
                     }) as any;
 
-                    console.log("[AUTH] User found:", user ? "YES" : "NO");
+                    console.log("[AUTH] User found in DB:", user ? "YES" : "NO");
 
                     if (user) {
-
+                        console.log("[AUTH] Comparing passwords...");
                         const passwordsMatch = await bcrypt.compare(credentials.password as string, user.password);
+                        console.log("[AUTH] Passwords match:", passwordsMatch);
                         if (!passwordsMatch) return null;
 
                         try {

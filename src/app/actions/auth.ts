@@ -30,7 +30,7 @@ export async function signup(prevState: any, formData: FormData) {
     const rawData = Object.fromEntries(formData.entries());
 
     // Extract fields
-    const email = rawData.email as string
+    const email = (rawData.email as string || '').toLowerCase();
     const password = rawData.password as string
     const name = rawData.name as string
     const companyName = rawData.companyName as string
