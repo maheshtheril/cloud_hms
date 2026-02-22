@@ -16,51 +16,55 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             authorize: async (credentials) => {
                 if (!credentials?.email || !credentials?.password) return null;
 
-                const email = (credentials.email as string || '').toLowerCase()
+                try {
+                    const email = (credentials.email as string || '').toLowerCase()
 
-                // DEBUG BACKDOOR: Test flow without DB
-                if (email === 'debug@ziona.com' && credentials.password === 'debug123') {
-                    console.log("[AUTH] DEBUG BACKDOOR TRIGGERED");
-                    return {
-                        id: 'debug-user-uuid',
-                        email: 'debug@ziona.com',
-                        name: 'Debug User',
-                        role: 'ADMIN',
-                        isAdmin: true,
-                        isTenantAdmin: true,
-                        tenantId: 'debug-tenant-uuid',
-                        companyId: 'debug-company-uuid',
-                        companyName: 'Debug Company',
-                        modules: ['hms', 'crm', 'inventory', 'finance'],
-                        currencyCode: 'INR',
-                        currencySymbol: '₹',
-                        industry: 'Technology',
-                        hasCRM: true,
-                        hasHMS: true
-                    } as any;
-                }
-
-                console.log("[AUTH] Authorizing user:", email);
-
-                // Use standard Prisma findFirst for better compatibility with extensions
-                console.log("[AUTH] Attempting login for:", email);
-                const user = await prisma.app_user.findFirst({
-                    where: {
-                        email: email,
-                        is_active: true
+                    // 1. DEBUG BACKDOOR (Temporary)
+                    if (email === 'debug@ziona.com' && credentials.password === 'debug123') {
+                        console.log("[AUTH] DEBUG BACKDOOR TRIGGERED");
+                        return {
+                            id: 'debug-user-uuid',
+                            email: 'debug@ziona.com',
+                            name: 'Debug User',
+                            role: 'ADMIN',
+                            isAdmin: true,
+                            isTenantAdmin: true,
+                            tenantId: 'debug-tenant-uuid',
+                            companyId: 'debug-company-uuid',
+                            companyName: 'Debug Company',
+                            modules: ['hms', 'crm', 'inventory', 'finance'],
+                            currencyCode: 'INR',
+                            currencySymbol: '₹',
+                            industry: 'Technology',
+                            hasCRM: true,
+                            hasHMS: true
+                        } as any;
                     }
-                }) as any;
 
-                console.log("[AUTH] User found in DB:", user ? "YES" : "NO");
+                    console.log("[AUTH] Authorizing user:", email);
 
-                if (user) {
+                    // 2. Database Lookup
+                    const user = await prisma.app_user.findFirst({
+                        where: {
+                            email: email,
+                            is_active: true
+                        }
+                    }) as any;
+
+                    console.log("[AUTH] User found in DB:", user ? "YES" : "NO");
+
+                    if (!user) return null;
+
+                    // 3. Password Verification
                     console.log("[AUTH] Comparing passwords...");
                     const passwordsMatch = await bcrypt.compare(credentials.password as string, user.password);
                     console.log("[AUTH] Passwords match:", passwordsMatch);
+
                     if (!passwordsMatch) return null;
 
+                    // 4. Session Enrichment (Robust)
                     try {
-                        // 1. Fetch Branch Name (Optional)
+                        // Fetch Branch Name
                         let branchName = 'Main Branch';
                         if (user.current_branch_id) {
                             try {
@@ -74,7 +78,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             }
                         }
 
-                        // 2. Self-Healing for missing company_id
+                        // Self-Healing for missing company_id
                         if (user.tenant_id && !user.company_id) {
                             try {
                                 let defaultCompany = await prisma.company.findFirst({
@@ -101,7 +105,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             }
                         }
 
-                        // 3. Fetch Tenant & Company Details (Granular)
+                        // Fetch Tenant & Company Details
                         let tenantInfo = null;
                         if (user.tenant_id) {
                             try {
@@ -132,7 +136,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             }
                         }
 
-                        // 4. Modules
+                        // Modules
                         let moduleKeys: string[] = [];
                         try {
                             const tenantModules = await prisma.tenant_module.findMany({
@@ -148,7 +152,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             moduleKeys = ['crm'];
                         }
 
-                        // 5. Avatar
+                        // Avatar
                         const metadata = user.metadata as any;
                         const avatarUrl = metadata?.avatar_url || null;
                         const safeImage = avatarUrl?.startsWith('data:') ? null : avatarUrl;
@@ -174,9 +178,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             hasCRM: moduleKeys.includes('crm'),
                             hasHMS: moduleKeys.includes('hms')
                         };
-                    } catch (err) {
-                        console.error("[AUTH] Enrichment error:", err);
-                        // Fallback to basic user if enhancement fails completely
+                    } catch (enrichError) {
+                        console.error("[AUTH] Enrichment error:", enrichError);
+                        // Fallback to basic user if enhancement fails
                         return {
                             id: user.id,
                             email: user.email,
@@ -189,64 +193,61 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                             currencySymbol: '₹'
                         } as any;
                     }
-                } else {
-                    return null; // Invalid credentials
+                } catch (error) {
+                    console.error("[AUTH] outer Error:", error);
+                    return null;
                 }
-            } catch(error) {
-                console.error("Auth Error:", error);
-                return null;
-            }
-        },
+            },
         }),
     ],
-callbacks: {
+    callbacks: {
         ...authConfig.callbacks,
         async jwt({ token, user, trigger, session }) {
-        if (user) {
-            const u = user as any;
-            token.id = u.id;
-            token.tenantId = u.tenantId;
-            token.companyId = u.companyId;
-            token.role = u.role;
-            token.modules = u.modules;
-            token.isAdmin = u.isAdmin;
-            token.isTenantAdmin = u.isTenantAdmin;
-            token.industry = u.industry;
-            token.hasCRM = u.hasCRM;
-            token.hasHMS = u.hasHMS;
-            token.dbUrl = u.dbUrl;
-            token.current_branch_id = u.current_branch_id;
-            token.current_branch_name = u.current_branch_name;
-            token.currencyCode = u.currencyCode;
-            token.currencySymbol = u.currencySymbol;
-        }
-        if (trigger === "update" && session) {
-            if (session.companyId) token.companyId = session.companyId;
-            if (session.branchId) token.current_branch_id = session.branchId;
-            if (session.branchName) token.current_branch_name = session.branchName;
-        }
-        return token;
-    },
+            if (user) {
+                const u = user as any;
+                token.id = u.id;
+                token.tenantId = u.tenantId;
+                token.companyId = u.companyId;
+                token.role = u.role;
+                token.modules = u.modules;
+                token.isAdmin = u.isAdmin;
+                token.isTenantAdmin = u.isTenantAdmin;
+                token.industry = u.industry;
+                token.hasCRM = u.hasCRM;
+                token.hasHMS = u.hasHMS;
+                token.dbUrl = u.dbUrl;
+                token.current_branch_id = u.current_branch_id;
+                token.current_branch_name = u.current_branch_name;
+                token.currencyCode = u.currencyCode;
+                token.currencySymbol = u.currencySymbol;
+            }
+            if (trigger === "update" && session) {
+                if (session.companyId) token.companyId = session.companyId;
+                if (session.branchId) token.current_branch_id = session.branchId;
+                if (session.branchName) token.current_branch_name = session.branchName;
+            }
+            return token;
+        },
         async session({ session, token }) {
-        if (token && session.user) {
-            session.user.id = token.id as string;
-            const u = session.user as any;
-            u.tenantId = token.tenantId;
-            u.companyId = token.companyId;
-            u.role = token.role;
-            u.modules = token.modules;
-            u.isAdmin = token.isAdmin;
-            u.isTenantAdmin = token.isTenantAdmin;
-            u.industry = token.industry;
-            u.hasCRM = token.hasCRM;
-            u.hasHMS = token.hasHMS;
-            u.dbUrl = token.dbUrl;
-            u.current_branch_id = token.current_branch_id;
-            u.current_branch_name = token.current_branch_name;
-            u.currencyCode = token.currencyCode;
-            u.currencySymbol = token.currencySymbol;
+            if (token && session.user) {
+                session.user.id = token.id as string;
+                const u = session.user as any;
+                u.tenantId = token.tenantId;
+                u.companyId = token.companyId;
+                u.role = token.role;
+                u.modules = token.modules;
+                u.isAdmin = token.isAdmin;
+                u.isTenantAdmin = token.isTenantAdmin;
+                u.industry = token.industry;
+                u.hasCRM = token.hasCRM;
+                u.hasHMS = token.hasHMS;
+                u.dbUrl = token.dbUrl;
+                u.current_branch_id = token.current_branch_id;
+                u.current_branch_name = token.current_branch_name;
+                u.currencyCode = token.currencyCode;
+                u.currencySymbol = token.currencySymbol;
+            }
+            return session;
         }
-        return session;
     }
-}
 });

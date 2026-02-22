@@ -68,7 +68,18 @@ export function SignupForm({ setIsLogin, branding }: { setIsLogin?: (v: boolean)
             signIn("credentials", {
                 email: formData.email.toLowerCase(),
                 password: formData.password,
-                callbackUrl
+                redirect: false
+            }).then(result => {
+                if (result?.error) {
+                    console.error("[AUTH] Auto-login failed:", result.error);
+                    // Force a reload to the login page with the error if it failed
+                    window.location.href = `/login?error=CredentialsSignin&email=${encodeURIComponent(formData.email)}`;
+                } else {
+                    window.location.href = callbackUrl;
+                }
+            }).catch(err => {
+                console.error("[AUTH] Fatal auto-login error:", err);
+                setSigningIn(false);
             });
         }
     }, [state, formData.email, formData.password, formData.modules, signingIn]);
