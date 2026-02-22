@@ -40,8 +40,8 @@ export async function signup(prevState: any, formData: FormData) {
 
     try {
         const existing = await prisma.app_user.findFirst({ where: { email } })
-        const countryId = rawData.countryId as string;
-        let resolvedCountryId = countryId;
+        const inputCountryId = rawData.countryId as string;
+        let resolvedCountryId = inputCountryId;
 
         // Defensive check: if countryId is an ISO code (e.g. "IN"), resolve it to UUID
         if (countryId && (countryId.length === 2 || countryId.length === 3)) {
@@ -53,8 +53,8 @@ export async function signup(prevState: any, formData: FormData) {
             else resolvedCountryId = ""; // Invalid ISO code
         }
 
-        const currencyId = rawData.currencyId as string;
-        let resolvedCurrencyId = currencyId;
+        const inputCurrencyId = rawData.currencyId as string;
+        let resolvedCurrencyId = inputCurrencyId;
 
         // Defensive check: if currencyId is a code (e.g. "INR"), resolve it to UUID
         if (currencyId && currencyId.length === 3 && !/^[0-9a-fA-F-]{36}$/.test(currencyId)) {
