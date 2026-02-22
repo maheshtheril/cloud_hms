@@ -861,8 +861,8 @@ export async function getProductsPremium(query?: string, page: number = 1, suppl
         };
 
     } catch (error) {
-        console.error("Failed to fetch products:", error);
-        return { error: "Failed to fetch products" };
+        console.error("DEBUG: getProductsPremium failed:", error);
+        return { error: "Failed to fetch products: " + (error instanceof Error ? error.message : String(error)) };
     }
 }
 

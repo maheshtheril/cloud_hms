@@ -265,24 +265,33 @@ export async function signup(prevState: any, formData: FormData) {
 
             // 6. HMS Specific Seeding (IF ENABLED)
             if (modulesToEnable.has('hms')) {
-                const labTests = [
-                    { sku: 'LAB001', name: 'Complete Blood Count (CBC)', price: 450 },
-                    { sku: 'LAB002', name: 'Lipid Profile', price: 900 },
-                    { sku: 'CON001', name: 'Consultation Fee', price: 500 },
+                const defaultProducts = [
+                    { sku: 'REG001', name: 'Patient Registration Fee', price: 150, type: 'fee' },
+                    { sku: 'CON001', name: 'Consultation Fee', price: 500, type: 'fee' },
+                    { sku: 'LAB001', name: 'Complete Blood Count (CBC)', price: 450, type: 'diagnostic' },
+                    { sku: 'LAB002', name: 'Lipid Profile', price: 900, type: 'diagnostic' },
+                    { sku: 'LAB003', name: 'Liver Function Test (LFT)', price: 850, type: 'diagnostic' },
+                    { sku: 'LAB004', name: 'Kidney Function Test (KFT)', price: 950, type: 'diagnostic' },
+                    { sku: 'LAB005', name: 'Thyroid Profile (T3, T4, TSH)', price: 1200, type: 'diagnostic' },
+                    { sku: 'LAB006', name: 'HbA1c', price: 600, type: 'diagnostic' },
+                    { sku: 'LAB007', name: 'Blood Sugar (Fasting)', price: 150, type: 'diagnostic' },
+                    { sku: 'LAB008', name: 'Blood Sugar (PP)', price: 150, type: 'diagnostic' },
+                    { sku: 'LAB009', name: 'Urine Routine', price: 200, type: 'diagnostic' },
+                    { sku: 'LAB010', name: 'Vitamin D Total', price: 1800, type: 'diagnostic' },
                 ];
 
                 await tx.hms_product.createMany({
-                    data: labTests.map(test => ({
+                    data: defaultProducts.map(p => ({
                         id: crypto.randomUUID(),
                         tenant_id: tenantId,
                         company_id: companyId,
-                        sku: test.sku,
-                        name: test.name,
+                        sku: p.sku,
+                        name: p.name,
                         is_service: true,
-                        price: test.price,
+                        price: p.price,
                         currency: 'INR',
                         is_active: true,
-                        metadata: { type: 'fee', tax_exempt: true }
+                        metadata: { type: p.type, tax_exempt: true }
                     }))
                 });
             }
