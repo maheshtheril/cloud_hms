@@ -7,7 +7,12 @@ import {
     SYSTEM_DEFAULT_CURRENCY_SYMBOL
 } from './currency-constants'
 
-export { CURRENCY_SYMBOLS, CURRENCY_CODES };
+export {
+    CURRENCY_SYMBOLS,
+    CURRENCY_CODES,
+    SYSTEM_DEFAULT_CURRENCY_CODE,
+    SYSTEM_DEFAULT_CURRENCY_SYMBOL
+};
 
 /**
  * Get currency symbol based on country code
