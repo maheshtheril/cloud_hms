@@ -112,16 +112,18 @@ export async function signup(prevState: any, formData: FormData) {
                 }
             });
 
+            const isHms = isSeeakk ? false : selectedModules.includes('hms');
+
             // 2b. Create Default Main Branch
             await tx.hms_branch.create({
                 data: {
                     id: branchId,
                     tenant_id: tenantId,
                     company_id: companyId,
-                    name: "Main Branch",
+                    name: isHms ? "Main Clinic" : "Head Office",
                     code: "MAIN",
                     is_active: true,
-                    type: "clinic"
+                    type: isHms ? "clinic" : "office"
                 }
             });
 
