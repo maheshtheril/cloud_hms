@@ -6,7 +6,7 @@ import { signOut } from "@/auth"
 import { headers } from "next/headers";
 import bcrypt from 'bcryptjs';
 import { initializeTenantMasters } from "@/lib/services/tenant-init";
-import { SYSTEM_DEFAULT_CURRENCY_CODE } from "@/lib/currency";
+import { SYSTEM_DEFAULT_CURRENCY_CODE } from "@/lib/currency-constants";
 
 export async function logout() {
     console.log("[Auth Action] Logging out...");

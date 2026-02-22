@@ -37,72 +37,95 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                         if (!passwordsMatch) return null;
 
                         try {
-                            // Fetch Branch Name
+                            // 1. Fetch Branch Name (Optional)
                             let branchName = 'Main Branch';
                             if (user.current_branch_id) {
-                                const branch = await prisma.hms_branch.findUnique({
-                                    where: { id: user.current_branch_id },
-                                    select: { name: true }
-                                });
-                                if (branch) branchName = branch.name;
+                                try {
+                                    const branch = await prisma.hms_branch.findUnique({
+                                        where: { id: user.current_branch_id },
+                                        select: { name: true }
+                                    });
+                                    if (branch) branchName = branch.name;
+                                } catch (e) {
+                                    console.warn("[AUTH] Failed to fetch branch name:", e);
+                                }
                             }
 
-                            // --- GENERIC MULTI-TENANT SELF-HEALING ---
-                            // Ensure every user has a company within their tenant
+                            // 2. Self-Healing for missing company_id
                             if (user.tenant_id && !user.company_id) {
-                                console.log(`[AUTH] User ${user.email} missing company link. Initializing...`);
+                                try {
+                                    let defaultCompany = await prisma.company.findFirst({
+                                        where: { tenant_id: user.tenant_id }
+                                    });
 
-                                let defaultCompany = await prisma.company.findFirst({
-                                    where: { tenant_id: user.tenant_id }
-                                });
+                                    if (!defaultCompany) {
+                                        defaultCompany = await prisma.company.create({
+                                            data: {
+                                                tenant_id: user.tenant_id,
+                                                name: "Default Company",
+                                                industry: "General"
+                                            }
+                                        });
+                                    }
 
-                                if (!defaultCompany) {
-                                    defaultCompany = await prisma.company.create({
-                                        data: {
-                                            tenant_id: user.tenant_id,
-                                            name: "Default Company",
-                                            industry: "General"
+                                    await prisma.app_user.update({
+                                        where: { id: user.id },
+                                        data: { company_id: defaultCompany.id }
+                                    });
+                                    user.company_id = defaultCompany.id;
+                                } catch (e) {
+                                    console.error("[AUTH] Self-healing failed:", e);
+                                }
+                            }
+
+                            // 3. Fetch Tenant & Company Details (Granular)
+                            let tenantInfo = null;
+                            if (user.tenant_id) {
+                                try {
+                                    tenantInfo = await prisma.tenant.findUnique({
+                                        where: { id: user.tenant_id },
+                                        select: { db_url: true, slug: true, name: true }
+                                    });
+                                } catch (e) {
+                                    console.error("[AUTH] Tenant fetch failed:", e);
+                                }
+                            }
+
+                            let company = null;
+                            if (user.company_id) {
+                                try {
+                                    company = await prisma.company.findFirst({
+                                        where: { id: user.company_id },
+                                        include: {
+                                            company_settings: {
+                                                include: {
+                                                    currencies: true
+                                                }
+                                            }
                                         }
                                     });
+                                } catch (e) {
+                                    console.error("[AUTH] Company fetch failed:", e);
                                 }
-
-                                await prisma.app_user.update({
-                                    where: { id: user.id },
-                                    data: { company_id: defaultCompany.id }
-                                });
-                                user.company_id = defaultCompany.id;
                             }
 
-                            // Fetch Tenant & Entitlements
-                            const tenantInfo = await prisma.tenant.findUnique({
-                                where: { id: user.tenant_id },
-                                select: { db_url: true, slug: true, name: true }
-                            });
+                            // 4. Modules
+                            let moduleKeys: string[] = [];
+                            try {
+                                const tenantModules = await prisma.tenant_module.findMany({
+                                    where: { tenant_id: user.tenant_id, enabled: true },
+                                    select: { module_key: true }
+                                });
+                                moduleKeys = tenantModules.map(m => m.module_key);
+                            } catch (e) {
+                                console.error("[AUTH] Module fetch failed:", e);
+                            }
 
-                            const company = user.company_id ? await prisma.company.findFirst({
-                                where: { id: user.company_id },
-                                include: {
-                                    company_settings: {
-                                        include: {
-                                            currencies: true
-                                        }
-                                    }
-                                }
-                            }) : null;
-
-                            const tenantModules = await prisma.tenant_module.findMany({
-                                where: { tenant_id: user.tenant_id, enabled: true },
-                                select: { module_key: true }
-                            });
-
-                            let moduleKeys = tenantModules.map(m => m.module_key);
-
-                            // Domain-specific enforcement (e.g., seeakk.com only wants CRM)
                             if (tenantInfo?.slug === 'seeakk') {
                                 moduleKeys = ['crm'];
                             }
 
-                            // Extract Avatar
+                            // 5. Avatar
                             const metadata = user.metadata as any;
                             const avatarUrl = metadata?.avatar_url || null;
                             const safeImage = avatarUrl?.startsWith('data:') ? null : avatarUrl;
@@ -116,7 +139,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 isTenantAdmin: user.is_tenant_admin,
                                 tenantId: user.tenant_id,
                                 companyId: user.company_id,
-                                companyName: company ? company.name : (tenantInfo?.name || 'My Business'),
+                                companyName: company?.name || tenantInfo?.name || 'My Business',
                                 current_branch_id: user.current_branch_id,
                                 current_branch_name: branchName,
                                 modules: moduleKeys,
@@ -124,14 +147,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 dbUrl: tenantInfo?.db_url,
                                 currencyCode: company?.company_settings?.currencies?.code || 'INR',
                                 currencySymbol: company?.company_settings?.currencies?.symbol || '₹',
-
                                 industry: company?.industry || 'General',
                                 hasCRM: moduleKeys.includes('crm'),
                                 hasHMS: moduleKeys.includes('hms')
                             };
-                        } catch (innerError) {
-                            console.error("Error fetching user details (company/tenant):", innerError);
-                            return null;
+                        } catch (err) {
+                            console.error("[AUTH] Enrichment error:", err);
+                            // Fallback to basic user if enhancement fails completely
+                            return {
+                                id: user.id,
+                                email: user.email,
+                                name: user.name,
+                                role: user.role,
+                                tenantId: user.tenant_id,
+                                companyId: user.company_id,
+                                modules: [],
+                                currencyCode: 'INR',
+                                currencySymbol: '₹'
+                            } as any;
                         }
                     } else {
                         return null; // Invalid credentials
