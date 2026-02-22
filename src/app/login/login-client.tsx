@@ -36,11 +36,7 @@ export default function LoginClient({ branding }: { branding: Branding | null })
             console.log("Login Result:", result);
 
             if (result?.error) {
-                let errorMessage = "Invalid email or password. Please try again.";
-                if (result.error !== "CredentialsSignin") {
-                    errorMessage = result.error;
-                }
-                alert("Login Failed: " + errorMessage);
+                alert("Login Failed: " + result.error);
                 setIsLoading(false)
             } else {
                 // Successful login
