@@ -131,12 +131,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 select: { module_key: true }
                             });
                             moduleKeys = tenantModules.map(m => m.module_key);
-                        } catch (e) {
-                            console.error("[AUTH] Module fetch failed:", e);
-                        }
-
-                        if (tenantInfo?.slug === 'seeakk') {
-                            moduleKeys = ['crm'];
+                        } catch (modError) {
+                            console.error("[AUTH] Module fetch error:", modError);
                         }
 
                         // Avatar

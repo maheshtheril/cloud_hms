@@ -23,21 +23,15 @@ export async function logout() {
 }
 
 export async function signup(prevState: any, formData: FormData) {
-    const headersList = await headers();
-    const host = headersList.get('host') || '';
-    const isSeeakk = host.toLowerCase().includes('seeakk');
-
     const rawData = Object.fromEntries(formData.entries());
-
-    // Extract fields
     const email = (rawData.email as string || '').toLowerCase();
     const password = rawData.password as string
     const name = rawData.name as string
     const companyName = rawData.companyName as string
     const countryId = rawData.countryId as string
     const currencyId = rawData.currencyId as string
-    const industry = isSeeakk ? 'CRM & Sales' : rawData.industry as string // Force industry if seeakk
-    const selectedModules = isSeeakk ? ['crm'] : (rawData.modules as string || '').split(',').filter(Boolean); // Force CRM if seeakk
+    const industry = rawData.industry as string
+    const selectedModules = (rawData.modules as string || '').split(',').filter(Boolean);
     const taxId = rawData.taxId as string // Optional tax ID if they selected one
 
     if (!email || !password || !name || !companyName) {
@@ -112,7 +106,7 @@ export async function signup(prevState: any, formData: FormData) {
                 }
             });
 
-            const isHms = isSeeakk ? false : selectedModules.includes('hms');
+            const isHms = selectedModules.includes('hms');
 
             // 2b. Create Default Main Branch
             await tx.hms_branch.create({
