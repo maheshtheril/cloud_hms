@@ -54,7 +54,7 @@ export default function LoginClient({ branding }: { branding: Branding | null })
     }
 
     const appName = branding?.app_name || "Enterprise ERP";
-    const isCRM = appName.toLowerCase().includes('crm') || appName.toLowerCase().includes('seeakk');
+    const isCRM = appName.toLowerCase().includes('crm');
 
     const theme = isCRM ? {
         // Updated to Green/Emerald Theme for Seeakk CRM
@@ -150,15 +150,12 @@ export default function LoginClient({ branding }: { branding: Branding | null })
 
                                             {/* Stylized Logo Container */}
                                             <div className="relative z-10 w-24 h-24 flex items-center justify-center">
-                                                <img
-                                                    src={branding.logo_url}
-                                                    alt={appName}
-                                                    className={`w-full h-full object-contain relative z-20 ${!isCRM ? 'mix-blend-screen' : ''}`}
-                                                    style={isCRM ? {
-                                                        filter: 'drop-shadow(0 0 15px rgba(16,185,129,0.5))'
-                                                    } : {
-                                                        filter: 'invert(1) grayscale(1) brightness(2) drop-shadow(0 0 5px rgba(34,211,238,0.8))'
-                                                    }}
+                                                <img src={branding.logo_url}
+                                                alt={appName}
+                                                className="w-full h-full object-contain relative z-20 mix-blend-screen"
+                                                style={{
+                                                    filter: 'drop-shadow(0 0 5px rgba(34,211,238,0.8))'
+                                                }}
                                                 />
                                             </div>
                                         </div>
