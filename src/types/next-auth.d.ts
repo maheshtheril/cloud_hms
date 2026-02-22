@@ -14,6 +14,8 @@ declare module "next-auth" {
             role?: string | null
             current_branch_id?: string | null
             dbUrl?: string | null
+            currencyCode?: string | null
+            currencySymbol?: string | null
         } & DefaultSession["user"]
     }
 
@@ -29,6 +31,8 @@ declare module "next-auth" {
         role?: string | null
         current_branch_id?: string | null
         dbUrl?: string | null
+        currencyCode?: string | null
+        currencySymbol?: string | null
     }
 }
 
@@ -45,5 +49,7 @@ declare module "next-auth/jwt" {
         role?: string | null
         current_branch_id?: string | null
         dbUrl?: string | null
+        currencyCode?: string | null
+        currencySymbol?: string | null
     }
 }

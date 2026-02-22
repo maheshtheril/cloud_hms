@@ -76,7 +76,7 @@ export default async function NewInvoicePage({
     const billableItems = itemsRes.success ? itemsRes.data : [];
     const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
     const uoms = (uomsRes as any).success ? (uomsRes as any).data : [];
-    const currency = companySettings?.currencies?.symbol || '₹';
+    const currency = companySettings?.currencies?.symbol || session.user.currencySymbol || '₹';
 
     // Standardization logic for initial items
     let initialItems = items ? JSON.parse(decodeURIComponent(items)) : (medicines ? JSON.parse(decodeURIComponent(medicines)) : []);

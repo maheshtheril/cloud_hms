@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { DollarSign, Calendar as CalendarIcon, Briefcase, IndianRupee, Euro, PoundSterling } from 'lucide-react'
 import { useState } from 'react'
+import { SYSTEM_DEFAULT_CURRENCY_CODE, SYSTEM_DEFAULT_CURRENCY_SYMBOL } from '@/lib/currency-constants'
 
 import { CurrencyInfo } from '@/app/actions/currency'
 
@@ -31,10 +32,10 @@ export function DealForm({
     const [state, dispatch] = useFormState(mode === 'edit' ? updateDeal : createDeal, initialState)
     const [selectedPipelineId, setSelectedPipelineId] = useState<string>(initialData?.pipeline_id || pipelines[0]?.id || '')
 
-    const [currency, setCurrency] = useState(initialData?.currency || defaultCurrency?.code || 'INR')
+    const [currency, setCurrency] = useState(initialData?.currency || defaultCurrency?.code || SYSTEM_DEFAULT_CURRENCY_CODE)
 
     // Get symbol for current currency
-    const currentCurrencySymbol = supportedCurrencies.find(c => c.code === currency)?.symbol || '₹'
+    const currentCurrencySymbol = supportedCurrencies.find(c => c.code === currency)?.symbol || SYSTEM_DEFAULT_CURRENCY_SYMBOL
 
     // Get stages for selected pipeline
     const selectedPipeline = pipelines.find(p => p.id === selectedPipelineId)

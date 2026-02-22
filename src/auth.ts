@@ -79,7 +79,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 select: { db_url: true, slug: true, name: true }
                             });
 
-                            const company = user.company_id ? await prisma.company.findFirst({ where: { id: user.company_id } }) : null;
+                            const company = user.company_id ? await prisma.company.findFirst({
+                                where: { id: user.company_id },
+                                include: {
+                                    company_settings: {
+                                        include: {
+                                            currencies: true
+                                        }
+                                    }
+                                }
+                            }) : null;
 
                             const tenantModules = await prisma.tenant_module.findMany({
                                 where: { tenant_id: user.tenant_id, enabled: true },
@@ -113,6 +122,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                                 modules: moduleKeys,
                                 image: safeImage,
                                 dbUrl: tenantInfo?.db_url,
+                                currencyCode: company?.company_settings?.currencies?.code || 'INR',
+                                currencySymbol: company?.company_settings?.currencies?.symbol || '₹',
 
                                 industry: company?.industry || 'General',
                                 hasCRM: moduleKeys.includes('crm'),
@@ -150,6 +161,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 token.dbUrl = u.dbUrl;
                 token.current_branch_id = u.current_branch_id;
                 token.current_branch_name = u.current_branch_name;
+                token.currencyCode = u.currencyCode;
+                token.currencySymbol = u.currencySymbol;
             }
             if (trigger === "update" && session) {
                 if (session.companyId) token.companyId = session.companyId;
@@ -174,6 +187,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 u.dbUrl = token.dbUrl;
                 u.current_branch_id = token.current_branch_id;
                 u.current_branch_name = token.current_branch_name;
+                u.currencyCode = token.currencyCode;
+                u.currencySymbol = token.currencySymbol;
             }
             return session;
         }

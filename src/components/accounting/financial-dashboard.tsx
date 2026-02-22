@@ -45,7 +45,13 @@ function CountUp({ value, prefix = "", suffix = "" }: { value: number, prefix?: 
     )
 }
 
-export function FinancialDashboard() {
+export function FinancialDashboard({
+    currencyCode = 'INR',
+    currencySymbol = '₹'
+}: {
+    currencyCode?: string,
+    currencySymbol?: string
+}) {
     const router = useRouter()
     const [loading, setLoading] = useState(true)
     const [dailyData, setDailyData] = useState<any>(null)
@@ -85,9 +91,9 @@ export function FinancialDashboard() {
     }
 
     const formatCurrency = (val: number) => {
-        return new Intl.NumberFormat('en-IN', {
+        return new Intl.NumberFormat(currencyCode === 'INR' ? 'en-IN' : 'en-US', {
             style: 'currency',
-            currency: 'INR',
+            currency: currencyCode,
             maximumFractionDigits: 0
         }).format(val)
     }
@@ -167,7 +173,7 @@ export function FinancialDashboard() {
                         <CardHeader className="pb-2">
                             <CardDescription className="text-indigo-100/80 font-bold uppercase tracking-[0.15em] text-[10px]">Today's Gross Sales</CardDescription>
                             <CardTitle className="text-4xl font-black">
-                                <CountUp value={dailyData?.totalSales || 0} prefix="₹" />
+                                <CountUp value={dailyData?.totalSales || 0} prefix={currencySymbol} />
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -197,7 +203,7 @@ export function FinancialDashboard() {
                             <div className="flex flex-col gap-1">
                                 <div className="text-sm font-semibold text-emerald-600 flex items-center gap-1">
                                     <ArrowUpRight className="h-4 w-4" />
-                                    <CountUp value={dailyData?.totalPaid || 0} prefix="₹" /> Collected
+                                    <CountUp value={dailyData?.totalPaid || 0} prefix={currencySymbol} /> Collected
                                 </div>
                                 <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full mt-2 overflow-hidden px-0.5">
                                     <motion.div
@@ -220,7 +226,7 @@ export function FinancialDashboard() {
                         <CardHeader className="pb-2">
                             <CardDescription className="font-bold uppercase tracking-[0.15em] text-[10px] text-slate-400">Total Outflow</CardDescription>
                             <CardTitle className="text-4xl font-black text-rose-500">
-                                <CountUp value={dailyData?.totalPurchases || 0} prefix="₹" />
+                                <CountUp value={dailyData?.totalPurchases || 0} prefix={currencySymbol} />
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -239,7 +245,7 @@ export function FinancialDashboard() {
                         <CardHeader className="pb-2">
                             <CardDescription className="font-bold uppercase tracking-[0.15em] text-[10px] text-slate-400">Net Monthly margin</CardDescription>
                             <CardTitle className={`text-4xl font-black ${plData?.netProfit >= 0 ? 'text-indigo-600' : 'text-rose-600'}`}>
-                                <CountUp value={plData?.netProfit || 0} prefix="₹" />
+                                <CountUp value={plData?.netProfit || 0} prefix={currencySymbol} />
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
@@ -318,7 +324,7 @@ export function FinancialDashboard() {
                                         axisLine={false}
                                         tickLine={false}
                                         tick={{ fill: '#64748b', fontSize: 10, fontWeight: 700 }}
-                                        tickFormatter={(val) => `₹${val / 1000}k`}
+                                        tickFormatter={(val) => `${currencySymbol}${val / 1000}k`}
                                     />
                                     <Tooltip
                                         contentStyle={{

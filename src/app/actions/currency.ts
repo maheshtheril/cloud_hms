@@ -9,7 +9,7 @@
 
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
-import { CURRENCY_CODES } from '@/lib/currency'
+import { CURRENCY_CODES, SYSTEM_DEFAULT_CURRENCY_CODE, SYSTEM_DEFAULT_CURRENCY_SYMBOL } from '@/lib/currency'
 
 export interface CurrencyInfo {
     code: string
@@ -29,7 +29,7 @@ export async function getCompanyDefaultCurrency(companyId?: string): Promise<Cur
     try {
         const session = await auth()
         if (!session?.user?.tenantId) {
-            return { code: 'INR', symbol: '₹', name: 'Indian Rupee' }
+            return { code: SYSTEM_DEFAULT_CURRENCY_CODE, symbol: SYSTEM_DEFAULT_CURRENCY_SYMBOL, name: SYSTEM_DEFAULT_CURRENCY_CODE }
         }
 
         // First, try to get from accounting settings
@@ -55,7 +55,7 @@ export async function getCompanyDefaultCurrency(companyId?: string): Promise<Cur
         if (accountingSettings?.currencies) {
             return {
                 code: accountingSettings.currencies.code,
-                symbol: accountingSettings.currencies.symbol || '₹',
+                symbol: accountingSettings.currencies.symbol || SYSTEM_DEFAULT_CURRENCY_SYMBOL,
                 name: accountingSettings.currencies.name,
             }
         }
@@ -105,7 +105,7 @@ export async function getCompanyDefaultCurrency(companyId?: string): Promise<Cur
 
     } catch (error) {
         console.error('Error fetching company default currency:', error)
-        return { code: 'INR', symbol: '₹', name: 'Indian Rupee' }
+        return { code: SYSTEM_DEFAULT_CURRENCY_CODE, symbol: SYSTEM_DEFAULT_CURRENCY_SYMBOL, name: SYSTEM_DEFAULT_CURRENCY_CODE }
     }
 }
 
@@ -161,5 +161,5 @@ function getCurrencySymbol(code: string): string {
         'AED': 'د.إ',
         'SAR': '﷼',
     }
-    return symbols[code] || '₹'
+    return symbols[code] || SYSTEM_DEFAULT_CURRENCY_SYMBOL
 }

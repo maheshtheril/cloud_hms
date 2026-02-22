@@ -1,4 +1,5 @@
 import { getProductsPremium, getSuppliers, getTaxRates, getUOMs, getCategories, getManufacturers, getUOMCategories } from "@/app/actions/inventory"
+import { auth } from "@/auth"
 import Link from "next/link"
 import {
     Plus,
@@ -18,6 +19,7 @@ export default async function ProductListPage({
 }) {
     const { query, page } = await searchParams;
     const currentPage = Number(page) || 1;
+    const session = await auth();
 
     const [
         { success, data: products, meta },
@@ -159,7 +161,7 @@ export default async function ProductListPage({
                                             </div>
                                         </td>
                                         <td className="p-4">
-                                            <span className="font-medium text-gray-900">{meta?.currencySymbol || product.currency || '$'} {product.price.toFixed(2)}</span>
+                                            <span className="font-medium text-gray-900">{meta?.currencySymbol || product.currency || session?.user?.currencySymbol || '₹'} {product.price.toFixed(2)}</span>
                                         </td>
                                         <td className="p-4 text-right">
                                             <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

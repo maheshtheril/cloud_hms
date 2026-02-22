@@ -18,9 +18,15 @@ import React from 'react'
 
 interface DetailedLedgerProps {
     type: 'daybook' | 'cashbook' | 'bankbook'
+    currencyCode?: string
+    currencySymbol?: string
 }
 
-export function DetailedLedgerReport({ type }: DetailedLedgerProps) {
+export function DetailedLedgerReport({
+    type,
+    currencyCode = 'INR',
+    currencySymbol = '₹'
+}: DetailedLedgerProps) {
     const [loading, setLoading] = useState(true)
     const [date, setDate] = useState(new Date())
     const [entries, setEntries] = useState<any[]>([])
@@ -63,9 +69,9 @@ export function DetailedLedgerReport({ type }: DetailedLedgerProps) {
     }
 
     const formatCurrency = (val: number) => {
-        return new Intl.NumberFormat('en-IN', {
+        return new Intl.NumberFormat(currencyCode === 'INR' ? 'en-IN' : 'en-US', {
             style: 'currency',
-            currency: 'INR'
+            currency: currencyCode
         }).format(val)
     }
 

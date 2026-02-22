@@ -481,7 +481,7 @@ export async function createPurchaseReceipt(data: PurchaseReceiptData) {
                     invoice_date: receiptDate,
                     due_date: receiptDate,
                     status: 'posted',
-                    currency: 'INR',
+                    currency: session.user.currencyCode || SYSTEM_DEFAULT_CURRENCY_CODE,
                     subtotal: invoiceSubtotal,
                     tax_total: invoiceTaxTotal,
                     total_amount: invoiceSubtotal + invoiceTaxTotal,

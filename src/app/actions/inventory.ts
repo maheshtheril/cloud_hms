@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
+import { SYSTEM_DEFAULT_CURRENCY_SYMBOL } from "@/lib/currency"
 import { redirect } from "next/navigation"
 import crypto from 'crypto';
 import { receiveStock } from "@/app/actions/inventory-operations";
@@ -878,8 +879,8 @@ export async function getProductsPremium(query?: string, page: number = 1, suppl
             };
         });
 
-        // Default to ₹ if not set, as user context implies India
-        const currencySymbol = companySettings?.currencies?.symbol || '₹';
+        // Default to system default if not set
+        const currencySymbol = companySettings?.currencies?.symbol || SYSTEM_DEFAULT_CURRENCY_SYMBOL;
 
         return {
             success: true,

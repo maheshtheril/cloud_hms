@@ -7,6 +7,7 @@ import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import { AccountingService } from "@/lib/services/accounting"
 import { NotificationService } from "@/lib/services/notification";
+import { SYSTEM_DEFAULT_CURRENCY_CODE } from "@/lib/currency-constants";
 
 export async function getUoms() {
     const session = await auth();
@@ -418,7 +419,7 @@ export async function createInvoice(data: {
                     invoice_date: new Date(data.date || new Date()),
                     issued_at: new Date(),
                     due_at: new Date(new Date().setDate(new Date().getDate() + 7)),
-                    currency: 'INR',
+                    currency: session.user.currencyCode || SYSTEM_DEFAULT_CURRENCY_CODE,
                     currency_rate: 1.0,
                     subtotal: subtotalCalc,
                     total_tax: taxTotalCalc,
@@ -463,7 +464,7 @@ export async function createInvoice(data: {
                             amount: safeNum(p.amount),
                             method: (['cash', 'card', 'upi', 'bank_transfer', 'insurance', 'adjustment'].includes(p.method) ? p.method : 'cash') as any,
                             payment_reference: p.reference || 'COUNTER_SALE',
-                            currency: 'INR',
+                            currency: session.user.currencyCode || SYSTEM_DEFAULT_CURRENCY_CODE,
                             paid_at: new Date(),
                             created_by: isUUID(userId) ? userId : null
                         }))

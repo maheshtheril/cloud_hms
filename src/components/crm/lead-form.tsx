@@ -24,6 +24,7 @@ import { upsertTargetType } from '@/app/actions/crm/masters'
 import { useRouter } from 'next/navigation'
 
 import { CurrencyInfo } from '@/app/actions/currency'
+import { SYSTEM_DEFAULT_CURRENCY_CODE, SYSTEM_DEFAULT_CURRENCY_SYMBOL } from '@/lib/currency-constants'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DateSelection } from '@/components/ui/date-selection'
@@ -76,8 +77,8 @@ export function LeadForm({
         setIsSavingTargetType(false)
     }
 
-    const [currency, setCurrency] = useState(initialData?.currency || defaultCurrency?.code || 'INR')
-    const currentCurrencySymbol = supportedCurrencies.find(c => c.code === currency)?.symbol || defaultCurrency?.symbol || '₹'
+    const [currency, setCurrency] = useState(initialData?.currency || defaultCurrency?.code || SYSTEM_DEFAULT_CURRENCY_CODE)
+    const currentCurrencySymbol = supportedCurrencies.find(c => c.code === currency)?.symbol || defaultCurrency?.symbol || SYSTEM_DEFAULT_CURRENCY_SYMBOL
 
     const defaultPipeline = pipelines.find(p => p.is_default) || pipelines[0]
     const defaultCompany = companies[0]

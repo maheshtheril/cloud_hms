@@ -1,46 +1,26 @@
-// Currency formatting utilities
-// Maps country codes to their currency symbols and formats
-
 import { prisma } from '@/lib/prisma'
 import { auth } from '@/auth'
+import {
+    CURRENCY_SYMBOLS,
+    CURRENCY_CODES,
+    SYSTEM_DEFAULT_CURRENCY_CODE,
+    SYSTEM_DEFAULT_CURRENCY_SYMBOL
+} from './currency-constants'
 
-
-export const CURRENCY_SYMBOLS: Record<string, string> = {
-    'IN': '₹',   // India - Rupee
-    'US': '$',   // United States - Dollar
-    'GB': '£',   // United Kingdom - Pound
-    'EU': '€',   // European Union - Euro
-    'AE': 'AED', // UAE - Dirham
-    'SA': 'SAR', // Saudi Arabia - Riyal
-    'AU': 'A$',  // Australia - Dollar
-    'CA': 'C$',  // Canada - Dollar
-    'SG': 'S$',  // Singapore - Dollar
-};
-
-export const CURRENCY_CODES: Record<string, string> = {
-    'IN': 'INR',
-    'US': 'USD',
-    'GB': 'GBP',
-    'EU': 'EUR',
-    'AE': 'AED',
-    'SA': 'SAR',
-    'AU': 'AUD',
-    'CA': 'CAD',
-    'SG': 'SGD',
-};
+export { CURRENCY_SYMBOLS, CURRENCY_CODES };
 
 /**
  * Get currency symbol based on country code
  */
 export function getCurrencySymbol(countryCode: string): string {
-    return CURRENCY_SYMBOLS[countryCode?.toUpperCase()] || '$';
+    return CURRENCY_SYMBOLS[countryCode?.toUpperCase()] || SYSTEM_DEFAULT_CURRENCY_SYMBOL;
 }
 
 /**
  * Get currency code based on country code
  */
 export function getCurrencyCode(countryCode: string): string {
-    return CURRENCY_CODES[countryCode?.toUpperCase()] || 'USD';
+    return CURRENCY_CODES[countryCode?.toUpperCase()] || SYSTEM_DEFAULT_CURRENCY_CODE;
 }
 
 /**
@@ -60,7 +40,7 @@ export function formatCurrency(amount: number, currencyOrCountry: string = 'USD'
     else if (code === 'SAR' || code === 'SA') symbol = 'SAR';
     else if (code === 'AUD' || code === 'AU') symbol = 'A$';
     else if (code === 'CAD' || code === 'CA') symbol = 'C$';
-    else symbol = CURRENCY_SYMBOLS[code] || '$';
+    else symbol = CURRENCY_SYMBOLS[code] || SYSTEM_DEFAULT_CURRENCY_SYMBOL;
 
     const formatted = amount.toLocaleString('en-IN', {
         minimumFractionDigits: 2,

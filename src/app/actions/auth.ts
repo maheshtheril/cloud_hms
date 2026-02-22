@@ -6,6 +6,7 @@ import { signOut } from "@/auth"
 import { headers } from "next/headers";
 import bcrypt from 'bcryptjs';
 import { initializeTenantMasters } from "@/lib/services/tenant-init";
+import { SYSTEM_DEFAULT_CURRENCY_CODE } from "@/lib/currency";
 
 export async function logout() {
     console.log("[Auth Action] Logging out...");
@@ -76,6 +77,16 @@ export async function signup(prevState: any, formData: FormData) {
         const companyId = crypto.randomUUID();
         const branchId = crypto.randomUUID();
         const userId = crypto.randomUUID();
+
+        // [NEW] Resolve Currency Code for Seeding (Dynamic - No Hardcoding)
+        let resolvedCurrencyCode = SYSTEM_DEFAULT_CURRENCY_CODE;
+        if (resolvedCurrencyId) {
+            const cur = await prisma.currencies.findUnique({
+                where: { id: resolvedCurrencyId },
+                select: { code: true }
+            });
+            if (cur) resolvedCurrencyCode = cur.code;
+        }
 
         // WRAP EVERYTHING IN A TRANSACTION (World-Class Reliability)
         console.log(`[AUTH] Starting signup transaction for ${email} (Timeout: 60s)`);
@@ -289,7 +300,7 @@ export async function signup(prevState: any, formData: FormData) {
                         name: p.name,
                         is_service: true,
                         price: p.price,
-                        currency: 'INR',
+                        currency: resolvedCurrencyCode,
                         is_active: true,
                         metadata: { type: p.type, tax_exempt: true }
                     }))
