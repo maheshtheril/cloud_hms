@@ -7,6 +7,7 @@ export async function GET() {
         const host = url.includes('@') ? url.split('@')[1].split('/')[0] : 'N/A';
 
         const userCount = await prisma.app_user.count();
+        const patientCount = await prisma.hms_patient.count();
         const latestUsers = await prisma.app_user.findMany({
             orderBy: { created_at: 'desc' },
             take: 5,
@@ -14,9 +15,7 @@ export async function GET() {
         });
 
         const dbInfo: any = await prisma.$queryRaw`SELECT current_database(), current_schema()`;
-
-        const tenantCount = await prisma.tenant.count();
-        const companyCount = await prisma.company.count();
+        const roleCount = await prisma.role.count();
 
         return NextResponse.json({
             success: true,
@@ -24,9 +23,9 @@ export async function GET() {
             database: dbInfo[0].current_database,
             schema: dbInfo[0].current_schema,
             userCount,
+            patientCount,
+            roleCount,
             latestUsers,
-            tenantCount,
-            companyCount,
             node_env: process.env.NODE_ENV
         });
     } catch (e: any) {
