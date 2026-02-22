@@ -10,8 +10,10 @@ export async function GET() {
         const latestUsers = await prisma.app_user.findMany({
             orderBy: { created_at: 'desc' },
             take: 5,
-            select: { email: true, created_at: true }
+            select: { email: true, name: true, created_at: true, is_active: true }
         });
+
+        const dbInfo: any = await prisma.$queryRaw`SELECT current_database(), current_schema()`;
 
         const tenantCount = await prisma.tenant.count();
         const companyCount = await prisma.company.count();
@@ -19,6 +21,8 @@ export async function GET() {
         return NextResponse.json({
             success: true,
             host,
+            database: dbInfo[0].current_database,
+            schema: dbInfo[0].current_schema,
             userCount,
             latestUsers,
             tenantCount,
