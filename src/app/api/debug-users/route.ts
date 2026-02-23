@@ -11,8 +11,8 @@ export async function GET() {
                 email: true,
                 created_at: true,
                 tenant_id: true,
-                tenant: { select: { name: true, slug: true } },
-                company: { select: { name: true, industry: true } }
+                company_id: true,
+                name: true
             }
         });
 
