@@ -5,24 +5,18 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
+        const rawInfo = await prisma.$queryRaw`SELECT current_database(), current_schema(), current_user, version()`;
+
         const users = await prisma.app_user.findMany({
             orderBy: { created_at: 'desc' },
             take: 10,
-            select: {
-                id: true,
-                email: true,
-                created_at: true,
-                tenant_id: true,
-                company_id: true,
-                name: true
-            }
+            select: { id: true, email: true, created_at: true }
         });
 
         return NextResponse.json({
             success: true,
-            message: "Showing the latest 10 users registered in the database from all domains",
             databaseHost: process.env.DATABASE_URL ? process.env.DATABASE_URL.split('@')[1] : 'UNDEFINED',
-            directDatabaseHost: process.env.DIRECT_DATABASE_URL ? process.env.DIRECT_DATABASE_URL.split('@')[1] : 'UNDEFINED',
+            pgContext: rawInfo,
             users
         });
     } catch (e) {
