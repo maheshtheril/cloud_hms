@@ -408,10 +408,7 @@ export async function createInvoice(data: {
                         status: { in: ['draft', 'posted', 'paid'] as any[] },
                         hms_invoice_lines: {
                             some: {
-                                OR: [
-                                    { description: { contains: 'Registration Fee', mode: 'insensitive' } },
-                                    { description: { contains: 'Identity Service', mode: 'insensitive' } }
-                                ]
+                                description: { contains: 'Registration Fee', mode: 'insensitive' }
                             }
                         }
                     },
@@ -423,14 +420,28 @@ export async function createInvoice(data: {
                 }
             }
 
+            // [DEDUPLICATION-FIX] Filter line items to ensure only ONE registration fee exists in this payload
+            let processedLineItems = [...(data.line_items || [])];
+            let regFound = false;
+            processedLineItems = processedLineItems.filter(l => {
+                const isReg = (l.description?.toLowerCase().includes('registration fee')) || (l.description?.toLowerCase().includes('identity service'));
+                if (isReg) {
+                    if (regFound) return false; // Remove second instance
+                    regFound = true;
+                    l.description = REG_FEE_DESCRIPTION; // Standardize
+                    return true;
+                }
+                return true;
+            });
+
             // 4. Sequential Numbering
             const voucherRes = await getNextVoucherNumber(data.date);
             const invoiceNo = voucherRes.success ? voucherRes.data : `INV-QL-${Date.now().toString().slice(-6)}`;
 
             // 5. Totals Calculation
             const { line_items = [], payments = [], status = 'draft', total_discount = 0 } = data;
-            const subtotalCalc = line_items.reduce((sum, l) => sum + (safeNum(l.quantity) * safeNum(l.unit_price) - safeNum(l.discount_amount)), 0);
-            const taxTotalCalc = line_items.reduce((sum, l) => sum + safeNum(l.tax_amount), 0);
+            const subtotalCalc = processedLineItems.reduce((sum, l) => sum + (safeNum(l.quantity) * safeNum(l.unit_price) - safeNum(l.discount_amount)), 0);
+            const taxTotalCalc = processedLineItems.reduce((sum, l) => sum + safeNum(l.tax_amount), 0);
             const grandTotalCalc = Math.max(0, subtotalCalc + taxTotalCalc - safeNum(total_discount));
             const totalPaidCalc = payments.reduce((sum, p) => sum + safeNum(p.amount), 0);
             const outstandingCalc = (status === 'paid') ? 0 : Math.max(0, grandTotalCalc - totalPaidCalc);
@@ -457,7 +468,7 @@ export async function createInvoice(data: {
                     branch_id: isUUID(branchId) ? branchId : null,
                     created_by: isUUID(userId) ? userId : null,
                     hms_invoice_lines: {
-                        create: line_items.map((l: any, idx) => ({
+                        create: processedLineItems.map((l: any, idx) => ({
                             id: crypto.randomUUID(),
                             tenant_id: tenantId,
                             company_id: companyId,
@@ -1459,31 +1470,37 @@ export async function getPatientLedger(patientId: string) {
     }
 }
 
+const REG_FEE_DESCRIPTION = "Patient Registration Fee";
+
 export async function generateRegistrationInvoice(patientId: string) {
     const session = await auth();
     const tenantId = session?.user?.tenantId;
-    const companyId = session?.user?.companyId;
+    let companyId = session?.user?.companyId;
 
-    if (!tenantId || !companyId) return { error: "SECURITY_AUTH_EXPIRED" };
+    if (!tenantId) return { error: "SECURITY_AUTH_EXPIRED: Please login to verify clinical credentials." };
+
+    if (!companyId) {
+        const fallback = await prisma.company.findFirst({
+            where: { tenant_id: tenantId, enabled: true }
+        });
+        companyId = fallback?.id ?? null;
+    }
+    if (!companyId) return { error: "FACILITY_UNLINKED: Billing terminal lacks active branch association." };
 
     try {
         const invoice = await prisma.$transaction(async (tx) => {
             // [ATOMIC-GUARD] Use Postgres Advisory Lock to prevent concurrent registration billing for this patient
-            await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext('${patientId}_reg'))`);
+            await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext(\'${patientId}_reg\'))`);
 
             // [IDEMPOTENCY-FIX] Check for existing registration invoice for this patient
-            // We look for ANY non-cancelled registration invoice to prevent double billing.
             const existing = await tx.hms_invoice.findFirst({
                 where: {
                     patient_id: patientId,
                     tenant_id: tenantId,
-                    status: { in: ['draft', 'posted', 'paid'] },
+                    status: { in: ['draft', 'posted', 'paid'] as any[] },
                     hms_invoice_lines: {
                         some: {
-                            OR: [
-                                { description: { contains: 'Registration Fee', mode: 'insensitive' } },
-                                { description: { contains: 'Identity Service', mode: 'insensitive' } }
-                            ]
+                            description: { contains: 'Registration Fee', mode: 'insensitive' }
                         }
                     }
                 },
@@ -1802,7 +1819,14 @@ export async function getInitialInvoiceData(appointmentId: string) {
         // 2. Add Registration Fee
         const registrationPaid = (appointment.hms_patient?.metadata as any)?.registration_fees_paid;
         if (!registrationPaid) {
-            const hasRegFee = draftInvoice?.hms_invoice_lines.some(l => l.description === 'Registration Fee') || initialItems.some((i: any) => i.name === 'Registration Fee');
+            const hasRegFee = draftInvoice?.hms_invoice_lines.some(l =>
+                l.description?.toLowerCase().includes('registration fee') ||
+                l.description?.toLowerCase().includes('identity service')
+            ) || initialItems.some((i: any) =>
+                i.name?.toLowerCase().includes('registration fee') ||
+                i.name?.toLowerCase().includes('identity service')
+            );
+
             if (!hasRegFee) {
                 const regFeeRecord = await prisma.hms_patient_registration_fees.findFirst({
                     where: { tenant_id: tenantId, is_active: true }
@@ -1810,7 +1834,7 @@ export async function getInitialInvoiceData(appointmentId: string) {
                 if (regFeeRecord) {
                     initialItems.push({
                         id: 'reg-fee',
-                        name: 'Registration Fee',
+                        name: REG_FEE_DESCRIPTION,
                         price: Number(regFeeRecord.fee_amount),
                         quantity: 1,
                         type: 'service'

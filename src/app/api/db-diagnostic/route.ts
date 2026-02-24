@@ -40,6 +40,25 @@ export async function GET() {
       AND column_name = 'status'
     `;
 
+    const duplicateRegFees: any = await prisma.$queryRaw`
+      SELECT 
+          i.patient_id, 
+          p.first_name, 
+          p.last_name, 
+          COUNT(il.id) as line_count,
+          MIN(il.created_at) as first_insert,
+          MAX(il.created_at) as last_insert,
+          array_agg(il.created_at) as all_timestamps
+      FROM hms_invoice_lines il
+      JOIN hms_invoice i ON il.invoice_id = i.id
+      JOIN hms_patient p ON i.patient_id = p.id
+      WHERE il.description LIKE '%Registration Fee%'
+      GROUP BY i.patient_id, p.first_name, p.last_name
+      HAVING COUNT(il.id) > 1
+      ORDER BY last_insert DESC
+      LIMIT 10;
+    `;
+
     return NextResponse.json({
       success: true,
       db_url: process.env.DATABASE_URL,
@@ -47,7 +66,8 @@ export async function GET() {
       triggers: triggers,
       clinician_columns: clinicianCols,
       appointment_array_columns: appointmentCols,
-      invoice_status_column: invoiceCols
+      invoice_status_column: invoiceCols,
+      duplicate_registration_fees: duplicateRegFees
     });
 
   } catch (error: any) {
