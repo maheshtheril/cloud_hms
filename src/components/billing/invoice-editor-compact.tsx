@@ -318,6 +318,12 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   // Sync lines when initial props change (e.g. after async fetch in parent)
   useEffect(() => {
     if (initialInvoice?.hms_invoice_lines || (initialMedicines && initialMedicines.length > 0)) {
+      // [WORLD CLASS] Lock on to the invoice if it arrived asynchronously
+      if (initialInvoice && !activeInvoice) {
+        console.log("[INVOICE-SYNC] Locking on to asynchronously arrived invoice:", initialInvoice.invoice_number);
+        setActiveInvoice(initialInvoice);
+      }
+
       let combined: any[] = [];
       if (initialInvoice?.hms_invoice_lines) {
         combined = initialInvoice.hms_invoice_lines.map((l: any) => ({

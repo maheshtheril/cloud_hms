@@ -372,6 +372,35 @@ export async function createInvoice(data: {
             if (p) resolvedPatientId = p.id;
         }
 
+        // [SAFETY-NET] If this is for an appointment, check if a draft already exists
+        // This prevents the "INV-006 / INV-007" duplicate when the UI is slightly laggy.
+        if (data.appointment_id && !resolvedPatientId) {
+            const apt = await prisma.hms_appointments.findUnique({
+                where: { id: data.appointment_id },
+                select: { patient_id: true }
+            });
+            if (apt) resolvedPatientId = apt.patient_id;
+        }
+
+        if (data.appointment_id) {
+            const existing = await prisma.hms_invoice.findFirst({
+                where: {
+                    appointment_id: data.appointment_id,
+                    tenant_id: tenantId,
+                    status: 'draft'
+                },
+                orderBy: { created_at: 'desc' }
+            });
+
+            if (existing) {
+                console.log(`${LOG_PREFIX} DUPLICATE_PREVENTION - Found existing draft ${existing.invoice_number}. Diverting to updateInvoice logic.`);
+                // We don't call updateInvoice directly to avoid recursion or session overhead, 
+                // we just let the logic proceed but we must return early with a redirect or 
+                // handle it as an update. Since this is createInvoice, the safest is to resume.
+                return updateInvoice(existing.id, data);
+            }
+        }
+
         // 2. Sequential Numbering
         let invoiceNo = data.billing_metadata?.invoice_number || data.billing_metadata?.invoice_no;
 
