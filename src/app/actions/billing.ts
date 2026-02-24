@@ -394,11 +394,11 @@ export async function createInvoice(data: {
                 }
             }
 
-            // 3. [REGISTRATION-GUARD] Check for existing Registration Invoice
-            const hasRegFee = data.line_items?.some(l =>
-                (l.description?.toLowerCase().includes('registration fee')) ||
-                (l.description?.toLowerCase().includes('identity service'))
-            );
+            // 3. [REGISTRATION-GUARD] Check for existing Registration Invoice (FUZZY-MATCH)
+            const hasRegFee = data.line_items?.some(l => {
+                const desc = l.description?.toLowerCase() || "";
+                return desc.includes('registration fee') || desc.includes('identity service') || (desc.includes('registration') && desc.includes('fee'));
+            });
 
             if (hasRegFee && resolvedPatientId) {
                 const existingReg = await tx.hms_invoice.findFirst({
@@ -408,25 +408,30 @@ export async function createInvoice(data: {
                         status: { in: ['draft', 'posted', 'paid'] as any[] },
                         hms_invoice_lines: {
                             some: {
-                                description: { contains: 'Registration Fee', mode: 'insensitive' }
+                                OR: [
+                                    { description: { contains: 'Registration Fee', mode: 'insensitive' } },
+                                    { description: { contains: 'Identity Service', mode: 'insensitive' } },
+                                    { AND: [{ description: { contains: 'Registration', mode: 'insensitive' } }, { description: { contains: 'Fee', mode: 'insensitive' } }] }
+                                ]
                             }
                         }
                     },
                     orderBy: { created_at: 'desc' }
                 });
                 if (existingReg) {
-                    console.log(`${LOG_PREFIX} [REG-RACE-PREVENTED] Patient ${resolvedPatientId} already has a registration invoice ${existingReg.invoice_number}. Status: ${existingReg.status}`);
+                    console.log(`${LOG_PREFIX} [REG-RACE-PREVENTED] Patient ${resolvedPatientId} already has a registration invoice ${existingReg.invoice_number} (Fuzzy Matched).`);
                     return { _isDuplicate: true, existingId: existingReg.id };
                 }
             }
 
-            // [DEDUPLICATION-FIX] Filter line items to ensure only ONE registration fee exists in this payload
+            // [DEDUPLICATION-FIX] Fuzzy intra-invoice deduplication
             let processedLineItems = [...(data.line_items || [])];
             let regFound = false;
             processedLineItems = processedLineItems.filter(l => {
-                const isReg = (l.description?.toLowerCase().includes('registration fee')) || (l.description?.toLowerCase().includes('identity service'));
+                const desc = l.description?.toLowerCase() || "";
+                const isReg = desc.includes('registration fee') || desc.includes('identity service') || (desc.includes('registration') && desc.includes('fee'));
                 if (isReg) {
-                    if (regFound) return false; // Remove second instance
+                    if (regFound) return false; // Remove subsequent instances
                     regFound = true;
                     l.description = REG_FEE_DESCRIPTION; // Standardize
                     return true;
@@ -610,6 +615,33 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
         // Determine Outstanding
         const outstandingAmount = (status === 'paid') ? 0 : Math.max(0, total - totalPaid);
 
+        // [DEDUPLICATION-FIX] Fuzzy intra-invoice deduplication
+        let processedLineItems = [...(line_items || [])];
+        let regFound = false;
+        processedLineItems = processedLineItems.filter((l: any) => {
+            const desc = l.description?.toLowerCase() || "";
+            const isReg = desc.includes('registration fee') || desc.includes('identity service') || (desc.includes('registration') && desc.includes('fee'));
+            if (isReg) {
+                if (regFound) return false;
+                regFound = true;
+                l.description = REG_FEE_DESCRIPTION; // Standardize
+                return true;
+            }
+            return true;
+        });
+
+        // RE-CALCULATE TOTALS AFTER DEDUPLICATION
+        const finalSubtotal = processedLineItems.reduce((sum: number, item: any) => {
+            const qty = Number(item.quantity) || 0;
+            const price = Number(item.unit_price) || 0;
+            const discount = Number(item.discount_amount) || 0;
+            const lineTotal = (qty * price) - discount;
+            return sum + lineTotal;
+        }, 0);
+        const finalTaxTotal = processedLineItems.reduce((sum: number, item: any) => sum + (Number(item.tax_amount || 0)), 0);
+        const finalGrandTotal = Math.max(0, finalSubtotal + finalTaxTotal - Number(total_discount || 0));
+        const finalOutstanding = (status === 'paid') ? 0 : Math.max(0, finalGrandTotal - totalPaid);
+
         const result = await prisma.$transaction(async (tx) => {
             // 1. Update Invoice Header
             const updatedInvoice = await tx.hms_invoice.update({
@@ -619,12 +651,12 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
                     appointment_id: (appointment_id as string) || null,
                     invoice_date: new Date(date),
                     status: status,
-                    total: total,
-                    subtotal: subtotal,
-                    total_tax: totalTaxAmount,
+                    total: finalGrandTotal,
+                    subtotal: finalSubtotal,
+                    total_tax: finalTaxTotal,
                     total_discount: Number(total_discount),
                     total_paid: totalPaid,
-                    outstanding_amount: outstandingAmount,
+                    outstanding_amount: finalOutstanding,
                     billing_metadata: billing_metadata,
                 }
             });
@@ -635,10 +667,10 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
             });
 
             // 3. Resolve Taxes & Create new lines
-            const resolvedLineItems = await Promise.all(line_items.map(async (l: any) => {
+            const resolvedLineItems = await Promise.all(processedLineItems.map(async (l: any) => {
                 if (l.tax_rate_id && l.tax_rate_id.toString().startsWith('AUTO_')) {
                     const rate = parseFloat(l.tax_rate_id.replace('AUTO_', ''));
-                    const realId = await resolveAutoTax(rate, session.user.tenantId, companyId);
+                    const realId = await resolveAutoTax(rate, session.user.tenantId, (companyId as string));
                     if (realId) return { ...l, tax_rate_id: realId };
                 }
                 return l;
@@ -650,15 +682,16 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
                     company_id: companyId,
                     invoice_id: invoiceId,
                     line_idx: index + 1,
-                    product_id: item.product_id || null, // Convert empty string to null
+                    product_id: isUUID(item.product_id) ? item.product_id : null,
                     description: item.description,
-                    quantity: item.quantity,
-                    unit_price: item.unit_price,
-                    net_amount: (item.quantity * item.unit_price) - (item.discount_amount || 0),
+                    quantity: safeNum(item.quantity),
+                    unit_price: safeNum(item.unit_price),
+                    net_amount: (safeNum(item.quantity) * safeNum(item.unit_price)) - safeNum(item.discount_amount),
                     // Tax details
-                    tax_rate_id: item.tax_rate_id || null, // Convert empty string to null
-                    tax_amount: item.tax_amount || 0,
-                    discount_amount: item.discount_amount || 0,
+                    tax_rate_id: isUUID(item.tax_rate_id) ? item.tax_rate_id : null,
+                    tax_amount: safeNum(item.tax_amount),
+                    discount_amount: safeNum(item.discount_amount),
+                    uom: item.uom || 'Unit',
                     metadata: {
                         batch_id: item.batch_id,
                         batch_no: item.batch_no
@@ -1492,7 +1525,7 @@ export async function generateRegistrationInvoice(patientId: string) {
             // [ATOMIC-GUARD] Use Postgres Advisory Lock to prevent concurrent registration billing for this patient
             await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext(\'${patientId}_reg\'))`);
 
-            // [IDEMPOTENCY-FIX] Check for existing registration invoice for this patient
+            // [IDEMPOTENCY-FIX] Fuzzy Match Check for existing registration invoice
             const existing = await tx.hms_invoice.findFirst({
                 where: {
                     patient_id: patientId,
@@ -1500,7 +1533,11 @@ export async function generateRegistrationInvoice(patientId: string) {
                     status: { in: ['draft', 'posted', 'paid'] as any[] },
                     hms_invoice_lines: {
                         some: {
-                            description: { contains: 'Registration Fee', mode: 'insensitive' }
+                            OR: [
+                                { description: { contains: 'Registration Fee', mode: 'insensitive' } },
+                                { description: { contains: 'Identity Service', mode: 'insensitive' } },
+                                { AND: [{ description: { contains: 'Registration', mode: 'insensitive' } }, { description: { contains: 'Fee', mode: 'insensitive' } }] }
+                            ]
                         }
                     }
                 },
@@ -1816,16 +1853,16 @@ export async function getInitialInvoiceData(appointmentId: string) {
             }
         }
 
-        // 2. Add Registration Fee
+        // 2. Add Registration Fee (Fuzzy Logic)
         const registrationPaid = (appointment.hms_patient?.metadata as any)?.registration_fees_paid;
         if (!registrationPaid) {
-            const hasRegFee = draftInvoice?.hms_invoice_lines.some(l =>
-                l.description?.toLowerCase().includes('registration fee') ||
-                l.description?.toLowerCase().includes('identity service')
-            ) || initialItems.some((i: any) =>
-                i.name?.toLowerCase().includes('registration fee') ||
-                i.name?.toLowerCase().includes('identity service')
-            );
+            const isRegFuzzy = (desc: string) => {
+                const d = desc?.toLowerCase() || "";
+                return d.includes('registration fee') || d.includes('identity service') || (d.includes('registration') && d.includes('fee'));
+            }
+
+            const hasRegFee = draftInvoice?.hms_invoice_lines.some(l => isRegFuzzy(l.description)) ||
+                initialItems.some((i: any) => isRegFuzzy(i.name));
 
             if (!hasRegFee) {
                 const regFeeRecord = await prisma.hms_patient_registration_fees.findFirst({
