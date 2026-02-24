@@ -15,6 +15,7 @@ interface PatientPaymentDialogProps {
     onPaymentSuccess?: () => void;
     trigger?: React.ReactNode;
     fixedAmount?: number; // [NEW] Allow overriding balance for specific fee collection
+    appointmentId?: string; // [RCM-CONTEXT] Link to appointment for better idempotency
 }
 
 
@@ -23,7 +24,8 @@ export function PatientPaymentDialog({
     patientName,
     onPaymentSuccess,
     trigger,
-    fixedAmount
+    fixedAmount,
+    appointmentId
 }: PatientPaymentDialogProps) {
     const { toast } = useToast();
     const [isOpen, setIsOpen] = useState(false);
@@ -46,15 +48,17 @@ export function PatientPaymentDialog({
                     mod.getTaxConfiguration(),
                     mod.getUoms(),
                     // [WORLD CLASS] Check for existing UNPAID registration invoice specifically
-                    mod.getOpenRegistrationInvoice(patientId)
+                    // If appointmentId is present, we prioritize that context
+                    mod.getInitialInvoiceData(appointmentId || '').then(res => res.success ? res : mod.getOpenRegistrationInvoice(patientId))
                 ]).then(([itemsRes, taxRes, uomsRes, invRes]) => {
                     if (itemsRes.success) setBillableItems(itemsRes.data || []);
                     if (taxRes.success) setTaxConfig(taxRes.data || { defaultTax: null, taxRates: [] });
                     if (uomsRes.success) setUoms(uomsRes.data || []);
 
-                    if (invRes.success && invRes.data) {
-                        console.log(`[RCM] Resuming existing registration invoice: ${invRes.data.invoice_number}`);
-                        setInitialInvoice(invRes.data);
+                    if ((invRes as any).success && (invRes as any).data) {
+                        const inv = (invRes as any).data;
+                        console.log(`[RCM] Resuming existing invoice: ${inv.invoice_number}`);
+                        setInitialInvoice(inv);
                     }
 
                     // Mock patient object for the editor
@@ -69,7 +73,7 @@ export function PatientPaymentDialog({
                 }).finally(() => setIsLoading(false));
             });
         }
-    }, [isOpen, patientId, patientName]);
+    }, [isOpen, patientId, patientName, appointmentId]);
 
     // Construct initial medicines/items based on fixedAmount (Registration Context)
     const initialMedicines = fixedAmount ? [{
@@ -108,7 +112,9 @@ export function PatientPaymentDialog({
                         uoms={uoms}
                         taxConfig={taxConfig}
                         initialPatientId={patientId}
+                        appointmentId={appointmentId}
                         initialMedicines={initialMedicines}
+                        initialInvoice={initialInvoice}
                         onClose={() => {
                             setIsOpen(false);
                         }}

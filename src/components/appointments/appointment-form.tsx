@@ -428,6 +428,7 @@ export function AppointmentForm({
                                             patientId={saveSuccess.patient_id || selectedPatientData?.id || selectedPatientId}
                                             patientName={`${(saveSuccess.patient || selectedPatientData || selectedPatient)?.first_name || ''} ${(saveSuccess.patient || selectedPatientData || selectedPatient)?.last_name || ''}`.trim() || 'Unnamed Patient'}
                                             fixedAmount={150}
+                                            appointmentId={saveSuccess.id}
                                             onPaymentSuccess={() => {
                                                 setRegFeePending(false);
                                                 toast({ title: "Registration Paid", description: "Receipt generated.", className: "bg-green-600 text-white" });

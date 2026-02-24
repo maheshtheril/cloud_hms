@@ -342,122 +342,100 @@ export async function createInvoice(data: {
 }) {
     const session = await auth();
     const LOG_PREFIX = `[BILLING-ENGINE-${Date.now()}]`;
-    console.log(`${LOG_PREFIX} START - User: ${session?.user?.email}`);
+    const tenantId = session?.user?.tenantId;
+    const companyId = (session?.user as any).companyId || tenantId;
+    const branchId = (session?.user as any).current_branch_id || (session?.user as any).branch_id;
+    const userId = session?.user?.id;
 
-    if (!session?.user?.tenantId) {
-        return { error: "AUTH_EXPIRED: Session lost. Please login again." };
+    if (!tenantId || !companyId) {
+        console.error(`${LOG_PREFIX} createInvoice - Unauthorized or Missing Context`, { tenantId, companyId });
+        return { error: "Unauthorized or Missing Facility Context" };
     }
-
-    const tenantId = session.user.tenantId;
-    const companyId = (session.user as any).companyId || tenantId;
-    const branchId = (session.user as any).current_branch_id || (session.user as any).branch_id;
-    const userId = session.user.id;
 
     const isUUID = (str: any) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
     const safeNum = (val: any) => { const n = parseFloat(val); return isNaN(n) ? 0 : n; };
 
+    console.log(`${LOG_PREFIX} [EXECUTION-TRACE] createInvoice PID: ${data.patient_id}, APT: ${data.appointment_id || 'N/A'}, Status: ${data.status || 'draft'}`);
+
     try {
-        // 1. Resolve Patient Identity
-        let resolvedPatientId: string | null = null;
-        const patientInput = data.patient_id;
-        const rawPatientId = (patientInput && typeof patientInput === 'object') ? (patientInput as any).id : patientInput;
+        const result = await prisma.$transaction(async (tx) => {
+            // [ATOMIC-GUARD] Use Postgres Advisory Lock to prevent concurrent creation for the same context
+            const lockKeyStr = data.appointment_id || data.patient_id;
+            await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext('${lockKeyStr}'))`);
 
-        if (isUUID(rawPatientId)) {
-            resolvedPatientId = rawPatientId;
-        } else if (rawPatientId && rawPatientId.toString().startsWith('PAT-')) {
-            const p = await prisma.hms_patient.findFirst({
-                where: { tenant_id: tenantId, patient_number: rawPatientId.toString() },
-                select: { id: true }
-            });
-            if (p) resolvedPatientId = p.id;
-        }
+            // 1. Resolve Patient Identity
+            let resolvedPatientId: string | null = null;
+            const patientInput = data.patient_id;
+            const rawPatientId = (patientInput && typeof patientInput === 'object') ? (patientInput as any).id : patientInput;
 
-        // [SAFETY-NET] If this is for an appointment, check if a draft already exists
-        // This prevents the "INV-006 / INV-007" duplicate when the UI is slightly laggy.
-        if (data.appointment_id && !resolvedPatientId) {
-            const apt = await prisma.hms_appointments.findUnique({
-                where: { id: data.appointment_id },
-                select: { patient_id: true }
-            });
-            if (apt) resolvedPatientId = apt.patient_id;
-        }
-
-        if (data.appointment_id) {
-            const existing = await prisma.hms_invoice.findFirst({
-                where: {
-                    appointment_id: data.appointment_id,
-                    tenant_id: tenantId,
-                    status: { in: ['draft', 'posted'] as any[] }
-                },
-                orderBy: { created_at: 'desc' }
-            });
-
-            if (existing) {
-                console.log(`${LOG_PREFIX} DUPLICATE_PREVENTION - Found existing ${existing.status} invoice ${existing.invoice_number} for this appointment. Resuming.`);
-                return updateInvoice(existing.id, data);
+            if (isUUID(rawPatientId)) {
+                resolvedPatientId = rawPatientId;
+            } else if (rawPatientId && rawPatientId.toString().startsWith('PAT-')) {
+                const p = await tx.hms_patient.findFirst({
+                    where: { tenant_id: tenantId, patient_number: rawPatientId.toString() },
+                    select: { id: true }
+                });
+                if (p) resolvedPatientId = p.id;
             }
-        }
 
-        // [STRICT-REGISTRATION-GUARD]
-        const hasRegFee = data.line_items?.some(l =>
-            (l.description?.toLowerCase().includes('registration fee')) ||
-            (l.description?.toLowerCase().includes('identity service'))
-        );
-
-        if (hasRegFee && resolvedPatientId) {
-            const existingReg = await prisma.hms_invoice.findFirst({
-                where: {
-                    patient_id: resolvedPatientId,
-                    tenant_id: tenantId,
-                    status: { in: ['draft', 'posted'] as any[] },
-                    hms_invoice_lines: {
-                        some: {
-                            OR: [
-                                { description: { contains: 'Registration Fee', mode: 'insensitive' } },
-                                { description: { contains: 'Identity Service', mode: 'insensitive' } }
-                            ]
-                        }
-                    }
-                },
-                orderBy: { created_at: 'desc' }
-            });
-
-            if (existingReg) {
-                console.log(`${LOG_PREFIX} REG_DEDUPLICATION - Patient already has an unpaid registration invoice ${existingReg.invoice_number}. Merging.`);
-                return updateInvoice(existingReg.id, data);
-            }
-        }
-
-        // 2. Sequential Numbering
-        let invoiceNo = data.billing_metadata?.invoice_number || data.billing_metadata?.invoice_no;
-
-        if (!invoiceNo) {
-            const invNoRes = await getNextVoucherNumber(data.date);
-            invoiceNo = invNoRes.success ? invNoRes.data : `INV-QL-${Date.now().toString().slice(-6)}`;
-        }
-
-        // 3. Totals
-        const { line_items = [], payments = [], status = 'draft', total_discount = 0 } = data;
-        const subtotalCalc = line_items.reduce((sum, l) => sum + (safeNum(l.quantity) * safeNum(l.unit_price) - safeNum(l.discount_amount)), 0);
-        const taxTotalCalc = line_items.reduce((sum, l) => sum + safeNum(l.tax_amount), 0);
-        const grandTotalCalc = Math.max(0, subtotalCalc + taxTotalCalc - safeNum(total_discount));
-        const totalPaidCalc = payments.reduce((sum, p) => sum + safeNum(p.amount), 0);
-        const outstandingCalc = (status === 'paid') ? 0 : Math.max(0, grandTotalCalc - totalPaidCalc);
-
-        // 4. Resolve AUTO Taxes (JIT Creation)
-        const resolvedLineItems = await Promise.all(line_items.map(async (l: any) => {
-            if (l.tax_rate_id && l.tax_rate_id.toString().startsWith('AUTO_')) {
-                const rate = parseFloat(l.tax_rate_id.replace('AUTO_', ''));
-                if (!isNaN(rate)) {
-                    const realId = await resolveAutoTax(rate, tenantId, companyId);
-                    if (realId) return { ...l, tax_rate_id: realId };
+            // 2. [STRICT-GUARD] Check for existing invoice AFTER acquiring lock
+            if (isUUID(data.appointment_id)) {
+                const existing = await tx.hms_invoice.findFirst({
+                    where: {
+                        appointment_id: data.appointment_id,
+                        tenant_id: tenantId,
+                        status: { in: ['draft', 'posted'] as any[] }
+                    },
+                    orderBy: { created_at: 'desc' }
+                });
+                if (existing) {
+                    console.log(`${LOG_PREFIX} [RACE-PREVENTED] Resuming ${existing.invoice_number} instead of creating duplicate.`);
+                    return { _isDuplicate: true, existingId: existing.id };
                 }
             }
-            return l;
-        }));
 
-        // 5. Persistence with Manual ID Injection (Neon Compatibility)
-        const result = await prisma.$transaction(async (tx) => {
+            // 3. [REGISTRATION-GUARD] Check for existing Registration Invoice
+            const hasRegFee = data.line_items?.some(l =>
+                (l.description?.toLowerCase().includes('registration fee')) ||
+                (l.description?.toLowerCase().includes('identity service'))
+            );
+
+            if (hasRegFee && resolvedPatientId) {
+                const existingReg = await tx.hms_invoice.findFirst({
+                    where: {
+                        patient_id: resolvedPatientId,
+                        tenant_id: tenantId,
+                        status: { in: ['draft', 'posted'] as any[] },
+                        hms_invoice_lines: {
+                            some: {
+                                OR: [
+                                    { description: { contains: 'Registration Fee', mode: 'insensitive' } },
+                                    { description: { contains: 'Identity Service', mode: 'insensitive' } }
+                                ]
+                            }
+                        }
+                    },
+                    orderBy: { created_at: 'desc' }
+                });
+                if (existingReg) {
+                    console.log(`${LOG_PREFIX} [REG-RACE-PREVENTED] Merging into existing reg invoice ${existingReg.invoice_number}.`);
+                    return { _isDuplicate: true, existingId: existingReg.id };
+                }
+            }
+
+            // 4. Sequential Numbering
+            const voucherRes = await getNextVoucherNumber(data.date);
+            const invoiceNo = voucherRes.success ? voucherRes.data : `INV-QL-${Date.now().toString().slice(-6)}`;
+
+            // 5. Totals Calculation
+            const { line_items = [], payments = [], status = 'draft', total_discount = 0 } = data;
+            const subtotalCalc = line_items.reduce((sum, l) => sum + (safeNum(l.quantity) * safeNum(l.unit_price) - safeNum(l.discount_amount)), 0);
+            const taxTotalCalc = line_items.reduce((sum, l) => sum + safeNum(l.tax_amount), 0);
+            const grandTotalCalc = Math.max(0, subtotalCalc + taxTotalCalc - safeNum(total_discount));
+            const totalPaidCalc = payments.reduce((sum, p) => sum + safeNum(p.amount), 0);
+            const outstandingCalc = (status === 'paid') ? 0 : Math.max(0, grandTotalCalc - totalPaidCalc);
+
+            // 6. Persistence
             const invoiceId = crypto.randomUUID();
             const invoice = await tx.hms_invoice.create({
                 data: {
@@ -467,10 +445,6 @@ export async function createInvoice(data: {
                     invoice_number: invoiceNo,
                     invoice_no: invoiceNo,
                     invoice_date: new Date(data.date || new Date()),
-                    issued_at: new Date(),
-                    due_at: new Date(new Date().setDate(new Date().getDate() + 7)),
-                    currency: session.user.currencyCode || SYSTEM_DEFAULT_CURRENCY_CODE,
-                    currency_rate: 1.0,
                     subtotal: subtotalCalc,
                     total_tax: taxTotalCalc,
                     total_discount: safeNum(total_discount),
@@ -478,14 +452,12 @@ export async function createInvoice(data: {
                     total_paid: totalPaidCalc,
                     status: status as any,
                     outstanding_amount: outstandingCalc,
-                    outstanding: outstandingCalc,
-                    billing_metadata: data.billing_metadata || {},
                     patient_id: resolvedPatientId,
                     appointment_id: isUUID(data.appointment_id) ? data.appointment_id : null,
                     branch_id: isUUID(branchId) ? branchId : null,
                     created_by: isUUID(userId) ? userId : null,
                     hms_invoice_lines: {
-                        create: resolvedLineItems.map((l, idx) => ({
+                        create: line_items.map((l: any, idx) => ({
                             id: crypto.randomUUID(),
                             tenant_id: tenantId,
                             company_id: companyId,
@@ -495,15 +467,9 @@ export async function createInvoice(data: {
                             unit_price: safeNum(l.unit_price),
                             discount_amount: safeNum(l.discount_amount),
                             tax_amount: safeNum(l.tax_amount),
-                            net_amount: (safeNum(l.quantity) * safeNum(l.unit_price)) - safeNum(l.discount_amount),
-                            subtotal: (safeNum(l.quantity) * safeNum(l.unit_price)),
                             product_id: isUUID(l.product_id) ? l.product_id : null,
                             tax_rate_id: isUUID(l.tax_rate_id) ? l.tax_rate_id : null,
-                            uom: l.uom || 'Unit',
-                            metadata: {
-                                batch_id: l.batch_id,
-                                batch_no: l.batch_no
-                            }
+                            uom: l.uom || 'Unit'
                         }))
                     },
                     hms_invoice_payments: payments.length > 0 ? {
@@ -513,49 +479,34 @@ export async function createInvoice(data: {
                             company_id: companyId,
                             amount: safeNum(p.amount),
                             method: (['cash', 'card', 'upi', 'bank_transfer', 'insurance', 'adjustment'].includes(p.method) ? p.method : 'cash') as any,
-                            payment_reference: p.reference || 'COUNTER_SALE',
-                            currency: session.user.currencyCode || SYSTEM_DEFAULT_CURRENCY_CODE,
-                            paid_at: new Date(),
-                            created_by: isUUID(userId) ? userId : null
+                            payment_reference: p.reference || 'COUNTER_SALE', paid_at: new Date()
                         }))
                     } : undefined
                 }
             });
 
+            // Post-Hooks
             if (status === 'paid' && isUUID(data.appointment_id)) {
                 await tx.hms_appointments.update({ where: { id: data.appointment_id }, data: { status: 'completed' } });
             }
 
-            // [NEW] Registration Fee Tracking
-            const hasRegistrationFee = line_items.some((l: any) => {
-                const desc = (l.description || l.name || "").toLowerCase();
-                return desc.includes('registration fee') || desc.includes('registration & identity service');
-            });
-            if (hasRegistrationFee && resolvedPatientId && (status === 'posted' || status === 'paid')) {
+            if (hasRegFee && resolvedPatientId && (status === 'posted' || status === 'paid')) {
                 await trackRegistrationPayment(tx, resolvedPatientId, tenantId, companyId);
             }
-
             return invoice;
-        }, { timeout: 40000 });
+        }, { timeout: 15000 });
 
-        if (result.id && status !== 'draft') {
-            AccountingService.postSalesInvoice(result.id, userId).catch(err => console.error(`${LOG_PREFIX} GL POST ERR:`, err));
+        // Handle the duplicate signal outside the transaction to clean up
+        if ((result as any)._isDuplicate) {
+            return updateInvoice((result as any).existingId, data);
         }
 
         revalidatePath('/hms/billing');
         return { success: true, data: result };
 
-    } catch (error: any) {
-        const detail = error.meta ? JSON.stringify(error.meta) : error.message;
-        const code = error.code || 'PRM-UNKNOWN';
-        const target = error.meta?.target || error.meta?.column || 'Identity Check';
-
-        const loudMessage = `[BILLING-FATAL] CODE: ${code} | TARGET: ${target} | DETAIL: ${detail}`;
-        console.error(loudMessage);
-
-        return {
-            error: loudMessage
-        };
+    } catch (err: any) {
+        console.error(`${LOG_PREFIX} [CRITICAL-FAIL] createInvoice:`, err);
+        return { error: `BILLING_CORE_FATAL: ${err.message}` };
     }
 }
 
