@@ -8,17 +8,8 @@ import { revalidatePath } from "next/cache"
 import { AccountingService } from "@/lib/services/accounting"
 import { NotificationService } from "@/lib/services/notification";
 import { SYSTEM_DEFAULT_CURRENCY_CODE } from "@/lib/currency-constants";
+import { isUUID, safeNum } from "@/lib/utils/is-uuid";
 
-// [HOISTED-CORE-UTILITIES] Always at top to prevent reference shadowing in transactions
-function isUUID(str: any): boolean {
-    if (typeof str !== 'string') return false;
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-}
-
-function safeNum(val: any): number {
-    const n = parseFloat(val);
-    return isNaN(n) ? 0 : n;
-}
 
 export async function getUoms() {
     const session = await auth();
@@ -470,7 +461,7 @@ export async function createInvoice(data: {
             const outstandingCalc = (status === 'paid') ? 0 : Math.max(0, grandTotalCalc - totalPaidCalc);
 
             // 6. Persistence
-            const invoiceId = crypto.randomUUID();
+            const invoiceId = randomUUID();
             const invoice = await tx.hms_invoice.create({
                 data: {
                     id: invoiceId,
@@ -492,7 +483,7 @@ export async function createInvoice(data: {
                     created_by: isUUID(userId) ? userId : null,
                     hms_invoice_lines: {
                         create: processedLineItems.map((l: any, idx) => ({
-                            id: crypto.randomUUID(),
+                            id: randomUUID(),
                             tenant_id: tenantId,
                             company_id: companyId,
                             line_idx: idx + 1,
@@ -508,7 +499,7 @@ export async function createInvoice(data: {
                     },
                     hms_invoice_payments: payments.length > 0 ? {
                         create: payments.filter(p => safeNum(p.amount) > 0).map(p => ({
-                            id: crypto.randomUUID(),
+                            id: randomUUID(),
                             tenant_id: tenantId,
                             company_id: companyId,
                             amount: safeNum(p.amount),
@@ -913,7 +904,7 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
 
             await tx.hms_invoice_payments.create({
                 data: {
-                    id: crypto.randomUUID(),
+                    id: randomUUID(),
                     tenant_id: session.user.tenantId,
                     company_id: companyId,
                     invoice_id: invoiceId,
@@ -1599,7 +1590,7 @@ export async function generateRegistrationInvoice(patientId: string, appointment
             if (!product) {
                 product = await tx.hms_product.create({
                     data: {
-                        id: crypto.randomUUID(),
+                        id: randomUUID(),
                         tenant_id: tenantId,
                         company_id: companyId,
                         name: "Patient Registration Fee",
@@ -1621,7 +1612,7 @@ export async function generateRegistrationInvoice(patientId: string, appointment
             // 4. Create Invoice Record with Line Item
             return await tx.hms_invoice.create({
                 data: {
-                    id: crypto.randomUUID(),
+                    id: randomUUID(),
                     tenant_id: tenantId,
                     company_id: companyId,
                     patient_id: patientId,
@@ -1641,7 +1632,7 @@ export async function generateRegistrationInvoice(patientId: string, appointment
                     created_by: session.user.id,
                     hms_invoice_lines: {
                         create: {
-                            id: crypto.randomUUID(),
+                            id: randomUUID(),
                             tenant_id: tenantId,
                             company_id: companyId,
                             line_idx: 1,
@@ -1746,7 +1737,7 @@ export async function generateConsultationInvoice(appointmentId: string) {
         // 3. Create Invoice
         const invoice = await prisma.hms_invoice.create({
             data: {
-                id: crypto.randomUUID(),
+                id: randomUUID(),
                 tenant_id: tenantId,
                 company_id: companyId,
                 patient_id: appointment.patient_id,
@@ -1765,7 +1756,7 @@ export async function generateConsultationInvoice(appointmentId: string) {
                 created_by: session.user.id,
                 hms_invoice_lines: {
                     create: {
-                        id: crypto.randomUUID(),
+                        id: randomUUID(),
                         tenant_id: tenantId,
                         company_id: companyId,
                         line_idx: 1,
@@ -1884,7 +1875,7 @@ export async function getInitialInvoiceData(appointmentId: string) {
                 return d.includes('registration fee') || d.includes('identity service') || (d.includes('registration') && d.includes('fee'));
             }
 
-            const hasRegFee = draftInvoice?.hms_invoice_lines.some(l => isRegFuzzy(l.description)) ||
+            const hasRegFee = draftInvoice?.hms_invoice_lines.some(l => isRegFuzzy(l.description || '')) ||
                 initialItems.some((i: any) => isRegFuzzy(i.name));
 
             if (!hasRegFee) {
