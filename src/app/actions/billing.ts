@@ -9,6 +9,9 @@ import { AccountingService } from "@/lib/services/accounting"
 import { NotificationService } from "@/lib/services/notification";
 import { SYSTEM_DEFAULT_CURRENCY_CODE } from "@/lib/currency-constants";
 
+const isUUID = (str: any) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+const safeNum = (val: any) => { const n = parseFloat(val); return isNaN(n) ? 0 : n; };
+
 export async function getUoms() {
     const session = await auth();
     const companyId = session?.user?.companyId || session?.user?.tenantId;
@@ -352,8 +355,6 @@ export async function createInvoice(data: {
         return { error: "Unauthorized or Missing Facility Context" };
     }
 
-    const isUUID = (str: any) => typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
-    const safeNum = (val: any) => { const n = parseFloat(val); return isNaN(n) ? 0 : n; };
 
     console.log(`${LOG_PREFIX} [EXECUTION-TRACE] createInvoice PID: ${data.patient_id}, APT: ${data.appointment_id || 'N/A'}, Status: ${data.status || 'draft'}`);
 
