@@ -324,16 +324,9 @@ export function AppointmentForm({
             } else {
                 const aptId = editingAppointment?.id || res.data?.id;
 
-                // Ensure consultation invoice exists if not pre-generated
-                console.log("DEBUG: Finalizing appointment", aptId);
-                console.log("DEBUG: Calling generateConsultationInvoice");
-                try {
-                    if (aptId) await generateConsultationInvoice(aptId);
-                    console.log("DEBUG: Invoice generated successfully");
-                } catch (invError: any) {
-                    console.error("DEBUG: Invoice generation failed", invError);
-                    // Do not block flow, just log
-                }
+                // [USER-FEEDBACK-FIX] Consultation invoices are NOT generated during booking.
+                // They are billed post-visit. ONLY Registration is handled here if required.
+                console.log("DEBUG: Finalizing appointment", aptId, " - Skipping Consultation Pre-bill as requested.");
 
                 // [NEW] CHECK FOR FEES DUE (Registration only as requested)
                 const regStatus = checkRegistrationStatus();
@@ -447,7 +440,10 @@ export function AppointmentForm({
                                     }
                                 />
                                 <p className="text-[10px] text-center font-bold text-amber-600/60 uppercase tracking-widest">
-                                    * Protocol: Doctor Consultation fees are collected post-visit
+                                    * Protocol: Only Registration Fee is collected at booking.
+                                </p>
+                                <p className="text-[10px] text-center font-bold text-slate-400 uppercase tracking-widest">
+                                    Consultation fees are collected POST-VISIT.
                                 </p>
                             </div>
                         </div>

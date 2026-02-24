@@ -1466,6 +1466,33 @@ export async function generateRegistrationInvoice(patientId: string) {
     if (!tenantId || !companyId) return { error: "SECURITY_AUTH_EXPIRED" };
 
     try {
+        // [IDEMPOTENCY-FIX] Check for existing registration invoice for this patient today
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+
+        const existing = await prisma.hms_invoice.findFirst({
+            where: {
+                patient_id: patientId,
+                tenant_id: tenantId,
+                status: { not: 'cancelled' },
+                hms_invoice_lines: {
+                    some: {
+                        OR: [
+                            { description: { contains: 'Registration Fee', mode: 'insensitive' } },
+                            { description: { contains: 'Identity Service', mode: 'insensitive' } }
+                        ]
+                    }
+                },
+                created_at: { gte: startOfDay }
+            },
+            include: { hms_invoice_lines: true }
+        });
+
+        if (existing) {
+            console.log(`[RCM] Duplicate registration invoice blocked for patient ${patientId}. Reusing ${existing.invoice_number}`);
+            return { success: true, data: existing };
+        }
+
         // 1. Resolve Settings for Registration Fee
         const settings = await prisma.hms_settings.findFirst({
             where: { tenant_id: tenantId, key: 'billing' }
@@ -1581,10 +1608,19 @@ export async function generateConsultationInvoice(appointmentId: string) {
         const consultationFee = Number(appointment.hms_clinician?.consultation_fee) || 0;
 
         // 1. Check for existing invoice
+        // [IDEMPOTENCY-FIX] Enhanced check with tenant scoping
         const existing = await prisma.hms_invoice.findFirst({
-            where: { appointment_id: appointmentId, status: { not: 'cancelled' } }
+            where: {
+                appointment_id: appointmentId,
+                tenant_id: tenantId,
+                status: { not: 'cancelled' }
+            }
         });
-        if (existing) return { success: true, data: existing };
+
+        if (existing) {
+            console.log(`[RCM] Duplicate consultation invoice blocked for appointment ${appointmentId}. Reusing ${existing.invoice_number}`);
+            return { success: true, data: existing };
+        }
 
         // 2. Generate Number
         const invNoRes = await getNextVoucherNumber();

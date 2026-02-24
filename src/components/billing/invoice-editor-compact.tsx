@@ -63,6 +63,9 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const { data: session } = useSession()
   const isAdmin = session?.user?.isAdmin
 
+  // Active persistence state
+  const [activeInvoice, setActiveInvoice] = useState<any>(initialInvoice)
+
   // UI State
   const [loading, setLoading] = useState(false)
   const [pricingMode, setPricingMode] = useState<'standard' | 'mrp'>('standard')
@@ -98,7 +101,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [isCreatingPatient, setIsCreatingPatient] = useState(false)
   const [walkInName, setWalkInName] = useState('')
   const [walkInPhone, setWalkInPhone] = useState('')
-  const [selectedPatientId, setSelectedPatientId] = useState(initialInvoice?.patient_id || initialPatientId || '')
+  const [selectedPatientId, setSelectedPatientId] = useState(activeInvoice?.patient_id || initialPatientId || '')
 
   const patientOptions = useMemo(() => patients.map(p => ({
     id: p.id,
@@ -130,58 +133,87 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     return inv?.hms_patient?.full_name || `${inv?.hms_patient?.first_name || ''} ${inv?.hms_patient?.last_name || ''}`.trim() || inv?.patient_name || ''
   }, [selectedPatientId, patientOptions, initialInvoice])
 
-  const [date, setDate] = useState(initialInvoice?.invoice_date ? new Date(initialInvoice.invoice_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
+  const [date, setDate] = useState(activeInvoice?.invoice_date ? new Date(activeInvoice.invoice_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0])
 
   // Fetch provisional number on mount and date change
   useEffect(() => {
-    if (!initialInvoice?.invoice_number) {
+    if (!activeInvoice?.invoice_number) {
       getNextVoucherNumber(date).then(res => {
         if (res.success && res.data) setProvisionalNo(res.data);
       });
     } else {
-      setProvisionalNo(initialInvoice.invoice_number);
+      setProvisionalNo(activeInvoice.invoice_number);
     }
-  }, [date, initialInvoice]);
+  }, [date, activeInvoice]);
 
   // AUTO-LOAD INITIAL DATA FROM APPOINTMENT (Registration Fee, etc)
   useEffect(() => {
-    if (appointmentId && (!initialInvoice && (!initialMedicines || initialMedicines.length === 0))) {
+    if (appointmentId && (!activeInvoice && (!initialMedicines || initialMedicines.length === 0))) {
       import('@/app/actions/billing').then(mod => {
         mod.getInitialInvoiceData(appointmentId).then(res => {
-          if (res && Array.isArray(res)) {
-            // Map the items to lines
-            const newLines = res.map((m: any) => {
-              const billable = billableItems.find(bi => bi.id === (m.id || m.product_id) || bi.label === m.name);
-              const taxId = billable?.categoryTaxId !== undefined ? billable.categoryTaxId : defaultTaxId;
-              const finalPrice = billable?.price || Number(m.price || 0);
+          if (res?.success && res.data) {
+            const { initialItems, initialInvoice: foundInvoice, patientId } = res.data;
 
-              // Calculate initial tax
-              const taxRateObj = taxConfig.taxRates.find((t: any) => t.id === taxId);
-              const rate = taxRateObj ? Number(taxRateObj.rate) : 0;
-              const lineNet = (Number(m.quantity || 1) * finalPrice);
-              const taxAmt = (Math.max(0, lineNet) * rate) / 100;
+            // If we found an existing draft invoice, lock on to it
+            if (foundInvoice) {
+              setActiveInvoice(foundInvoice);
+              if (!selectedPatientId) setSelectedPatientId(foundInvoice.patient_id);
 
-              return {
-                id: Math.random() + Date.now(),
-                product_id: billable?.id || m.id || '',
-                description: m.name || m.description || '',
-                quantity: Number(m.quantity || 1),
-                uom: m.uom || billable?.uom || 'PCS',
-                unit_price: finalPrice,
-                tax_rate_id: taxId,
-                tax_amount: taxAmt,
-                discount_amount: 0,
-                base_price: finalPrice,
-                item_type: m.type || billable?.type || 'item',
-                metadata: billable?.metadata || {}
+              // Load lines from existing invoice
+              if (foundInvoice.hms_invoice_lines) {
+                const invLines = foundInvoice.hms_invoice_lines.map((l: any) => ({
+                  id: l.id || Date.now() + Math.random(),
+                  product_id: l.product_id || '',
+                  description: l.description,
+                  quantity: Number(l.quantity),
+                  uom: l.uom || 'PCS',
+                  unit_price: Number(l.unit_price),
+                  tax_rate_id: l.tax_rate_id,
+                  tax_amount: Number(l.tax_amount),
+                  discount_amount: Number(l.discount_amount),
+                  base_price: l.unit_price,
+                  item_type: l.product_id ? (billableItems.find(bi => bi.id === l.product_id)?.type || 'item') : 'item',
+                  isFromInvoice: true
+                }));
+                setLines(invLines);
               }
-            });
-            if (newLines.length > 0) setLines(newLines);
+              return;
+            }
+
+            // Fallback to initialItems if no invoice exists
+            if (Array.isArray(initialItems) && initialItems.length > 0) {
+              const newLines = initialItems.map((m: any) => {
+                const billable = billableItems.find(bi => bi.id === (m.id || m.product_id) || bi.label === m.name);
+                const taxId = billable?.categoryTaxId !== undefined ? billable.categoryTaxId : defaultTaxId;
+                const finalPrice = billable?.price || Number(m.price || 0);
+
+                const taxRateObj = taxConfig.taxRates.find((t: any) => t.id === taxId);
+                const rate = taxRateObj ? Number(taxRateObj.rate) : 0;
+                const lineNet = (Number(m.quantity || 1) * finalPrice);
+                const taxAmt = (Math.max(0, lineNet) * rate) / 100;
+
+                return {
+                  id: Math.random() + Date.now(),
+                  product_id: billable?.id || m.id || '',
+                  description: m.name || m.description || '',
+                  quantity: Number(m.quantity || 1),
+                  uom: m.uom || billable?.uom || 'PCS',
+                  unit_price: finalPrice,
+                  tax_rate_id: taxId,
+                  tax_amount: taxAmt,
+                  discount_amount: 0,
+                  base_price: finalPrice,
+                  item_type: m.type || billable?.type || 'item',
+                  metadata: billable?.metadata || {}
+                }
+              });
+              setLines(newLines);
+            }
           }
         });
       });
     }
-  }, [appointmentId, initialInvoice, initialMedicines]);
+  }, [appointmentId, activeInvoice, initialMedicines, billableItems]);
 
 
   const extendedTaxRates = useMemo(() => {
@@ -503,8 +535,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     }
 
     try {
-      // Execute the save action with a focus on core persistence
-      const res = await (initialInvoice?.id ? updateInvoice(initialInvoice.id, payload) : createInvoice(payload))
+      // Create or update based on activeInvoice state (which handles post-initial-fetch resolution)
+      const res = await (activeInvoice?.id ? updateInvoice(activeInvoice.id, payload) : createInvoice(payload))
 
       if (res.success) {
         let tallyMsg = `Transaction serialized as ${effectiveStatus}.`;
