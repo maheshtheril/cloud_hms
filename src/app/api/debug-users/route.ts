@@ -13,9 +13,21 @@ export async function GET() {
             select: { id: true, email: true, created_at: true }
         });
 
+        const maskUrl = (url?: string) => {
+            if (!url) return 'UNDEFINED';
+            try {
+                const u = new URL(url);
+                u.password = '***';
+                return u.toString();
+            } catch (e) {
+                return 'INVALID_URL';
+            }
+        };
+
         return NextResponse.json({
             success: true,
-            databaseHost: process.env.DATABASE_URL ? process.env.DATABASE_URL.split('@')[1] : 'UNDEFINED',
+            databaseUrlExact: maskUrl(process.env.DATABASE_URL),
+            directDatabaseUrlExact: maskUrl(process.env.DIRECT_DATABASE_URL),
             pgContext: rawInfo,
             users
         });
