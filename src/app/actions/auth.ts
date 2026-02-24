@@ -82,80 +82,127 @@ export async function signup(prevState: any, formData: FormData) {
             if (cur) resolvedCurrencyCode = cur.code;
         }
 
-        // WRAP EVERYTHING IN A TRANSACTION (World-Class Reliability)
-        console.log(`[AUTH] Starting signup transaction for ${email} (Timeout: 60s)`);
-        await prisma.$transaction(async (tx) => {
-            // 1. Create Tenant
-            await tx.tenant.create({
-                data: {
-                    id: tenantId,
-                    name: `${companyName} (Tenant)`,
-                    slug: companyName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-                }
-            });
+        // PHASE 1: CORE IDENTITY (Sequential - bypassing transaction for pooler stability)
+        console.log(`[AUTH] Starting Core Creation for ${email}`);
 
-            // 2. Create Company
-            await tx.company.create({
-                data: {
-                    id: companyId,
-                    tenant_id: tenantId,
-                    name: companyName,
-                    country_id: resolvedCountryId || undefined,
-                    industry: industry,
-                    enabled: true
-                }
-            });
+        // 1. Create Tenant
+        await prisma.tenant.create({
+            data: {
+                id: tenantId,
+                name: `${companyName} (Tenant)`,
+                slug: companyName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+            }
+        });
 
-            const isHms = selectedModules.includes('hms');
+        // 2. Create Company
+        await prisma.company.create({
+            data: {
+                id: companyId,
+                tenant_id: tenantId,
+                name: companyName,
+                country_id: resolvedCountryId || undefined,
+                industry: industry,
+                enabled: true
+            }
+        });
 
-            // 2b. Create Default Main Branch
-            await tx.hms_branch.create({
-                data: {
-                    id: branchId,
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    name: isHms ? "Main Clinic" : "Head Office",
-                    code: "MAIN",
-                    is_active: true,
-                    type: isHms ? "clinic" : "office"
-                }
-            });
+        // 3. Create Default Main Branch
+        const isHms = selectedModules.includes('hms');
+        await prisma.hms_branch.create({
+            data: {
+                id: branchId,
+                tenant_id: tenantId,
+                company_id: companyId,
+                name: isHms ? "Main Clinic" : "Head Office",
+                code: "MAIN",
+                is_active: true,
+                type: isHms ? "clinic" : "office"
+            }
+        });
 
-            // 3. Create Company Settings
+        // 4. Create App User
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await prisma.app_user.create({
+            data: {
+                id: userId,
+                tenant_id: tenantId,
+                company_id: companyId,
+                current_branch_id: branchId,
+                email: email.toLowerCase(),
+                password: hashedPassword,
+                name: name,
+                is_admin: true,
+                is_active: true
+            }
+        });
+
+        await prisma.user_branch.create({
+            data: { user_id: userId, branch_id: branchId, is_default: true }
+        });
+
+        // 5. Create Default Roles
+        const superAdminRoleId = crypto.randomUUID();
+        const defaultRoles = [
+            { id: superAdminRoleId, key: 'super_admin', name: 'Super Administrator', permissions: ['*'] },
+            { key: 'admin', name: 'Administrator', permissions: ['users:view', 'users:create', 'users:edit', 'hms:admin', 'crm:admin'] },
+            { key: 'hms_admin', name: 'HMS Administrator', permissions: ['hms:view', 'patients:view', 'billing:view'] },
+            { key: 'doctor', name: 'Doctor', permissions: ['patients:view', 'appointments:view', 'prescriptions:create'] },
+            { key: 'nurse', name: 'Nurse', permissions: ['patients:view', 'vitals:create'] },
+            { key: 'receptionist', name: 'Receptionist', permissions: ['patients:create', 'appointments:create', 'billing:create'] },
+            { key: 'sales_executive', name: 'Sales Executive', permissions: ['crm:view_own', 'leads:create'] },
+        ];
+
+        await prisma.role.createMany({
+            data: defaultRoles.map(r => ({
+                id: r.id || crypto.randomUUID(),
+                tenant_id: tenantId,
+                key: r.key,
+                name: r.name,
+                permissions: r.permissions
+            }))
+        });
+
+        await prisma.user_role.create({
+            data: { id: crypto.randomUUID(), user_id: userId, role_id: superAdminRoleId, tenant_id: tenantId }
+        });
+
+        // PHASE 2: DOMAIN INITIALIZATION (Background/Secondary)
+        console.log(`[AUTH] Core Creation Successful. Starting Background Init for ${email}`);
+
+        try {
+            // 6. Settings & Tax
             if (resolvedCurrencyId) {
-                await tx.company_settings.create({
+                await prisma.company_settings.create({
                     data: {
                         tenant_id: tenantId,
                         company_id: companyId,
                         currency_id: resolvedCurrencyId,
                     }
                 });
-            }
 
-            // 3b. Copy Default Tax Mappings
-            if (resolvedCountryId) {
-                const defaultMappings = await tx.country_tax_mappings.findMany({
-                    where: { country_id: resolvedCountryId, is_active: true }
-                });
-
-                if (defaultMappings.length > 0) {
-                    await tx.company_tax_maps.createMany({
-                        data: defaultMappings.map(dm => ({
-                            id: crypto.randomUUID(),
-                            tenant_id: tenantId,
-                            company_id: companyId,
-                            country_id: resolvedCountryId,
-                            tax_type_id: dm.tax_type_id,
-                            tax_rate_id: dm.tax_rate_id,
-                            is_default: false,
-                            is_active: true
-                        }))
+                if (resolvedCountryId) {
+                    const defaultMappings = await prisma.country_tax_mappings.findMany({
+                        where: { country_id: resolvedCountryId, is_active: true }
                     });
+                    if (defaultMappings.length > 0) {
+                        await prisma.company_tax_maps.createMany({
+                            data: defaultMappings.map(dm => ({
+                                id: crypto.randomUUID(),
+                                tenant_id: tenantId,
+                                company_id: companyId,
+                                country_id: resolvedCountryId,
+                                tax_type_id: dm.tax_type_id,
+                                tax_rate_id: dm.tax_rate_id,
+                                is_default: false,
+                                is_active: true
+                            }))
+                        });
+                    }
                 }
             }
 
-            // 3c. Seed Chart of Accounts
-            if (currencyId) {
+            // 7. Chart of Accounts
+            if (resolvedCurrencyId) {
                 const coaTemplate = [
                     { code: '1000', name: 'Cash on Hand', type: 'Asset' },
                     { code: '1010', name: 'Bank Account', type: 'Asset' },
@@ -171,7 +218,7 @@ export async function signup(prevState: any, formData: FormData) {
                     { code: '5100', name: 'Inventory Adjmnt', type: 'Expense' },
                 ];
 
-                await tx.accounts.createMany({
+                await prisma.accounts.createMany({
                     data: coaTemplate.map(acc => ({
                         id: crypto.randomUUID(),
                         tenant_id: tenantId,
@@ -183,10 +230,10 @@ export async function signup(prevState: any, formData: FormData) {
                     }))
                 });
 
-                const createdAccounts = await tx.accounts.findMany({ where: { company_id: companyId } });
+                const createdAccounts = await prisma.accounts.findMany({ where: { company_id: companyId } });
                 const findId = (code: string) => createdAccounts.find(a => a.code === code)?.id;
 
-                await tx.company_accounting_settings.create({
+                await prisma.company_accounting_settings.create({
                     data: {
                         tenant_id: tenantId,
                         company_id: companyId,
@@ -205,60 +252,14 @@ export async function signup(prevState: any, formData: FormData) {
                 });
             }
 
-            // 4. Create User
-            const hashedPassword = await bcrypt.hash(password, 10);
-            await tx.app_user.create({
-                data: {
-                    id: userId,
-                    tenant_id: tenantId,
-                    company_id: companyId,
-                    current_branch_id: branchId,
-                    email: email.toLowerCase(),
-                    password: hashedPassword,
-                    name: name,
-                    is_admin: true,
-                    is_active: true
-                }
-            });
-
-            await tx.user_branch.create({
-                data: { user_id: userId, branch_id: branchId, is_default: true }
-            });
-
-            // 4b. Create Roles (BULK OPTIMIZATION)
-            const superAdminRoleId = crypto.randomUUID();
-            const defaultRoles = [
-                { id: superAdminRoleId, key: 'super_admin', name: 'Super Administrator', permissions: ['*'] },
-                { key: 'admin', name: 'Administrator', permissions: ['users:view', 'users:create', 'users:edit', 'hms:admin', 'crm:admin'] },
-                { key: 'hms_admin', name: 'HMS Administrator', permissions: ['hms:view', 'patients:view', 'billing:view'] },
-                { key: 'doctor', name: 'Doctor', permissions: ['patients:view', 'appointments:view', 'prescriptions:create'] },
-                { key: 'nurse', name: 'Nurse', permissions: ['patients:view', 'vitals:create'] },
-                { key: 'receptionist', name: 'Receptionist', permissions: ['patients:create', 'appointments:create', 'billing:create'] },
-                { key: 'sales_executive', name: 'Sales Executive', permissions: ['crm:view_own', 'leads:create'] },
-            ];
-
-            await tx.role.createMany({
-                data: defaultRoles.map(r => ({
-                    id: r.id || crypto.randomUUID(),
-                    tenant_id: tenantId,
-                    key: r.key,
-                    name: r.name,
-                    permissions: r.permissions
-                }))
-            });
-
-            await tx.user_role.create({
-                data: { id: crypto.randomUUID(), user_id: userId, role_id: superAdminRoleId, tenant_id: tenantId }
-            });
-
-            // 5. Activate Modules (BULK OPTIMIZATION)
+            // 8. Modules
             let modulesToEnable = new Set(['system', ...selectedModules]);
-            const validModules = await tx.modules.findMany({
+            const validModules = await prisma.modules.findMany({
                 where: { module_key: { in: Array.from(modulesToEnable) } }
             });
 
             if (validModules.length > 0) {
-                await tx.tenant_module.createMany({
+                await prisma.tenant_module.createMany({
                     data: validModules.map(m => ({
                         id: crypto.randomUUID(),
                         tenant_id: tenantId,
@@ -270,24 +271,15 @@ export async function signup(prevState: any, formData: FormData) {
                 });
             }
 
-            // 6. HMS Specific Seeding (IF ENABLED)
+            // 9. Products (HMS Only)
             if (modulesToEnable.has('hms')) {
                 const defaultProducts = [
                     { sku: 'REG001', name: 'Patient Registration Fee', price: 150, type: 'fee' },
                     { sku: 'CON001', name: 'Consultation Fee', price: 500, type: 'fee' },
                     { sku: 'LAB001', name: 'Complete Blood Count (CBC)', price: 450, type: 'diagnostic' },
-                    { sku: 'LAB002', name: 'Lipid Profile', price: 900, type: 'diagnostic' },
-                    { sku: 'LAB003', name: 'Liver Function Test (LFT)', price: 850, type: 'diagnostic' },
-                    { sku: 'LAB004', name: 'Kidney Function Test (KFT)', price: 950, type: 'diagnostic' },
-                    { sku: 'LAB005', name: 'Thyroid Profile (T3, T4, TSH)', price: 1200, type: 'diagnostic' },
-                    { sku: 'LAB006', name: 'HbA1c', price: 600, type: 'diagnostic' },
-                    { sku: 'LAB007', name: 'Blood Sugar (Fasting)', price: 150, type: 'diagnostic' },
-                    { sku: 'LAB008', name: 'Blood Sugar (PP)', price: 150, type: 'diagnostic' },
-                    { sku: 'LAB009', name: 'Urine Routine', price: 200, type: 'diagnostic' },
-                    { sku: 'LAB010', name: 'Vitamin D Total', price: 1800, type: 'diagnostic' },
                 ];
 
-                await tx.hms_product.createMany({
+                await prisma.hms_product.createMany({
                     data: defaultProducts.map(p => ({
                         id: crypto.randomUUID(),
                         tenant_id: tenantId,
@@ -303,13 +295,11 @@ export async function signup(prevState: any, formData: FormData) {
                 });
             }
 
-            await initializeTenantMasters(tenantId, companyId, tx);
-        }, {
-            maxWait: 20000,
-            timeout: 60000
-        });
-
-        console.log(`[AUTH] Signup transaction successful for ${email}`);
+            // 10. Master Seeding
+            await initializeTenantMasters(tenantId, companyId, prisma);
+        } catch (initError) {
+            console.error("[AUTH] Domain Initialization failed, but User exists:", initError);
+        }
 
         return { success: true };
 
