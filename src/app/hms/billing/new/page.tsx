@@ -78,6 +78,16 @@ export default async function NewInvoicePage({
     const uoms = (uomsRes as any).success ? (uomsRes as any).data : [];
     const currency = companySettings?.currencies?.symbol || session.user.currencySymbol || '₹';
 
+    const hmsConfigRecord = await prisma.hms_settings.findFirst({
+        where: {
+            tenant_id: tenantId,
+            company_id: session.user.companyId || tenantId,
+            key: 'registration_config'
+        }
+    });
+    const configData = (hmsConfigRecord?.value as any) || {};
+    const consultationBillingMode = configData.consultationBillingMode || 'post_visit';
+
     // Standardization logic for initial items
     let initialItems = items ? JSON.parse(decodeURIComponent(items)) : (medicines ? JSON.parse(decodeURIComponent(medicines)) : []);
     let initialInvoice = null;
@@ -103,12 +113,17 @@ export default async function NewInvoicePage({
         }
 
         if (appointment) {
-            // 1. Add Consultation Fee if clinician has one
-            // [USER-FEEDBACK-FIX] Consultation fees are collected post-visit.
+            // 1. Add Consultation Fee (Respect Mode)
             const consultationFee = Number(appointment.hms_clinician?.consultation_fee) || 0;
-            const isPreVisit = ['scheduled', 'arrived'].includes(appointment.status);
 
-            if (consultationFee > 0 && !isPreVisit) {
+            let shouldAddConsultation = false;
+            if (consultationBillingMode === 'at_booking') {
+                shouldAddConsultation = true;
+            } else if (consultationBillingMode === 'post_visit') {
+                shouldAddConsultation = !['scheduled', 'arrived'].includes(appointment.status);
+            }
+
+            if (consultationFee > 0 && shouldAddConsultation) {
                 // Check if already in draft lines
                 const hasConsultation = draftInvoice?.hms_invoice_lines.some(l => l.description?.includes('Consultation Fee'));
                 if (!hasConsultation) {

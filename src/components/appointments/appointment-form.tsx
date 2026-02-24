@@ -82,6 +82,7 @@ export function AppointmentForm({
     const [isRCMProcessing, setIsRCMProcessing] = useState(false)
     const [pendingFormData, setPendingFormData] = useState<FormData | null>(null)
     const [regFeePending, setRegFeePending] = useState(false);
+    const [consFeePending, setConsFeePending] = useState(false);
 
     // Sync state when editingAppointment changes or prop updates
     useEffect(() => {
@@ -332,17 +333,13 @@ export function AppointmentForm({
             } else {
                 const aptId = editingAppointment?.id || res.data?.id;
 
-                // [USER-FEEDBACK-FIX] Consultation invoices are NOT generated during booking.
-                // They are billed post-visit. ONLY Registration is handled here if required.
-                console.log("DEBUG: Finalizing appointment", aptId, " - Skipping Consultation Pre-bill as requested.");
-
-                // [NEW] CHECK FOR FEES DUE (Registration only as requested)
+                // [NEW] CHECK FOR FEES DUE (Respect Billing Mode)
                 const regStatus = checkRegistrationStatus();
-                // We use the effective Patient ID (from result or logic)
                 const currentPatientId = editingAppointment?.patient_id || res.data?.patient_id || selectedPatientId;
+                const billingMode = hmsSettings?.consultationBillingMode || 'post_visit';
 
+                // 1. Handle Registration Fee
                 if (regStatus.shouldCharge && !editingAppointment) {
-                    // [PRACTICAL-FIX] Await Generation to prevent Race Condition
                     try {
                         await generateRegistrationInvoice(currentPatientId);
                         setRegFeePending(true);
@@ -353,11 +350,23 @@ export function AppointmentForm({
                         });
                     } catch (err) {
                         console.error("Reg Invoice Gen Failed", err);
-                        // Still show success but warn about billing
                         toast({ title: "Billing Warning", description: "Could not generate registration fee invoice.", variant: "destructive" });
                     }
                 } else {
                     setRegFeePending(false);
+                }
+
+                // 2. Handle Consultation Fee (If mode is 'at_booking')
+                if (billingMode === 'at_booking' && !editingAppointment) {
+                    try {
+                        console.log("DEBUG: Generating Consultation Invoice due to 'At Booking' mode");
+                        await generateConsultationInvoice(aptId);
+                        setConsFeePending(true);
+                    } catch (err) {
+                        console.error("Cons Invoice Gen Failed", err);
+                    }
+                } else {
+                    setConsFeePending(false);
                 }
 
                 // [WORLD CLASS] Instead of immediate exit, show Success Stage
@@ -407,59 +416,91 @@ export function AppointmentForm({
                     <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter mb-2">Saved <span className="text-emerald-600">Successfully</span></h2>
                     <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mb-8">Patient flow initiated for OP Consultation</p>
 
-                    {/* [PRACTICAL-FIX] Registration Fee Collection Only (Consultation is Post-Paid) */}
-                    {regFeePending ? (
-                        <div className="mb-8 p-6 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-700/30 rounded-2xl animate-in slide-in-from-top-4 text-left">
-                            <div className="flex items-center justify-between mb-4">
-                                <div>
-                                    <h3 className="text-lg font-black text-amber-900 dark:text-amber-100 uppercase tracking-tight flex items-center gap-2">
-                                        <AlertCircle className="h-5 w-5" /> Registration Fee Due
-                                    </h3>
-                                    <p className="text-xs font-bold text-amber-700 dark:text-amber-300 uppercase tracking-widest mt-1">
-                                        New Patient / Validity Expired
-                                    </p>
-                                </div>
-                                <div className="text-right">
-                                    <span className="text-3xl font-black text-amber-600 dark:text-amber-400">₹150</span>
-                                </div>
-                            </div>
+                    {/* FEES SECTION */}
+                    {(regFeePending || consFeePending) ? (
+                        <div className="mb-8 p-6 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2.5rem] animate-in slide-in-from-top-4 text-left">
+                            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6 ml-1">Fees Pending Collection</h3>
 
-                            <div className="space-y-3">
-                                <PatientPaymentDialog
-                                    patientId={saveSuccess.patient_id || selectedPatientData?.id || selectedPatientId}
-                                    patientName={`${(saveSuccess.patient || selectedPatientData || selectedPatient)?.first_name || ''} ${(saveSuccess.patient || selectedPatientData || selectedPatient)?.last_name || ''}`.trim() || 'Unnamed Patient'}
-                                    fixedAmount={150} // [FIX] Force exact registration amount
-                                    onPaymentSuccess={() => {
-                                        setRegFeePending(false);
-                                        toast({ title: "Registration Paid", description: "Receipt generated. Refreshing status...", className: "bg-green-600 text-white" });
+                            <div className="space-y-4">
+                                {/* Registration Fee Button */}
+                                {regFeePending && (
+                                    <div className="group relative bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 p-5 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-amber-500/10 transition-all">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 bg-amber-50 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">
+                                                    <ShieldAlert className="h-5 w-5 text-amber-600" />
+                                                </div>
+                                                <div>
+                                                    <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest block mb-0.5">Registration</span>
+                                                    <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-tight">New Patient Fee</h4>
+                                                </div>
+                                            </div>
+                                            <div className="text-xl font-black text-slate-900 dark:text-white">₹150</div>
+                                        </div>
+                                        <PatientPaymentDialog
+                                            patientId={saveSuccess.patient_id || selectedPatientData?.id || selectedPatientId}
+                                            patientName={`${(saveSuccess.patient || selectedPatientData || selectedPatient)?.first_name || ''} ${(saveSuccess.patient || selectedPatientData || selectedPatient)?.last_name || ''}`.trim() || 'Unnamed Patient'}
+                                            fixedAmount={150}
+                                            onPaymentSuccess={() => {
+                                                setRegFeePending(false);
+                                                toast({ title: "Registration Paid", description: "Receipt generated.", className: "bg-green-600 text-white" });
+                                                const pid = saveSuccess.patient_id || selectedPatientData?.id || selectedPatientId;
+                                                if (pid) getPatientById(pid).then(res => res.success && setSelectedPatientData(res.data));
+                                            }}
+                                            trigger={
+                                                <button className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl shadow-lg shadow-amber-500/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">
+                                                    Collect Registration <IndianRupee className="h-3 w-3" />
+                                                </button>
+                                            }
+                                        />
+                                    </div>
+                                )}
 
-                                        // [FIX] Force re-fetch of patient record to clear "PAYMENT REQUIRED"
-                                        const pid = saveSuccess.patient_id || selectedPatientData?.id || selectedPatientId;
-                                        if (pid) {
-                                            getPatientById(pid).then(res => {
-                                                if (res.success) setSelectedPatientData(res.data);
-                                            });
-                                        }
-                                    }}
-                                    trigger={
-                                        <button className="w-full h-14 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl shadow-lg shadow-amber-500/30 font-black uppercase text-sm tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2">
-                                            Collect ₹150 Registration <IndianRupee className="h-4 w-4" />
-                                        </button>
-                                    }
-                                />
-                                <p className="text-[10px] text-center font-bold text-amber-600/60 uppercase tracking-widest">
-                                    * Protocol: Only Registration Fee is collected at booking.
-                                </p>
-                                <p className="text-[10px] text-center font-bold text-slate-400 uppercase tracking-widest">
-                                    Consultation fees are collected POST-VISIT.
-                                </p>
+                                {/* Consultation Fee Button */}
+                                {consFeePending && (
+                                    <div className="group relative bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 p-5 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 transition-all">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="h-10 w-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center">
+                                                    <Stethoscope className="h-5 w-5 text-indigo-600" />
+                                                </div>
+                                                <div>
+                                                    <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest block mb-0.5">Consultation</span>
+                                                    <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-tight">Doctor Visit Fee</h4>
+                                                </div>
+                                            </div>
+                                            <div className="text-xl font-black text-slate-900 dark:text-white">
+                                                ₹{saveSuccess.clinician?.consultation_fee || doctors.find(d => d.id === selectedClinicianId)?.consultation_fee || '---'}
+                                            </div>
+                                        </div>
+                                        <PatientPaymentDialog
+                                            patientId={saveSuccess.patient_id || selectedPatientId}
+                                            patientName={`${(saveSuccess.patient || selectedPatientData || selectedPatient)?.first_name || ''} ${(saveSuccess.patient || selectedPatientData || selectedPatient)?.last_name || ''}`.trim() || 'Unnamed Patient'}
+                                            appointmentId={saveSuccess.id}
+                                            onPaymentSuccess={() => {
+                                                setConsFeePending(false);
+                                                toast({ title: "Consultation Paid", description: "Payment recorded.", className: "bg-green-600 text-white" });
+                                            }}
+                                            trigger={
+                                                <button className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg shadow-indigo-500/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">
+                                                    Collect Consultation <IndianRupee className="h-3 w-3" />
+                                                </button>
+                                            }
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ) : (
-                        <div className="mb-8 p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 text-center">
-                            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">No Immediate Fees Due</p>
-                            <p className="text-[10px] text-slate-300 uppercase tracking-widest mt-1 leading-relaxed">
-                                Registration Validity Active.<br />Consultation fees will be billed after the session.
+                        <div className="mb-8 p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border border-slate-100 dark:border-white/5 text-center">
+                            <div className="h-12 w-12 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-white/10 shadow-sm">
+                                <Sparkles className="h-5 w-5 text-emerald-500" />
+                            </div>
+                            <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">No Immediate Payments Due</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 leading-relaxed opacity-60">
+                                {hmsSettings?.consultationBillingMode === 'post_visit'
+                                    ? "Consultation fees will be billed later."
+                                    : "Protocol: Patient registered & cleared for visit."}
                             </p>
                         </div>
                     )}

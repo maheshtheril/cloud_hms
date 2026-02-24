@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { updateHMSSettings } from "@/app/actions/settings"
-import { Shield, CreditCard, Save, Calendar, Sparkles, AlertCircle } from "lucide-react"
+import { Shield, CreditCard, Save, Calendar, Sparkles, AlertCircle, CheckCircle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
 export function HMSSettingsForm({ settings, products }: { settings: any, products: any[] }) {
@@ -16,6 +15,7 @@ export function HMSSettingsForm({ settings, products }: { settings: any, product
     const [registrationValidity, setRegistrationValidity] = useState(settings.registrationValidity)
     const [enableCardIssuance, setEnableCardIssuance] = useState(settings.enableCardIssuance)
     const [selectedProductId, setSelectedProductId] = useState(settings.registrationProductId)
+    const [consultationBillingMode, setConsultationBillingMode] = useState(settings.consultationBillingMode || 'post_visit')
 
     // CRITICAL: Sync local state when settings props change (after router.refresh)
     useEffect(() => {
@@ -23,6 +23,7 @@ export function HMSSettingsForm({ settings, products }: { settings: any, product
         setRegistrationValidity(settings.registrationValidity);
         setEnableCardIssuance(settings.enableCardIssuance);
         setSelectedProductId(settings.registrationProductId);
+        setConsultationBillingMode(settings.consultationBillingMode || 'post_visit');
     }, [settings]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -41,6 +42,7 @@ export function HMSSettingsForm({ settings, products }: { settings: any, product
                 registrationFee: parseFloat(String(registrationFee)),
                 registrationValidity: parseInt(String(registrationValidity)),
                 enableCardIssuance: !!enableCardIssuance,
+                consultationBillingMode: consultationBillingMode,
                 productId: selectedProductId
             });
 
@@ -201,6 +203,53 @@ export function HMSSettingsForm({ settings, products }: { settings: any, product
                     <p className="mt-3 text-[10px] text-slate-400 leading-normal">
                         System will default to this validity period for all new registrations.
                     </p>
+                </div>
+
+                {/* 3. Consultation Billing Mode */}
+                <div className="md:col-span-2 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/20 dark:to-slate-900 border border-indigo-100 dark:border-indigo-900/30 rounded-[2.5rem] p-8 shadow-xl shadow-indigo-500/5 group">
+                    <div className="flex items-center gap-5 mb-8">
+                        <div className="h-14 w-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/40 group-hover:rotate-6 transition-transform">
+                            <CreditCard className="h-7 w-7 text-white" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-[0.2em] bg-indigo-100 dark:bg-indigo-900/40 px-3 py-1 rounded-full">Billing Automation</span>
+                            </div>
+                            <h3 className="font-black text-2xl text-slate-900 dark:text-white italic tracking-tight">Consultation Billing Mode</h3>
+                            <p className="text-xs text-slate-500 font-bold uppercase tracking-widest opacity-70">Define when patients are billed for doctor consultations</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {[
+                            { id: 'at_booking', label: 'At Booking', desc: 'Pre-paid model. Bill created and shown immediately during appointment setup.', icon: '⚡' },
+                            { id: 'post_visit', label: 'After Visit', desc: 'Post-paid model. Fees hidden during booking, billed after the clinical visit.', icon: '🩺' },
+                            { id: 'none', label: 'No Automatic Bill', desc: 'Manual billing only. No consultation fees are added automatically.', icon: '🚫' }
+                        ].map(mode => (
+                            <label
+                                key={mode.id}
+                                className={`relative flex flex-col p-6 rounded-3xl border-2 cursor-pointer transition-all duration-300 ${consultationBillingMode === mode.id
+                                    ? 'bg-white dark:bg-slate-800 border-indigo-500 shadow-2xl shadow-indigo-500/20 scale-[1.02]'
+                                    : 'bg-slate-50/50 dark:bg-slate-950/50 border-slate-100 dark:border-slate-800 hover:border-slate-200 opacity-60 hover:opacity-100'
+                                    }`}
+                                onClick={() => setConsultationBillingMode(mode.id)}
+                            >
+                                <input type="radio" name="billingMode" value={mode.id} className="hidden" checked={consultationBillingMode === mode.id} onChange={() => { }} />
+                                <div className="text-3xl mb-4">{mode.icon}</div>
+                                <span className={`text-sm font-black uppercase tracking-widest mb-2 ${consultationBillingMode === mode.id ? 'text-indigo-600' : 'text-slate-400'}`}>
+                                    {mode.label}
+                                </span>
+                                <p className="text-[11px] font-bold text-slate-500 leading-relaxed">
+                                    {mode.desc}
+                                </p>
+                                {consultationBillingMode === mode.id && (
+                                    <div className="absolute top-4 right-4 h-6 w-6 bg-indigo-500 rounded-full flex items-center justify-center animate-in zoom-in">
+                                        <CheckCircle className="h-3 w-3 text-white" />
+                                    </div>
+                                )}
+                            </label>
+                        ))}
+                    </div>
                 </div>
 
                 {/* 3. Card Issuance Toggle */}

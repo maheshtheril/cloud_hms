@@ -324,6 +324,7 @@ export async function getHMSSettings() {
                 registrationProductDescription: finalProduct?.description || 'Standard Registration Service',
                 registrationValidity: activeFee?.validity_days || configData.validity || 7,
                 enableCardIssuance: configData.enableCardIssuance ?? true,
+                consultationBillingMode: configData.consultationBillingMode || 'post_visit',
                 feeHistory: feeHistory.map(f => ({
                     id: f.id,
                     amount: Number(f.fee_amount),
@@ -443,6 +444,7 @@ export async function updateHMSSettings(data: any) {
             const configValue = JSON.stringify({
                 validity: validityDays,
                 enableCardIssuance: !!data.enableCardIssuance,
+                consultationBillingMode: data.consultationBillingMode || 'post_visit',
                 fee: feeAmount,
                 productId: regProduct.id,
                 lastUpdated: new Date().toISOString()
