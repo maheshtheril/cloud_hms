@@ -9,11 +9,13 @@ import { AccountingService } from "@/lib/services/accounting"
 import { NotificationService } from "@/lib/services/notification";
 import { SYSTEM_DEFAULT_CURRENCY_CODE } from "@/lib/currency-constants";
 
-function isUUID(str: any) {
-    return typeof str === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+// [HOISTED-CORE-UTILITIES] Always at top to prevent reference shadowing in transactions
+function isUUID(str: any): boolean {
+    if (typeof str !== 'string') return false;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 }
 
-function safeNum(val: any) {
+function safeNum(val: any): number {
     const n = parseFloat(val);
     return isNaN(n) ? 0 : n;
 }

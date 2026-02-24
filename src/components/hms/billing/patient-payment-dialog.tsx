@@ -68,15 +68,6 @@ export function PatientPaymentDialog({
                         const inv = (invRes as any).data;
                         console.log(`[RCM] Resuming existing invoice: ${inv.invoice_number}`);
                         setInitialInvoice(inv);
-                    } else if (fixedAmount === 150) {
-                        // [AUTO-GENERATE] If collecting registration and no invoice exists, create it now
-                        console.log(`[RCM] No registration invoice found for patient ${patientId}. Generating one...`);
-                        mod.generateRegistrationInvoice(patientId, appointmentId).then((res: any) => {
-                            if (res.success || res.id) {
-                                console.log(`[RCM] Auto-generated registration invoice: ${res.invoice_number}`);
-                                setInitialInvoice(res);
-                            }
-                        });
                     }
 
                     // Mock patient object for the editor

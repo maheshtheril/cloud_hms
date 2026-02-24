@@ -380,19 +380,10 @@ export function AppointmentForm({
                 // Invoice will be created ONLY when the user clicks 'Collect' in the success modal.
                 // This prevents race conditions and duplicate numbering (INV-006 vs INV-007).
 
-                // 1. Check & Auto-Generate Registration Fee
+                // 1. Check Registration Fee
                 if (activeRegStatus.shouldCharge) {
-                    console.log(`[RCM-AUTO] Generating registration invoice for patient ${selectedPatientId}`);
-                    try {
-                        const regRes = await generateRegistrationInvoice(selectedPatientId, aptId);
-                        if (regRes.success) {
-                            setRegInvoice(regRes.data);
-                            setRegFeePending(true);
-                            console.log(`[RCM-AUTO] Registration invoice generated: ${regRes.data.invoice_number}`);
-                        }
-                    } catch (err) {
-                        console.error("[RCM-AUTO] Failed to auto-generate reg invoice", err);
-                    }
+                    setRegFeePending(true);
+                    console.log(`[RCM-MANUAL] Registration fee due for patient ${selectedPatientId}. Will be handled in terminal.`);
                 } else {
                     setRegFeePending(false);
                 }
