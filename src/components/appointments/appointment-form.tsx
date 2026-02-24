@@ -257,7 +257,16 @@ export function AppointmentForm({
 
         const expiryDateStr = metadata.registration_expiry;
         if (!expiryDateStr) {
-            // [LEGACY-FIX] Check creation date vs validity period (default 7 days)
+            // [LEGACY-FIX] If there's no expiry date and no 'registration_fees_paid' flag:
+            // 1. If the record is very new (created today), it's a NEW PATIENT -> CHARGE.
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
+
+            if (createdAt >= startOfToday) {
+                return { shouldCharge: true, status: 'new_patient' };
+            }
+
+            // 2. Otherwise, check validity period (default 7 days)
             const cutoffDate = new Date();
             cutoffDate.setDate(cutoffDate.getDate() - validityDays);
 
@@ -265,7 +274,6 @@ export function AppointmentForm({
                 return { shouldCharge: false, status: 'valid' };
             }
 
-            // If they are older than the validity period and have no payment metadata, renewal is due
             return {
                 shouldCharge: true,
                 status: 'expired',
