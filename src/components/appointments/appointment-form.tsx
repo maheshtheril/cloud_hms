@@ -338,33 +338,20 @@ export function AppointmentForm({
                 const currentPatientId = editingAppointment?.patient_id || res.data?.patient_id || selectedPatientId;
                 const billingMode = hmsSettings?.consultationBillingMode || 'post_visit';
 
-                // 1. Handle Registration Fee
-                if (regStatus.shouldCharge && !editingAppointment) {
-                    try {
-                        await generateRegistrationInvoice(currentPatientId);
-                        setRegFeePending(true);
-                        toast({
-                            title: "Registration Fee Pending",
-                            description: "Fee added to bill. Collect now or pay later.",
-                            className: "bg-amber-50 border-amber-200 text-amber-900"
-                        });
-                    } catch (err) {
-                        console.error("Reg Invoice Gen Failed", err);
-                        toast({ title: "Billing Warning", description: "Could not generate registration fee invoice.", variant: "destructive" });
-                    }
+                // [COMPLEXITY-REDUCTION] Do NOT generate invoices in background.
+                // Invoice will be created ONLY when the user clicks 'Collect' in the success modal.
+                // This prevents race conditions and duplicate numbering (INV-006 vs INV-007).
+
+                // 1. Check Registration Fee
+                if (activeRegStatus.shouldCharge) { // Changed from activeRegStatus.needed to activeRegStatus.shouldCharge
+                    setRegFeePending(true);
                 } else {
                     setRegFeePending(false);
                 }
 
-                // 2. Handle Consultation Fee (If mode is 'at_booking')
+                // 2. Handle Consultation Fee
                 if (billingMode === 'at_booking' && !editingAppointment) {
-                    try {
-                        console.log("DEBUG: Generating Consultation Invoice due to 'At Booking' mode");
-                        await generateConsultationInvoice(aptId);
-                        setConsFeePending(true);
-                    } catch (err) {
-                        console.error("Cons Invoice Gen Failed", err);
-                    }
+                    setConsFeePending(true);
                 } else {
                     setConsFeePending(false);
                 }
