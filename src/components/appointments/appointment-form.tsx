@@ -85,6 +85,9 @@ export function AppointmentForm({
     const [consFeePending, setConsFeePending] = useState(false);
     const [isCollectingReg, setIsCollectingReg] = useState(false);
     const [isCollectingCons, setIsCollectingCons] = useState(false);
+    const [regInvoice, setRegInvoice] = useState<any>(null);
+    const [isCheckingRegInvoice, setIsCheckingRegInvoice] = useState(false);
+    const [isGeneratingReg, setIsGeneratingReg] = useState(false);
 
     // Sync state when editingAppointment changes or prop updates
     useEffect(() => {
@@ -112,6 +115,39 @@ export function AppointmentForm({
             setSelectedPatientData(null)
         }
     }, [selectedPatientId]) // We check selectedPatientData internally to avoid loop
+
+    // [NEW] Check for Registration Invoice when fee is due
+    useEffect(() => {
+        const checkRegFee = async () => {
+            const id = selectedPatientId?.toString().trim();
+            if (!id || id === 'undefined' || id === 'null') {
+                setRegInvoice(null);
+                return;
+            }
+
+            const status = checkRegistrationStatus();
+            if (status.shouldCharge) {
+                setIsCheckingRegInvoice(true);
+                try {
+                    const { getOpenRegistrationInvoice } = await import('@/app/actions/billing');
+                    const res = await getOpenRegistrationInvoice(id);
+                    if (res.success) {
+                        setRegInvoice(res.data);
+                    } else {
+                        setRegInvoice(null);
+                    }
+                } catch (err) {
+                    console.error("Failed to check reg invoice", err);
+                } finally {
+                    setIsCheckingRegInvoice(false);
+                }
+            } else {
+                setRegInvoice(null);
+            }
+        };
+
+        checkRegFee();
+    }, [selectedPatientId, selectedPatientData, hmsSettings]);
 
     // Auto-select first doctor if none specified handled via component default now
     const [appointmentsList, setAppointmentsList] = useState<any[]>(appointments);
@@ -380,6 +416,16 @@ export function AppointmentForm({
             return;
         }
 
+        // [STRICT-RCM] Enforce Registration Fee Requirement
+        if (activeRegStatus.shouldCharge && !regInvoice) {
+            toast({
+                title: "Registration Required",
+                description: "This patient has an outstanding registration fee. Please generate the bill first.",
+                variant: "destructive"
+            });
+            return;
+        }
+
         setIsPending(true)
         try {
             await executeSave(formData);
@@ -594,6 +640,36 @@ export function AppointmentForm({
                         {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
                         {editingAppointment ? 'Update Encounter' : 'Save'}
                     </button>
+
+                    {/* [NEW] Quick Registration Generate */}
+                    {activeRegStatus.shouldCharge && !regInvoice && (
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                if (!selectedPatientId) return;
+                                setIsGeneratingReg(true);
+                                try {
+                                    const { generateRegistrationInvoice } = await import('@/app/actions/billing');
+                                    const res = await generateRegistrationInvoice(selectedPatientId);
+                                    if (res.success) {
+                                        setRegInvoice(res.data);
+                                        toast({ title: "Bill Generated", description: "Registration invoice posted. You can now save.", className: "bg-emerald-600 text-white" });
+                                    } else {
+                                        toast({ title: "Billing Failed", description: res.error, variant: "destructive" });
+                                    }
+                                } catch (err: any) {
+                                    toast({ title: "System Error", description: err.message, variant: "destructive" });
+                                } finally {
+                                    setIsGeneratingReg(false);
+                                }
+                            }}
+                            disabled={isGeneratingReg || !selectedPatientId}
+                            className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl shadow-xl shadow-amber-500/20 font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center gap-2 border border-amber-400/20 disabled:opacity-50"
+                        >
+                            {isGeneratingReg ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldAlert className="h-4 w-4" />}
+                            Generate Reg Bill
+                        </button>
+                    )}
                 </div>
             </div>
 
