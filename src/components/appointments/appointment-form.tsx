@@ -84,6 +84,7 @@ export function AppointmentForm({
     const [regFeePending, setRegFeePending] = useState(false);
     const [consFeePending, setConsFeePending] = useState(false);
     const [isCollectingReg, setIsCollectingReg] = useState(false);
+    const [isCollectingCons, setIsCollectingCons] = useState(false);
 
     // Sync state when editingAppointment changes or prop updates
     useEffect(() => {
@@ -472,13 +473,19 @@ export function AppointmentForm({
                                             patientId={saveSuccess.patient_id || selectedPatientId}
                                             patientName={`${(saveSuccess.patient || selectedPatientData || selectedPatient)?.first_name || ''} ${(saveSuccess.patient || selectedPatientData || selectedPatient)?.last_name || ''}`.trim() || 'Unnamed Patient'}
                                             appointmentId={saveSuccess.id}
+                                            onClose={() => setIsCollectingCons(false)}
                                             onPaymentSuccess={() => {
                                                 setConsFeePending(false);
                                                 toast({ title: "Consultation Paid", description: "Payment recorded.", className: "bg-green-600 text-white" });
                                             }}
                                             trigger={
-                                                <button className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg shadow-indigo-500/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">
-                                                    Collect Consultation <IndianRupee className="h-3 w-3" />
+                                                <button
+                                                    onClick={() => setIsCollectingCons(true)}
+                                                    disabled={isCollectingCons}
+                                                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg shadow-indigo-500/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    {isCollectingCons ? <Loader2 className="h-3 w-3 animate-spin" /> : <IndianRupee className="h-3 w-3" />}
+                                                    {isCollectingCons ? 'Processing...' : 'Collect Consultation'}
                                                 </button>
                                             }
                                         />

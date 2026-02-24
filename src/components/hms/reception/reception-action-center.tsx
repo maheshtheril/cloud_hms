@@ -510,6 +510,7 @@ export function ReceptionActionCenter({
                                                 currentTime={currentTime}
                                                 router={router}
                                                 handleStatusUpdate={handleStatusUpdate}
+                                                statusLoading={statusLoading}
                                                 onAction={() => handleStatusUpdate(apt.id, apt.status === 'scheduled' ? 'arrived' : 'confirmed')}
                                                 onEdit={() => handleEditClick(apt)}
                                             />
@@ -541,6 +542,7 @@ export function ReceptionActionCenter({
                                                 currentTime={currentTime}
                                                 router={router}
                                                 handleStatusUpdate={handleStatusUpdate}
+                                                statusLoading={statusLoading}
                                                 onAction={() => { }}
                                                 onEdit={() => handleEditClick(apt)}
                                                 onBill={() => setSelectedAptForBilling(apt)}
@@ -573,6 +575,7 @@ export function ReceptionActionCenter({
                                                 currentTime={currentTime}
                                                 router={router}
                                                 handleStatusUpdate={handleStatusUpdate}
+                                                statusLoading={statusLoading}
                                                 onAction={() => setSelectedAptForBilling(apt)}
                                                 onEdit={() => handleEditClick(apt)}
                                                 onBill={() => setSelectedAptForBilling(apt)}
@@ -602,6 +605,7 @@ export function ReceptionActionCenter({
                                             currentTime={currentTime}
                                             router={router}
                                             handleStatusUpdate={handleStatusUpdate}
+                                            statusLoading={statusLoading}
                                             onAction={() => { }}
                                             onEdit={() => handleEditClick(apt)}
                                             onBill={() => setSelectedAptForBilling(apt)}
@@ -739,7 +743,10 @@ export function ReceptionActionCenter({
                                                                             Process Billing
                                                                         </DropdownMenuItem>
                                                                     )}
-                                                                    <DropdownMenuItem onClick={() => handleStatusUpdate(apt.id, 'cancelled')} className="text-red-600">Cancel</DropdownMenuItem>
+                                                                    <DropdownMenuItem disabled={statusLoading === apt.id} onClick={() => handleStatusUpdate(apt.id, 'cancelled')} className="text-red-600">
+                                                                        {statusLoading === apt.id ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                                                        Cancel
+                                                                    </DropdownMenuItem>
                                                                 </DropdownMenuContent>
                                                             </DropdownMenu>
                                                         </div>
@@ -1135,7 +1142,29 @@ const StatusBadge = ({ apt }: { apt: any }) => {
 
 
 
-function PatientCard({ apt, type, onAction, onEdit, onBill, isPrivacyMode, currentTime, router, handleStatusUpdate }: { apt: any, type: 'waiting' | 'running' | 'billing' | 'completed', onAction: () => void, onEdit: () => void, onBill?: () => void, isPrivacyMode: boolean, currentTime: Date, router: any, handleStatusUpdate: (id: string, status: string) => void }) {
+function PatientCard({
+    apt,
+    type,
+    onAction,
+    onEdit,
+    onBill,
+    isPrivacyMode,
+    currentTime,
+    router,
+    handleStatusUpdate,
+    statusLoading
+}: {
+    apt: any,
+    type: 'waiting' | 'running' | 'billing' | 'completed',
+    onAction: () => void,
+    onEdit: () => void,
+    onBill?: () => void,
+    isPrivacyMode: boolean,
+    currentTime: Date,
+    router: any,
+    handleStatusUpdate: (id: string, status: string) => void,
+    statusLoading: string | null
+}) {
     const isEmergency = apt.type === 'emergency' || apt.tags?.includes('EMERGENCY');
     const isUrgent = apt.priority === 'urgent';
     const isHigh = apt.priority === 'high';
@@ -1254,11 +1283,25 @@ function PatientCard({ apt, type, onAction, onEdit, onBill, isPrivacyMode, curre
                 </div>
 
                 {type === 'waiting' && apt.status === 'scheduled' && (
-                    <Button size="sm" onClick={onAction} className="h-7 text-[10px] bg-blue-600 hover:bg-blue-700 text-white">Check In</Button>
+                    <Button
+                        size="sm"
+                        disabled={statusLoading === apt.id}
+                        onClick={onAction}
+                        className="h-7 text-[10px] bg-blue-600 hover:bg-blue-700 text-white min-w-[80px]"
+                    >
+                        {statusLoading === apt.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Check In"}
+                    </Button>
                 )}
                 {type === 'waiting' && (apt.status === 'arrived' || apt.status === 'checked_in') && (
                     <div className="flex gap-1">
-                        <Button size="sm" onClick={onAction} className="h-7 text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white">Send In</Button>
+                        <Button
+                            size="sm"
+                            disabled={statusLoading === apt.id}
+                            onClick={onAction}
+                            className="h-7 text-[10px] bg-indigo-600 hover:bg-indigo-700 text-white min-w-[80px]"
+                        >
+                            {statusLoading === apt.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Send In"}
+                        </Button>
                         <AdmissionDialog
                             patientId={apt.patient.id}
                             patientName={`${apt.patient.first_name} ${apt.patient.last_name}`}
@@ -1290,7 +1333,14 @@ function PatientCard({ apt, type, onAction, onEdit, onBill, isPrivacyMode, curre
                                 Bill
                             </Button>
                         )}
-                        <Button size="sm" onClick={() => handleStatusUpdate(apt.id, 'archived')} className="h-7 text-[10px] bg-slate-100 text-slate-500 hover:bg-slate-200">Archive</Button>
+                        <Button
+                            size="sm"
+                            disabled={statusLoading === apt.id}
+                            onClick={() => handleStatusUpdate(apt.id, 'archived')}
+                            className="h-7 text-[10px] bg-slate-100 text-slate-500 hover:bg-slate-200 min-w-[70px]"
+                        >
+                            {statusLoading === apt.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Archive"}
+                        </Button>
                     </div>
                 )}
                 {type === 'billing' && (
