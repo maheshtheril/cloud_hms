@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { updateHMSSettings } from "@/app/actions/settings"
 import { Shield, CreditCard, Save, Calendar, Sparkles, AlertCircle, CheckCircle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"

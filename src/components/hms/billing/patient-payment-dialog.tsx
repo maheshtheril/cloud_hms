@@ -45,27 +45,20 @@ export function PatientPaymentDialog({
                     mod.getBillableItems(),
                     mod.getTaxConfiguration(),
                     mod.getUoms(),
-                    // Also try to find an existing drafted registration invoice to resume
-                    (mod as any).getPatientOutstandingBalance(patientId) // Just to check if we have one? No, we need the invoice object.
-                ]).then(([itemsRes, taxRes, uomsRes]) => {
+                    // [WORLD CLASS] Check for existing UNPAID registration invoice specifically
+                    mod.getOpenRegistrationInvoice(patientId)
+                ]).then(([itemsRes, taxRes, uomsRes, invRes]) => {
                     if (itemsRes.success) setBillableItems(itemsRes.data || []);
                     if (taxRes.success) setTaxConfig(taxRes.data || { defaultTax: null, taxRates: [] });
                     if (uomsRes.success) setUoms(uomsRes.data || []);
 
+                    if (invRes.success && invRes.data) {
+                        console.log(`[RCM] Resuming existing registration invoice: ${invRes.data.invoice_number}`);
+                        setInitialInvoice(invRes.data);
+                    }
+
                     // Mock patient object for the editor
                     setPatients([{ id: patientId, label: patientName }]);
-
-                    // [WORLD CLASS] Check for existing UNPAID registration invoice specifically
-                    // This ensures we resume the correct invoice if it exists
-                    // For now, we'll let the editor handle new invoice creation if none passed, 
-                    // but we could try to fetch open invoices here.
-                    // However, CompactInvoiceEditor has logic to load initial data.
-
-                    // If we have a fixed amount (likely registration fee), we might WANT to create a specific invoice for it
-                    // if one doesn't exist. 
-                    // But for now, let's just open the editor. The editor has robust "create" logic.
-                    // IMPORTANT: We need to pass the "Registration Fee" as an initial item if it's the intent.
-
                 }).catch(err => {
                     console.error("Failed to load billing dependencies", err);
                     toast({

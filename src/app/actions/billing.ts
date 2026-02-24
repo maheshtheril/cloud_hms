@@ -372,19 +372,13 @@ export async function createInvoice(data: {
             if (p) resolvedPatientId = p.id;
         }
 
-        // 2. Simple Sequence (INV-0001)
-        const lastInv = await prisma.hms_invoice.findFirst({
-            where: { tenant_id: tenantId },
-            orderBy: { created_at: 'desc' },
-            select: { invoice_number: true }
-        });
+        // 2. Sequential Numbering
+        let invoiceNo = data.billing_metadata?.invoice_number || data.billing_metadata?.invoice_no;
 
-        let nextSeq = 1;
-        if (lastInv?.invoice_number) {
-            const match = lastInv.invoice_number.match(/(\d+)$/);
-            if (match) nextSeq = parseInt(match[0]) + 1;
+        if (!invoiceNo) {
+            const invNoRes = await getNextVoucherNumber(data.date);
+            invoiceNo = invNoRes.success ? invNoRes.data : `INV-QL-${Date.now().toString().slice(-6)}`;
         }
-        const invoiceNo = `DBG-${Date.now()}`;
 
         // 3. Totals
         const { line_items = [], payments = [], status = 'draft', total_discount = 0 } = data;
@@ -1466,15 +1460,13 @@ export async function generateRegistrationInvoice(patientId: string) {
     if (!tenantId || !companyId) return { error: "SECURITY_AUTH_EXPIRED" };
 
     try {
-        // [IDEMPOTENCY-FIX] Check for existing registration invoice for this patient today
-        const startOfDay = new Date();
-        startOfDay.setHours(0, 0, 0, 0);
-
+        // [IDEMPOTENCY-FIX] Check for existing registration invoice for this patient
+        // We look for ANY unpaid/posted registration invoice to prevent double billing.
         const existing = await prisma.hms_invoice.findFirst({
             where: {
                 patient_id: patientId,
                 tenant_id: tenantId,
-                status: { not: 'cancelled' },
+                status: { in: ['draft', 'posted'] },
                 hms_invoice_lines: {
                     some: {
                         OR: [
@@ -1482,10 +1474,10 @@ export async function generateRegistrationInvoice(patientId: string) {
                             { description: { contains: 'Identity Service', mode: 'insensitive' } }
                         ]
                     }
-                },
-                created_at: { gte: startOfDay }
+                }
             },
-            include: { hms_invoice_lines: true }
+            include: { hms_invoice_lines: true },
+            orderBy: { created_at: 'desc' }
         });
 
         if (existing) {
@@ -1581,6 +1573,39 @@ export async function generateRegistrationInvoice(patientId: string) {
     } catch (err: any) {
         console.error("FAILED_TO_GENERATE_REG_INVOICE:", err);
         return { error: err.message || "RCM_FAILURE: Could not generate auto-billing record." };
+    }
+}
+
+export async function getOpenRegistrationInvoice(patientId: string) {
+    const session = await auth();
+    const tenantId = session?.user?.tenantId;
+    if (!tenantId) return { error: "Unauthorized" };
+
+    try {
+        const invoice = await prisma.hms_invoice.findFirst({
+            where: {
+                patient_id: patientId,
+                tenant_id: tenantId,
+                status: { in: ['draft', 'posted'] },
+                hms_invoice_lines: {
+                    some: {
+                        OR: [
+                            { description: { contains: 'Registration Fee', mode: 'insensitive' } },
+                            { description: { contains: 'Identity Service', mode: 'insensitive' } }
+                        ]
+                    }
+                }
+            },
+            include: {
+                hms_invoice_lines: true,
+                hms_patient: true
+            },
+            orderBy: { created_at: 'desc' }
+        });
+
+        return { success: true, data: invoice };
+    } catch (err: any) {
+        return { error: err.message };
     }
 }
 

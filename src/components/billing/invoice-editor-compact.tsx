@@ -315,6 +315,65 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     ]
   })
 
+  // Sync lines when initial props change (e.g. after async fetch in parent)
+  useEffect(() => {
+    if (initialInvoice?.hms_invoice_lines || (initialMedicines && initialMedicines.length > 0)) {
+      let combined: any[] = [];
+      if (initialInvoice?.hms_invoice_lines) {
+        combined = initialInvoice.hms_invoice_lines.map((l: any) => ({
+          id: l.id || Date.now() + Math.random(),
+          product_id: l.product_id || '',
+          description: l.description,
+          quantity: Number(l.quantity),
+          uom: l.uom || 'PCS',
+          unit_price: Number(l.unit_price),
+          tax_rate_id: l.tax_rate_id,
+          tax_amount: Number(l.tax_amount),
+          discount_amount: Number(l.discount_amount),
+          base_price: l.unit_price,
+          item_type: l.product_id ? (billableItems.find((bi: any) => bi.id === l.product_id)?.type || 'item') : 'item',
+          isFromInvoice: true
+        }));
+      }
+
+      if (initialMedicines && initialMedicines.length > 0) {
+        initialMedicines.forEach((m: any) => {
+          const billable = billableItems.find((bi: any) => bi.id === (m.id || m.product_id) || bi.label === m.name);
+          const taxId = billable?.categoryTaxId !== undefined ? billable.categoryTaxId : defaultTaxId;
+          const finalPrice = billable?.price || Number(m.price || 0);
+          const taxRateObj = taxConfig.taxRates.find((t: any) => t.id === taxId);
+          const rate = taxRateObj ? Number(taxRateObj.rate) : 0;
+          const lineNet = (Number(m.quantity || 1) * finalPrice);
+          const taxAmt = (Math.max(0, lineNet) * rate) / 100;
+
+          const exists = combined.some(cl => {
+            const productMatch = cl.product_id && (billable?.id || m.id) && cl.product_id === (billable?.id || m.id);
+            const descMatch = (cl.description?.toLowerCase() || '').trim() === (m.name?.toLowerCase() || m.description?.toLowerCase() || '').trim();
+            return productMatch || descMatch;
+          });
+
+          if (!exists) {
+            combined.push({
+              id: Math.random() + Date.now(),
+              product_id: billable?.id || m.id || '',
+              description: m.name || m.description || '',
+              quantity: Number(m.quantity || 1),
+              uom: m.uom || billable?.uom || 'PCS',
+              unit_price: finalPrice,
+              tax_rate_id: taxId,
+              tax_amount: taxAmt,
+              discount_amount: 0,
+              base_price: finalPrice,
+              item_type: m.type || billable?.type || 'item',
+              metadata: billable?.metadata || {}
+            });
+          }
+        });
+      }
+      if (combined.length > 0) setLines(combined);
+    }
+  }, [initialInvoice, initialMedicines, billableItems, defaultTaxId, taxConfig.taxRates]);
+
   // Sync Tax Amounts on Mount for initial items
   useEffect(() => {
     if (lines.length > 0) {
