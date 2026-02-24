@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
 import { signup } from '@/app/actions/auth';
 import { prisma as db } from '@/lib/prisma';
+import crypto from 'node:crypto';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
@@ -19,7 +19,27 @@ export async function GET(request: Request) {
         formData.append('companyName', 'Test Company');
         formData.append('modules', 'hms,crm');
 
-        const result = await signup(null, formData);
+        // PERFORM SIMPLE CREATE (NON-TRANSACTIONAL) TO TEST connectivity
+        const tId = 'diag-' + crypto.randomBytes(4).toString('hex');
+        const uId = 'user-' + crypto.randomBytes(4).toString('hex');
+
+        // Create tenant first
+        await db.tenant.create({
+            data: { id: tId, name: 'Diag Tenant', slug: tId }
+        });
+
+        // Create user
+        await db.app_user.create({
+            data: {
+                id: uId,
+                tenant_id: tId,
+                email: email.toLowerCase(),
+                password: 'hashed_password', // bypass bcrypt for test
+                name: 'Diag User',
+                is_active: true
+            }
+        });
+
         const dbHost = process.env.DATABASE_URL?.split('@')[1]?.split('/')[0] || "Unknown";
 
         // VERIFY IMMEDIATELY
@@ -30,9 +50,9 @@ export async function GET(request: Request) {
 
         return NextResponse.json({
             timestamp: new Date().toISOString(),
-            message: 'Signup executed',
+            message: 'Simple Signup executed (Non-transactional)',
             dbHost: dbHost,
-            result: result,
+            createdIds: { tId, uId },
             verifiedUser: verifiedUser
         });
     } catch (e: any) {
