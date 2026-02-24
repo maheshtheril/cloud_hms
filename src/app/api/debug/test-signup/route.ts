@@ -21,11 +21,18 @@ export async function GET(request: Request) {
         const result = await signup(null, formData);
         const dbHost = process.env.DATABASE_URL?.split('@')[1]?.split('/')[0] || "Unknown";
 
+        // VERIFY IMMEDIATELY
+        const verifiedUser = await prisma.app_user.findFirst({
+            where: { email: email.toLowerCase() },
+            select: { id: true, email: true, created_at: true }
+        });
+
         return NextResponse.json({
             timestamp: new Date().toISOString(),
             message: 'Signup executed',
             dbHost: dbHost,
-            result: result
+            result: result,
+            verifiedUser: verifiedUser
         });
     } catch (e: any) {
         return NextResponse.json({ error: e.message, stack: e.stack }, { status: 500 });
