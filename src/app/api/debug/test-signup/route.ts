@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { signup } from '@/app/actions/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma as db } from '@/lib/prisma';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
@@ -23,7 +23,7 @@ export async function GET(request: Request) {
         const dbHost = process.env.DATABASE_URL?.split('@')[1]?.split('/')[0] || "Unknown";
 
         // VERIFY IMMEDIATELY
-        const verifiedUser = await prisma.app_user.findFirst({
+        const verifiedUser = await db.app_user.findFirst({
             where: { email: email.toLowerCase() },
             select: { id: true, email: true, created_at: true }
         });
