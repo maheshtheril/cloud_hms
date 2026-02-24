@@ -378,6 +378,17 @@ export async function createInvoice(data: {
                 if (p) resolvedPatientId = p.id;
             }
 
+            // [REGISTRATION-SYNC-LOCK] If this invoice contains a registration fee, we MUST synchronize with generateRegistrationInvoice
+            const hasRegFee = data.line_items?.some(l => {
+                const desc = l.description?.toLowerCase() || "";
+                return desc.includes('registration fee') || desc.includes('identity service') || (desc.includes('registration') && desc.includes('fee'));
+            });
+
+            if (hasRegFee && resolvedPatientId) {
+                // Use the EXACT SAME lock string as generateRegistrationInvoice
+                await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext('${resolvedPatientId}_reg'))`);
+            }
+
             // 2. [STRICT-GUARD] Check for existing invoice AFTER acquiring lock
             if (isUUID(data.appointment_id)) {
                 const existing = await tx.hms_invoice.findFirst({
@@ -393,12 +404,6 @@ export async function createInvoice(data: {
                     return { _isDuplicate: true, existingId: existing.id };
                 }
             }
-
-            // 3. [REGISTRATION-GUARD] Check for existing Registration Invoice (FUZZY-MATCH)
-            const hasRegFee = data.line_items?.some(l => {
-                const desc = l.description?.toLowerCase() || "";
-                return desc.includes('registration fee') || desc.includes('identity service') || (desc.includes('registration') && desc.includes('fee'));
-            });
 
             if (hasRegFee && resolvedPatientId) {
                 const existingReg = await tx.hms_invoice.findFirst({
