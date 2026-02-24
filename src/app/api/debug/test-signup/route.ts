@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server';
 import { signup } from '@/app/actions/auth';
 import { prisma as db } from '@/lib/prisma';
 import crypto from 'node:crypto';
