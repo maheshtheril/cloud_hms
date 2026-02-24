@@ -19,9 +19,11 @@ export async function GET(request: Request) {
         formData.append('modules', 'hms,crm');
 
         const result = await signup(null, formData);
+        const dbHost = process.env.DATABASE_URL?.split('@')[1]?.split('/')[0] || "Unknown";
 
         return NextResponse.json({
             message: 'Signup executed',
+            dbHost: dbHost,
             result: result
         });
     } catch (e: any) {

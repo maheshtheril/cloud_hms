@@ -11,9 +11,11 @@ export async function GET(request: Request) {
             select: { email: true, created_at: true, is_active: true }
         });
         const count = await prisma.app_user.count()
+        const dbHost = process.env.DATABASE_URL?.split('@')[1]?.split('/')[0] || "Unknown";
 
         return NextResponse.json({
             totalUsers: count,
+            dbHost: dbHost,
             recentUsers: users,
         });
     } catch (e: any) {
