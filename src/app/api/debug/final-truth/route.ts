@@ -5,9 +5,9 @@ import crypto from 'node:crypto';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-    const tId = 'diag-' + crypto.randomBytes(4).toString('hex');
-    const uId = 'user-' + crypto.randomBytes(4).toString('hex');
-    const email = `diag-${tId}@test.com`;
+    const tId = crypto.randomUUID();
+    const uId = crypto.randomUUID();
+    const email = `diag-${tId.slice(0, 8)}@test.com`;
 
     try {
         // Create
