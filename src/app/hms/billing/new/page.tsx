@@ -104,8 +104,11 @@ export default async function NewInvoicePage({
 
         if (appointment) {
             // 1. Add Consultation Fee if clinician has one
+            // [USER-FEEDBACK-FIX] Consultation fees are collected post-visit.
             const consultationFee = Number(appointment.hms_clinician?.consultation_fee) || 0;
-            if (consultationFee > 0) {
+            const isPreVisit = ['scheduled', 'arrived'].includes(appointment.status);
+
+            if (consultationFee > 0 && !isPreVisit) {
                 // Check if already in draft lines
                 const hasConsultation = draftInvoice?.hms_invoice_lines.some(l => l.description?.includes('Consultation Fee'));
                 if (!hasConsultation) {

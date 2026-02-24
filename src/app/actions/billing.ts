@@ -1724,9 +1724,12 @@ export async function getInitialInvoiceData(appointmentId: string) {
             initialInvoice = draftInvoice;
         }
 
-        // 1. Add Consultation Fee
+        // 1. Add Consultation Fee (ONLY if NOT in booking/scheduled phase)
+        // [USER-FEEDBACK-FIX] Consultation fees are collected post-visit.
         const consultationFee = Number(appointment.hms_clinician?.consultation_fee) || 0;
-        if (consultationFee > 0) {
+        const isPreVisit = ['scheduled', 'arrived'].includes(appointment.status);
+
+        if (consultationFee > 0 && !isPreVisit) {
             const hasConsultation = draftInvoice?.hms_invoice_lines.some(l => l.description?.includes('Consultation Fee'));
             if (!hasConsultation) {
                 initialItems.push({
