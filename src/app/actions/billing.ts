@@ -381,7 +381,11 @@ export async function createInvoice(data: {
             // [REGISTRATION-SYNC-LOCK] If this invoice contains a registration fee, we MUST synchronize with generateRegistrationInvoice
             const hasRegFee = data.line_items?.some(l => {
                 const desc = l.description?.toLowerCase() || "";
-                return desc.includes('registration fee') || desc.includes('identity service') || (desc.includes('registration') && desc.includes('fee'));
+                // Nuclear Fuzzy Match: Catch any variation of Registration/Identity Fee
+                return (desc.includes('reg') && desc.includes('fee')) ||
+                    desc.includes('identity service') ||
+                    desc.includes('registration') ||
+                    desc.includes('identity fee');
             });
 
             if (hasRegFee && resolvedPatientId) {
@@ -414,9 +418,9 @@ export async function createInvoice(data: {
                         hms_invoice_lines: {
                             some: {
                                 OR: [
-                                    { description: { contains: 'Registration Fee', mode: 'insensitive' } },
-                                    { description: { contains: 'Identity Service', mode: 'insensitive' } },
-                                    { AND: [{ description: { contains: 'Registration', mode: 'insensitive' } }, { description: { contains: 'Fee', mode: 'insensitive' } }] }
+                                    { description: { contains: 'Reg', mode: 'insensitive' } },
+                                    { description: { contains: 'Registration', mode: 'insensitive' } },
+                                    { description: { contains: 'Identity', mode: 'insensitive' } }
                                 ]
                             }
                         }
@@ -424,7 +428,7 @@ export async function createInvoice(data: {
                     orderBy: { created_at: 'desc' }
                 });
                 if (existingReg) {
-                    console.log(`${LOG_PREFIX} [REG-RACE-PREVENTED] Patient ${resolvedPatientId} already has a registration invoice ${existingReg.invoice_number} (Fuzzy Matched).`);
+                    console.log(`${LOG_PREFIX} [REG-RACE-PREVENTED] Patient ${resolvedPatientId} already has a registration invoice ${existingReg.invoice_number} (Nuclear Match).`);
                     return { _isDuplicate: true, existingId: existingReg.id };
                 }
             }
@@ -1510,7 +1514,7 @@ export async function getPatientLedger(patientId: string) {
 
 const REG_FEE_DESCRIPTION = "Patient Registration Fee";
 
-export async function generateRegistrationInvoice(patientId: string) {
+export async function generateRegistrationInvoice(patientId: string, appointmentId?: string) {
     const session = await auth();
     const tenantId = session?.user?.tenantId;
     let companyId = session?.user?.companyId;
@@ -1530,18 +1534,21 @@ export async function generateRegistrationInvoice(patientId: string) {
             // [ATOMIC-GUARD] Use Postgres Advisory Lock to prevent concurrent registration billing for this patient
             await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext(\'${patientId}_reg\'))`);
 
-            // [IDEMPOTENCY-FIX] Fuzzy Match Check for existing registration invoice
+            // [IDEMPOTENCY-FIX] Nuclear Match Check for existing registration invoice
             const existing = await tx.hms_invoice.findFirst({
                 where: {
-                    patient_id: patientId,
+                    OR: [
+                        appointmentId ? { appointment_id: appointmentId } : {},
+                        { patient_id: patientId }
+                    ],
                     tenant_id: tenantId,
                     status: { in: ['draft', 'posted', 'paid'] as any[] },
                     hms_invoice_lines: {
                         some: {
                             OR: [
-                                { description: { contains: 'Registration Fee', mode: 'insensitive' } },
-                                { description: { contains: 'Identity Service', mode: 'insensitive' } },
-                                { AND: [{ description: { contains: 'Registration', mode: 'insensitive' } }, { description: { contains: 'Fee', mode: 'insensitive' } }] }
+                                { description: { contains: 'Reg', mode: 'insensitive' } },
+                                { description: { contains: 'Registration', mode: 'insensitive' } },
+                                { description: { contains: 'Identity', mode: 'insensitive' } }
                             ]
                         }
                     }
@@ -1609,6 +1616,7 @@ export async function generateRegistrationInvoice(patientId: string) {
                     tenant_id: tenantId,
                     company_id: companyId,
                     patient_id: patientId,
+                    appointment_id: appointmentId || null,
                     invoice_number: invoiceNumber,
                     issued_at: new Date(),
                     subtotal: product.price || 0,
@@ -1629,7 +1637,7 @@ export async function generateRegistrationInvoice(patientId: string) {
                             company_id: companyId,
                             line_idx: 1,
                             product_id: product.id,
-                            description: "One-time Patient Registration & Identity Service",
+                            description: REG_FEE_DESCRIPTION,
                             quantity: 1,
                             unit_price: product.price || 0,
                             net_amount: product.price || 0
@@ -1664,8 +1672,9 @@ export async function getOpenRegistrationInvoice(patientId: string) {
                 hms_invoice_lines: {
                     some: {
                         OR: [
-                            { description: { contains: 'Registration Fee', mode: 'insensitive' } },
-                            { description: { contains: 'Identity Service', mode: 'insensitive' } }
+                            { description: { contains: 'Reg', mode: 'insensitive' } },
+                            { description: { contains: 'Registration', mode: 'insensitive' } },
+                            { description: { contains: 'Identity', mode: 'insensitive' } }
                         ]
                     }
                 }
@@ -1809,7 +1818,7 @@ export async function getInitialInvoiceData(appointmentId: string) {
         const draftInvoice = await prisma.hms_invoice.findFirst({
             where: {
                 appointment_id: appointmentId,
-                status: 'draft' as any
+                status: { in: ['draft', 'posted'] as any[] }
             },
             include: {
                 hms_invoice_lines: {

@@ -56,7 +56,7 @@ export function PatientPaymentDialog({
                     mod.getUoms(),
                     // [WORLD CLASS] Check for existing UNPAID registration invoice specifically
                     // If appointmentId is present, we prioritize that context
-                    mod.getInitialInvoiceData(appointmentId || '').then((res: any) => res.success ? res : mod.getOpenRegistrationInvoice(patientId))
+                    mod.getInitialInvoiceData(appointmentId || '').then((res: any) => (res.success && res.data) ? res : mod.getOpenRegistrationInvoice(patientId))
                 ]).then(([itemsRes, taxRes, uomsRes, invRes]) => {
                     if (itemsRes.success) setBillableItems(itemsRes.data || []);
                     if (taxRes.success) setTaxConfig(taxRes.data || { defaultTax: null, taxRates: [] });
@@ -66,6 +66,15 @@ export function PatientPaymentDialog({
                         const inv = (invRes as any).data;
                         console.log(`[RCM] Resuming existing invoice: ${inv.invoice_number}`);
                         setInitialInvoice(inv);
+                    } else if (fixedAmount === 150) {
+                        // [AUTO-GENERATE] If collecting registration and no invoice exists, create it now
+                        console.log(`[RCM] No registration invoice found for patient ${patientId}. Generating one...`);
+                        mod.generateRegistrationInvoice(patientId, appointmentId).then((res: any) => {
+                            if (res.success || res.id) {
+                                console.log(`[RCM] Auto-generated registration invoice: ${res.invoice_number}`);
+                                setInitialInvoice(res);
+                            }
+                        });
                     }
 
                     // Mock patient object for the editor
@@ -89,7 +98,7 @@ export function PatientPaymentDialog({
         price: fixedAmount,
         quantity: 1,
         type: 'service',
-        description: 'One-time Patient Registration & Identity Service'
+        description: 'Patient Registration Fee'
     }] : [];
 
     return (
