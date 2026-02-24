@@ -22,6 +22,7 @@ export async function GET(request: Request) {
         const dbHost = process.env.DATABASE_URL?.split('@')[1]?.split('/')[0] || "Unknown";
 
         return NextResponse.json({
+            timestamp: new Date().toISOString(),
             message: 'Signup executed',
             dbHost: dbHost,
             result: result

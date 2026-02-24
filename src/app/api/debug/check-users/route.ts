@@ -12,10 +12,13 @@ export async function GET(request: Request) {
         });
         const count = await prisma.app_user.count()
         const dbHost = process.env.DATABASE_URL?.split('@')[1]?.split('/')[0] || "Unknown";
+        const envKeys = Object.keys(process.env).sort();
 
         return NextResponse.json({
+            timestamp: new Date().toISOString(),
             totalUsers: count,
             dbHost: dbHost,
+            envKeys: envKeys,
             recentUsers: users,
         });
     } catch (e: any) {
