@@ -387,17 +387,44 @@ export async function createInvoice(data: {
                 where: {
                     appointment_id: data.appointment_id,
                     tenant_id: tenantId,
-                    status: 'draft'
+                    status: { in: ['draft', 'posted'] as any[] }
                 },
                 orderBy: { created_at: 'desc' }
             });
 
             if (existing) {
-                console.log(`${LOG_PREFIX} DUPLICATE_PREVENTION - Found existing draft ${existing.invoice_number}. Diverting to updateInvoice logic.`);
-                // We don't call updateInvoice directly to avoid recursion or session overhead, 
-                // we just let the logic proceed but we must return early with a redirect or 
-                // handle it as an update. Since this is createInvoice, the safest is to resume.
+                console.log(`${LOG_PREFIX} DUPLICATE_PREVENTION - Found existing ${existing.status} invoice ${existing.invoice_number} for this appointment. Resuming.`);
                 return updateInvoice(existing.id, data);
+            }
+        }
+
+        // [STRICT-REGISTRATION-GUARD]
+        const hasRegFee = data.line_items?.some(l =>
+            (l.description?.toLowerCase().includes('registration fee')) ||
+            (l.description?.toLowerCase().includes('identity service'))
+        );
+
+        if (hasRegFee && resolvedPatientId) {
+            const existingReg = await prisma.hms_invoice.findFirst({
+                where: {
+                    patient_id: resolvedPatientId,
+                    tenant_id: tenantId,
+                    status: { in: ['draft', 'posted'] as any[] },
+                    hms_invoice_lines: {
+                        some: {
+                            OR: [
+                                { description: { contains: 'Registration Fee', mode: 'insensitive' } },
+                                { description: { contains: 'Identity Service', mode: 'insensitive' } }
+                            ]
+                        }
+                    }
+                },
+                orderBy: { created_at: 'desc' }
+            });
+
+            if (existingReg) {
+                console.log(`${LOG_PREFIX} REG_DEDUPLICATION - Patient already has an unpaid registration invoice ${existingReg.invoice_number}. Merging.`);
+                return updateInvoice(existingReg.id, data);
             }
         }
 
