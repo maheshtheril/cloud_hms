@@ -83,6 +83,7 @@ export function AppointmentForm({
     const [pendingFormData, setPendingFormData] = useState<FormData | null>(null)
     const [regFeePending, setRegFeePending] = useState(false);
     const [consFeePending, setConsFeePending] = useState(false);
+    const [isCollectingReg, setIsCollectingReg] = useState(false);
 
     // Sync state when editingAppointment changes or prop updates
     useEffect(() => {
@@ -429,6 +430,7 @@ export function AppointmentForm({
                                             patientName={`${(saveSuccess.patient || selectedPatientData || selectedPatient)?.first_name || ''} ${(saveSuccess.patient || selectedPatientData || selectedPatient)?.last_name || ''}`.trim() || 'Unnamed Patient'}
                                             fixedAmount={150}
                                             appointmentId={saveSuccess.id}
+                                            onClose={() => setIsCollectingReg(false)}
                                             onPaymentSuccess={() => {
                                                 setRegFeePending(false);
                                                 toast({ title: "Registration Paid", description: "Receipt generated.", className: "bg-green-600 text-white" });
@@ -436,8 +438,13 @@ export function AppointmentForm({
                                                 if (pid) getPatientById(pid).then(res => res.success && setSelectedPatientData(res.data));
                                             }}
                                             trigger={
-                                                <button className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl shadow-lg shadow-amber-500/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">
-                                                    Collect Registration <IndianRupee className="h-3 w-3" />
+                                                <button
+                                                    onClick={() => setIsCollectingReg(true)}
+                                                    disabled={isCollectingReg}
+                                                    className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl shadow-lg shadow-amber-500/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                >
+                                                    {isCollectingReg ? <Loader2 className="h-3 w-3 animate-spin" /> : <IndianRupee className="h-3 w-3" />}
+                                                    {isCollectingReg ? 'Processing...' : 'Collect Registration'}
                                                 </button>
                                             }
                                         />

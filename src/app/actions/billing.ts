@@ -405,7 +405,7 @@ export async function createInvoice(data: {
                     where: {
                         patient_id: resolvedPatientId,
                         tenant_id: tenantId,
-                        status: { in: ['draft', 'posted'] as any[] },
+                        status: { in: ['draft', 'posted', 'paid'] as any[] },
                         hms_invoice_lines: {
                             some: {
                                 OR: [
@@ -418,7 +418,7 @@ export async function createInvoice(data: {
                     orderBy: { created_at: 'desc' }
                 });
                 if (existingReg) {
-                    console.log(`${LOG_PREFIX} [REG-RACE-PREVENTED] Merging into existing reg invoice ${existingReg.invoice_number}.`);
+                    console.log(`${LOG_PREFIX} [REG-RACE-PREVENTED] Patient ${resolvedPatientId} already has a registration invoice ${existingReg.invoice_number}. Status: ${existingReg.status}`);
                     return { _isDuplicate: true, existingId: existingReg.id };
                 }
             }
@@ -1377,7 +1377,7 @@ export async function recordPatientConsumption(patientId: string, items: any[], 
                 }
             };
 
-            const res = await createInvoice(payload);
+            const res: any = await createInvoice(payload);
             if (res.error) throw new Error(res.error);
 
             const newId = (res as any).data?.id;
@@ -1467,114 +1467,122 @@ export async function generateRegistrationInvoice(patientId: string) {
     if (!tenantId || !companyId) return { error: "SECURITY_AUTH_EXPIRED" };
 
     try {
-        // [IDEMPOTENCY-FIX] Check for existing registration invoice for this patient
-        // We look for ANY unpaid/posted registration invoice to prevent double billing.
-        const existing = await prisma.hms_invoice.findFirst({
-            where: {
-                patient_id: patientId,
-                tenant_id: tenantId,
-                status: { in: ['draft', 'posted'] },
-                hms_invoice_lines: {
-                    some: {
-                        OR: [
-                            { description: { contains: 'Registration Fee', mode: 'insensitive' } },
-                            { description: { contains: 'Identity Service', mode: 'insensitive' } }
-                        ]
-                    }
-                }
-            },
-            include: { hms_invoice_lines: true },
-            orderBy: { created_at: 'desc' }
-        });
+        const invoice = await prisma.$transaction(async (tx) => {
+            // [ATOMIC-GUARD] Use Postgres Advisory Lock to prevent concurrent registration billing for this patient
+            await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext('${patientId}_reg'))`);
 
-        if (existing) {
-            console.log(`[RCM] Duplicate registration invoice blocked for patient ${patientId}. Reusing ${existing.invoice_number}`);
-            return { success: true, data: existing };
-        }
-
-        // 1. Resolve Settings for Registration Fee
-        const settings = await prisma.hms_settings.findFirst({
-            where: { tenant_id: tenantId, key: 'billing' }
-        });
-        const billingSettings = (settings?.value as any) || {};
-        const regFee = billingSettings.registrationFee || 150;
-        const regProductId = billingSettings.registrationProductId;
-
-        // 2. Resolve Product (Registration Fee)
-        let product = null;
-        if (regProductId) {
-            product = await prisma.hms_product.findUnique({ where: { id: regProductId } });
-        }
-
-        if (!product) {
-            product = await prisma.hms_product.findFirst({
+            // [IDEMPOTENCY-FIX] Check for existing registration invoice for this patient
+            // We look for ANY non-cancelled registration invoice to prevent double billing.
+            const existing = await tx.hms_invoice.findFirst({
                 where: {
+                    patient_id: patientId,
                     tenant_id: tenantId,
-                    company_id: companyId,
-                    name: { contains: 'Registration Fee', mode: 'insensitive' }
-                }
+                    status: { in: ['draft', 'posted', 'paid'] },
+                    hms_invoice_lines: {
+                        some: {
+                            OR: [
+                                { description: { contains: 'Registration Fee', mode: 'insensitive' } },
+                                { description: { contains: 'Identity Service', mode: 'insensitive' } }
+                            ]
+                        }
+                    }
+                },
+                include: { hms_invoice_lines: true },
+                orderBy: { created_at: 'desc' }
             });
-        }
 
-        // Auto-create product if missing (Self-healing)
-        if (!product) {
-            product = await prisma.hms_product.create({
+            if (existing) {
+                console.log(`[RCM] Duplicate registration invoice blocked for patient ${patientId}. Reusing ${existing.invoice_number}`);
+                return existing;
+            }
+
+            // 1. Resolve Settings for Registration Fee
+            const settings = await tx.hms_settings.findFirst({
+                where: { tenant_id: tenantId, key: 'billing' }
+            });
+            const billingSettings = (settings?.value as any) || {};
+            const regFee = billingSettings.registrationFee || 150;
+            const regProductId = billingSettings.registrationProductId;
+
+            // 2. Resolve Product (Registration Fee)
+            let product = null;
+            if (regProductId) {
+                product = await tx.hms_product.findUnique({ where: { id: regProductId } });
+            }
+
+            if (!product) {
+                product = await tx.hms_product.findFirst({
+                    where: {
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        name: { contains: 'Registration Fee', mode: 'insensitive' }
+                    }
+                });
+            }
+
+            // Auto-create product if missing (Self-healing)
+            if (!product) {
+                product = await tx.hms_product.create({
+                    data: {
+                        id: crypto.randomUUID(),
+                        tenant_id: tenantId,
+                        company_id: companyId,
+                        name: "Patient Registration Fee",
+                        sku: "REG-FEE",
+                        is_service: true,
+                        price: regFee,
+                        is_active: true
+                    }
+                });
+            }
+
+            // 3. Generate Official Invoice Number
+            // NOTE: getNextVoucherNumber uses Prisma internally, if called here it might dead-lock or fail
+            // if not passed the transaction client. But since it's a separate async call, we'll risk it or 
+            // wrap it if possible. For now, using the standard pattern.
+            const invNoRes = await getNextVoucherNumber();
+            const invoiceNumber = invNoRes.success ? invNoRes.data : `INV-REG-${Date.now().toString().slice(-6)}`;
+
+            // 4. Create Invoice Record with Line Item
+            return await tx.hms_invoice.create({
                 data: {
                     id: crypto.randomUUID(),
                     tenant_id: tenantId,
                     company_id: companyId,
-                    name: "Patient Registration Fee",
-                    sku: "REG-FEE",
-                    is_service: true,
-                    price: regFee,
-                    is_active: true
+                    patient_id: patientId,
+                    invoice_number: invoiceNumber,
+                    issued_at: new Date(),
+                    subtotal: product.price || 0,
+                    total_tax: 0,
+                    total: product.price || 0,
+                    outstanding_amount: product.price || 0,
+                    status: 'posted',
+                    billing_metadata: {
+                        source: 'auto-registration-rcm',
+                        description: 'Automatic registration billing sequence'
+                    },
+                    branch_id: session.user.current_branch_id,
+                    created_by: session.user.id,
+                    hms_invoice_lines: {
+                        create: {
+                            id: crypto.randomUUID(),
+                            tenant_id: tenantId,
+                            company_id: companyId,
+                            line_idx: 1,
+                            product_id: product.id,
+                            description: "One-time Patient Registration & Identity Service",
+                            quantity: 1,
+                            unit_price: product.price || 0,
+                            net_amount: product.price || 0
+                        }
+                    }
+                },
+                include: {
+                    hms_invoice_lines: true,
+                    hms_patient: true
                 }
             });
-        }
-
-        // 3. Generate Official Invoice Number
-        const invNoRes = await getNextVoucherNumber();
-        const invoiceNumber = invNoRes.success ? invNoRes.data : `INV-REG-${Date.now().toString().slice(-6)}`;
-
-        // 4. Create Invoice Record with Line Item
-        const invoice = await prisma.hms_invoice.create({
-            data: {
-                id: crypto.randomUUID(),
-                tenant_id: tenantId,
-                company_id: companyId,
-                patient_id: patientId,
-                invoice_number: invoiceNumber,
-                issued_at: new Date(),
-                subtotal: product.price || 0,
-                total_tax: 0,
-                total: product.price || 0,
-                outstanding_amount: product.price || 0,
-                status: 'posted', // [FIX] Immediate validity for finding in settlement
-                billing_metadata: {
-                    source: 'auto-registration-rcm',
-                    description: 'Automatic registration billing sequence'
-                },
-                branch_id: session.user.current_branch_id,
-                created_by: session.user.id,
-                hms_invoice_lines: {
-                    create: {
-                        id: crypto.randomUUID(),
-                        tenant_id: tenantId,
-                        company_id: companyId,
-                        line_idx: 1,
-                        product_id: product.id,
-                        description: "One-time Patient Registration & Identity Service",
-                        quantity: 1,
-                        unit_price: product.price || 0,
-                        net_amount: product.price || 0
-                    }
-                }
-            },
-            include: {
-                hms_invoice_lines: true,
-                hms_patient: true
-            }
-        });
+        }, { timeout: 15000 });
 
         return { success: true, data: invoice };
     } catch (err: any) {
@@ -1968,6 +1976,25 @@ async function resolveAutoTax(rate: number, tenant_id: string, company_id: strin
 // Helper for unified registration tracking
 async function trackRegistrationPayment(tx: any, patientId: string, tenantId: string, companyId: string) {
     try {
+        // [IDEMPOTENCY-FIX] Check if patient is already active and valid
+        const patient = await tx.hms_patient.findUnique({
+            where: { id: patientId },
+            select: { metadata: true }
+        });
+        if (!patient) return;
+
+        const currentMeta = (patient.metadata as any) || {};
+        const now = new Date();
+
+        // If they already have an expiry in the future, don't update (avoid flapping or nested transactional loops)
+        if (currentMeta.registration_fees_paid === true && currentMeta.registration_expiry) {
+            const expiry = new Date(currentMeta.registration_expiry);
+            if (expiry > now) {
+                console.log(`[REG-TRACK] Skipping update for patient ${patientId}. Existing valid registration until ${currentMeta.registration_expiry}`);
+                return;
+            }
+        }
+
         // 1. Get validity period from settings
         const hmsConfigRecord = await tx.hms_settings.findFirst({
             where: { company_id: companyId, tenant_id: tenantId, key: 'registration_config' }
@@ -1982,15 +2009,10 @@ async function trackRegistrationPayment(tx: any, patientId: string, tenantId: st
         const validityDays = activeFee?.validity_days || configData.validity || 7;
 
         // 2. Calculate expiry
-        const now = new Date();
         const expiryDate = new Date();
         expiryDate.setDate(now.getDate() + validityDays);
 
-        // 3. Update Patient Metadata
-        const patient = await tx.hms_patient.findUnique({ where: { id: patientId } });
-        if (!patient) return;
-
-        const currentMeta = (patient.metadata as any) || {};
+        // 3. Update Patient Metadata (using the already fetched patient object)
         await tx.hms_patient.update({
             where: { id: patientId },
             data: {

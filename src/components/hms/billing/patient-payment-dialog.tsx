@@ -13,6 +13,7 @@ interface PatientPaymentDialogProps {
     patientId: string;
     patientName: string;
     onPaymentSuccess?: () => void;
+    onClose?: () => void;
     trigger?: React.ReactNode;
     fixedAmount?: number; // [NEW] Allow overriding balance for specific fee collection
     appointmentId?: string; // [RCM-CONTEXT] Link to appointment for better idempotency
@@ -23,12 +24,18 @@ export function PatientPaymentDialog({
     patientId,
     patientName,
     onPaymentSuccess,
+    onClose,
     trigger,
     fixedAmount,
     appointmentId
 }: PatientPaymentDialogProps) {
     const { toast } = useToast();
     const [isOpen, setIsOpen] = useState(false);
+
+    const handleOpenChange = (open: boolean) => {
+        setIsOpen(open);
+        if (!open && onClose) onClose();
+    };
     const [isLoading, setIsLoading] = useState(false);
 
     // Dependencies needed for CompactInvoiceEditor
@@ -49,7 +56,7 @@ export function PatientPaymentDialog({
                     mod.getUoms(),
                     // [WORLD CLASS] Check for existing UNPAID registration invoice specifically
                     // If appointmentId is present, we prioritize that context
-                    mod.getInitialInvoiceData(appointmentId || '').then(res => res.success ? res : mod.getOpenRegistrationInvoice(patientId))
+                    mod.getInitialInvoiceData(appointmentId || '').then((res: any) => res.success ? res : mod.getOpenRegistrationInvoice(patientId))
                 ]).then(([itemsRes, taxRes, uomsRes, invRes]) => {
                     if (itemsRes.success) setBillableItems(itemsRes.data || []);
                     if (taxRes.success) setTaxConfig(taxRes.data || { defaultTax: null, taxRates: [] });
