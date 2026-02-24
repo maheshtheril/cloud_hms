@@ -380,9 +380,19 @@ export function AppointmentForm({
                 // Invoice will be created ONLY when the user clicks 'Collect' in the success modal.
                 // This prevents race conditions and duplicate numbering (INV-006 vs INV-007).
 
-                // 1. Check Registration Fee
-                if (activeRegStatus.shouldCharge) { // Changed from activeRegStatus.needed to activeRegStatus.shouldCharge
-                    setRegFeePending(true);
+                // 1. Check & Auto-Generate Registration Fee
+                if (activeRegStatus.shouldCharge) {
+                    console.log(`[RCM-AUTO] Generating registration invoice for patient ${selectedPatientId}`);
+                    try {
+                        const regRes = await generateRegistrationInvoice(selectedPatientId, aptId);
+                        if (regRes.success) {
+                            setRegInvoice(regRes.data);
+                            setRegFeePending(true);
+                            console.log(`[RCM-AUTO] Registration invoice generated: ${regRes.data.invoice_number}`);
+                        }
+                    } catch (err) {
+                        console.error("[RCM-AUTO] Failed to auto-generate reg invoice", err);
+                    }
                 } else {
                     setRegFeePending(false);
                 }
@@ -413,16 +423,6 @@ export function AppointmentForm({
     async function handleSubmit(formData: FormData) {
         if (!selectedPatientId) {
             toast({ title: "Patient Missing", description: "Select a patient to finalize the session.", variant: "destructive" });
-            return;
-        }
-
-        // [STRICT-RCM] Enforce Registration Fee Requirement
-        if (activeRegStatus.shouldCharge && !regInvoice) {
-            toast({
-                title: "Registration Required",
-                description: "This patient has an outstanding registration fee. Please generate the bill first.",
-                variant: "destructive"
-            });
             return;
         }
 
@@ -473,10 +473,11 @@ export function AppointmentForm({
                                             <div className="text-xl font-black text-slate-900 dark:text-white">₹150</div>
                                         </div>
                                         <PatientPaymentDialog
-                                            patientId={saveSuccess.patient_id || selectedPatientData?.id || selectedPatientId}
+                                            patientId={saveSuccess.patient_id || selectedPatientId}
                                             patientName={`${(saveSuccess.patient || selectedPatientData || selectedPatient)?.first_name || ''} ${(saveSuccess.patient || selectedPatientData || selectedPatient)?.last_name || ''}`.trim() || 'Unnamed Patient'}
                                             fixedAmount={150}
                                             appointmentId={saveSuccess.id}
+                                            autoOpen={true} // [WORLD CLASS] Auto-open the terminal immediately
                                             onClose={() => setIsCollectingReg(false)}
                                             onPaymentSuccess={() => {
                                                 setRegFeePending(false);
@@ -519,6 +520,7 @@ export function AppointmentForm({
                                             patientId={saveSuccess.patient_id || selectedPatientId}
                                             patientName={`${(saveSuccess.patient || selectedPatientData || selectedPatient)?.first_name || ''} ${(saveSuccess.patient || selectedPatientData || selectedPatient)?.last_name || ''}`.trim() || 'Unnamed Patient'}
                                             appointmentId={saveSuccess.id}
+                                            autoOpen={!regFeePending} // [WORLD CLASS] Only auto-open consultation if reg is already cleared
                                             onClose={() => setIsCollectingCons(false)}
                                             onPaymentSuccess={() => {
                                                 setConsFeePending(false);
@@ -641,35 +643,6 @@ export function AppointmentForm({
                         {editingAppointment ? 'Update Encounter' : 'Save'}
                     </button>
 
-                    {/* [NEW] Quick Registration Generate */}
-                    {activeRegStatus.shouldCharge && !regInvoice && (
-                        <button
-                            type="button"
-                            onClick={async () => {
-                                if (!selectedPatientId) return;
-                                setIsGeneratingReg(true);
-                                try {
-                                    const { generateRegistrationInvoice } = await import('@/app/actions/billing');
-                                    const res = await generateRegistrationInvoice(selectedPatientId);
-                                    if (res.success) {
-                                        setRegInvoice(res.data);
-                                        toast({ title: "Bill Generated", description: "Registration invoice posted. You can now save.", className: "bg-emerald-600 text-white" });
-                                    } else {
-                                        toast({ title: "Billing Failed", description: res.error, variant: "destructive" });
-                                    }
-                                } catch (err: any) {
-                                    toast({ title: "System Error", description: err.message, variant: "destructive" });
-                                } finally {
-                                    setIsGeneratingReg(false);
-                                }
-                            }}
-                            disabled={isGeneratingReg || !selectedPatientId}
-                            className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl shadow-xl shadow-amber-500/20 font-black text-xs uppercase tracking-[0.2em] transition-all flex items-center gap-2 border border-amber-400/20 disabled:opacity-50"
-                        >
-                            {isGeneratingReg ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldAlert className="h-4 w-4" />}
-                            Generate Reg Bill
-                        </button>
-                    )}
                 </div>
             </div>
 

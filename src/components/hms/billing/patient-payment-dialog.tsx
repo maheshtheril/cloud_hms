@@ -17,6 +17,7 @@ interface PatientPaymentDialogProps {
     trigger?: React.ReactNode;
     fixedAmount?: number; // [NEW] Allow overriding balance for specific fee collection
     appointmentId?: string; // [RCM-CONTEXT] Link to appointment for better idempotency
+    autoOpen?: boolean; // [AUTO] Automatically open the dialog on mount
 }
 
 
@@ -27,10 +28,11 @@ export function PatientPaymentDialog({
     onClose,
     trigger,
     fixedAmount,
-    appointmentId
+    appointmentId,
+    autoOpen = false
 }: PatientPaymentDialogProps) {
     const { toast } = useToast();
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(autoOpen);
 
     const handleOpenChange = (open: boolean) => {
         setIsOpen(open);
