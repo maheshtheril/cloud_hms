@@ -213,7 +213,7 @@ export async function signup(prevState: any, formData: FormData) {
                     tenant_id: tenantId,
                     company_id: companyId,
                     current_branch_id: branchId,
-                    email: email,
+                    email: email.toLowerCase(),
                     password: hashedPassword,
                     name: name,
                     is_admin: true,
