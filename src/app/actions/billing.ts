@@ -1,7 +1,7 @@
 'use server'
 
 import { prisma } from "@/lib/prisma"
-import { randomUUID } from "crypto"
+import crypto from "crypto"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
@@ -461,7 +461,7 @@ export async function createInvoice(data: {
             const outstandingCalc = (status === 'paid') ? 0 : Math.max(0, grandTotalCalc - totalPaidCalc);
 
             // 6. Persistence
-            const invoiceId = randomUUID();
+            const invoiceId = crypto.randomUUID();
             const invoice = await tx.hms_invoice.create({
                 data: {
                     id: invoiceId,
@@ -483,7 +483,7 @@ export async function createInvoice(data: {
                     created_by: isUUID(userId) ? userId : null,
                     hms_invoice_lines: {
                         create: processedLineItems.map((l: any, idx) => ({
-                            id: randomUUID(),
+                            id: crypto.randomUUID(),
                             tenant_id: tenantId,
                             company_id: companyId,
                             line_idx: idx + 1,
@@ -1590,7 +1590,7 @@ export async function generateRegistrationInvoice(patientId: string, appointment
             if (!product) {
                 product = await tx.hms_product.create({
                     data: {
-                        id: randomUUID(),
+                        id: crypto.randomUUID(),
                         tenant_id: tenantId,
                         company_id: companyId,
                         name: "Patient Registration Fee",
@@ -1612,7 +1612,7 @@ export async function generateRegistrationInvoice(patientId: string, appointment
             // 4. Create Invoice Record with Line Item
             return await tx.hms_invoice.create({
                 data: {
-                    id: randomUUID(),
+                    id: crypto.randomUUID(),
                     tenant_id: tenantId,
                     company_id: companyId,
                     patient_id: patientId,
@@ -1632,7 +1632,7 @@ export async function generateRegistrationInvoice(patientId: string, appointment
                     created_by: session.user.id,
                     hms_invoice_lines: {
                         create: {
-                            id: randomUUID(),
+                            id: crypto.randomUUID(),
                             tenant_id: tenantId,
                             company_id: companyId,
                             line_idx: 1,
@@ -1737,7 +1737,7 @@ export async function generateConsultationInvoice(appointmentId: string) {
         // 3. Create Invoice
         const invoice = await prisma.hms_invoice.create({
             data: {
-                id: randomUUID(),
+                id: crypto.randomUUID(),
                 tenant_id: tenantId,
                 company_id: companyId,
                 patient_id: appointment.patient_id,
@@ -1756,7 +1756,7 @@ export async function generateConsultationInvoice(appointmentId: string) {
                 created_by: session.user.id,
                 hms_invoice_lines: {
                     create: {
-                        id: randomUUID(),
+                        id: crypto.randomUUID(),
                         tenant_id: tenantId,
                         company_id: companyId,
                         line_idx: 1,

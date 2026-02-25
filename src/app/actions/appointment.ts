@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth" // Correct auth import
 import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
+import { isUUID, safeNum } from "@/lib/utils/is-uuid"
 
 export async function getAppointmentsProp(start: Date, end: Date) {
     const session = await auth();
@@ -80,75 +81,79 @@ export async function createAppointment(formData: FormData) {
     // Combine date and time
     const startsAt = new Date(`${dateStr}T${timeStr}:00`)
 
-    // PREVENT DUPLICATES: Check if patient already has an appointment with this doctor today
-    const startOfDay = new Date(`${dateStr}T00:00:00`)
-    const endOfDay = new Date(`${dateStr}T23:59:59`)
-
-    const existing = await prisma.hms_appointments.findFirst({
-        where: {
-            patient_id: patientId,
-            clinician_id: clinicianId,
-            starts_at: {
-                gte: startOfDay,
-                lte: endOfDay
-            },
-            status: { notIn: ['cancelled'] },
-            deleted_at: null
-        }
-    })
-
-    if (existing) {
-        return { error: `DUPLICATE_ENTRY: This patient already has an active appointment with this doctor on ${dateStr}. Please reschedule or update the existing record.` }
-    }
-
-    // Fetch doctor's slot duration
-    const clinician = await prisma.hms_clinicians.findUnique({
-        where: { id: clinicianId },
-        select: { consultation_slot_duration: true }
-    })
-
-    const durationMinutes = clinician?.consultation_slot_duration || 30
-    const endsAt = new Date(startsAt.getTime() + durationMinutes * 60000)
-
-    // CRITICAL: Ensure company_id is NEVER null
-    const finalCompanyId = companyId || session.user.tenantId;
-    if (!finalCompanyId) {
-        console.error('CRITICAL: No company_id available', { session: session.user });
-        return { error: "System configuration error: missing company context" };
-    }
-
+    // NUCLEAR LOCK: Prevent concurrent bookings for the same patient/clinician on this day
+    const lockKey = `${patientId}_${clinicianId}_${dateStr}`;
+    const startOfDay = new Date(`${dateStr}T00:00:00`);
+    const endOfDay = new Date(`${dateStr}T23:59:59`);
     let createdApt;
-    try {
-        // Use raw SQL to get the ACTUAL error message from PostgreSQL
-        const result: any = await prisma.$queryRaw`
-            INSERT INTO hms_appointments (
-                id, tenant_id, company_id, patient_id, clinician_id,
-                starts_at, ends_at, type, mode, priority, notes, status, created_by, branch_id
-            ) VALUES (
-                gen_random_uuid(),
-                ${session.user.tenantId}::uuid,
-                ${finalCompanyId}::uuid,
-                ${patientId}::uuid,
-                ${clinicianId}::uuid,
-                ${startsAt}::timestamptz,
-                ${endsAt}::timestamptz,
-                ${type},
-                ${mode},
-                ${priority},
-                ${notes || null},
-                'scheduled',
-                ${session.user.id}::uuid,
-                ${session.user.current_branch_id || null}::uuid
-            )
-            RETURNING *
-        `;
 
-        createdApt = result[0];
+    try {
+        const result = await prisma.$transaction(async (tx) => {
+            // [ATOMIC-GUARD] Acquire session-level lock for this specific booking context
+            await tx.$executeRawUnsafe(`SELECT pg_advisory_xact_lock(hashtext('${lockKey}'))`);
+
+            // 1. DUPLICATE CHECK (Inside lock)
+            const existing = await tx.hms_appointments.findFirst({
+                where: {
+                    patient_id: patientId,
+                    clinician_id: clinicianId,
+                    starts_at: {
+                        gte: startOfDay,
+                        lte: endOfDay
+                    },
+                    status: { notIn: ['cancelled'] },
+                    deleted_at: null
+                }
+            })
+
+            if (existing) {
+                return { _isDuplicate: true, data: existing };
+            }
+
+            // 2. Fetch doctor's slot duration (using tx)
+            const clinician = await tx.hms_clinicians.findUnique({
+                where: { id: clinicianId },
+                select: { consultation_slot_duration: true }
+            })
+
+            const durationMinutes = clinician?.consultation_slot_duration || 30
+            const endsAt = new Date(startsAt.getTime() + durationMinutes * 60000)
+
+            // 3. Create Appointment
+            const created = await tx.$queryRaw`
+                INSERT INTO hms_appointments (
+                    id, tenant_id, company_id, patient_id, clinician_id,
+                    starts_at, ends_at, type, mode, priority, notes, status, created_by, branch_id
+                ) VALUES (
+                    gen_random_uuid(),
+                    ${session.user.tenantId}::uuid,
+                    ${companyId}::uuid,
+                    ${patientId}::uuid,
+                    ${clinicianId}::uuid,
+                    ${startsAt}::timestamptz,
+                    ${endsAt}::timestamptz,
+                    ${type},
+                    ${mode},
+                    ${priority},
+                    ${notes || null},
+                    'scheduled',
+                    ${session.user.id}::uuid,
+                    ${session.user.current_branch_id || null}::uuid
+                )
+                RETURNING *
+            `;
+            return (created as any)[0];
+        });
+
+        if ((result as any)._isDuplicate) {
+            console.log(`[BOOKING-DEDUPLICATED] Patient ${patientId} already booked for ${dateStr}. Returning existing.`);
+            return { success: true, data: result.data };
+        }
+
+        createdApt = result;
     } catch (error: any) {
-        console.error("Failed to create appointment:", error)
-        console.error("Error detail:", error.message)
-        console.error("Error code:", error.code)
-        return { error: `Failed to create appointment: ${error.message}` }
+        console.error("CRITICAL_BOOKING_FAILURE:", error.message)
+        return { error: `Appointment allocation failed: ${error.message}` }
     }
 
     const source = formData.get("source") as string
