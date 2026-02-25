@@ -3,14 +3,14 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import {
-  Plus, Trash2, Search, Save, User, DollarSign, Receipt, X,
+  MessageSquare, Plus, Trash2, Search, Save, User, DollarSign, Receipt, X,
   Loader2, CreditCard, Banknote, Smartphone, Maximize2,
   Minimize2, Check, QrCode, Clock, ArrowRight, Activity, Package, Landmark,
   Copy, AlertTriangle
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { posService } from '@/lib/services/pos-device'
-import { createInvoice, updateInvoice, cancelInvoice, createQuickPatient, getPatientOutstandingBalance, getPatientLedger, getNextVoucherNumber } from '@/app/actions/billing'
+import { createInvoice, updateInvoice, cancelInvoice, createQuickPatient, getPatientOutstandingBalance, getPatientLedger, getNextVoucherNumber, shareInvoiceWhatsapp } from '@/app/actions/billing'
 import { getBestBatch } from '@/app/actions/inventory'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { useToast } from '@/components/ui/use-toast'
@@ -829,17 +829,37 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             <h1 className="text-5xl font-black italic tracking-tighter text-slate-900 dark:text-white mb-4">TRANSACTION FINALIZED</h1>
             <p className="text-xs font-black uppercase tracking-[0.6em] text-slate-500 mb-12">Serial: {initialInvoice?.invoice_number || 'NEW_ENTRY'} | Ledger Node Synced</p>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 w-full mb-12">
               {/* PRINT RECEIPT */}
               <button
                 onClick={() => window.open(`/hms/billing/${lastSavedId}/print`, '_blank')}
-                className="group p-8 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-indigo-500 transition-all text-center"
+                className="group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-indigo-500 transition-all text-center"
               >
                 <div className="bg-indigo-600 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-xl shadow-indigo-600/20 group-hover:scale-110 transition-transform">
                   <Receipt className="h-6 w-6" />
                 </div>
                 <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Print node</p>
                 <p className="text-[11px] font-black text-slate-900 dark:text-white mt-1">RECEIPT</p>
+              </button>
+
+              {/* WHATSAPP RECEIPT */}
+              <button
+                onClick={async () => {
+                  if (!lastSavedId) return;
+                  const res = await shareInvoiceWhatsapp(lastSavedId);
+                  if (res.success) {
+                    toast({ title: "WhatsApp Sent", description: "Receipt shared with patient." });
+                  } else {
+                    toast({ title: "WhatsApp Failed", description: res.error || "System error", variant: "destructive" });
+                  }
+                }}
+                className="group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-emerald-500 transition-all text-center"
+              >
+                <div className="bg-emerald-500 w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-xl shadow-emerald-500/20 group-hover:scale-110 transition-transform">
+                  <MessageSquare className="h-6 w-6" />
+                </div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Share Node</p>
+                <p className="text-[11px] font-black text-slate-900 dark:text-white mt-1">WHATSAPP</p>
               </button>
 
               {/* NEW TRANSACTION */}

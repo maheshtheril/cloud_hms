@@ -129,7 +129,6 @@ export function PatientPaymentDialog({
                             setIsOpen(false);
                         }}
                         onPaymentSuccess={() => {
-                            setIsOpen(false);
                             onPaymentSuccess?.();
                         }}
                     />

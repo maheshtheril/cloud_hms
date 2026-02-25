@@ -297,12 +297,12 @@ export function AppointmentForm({
 
         // [AUDIT] Explicit check for 'awaiting_payment' status set during creation
         if (metadata.status === 'awaiting_payment') {
-            return { shouldCharge: true, status: 'awaiting_payment' };
+            return { shouldCharge: true, status: 'awaiting_payment', expiryDate: null };
         }
 
         // Check for the explicit flag first
         if (metadata.registration_fees_paid === false) {
-            return { shouldCharge: true, status: 'not_paid' };
+            return { shouldCharge: true, status: 'not_paid', expiryDate: null };
         }
 
         const expiryDateStr = metadata.registration_expiry;
@@ -313,7 +313,7 @@ export function AppointmentForm({
             startOfToday.setHours(0, 0, 0, 0);
 
             if (createdAt >= startOfToday) {
-                return { shouldCharge: true, status: 'new_patient' };
+                return { shouldCharge: true, status: 'new_patient', expiryDate: null };
             }
 
             // 2. Otherwise, check validity period (default 7 days)
@@ -321,19 +321,20 @@ export function AppointmentForm({
             cutoffDate.setDate(cutoffDate.getDate() - validityDays);
 
             if (createdAt > cutoffDate) {
-                return { shouldCharge: false, status: 'valid' };
+                return { shouldCharge: false, status: 'valid', expiryDate: null };
             }
 
             return {
                 shouldCharge: true,
                 status: 'expired',
+                expiryDate: null,
                 reason: `Legacy record (${validityDays} days+)`
             };
         }
 
         const expiryDate = new Date(expiryDateStr);
         // Handle Invalid Date strings
-        if (isNaN(expiryDate.getTime())) return { shouldCharge: true, status: 'invalid_date' };
+        if (isNaN(expiryDate.getTime())) return { shouldCharge: true, status: 'invalid_date', expiryDate: null };
 
         const isExpired = expiryDate < new Date();
 
@@ -636,7 +637,7 @@ export function AppointmentForm({
                                     autoOpen={isCollectingReg}
                                     onClose={() => setIsCollectingReg(false)}
                                     onPaymentSuccess={() => {
-                                        setIsCollectingReg(false);
+                                        // setIsCollectingReg(false); // [FIX] Keep open to see success screen/WhatsApp
                                         toast({ title: "Fee Paid", description: "Registration cleared." });
                                         refreshPatientData(); // Refresh to update status ring/strip
                                     }}

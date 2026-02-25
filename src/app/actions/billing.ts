@@ -518,12 +518,35 @@ export async function createInvoice(data: {
             if (hasRegFee && resolvedPatientId && (status === 'posted' || status === 'paid')) {
                 await trackRegistrationPayment(tx, resolvedPatientId, tenantId, companyId);
             }
+
             return invoice;
         }, { timeout: 15000 });
 
         // Handle the duplicate signal outside the transaction to clean up
         if ((result as any)._isDuplicate) {
             return updateInvoice((result as any).existingId, data);
+        }
+
+        const invoiceId = (result as any).id;
+        const status = (result as any).status;
+
+        // Trigger Accounting & Notification (Outside transaction for performance and robustness)
+        if ((status === 'posted' || status === 'paid') && invoiceId) {
+            try {
+                const accountingRes = await AccountingService.postSalesInvoice(invoiceId, userId);
+                if (!accountingRes.success) {
+                    console.warn(`${LOG_PREFIX} Accounting Post Partial Failure:`, accountingRes.error);
+                }
+            } catch (err) {
+                console.error(`${LOG_PREFIX} Accounting Post Exception:`, err);
+            }
+
+            // WhatsApp Notification (Only if paid)
+            if (status === 'paid') {
+                NotificationService.sendInvoiceWhatsapp(invoiceId, tenantId).catch(err => {
+                    console.error(`${LOG_PREFIX} WhatsApp Notification Failed:`, err);
+                });
+            }
         }
 
         revalidatePath('/hms/billing');
