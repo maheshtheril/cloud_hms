@@ -5,7 +5,7 @@ import { ArrowLeft, Calendar, Clock, FileText, CheckCircle, MapPin, Video, Phone
 import Link from "next/link"
 import { PatientDoctorSelectors } from "@/components/appointments/patient-doctor-selectors"
 import { CreatePatientForm } from "@/components/hms/create-patient-form"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
 import { ZionaLogo } from "@/components/branding/ziona-logo"
@@ -14,7 +14,7 @@ import { getHMSSettings } from "@/app/actions/settings"
 import { generateConsultationInvoice, generateRegistrationInvoice } from "@/app/actions/billing"
 import { PatientPaymentDialog } from "@/components/hms/billing/patient-payment-dialog";
 import { getPatientById } from "@/app/actions/patient-v10"
-import { CreditCard as CardIcon, X, Printer } from "lucide-react"
+import { CreditCard as CardIcon, X, Printer, Plus } from "lucide-react"
 import { OpSlipDialog } from "@/components/hms/reception/op-slip-dialog"
 
 interface AppointmentFormProps {
@@ -81,10 +81,7 @@ export function AppointmentForm({
     // RCM States
     const [isRCMProcessing, setIsRCMProcessing] = useState(false)
     const [pendingFormData, setPendingFormData] = useState<FormData | null>(null)
-    const [regFeePending, setRegFeePending] = useState(false);
-    const [consFeePending, setConsFeePending] = useState(false);
     const [isCollectingReg, setIsCollectingReg] = useState(false);
-    const [isCollectingCons, setIsCollectingCons] = useState(false);
     const [regInvoice, setRegInvoice] = useState<any>(null);
     const [isCheckingRegInvoice, setIsCheckingRegInvoice] = useState(false);
     const [isGeneratingReg, setIsGeneratingReg] = useState(false);
@@ -371,36 +368,13 @@ export function AppointmentForm({
             } else {
                 const aptId = editingAppointment?.id || res.data?.id;
 
-                // [NEW] CHECK FOR FEES DUE (Respect Billing Mode)
-                const regStatus = checkRegistrationStatus();
-                const currentPatientId = editingAppointment?.patient_id || res.data?.patient_id || selectedPatientId;
-                const billingMode = hmsSettings?.consultationBillingMode || 'post_visit';
 
-                // [COMPLEXITY-REDUCTION] Do NOT generate invoices in background.
-                // Invoice will be created ONLY when the user clicks 'Collect' in the success modal.
-                // This prevents race conditions and duplicate numbering (INV-006 vs INV-007).
-
-                // 1. Check Registration Fee
-                if (activeRegStatus.shouldCharge) {
-                    setRegFeePending(true);
-                    console.log(`[RCM-MANUAL] Registration fee due for patient ${selectedPatientId}. Will be handled in terminal.`);
-                } else {
-                    setRegFeePending(false);
-                }
-
-                // 2. Handle Consultation Fee
-                if (billingMode === 'at_booking' && !editingAppointment) {
-                    setConsFeePending(true);
-                } else {
-                    setConsFeePending(false);
-                }
-
-                // [WORLD CLASS] Instead of immediate exit, show Success Stage
-                setSaveSuccess(editingAppointment ? { ...editingAppointment, id: aptId } : res.data);
+                // [WORLD CLASS] Show Success Stage
+                setSaveSuccess(editingAppointment ? { ...editingAppointment, id: aptId, patient: res.data?.patient } : res.data);
 
                 toast({
                     title: "Medical Record Finalized",
-                    description: editingAppointment ? "Clinical encounter updated." : "Session finalized and billing initiated.",
+                    description: editingAppointment ? "Clinical encounter updated." : "Session finalized.",
                     className: "bg-emerald-600 text-white"
                 });
             }
@@ -426,8 +400,22 @@ export function AppointmentForm({
         }
     }
 
+
     const [selectedPriority, setSelectedPriority] = useState(editingAppointment?.priority || 'normal')
-    const selectedPatient = localPatients.find(p => p.id === selectedPatientId)
+    const refreshPatientData = async () => {
+        if (!selectedPatientId) return;
+        // setIsCheckingRegInvoice(true); // Assuming this state exists elsewhere
+        const res = await getPatientById(selectedPatientId);
+        if (res.success && res.data) {
+            setSelectedPatientData(res.data);
+            // Re-check reg status via side effect or direct call
+        }
+        // setIsCheckingRegInvoice(false); // Assuming this state exists elsewhere
+    };
+
+    const selectedPatient = useMemo(() => {
+        return localPatients.find(p => p.id === selectedPatientId)
+    }, [selectedPatientId, localPatients]);
     const activeRegStatus = checkRegistrationStatus();
 
     // [NEW] SUCCESS STAGE VIEW
@@ -439,152 +427,71 @@ export function AppointmentForm({
                         <CheckCircle className="h-12 w-12 text-emerald-600 dark:text-emerald-400 animate-bounce" />
                     </div>
 
-                    <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter mb-2">Saved <span className="text-emerald-600">Successfully</span></h2>
+                    <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter mb-2">Appointment <span className="text-emerald-600">Finalized</span></h2>
                     <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mb-8">Patient flow initiated for OP Consultation</p>
 
-                    {/* FEES SECTION */}
-                    {(regFeePending || consFeePending) ? (
-                        <div className="mb-8 p-6 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2.5rem] animate-in slide-in-from-top-4 text-left">
-                            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6 ml-1">Fees Pending Collection</h3>
-
-                            <div className="space-y-4">
-                                {/* Registration Fee Button */}
-                                {regFeePending && (
-                                    <div className="group relative bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 p-5 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-amber-500/10 transition-all">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 bg-amber-50 dark:bg-amber-900/30 rounded-xl flex items-center justify-center">
-                                                    <ShieldAlert className="h-5 w-5 text-amber-600" />
-                                                </div>
-                                                <div>
-                                                    <span className="text-[9px] font-black text-amber-600 uppercase tracking-widest block mb-0.5">Registration</span>
-                                                    <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-tight">New Patient Fee</h4>
-                                                </div>
-                                            </div>
-                                            <div className="text-xl font-black text-slate-900 dark:text-white">₹150</div>
-                                        </div>
-                                        <PatientPaymentDialog
-                                            patientId={saveSuccess.patient_id || selectedPatientId}
-                                            patientName={`${(saveSuccess.patient || selectedPatientData || selectedPatient)?.first_name || ''} ${(saveSuccess.patient || selectedPatientData || selectedPatient)?.last_name || ''}`.trim() || 'Unnamed Patient'}
-                                            fixedAmount={150}
-                                            appointmentId={saveSuccess.id}
-                                            autoOpen={true} // [WORLD CLASS] Auto-open the terminal immediately
-                                            onClose={() => setIsCollectingReg(false)}
-                                            onPaymentSuccess={() => {
-                                                setRegFeePending(false);
-                                                toast({ title: "Registration Paid", description: "Receipt generated.", className: "bg-green-600 text-white" });
-                                                const pid = saveSuccess.patient_id || selectedPatientData?.id || selectedPatientId;
-                                                if (pid) getPatientById(pid).then(res => res.success && setSelectedPatientData(res.data));
-                                            }}
-                                            trigger={
-                                                <button
-                                                    onClick={() => setIsCollectingReg(true)}
-                                                    disabled={isCollectingReg}
-                                                    className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl shadow-lg shadow-amber-500/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    {isCollectingReg ? <Loader2 className="h-3 w-3 animate-spin" /> : <IndianRupee className="h-3 w-3" />}
-                                                    {isCollectingReg ? 'Processing...' : 'Collect Registration'}
-                                                </button>
-                                            }
-                                        />
-                                    </div>
-                                )}
-
-                                {/* Consultation Fee Button */}
-                                {consFeePending && (
-                                    <div className="group relative bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 p-5 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-indigo-500/10 transition-all">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-10 w-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl flex items-center justify-center">
-                                                    <Stethoscope className="h-5 w-5 text-indigo-600" />
-                                                </div>
-                                                <div>
-                                                    <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest block mb-0.5">Consultation</span>
-                                                    <h4 className="font-black text-slate-900 dark:text-white uppercase tracking-tight">Doctor Visit Fee</h4>
-                                                </div>
-                                            </div>
-                                            <div className="text-xl font-black text-slate-900 dark:text-white">
-                                                ₹{saveSuccess.clinician?.consultation_fee || doctors.find(d => d.id === selectedClinicianId)?.consultation_fee || '---'}
-                                            </div>
-                                        </div>
-                                        <PatientPaymentDialog
-                                            patientId={saveSuccess.patient_id || selectedPatientId}
-                                            patientName={`${(saveSuccess.patient || selectedPatientData || selectedPatient)?.first_name || ''} ${(saveSuccess.patient || selectedPatientData || selectedPatient)?.last_name || ''}`.trim() || 'Unnamed Patient'}
-                                            appointmentId={saveSuccess.id}
-                                            autoOpen={!regFeePending} // [WORLD CLASS] Only auto-open consultation if reg is already cleared
-                                            onClose={() => setIsCollectingCons(false)}
-                                            onPaymentSuccess={() => {
-                                                setConsFeePending(false);
-                                                toast({ title: "Consultation Paid", description: "Payment recorded.", className: "bg-green-600 text-white" });
-                                            }}
-                                            trigger={
-                                                <button
-                                                    onClick={() => setIsCollectingCons(true)}
-                                                    disabled={isCollectingCons}
-                                                    className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl shadow-lg shadow-indigo-500/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    {isCollectingCons ? <Loader2 className="h-3 w-3 animate-spin" /> : <IndianRupee className="h-3 w-3" />}
-                                                    {isCollectingCons ? 'Processing...' : 'Collect Consultation'}
-                                                </button>
-                                            }
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="mb-8 p-6 bg-slate-50 dark:bg-white/5 rounded-[2rem] border border-slate-100 dark:border-white/5 text-center">
-                            <div className="h-12 w-12 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100 dark:border-white/10 shadow-sm">
-                                <Sparkles className="h-5 w-5 text-emerald-500" />
-                            </div>
-                            <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">No Immediate Payments Due</p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 leading-relaxed opacity-60">
-                                {hmsSettings?.consultationBillingMode === 'post_visit'
-                                    ? "Consultation fees will be billed later."
-                                    : "Protocol: Patient registered & cleared for visit."}
-                            </p>
-                        </div>
-                    )}
-
-                    <div className="grid grid-cols-1 gap-4 mb-10">
-                        <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center justify-between">
-                            <div className="text-left">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Patient</p>
-                                <p className="text-lg font-black text-slate-900 dark:text-white">{saveSuccess.patient?.first_name || ''} {saveSuccess.patient?.last_name || ''}</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Token No</p>
-                                <p className="text-lg font-black text-indigo-600 font-mono">#{saveSuccess.id?.split('-')[0].toUpperCase()}</p>
-                            </div>
-                        </div>
+                    <div className="mb-10 text-slate-400 font-medium">
+                        The medical record has been securely saved and synchronized with the clinical terminal.
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
-                        <OpSlipDialog
-                            appointment={{ ...saveSuccess, patient: saveSuccess.patient || selectedPatientData, clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId) }}
-                            trigger={
-                                <button className="h-14 bg-indigo-50 dark:bg-white/5 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center gap-2 transition-all">
-                                    <Printer className="h-4 w-4" /> Print Ticket Only
-                                </button>
-                            }
-                        />
+                    {/* CLEAN SUCCESS ACTIONS */}
+                    <div className="flex flex-col gap-3">
+                        <div className="grid grid-cols-2 gap-3">
+                            <OpSlipDialog
+                                appointment={{
+                                    ...saveSuccess,
+                                    patient: saveSuccess.patient || selectedPatientData || selectedPatient,
+                                    clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId)
+                                }}
+                                defaultPrintMode="standard"
+                                trigger={
+                                    <button className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-3xl shadow-xl shadow-emerald-600/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">
+                                        <Printer className="h-4 w-4" /> OP Slip (A4)
+                                    </button>
+                                }
+                            />
+
+                            <OpSlipDialog
+                                appointment={{
+                                    ...saveSuccess,
+                                    patient: saveSuccess.patient || selectedPatientData || selectedPatient,
+                                    clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId)
+                                }}
+                                defaultPrintMode="label"
+                                trigger={
+                                    <button className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-3xl shadow-xl shadow-indigo-600/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">
+                                        <Printer className="h-4 w-4" /> Patient Label
+                                    </button>
+                                }
+                            />
+                        </div>
+
                         <button
                             onClick={() => {
                                 setSaveSuccess(null);
                                 setSelectedPatientId('');
                                 setSelectedPatientData(null);
                                 setNotes('');
-                                router.refresh();
+                                setRegFeePending(false);
+                                setConsFeePending(false);
                             }}
-                            className="h-14 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-200 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all"
+                            className="w-full py-5 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-3xl font-black uppercase text-[10px] tracking-[0.2em] hover:opacity-90 transition-all flex items-center justify-center gap-2"
                         >
-                            Register Next
+                            <Plus className="h-4 w-4" /> Register New Patient
+                        </button>
+
+                        <button
+                            onClick={() => router.push('/reception')}
+                            className="w-full py-4 text-slate-400 font-bold uppercase text-[9px] tracking-[0.3em] hover:text-slate-600 transition-all"
+                        >
+                            Return to Dashboard
                         </button>
                     </div>
                 </div>
             </div>
         )
     }
+
 
     return (
         <div className={`relative bg-slate-900 border border-white/20 shadow-2xl overflow-hidden transition-all duration-500 ease-in-out ${isMaximized ? 'fixed inset-0 z-[100]' : 'w-full h-full relative'}`}>
@@ -633,7 +540,6 @@ export function AppointmentForm({
                         {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
                         {editingAppointment ? 'Update Encounter' : 'Save'}
                     </button>
-
                 </div>
             </div>
 
@@ -692,6 +598,36 @@ export function AppointmentForm({
                             onPatientSelect={setSelectedPatientId}
                             onNewPatientClick={() => setShowNewPatientModal(true)}
                         />
+
+                        {/* USER-FRIENDLY REGISTRATION TRIGGER (NORMAL PAY) */}
+                        {activeRegStatus.shouldCharge && (
+                            <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 rounded-2xl flex items-center justify-between animate-in slide-in-from-top-2 shadow-inner">
+                                <div className="flex items-center gap-3">
+                                    <ShieldAlert className="h-5 w-5 text-amber-600" />
+                                    <div>
+                                        <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Fee Due</p>
+                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Patient Registration Fee (₹150)</p>
+                                    </div>
+                                </div>
+                                <PatientPaymentDialog
+                                    patientId={selectedPatientId}
+                                    patientName={`${selectedPatientData?.first_name || ''} ${selectedPatientData?.last_name || ''}`.trim() || 'Selected Patient'}
+                                    fixedAmount={150}
+                                    autoOpen={isCollectingReg}
+                                    onClose={() => setIsCollectingReg(false)}
+                                    onPaymentSuccess={() => {
+                                        setIsCollectingReg(false);
+                                        toast({ title: "Fee Paid", description: "Registration cleared." });
+                                        refreshPatientData(); // Refresh to update status ring/strip
+                                    }}
+                                    trigger={
+                                        <button type="button" className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20">
+                                            Collect Now
+                                        </button>
+                                    }
+                                />
+                            </div>
+                        )}
 
                         {/* Schedule & Slotting */}
                         <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4 ring-1 ring-slate-100">

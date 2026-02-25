@@ -12,11 +12,12 @@ import { Printer, FileText, Layout, X, Check } from "lucide-react"
 interface OpSlipDialogProps {
     appointment: any
     trigger?: React.ReactNode
+    defaultPrintMode?: 'standard' | 'letterhead' | 'thermal' | 'label'
 }
 
-export function OpSlipDialog({ appointment, trigger }: OpSlipDialogProps) {
+export function OpSlipDialog({ appointment, trigger, defaultPrintMode = 'standard' }: OpSlipDialogProps) {
     const [isOpen, setIsOpen] = useState(false)
-    const [printMode, setPrintMode] = useState<'standard' | 'letterhead' | 'thermal'>('standard')
+    const [printMode, setPrintMode] = useState<'standard' | 'letterhead' | 'thermal' | 'label'>(defaultPrintMode)
 
     const handlePrint = () => {
         const printWindow = window.open('', '_blank')
@@ -30,7 +31,45 @@ export function OpSlipDialog({ appointment, trigger }: OpSlipDialogProps) {
 
         let html = ''
 
-        if (printMode === 'thermal') {
+        if (printMode === 'label') {
+            html = `
+                <!DOCTYPE html>
+                <html>
+                    <head>
+                        <title>Label - ${patientName}</title>
+                        <style>
+                            @page { margin: 0; size: 50mm 25mm; }
+                            body { 
+                                font-family: 'Arial', sans-serif; 
+                                width: 46mm; 
+                                margin: 0 auto; 
+                                padding: 2mm 0;
+                                color: black;
+                                background: white;
+                                font-size: 8pt;
+                                overflow: hidden;
+                            }
+                            .name { font-weight: 900; font-size: 10pt; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+                            .id { font-weight: bold; border-bottom: 1px solid black; padding-bottom: 1px; margin-bottom: 2px; }
+                            .meta { font-size: 7pt; display: flex; justify-content: space-between; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="name">${patientName}</div>
+                        <div class="id">ID: ${appointment.patient?.patient_number}</div>
+                        <div class="meta">
+                            <span>${appointment.patient?.gender || 'N/A'} | ${appointment.patient?.age || ''}</span>
+                            <span>${date}</span>
+                        </div>
+                        <div class="meta" style="margin-top: 2px;">
+                            <span>T-ID: #${tokenNumber}</span>
+                            <span style="font-weight: bold;">${doctorName.slice(0, 15)}</span>
+                        </div>
+                        <script>window.onload = () => { window.print(); window.close(); };</script>
+                    </body>
+                </html>
+            `
+        } else if (printMode === 'thermal') {
             html = `
                 <!DOCTYPE html>
                 <html>
@@ -370,6 +409,22 @@ export function OpSlipDialog({ appointment, trigger }: OpSlipDialogProps) {
                                 </div>
                             </div>
                             {printMode === 'thermal' && <Check className="h-5 w-5 text-indigo-600" />}
+                        </button>
+
+                        <button
+                            onClick={() => setPrintMode('label')}
+                            className={`w-full p-4 rounded-2xl border-2 transition-all flex items-center justify-between group ${printMode === 'label' ? 'bg-white border-indigo-600 shadow-xl shadow-indigo-50' : 'bg-white/50 border-transparent hover:border-slate-200'}`}
+                        >
+                            <div className="flex items-center gap-4">
+                                <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${printMode === 'label' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-400'}`}>
+                                    <Printer className="h-5 w-5" />
+                                </div>
+                                <div className="text-left">
+                                    <p className="font-black text-slate-800 uppercase tracking-tight text-sm">Patient Label (50x25mm)</p>
+                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Concise sticky label for files/samples</p>
+                                </div>
+                            </div>
+                            {printMode === 'label' && <Check className="h-5 w-5 text-indigo-600" />}
                         </button>
                     </div>
 

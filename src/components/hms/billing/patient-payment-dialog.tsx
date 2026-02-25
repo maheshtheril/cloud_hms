@@ -124,6 +124,7 @@ export function PatientPaymentDialog({
                         appointmentId={appointmentId}
                         initialMedicines={initialMedicines}
                         initialInvoice={initialInvoice}
+                        isRegistrationFee={!!fixedAmount}
                         onClose={() => {
                             setIsOpen(false);
                         }}

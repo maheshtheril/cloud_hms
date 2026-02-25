@@ -21,7 +21,9 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { ZionaLogo } from '@/components/branding/ziona-logo'
 
-export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice, onClose, onPaymentSuccess, currency = '₹' }: {
+export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice, onClose, onPaymentSuccess, currency = '₹',
+  isRegistrationFee = false
+}: {
   patients: any[],
   billableItems: any[],
   uoms?: any[],
@@ -32,7 +34,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   initialInvoice?: any,
   onClose?: () => void,
   onPaymentSuccess?: (invoiceData: any) => void,
-  currency?: string
+  currency?: string,
+  isRegistrationFee?: boolean
 }) {
 
   const getUomOptions = (itemType: string, currentUom: string) => {
@@ -344,7 +347,15 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
       if (initialMedicines && initialMedicines.length > 0) {
         initialMedicines.forEach((m: any) => {
-          const billable = billableItems.find((bi: any) => bi.id === (m.id || m.product_id) || bi.label === m.name);
+          // [WORLD CLASS AUTO-POPULATE]
+          // Find the real catalog item by ID or exact Name match
+          const billable = billableItems.find((bi: any) =>
+            bi.id === (m.id || m.product_id) ||
+            bi.label === m.name ||
+            bi.name === m.name ||
+            (isRegistrationFee && (bi.label === "Patient Registration Fee" || bi.name === "Patient Registration Fee"))
+          );
+
           const taxId = billable?.categoryTaxId !== undefined ? billable.categoryTaxId : defaultTaxId;
           const finalPrice = billable?.price || Number(m.price || 0);
           const taxRateObj = taxConfig.taxRates.find((t: any) => t.id === taxId);
@@ -362,7 +373,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
             combined.push({
               id: Math.random() + Date.now(),
               product_id: billable?.id || m.id || '',
-              description: m.name || m.description || '',
+              description: billable?.label || billable?.name || m.name || m.description || '',
               quantity: Number(m.quantity || 1),
               uom: m.uom || billable?.uom || 'PCS',
               unit_price: finalPrice,
@@ -378,7 +389,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
       }
       if (combined.length > 0) setLines(combined);
     }
-  }, [initialInvoice, initialMedicines, billableItems, defaultTaxId, taxConfig.taxRates]);
+  }, [initialInvoice, initialMedicines, billableItems, defaultTaxId, taxConfig.taxRates, isRegistrationFee]);
 
   // Sync Tax Amounts on Mount for initial items
   useEffect(() => {
@@ -943,7 +954,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               <div className="w-[400px]">
                 {isWalkIn ? (
                   <div className="flex gap-2 animate-in slide-in-from-right-4">
-                    <Input value={walkInPhone} onChange={e => setWalkInPhone(e.target.value)} disabled={isPaymentModalOpen || loading} placeholder="MOBILE..." className="h-10 bg-white dark:bg-slate-950 border-transparent focus:border-pink-500 rounded-xl text-[10px] font-black tracking-widest uppercase" />
+                    <Input value={walkInPhone} onChange={e => e.target.value.length <= 10 ? setWalkInPhone(e.target.value) : null} disabled={isPaymentModalOpen || loading} placeholder="MOBILE..." className="h-10 bg-white dark:bg-slate-950 border-transparent focus:border-pink-500 rounded-xl text-[10px] font-black tracking-widest uppercase" />
                     <Input value={walkInName} onChange={e => setWalkInName(e.target.value)} disabled={isPaymentModalOpen || loading} placeholder="NAME..." className="h-10 bg-white dark:bg-slate-950 border-transparent focus:border-pink-500 rounded-xl text-[10px] font-black tracking-widest uppercase" />
                   </div>
                 ) : (
@@ -1252,30 +1263,32 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                       setActivePaymentAmount(grandTotal.toFixed(2));
                       setIsPaymentModalOpen(true);
                     }}
-                    disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
+                    disabled={loading || lines.filter(l => l.description || l.product_id).length === 0}
                     className="group relative px-10 py-4 bg-indigo-600 hover:bg-indigo-700 focus:ring-4 focus:ring-white/20 outline-none text-white rounded-2xl shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 text-lg font-black italic uppercase tracking-tighter overflow-hidden focus:translate-y-[-2px] border-2 border-transparent focus:border-white/50"
                   >
                     <div className="absolute inset-x-0 bottom-0 h-0.5 bg-white/20 animate-pulse" />
                     COLLECT SETTLEMENT <ArrowRight className="h-6 w-6 group-hover:translate-x-1 transition-transform" />
                   </button>
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); handleSave('draft'); }}
-                      disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
-                      className="px-6 py-4 bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all"
-                    >
-                      Save Draft
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => { e.preventDefault(); handleSave('posted'); }}
-                      disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
-                      className="px-8 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg"
-                    >
-                      Post Credit
-                    </button>
-                  </div>
+                  {!isRegistrationFee && (
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); handleSave('draft'); }}
+                        disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
+                        className="px-6 py-4 bg-slate-100 dark:bg-slate-800 border border-transparent hover:border-slate-300 dark:hover:border-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-500 transition-all"
+                      >
+                        Save Draft
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); handleSave('posted'); }}
+                        disabled={loading || lines.filter(l => l.product_id || l.description).length === 0}
+                        className="px-8 py-4 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg"
+                      >
+                        Post Credit
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
             </div>
