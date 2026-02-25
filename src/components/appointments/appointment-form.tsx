@@ -106,7 +106,16 @@ export function AppointmentForm({
             setSelectedPatientData(null)
 
             getPatientById(selectedPatientId).then(res => {
+                console.log("DEBUG: getPatientById Response", { success: res.success, hasData: !!res.data });
                 if (res.success) setSelectedPatientData(res.data)
+                else {
+                    console.error("DEBUG: Failed to fetch patient data", res.error);
+                    toast({ title: "Data Error", description: "Could not sync patient record.", variant: "destructive" });
+                    setSelectedPatientData({ id: selectedPatientId, metadata: {}, error: true }); // Prevent loading trap
+                }
+            }).catch(err => {
+                console.error("DEBUG: getPatientById Fatal Error", err);
+                setSelectedPatientData({ id: selectedPatientId, metadata: {}, error: true }); // Prevent loading trap
             })
         } else {
             setSelectedPatientData(null)
@@ -274,6 +283,11 @@ export function AppointmentForm({
         if (!id || id === 'undefined' || id === 'null') return { shouldCharge: false, status: 'none' };
 
         if (!selectedPatientData || selectedPatientData.id !== selectedPatientId) {
+            console.log("DEBUG: checkRegistrationStatus - LOADING/MISMATCH", {
+                hasData: !!selectedPatientData,
+                targetId: selectedPatientId,
+                currentDataId: selectedPatientData?.id
+            });
             return { shouldCharge: false, status: 'loading' };
         }
 
@@ -323,11 +337,19 @@ export function AppointmentForm({
 
         const isExpired = expiryDate < new Date();
 
-        return {
+        const result = {
             shouldCharge: isExpired,
             status: isExpired ? 'expired' : 'valid',
-            expiryDate: expiryDateStr
+            expiryDate: expiryDateStr,
+            debug: {
+                metadataStatus: metadata.status,
+                regFeesPaid: metadata.registration_fees_paid,
+                validityDays,
+                createdAt: createdAt.toISOString()
+            }
         };
+        console.log("DEBUG: checkRegistrationStatus Result", JSON.stringify(result, null, 2));
+        return result;
     };
 
     const handlePatientCreated = (newPatient: any) => {
@@ -472,8 +494,6 @@ export function AppointmentForm({
                                 setSelectedPatientId('');
                                 setSelectedPatientData(null);
                                 setNotes('');
-                                setRegFeePending(false);
-                                setConsFeePending(false);
                             }}
                             className="w-full py-5 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-3xl font-black uppercase text-[10px] tracking-[0.2em] hover:opacity-90 transition-all flex items-center justify-center gap-2"
                         >

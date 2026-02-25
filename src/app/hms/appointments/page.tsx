@@ -6,6 +6,7 @@ import { auth } from "@/auth"
 import SearchInput from "@/components/search-input"
 import AppointmentsCalendar from "@/components/appointments/appointments-calendar"
 import { AppointmentDialog, MobileAppointmentFab } from "@/components/appointments/appointment-dialog"
+import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/billing";
 
 export default async function AppointmentsPage() {
     const session = await auth()
@@ -17,7 +18,15 @@ export default async function AppointmentsPage() {
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    const [todayCount, inProgressCount, weekStart] = await Promise.all([
+    const [
+        todayCount,
+        inProgressCount,
+        weekStart,
+        itemsRes,
+        taxRes,
+        uomsRes,
+        companySettings
+    ] = await Promise.all([
         prisma.hms_appointments.count({
             where: {
                 tenant_id: tenantId,
@@ -38,8 +47,20 @@ export default async function AppointmentsPage() {
             ws.setDate(ws.getDate() - ws.getDay())
             ws.setHours(0, 0, 0, 0)
             return ws
-        })()
+        })(),
+        getBillableItems(),
+        getTaxConfiguration(),
+        getUoms(),
+        prisma.company_settings.findFirst({
+            where: { tenant_id: tenantId },
+            include: { currencies: true }
+        })
     ])
+
+    const billableItems = itemsRes.success ? itemsRes.data : [];
+    const taxConfig = taxRes.success ? taxRes.data : { defaultTax: null, taxRates: [] };
+    const uoms = (uomsRes as any).success ? (uomsRes as any).data : [];
+    const currency = companySettings?.currencies?.symbol || session?.user?.currencySymbol || '₹';
 
     // Fetch Patients and Doctors for the Modal
     const [patients, doctors] = await Promise.all([
@@ -108,7 +129,14 @@ export default async function AppointmentsPage() {
                                 {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                             </span>
                         </div>
-                        <AppointmentDialog patients={patients} doctors={doctors} />
+                        <AppointmentDialog
+                            patients={patients}
+                            doctors={doctors}
+                            billableItems={billableItems}
+                            taxConfig={taxConfig}
+                            uoms={uoms}
+                            currency={currency}
+                        />
                     </div>
                 </div>
 
@@ -166,7 +194,14 @@ export default async function AppointmentsPage() {
             </div>
 
             {/* Mobile Floating Action Button (FAB) - World Standard */}
-            <MobileAppointmentFab patients={patients} doctors={doctors} />
+            <MobileAppointmentFab
+                patients={patients}
+                doctors={doctors}
+                billableItems={billableItems}
+                taxConfig={taxConfig}
+                uoms={uoms}
+                currency={currency}
+            />
         </div>
     )
 }

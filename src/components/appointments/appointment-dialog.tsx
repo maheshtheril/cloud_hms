@@ -9,9 +9,20 @@ import { Button } from "@/components/ui/button"
 interface AppointmentDialogProps {
     patients: any[]
     doctors: any[]
+    billableItems?: any[]
+    taxConfig?: any
+    uoms?: any[]
+    currency?: string
 }
 
-export function AppointmentDialog({ patients, doctors }: AppointmentDialogProps) {
+export function AppointmentDialog({
+    patients,
+    doctors,
+    billableItems,
+    taxConfig,
+    uoms,
+    currency
+}: AppointmentDialogProps) {
     const [open, setOpen] = useState(false)
 
     return (
@@ -30,6 +41,10 @@ export function AppointmentDialog({ patients, doctors }: AppointmentDialogProps)
                         <AppointmentForm
                             patients={patients}
                             doctors={doctors}
+                            billableItems={billableItems}
+                            taxConfig={taxConfig}
+                            uoms={uoms}
+                            currency={currency}
                             onClose={() => setOpen(false)}
                         />
                     </div>
@@ -39,7 +54,14 @@ export function AppointmentDialog({ patients, doctors }: AppointmentDialogProps)
     )
 }
 
-export function MobileAppointmentFab({ patients, doctors }: AppointmentDialogProps) {
+export function MobileAppointmentFab({
+    patients,
+    doctors,
+    billableItems,
+    taxConfig,
+    uoms,
+    currency
+}: AppointmentDialogProps) {
     const [open, setOpen] = useState(false)
 
     return (
@@ -59,6 +81,10 @@ export function MobileAppointmentFab({ patients, doctors }: AppointmentDialogPro
                         <AppointmentForm
                             patients={patients}
                             doctors={doctors}
+                            billableItems={billableItems}
+                            taxConfig={taxConfig}
+                            uoms={uoms}
+                            currency={currency}
                             onClose={() => setOpen(false)}
                         />
                     </div>

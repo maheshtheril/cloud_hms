@@ -499,7 +499,7 @@ export async function createInvoice(data: {
                     },
                     hms_invoice_payments: payments.length > 0 ? {
                         create: payments.filter(p => safeNum(p.amount) > 0).map(p => ({
-                            id: randomUUID(),
+                            id: crypto.randomUUID(),
                             tenant_id: tenantId,
                             company_id: companyId,
                             amount: safeNum(p.amount),
@@ -904,7 +904,7 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
 
             await tx.hms_invoice_payments.create({
                 data: {
-                    id: randomUUID(),
+                    id: crypto.randomUUID(),
                     tenant_id: session.user.tenantId,
                     company_id: companyId,
                     invoice_id: invoiceId,
@@ -1989,7 +1989,7 @@ async function resolveAutoTax(rate: number, tenant_id: string, company_id: strin
             const alreadyMapped = await prisma.company_tax_maps.findFirst({ where: { company_id, tax_rate_id: existing.id } });
             if (!alreadyMapped) {
                 const mapData: any = {
-                    id: randomUUID(),
+                    id: crypto.randomUUID(),
                     tenant_id,
                     company_id,
                     tax_rate_id: existing.id,
@@ -2007,7 +2007,7 @@ async function resolveAutoTax(rate: number, tenant_id: string, company_id: strin
 
         if (!taxType) {
             const typeData: any = {
-                id: randomUUID(),
+                id: crypto.randomUUID(),
                 name: typeName,
                 description: `Auto Generated ${rate}%`,
                 is_active: true
@@ -2022,7 +2022,7 @@ async function resolveAutoTax(rate: number, tenant_id: string, company_id: strin
         if (!taxType) return null;
 
         const rateData: any = {
-            id: randomUUID(),
+            id: crypto.randomUUID(),
             tax_type_id: taxType.id,
             name: `${rate}%`,
             rate: rate,
@@ -2031,7 +2031,7 @@ async function resolveAutoTax(rate: number, tenant_id: string, company_id: strin
         const newRate = await prisma.tax_rates.create({ data: rateData });
 
         const mapData: any = {
-            id: randomUUID(),
+            id: crypto.randomUUID(),
             tenant_id,
             company_id,
             tax_rate_id: newRate.id,
