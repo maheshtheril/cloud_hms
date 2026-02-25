@@ -621,6 +621,20 @@ export function AppointmentForm({
                         />
 
                         {/* USER-FRIENDLY REGISTRATION TRIGGER (NORMAL PAY) */}
+                        <PatientPaymentDialog
+                            patientId={selectedPatientId}
+                            patientName={`${selectedPatientData?.first_name || ''} ${selectedPatientData?.last_name || ''}`.trim() || 'Selected Patient'}
+                            fixedAmount={150}
+                            autoOpen={isCollectingReg}
+                            onClose={() => setIsCollectingReg(false)}
+                            isRegistrationFee={true}
+                            onPaymentSuccess={() => {
+                                // [FIX] Keep open to see success screen/WhatsApp
+                                toast({ title: "Fee Paid", description: "Registration cleared." });
+                                refreshPatientData(); // Refresh to update status ring/strip
+                            }}
+                        />
+
                         {activeRegStatus.shouldCharge && (
                             <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 rounded-2xl flex items-center justify-between animate-in slide-in-from-top-2 shadow-inner">
                                 <div className="flex items-center gap-3">
@@ -630,23 +644,13 @@ export function AppointmentForm({
                                         <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Patient Registration Fee (₹150)</p>
                                     </div>
                                 </div>
-                                <PatientPaymentDialog
-                                    patientId={selectedPatientId}
-                                    patientName={`${selectedPatientData?.first_name || ''} ${selectedPatientData?.last_name || ''}`.trim() || 'Selected Patient'}
-                                    fixedAmount={150}
-                                    autoOpen={isCollectingReg}
-                                    onClose={() => setIsCollectingReg(false)}
-                                    onPaymentSuccess={() => {
-                                        // setIsCollectingReg(false); // [FIX] Keep open to see success screen/WhatsApp
-                                        toast({ title: "Fee Paid", description: "Registration cleared." });
-                                        refreshPatientData(); // Refresh to update status ring/strip
-                                    }}
-                                    trigger={
-                                        <button type="button" className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20">
-                                            Collect Now
-                                        </button>
-                                    }
-                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setIsCollectingReg(true)}
+                                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20"
+                                >
+                                    Collect Now
+                                </button>
                             </div>
                         )}
 

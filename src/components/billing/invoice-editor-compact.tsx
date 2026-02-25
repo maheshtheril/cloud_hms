@@ -124,8 +124,12 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     if (pId) {
       setSelectedPatientId(pId);
       setIsWalkIn(false);
+    } else if (initialPatientId && !selectedPatientId) {
+      // [FIX] Sync with prop if state is empty (handles late-bind mapping)
+      setSelectedPatientId(initialPatientId);
+      setIsWalkIn(false);
     }
-  }, [searchParams]);
+  }, [searchParams, initialPatientId, selectedPatientId]);
 
   const selectedPatientLabel = useMemo(() => {
     if (!selectedPatientId) return ''

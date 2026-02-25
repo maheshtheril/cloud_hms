@@ -18,6 +18,7 @@ interface PatientPaymentDialogProps {
     fixedAmount?: number; // [NEW] Allow overriding balance for specific fee collection
     appointmentId?: string; // [RCM-CONTEXT] Link to appointment for better idempotency
     autoOpen?: boolean; // [AUTO] Automatically open the dialog on mount
+    isRegistrationFee?: boolean; // [NEW] Explicit registration fee flag
 }
 
 
@@ -29,7 +30,8 @@ export function PatientPaymentDialog({
     trigger,
     fixedAmount,
     appointmentId,
-    autoOpen = false
+    autoOpen = false,
+    isRegistrationFee = false
 }: PatientPaymentDialogProps) {
     const { toast } = useToast();
     const [isOpen, setIsOpen] = useState(autoOpen);
@@ -124,7 +126,7 @@ export function PatientPaymentDialog({
                         appointmentId={appointmentId}
                         initialMedicines={initialMedicines}
                         initialInvoice={initialInvoice}
-                        isRegistrationFee={!!fixedAmount}
+                        isRegistrationFee={isRegistrationFee || !!fixedAmount}
                         onClose={() => {
                             setIsOpen(false);
                         }}

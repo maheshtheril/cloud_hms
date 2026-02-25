@@ -492,6 +492,7 @@ export async function createInvoice(data: {
                             unit_price: safeNum(l.unit_price),
                             discount_amount: safeNum(l.discount_amount),
                             tax_amount: safeNum(l.tax_amount),
+                            net_amount: (safeNum(l.quantity) * safeNum(l.unit_price)) - safeNum(l.discount_amount),
                             product_id: isUUID(l.product_id) ? l.product_id : null,
                             tax_rate_id: isUUID(l.tax_rate_id) ? l.tax_rate_id : null,
                             uom: l.uom || 'Unit'
