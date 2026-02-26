@@ -632,12 +632,16 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
         toast({ title: "Sync Successful", description: tallyMsg })
 
-        // EXPLICIT CLOSURE: Trigger success state instead of silent redirect
-        setLastSavedId(res.data?.id || null)
         setIsSuccess(true)
         setLoading(false)
+        setLastSavedId(res.data?.id || null)
+
+        // [WORLD CLASS STABILITY] Delay the parent callback to allow success screen to mount first
+        // and ensure the terminal doesn't unmount due to parent state updates immediately.
         if (onPaymentSuccess) {
-          onPaymentSuccess(res.data);
+          setTimeout(() => {
+            onPaymentSuccess(res.data);
+          }, 500);
         }
         // Do NOT close modal automatically if success screen is desired.
         // But if onPaymentSuccess is provided (like in popup mode), we might want to auto-close or show success within the popup?

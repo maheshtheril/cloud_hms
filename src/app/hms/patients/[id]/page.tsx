@@ -26,7 +26,8 @@ export default async function PatientDetailPage({ params }: { params: Promise<{ 
                     orderBy: { created_at: 'desc' },
                     take: 50,
                     include: {
-                        hms_invoice_lines: true
+                        hms_invoice_lines: true,
+                        hms_patient: true
                     }
                 },
                 prescription: {

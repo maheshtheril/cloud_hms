@@ -113,169 +113,122 @@ export function DetailedLedgerReport({
     }
 
     return (
-        <div className="space-y-8 p-4 md:p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
-            {/* Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white dark:bg-slate-900 p-8 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-xl no-print">
-                <div>
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="h-12 w-12 bg-black rounded-xl flex items-center justify-center shadow-2xl shadow-indigo-500/20 border border-white/10 shrink-0">
-                            <ZionaLogo size={32} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
+        <div className="min-h-screen bg-[#002b2b] text-[#ffffcc] font-mono select-none flex flex-col overflow-hidden">
+            {/* Tally Header Bar */}
+            <div className="h-8 bg-[#004d4d] flex items-center justify-between px-4 border-b border-[#006666] text-[10px] font-bold no-print">
+                <div className="flex items-center gap-4">
+                    <span className="text-[#64ffff]">{titleMap[type].toUpperCase()}</span>
+                    <span className="text-[#ffffcc]">Ziona HMS v4.5</span>
+                </div>
+                <div className="flex items-center gap-4">
+                    <span className="text-[#64ffff]">Enterprise ERP</span>
+                    <span className="text-[#ffffcc]">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}</span>
+                </div>
+            </div>
+
+            {/* Content Container */}
+            <div className="flex-1 flex gap-1 p-1 overflow-hidden">
+                {/* Main Ledger Area */}
+                <div className="flex-1 bg-[#004d4d] border border-[#006666] flex flex-col overflow-hidden">
+                    <div className="h-10 bg-[#006666] flex items-center px-4 justify-between border-b border-[#008080] no-print">
+                        <div className="flex items-center gap-6">
+                            <span className="text-[12px] font-black">LEDGER REGISTER</span>
+                            <div className="flex items-center bg-[#002b2b] border border-[#008080] px-2 rounded">
+                                <Calendar className="h-3 w-3 text-[#64ffff] mr-2" />
+                                <input
+                                    type="date"
+                                    value={format(date, 'yyyy-MM-dd')}
+                                    onChange={(e) => setDate(new Date(e.target.value))}
+                                    className="bg-transparent border-none text-[10px] h-6 focus:ring-0 text-[#ffffcc]"
+                                />
+                            </div>
                         </div>
-                        <Badge variant="outline" className="uppercase tracking-widest text-[10px] font-bold border-slate-200">Accounting Oversight</Badge>
+                        <div className="flex items-center gap-3">
+                            <div className="relative group">
+                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#64ffff]" />
+                                <input
+                                    type="text"
+                                    placeholder="SEARCH..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="h-6 pl-7 pr-2 bg-[#002b2b] border border-[#008080] rounded text-[10px] text-[#ffffcc] focus:outline-none focus:border-[#64ffff] w-48 transition-all"
+                                />
+                            </div>
+                            <button onClick={() => window.print()} className="h-6 px-3 bg-[#002b2b] hover:bg-[#003333] border border-[#008080] rounded text-[9px] font-black flex items-center gap-2">
+                                <Printer className="h-3 w-3" /> PRINT
+                            </button>
+                        </div>
                     </div>
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{titleMap[type]}</h1>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">Audit-ready transaction recording & verification</p>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-3">
-                    <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
-                        <input
-                            type="date"
-                            value={format(date, 'yyyy-MM-dd')}
-                            onChange={(e) => setDate(new Date(e.target.value))}
-                            className="bg-transparent border-none text-sm font-bold px-4 py-2 focus:ring-0 dark:text-white"
-                        />
-                    </div>
-                    <Button variant="outline" className="rounded-xl h-11 border-slate-200 dark:border-slate-800" onClick={() => window.print()}>
-                        <Printer className="h-4 w-4 mr-2" /> Print PDF
-                    </Button>
-                    <Button className="rounded-xl h-11 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:opacity-90" onClick={loadData}>
-                        <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Refresh
-                    </Button>
-                </div>
-            </div>
-
-            {/* Print Header (Visible only when printing) */}
-            <div className="hidden print:block text-center mb-8 border-b-2 pb-4">
-                <h1 className="text-2xl font-bold">{titleMap[type]}</h1>
-                <p className="text-sm">Date: {format(date, 'PPP')}</p>
-            </div>
-
-            {/* Summary Cards (Only for Cash/Bank) */}
-            {type !== 'daybook' && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <Card className="rounded-3xl border-none shadow-lg bg-white dark:bg-slate-900 overflow-hidden relative">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-slate-300 dark:bg-slate-700" />
-                        <CardHeader className="p-6 pb-2">
-                            <CardDescription className="uppercase text-[10px] font-black tracking-widest text-slate-400">Opening Balance</CardDescription>
-                            <CardTitle className="text-2xl font-black text-slate-900 dark:text-white">{formatCurrency(openingBalance)}</CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card className="rounded-3xl border-none shadow-lg bg-white dark:bg-slate-900 overflow-hidden relative">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-emerald-500" />
-                        <CardHeader className="p-6 pb-2">
-                            <CardDescription className="uppercase text-[10px] font-black tracking-widest text-emerald-500">Today's Inflow (Debits)</CardDescription>
-                            <CardTitle className="text-2xl font-black text-emerald-600">{formatCurrency(totalDebit)}</CardTitle>
-                        </CardHeader>
-                    </Card>
-                    <Card className="rounded-3xl border-none shadow-lg bg-white dark:bg-slate-900 overflow-hidden relative">
-                        <div className="absolute top-0 left-0 w-1 h-full bg-rose-500" />
-                        <CardHeader className="p-6 pb-2">
-                            <CardDescription className="uppercase text-[10px] font-black tracking-widest text-rose-500">Today's Outflow (Credits)</CardDescription>
-                            <CardTitle className="text-2xl font-black text-rose-600">{formatCurrency(totalCredit)}</CardTitle>
-                        </CardHeader>
-                    </Card>
-                </div>
-            )}
-
-            {/* Main Ledger Table */}
-            <Card className="rounded-[2rem] border-none shadow-2xl bg-white dark:bg-slate-900 overflow-hidden">
-                <CardHeader className="p-8 border-b border-slate-50 dark:border-slate-800 flex flex-row items-center justify-between gap-4 no-print">
-                    <div className="relative flex-1 max-w-md">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                        <Input
-                            placeholder="Search by Ref or Description..."
-                            className="pl-11 rounded-xl bg-slate-50 dark:bg-slate-800 border-none h-11 text-sm"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="text-[10px] font-black uppercase text-slate-400 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
-                                    <th className="px-8 py-4 w-32 whitespace-nowrap">Voucher No</th>
-                                    <th className="px-4 py-4 w-32 whitespace-nowrap">Time</th>
-                                    <th className="px-4 py-4 whitespace-nowrap">Transaction Details</th>
-                                    <th className="px-4 py-4 w-40 text-right whitespace-nowrap">Debit (In)</th>
-                                    <th className="px-8 py-4 w-40 text-right whitespace-nowrap">Credit (Out)</th>
+                    <div className="flex-1 overflow-auto">
+                        <table className="w-full text-left text-[11px] border-collapse">
+                            <thead className="sticky top-0 bg-[#006666] z-10 shadow-md">
+                                <tr className="text-[9px] font-black uppercase text-[#64ffff] border-b border-[#008080]">
+                                    <th className="px-4 py-2 w-32">Vch No.</th>
+                                    <th className="px-4 py-2 w-24">Date</th>
+                                    <th className="px-4 py-2">Particulars</th>
+                                    <th className="px-4 py-2 text-right w-32">Debit (In)</th>
+                                    <th className="px-4 py-2 text-right w-32">Credit (Out)</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                            <tbody className="divide-y divide-[#003333]">
+                                {type !== 'daybook' && (
+                                    <tr className="bg-[#002b2b]/40 font-black">
+                                        <td className="px-4 py-1 italic opacity-50 text-[9px]">BS</td>
+                                        <td className="px-4 py-1"></td>
+                                        <td className="px-4 py-1 text-[#64ffff]">Opening Balance</td>
+                                        <td className="px-4 py-1 text-right">{openingBalance > 0 ? openingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}</td>
+                                        <td className="px-4 py-1 text-right">{openingBalance < 0 ? Math.abs(openingBalance).toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}</td>
+                                    </tr>
+                                )}
+
                                 {loading ? (
                                     <tr>
-                                        <td colSpan={5} className="p-20 text-center">
-                                            <RefreshCcw className="h-10 w-10 animate-spin text-indigo-200 mx-auto mb-4" />
-                                            <p className="text-slate-400 font-medium tracking-widest uppercase text-xs">Reconstructing ledger state...</p>
-                                        </td>
+                                        <td colSpan={5} className="py-20 text-center text-[#64ffff] animate-pulse">SYNCHRONIZING LEDGER...</td>
                                     </tr>
                                 ) : filteredEntries.length === 0 ? (
                                     <tr>
-                                        <td colSpan={5} className="p-20 text-center">
-                                            <FileText className="h-12 w-12 text-slate-100 dark:text-slate-800 mx-auto mb-4" />
-                                            <p className="text-slate-400 dark:text-slate-500 font-medium italic">No transactions recorded for this period</p>
-                                        </td>
+                                        <td colSpan={5} className="py-20 text-center opacity-30 uppercase tracking-[0.3em]">No Transactions Found</td>
                                     </tr>
                                 ) : filteredEntries.map((e) => (
                                     <React.Fragment key={e.id}>
                                         <tr
-                                            className="group hover:bg-slate-50/50 dark:hover:bg-slate-800/20 transition-all cursor-pointer border-b last:border-0 border-slate-50 dark:border-slate-800/50"
+                                            className="hover:bg-[#002b2b] transition-colors cursor-pointer group"
                                             onClick={() => toggleExpand(e.id)}
                                         >
-                                            <td className="px-8 py-6">
-                                                <Badge variant="outline" className="font-mono text-[11px] px-2 py-1 rounded bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-200">{e.ref}</Badge>
-                                            </td>
-                                            <td className="px-4 py-6 text-sm font-medium text-slate-500 whitespace-nowrap">
-                                                {format(new Date(e.created_at || e.date), 'hh:mm aa')}
-                                            </td>
-                                            <td className="px-4 py-6">
-                                                <div className="flex flex-col">
-                                                    <span className="font-black text-slate-900 dark:text-white text-sm line-clamp-1">{e.journal_entry_lines[0]?.description || 'No description'}</span>
-                                                    <div className="flex items-center gap-2 mt-1 no-print">
-                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                                            {e.journal_entry_lines.length} lines detected
-                                                        </span>
-                                                        {expandedEntries.has(e.id) ? <ChevronUp className="h-3 w-3 text-slate-400" /> : <ChevronDown className="h-3 w-3 text-slate-400" />}
-                                                    </div>
+                                            <td className="px-4 py-2 font-bold text-[#64ffff]">{e.ref}</td>
+                                            <td className="px-4 py-2 opacity-80">{format(new Date(e.created_at || e.date), 'dd-MMM-yy').toUpperCase()}</td>
+                                            <td className="px-4 py-2">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-black text-[#ffffcc]">{e.journal_entry_lines[0]?.description?.toUpperCase() || 'NO NARRATION'}</span>
+                                                    <span className="text-[8px] opacity-40 group-hover:opacity-100 uppercase tracking-widest">{e.journal_entry_lines.length} LINES</span>
                                                 </div>
                                             </td>
-                                            <td className="px-4 py-6 text-right font-black text-slate-900 dark:text-white">
-                                                {e.journal_entry_lines.reduce((s: number, l: any) => s + Number(l.debit || 0), 0) > 0 ? (
-                                                    formatCurrency(e.journal_entry_lines.reduce((s: number, l: any) => s + Number(l.debit || 0), 0))
-                                                ) : '-'}
+                                            <td className="px-4 py-2 text-right font-black">
+                                                {e.journal_entry_lines.reduce((s: number, l: any) => s + Number(l.debit || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </td>
-                                            <td className="px-8 py-6 text-right font-black text-slate-900 dark:text-white">
-                                                {e.journal_entry_lines.reduce((s: number, l: any) => s + Number(l.credit || 0), 0) > 0 ? (
-                                                    formatCurrency(e.journal_entry_lines.reduce((s: number, l: any) => s + Number(l.credit || 0), 0))
-                                                ) : '-'}
+                                            <td className="px-4 py-2 text-right font-black">
+                                                {e.journal_entry_lines.reduce((s: number, l: any) => s + Number(l.credit || 0), 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                                             </td>
                                         </tr>
                                         <AnimatePresence>
-                                            {(expandedEntries.has(e.id) || typeof window !== 'undefined' && window.matchMedia('print').matches) && (
-                                                <tr>
-                                                    <td colSpan={5} className="bg-slate-50/50 dark:bg-slate-900/50 p-8 pt-0 md:px-20">
+                                            {(expandedEntries.has(e.id) || (typeof window !== 'undefined' && window.matchMedia('print').matches)) && (
+                                                <tr className="bg-[#002b2b]/60 border-y border-[#006666]">
+                                                    <td colSpan={5} className="px-8 py-2">
                                                         <motion.div
-                                                            initial={{ opacity: 0, y: -10 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            exit={{ opacity: 0, y: -10 }}
-                                                            className="border-t border-slate-100 dark:border-slate-800 py-6"
+                                                            initial={{ opacity: 0, height: 0 }}
+                                                            animate={{ opacity: 1, height: 'auto' }}
+                                                            exit={{ opacity: 0, height: 0 }}
+                                                            className="overflow-hidden"
                                                         >
-                                                            <div className="grid grid-cols-1 gap-4">
+                                                            <div className="space-y-1 py-2">
                                                                 {e.journal_entry_lines.map((l: any, i: number) => (
-                                                                    <div key={i} className="flex items-center justify-between text-xs group/line">
-                                                                        <div className="flex items-center gap-6">
-                                                                            <span className={`font-mono font-bold w-12 ${l.debit > 0 ? 'text-emerald-500' : 'text-slate-400'}`}>
-                                                                                {l.debit > 0 ? 'Debit' : 'Credit'}
-                                                                            </span>
-                                                                            <span className="font-bold text-slate-700 dark:text-slate-200 w-64">{l.accounts.name}</span>
-                                                                            <span className="text-slate-400 italic hidden md:inline">{l.description}</span>
-                                                                        </div>
-                                                                        <div className="flex gap-8">
-                                                                            <span className="w-24 text-right font-black text-slate-900 dark:text-slate-200">{l.debit > 0 ? formatCurrency(l.debit) : ''}</span>
-                                                                            <span className="w-24 text-right font-black text-slate-900 dark:text-slate-200">{l.credit > 0 ? formatCurrency(l.credit) : ''}</span>
-                                                                        </div>
+                                                                    <div key={i} className="flex items-center text-[10px] gap-4">
+                                                                        <span className="w-12 text-[#64ffff] font-black">{l.debit > 0 ? 'DR' : 'CR'}</span>
+                                                                        <span className="flex-1 text-[#ffffcc] font-bold">{l.accounts.name.toUpperCase()}</span>
+                                                                        <span className="flex-1 opacity-50 italic">{l.description}</span>
+                                                                        <span className="w-24 text-right font-black">{l.debit > 0 ? l.debit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}</span>
+                                                                        <span className="w-24 text-right font-black">{l.credit > 0 ? l.credit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : ''}</span>
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -287,23 +240,70 @@ export function DetailedLedgerReport({
                                     </React.Fragment>
                                 ))}
                             </tbody>
-                            <tfoot className="bg-slate-900 dark:bg-slate-950 text-white border-t-2 border-slate-800">
-                                <tr className="font-black">
-                                    <td colSpan={3} className="px-8 py-6 text-right uppercase text-[10px] tracking-widest text-slate-500">Total Movements</td>
-                                    <td className="px-4 py-6 text-right text-lg">{formatCurrency(totalDebit)}</td>
-                                    <td className="px-8 py-6 text-right text-lg">{formatCurrency(totalCredit)}</td>
+                            <tfoot className="bg-[#003333] border-t-2 border-[#008080] font-black">
+                                <tr>
+                                    <td colSpan={3} className="px-4 py-2 text-right text-[9px] uppercase text-[#64ffff]">Total Inflow/Outflow</td>
+                                    <td className="px-4 py-2 text-right border-t border-[#006666]">{totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                    <td className="px-4 py-2 text-right border-t border-[#006666]">{totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                                 </tr>
                                 {type !== 'daybook' && (
-                                    <tr className="bg-slate-950 border-t border-white/5">
-                                        <td colSpan={3} className="px-8 py-4 text-right uppercase text-[10px] tracking-widest text-slate-500 font-black">Closing Balance (Carried Forward)</td>
-                                        <td colSpan={2} className="px-8 py-4 text-right text-2xl font-black text-indigo-400">{formatCurrency(closingBalance)}</td>
+                                    <tr className="bg-[#002b2b]">
+                                        <td colSpan={3} className="px-4 py-2 text-right text-[9px] uppercase text-[#64ffff]">Closing Balance (C/F)</td>
+                                        <td colSpan={2} className="px-4 py-2 text-right text-sm text-[#ffffcc] font-black border-t-4 border-double border-[#006666]">{closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                                     </tr>
                                 )}
                             </tfoot>
                         </table>
                     </div>
-                </CardContent>
-            </Card>
+
+                    {/* Footer Stats Bar */}
+                    <div className="h-8 bg-[#003333] border-t border-[#006666] flex items-center justify-between px-6 text-[9px] font-bold no-print">
+                        <div className="flex gap-8">
+                            <span className="text-[#64ffff]">RECORDS: {filteredEntries.length}</span>
+                            <span className="text-[#64ffff]">STATUS: BALANCED</span>
+                            <span className="text-[#64ffff]">USER: INSTITUTIONAL ADMIN</span>
+                        </div>
+                        <div className="flex gap-4">
+                            <span className="text-[#64ffff] animate-pulse">REAL-TIME SYNC ACTIVE</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Side Options Bar */}
+                <div className="w-48 bg-[#003333] border border-[#006666] flex flex-col p-1 gap-1 no-print">
+                    <div className="bg-[#004d4d] flex flex-col items-center py-2 border border-[#006666] mb-1">
+                        <span className="text-[10px] font-black text-[#ffffcc]">OPTIONS</span>
+                    </div>
+
+                    <div className="flex-1 space-y-1">
+                        {[
+                            { f: 'F1', l: 'Select Cmp' },
+                            { f: 'F2', l: 'Period' },
+                            { f: 'F4', l: 'Contra' },
+                            { f: 'F5', l: 'Payment' },
+                            { f: 'F6', l: 'Receipt' },
+                            { f: 'F7', l: 'Journal' },
+                            { f: 'F8', l: 'Sales' },
+                            { f: 'F9', l: 'Purchase' },
+                            { f: 'F11', l: 'Features' },
+                            { f: 'F12', l: 'Configure' },
+                        ].map(btn => (
+                            <button key={btn.f} className="w-full h-6 flex items-center px-2 text-[9px] text-[#ffffcc] hover:bg-[#004d4d] border border-transparent hover:border-[#008080] transition-all">
+                                <span className="w-8 opacity-50">{btn.f}</span>
+                                <span className="flex-1 text-left uppercase">{btn.l}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="bg-[#004d4d] p-2 border border-[#006666]">
+                        <p className="text-[7px] text-[#64ffff]/60 uppercase leading-tight">
+                            Institutional Authority<br />
+                            Ziona Global Financials<br />
+                            Layer 3 Security Active
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
-    )
+    );
 }
