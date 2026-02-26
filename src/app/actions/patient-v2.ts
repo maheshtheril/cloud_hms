@@ -141,6 +141,7 @@ export async function createPatient(existingId: string | null | any, formData: F
             expiryDate.setFullYear(expiryDate.getFullYear() - 10);
             metadata.registration_expiry = expiryDate.toISOString();
             metadata.status = 'awaiting_payment';
+            metadata.accounting_group = (formData.get('accounting_group') as string) || 'general';
 
             patient = await prisma.hms_patient.create({
                 data: {

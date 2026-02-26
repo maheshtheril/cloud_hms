@@ -76,6 +76,7 @@ export async function createPatientEmergency(existingId: string | null | any, fo
         metadata.registration_date = registrationDate.toISOString();
         metadata.registration_expiry = expiryDate.toISOString();
         metadata.status = 'awaiting_payment';
+        metadata.accounting_group = (formData.get('accounting_group') as string) || 'general';
 
         patient = await prisma.hms_patient.create({
             data: {
