@@ -584,10 +584,11 @@ export function AppointmentForm({
                             const form = document.getElementById('appointment-terminal-form') as HTMLFormElement;
                             if (form) form.requestSubmit();
                         }}
-                        disabled={isPending}
-                        className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-500/20 font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center gap-3 border border-indigo-400/20 disabled:opacity-50"
+                        disabled={isPending || isLoadingPatient || activeRegStatus.shouldCharge || activeRegStatus.status === 'loading'}
+                        title={isLoadingPatient ? 'Loading patient...' : activeRegStatus.shouldCharge ? 'Collect registration fee first' : ''}
+                        className="px-8 py-3 bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white rounded-2xl shadow-xl shadow-indigo-500/20 font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center gap-3 border border-indigo-400/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
                     >
-                        {isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
+                        {(isPending || isLoadingPatient) ? <Loader2 className="h-5 w-5 animate-spin" /> : <Save className="h-5 w-5" />}
                         {editingAppointment ? 'Update Encounter' : 'Save'}
                     </button>
                 </div>
