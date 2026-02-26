@@ -5,6 +5,7 @@ import { auth } from "@/auth"
 import { getUserPermissions, seedRolesAndPermissions } from "./rbac"
 import { ensureAdminMenus, ensureCrmMenus } from "@/lib/menu-seeder"
 import crypto from "crypto";
+import { unstable_noStore as noStore } from 'next/cache';
 
 export async function getMenuItems() {
     noStore();
