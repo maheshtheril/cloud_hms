@@ -7,6 +7,24 @@ import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/bi
 
 export const dynamic = 'force-dynamic'
 
+// [WORLD-CLASS SERIALIZATION] Recursively convert Prisma.Decimal or any non-serializable numeric objects to standard numbers
+function serialize(obj: any): any {
+    if (obj === null || typeof obj !== 'object') return obj;
+    if (Array.isArray(obj)) return obj.map(serialize);
+    if (obj instanceof Date) return obj;
+
+    // Prisma Decimals usually have a toJSON or toNumber method
+    if (obj.constructor && obj.constructor.name === 'Decimal' && typeof obj.toNumber === 'function') {
+        return obj.toNumber();
+    }
+
+    const newObj: any = {};
+    for (const key in obj) {
+        newObj[key] = serialize(obj[key]);
+    }
+    return newObj;
+}
+
 export default async function ReceptionDashboardPage() {
     const session = await auth()
 
@@ -223,21 +241,21 @@ export default async function ReceptionDashboardPage() {
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 max-w-7xl mx-auto space-y-6">
             {/* ShiftManager moved to Action Center */}
             <ReceptionActionCenter
-                todayAppointments={formattedAppointments}
-                patients={patientsList}
-                doctors={doctorsList}
+                todayAppointments={serialize(formattedAppointments)}
+                patients={serialize(patientsList)}
+                doctors={serialize(doctorsList)}
                 dailyCollection={totalCollection}
                 collectionBreakdown={collectionBreakdown}
-                todayPayments={serializedPayments}
-                todayExpenses={serializedExpenses}
+                todayPayments={serialize(serializedPayments)}
+                todayExpenses={serialize(serializedExpenses)}
                 totalExpenses={totalExpenses}
                 draftCount={draftCountVal}
                 availableBeds={availableBedsCount}
-                branches={branches || []}
+                branches={serialize(branches || [])}
                 isAdmin={isAdmin}
-                billableItems={billableItems}
-                taxConfig={taxConfig}
-                uoms={uoms}
+                billableItems={serialize(billableItems)}
+                taxConfig={serialize(taxConfig)}
+                uoms={serialize(uoms)}
                 currency={currency}
             />
         </div>
