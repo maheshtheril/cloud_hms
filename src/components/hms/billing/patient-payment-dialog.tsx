@@ -36,6 +36,11 @@ export function PatientPaymentDialog({
     const { toast } = useToast();
     const [isOpen, setIsOpen] = useState(autoOpen);
 
+    // [STABILITY] Sync internal open state with parent prop (crucial for autoOpen triggers)
+    useEffect(() => {
+        if (autoOpen) setIsOpen(true);
+    }, [autoOpen]);
+
     const handleOpenChange = (open: boolean) => {
         setIsOpen(open);
         if (!open && onClose) onClose();

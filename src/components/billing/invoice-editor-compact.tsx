@@ -931,18 +931,18 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
       <div className={`relative flex flex-col bg-white dark:bg-slate-900 shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-200 dark:border-slate-800 transition-all duration-500 ease-out ${isMaximized ? 'w-full h-full' : 'w-full max-w-[98vw] h-[95vh] rounded-[2.5rem]'}`} onClick={e => e.stopPropagation()}>
 
-        {/* 1. Header Area */}
-        <div className="flex items-center justify-between px-6 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 z-20">
+        {/* 1. Tally-Style Header Area */}
+        <div className="flex items-center justify-between px-6 py-2 border-b border-[#006666] bg-[#004d4d] z-20 no-print">
           <div className="flex items-center gap-4">
-            <div className="bg-black p-1.5 rounded-xl text-white shadow-2xl shadow-indigo-500/20 border border-white/10">
-              <ZionaLogo size={24} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
+            <div className="bg-[#002b2b] p-1.5 rounded border border-[#008080]">
+              <ZionaLogo size={20} variant="icon" theme="dark" speed="slow" colorScheme="signature" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white tracking-tight italic">Financial Billing Terminal</h2>
+              <h2 className="text-[12px] font-black text-[#ffffcc] tracking-tight truncate">FINANCIAL BILLING TERMINAL - Ziona HMS v4.5</h2>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-500 bg-indigo-500/5 px-2 py-0.5 rounded-full">CORE FINANCE L3</span>
-                <div className="h-1 w-1 rounded-full bg-slate-300" />
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Services & Pharmacy Terminal</p>
+                <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#64ffff]">GATEWAY OF BILLING</span>
+                <div className="h-1 w-1 rounded-full bg-[#006666]" />
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-[#ffffcc]/60">Transaction Mode: Standard Ledger Node</p>
               </div>
             </div>
           </div>
@@ -1021,24 +1021,29 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
           </div>
         </div>
 
-        {/* 2. Metadata Ribbon & Debt Alert (Regulatory Compliance) */}
-        <div className="flex items-center justify-between px-6 py-2 bg-slate-100/50 dark:bg-slate-800/10 border-b border-slate-200/50 dark:border-slate-800/50 z-10 transition-all">
+        {/* 2. Tally-Style Ribbon Area */}
+        <div className="flex items-center justify-between px-6 py-2 bg-[#003333] border-b border-[#006666] z-10 transition-all no-print">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
-              <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">Ledger Identity:</span>
-              <span className="text-[10px] font-mono font-black text-indigo-600 dark:text-indigo-400 bg-indigo-500/5 dark:bg-indigo-500/10 px-2 py-0.5 rounded cursor-help">
+              <span className="text-[9px] font-black uppercase tracking-widest text-[#64ffff]">VOUCHER NO:</span>
+              <span className="text-[10px] font-mono font-black text-[#ffffcc] bg-[#002b2b] border border-[#006666] px-2 py-0.5 rounded">
                 {provisionalNo}
               </span>
             </div>
-            <div className="h-3 w-[1px] bg-slate-200 dark:bg-slate-700" />
+            <div className="h-3 w-[1px] bg-[#006666]" />
             <div className="flex items-center gap-2 group">
-              <Clock className="h-3 w-3 text-slate-400 group-hover:text-indigo-500 transition-all" />
+              <span className="text-[9px] font-black uppercase tracking-widest text-[#64ffff]">DATE:</span>
               <input
                 type="date"
                 value={date}
                 onChange={e => setDate(e.target.value)}
-                className="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-300 focus:ring-0 cursor-pointer hover:text-indigo-600 transition-all p-0"
+                className="bg-transparent border-none text-[10px] font-black text-[#ffffcc] focus:ring-0 cursor-pointer p-0"
               />
+            </div>
+            <div className="h-3 w-[1px] bg-[#006666]" />
+            <div className="flex items-center gap-2">
+              <span className="text-[9px] font-black uppercase tracking-widest text-[#64ffff]">PARTICULARS:</span>
+              <span className="text-[10px] font-black text-[#ffffcc]">{patients.find(p => p.id === selectedPatientId)?.label?.toUpperCase() || 'WALK-IN PATIENT'}</span>
             </div>
           </div>
 
@@ -1082,19 +1087,19 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
           <div className="max-w-[1400px] mx-auto">
             <div className="bg-white dark:bg-slate-950 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden">
               <table className="w-full text-left">
-                <thead className="bg-slate-900 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400 border-b border-slate-800">
+                <thead className="bg-[#006666] text-[9px] font-black uppercase tracking-[0.3em] text-[#64ffff] border-b border-[#008080]">
                   <tr>
-                    <th className="px-8 py-4">Item Description</th>
-                    <th className="px-4 py-4 w-24">Type</th>
-                    <th className="px-4 py-4 w-28 text-center">Qty</th>
-                    <th className="px-4 py-4 w-32">UOM</th>
-                    <th className="px-4 py-4 w-32">Rate</th>
-                    <th className="px-4 py-4 w-36">Tax %</th>
-                    <th className="px-8 py-4 w-36 text-right italic">Total</th>
-                    <th className="px-4 py-4 w-12"></th>
+                    <th className="px-8 py-2">Item Description</th>
+                    <th className="px-4 py-2 w-24">Type</th>
+                    <th className="px-4 py-2 w-28 text-center">Qty</th>
+                    <th className="px-4 py-2 w-32">UOM</th>
+                    <th className="px-4 py-2 w-32">Rate</th>
+                    <th className="px-4 py-2 w-36">Tax %</th>
+                    <th className="px-8 py-2 w-36 text-right">Total</th>
+                    <th className="px-4 py-2 w-12"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-900 border-b border-slate-100 dark:border-slate-900">
+                <tbody className="divide-y divide-[#003333] border-b border-[#006666] bg-[#004d4d] text-[#ffffcc]">
                   {lines.map((line, index) => {
                     const lineTotal = (line.quantity * line.unit_price);
                     const isZeroLine = (line.product_id || line.description) && lineTotal === 0;
