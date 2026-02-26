@@ -658,11 +658,11 @@ export function AppointmentForm({
                             autoOpen={isCollectingReg}
                             onClose={() => setIsCollectingReg(false)}
                             isRegistrationFee={true}
+                            trigger={<span />}
                             onPaymentSuccess={(data) => {
-                                // [FIX] Capture invoice ID for printing link
                                 setPaidInvoiceId(data?.id || null);
                                 toast({ title: "Fee Paid", description: "Registration cleared." });
-                                refreshPatientData(); // Refresh to update status ring/strip
+                                refreshPatientData();
                             }}
                         />
 
