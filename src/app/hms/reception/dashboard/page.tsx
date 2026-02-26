@@ -73,19 +73,45 @@ export default async function ReceptionDashboardPage() {
                     tenant_id: tenantId,
                     starts_at: { gte: todayStart, lte: todayEnd }
                 },
-                include: {
-                    hms_patient: true,
-                    hms_clinician: true,
+                select: {
+                    id: true,
+                    patient_id: true,
+                    clinician_id: true,
+                    starts_at: true,
+                    ends_at: true,
+                    status: true,
+                    type: true,
+                    priority: true,
+                    notes: true,
+                    hms_patient: {
+                        select: {
+                            id: true,
+                            first_name: true,
+                            last_name: true,
+                            patient_number: true,
+                            dob: true,
+                            gender: true,
+                            contact: true
+                        }
+                    },
+                    hms_clinician: {
+                        select: {
+                            id: true,
+                            first_name: true,
+                            last_name: true,
+                            hms_specializations: { select: { name: true } }
+                        }
+                    },
                     prescription: { select: { id: true } },
                     hms_invoice: { select: { id: true, status: true, total: true, outstanding_amount: true } },
                     hms_lab_order: { select: { id: true, status: true } }
                 },
-                orderBy: { created_at: 'desc' }
+                orderBy: { starts_at: 'desc' }
             }),
             prisma.hms_patient.findMany({
                 where: { tenant_id: tenantId },
                 take: 100,
-                orderBy: { updated_at: 'desc' },
+                orderBy: { created_at: 'desc' },
                 select: {
                     id: true,
                     first_name: true,
@@ -115,7 +141,12 @@ export default async function ReceptionDashboardPage() {
                     tenant_id: tenantId,
                     paid_at: { gte: todayStart, lte: todayEnd }
                 },
-                include: {
+                select: {
+                    id: true,
+                    amount: true,
+                    method: true,
+                    paid_at: true,
+                    payment_reference: true,
                     hms_invoice: {
                         select: {
                             invoice_number: true,
@@ -130,6 +161,14 @@ export default async function ReceptionDashboardPage() {
                     tenant_id: tenantId,
                     metadata: { path: ['type'], equals: 'outbound' },
                     created_at: { gte: todayStart, lte: todayEnd }
+                },
+                select: {
+                    id: true,
+                    amount: true,
+                    payment_number: true,
+                    reference: true,
+                    created_at: true,
+                    method: true
                 },
                 orderBy: { created_at: 'desc' }
             }),
