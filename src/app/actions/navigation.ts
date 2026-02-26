@@ -6,12 +6,10 @@ import { getUserPermissions, seedRolesAndPermissions } from "./rbac"
 import { ensureAdminMenus, ensureCrmMenus } from "@/lib/menu-seeder"
 import crypto from "crypto";
 
-import { unstable_noStore as noStore } from 'next/cache';
-
 export async function getMenuItems() {
     noStore();
     const session = await auth();
-    // if (!session?.user) return []; 
+    if (!session?.user) return getFallbackMenuItems(false);
 
     const isAdmin = session?.user?.isAdmin || (session?.user as any)?.isTenantAdmin;
     const userId = session?.user?.id;

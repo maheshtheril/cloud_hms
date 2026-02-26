@@ -121,7 +121,11 @@ export function CreatePatientForm({
     const [ageUnit, setAgeUnit] = useState(initialAgeData.unit);
     const [dob, setDob] = useState(initialData?.dob ? new Date(initialData.dob).toISOString().split('T')[0] : '');
     const [gender, setGender] = useState(initialData?.gender || 'male');
-    const [accountingGroup, setAccountingGroup] = useState(initialData?.accounting_group || 'general');
+    const [accountingGroup, setAccountingGroup] = useState(
+        initialData?.accounting_group ||
+        (initialData?.metadata as any)?.accounting_group ||
+        'general'
+    );
 
 
     // Billing Options State

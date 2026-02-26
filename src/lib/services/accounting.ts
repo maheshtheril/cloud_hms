@@ -1605,7 +1605,7 @@ export class AccountingService {
     static async resolvePatientARAccount(companyId: string, defaultArId: string | null, patient: any) {
         if (!patient) return defaultArId;
 
-        const category = patient.accounting_group || (patient.metadata as any)?.accounting_category || 'general';
+        const category = (patient.metadata as any)?.accounting_group || (patient.metadata as any)?.accounting_category || 'general';
         let code = '1200'; // General Patients
 
         if (category === 'insurance') code = '1210';
