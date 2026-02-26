@@ -783,11 +783,18 @@ export function AppointmentForm({
                 </div>
 
                 {/* Secondary Save Trigger (Legacy Consistency) */}
-                <div className="p-4 bg-slate-50 dark:bg-white/[0.02] border-t border-gray-100 dark:border-white/5 flex justify-end shrink-0">
+                <div className="p-4 bg-slate-50 dark:bg-white/[0.02] border-t border-gray-100 dark:border-white/5 flex flex-col items-end gap-2 shrink-0">
+                    {activeRegStatus.shouldCharge && (
+                        <p className="text-xs font-bold text-red-500 uppercase tracking-widest flex items-center gap-1.5">
+                            <span>⛔</span>
+                            {activeRegStatus.status === 'expired' ? 'Registration expired — renew fee to enable booking' : 'Registration fee pending — collect fee to enable booking'}
+                        </p>
+                    )}
                     <button
                         type="submit"
-                        disabled={isPending}
-                        className="px-10 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-500/20 font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-3 disabled:opacity-50"
+                        disabled={isPending || activeRegStatus.shouldCharge}
+                        title={activeRegStatus.shouldCharge ? 'Collect registration fee first' : ''}
+                        className="px-10 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-500/20 font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
                     >
                         {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                         {editingAppointment ? 'Update Record' : 'Finalize & Save'}
