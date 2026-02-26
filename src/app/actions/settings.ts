@@ -231,11 +231,6 @@ export async function getHMSSettings() {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
 
-    const isAdmin = await checkPermission('hms:admin');
-    if (!isAdmin) {
-        return { error: "Access Denied: You need 'hms:admin' permission to manage clinical settings." };
-    }
-
     try {
         const companyId = session.user.companyId;
         const tenantId = session.user.tenantId;

@@ -54,7 +54,8 @@ export async function getCurrentCompany() {
 
     try {
         return await prisma.company.findUnique({
-            where: { id: companyId }
+            where: { id: companyId },
+            select: { id: true, name: true, industry: true, logo_url: true }
         });
     } catch (error) {
         console.error("Failed to fetch current company:", error);
@@ -76,7 +77,16 @@ export async function switchCompany(companyId: string) {
 
         const company = await prisma.company.findUnique({
             where: { id: companyId },
-            include: { branches: { where: { is_active: true }, take: 1 } }
+            select: {
+                id: true,
+                tenant_id: true,
+                enabled: true,
+                branches: {
+                    where: { is_active: true },
+                    take: 1,
+                    select: { id: true }
+                }
+            }
         });
 
         if (!company || company.tenant_id !== user.tenant_id) {

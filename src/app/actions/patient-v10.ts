@@ -65,28 +65,28 @@ export async function createPatientV10(patientId: string | null | any, formData:
     }
     if (!companyId) return { error: "FACILITY_NOT_LINKED: Terminal must be associated with an active medical branch." };
 
-    // 3. DUPLICATE CHECK (Mobile Number)
-    const isUpdate = (patientId && typeof patientId === 'string' && patientId.length > 30);
-    if (!isUpdate) {
-        const existingPatient = await prisma.hms_patient.findFirst({
-            where: {
-                tenant_id: tenantId,
-                contact: {
-                    path: ['phone'],
-                    equals: phone
-                }
-            }
-        });
-
-        if (existingPatient) {
-            return {
-                error: `DUPLICATE_FOUND: A patient with this mobile number (${phone}) is already registered as ${existingPatient.first_name}.`,
-                data: existingPatient
-            };
-        }
-    }
-
     try {
+        // 3. DUPLICATE CHECK (Mobile Number)
+        const isUpdate = (patientId && typeof patientId === 'string' && patientId.length > 30);
+        if (!isUpdate) {
+            const existingPatient = await prisma.hms_patient.findFirst({
+                where: {
+                    tenant_id: tenantId,
+                    contact: {
+                        path: ['phone'],
+                        equals: phone
+                    }
+                },
+                select: { id: true, first_name: true }
+            });
+
+            if (existingPatient) {
+                return {
+                    error: `DUPLICATE_FOUND: A patient with this mobile number (${phone}) is already registered as ${existingPatient.first_name}.`,
+                    data: existingPatient
+                };
+            }
+        }
         // -----------------------------------------------------------------------------------
         // MASTER PATIENT INDEX (UPSERT) - DIRECT MODE (No Transaction, No Others)
         // -----------------------------------------------------------------------------------

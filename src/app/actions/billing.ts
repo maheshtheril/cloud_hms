@@ -1577,7 +1577,15 @@ export async function generateRegistrationInvoice(patientId: string, appointment
                         }
                     }
                 },
-                include: { hms_invoice_lines: true },
+                select: {
+                    id: true,
+                    invoice_number: true,
+                    status: true,
+                    total: true,
+                    hms_invoice_lines: {
+                        select: { id: true, description: true, net_amount: true, unit_price: true }
+                    }
+                },
                 orderBy: { created_at: 'desc' }
             });
 
@@ -1668,9 +1676,17 @@ export async function generateRegistrationInvoice(patientId: string, appointment
                         }
                     }
                 },
-                include: {
-                    hms_invoice_lines: true,
-                    hms_patient: true
+                select: {
+                    id: true,
+                    invoice_number: true,
+                    status: true,
+                    total: true,
+                    hms_invoice_lines: {
+                        select: { id: true, description: true, net_amount: true, unit_price: true }
+                    },
+                    hms_patient: {
+                        select: { id: true, first_name: true, last_name: true }
+                    }
                 }
             });
         }, { timeout: 15000 });
@@ -1703,9 +1719,17 @@ export async function getOpenRegistrationInvoice(patientId: string) {
                     }
                 }
             },
-            include: {
-                hms_invoice_lines: true,
-                hms_patient: true
+            select: {
+                id: true,
+                invoice_number: true,
+                status: true,
+                total: true,
+                hms_invoice_lines: {
+                    select: { id: true, description: true, net_amount: true, unit_price: true }
+                },
+                hms_patient: {
+                    select: { id: true, first_name: true, last_name: true }
+                }
             },
             orderBy: { created_at: 'desc' }
         });

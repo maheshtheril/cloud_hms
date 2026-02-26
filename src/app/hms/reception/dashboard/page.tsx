@@ -187,7 +187,11 @@ export default async function ReceptionDashboardPage() {
             getUoms(),
             prisma.company_settings.findUnique({
                 where: { company_id: companyId },
-                include: { currencies: true }
+                select: {
+                    currencies: {
+                        select: { symbol: true, code: true }
+                    }
+                }
             })
         ]);
 
