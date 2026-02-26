@@ -441,81 +441,80 @@ export function AppointmentForm({
     }, [selectedPatientId, localPatients]);
     const activeRegStatus = checkRegistrationStatus();
 
-    // [NEW] SUCCESS STAGE VIEW
-    if (saveSuccess) {
-        return (
-            <div className="fixed inset-0 z-[200] bg-slate-950 flex items-center justify-center p-4">
-                <div className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden border border-white/10 p-10 text-center animate-in zoom-in-95 duration-300">
-                    <div className="h-24 w-24 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/20">
-                        <CheckCircle className="h-12 w-12 text-emerald-600 dark:text-emerald-400 animate-bounce" />
-                    </div>
+    // [NEW] SUCCESS STAGE VIEW (REFACTORED: Moved inside main return to survive billing terminal)
+    const renderSuccessView = () => (
+        <div className="fixed inset-0 z-[200] bg-slate-950 flex items-center justify-center p-4">
+            <div className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden border border-white/10 p-10 text-center animate-in zoom-in-95 duration-300">
+                <div className="h-24 w-24 bg-emerald-100 dark:bg-emerald-900/50 rounded-full flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/20">
+                    <CheckCircle className="h-12 w-12 text-emerald-600 dark:text-emerald-400 animate-bounce" />
+                </div>
 
-                    <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter mb-2">Appointment <span className="text-emerald-600">Finalized</span></h2>
-                    <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mb-8">Patient flow initiated for OP Consultation</p>
+                <h2 className="text-4xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter mb-2">Appointment <span className="text-emerald-600">Finalized</span></h2>
+                <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mb-8">Patient flow initiated for OP Consultation</p>
 
-                    <div className="mb-10 text-slate-400 font-medium">
-                        The medical record has been securely saved and synchronized with the clinical terminal.
-                    </div>
+                <div className="mb-10 text-slate-400 font-medium">
+                    The medical record has been securely saved and synchronized with the clinical terminal.
+                </div>
 
-                    {/* CLEAN SUCCESS ACTIONS */}
-                    <div className="flex flex-col gap-3">
-                        <div className="grid grid-cols-2 gap-3">
-                            <OpSlipDialog
-                                appointment={{
-                                    ...saveSuccess,
-                                    patient: saveSuccess.patient || selectedPatientData || selectedPatient,
-                                    clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId)
-                                }}
-                                defaultPrintMode="standard"
-                                trigger={
-                                    <button className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-3xl shadow-xl shadow-emerald-600/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">
-                                        <Printer className="h-4 w-4" /> OP Slip (A4)
-                                    </button>
-                                }
-                            />
-
-                            <OpSlipDialog
-                                appointment={{
-                                    ...saveSuccess,
-                                    patient: saveSuccess.patient || selectedPatientData || selectedPatient,
-                                    clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId)
-                                }}
-                                defaultPrintMode="label"
-                                trigger={
-                                    <button className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-3xl shadow-xl shadow-indigo-600/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">
-                                        <Printer className="h-4 w-4" /> Patient Label
-                                    </button>
-                                }
-                            />
-                        </div>
-
-                        <button
-                            onClick={() => {
-                                setSaveSuccess(null);
-                                setSelectedPatientId('');
-                                setSelectedPatientData(null);
-                                setNotes('');
+                {/* CLEAN SUCCESS ACTIONS */}
+                <div className="flex flex-col gap-3">
+                    <div className="grid grid-cols-2 gap-3">
+                        <OpSlipDialog
+                            appointment={{
+                                ...saveSuccess,
+                                patient: saveSuccess.patient || selectedPatientData || selectedPatient,
+                                clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId)
                             }}
-                            className="w-full py-5 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-3xl font-black uppercase text-[10px] tracking-[0.2em] hover:opacity-90 transition-all flex items-center justify-center gap-2"
-                        >
-                            <Plus className="h-4 w-4" /> Register New Patient
-                        </button>
+                            defaultPrintMode="standard"
+                            trigger={
+                                <button className="w-full py-5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-3xl shadow-xl shadow-emerald-600/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">
+                                    <Printer className="h-4 w-4" /> OP Slip (A4)
+                                </button>
+                            }
+                        />
 
-                        <button
-                            onClick={() => router.push('/reception')}
-                            className="w-full py-4 text-slate-400 font-bold uppercase text-[9px] tracking-[0.3em] hover:text-slate-600 transition-all"
-                        >
-                            Return to Dashboard
-                        </button>
+                        <OpSlipDialog
+                            appointment={{
+                                ...saveSuccess,
+                                patient: saveSuccess.patient || selectedPatientData || selectedPatient,
+                                clinician: saveSuccess.clinician || doctors.find(d => d.id === selectedClinicianId)
+                            }}
+                            defaultPrintMode="label"
+                            trigger={
+                                <button className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-3xl shadow-xl shadow-indigo-600/20 font-black uppercase text-[10px] tracking-[0.2em] transition-all active:scale-95 flex items-center justify-center gap-2">
+                                    <Printer className="h-4 w-4" /> Patient Label
+                                </button>
+                            }
+                        />
                     </div>
+
+                    <button
+                        onClick={() => {
+                            setSaveSuccess(null);
+                            setSelectedPatientId('');
+                            setSelectedPatientData(null);
+                            setNotes('');
+                        }}
+                        className="w-full py-5 bg-slate-900 dark:bg-white dark:text-slate-900 text-white rounded-3xl font-black uppercase text-[10px] tracking-[0.2em] hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                    >
+                        <Plus className="h-4 w-4" /> Register New Patient
+                    </button>
+
+                    <button
+                        onClick={() => router.push('/reception')}
+                        className="w-full py-4 text-slate-400 font-bold uppercase text-[9px] tracking-[0.3em] hover:text-slate-600 transition-all"
+                    >
+                        Return to Dashboard
+                    </button>
                 </div>
             </div>
-        )
-    }
+        </div>
+    );
 
 
     return (
         <div className={`relative bg-slate-900 border border-white/20 shadow-2xl overflow-hidden transition-all duration-500 ease-in-out ${isMaximized ? 'fixed inset-0 z-[100]' : 'w-full h-full relative'}`}>
+            {saveSuccess && renderSuccessView()}
             {/* Elite Terminal Header */}
             <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white px-6 py-4 flex items-center justify-between border-b border-white/10 shrink-0 shadow-2xl relative z-30">
                 <div className="flex items-center gap-6">

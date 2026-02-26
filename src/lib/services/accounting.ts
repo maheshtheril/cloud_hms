@@ -47,11 +47,8 @@ export class AccountingService {
             if (!existingJournal) {
                 // --- ACCRUAL LOGIC START ---
                 // Identify Accounts
-                let debitAccountId = settings.ar_account_id;
-                if (!debitAccountId) {
-                    const ar = await prisma.accounts.findFirst({ where: { company_id: invoice.company_id, code: '1200' } });
-                    debitAccountId = ar?.id || null;
-                }
+                // --- WORLD-STANDARD DYNAMIC AR RESOLUTION ---
+                let debitAccountId = await AccountingService.resolvePatientARAccount(invoice.company_id, settings.ar_account_id, invoice.hms_patient);
                 if (!debitAccountId) throw new Error("AR Account (1200) missing.");
 
                 let defaultSalesAccountId = settings.sales_account_id;
@@ -75,7 +72,7 @@ export class AccountingService {
                             account_id: defaultSalesAccountId, // Simplified: All to default sales for robustness
                             debit: 0,
                             credit: netAmount,
-                            description: `Sales - ${invoice.invoice_number}`,
+                            description: `Sales - ${invoice.invoice_number}${invoice.hms_patient ? ` - ${invoice.hms_patient.full_name || `${invoice.hms_patient.first_name} ${invoice.hms_patient.last_name}`}` : ''}`,
                             metadata: { source: 'auto' }
                         });
                     }
@@ -88,7 +85,7 @@ export class AccountingService {
                         account_id: taxAccountId,
                         debit: 0,
                         credit: totalTax,
-                        description: `Tax - ${invoice.invoice_number}`,
+                        description: `Tax Output - ${invoice.invoice_number}${invoice.hms_patient ? ` - ${invoice.hms_patient.full_name || `${invoice.hms_patient.first_name} ${invoice.hms_patient.last_name}`}` : ''}`,
                         metadata: { source: 'auto' }
                     });
                 }
@@ -100,7 +97,7 @@ export class AccountingService {
                         account_id: debitAccountId,
                         debit: totalReceivable,
                         credit: 0,
-                        description: `AR - ${invoice.invoice_number}`,
+                        description: `AR - ${invoice.invoice_number}${invoice.hms_patient ? ` - ${invoice.hms_patient.full_name || `${invoice.hms_patient.first_name} ${invoice.hms_patient.last_name}`}` : ''}`,
                         party_type: 'patient',
                         party_id: invoice.patient_id,
                         metadata: { source: 'auto' }
@@ -197,10 +194,10 @@ export class AccountingService {
                                             id: crypto.randomUUID(),
                                             tenant_id: invoice.tenant_id,
                                             company_id: invoice.company_id,
-                                            account_id: creditAccount, // AR
+                                            account_id: await AccountingService.resolvePatientARAccount(invoice.company_id, settings.ar_account_id, invoice.hms_patient), // Dynamic AR resolution
                                             debit: 0,
                                             credit: amount,
-                                            description: `Payment Applied - ${invoice.invoice_number}`,
+                                            description: `Payment Applied - ${invoice.invoice_number}${invoice.hms_patient ? ` - ${invoice.hms_patient.full_name || `${invoice.hms_patient.first_name} ${invoice.hms_patient.last_name}`}` : ''}`,
                                             partner_id: invoice.patient_id
                                         }
                                     ]
@@ -291,10 +288,12 @@ export class AccountingService {
                 data: { tenant_id: payment.tenant_id!, company_id: payment.company_id, name: 'Bank Account', code: '1100', type: 'Asset', is_active: true }
             });
 
-            const arAccount = settings.ar_account_id || (await prisma.accounts.findFirst({ where: { company_id: payment.company_id, code: '1200' } }))?.id;
+            // Dynamic AR/AP Resolution
+            const patient = payment.partner_id ? await prisma.hms_patient.findUnique({ where: { id: payment.partner_id } }) : null;
+            const arAccount = await AccountingService.resolvePatientARAccount(payment.company_id, settings.ar_account_id, patient);
             const apAccount = settings.ap_account_id || (await prisma.accounts.findFirst({ where: { company_id: payment.company_id, code: '2000' } }))?.id;
 
-            if (type === 'inbound' && !arAccount) throw new Error("Accounts Receivable (1200) not found.");
+            if (type === 'inbound' && !arAccount) throw new Error("Accounts Receivable not found.");
             if (type === 'outbound' && !apAccount) throw new Error("Accounts Payable (2000) not found.");
 
             const moneyAccount = (payment.method === 'cash') ? cashAccount.id : bankAccount.id;
@@ -1590,5 +1589,26 @@ export class AccountingService {
             console.error(`${type.toUpperCase()}book Error:`, error);
             return { success: false, error: error.message, data: [], openingBalance: 0 };
         }
+    }
+
+    /**
+     * Resolves the correct Accounts Receivable (AR) account for a patient 
+     * based on their categorization (accounting_group).
+     * Follows Hospital World-Standards for patient grouping.
+     */
+    static async resolvePatientARAccount(companyId: string, defaultArId: string | null, patient: any) {
+        if (!patient) return defaultArId;
+
+        const category = patient.accounting_group || (patient.metadata as any)?.accounting_category || 'general';
+        let code = '1200'; // General Patients
+
+        if (category === 'insurance') code = '1210';
+        if (category === 'corporate') code = '1220';
+
+        const specificAr = await prisma.accounts.findFirst({
+            where: { company_id: companyId, code: code }
+        });
+
+        return specificAr?.id || defaultArId;
     }
 }

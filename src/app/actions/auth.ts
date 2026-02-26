@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import bcrypt from 'bcryptjs';
 import { initializeTenantMasters } from "@/lib/services/tenant-init";
 import { SYSTEM_DEFAULT_CURRENCY_CODE } from "@/lib/currency-constants";
+import { ensureDefaultAccounts } from "@/lib/account-seeder";
 
 export async function logout() {
     console.log("[Auth Action] Logging out...");
@@ -201,55 +202,9 @@ export async function signup(prevState: any, formData: FormData) {
                 }
             }
 
-            // 7. Chart of Accounts
+            // 7. Chart of Accounts (World-Standard Seeding)
             if (resolvedCurrencyId) {
-                const coaTemplate = [
-                    { code: '1000', name: 'Cash on Hand', type: 'Asset' },
-                    { code: '1010', name: 'Bank Account', type: 'Asset' },
-                    { code: '1200', name: 'Accounts Receivable', type: 'Asset' },
-                    { code: '1400', name: 'Inventory / Stock', type: 'Asset' },
-                    { code: '2000', name: 'Accounts Payable', type: 'Liability' },
-                    { code: '2200', name: `Tax Output (Sales)`, type: 'Liability' },
-                    { code: '2210', name: `Tax Input (Purchase)`, type: 'Liability' },
-                    { code: '3000', name: 'Owner Capital / Equity', type: 'Equity' },
-                    { code: '4000', name: 'Product Sales', type: 'Revenue' },
-                    { code: '4100', name: 'Service Revenue', type: 'Revenue' },
-                    { code: '5000', name: 'Cost of Goods Sold (COGS)', type: 'Expense' },
-                    { code: '5100', name: 'Inventory Adjmnt', type: 'Expense' },
-                ];
-
-                await prisma.accounts.createMany({
-                    data: coaTemplate.map(acc => ({
-                        id: crypto.randomUUID(),
-                        tenant_id: tenantId,
-                        company_id: companyId,
-                        code: acc.code,
-                        name: acc.name,
-                        type: acc.type,
-                        is_active: true
-                    }))
-                });
-
-                const createdAccounts = await prisma.accounts.findMany({ where: { company_id: companyId } });
-                const findId = (code: string) => createdAccounts.find(a => a.code === code)?.id;
-
-                await prisma.company_accounting_settings.create({
-                    data: {
-                        tenant_id: tenantId,
-                        company_id: companyId,
-                        currency_id: resolvedCurrencyId,
-                        ar_account_id: findId('1200'),
-                        ap_account_id: findId('2000'),
-                        sales_account_id: findId('4000'),
-                        purchase_account_id: findId('5000'),
-                        inventory_asset_account_id: findId('1400'),
-                        output_tax_account_id: findId('2200'),
-                        input_tax_account_id: findId('2210'),
-                        stock_adjustment_account_id: findId('5100'),
-                        fiscal_year_start: new Date(new Date().getFullYear(), 0, 1),
-                        fiscal_year_end: new Date(new Date().getFullYear(), 11, 31),
-                    }
-                });
+                await ensureDefaultAccounts(companyId, tenantId);
             }
 
             // 8. Modules
