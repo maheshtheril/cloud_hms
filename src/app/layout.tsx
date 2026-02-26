@@ -66,7 +66,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   // SELF-HEALING: Ensuring menu items and permissions are standardized.
-  await auditAndFixMenuPermissions();
+  // Wrapped in try/catch - a failure here must NEVER bring down the whole app.
+  try { await auditAndFixMenuPermissions(); } catch (e) { console.error('[layout] auditAndFixMenuPermissions failed silently:', e); }
 
   return (
     <html lang="en" suppressHydrationWarning className="dark">
