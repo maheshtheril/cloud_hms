@@ -504,7 +504,7 @@ export function CreatePatientForm({
                                                             {group.label}
                                                         </button>
                                                     ))}
-                                                    <input type="hidden" name="accounting_group" value={accountingGroup} />
+
                                                 </div>
                                                 <p className="mt-1 text-[9px] text-slate-400 font-medium italic">
                                                     * This determines which Accounts Receivable (AR) head the billing will be posted to.
