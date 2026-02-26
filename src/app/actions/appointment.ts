@@ -81,6 +81,32 @@ export async function createAppointment(formData: FormData) {
     // Combine date and time
     const startsAt = new Date(`${dateStr}T${timeStr}:00`)
 
+    // =====================================================================
+    // [SERVER-SIDE REG FEE GUARD] — Cannot be bypassed by frontend
+    // =====================================================================
+    const patient = await prisma.hms_patient.findUnique({
+        where: { id: patientId },
+        select: { metadata: true, created_at: true }
+    });
+
+    if (patient) {
+        const meta = (patient.metadata as any) || {};
+        const expiryStr = meta.registration_expiry;
+        const isAwaitingPayment = meta.status === 'awaiting_payment';
+        const isFeesNotPaid = meta.registration_fees_paid === false;
+        const isExpired = expiryStr ? new Date(expiryStr) < new Date() : false;
+
+        if (isAwaitingPayment || isFeesNotPaid || isExpired) {
+            const reason = isAwaitingPayment
+                ? "Registration fee is pending. Collect it before booking an appointment."
+                : isExpired
+                    ? "Patient's registration has expired. Renew the registration before booking."
+                    : "Registration fee is unpaid. Collect it before booking.";
+            return { error: `⛔ ${reason}` };
+        }
+    }
+    // =====================================================================
+
     // NUCLEAR LOCK: Prevent concurrent bookings for the same patient/clinician on this day
     const lockKey = `${patientId}_${clinicianId}_${dateStr}`;
     const startOfDay = new Date(`${dateStr}T00:00:00`);
