@@ -170,7 +170,11 @@ export default async function ReceptionDashboardPage() {
 
     // Transform appointments to friendly format
     const formattedAppointments = appointmentsRaw.map(apt => {
-        const invoices = apt.hms_invoice || [];
+        const invoices = (apt.hms_invoice || []).map((inv: any) => ({
+            ...inv,
+            total: Number(inv.total || 0),
+            outstanding_amount: Number(inv.outstanding_amount || 0)
+        }));
         const labs = apt.hms_lab_order || [];
 
         const hasPendingInvoice = invoices.some(inv => inv.status !== 'paid' && inv.status !== 'cancelled');
@@ -197,11 +201,23 @@ export default async function ReceptionDashboardPage() {
             invoiceStatus: hasPendingInvoice ? 'pending' : (isPaid ? 'paid' : 'none'),
             labStatus: labs.length > 0 ? (hasPendingLabs ? 'pending' : 'completed') : 'none',
             assigned_ward: admission?.ward,
-            assigned_bed: admission?.bed
+            assigned_bed: admission?.bed,
+            hms_invoice: invoices // Re-inject serialized invoices
         };
     });
 
     const totalExpenses = todayExpensesList.reduce((sum, e) => sum + Number(e.amount), 0);
+
+    // SERIALIZATION FIX: Convert Decimals in Payments and Expenses
+    const serializedPayments = todayPaymentsList.map(p => ({
+        ...p,
+        amount: Number(p.amount || 0)
+    }));
+
+    const serializedExpenses = todayExpensesList.map(e => ({
+        ...e,
+        amount: Number(e.amount || 0)
+    }));
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-6 max-w-7xl mx-auto space-y-6">
@@ -212,8 +228,8 @@ export default async function ReceptionDashboardPage() {
                 doctors={doctorsList}
                 dailyCollection={totalCollection}
                 collectionBreakdown={collectionBreakdown}
-                todayPayments={todayPaymentsList}
-                todayExpenses={todayExpensesList}
+                todayPayments={serializedPayments}
+                todayExpenses={serializedExpenses}
                 totalExpenses={totalExpenses}
                 draftCount={draftCountVal}
                 availableBeds={availableBedsCount}
