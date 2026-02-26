@@ -415,6 +415,23 @@ export function AppointmentForm({
             return;
         }
 
+        // [REG-FEE GUARD] Block save if registration fee is outstanding
+        const regStatus = checkRegistrationStatus();
+        if (regStatus.shouldCharge) {
+            const msg = regStatus.status === 'awaiting_payment'
+                ? "Registration fee is pending. Please collect the registration fee before booking this appointment."
+                : regStatus.status === 'expired'
+                    ? "Patient's registration has expired. Please renew the registration fee before booking."
+                    : "Registration fee is unpaid. Please collect it before saving this appointment.";
+            toast({
+                title: "⛔ Registration Fee Required",
+                description: msg,
+                variant: "destructive",
+                duration: 6000,
+            });
+            return;
+        }
+
         setIsPending(true)
         try {
             await executeSave(formData);
