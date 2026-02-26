@@ -121,6 +121,7 @@ export function CreatePatientForm({
     const [ageUnit, setAgeUnit] = useState(initialAgeData.unit);
     const [dob, setDob] = useState(initialData?.dob ? new Date(initialData.dob).toISOString().split('T')[0] : '');
     const [gender, setGender] = useState(initialData?.gender || 'male');
+    const [accountingGroup, setAccountingGroup] = useState(initialData?.accounting_group || 'general');
 
 
     // Billing Options State
@@ -476,6 +477,34 @@ export function CreatePatientForm({
                                                         </select>
                                                     </div>
                                                 </div>
+                                            </div>
+                                            {/* WORLD-STANDARD ACCOUNTING GROUP */}
+                                            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                                                <label className="block text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-wide">Accounting Group (AR Category)</label>
+                                                <div className="flex gap-2">
+                                                    {[
+                                                        { id: 'general', label: 'General / Cash', color: 'indigo' },
+                                                        { id: 'insurance', label: 'Insurance (TPA)', color: 'emerald' },
+                                                        { id: 'corporate', label: 'Corporate (Credit)', color: 'orange' }
+                                                    ].map(group => (
+                                                        <button
+                                                            key={group.id}
+                                                            type="button"
+                                                            onClick={() => setAccountingGroup(group.id)}
+                                                            className={`flex-1 h-10 rounded-lg border font-bold uppercase text-[10px] transition-all flex items-center justify-center gap-2 ${accountingGroup === group.id
+                                                                ? `border-${group.color}-500 bg-${group.color}-50 text-${group.color}-600`
+                                                                : 'border-slate-200 bg-white text-slate-400 hover:border-slate-300'
+                                                                }`}
+                                                        >
+                                                            <div className={`w-1.5 h-1.5 rounded-full bg-${group.color}-500`}></div>
+                                                            {group.label}
+                                                        </button>
+                                                    ))}
+                                                    <input type="hidden" name="accounting_group" value={accountingGroup} />
+                                                </div>
+                                                <p className="mt-1 text-[9px] text-slate-400 font-medium italic">
+                                                    * This determines which Accounts Receivable (AR) head the billing will be posted to.
+                                                </p>
                                             </div>
                                             <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-800 grid grid-cols-2 md:grid-cols-12 gap-3">
                                                 <div className="col-span-2 md:col-span-5">

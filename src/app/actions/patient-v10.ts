@@ -116,6 +116,7 @@ export async function createPatientV10(patientId: string | null | any, formData:
             gender: normalizeGender(formData.get('gender') as string),
             dob: formData.get('dob') ? new Date(formData.get('dob') as string) : null,
             contact: { phone, email: formData.get('email'), address } as any,
+            accounting_group: (formData.get('accounting_group') as string) || 'general',
             metadata: metadata,
             updated_at: new Date(),
             updated_by: userId

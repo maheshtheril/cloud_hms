@@ -167,12 +167,13 @@ export async function createAppointment(formData: FormData) {
         redirect(`/hms/billing/new?patientId=${patientId}&appointmentId=${createdApt.id}`)
     }
 
-    if (source === 'dashboard') {
+    if (source === 'dashboard' || source === 'terminal') {
         revalidatePath("/hms/reception/dashboard")
         revalidatePath("/hms/dashboard")
         return { success: true, data: createdApt }
     }
 
+    // Default Fallback
     redirect("/hms/appointments")
 }
 
@@ -282,10 +283,12 @@ export async function updateAppointmentDetails(formData: FormData) {
 
     // Handle redirection outside try/catch
     const source = formData.get("source") as string
-    if (source === 'dashboard') {
+    if (source === 'dashboard' || source === 'terminal') {
         revalidatePath("/hms/reception/dashboard")
-        return { success: true }
+        revalidatePath("/hms/dashboard")
+        return { success: true, data: { ...editingAppointment, id } }
     }
+
     redirect("/hms/appointments")
 }
 
