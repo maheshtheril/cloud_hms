@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-// Version 1.0.5 - Cache Busting PWA Icons
+// Version 1.0.6 - Hardened Against DB Failures
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/contexts/theme-context";
+import { AuthProvider } from "@/components/auth-provider";
 
 // Force dynamic rendering for all pages to prevent build-time database access
 export const dynamic = 'force-dynamic'
@@ -29,23 +30,30 @@ export const viewport = {
 };
 
 export async function generateMetadata(): Promise<Metadata> {
-  const branding = await getTenantBrandingByHost();
+  // HARDENED: Never crash the app if branding DB lookup fails
+  let branding: any = null;
+  try {
+    branding = await getTenantBrandingByHost();
+  } catch (e) {
+    console.error('[layout] generateMetadata branding fetch failed:', e);
+  }
+
   const appName = branding?.app_name || branding?.name || "Enterprise";
+  const logoUrl = branding?.logo_url || "/logo-ziona.svg";
 
   return {
     title: `${appName} - Enterprise ERP`,
     description: `World-class ${appName} Management & ERP System`,
     icons: {
       icon: [
-        { url: `${branding?.logo_url || "/logo-ziona.svg"}?v=1.0.5`, type: "image/svg+xml" },
+        { url: `${logoUrl}?v=1.0.6`, type: "image/svg+xml" },
       ],
-      shortcut: [`${branding?.logo_url || "/logo-ziona.svg"}?v=1.0.5`],
+      shortcut: [`${logoUrl}?v=1.0.6`],
       apple: [
-        { url: `${branding?.logo_url || "/logo-ziona.svg"}?v=1.0.5`, sizes: "180x180", type: "image/svg+xml" },
+        { url: `${logoUrl}?v=1.0.6`, sizes: "180x180", type: "image/svg+xml" },
       ],
     },
-
-    manifest: '/manifest.webmanifest?v=1.0.5',
+    manifest: '/manifest.webmanifest?v=1.0.6',
     appleWebApp: {
       capable: true,
       statusBarStyle: "default",
@@ -57,17 +65,15 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-
-import { AuthProvider } from "@/components/auth-provider";
-
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // SELF-HEALING: Ensuring menu items and permissions are standardized.
-  // Wrapped in try/catch - a failure here must NEVER bring down the whole app.
-  try { await auditAndFixMenuPermissions(); } catch (e) { console.error('[layout] auditAndFixMenuPermissions failed silently:', e); }
+  // HARDENED: This must NEVER crash the app.
+  try { await auditAndFixMenuPermissions(); } catch (e) {
+    console.error('[layout] auditAndFixMenuPermissions failed silently:', e);
+  }
 
   return (
     <html lang="en" suppressHydrationWarning className="dark">
