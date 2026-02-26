@@ -186,6 +186,21 @@ export default async function PrintPage({ params, searchParams }: {
                             <p className="text-xl font-bold text-slate-800">{invoice.hms_patient?.first_name} {invoice.hms_patient?.last_name}</p>
                             <p className="text-xs font-bold text-slate-500 uppercase mt-1">Patient ID: {invoice.hms_patient?.patient_number || 'N/A'}</p>
                             <p className="text-xs font-bold text-slate-500 uppercase">Contact: {((invoice.hms_patient?.contact as any)?.phone) || 'N/A'}</p>
+                            {(() => {
+                                const expiry = (invoice.hms_patient?.metadata as any)?.registration_expiry;
+                                if (!expiry) return null;
+                                const expiryDate = new Date(expiry);
+                                const today = new Date();
+                                const diffMs = expiryDate.getTime() - today.getTime();
+                                const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+                                const isExpired = diffDays < 0;
+                                return (
+                                    <p className={`text-xs font-bold uppercase mt-1 ${isExpired ? 'text-red-500' : 'text-emerald-600'}`}>
+                                        Reg. Valid Till: {expiryDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                        {' '}({isExpired ? `Expired ${Math.abs(diffDays)} days ago` : `${diffDays} days remaining`})
+                                    </p>
+                                );
+                            })()}
                         </div>
                     </div>
                     <div className="space-y-4 text-right">
