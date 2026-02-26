@@ -666,24 +666,7 @@ export function AppointmentForm({
                             }}
                         />
 
-                        {activeRegStatus.shouldCharge && (
-                            <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/50 rounded-2xl flex items-center justify-between animate-in slide-in-from-top-2 shadow-inner">
-                                <div className="flex items-center gap-3">
-                                    <ShieldAlert className="h-5 w-5 text-amber-600" />
-                                    <div>
-                                        <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">Fee Due</p>
-                                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Patient Registration Fee (₹150)</p>
-                                    </div>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsCollectingReg(true)}
-                                    className="px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-amber-500/20"
-                                >
-                                    Collect Now
-                                </button>
-                            </div>
-                        )}
+
 
                         {/* Schedule & Slotting */}
                         <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-xl border border-white dark:border-slate-800 shadow-sm p-4 ring-1 ring-slate-100">
