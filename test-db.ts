@@ -1,33 +1,19 @@
-import { PrismaClient } from '@prisma/client';
+import { getMenuItems } from './src/app/actions/navigation';
 
-const prisma = new PrismaClient({
-    datasources: {
-        db: {
-            url: "postgresql://neondb_owner:npg_LKIg3tRXfbp9@ep-flat-firefly-a19fhxoa-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&pgbouncer=true"
-        },
-    },
-});
-
-async function run() {
+async function main() {
+    console.log("Testing Navigation Action...");
     try {
-        console.log("Connecting...");
-        await prisma.$connect();
-        console.log("Connected to Neon DB successfully.");
-
-        // Check if countries/currencies are empty
-        const countries = await prisma.countries.count();
-        console.log("Countries count:", countries);
-
-        const currencies = await prisma.currencies.count();
-        console.log("Currencies count:", currencies);
-
-        const uomcat = await prisma.hms_uom_category.count();
-        console.log("UOM Category count:", uomcat);
-
-    } catch (err) {
-        console.error("Connection error:", err);
-    } finally {
-        await prisma.$disconnect();
+        const start = Date.now();
+        const items = await getMenuItems();
+        console.log(`Success! Found ${items.length} menu groups.`);
+        console.log(JSON.stringify(items.map(i => ({ module: i.module.name, items: i.items.length })), null, 2));
+        console.log(`Latency: ${Date.now() - start}ms`);
+        process.exit(0);
+    } catch (error) {
+        console.error("Action Failed!");
+        console.error(error);
+        process.exit(1);
     }
 }
-run();
+
+main();
