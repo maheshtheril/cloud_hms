@@ -76,6 +76,7 @@ export function AppointmentForm({
     const [hmsSettings, setHmsSettings] = useState<any>(null)
     const [notes, setNotes] = useState(editingAppointment?.notes || '')
     const [isPending, setIsPending] = useState(false)
+    const [isLoadingPatient, setIsLoadingPatient] = useState(false)
     const [saveSuccess, setSaveSuccess] = useState<any>(null) // [NEW] Track save results
     const [paidInvoiceId, setPaidInvoiceId] = useState<string | null>(null) // [NEW] Capture reg fee ID
 
@@ -103,25 +104,26 @@ export function AppointmentForm({
             // Avoid redundant fetch if we already have the data (e.g. from handlePatientCreated)
             if (selectedPatientData?.id === selectedPatientId) return;
 
-            // Clear stale data before fetching new
-            setSelectedPatientData(null)
+            // Clear stale data, lock button while loading
+            setSelectedPatientData(null);
+            setIsLoadingPatient(true);
 
             getPatientById(selectedPatientId).then(res => {
-                console.log("DEBUG: getPatientById Response", { success: res.success, hasData: !!res.data });
                 if (res.success) setSelectedPatientData(res.data)
                 else {
-                    console.error("DEBUG: Failed to fetch patient data", res.error);
                     toast({ title: "Data Error", description: "Could not sync patient record.", variant: "destructive" });
-                    setSelectedPatientData({ id: selectedPatientId, metadata: {}, error: true }); // Prevent loading trap
+                    setSelectedPatientData({ id: selectedPatientId, metadata: {}, error: true });
                 }
             }).catch(err => {
-                console.error("DEBUG: getPatientById Fatal Error", err);
-                setSelectedPatientData({ id: selectedPatientId, metadata: {}, error: true }); // Prevent loading trap
-            })
+                setSelectedPatientData({ id: selectedPatientId, metadata: {}, error: true });
+            }).finally(() => {
+                setIsLoadingPatient(false);
+            });
         } else {
-            setSelectedPatientData(null)
+            setSelectedPatientData(null);
+            setIsLoadingPatient(false);
         }
-    }, [selectedPatientId]) // We check selectedPatientData internally to avoid loop
+    }, [selectedPatientId])
 
     // [NEW] Check for Registration Invoice when fee is due
     useEffect(() => {
@@ -792,11 +794,11 @@ export function AppointmentForm({
                     )}
                     <button
                         type="submit"
-                        disabled={isPending || activeRegStatus.shouldCharge}
-                        title={activeRegStatus.shouldCharge ? 'Collect registration fee first' : ''}
+                        disabled={isPending || isLoadingPatient || activeRegStatus.shouldCharge || activeRegStatus.status === 'loading'}
+                        title={isLoadingPatient ? 'Loading patient data...' : activeRegStatus.shouldCharge ? 'Collect registration fee first' : ''}
                         className="px-10 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-500/20 font-black text-xs uppercase tracking-widest transition-all active:scale-95 flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
                     >
-                        {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        {(isPending || isLoadingPatient) ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                         {editingAppointment ? 'Update Record' : 'Finalize & Save'}
                     </button>
                 </div>
