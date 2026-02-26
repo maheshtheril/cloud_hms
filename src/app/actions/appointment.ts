@@ -82,27 +82,47 @@ export async function createAppointment(formData: FormData) {
     const startsAt = new Date(`${dateStr}T${timeStr}:00`)
 
     // =====================================================================
-    // [SERVER-SIDE REG FEE GUARD] — Cannot be bypassed by frontend
+    // [SERVER-SIDE REG FEE GUARD] — Two-pronged, cannot be bypassed
+    // 1. Check metadata flags
+    // 2. Check for outstanding registration invoices in DB
     // =====================================================================
-    const patient = await prisma.hms_patient.findUnique({
-        where: { id: patientId },
-        select: { metadata: true, created_at: true }
-    });
+    const [patient, unpaidRegInvoice] = await Promise.all([
+        prisma.hms_patient.findUnique({
+            where: { id: patientId },
+            select: { metadata: true, created_at: true }
+        }),
+        // Look for any outstanding invoice that has a registration-related line
+        prisma.hms_invoice.findFirst({
+            where: {
+                patient_id: patientId,
+                status: { in: ['draft', 'posted'] },
+                outstanding_amount: { gt: 0 },
+                hms_invoice_lines: {
+                    some: {
+                        description: { contains: 'egistration', mode: 'insensitive' }
+                    }
+                }
+            },
+            select: { id: true, outstanding_amount: true }
+        })
+    ]);
+
+    if (unpaidRegInvoice) {
+        return { error: `⛔ Registration fee of ₹${Number(unpaidRegInvoice.outstanding_amount).toFixed(0)} is outstanding. Collect it before booking.` };
+    }
 
     if (patient) {
         const meta = (patient.metadata as any) || {};
         const expiryStr = meta.registration_expiry;
         const isAwaitingPayment = meta.status === 'awaiting_payment';
-        const isFeesNotPaid = meta.registration_fees_paid === false;
+        const isFeesNotPaid = meta.registration_fees_paid !== true && meta.registration_fees_paid !== undefined;
         const isExpired = expiryStr ? new Date(expiryStr) < new Date() : false;
 
-        if (isAwaitingPayment || isFeesNotPaid || isExpired) {
-            const reason = isAwaitingPayment
-                ? "Registration fee is pending. Collect it before booking an appointment."
-                : isExpired
-                    ? "Patient's registration has expired. Renew the registration before booking."
-                    : "Registration fee is unpaid. Collect it before booking.";
-            return { error: `⛔ ${reason}` };
+        if (isAwaitingPayment) {
+            return { error: `⛔ Registration fee is pending. Collect it before booking an appointment.` };
+        }
+        if (isExpired) {
+            return { error: `⛔ Patient's registration has expired. Renew the registration before booking.` };
         }
     }
     // =====================================================================
