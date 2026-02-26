@@ -1656,6 +1656,7 @@ model hms_patient {
   full_name         String?             @default(dbgenerated("TRIM(BOTH ' '::text FROM ((COALESCE(first_name, ''::text) || ' '::text) || COALESCE(last_name, ''::text)))"))
   profile_image_url String?
   blood_group       String?
+  accounting_group  String?             @default("general")
   branch_id         String?             @db.Uuid
   hms_admission     hms_admission[]
   hms_appointments  hms_appointments[]
