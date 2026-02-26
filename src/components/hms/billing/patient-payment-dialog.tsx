@@ -12,7 +12,7 @@ import { useToast } from "@/components/ui/use-toast";
 interface PatientPaymentDialogProps {
     patientId: string;
     patientName: string;
-    onPaymentSuccess?: () => void;
+    onPaymentSuccess?: (invoiceData?: any) => void;
     onClose?: () => void;
     trigger?: React.ReactNode;
     fixedAmount?: number; // [NEW] Allow overriding balance for specific fee collection
@@ -130,8 +130,8 @@ export function PatientPaymentDialog({
                         onClose={() => {
                             setIsOpen(false);
                         }}
-                        onPaymentSuccess={() => {
-                            onPaymentSuccess?.();
+                        onPaymentSuccess={(data) => {
+                            onPaymentSuccess?.(data);
                         }}
                     />
                 )}

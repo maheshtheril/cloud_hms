@@ -14,7 +14,7 @@ import { getHMSSettings } from "@/app/actions/settings"
 import { generateConsultationInvoice, generateRegistrationInvoice } from "@/app/actions/billing"
 import { PatientPaymentDialog } from "@/components/hms/billing/patient-payment-dialog";
 import { getPatientById } from "@/app/actions/patient-v10"
-import { CreditCard as CardIcon, X, Printer, Plus } from "lucide-react"
+import { CreditCard as CardIcon, X, Printer, Plus, Receipt } from "lucide-react"
 import { OpSlipDialog } from "@/components/hms/reception/op-slip-dialog"
 
 interface AppointmentFormProps {
@@ -77,6 +77,7 @@ export function AppointmentForm({
     const [notes, setNotes] = useState(editingAppointment?.notes || '')
     const [isPending, setIsPending] = useState(false)
     const [saveSuccess, setSaveSuccess] = useState<any>(null) // [NEW] Track save results
+    const [paidInvoiceId, setPaidInvoiceId] = useState<string | null>(null) // [NEW] Capture reg fee ID
 
     // RCM States
     const [isRCMProcessing, setIsRCMProcessing] = useState(false)
@@ -488,6 +489,16 @@ export function AppointmentForm({
                         />
                     </div>
 
+                    {paidInvoiceId && (
+                        <button
+                            type="button"
+                            onClick={() => window.open(`/hms/billing/${paidInvoiceId}/print`, '_blank')}
+                            className="w-full py-5 bg-indigo-50 dark:bg-indigo-500/10 border border-indigo-200 dark:border-indigo-500/20 text-indigo-600 rounded-3xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-indigo-100 transition-all flex items-center justify-center gap-2"
+                        >
+                            <Receipt className="h-4 w-4" /> Print Registration Receipt
+                        </button>
+                    )}
+
                     <button
                         onClick={() => {
                             setSaveSuccess(null);
@@ -627,8 +638,9 @@ export function AppointmentForm({
                             autoOpen={isCollectingReg}
                             onClose={() => setIsCollectingReg(false)}
                             isRegistrationFee={true}
-                            onPaymentSuccess={() => {
-                                // [FIX] Keep open to see success screen/WhatsApp
+                            onPaymentSuccess={(data) => {
+                                // [FIX] Capture invoice ID for printing link
+                                setPaidInvoiceId(data?.id || null);
                                 toast({ title: "Fee Paid", description: "Registration cleared." });
                                 refreshPatientData(); // Refresh to update status ring/strip
                             }}

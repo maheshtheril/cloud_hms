@@ -25,6 +25,11 @@ export class AccountingService {
 
             if (!invoice) throw new Error("Invoice not found");
 
+            // [TALLY-STYLE] Resolve Patient Name for narration fallback
+            const patientName = invoice.hms_patient
+                ? (invoice.hms_patient.full_name || `${invoice.hms_patient.first_name || ''} ${invoice.hms_patient.last_name || ''}`.trim())
+                : (invoice.billing_metadata as any)?.patient_name || 'Guest Patient';
+
             // 2. Fetch/Configure Settings (Required for both Accrual and Payments)
             let settings = await prisma.company_accounting_settings.findUnique({
                 where: { company_id: invoice.company_id }
@@ -69,10 +74,10 @@ export class AccountingService {
                     const netAmount = Number(line.net_amount || 0);
                     if (netAmount > 0) {
                         journalLines.push({
-                            account_id: defaultSalesAccountId, // Simplified: All to default sales for robustness
+                            account_id: defaultSalesAccountId,
                             debit: 0,
                             credit: netAmount,
-                            description: `Sales - ${invoice.invoice_number}${invoice.hms_patient ? ` - ${invoice.hms_patient.full_name || `${invoice.hms_patient.first_name} ${invoice.hms_patient.last_name}`}` : ''}`,
+                            description: `${patientName} | Sales - ${line.description || invoice.invoice_number}`,
                             metadata: { source: 'auto' }
                         });
                     }
@@ -85,7 +90,7 @@ export class AccountingService {
                         account_id: taxAccountId,
                         debit: 0,
                         credit: totalTax,
-                        description: `Tax Output - ${invoice.invoice_number}${invoice.hms_patient ? ` - ${invoice.hms_patient.full_name || `${invoice.hms_patient.first_name} ${invoice.hms_patient.last_name}`}` : ''}`,
+                        description: `${patientName} | Tax Output - ${invoice.invoice_number}`,
                         metadata: { source: 'auto' }
                     });
                 }
@@ -97,7 +102,7 @@ export class AccountingService {
                         account_id: debitAccountId,
                         debit: totalReceivable,
                         credit: 0,
-                        description: `AR - ${invoice.invoice_number}${invoice.hms_patient ? ` - ${invoice.hms_patient.full_name || `${invoice.hms_patient.first_name} ${invoice.hms_patient.last_name}`}` : ''}`,
+                        description: `${patientName} | AR - ${invoice.invoice_number}`,
                         party_type: 'patient',
                         party_id: invoice.patient_id,
                         metadata: { source: 'auto' }
@@ -128,7 +133,7 @@ export class AccountingService {
                                     debit: l.debit,
                                     credit: l.credit,
                                     description: l.description,
-                                    partner_id: l.party_id
+                                    partner_id: (l.party_id || invoice.patient_id || undefined) as string | undefined // ENFORCE LINK TO ALL LINES
                                 }))
                             }
                         }
@@ -188,16 +193,17 @@ export class AccountingService {
                                             account_id: debitAccount.id,
                                             debit: amount,
                                             credit: 0,
-                                            description: `Payment Recvd (${payment.method})`,
+                                            description: `${patientName} | Payment Recvd (${payment.method}) - ${invoice.invoice_number}`,
+                                            partner_id: invoice.patient_id
                                         },
                                         {
                                             id: crypto.randomUUID(),
                                             tenant_id: invoice.tenant_id,
                                             company_id: invoice.company_id,
-                                            account_id: await AccountingService.resolvePatientARAccount(invoice.company_id, settings.ar_account_id, invoice.hms_patient), // Dynamic AR resolution
+                                            account_id: (await AccountingService.resolvePatientARAccount(invoice.company_id, settings.ar_account_id, invoice.hms_patient)) as string, // Dynamic AR resolution
                                             debit: 0,
                                             credit: amount,
-                                            description: `Payment Applied - ${invoice.invoice_number}${invoice.hms_patient ? ` - ${invoice.hms_patient.full_name || `${invoice.hms_patient.first_name} ${invoice.hms_patient.last_name}`}` : ''}`,
+                                            description: `${patientName} | Payment Applied - ${invoice.invoice_number}`,
                                             partner_id: invoice.patient_id
                                         }
                                     ]
