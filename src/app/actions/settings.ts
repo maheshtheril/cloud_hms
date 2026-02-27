@@ -696,3 +696,100 @@ export async function deleteDesignation(id: string) {
 }
 
 
+// === PAYMENT GATEWAY SETTINGS ===
+
+export async function getPaymentGatewaySettings() {
+    const session = await auth();
+    if (!session?.user?.companyId || !session?.user?.tenantId) return { success: false, error: 'Unauthorized' };
+
+    try {
+        const record = await prisma.hms_settings.findFirst({
+            where: {
+                company_id: session.user.companyId,
+                tenant_id: session.user.tenantId,
+                key: 'payment_gateway_config'
+            }
+        });
+
+        const data = (record?.value as any) || {};
+
+        return {
+            success: true,
+            settings: {
+                enabled: data.enabled ?? false,
+                provider: data.provider ?? 'razorpay',
+                keyId: data.keyId ?? '',
+                hasKeySecret: !!data.keySecret,
+                upiVpa: data.upiVpa ?? '',
+                businessName: data.businessName ?? '',
+            }
+        };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function updatePaymentGatewaySettings(data: {
+    enabled: boolean;
+    keyId: string;
+    keySecret?: string;
+    upiVpa: string;
+    businessName: string;
+}) {
+    const session = await auth();
+    const companyId = session?.user?.companyId;
+    const tenantId = session?.user?.tenantId;
+    const userId = session?.user?.id;
+
+    if (!companyId || !tenantId || !userId) return { success: false, error: 'Session expired.' };
+
+    const canManage = await checkPermission('hms:admin');
+    if (!canManage) return { success: false, error: 'Unauthorized: HMS Admin permission required.' };
+
+    try {
+        const existing = await prisma.hms_settings.findFirst({
+            where: { company_id: companyId, tenant_id: tenantId, key: 'payment_gateway_config' }
+        });
+        const existingData = (existing?.value as any) || {};
+
+        const configValue = JSON.stringify({
+            enabled: data.enabled,
+            provider: 'razorpay',
+            keyId: data.keyId,
+            keySecret: (data.keySecret && data.keySecret.trim() !== '')
+                ? data.keySecret.trim()
+                : (existingData.keySecret ?? ''),
+            upiVpa: data.upiVpa,
+            businessName: data.businessName,
+            lastUpdated: new Date().toISOString()
+        });
+
+        await prisma.hms_settings.deleteMany({
+            where: { company_id: companyId, tenant_id: tenantId, key: 'payment_gateway_config' }
+        });
+
+        const configId = (await prisma.$queryRaw`SELECT gen_random_uuid()` as any)[0].gen_random_uuid;
+        await prisma.$executeRaw`
+            INSERT INTO hms_settings (id, tenant_id, company_id, key, value, scope, version, is_active, created_at, updated_at, created_by, updated_by)
+            VALUES (
+                ${configId}::uuid, ${tenantId}::uuid, ${companyId}::uuid,
+                'payment_gateway_config', ${configValue}::jsonb,
+                'company', 1, true, now(), now(), ${userId}::uuid, ${userId}::uuid
+            )
+        `;
+
+        revalidatePath('/settings/hms');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Failed to save payment gateway settings:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+// Internal server-only helper — includes the raw secret (never send to frontend)
+export async function getPaymentGatewayConfig(companyId: string, tenantId: string) {
+    const record = await prisma.hms_settings.findFirst({
+        where: { company_id: companyId, tenant_id: tenantId, key: 'payment_gateway_config' }
+    });
+    return (record?.value as any) || null;
+}

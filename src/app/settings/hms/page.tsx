@@ -1,7 +1,7 @@
 
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import { getHMSSettings } from "@/app/actions/settings"
+import { getHMSSettings, getPaymentGatewaySettings } from "@/app/actions/settings"
 import { HMSSettingsForm } from "./hms-settings-form"
 import { Activity } from "lucide-react"
 import { prisma } from "@/lib/prisma"
@@ -12,7 +12,7 @@ export default async function HMSSettingsPage() {
     const session = await auth()
     if (!session?.user?.id) redirect('/login')
 
-    const [res, doctors] = await Promise.all([
+    const [res, doctors, gatewayRes] = await Promise.all([
         getHMSSettings(),
         prisma.hms_clinicians.findMany({
             where: { company_id: session.user.companyId!, is_active: true },
@@ -22,7 +22,8 @@ export default async function HMSSettingsPage() {
                 last_name: true,
             },
             orderBy: { first_name: 'asc' }
-        })
+        }),
+        getPaymentGatewaySettings()
     ]);
 
     if (!res.success) {
@@ -48,7 +49,12 @@ export default async function HMSSettingsPage() {
                 </div>
             </header>
 
-            <HMSSettingsForm settings={res.settings} products={res.availableProducts || []} doctors={doctors} />
+            <HMSSettingsForm
+                settings={res.settings}
+                products={res.availableProducts || []}
+                doctors={doctors}
+                gatewaySettings={gatewayRes.success ? gatewayRes.settings : null}
+            />
         </div>
     )
 }

@@ -213,4 +213,74 @@ export class NotificationService {
             return { success: false, error: 'Internal server error' };
         }
     }
+
+    /**
+     * Sends a direct Razorpay payment link to the patient via WhatsApp.
+     */
+    static async sendPaymentLinkWhatsapp(patientId: string, amount: number, paymentLink: string, currency: string = '₹') {
+        try {
+            // 1. Fetch Patient Details
+            const patient = await prisma.hms_patient.findUnique({
+                where: { id: patientId }
+            });
+
+            if (!patient) {
+                return { success: false, error: 'Patient not found' };
+            }
+
+            // 2. Extract Phone Number
+            const contact = patient.contact as any;
+            let phone = contact?.phone || contact?.mobile || contact?.primary_phone || '';
+            phone = phone.replace(/\D/g, '');
+            if (phone.length === 10) phone = '91' + phone;
+
+            if (!phone) {
+                return { success: false, error: 'Patient phone number missing' };
+            }
+
+            // 3. Construct Message
+            const patientName = `${patient.first_name} ${patient.last_name}`;
+            const message = `Hello *${patientName}*,\n\n` +
+                `Greetings from our medical center.\n\n` +
+                `A professional payment request of *${currency}${amount.toLocaleString('en-IN')}* has been generated for your recent visit.\n\n` +
+                `Kindly pay securely using the link below:\n` +
+                `🔗 *Payment Link:* ${paymentLink}\n\n` +
+                `Thank you for choosing us!`;
+
+            // 4. API Configuration
+            const instanceId = process.env.WHATSAPP_INSTANCE_ID;
+            const token = process.env.WHATSAPP_TOKEN;
+            const isMock = !token || token.includes('mock');
+
+            if (isMock) {
+                console.log(`[WhatsApp-Link-Mock] To: ${phone}\n[WhatsApp-Link-Mock] Content: ${message}`);
+                return { success: true, message: "WhatsApp payment link simulated (Mock Mode)." };
+            }
+
+            // 5. Send Real Request
+            const payload = {
+                token: token,
+                to: phone,
+                body: message,
+                priority: 10
+            };
+
+            const response = await fetch(`https://api.ultramsg.com/${instanceId}/messages/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            if (result.sent === "true" || result.success) {
+                return { success: true, message: 'Payment link sent via WhatsApp' };
+            } else {
+                return { success: false, error: result.error || 'Failed to send WhatsApp link' };
+            }
+
+        } catch (error) {
+            console.error("[NotificationService] Payment Link WhatsApp failed:", error);
+            return { success: false, error: 'Internal server error' };
+        }
+    }
 }

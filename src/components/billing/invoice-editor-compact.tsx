@@ -6,7 +6,7 @@ import {
   MessageSquare, Plus, Trash2, Search, Save, User, DollarSign, Receipt, X,
   Loader2, CreditCard, Banknote, Smartphone, Maximize2,
   Minimize2, Check, QrCode, Clock, ArrowRight, Activity, Package, Landmark,
-  Copy, AlertTriangle
+  Copy, AlertTriangle, Zap, Info
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { posService } from '@/lib/services/pos-device'
@@ -22,7 +22,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { ZionaLogo } from '@/components/branding/ziona-logo'
 
 export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice, onClose, onPaymentSuccess, currency = '₹',
-  isRegistrationFee = false
+  isRegistrationFee = false,
+  gatewayConfig = null
 }: {
   patients: any[],
   billableItems: any[],
@@ -35,7 +36,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   onClose?: () => void,
   onPaymentSuccess?: (invoiceData: any) => void,
   currency?: string,
-  isRegistrationFee?: boolean
+  isRegistrationFee?: boolean,
+  gatewayConfig?: { enabled: boolean, keyId: string, upiVpa: string, businessName: string } | null
 }) {
 
   const getUomOptions = (itemType: string, currentUom: string) => {
@@ -90,6 +92,17 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [errorDetails, setErrorDetails] = useState({ title: '', message: '' })
   const [posStatus, setPosStatus] = useState<'connected' | 'offline' | 'searching'>('searching')
   const [isPOSLoading, setIsPOSLoading] = useState(false)
+
+  // Razorpay UPI QR State
+  const [isRazorpayQROpen, setIsRazorpayQROpen] = useState(false)
+  const [razorpayOrderId, setRazorpayOrderId] = useState<string | null>(null)
+  const [razorpayQRAmount, setRazorpayQRAmount] = useState(0)
+  const [razorpayStatus, setRazorpayStatus] = useState<'loading' | 'waiting' | 'confirmed' | 'error'>('loading')
+  const [razorpayPaymentId, setRazorpayPaymentId] = useState<string | null>(null)
+  const [razorpayQRUrl, setRazorpayQRUrl] = useState<string | null>(null)
+  const [isSendingLink, setIsSendingLink] = useState(false)
+  const [isCustomerDisplayOpen, setIsCustomerDisplayOpen] = useState(false)
+  const razorpayPollRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (isPaymentModalOpen) {
@@ -634,13 +647,14 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
         setIsSuccess(true)
         setLoading(false)
-        setLastSavedId(res.data?.id || null)
+        const id = (res as any).data?.id;
+        setLastSavedId(id || null)
 
         // [WORLD CLASS STABILITY] Delay the parent callback to allow success screen to mount first
         // and ensure the terminal doesn't unmount due to parent state updates immediately.
         if (onPaymentSuccess) {
           setTimeout(() => {
-            onPaymentSuccess(res.data);
+            onPaymentSuccess((res as any).data);
           }, 500);
         }
         // Do NOT close modal automatically if success screen is desired.
@@ -650,7 +664,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         // setIsPaymentModalOpen(false) // This closes the payment sub-modal, not the EDITOR.
       } else {
         setLoading(false)
-        const errorMsg = res.error || "The server rejected the transaction. Please check your data and retry.";
+        const errorMsg = (res as any).error || "The server rejected the transaction. Please check your data and retry.";
         console.error("Sync Interrupted:", errorMsg);
 
         setErrorDetails({ title: 'Critical Save Failure', message: errorMsg });
@@ -734,6 +748,105 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     } finally {
       setIsPOSLoading(false);
     }
+  };
+
+  const handleRazorpayQR = async (amount: number) => {
+    if (!gatewayConfig?.enabled || !gatewayConfig?.keyId) {
+      toast({ title: 'Gateway Not Ready', description: 'Configure Razorpay in Settings → HMS Configuration.', variant: 'destructive' });
+      return;
+    }
+    setRazorpayQRAmount(amount);
+    setRazorpayStatus('loading');
+    setRazorpayOrderId(null);
+    setRazorpayQRUrl(null);
+    setRazorpayPaymentId(null);
+    setIsRazorpayQROpen(true);
+
+    // Clear any existing poll
+    if (razorpayPollRef.current) clearInterval(razorpayPollRef.current);
+
+    try {
+      const res = await fetch('/api/razorpay/create-order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount, invoiceId: initialInvoice?.id || 'NEW_BILL' })
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.orderId) {
+        setRazorpayStatus('error');
+        toast({ title: 'Order Failed', description: data.error || 'Failed to create payment order.', variant: 'destructive' });
+        return;
+      }
+
+      setRazorpayOrderId(data.orderId);
+      const upiUrl = `upi://pay?pa=${encodeURIComponent(data.upiVpa || gatewayConfig.upiVpa)}&pn=${encodeURIComponent(data.businessName || gatewayConfig.businessName)}&am=${amount}&cu=INR&tn=${encodeURIComponent(`HMS Bill ${data.orderId}`)}`;
+      setRazorpayQRUrl(upiUrl);
+      setRazorpayStatus('waiting');
+    } catch (err: any) {
+      setRazorpayStatus('error');
+      toast({ title: 'Gateway Error', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleRazorpayManualConfirm = () => {
+    if (razorpayPollRef.current) clearInterval(razorpayPollRef.current);
+    setRazorpayStatus('confirmed');
+    const amt = razorpayQRAmount;
+    setPayments(prev => [...prev, { method: 'upi', amount: amt, reference: razorpayOrderId || 'RAZORPAY' }]);
+    setIsRazorpayQROpen(false);
+    setActivePaymentAmount('');
+    toast({ title: '✅ Payment Recorded', description: `₹${amt.toFixed(2)} via Razorpay recorded. Click Save to finalize.` });
+  };
+
+  const handleSendPaymentLink = async (amount: number) => {
+    if (!gatewayConfig?.enabled || !gatewayConfig?.keyId) {
+      toast({ title: 'Gateway Not Ready', description: 'Configure Razorpay in Settings → HMS Configuration.', variant: 'destructive' });
+      return;
+    }
+
+    if (!selectedPatientId) {
+      toast({ title: 'Select Patient', description: 'Cannot send link without a patient context.', variant: 'destructive' });
+      return;
+    }
+
+    const patient = patients.find(p => p.id === selectedPatientId);
+    if (!patient) return;
+
+    setIsSendingLink(true);
+    try {
+      const res = await fetch('/api/razorpay/payment-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount,
+          patientId: selectedPatientId,
+          customerName: `${patient.first_name} ${patient.last_name}`,
+          customerPhone: patient.contact?.phone || patient.contact?.mobile || patient.contact?.primary_phone
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast({
+          title: '🚀 Payment Link Sent',
+          description: data.whatsappSent ? 'Link delivered to patient\'s WhatsApp.' : 'Link generated successfully.',
+        });
+      } else {
+        toast({ title: 'Delivery Failed', description: data.error || 'Check server logs.', variant: 'destructive' });
+      }
+    } catch (err: any) {
+      toast({ title: 'System Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsSendingLink(false);
+    }
+  };
+
+  const handlePopOutDisplay = () => {
+    if (!razorpayQRUrl) return;
+    const url = `/hms/billing/qr?url=${encodeURIComponent(razorpayQRUrl)}&amount=${razorpayQRAmount}&bn=${encodeURIComponent(gatewayConfig?.businessName || 'Our Facility')}`;
+    window.open(url, 'CustomerDisplay', 'width=800,height=1000,menubar=no,toolbar=no,location=no,status=no');
+    setIsCustomerDisplayOpen(true);
   };
 
   const applyPricingMode = (mode: 'standard' | 'mrp') => {
@@ -855,10 +968,10 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                 onClick={async () => {
                   if (!lastSavedId) return;
                   const res = await shareInvoiceWhatsapp(lastSavedId);
-                  if (res.success) {
+                  if ((res as any).success) {
                     toast({ title: "WhatsApp Sent", description: "Receipt shared with patient." });
                   } else {
-                    toast({ title: "WhatsApp Failed", description: res.error || "System error", variant: "destructive" });
+                    toast({ title: "WhatsApp Failed", description: (res as any).error || "System error", variant: "destructive" });
                   }
                 }}
                 className="group p-6 bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border border-slate-100 dark:border-white/5 hover:border-emerald-500 transition-all text-center"
@@ -1526,6 +1639,62 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                 </div>
 
 
+                {/* Razorpay QR Button (Dynamic) */}
+                {gatewayConfig?.enabled && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const amt = parseFloat(activePaymentAmount) || 0;
+                      if (amt > 0) {
+                        handleRazorpayQR(amt);
+                      } else {
+                        toast({ title: "Amount Required", description: "Enter an amount before starting Razorpay payment.", variant: "destructive" });
+                      }
+                    }}
+                    className="w-full h-16 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white rounded-2xl flex items-center justify-center gap-4 transition-all active:scale-[0.98] shadow-lg shadow-indigo-500/20 group"
+                  >
+                    <div className="h-8 w-8 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                      <Zap className="h-4 w-4 text-yellow-300" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 leading-none mb-1">Active Gateway</p>
+                      <p className="text-sm font-black tracking-tight uppercase leading-none">Pay via Razorpay QR (Auto-Confirmed)</p>
+                    </div>
+                  </button>
+                )}
+
+                {/* WhatsApp Payment Link Button (World Class) */}
+                {gatewayConfig?.enabled && (
+                  <button
+                    type="button"
+                    disabled={isSendingLink}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const amt = parseFloat(activePaymentAmount) || 0;
+                      if (amt > 0) {
+                        handleSendPaymentLink(amt);
+                      } else {
+                        toast({ title: "Amount Required", description: "Enter an amount before sending payment link.", variant: "destructive" });
+                      }
+                    }}
+                    className="w-full h-16 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl flex items-center justify-center gap-4 transition-all active:scale-[0.98] shadow-lg shadow-emerald-500/20 group disabled:opacity-50"
+                  >
+                    <div className="h-8 w-8 bg-white/20 rounded-xl flex items-center justify-center group-hover:bg-white/30 transition-colors">
+                      {isSendingLink ? <Loader2 className="h-4 w-4 animate-spin text-white" /> : <Smartphone className="h-4 w-4 text-white" />}
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80 leading-none mb-1">Contact-less Pay</p>
+                      <p className="text-sm font-black tracking-tight uppercase leading-none">
+                        {isSendingLink ? 'Requesting...' : 'Send Payment Link to WhatsApp'}
+                      </p>
+                    </div>
+                  </button>
+                )}
+
+
                 {/* Final Conclusion Action */}
                 <div className="grid grid-cols-3 gap-4">
                   <button
@@ -1586,6 +1755,85 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                   </button>
                 </div>
                 <p className="text-[8px] font-black text-center text-slate-600 uppercase tracking-[0.4em] opacity-40">Standard Institutional Billing & Settlement Node</p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Razorpay QR Modal */}
+        <Dialog open={isRazorpayQROpen} onOpenChange={setIsRazorpayQROpen}>
+          <DialogContent className="z-[500] max-w-md p-8 bg-white dark:bg-slate-900 rounded-[3rem] border-none shadow-2xl overflow-hidden">
+            <div className="text-center">
+              <div className="inline-flex items-center gap-2 mb-6 bg-indigo-50 dark:bg-indigo-900/30 px-4 py-1.5 rounded-full border border-indigo-100 dark:border-indigo-800/50">
+                <Zap className="h-3 w-3 text-indigo-500" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400">Dynamic Payment Gateway</span>
+              </div>
+
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white italic mb-2">SCAN TO PAY</h2>
+              <p className="text-xs font-medium text-slate-500 mb-8">Pay precisely {currency}{razorpayQRAmount.toFixed(2)} to avoid payment failure</p>
+
+              <div className="relative mb-8 flex justify-center">
+                <div className={`transition-all duration-300 ${razorpayStatus === 'loading' ? 'blur-md opacity-50' : ''}`}>
+                  <div className="p-6 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.1)] inline-block">
+                    {razorpayQRUrl ? (
+                      <QRCodeSVG value={razorpayQRUrl} size={180} level="H" includeMargin={false} />
+                    ) : (
+                      <div className="h-[180px] w-[180px] flex items-center justify-center bg-slate-50 rounded-xl">
+                        <Loader2 className="h-8 w-8 text-indigo-400 animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {razorpayStatus === 'loading' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
+                    <Loader2 className="h-10 w-10 text-indigo-600 animate-spin" />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">Generating QR...</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-6">
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-3xl border border-slate-100 dark:border-white/5">
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Order ID</span>
+                    <span className="text-[10px] font-mono font-bold text-slate-600 dark:text-slate-300">{razorpayOrderId || 'PENDING'}</span>
+                  </div>
+                  <div className="flex justify-between items-center bg-indigo-500/10 p-3 rounded-2xl">
+                    <span className="text-[9px] font-black text-indigo-600 uppercase tracking-widest flex items-center gap-2">
+                      <Clock className="h-3 w-3" /> Waiting for Payment
+                    </span>
+                    <span className="text-xs font-black text-indigo-700 animate-pulse">LIVE</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <Button variant="outline" onClick={() => setIsRazorpayQROpen(false)} className="h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest border-slate-200 dark:border-slate-800 focus:ring-0">
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleRazorpayManualConfirm}
+                    className="h-14 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-lg shadow-emerald-600/20 active:scale-95 border-none"
+                  >
+                    I have Paid
+                  </Button>
+                </div>
+
+                <Button
+                  variant="ghost"
+                  onClick={(e) => { e.preventDefault(); handlePopOutDisplay(); }}
+                  className="w-full h-12 rounded-xl text-[9px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 flex items-center justify-center gap-3 transition-all border border-indigo-100 dark:border-indigo-900/40 mb-4"
+                >
+                  <Activity className={`h-4 w-4 ${isCustomerDisplayOpen ? 'animate-pulse text-emerald-500' : ''}`} />
+                  {isCustomerDisplayOpen ? 'MIRROR ACTIVE (PATIENT SCREEN)' : 'MIRROR TO PATIENT DISPLAY'}
+                </Button>
+
+                <div className="flex items-center gap-3 p-4 bg-amber-50 dark:bg-amber-900/10 rounded-2xl border border-amber-100 dark:border-amber-900/20">
+                  <Info className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                  <p className="text-[10px] text-left leading-relaxed text-amber-700 dark:text-amber-400 font-medium italic">
+                    Open any UPI App (PhonePe, GPay, Paytm) and scan this QR code. The system will automatically detect the payment via cloud hook.
+                  </p>
+                </div>
               </div>
             </div>
           </DialogContent>

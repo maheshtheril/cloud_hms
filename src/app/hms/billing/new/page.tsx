@@ -3,8 +3,8 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { CompactInvoiceEditor } from "@/components/billing/invoice-editor-compact"
 import { getBillableItems, getTaxConfiguration, getUoms } from "@/app/actions/billing"
+import { getPaymentGatewaySettings } from "@/app/actions/settings"
 import { auth } from "@/auth"
-// hms_invoice_status removed
 
 export default async function NewInvoicePage({
     searchParams
@@ -46,7 +46,7 @@ export default async function NewInvoicePage({
     }
 
     // Parallel data fetching
-    const [patients, itemsRes, taxRes, uomsRes, companySettings] = await Promise.all([
+    const [patients, itemsRes, taxRes, uomsRes, companySettings, gatewayRes] = await Promise.all([
         prisma.hms_patient.findMany({
             where: {
                 tenant_id: tenantId // Filter by current user's tenant
@@ -70,7 +70,8 @@ export default async function NewInvoicePage({
         prisma.company_settings.findUnique({
             where: { company_id: session.user.companyId || session.user.tenantId },
             include: { currencies: true }
-        })
+        }),
+        getPaymentGatewaySettings()
     ]);
 
     const billableItems = itemsRes.success ? itemsRes.data : [];
@@ -296,6 +297,10 @@ export default async function NewInvoicePage({
     }
     */
 
+    const gatewayConfig = (gatewayRes.success && gatewayRes.settings?.enabled && gatewayRes.settings?.keyId)
+        ? { enabled: true, keyId: gatewayRes.settings.keyId, upiVpa: gatewayRes.settings.upiVpa, businessName: gatewayRes.settings.businessName }
+        : null;
+
     return (
         <CompactInvoiceEditor
             key={`${appointmentId || 'no-apt'}-${patientId || 'no-pat'}`}
@@ -308,6 +313,7 @@ export default async function NewInvoicePage({
             appointmentId={appointmentId}
             initialInvoice={initialInvoice ? JSON.parse(JSON.stringify(initialInvoice)) : null}
             currency={currency}
+            gatewayConfig={gatewayConfig}
         />
     )
 }

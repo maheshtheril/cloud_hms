@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { updateHMSSettings } from "@/app/actions/settings"
-import { Shield, CreditCard, Save, Calendar, Sparkles, AlertCircle, CheckCircle, Stethoscope } from "lucide-react"
+import { updateHMSSettings, updatePaymentGatewaySettings } from "@/app/actions/settings"
+import { Shield, CreditCard, Save, Calendar, Sparkles, AlertCircle, CheckCircle, Stethoscope, Zap, Eye, EyeOff, ToggleLeft } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
-export function HMSSettingsForm({ settings, products, doctors = [] }: { settings: any, products: any[], doctors?: any[] }) {
+export function HMSSettingsForm({ settings, products, doctors = [], gatewaySettings }: { settings: any, products: any[], doctors?: any[], gatewaySettings?: any }) {
     const router = useRouter()
     const { toast } = useToast()
     const [loading, setLoading] = useState(false)
@@ -19,6 +19,15 @@ export function HMSSettingsForm({ settings, products, doctors = [] }: { settings
     const [consultationBillingMode, setConsultationBillingMode] = useState(settings.consultationBillingMode || 'post_visit')
     const [defaultDoctorId, setDefaultDoctorId] = useState(settings.defaultDoctorId || '')
 
+    // Payment Gateway Settings
+    const [gatewayEnabled, setGatewayEnabled] = useState(gatewaySettings?.enabled ?? false)
+    const [gatewayKeyId, setGatewayKeyId] = useState(gatewaySettings?.keyId ?? '')
+    const [gatewayKeySecret, setGatewayKeySecret] = useState('')  // Never pre-filled for security
+    const [gatewayUpiVpa, setGatewayUpiVpa] = useState(gatewaySettings?.upiVpa ?? '')
+    const [gatewayBusinessName, setGatewayBusinessName] = useState(gatewaySettings?.businessName ?? '')
+    const [showSecret, setShowSecret] = useState(false)
+    const [hasExistingSecret, setHasExistingSecret] = useState(gatewaySettings?.hasKeySecret ?? false)
+
     // CRITICAL: Sync local state when settings props change (after router.refresh)
     useEffect(() => {
         setRegistrationFee(settings.registrationFee);
@@ -28,6 +37,16 @@ export function HMSSettingsForm({ settings, products, doctors = [] }: { settings
         setConsultationBillingMode(settings.consultationBillingMode || 'post_visit');
         setDefaultDoctorId(settings.defaultDoctorId || '');
     }, [settings]);
+
+    useEffect(() => {
+        if (gatewaySettings) {
+            setGatewayEnabled(gatewaySettings.enabled ?? false);
+            setGatewayKeyId(gatewaySettings.keyId ?? '');
+            setGatewayUpiVpa(gatewaySettings.upiVpa ?? '');
+            setGatewayBusinessName(gatewaySettings.businessName ?? '');
+            setHasExistingSecret(gatewaySettings.hasKeySecret ?? false);
+        }
+    }, [gatewaySettings]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -41,36 +60,45 @@ export function HMSSettingsForm({ settings, products, doctors = [] }: { settings
 
         try {
             console.log("Submitting HMS settings...");
-            const res = await updateHMSSettings({
-                registrationFee: parseFloat(String(registrationFee)),
-                registrationValidity: parseInt(String(registrationValidity)),
-                enableCardIssuance: !!enableCardIssuance,
-                consultationBillingMode: consultationBillingMode,
-                productId: selectedProductId,
-                defaultDoctorId: defaultDoctorId || null
-            });
+            const [res, gatewayRes] = await Promise.all([
+                updateHMSSettings({
+                    registrationFee: parseFloat(String(registrationFee)),
+                    registrationValidity: parseInt(String(registrationValidity)),
+                    enableCardIssuance: !!enableCardIssuance,
+                    consultationBillingMode: consultationBillingMode,
+                    productId: selectedProductId,
+                    defaultDoctorId: defaultDoctorId || null
+                }),
+                updatePaymentGatewaySettings({
+                    enabled: gatewayEnabled,
+                    keyId: gatewayKeyId,
+                    keySecret: gatewayKeySecret || undefined,
+                    upiVpa: gatewayUpiVpa,
+                    businessName: gatewayBusinessName,
+                })
+            ]);
+            // Merge errors from both
+            if (!res.success) {
+                setMsg({ type: 'error', text: res.error || 'Failed to save HMS settings.', debug: res.debug });
+                toast({ title: "Save Failed", description: res.error || "Please check your input.", variant: "destructive" });
+                return;
+            }
+            if (!gatewayRes.success) {
+                setMsg({ type: 'error', text: gatewayRes.error || 'Failed to save gateway settings.' });
+                toast({ title: "Gateway Save Failed", description: gatewayRes.error, variant: "destructive" });
+                return;
+            }
+            // Fake res to reuse existing success flow
+            const res2 = res as any;
 
             if (loadingToast) loadingToast.dismiss();
 
-            if (res.success) {
-                setMsg({ type: 'success', text: 'Configuration saved successfully.' });
-                toast({
-                    title: "Success",
-                    description: "HMS registration settings updated.",
-                });
-                router.refresh();
-            } else {
-                setMsg({
-                    type: 'error',
-                    text: res.error || 'Failed to save settings.',
-                    debug: res.debug
-                });
-                toast({
-                    title: "Save Failed",
-                    description: res.error || "Please check your input.",
-                    variant: "destructive",
-                });
-            }
+            setMsg({ type: 'success', text: 'Configuration saved successfully.' });
+            toast({ title: "Success", description: "HMS & Payment Gateway settings updated." });
+            if (gatewayKeySecret) { setGatewayKeySecret(''); setHasExistingSecret(true); }
+            router.refresh();
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            void res2;
         } catch (err: any) {
             if (loadingToast) loadingToast.dismiss();
             console.error("Critical error in settings save:", err);
@@ -374,6 +402,123 @@ export function HMSSettingsForm({ settings, products, doctors = [] }: { settings
                             )}
                         </tbody>
                     </table>
+                </div>
+            </div>
+
+            {/* Payment Gateway Card */}
+            <div className="bg-gradient-to-r from-violet-950 to-indigo-950 text-white rounded-2xl p-6 shadow-xl border border-violet-800/40">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                        <div className="h-12 w-12 bg-white/10 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                            <Zap className="h-6 w-6 text-yellow-300" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[10px] font-black text-violet-300 uppercase tracking-[0.2em] bg-violet-800/40 px-2 py-0.5 rounded-md">UPI Payments</span>
+                                {gatewayEnabled && (
+                                    <span className="text-[10px] font-black text-emerald-300 uppercase tracking-[0.2em] bg-emerald-900/40 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
+                                        Live
+                                    </span>
+                                )}
+                            </div>
+                            <h3 className="font-bold text-lg text-white">Payment Gateway — Razorpay</h3>
+                            <p className="text-xs text-violet-300 font-medium opacity-80">Plug & Play UPI QR payments on billing forms</p>
+                        </div>
+                    </div>
+                    {/* Enable Toggle */}
+                    <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={gatewayEnabled}
+                            onChange={(e) => setGatewayEnabled(e.target.checked)}
+                            className="sr-only peer"
+                            id="gateway-enabled-toggle"
+                        />
+                        <div className="w-14 h-7 bg-slate-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-violet-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
+                </div>
+
+                <div className={`space-y-4 transition-all duration-300 ${!gatewayEnabled ? 'opacity-40 pointer-events-none' : ''}`}>
+                    {/* Business Name */}
+                    <div>
+                        <label className="block text-[10px] font-black text-violet-300 uppercase tracking-widest mb-1.5">Hospital / Business Name</label>
+                        <input
+                            type="text"
+                            value={gatewayBusinessName}
+                            onChange={(e) => setGatewayBusinessName(e.target.value)}
+                            placeholder="e.g. City General Hospital"
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 font-bold outline-none focus:border-violet-400 transition-colors"
+                        />
+                        <p className="text-[10px] text-violet-400 mt-1">Shown to patient on Razorpay payment screen</p>
+                    </div>
+
+                    {/* UPI VPA */}
+                    <div>
+                        <label className="block text-[10px] font-black text-violet-300 uppercase tracking-widest mb-1.5">Hospital UPI ID (VPA)</label>
+                        <input
+                            type="text"
+                            value={gatewayUpiVpa}
+                            onChange={(e) => setGatewayUpiVpa(e.target.value)}
+                            placeholder="e.g. cityhospital@hdfc"
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 font-bold outline-none focus:border-violet-400 transition-colors"
+                        />
+                        <p className="text-[10px] text-violet-400 mt-1">UPI address where patients' payments will be received</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Key ID */}
+                        <div>
+                            <label className="block text-[10px] font-black text-violet-300 uppercase tracking-widest mb-1.5">Razorpay Key ID</label>
+                            <input
+                                type="text"
+                                value={gatewayKeyId}
+                                onChange={(e) => setGatewayKeyId(e.target.value)}
+                                placeholder="rzp_test_xxxxxxxxxxxx"
+                                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 font-mono text-sm outline-none focus:border-violet-400 transition-colors"
+                            />
+                            <p className="text-[10px] text-violet-400 mt-1">Starts with rzp_test_ or rzp_live_</p>
+                        </div>
+
+                        {/* Key Secret */}
+                        <div>
+                            <label className="block text-[10px] font-black text-violet-300 uppercase tracking-widest mb-1.5">
+                                Razorpay Key Secret
+                                {hasExistingSecret && !gatewayKeySecret && (
+                                    <span className="ml-2 text-emerald-400 normal-case font-bold text-[9px] bg-emerald-900/40 px-1.5 py-0.5 rounded">
+                                        ✓ Saved
+                                    </span>
+                                )}
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type={showSecret ? 'text' : 'password'}
+                                    value={gatewayKeySecret}
+                                    onChange={(e) => setGatewayKeySecret(e.target.value)}
+                                    placeholder={hasExistingSecret ? '••••••• (leave blank to keep existing)' : 'Enter your Key Secret'}
+                                    className="w-full px-4 py-3 pr-12 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/30 font-mono text-sm outline-none focus:border-violet-400 transition-colors"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowSecret(!showSecret)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors"
+                                >
+                                    {showSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                </button>
+                            </div>
+                            <p className="text-[10px] text-violet-400 mt-1">Never stored in browser. Server-only encryption.</p>
+                        </div>
+                    </div>
+
+                    {!gatewayKeyId && (
+                        <div className="flex items-start gap-3 p-4 bg-amber-900/30 rounded-xl border border-amber-700/40">
+                            <ToggleLeft className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-xs text-amber-300 font-medium">
+                                No keys yet? That's OK — save and come back here after you get your Razorpay API keys.
+                                The gateway button on the billing form will be hidden until keys are entered.
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
 
