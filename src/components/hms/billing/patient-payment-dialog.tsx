@@ -102,7 +102,7 @@ export function PatientPaymentDialog({
     }] : [];
 
     return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
                 {trigger || (
                     <Button className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg shadow-emerald-200">
@@ -133,7 +133,8 @@ export function PatientPaymentDialog({
                         initialInvoice={initialInvoice}
                         isRegistrationFee={isRegistrationFee || !!fixedAmount}
                         onClose={() => {
-                            setIsOpen(false);
+                            // [FIX] Call handleOpenChange so parent onClose is notified
+                            handleOpenChange(false);
                         }}
                         onPaymentSuccess={(data) => {
                             onPaymentSuccess?.(data);

@@ -1015,8 +1015,10 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               )}
             </div>
             <div className="flex gap-2 border-l border-slate-200 dark:border-slate-800 pl-6">
-              <button onClick={() => setIsMaximized(!isMaximized)} className="p-3 text-slate-400 hover:text-slate-900 transition-all"><Maximize2 className="h-5 w-5" /></button>
-              <button onClick={() => onClose ? onClose() : router.back()} className="p-3 text-slate-400 hover:text-red-500 transition-all"><X className="h-5 w-5" /></button>
+              <button onClick={() => setIsMaximized(!isMaximized)} className="p-3 text-slate-400 hover:text-slate-900 transition-all rounded-xl hover:bg-slate-100"><Maximize2 className="h-5 w-5" /></button>
+              <button onClick={() => onClose ? onClose() : router.back()} className="p-2 bg-red-50 hover:bg-red-500 text-red-500 hover:text-white transition-all rounded-xl border border-red-200 hover:border-red-500 shadow-sm" title="Close">
+                <X className="h-5 w-5" />
+              </button>
             </div>
           </div>
         </div>
@@ -1099,7 +1101,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                     <th className="px-4 py-2 w-12"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#003333] border-b border-[#006666] bg-[#004d4d] text-[#ffffcc]">
+                <tbody className="divide-y divide-[#003333] border-b border-[#006666] bg-[#004d4d] text-[#ffffcc] [&_input]:text-[#ffffcc] [&_select]:text-[#ffffcc]">
                   {lines.map((line, index) => {
                     const lineTotal = (line.quantity * line.unit_price);
                     const isZeroLine = (line.product_id || line.description) && lineTotal === 0;
@@ -1155,7 +1157,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                                   // Tax is now decoupled and preserved.
                                 } : l));
                               }}
-                              className={`text-[8px] font-black px-1.5 py-0.5 rounded-md transition-all active:scale-95 ${line.item_type === 'service' ? 'bg-indigo-500/10 text-indigo-600 hover:bg-indigo-500/20' : 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'}`}
+                              className={`text-[8px] font-black px-2 py-1 rounded-md transition-all active:scale-95 border ${line.item_type === 'service' ? 'bg-indigo-500/20 text-indigo-300 hover:bg-indigo-500/30 border-indigo-500/30' : 'bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border-emerald-500/30'}`}
                             >
                               {(line.item_type || 'ITEM').toUpperCase()}
                             </button>
@@ -1185,20 +1187,20 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                             }}
                             onChange={e => updateLine(line.id, 'quantity', parseFloat(e.target.value) || 0)}
                             disabled={isPaymentModalOpen || loading}
-                            className="h-10 bg-transparent border-none text-center font-black text-base focus:ring-0"
+                            className="h-10 bg-transparent border-none text-center font-black text-base focus:ring-0 text-[#ffffcc] placeholder:text-[#ffffcc]/40"
                           />
                         </td>
                         <td className="px-4 py-3">
-                          <select className="w-full h-10 bg-slate-50 dark:bg-slate-900 border-none rounded-lg px-2 text-[9px] font-black tracking-widest outline-none focus:ring-1 focus:ring-indigo-500" value={line.uom || ''} onChange={e => updateLine(line.id, 'uom', e.target.value)} disabled={isPaymentModalOpen || loading}>
+                          <select className="w-full h-10 bg-[#003333] text-[#ffffcc] border border-[#006666] rounded-lg px-2 text-[9px] font-black tracking-widest outline-none focus:ring-1 focus:ring-[#64ffff]" value={line.uom || ''} onChange={e => updateLine(line.id, 'uom', e.target.value)} disabled={isPaymentModalOpen || loading}>
                             {getUomOptions(line.item_type, line.uom).map(u => (
                               <option key={u} value={u}>{u}</option>
                             ))}
                           </select>
                         </td>
-                        <td className="px-4 py-3"><Input type="number" value={line.unit_price} onChange={e => updateLine(line.id, 'unit_price', parseFloat(e.target.value) || 0)} disabled={isPaymentModalOpen || loading} className="h-10 bg-transparent border-none font-mono font-black text-slate-400 text-sm focus:ring-0" /></td>
+                        <td className="px-4 py-3"><Input type="number" value={line.unit_price} onChange={e => updateLine(line.id, 'unit_price', parseFloat(e.target.value) || 0)} disabled={isPaymentModalOpen || loading} className="h-10 bg-transparent border-none font-mono font-black text-[#ffffcc] text-sm focus:ring-0" /></td>
                         <td className="px-4 py-3">
                           <div className="flex flex-col gap-1">
-                            <select className="w-full h-8 bg-transparent border border-slate-100 dark:border-slate-800 rounded-lg px-2 text-[8px] font-black outline-none" value={line.tax_rate_id || ''} onChange={e => updateLine(line.id, 'tax_rate_id', e.target.value)} disabled={isPaymentModalOpen || loading}>
+                            <select className="w-full h-8 bg-[#003333] text-[#ffffcc] border border-[#006666] rounded-lg px-2 text-[8px] font-black outline-none focus:ring-1 focus:ring-[#64ffff]" value={line.tax_rate_id || ''} onChange={e => updateLine(line.id, 'tax_rate_id', e.target.value)} disabled={isPaymentModalOpen || loading}>
                               <option value="">0% (No Tax)</option>
                               {extendedTaxRates.map((t: any) => <option key={t.id} value={t.id}>{t.name} ({t.rate}%)</option>)}
                             </select>
@@ -1209,7 +1211,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                             )}
                           </div>
                         </td>
-                        <td className="px-8 py-3 text-right font-black text-lg italic tracking-tighter text-slate-800 dark:text-white">
+                        <td className="px-8 py-3 text-right font-black text-lg italic tracking-tighter text-[#ffffcc]">
                           <span className={isZeroLine ? 'text-rose-500 animate-pulse' : ''}>
                             {currency}{(lineTotal + (line.tax_amount || 0)).toFixed(2)}
                           </span>
