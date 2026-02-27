@@ -1,48 +1,87 @@
 import { jsPDF } from 'jspdf';
+import { getPDFConfig } from '@/app/actions/settings';
 
 export async function generatePrescriptionPDFBase64(prescription: any, company?: any): Promise<string> {
     try {
         const doc = new jsPDF('p', 'pt', 'a4');
         const pageWidth = doc.internal.pageSize.getWidth();
 
-        // --- Header & Branding ---
+        // --- Branding & Configuration ---
+        const config = await getPDFConfig(prescription.company_id!, prescription.tenant_id!);
+        const alignment = config?.headerAlignment || 'right';
+        const showLogo = config?.showLogo ?? true;
+        const logoUrl = company?.logo_url;
+
+        let headerY = 60;
+        const margin = 50;
+        const contentWidth = pageWidth - (margin * 2);
+
+        // Hospital Details
         const companyName = company?.name || 'Hospital Management System';
         const meta = company?.metadata as any;
         const address = meta?.address || 'Healthcare Excellence';
         const contactStr = (meta?.email || meta?.phone)
-            ? `${meta?.email || ''} ${meta?.email && meta?.phone ? ' | ' : ''} ${meta?.phone || ''}`
+            ? `${meta?.email || ''}${meta?.email && meta?.phone ? ' | ' : ''}${meta?.phone || ''}`
             : 'Premium Healthcare Services';
 
-        // Set colors and fonts
+        // 1. Draw Title (PRESCRIPTION) - always top left
         doc.setTextColor(68, 68, 68);
         doc.setFontSize(24);
         doc.setFont('helvetica', 'bold');
-        doc.text('PRESCRIPTION', 50, 60);
+        doc.text('PRESCRIPTION', margin, headerY);
 
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Date: ${new Date(prescription.created_at).toLocaleDateString()}`, 50, 80);
+        doc.text(`Date: ${new Date(prescription.created_at).toLocaleDateString()}`, margin, headerY + 20);
 
-        // Company info (Right aligned)
+        // 2. Draw Logo if enabled
+        if (showLogo && logoUrl) {
+            try {
+                let logoX = margin;
+                if (alignment === 'right') logoX = pageWidth - margin - 60;
+                else if (alignment === 'center') logoX = (pageWidth / 2) - 30;
+
+                const logoBase64 = await fetchImageAsBase64(logoUrl);
+                if (logoBase64) {
+                    doc.addImage(logoBase64, 'PNG', logoX, headerY - 30, 60, 60, undefined, 'FAST');
+                }
+            } catch (e) {
+                console.error("[Prescription-Logo] Failed to embed logo:", e);
+            }
+        }
+
+        // 3. Draw Branding Info
+        const brandX = alignment === 'right' ? pageWidth - margin : (alignment === 'center' ? pageWidth / 2 : margin);
+        const textAlign = alignment;
+
         doc.setTextColor(79, 70, 229); // Indigo-600
-        doc.setFontSize(14);
+        doc.setFontSize(config?.hospitalNameSize || 14);
         doc.setFont('helvetica', 'bold');
-        doc.text(companyName, pageWidth - 50, 60, { align: 'right' });
+
+        let brandY = headerY;
+        if (alignment === 'center') brandY = headerY + 60;
+        if (alignment === 'left') brandY = headerY + 70;
+
+        doc.text(companyName, brandX, brandY, { align: textAlign });
 
         doc.setTextColor(102, 102, 102);
-        doc.setFontSize(10);
+        doc.setFontSize(config?.addressSize || 10);
         doc.setFont('helvetica', 'normal');
-        doc.text(address, pageWidth - 50, 75, { align: 'right' });
-        doc.text(contactStr, pageWidth - 50, 90, { align: 'right' });
+        doc.text(address, brandX, brandY + 15, { align: textAlign });
+
+        if (config?.showContactInfo !== false) {
+            doc.text(contactStr, brandX, brandY + 30, { align: textAlign });
+        }
 
         // Divider
         doc.setDrawColor(238, 238, 238);
-        doc.line(50, 115, pageWidth - 50, 115);
+        const dividerY = Math.max(brandY + 45, 115);
+        doc.line(margin, dividerY, pageWidth - margin, dividerY);
 
         // --- Patient Info ---
         doc.setTextColor(153, 153, 153);
         doc.setFontSize(10);
-        doc.text('PATIENT', 50, 140);
+        doc.text('PATIENT', margin, dividerY + 25);
 
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(12);
@@ -156,5 +195,27 @@ export async function generatePrescriptionPDFBase64(prescription: any, company?:
         return pdfBase64;
     } catch (err) {
         throw err;
+    }
+}
+
+/**
+ * Helper to fetch external image and convert to Base64 for PDF embedding
+ */
+async function fetchImageAsBase64(url: string): Promise<string | null> {
+    try {
+        if (!url) return null;
+        if (url.startsWith('data:')) return url;
+
+        const response = await fetch(url);
+        if (!response.ok) return null;
+
+        const arrayBuffer = await response.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        const mimeType = response.headers.get('content-type') || 'image/png';
+
+        return `data:${mimeType};base64,${buffer.toString('base64')}`;
+    } catch (error) {
+        console.error("fetchImageAsBase64 failed:", error);
+        return null;
     }
 }

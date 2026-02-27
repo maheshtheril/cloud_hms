@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getWhatsAppConfig } from "@/app/actions/settings";
 import { generateInvoicePDFBase64 } from "@/lib/utils/pdf-generator";
 import { generatePrescriptionPDFBase64 } from "@/lib/utils/prescription-pdf-generator";
 
@@ -68,15 +69,16 @@ export class NotificationService {
                 `Thank you,\n*${companyName}*\n\n` +
                 `🔗 Bill Link: ${billLink}`;
 
-            // 5. API Configuration
-            const instanceId = process.env.WHATSAPP_INSTANCE_ID || 'instance_mock_123';
-            const token = process.env.WHATSAPP_TOKEN || 'token_mock_123';
+            // 5. Dynamic API Configuration
+            const dynamicConfig = await this.getDynamicConfig(invoice.company_id!, tenantId);
 
-            // Note: If you use UltraMsg, the endpoint is usually:
-            // https://api.ultramsg.com/${instanceId}/messages/chat
+            if (!dynamicConfig.enabled) {
+                console.log(`[NotificationService] WhatsApp disabled for company ${invoice.company_id}`);
+                return { success: false, error: 'WhatsApp delivery is disabled in settings.' };
+            }
 
-            const isMock = !process.env.WHATSAPP_TOKEN || process.env.WHATSAPP_TOKEN.includes('mock');
-
+            const { instanceId, token } = dynamicConfig;
+            const isMock = !token || token.includes('mock');
 
             if (isMock) {
                 console.log(`[WhatsApp-Mock] To: ${phone}\n[WhatsApp-Mock] Message: ${message}${finalPdfBase64 ? '\n[WhatsApp-Mock] Attachment: [PDF DETECTED]' : ''}`);
@@ -172,9 +174,14 @@ export class NotificationService {
                 `Please find the attached PDF.\n\n` +
                 `Thank you.`;
 
-            // 5. configuration
-            const instanceId = process.env.WHATSAPP_INSTANCE_ID;
-            const token = process.env.WHATSAPP_TOKEN;
+            // 5. Dynamic Configuration
+            const dynamicConfig = await this.getDynamicConfig(prescription.company_id!, tenantId);
+
+            if (!dynamicConfig.enabled) {
+                return { success: false, error: 'WhatsApp delivery is disabled.' };
+            }
+
+            const { instanceId, token } = dynamicConfig;
             const isMock = !token || token.includes('mock');
 
             if (isMock) {
@@ -248,8 +255,16 @@ export class NotificationService {
                 `Thank you for choosing us!`;
 
             // 4. API Configuration
-            const instanceId = process.env.WHATSAPP_INSTANCE_ID;
-            const token = process.env.WHATSAPP_TOKEN;
+            // Since we only have patientId, we may need to find the tenantId/companyId if not provided.
+            // For now, let's assume this is called with context or just use process.env as last resort
+            // or better yet, fetch patient's company.
+            const dynamicConfig = await this.getDynamicConfig(patient.company_id!, patient.tenant_id!);
+
+            if (!dynamicConfig.enabled) {
+                return { success: false, error: 'WhatsApp delivery is disabled.' };
+            }
+
+            const { instanceId, token } = dynamicConfig;
             const isMock = !token || token.includes('mock');
 
             if (isMock) {
@@ -282,5 +297,36 @@ export class NotificationService {
             console.error("[NotificationService] Payment Link WhatsApp failed:", error);
             return { success: false, error: 'Internal server error' };
         }
+    }
+
+    /**
+     * INTERNAL: Resolves the best WhatsApp configuration available.
+     * Priority: Dynamic Settings (DB) > Environment Variables
+     */
+    private static async getDynamicConfig(companyId: string, tenantId: string) {
+        try {
+            const dbConfig = await getWhatsAppConfig(companyId, tenantId);
+
+            // If DB config exists and is enabled, use it.
+            // Even if disabled, we return it to respect the "Admin Kill Switch"
+            if (dbConfig) {
+                return {
+                    enabled: dbConfig.enabled ?? false,
+                    instanceId: dbConfig.instanceId || process.env.WHATSAPP_INSTANCE_ID || '',
+                    token: dbConfig.token || process.env.WHATSAPP_TOKEN || '',
+                    autoSendBill: dbConfig.autoSendBill ?? false
+                };
+            }
+        } catch (err) {
+            console.error("[NotificationService] Dynamic config fetch failed:", err);
+        }
+
+        // Fallback to Environment Variables
+        return {
+            enabled: !!process.env.WHATSAPP_TOKEN, // Enable if token exists in ENV
+            instanceId: process.env.WHATSAPP_INSTANCE_ID || '',
+            token: process.env.WHATSAPP_TOKEN || '',
+            autoSendBill: false
+        };
     }
 }

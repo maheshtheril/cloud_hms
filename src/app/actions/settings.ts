@@ -793,3 +793,181 @@ export async function getPaymentGatewayConfig(companyId: string, tenantId: strin
     });
     return (record?.value as any) || null;
 }
+
+// === WHATSAPP CONFIGURATION SETTINGS ===
+
+export async function getWhatsAppSettings() {
+    const session = await auth();
+    if (!session?.user?.companyId || !session?.user?.tenantId) return { success: false, error: 'Unauthorized' };
+
+    try {
+        const record = await prisma.hms_settings.findFirst({
+            where: {
+                company_id: session.user.companyId,
+                tenant_id: session.user.tenantId,
+                key: 'whatsapp_config'
+            }
+        });
+
+        const data = (record?.value as any) || {};
+
+        return {
+            success: true,
+            settings: {
+                enabled: data.enabled ?? false,
+                instanceId: data.instanceId ?? '',
+                hasToken: !!data.token,
+                autoSendBill: data.autoSendBill ?? false,
+            }
+        };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function updateWhatsAppSettings(data: {
+    enabled: boolean;
+    instanceId: string;
+    token?: string;
+    autoSendBill: boolean;
+}) {
+    const session = await auth();
+    const companyId = session?.user?.companyId;
+    const tenantId = session?.user?.tenantId;
+    const userId = session?.user?.id;
+
+    if (!companyId || !tenantId || !userId) return { success: false, error: 'Session expired.' };
+
+    const canManage = await checkPermission('hms:admin');
+    if (!canManage) return { success: false, error: 'Unauthorized: HMS Admin permission required.' };
+
+    try {
+        const existing = await prisma.hms_settings.findFirst({
+            where: { company_id: companyId, tenant_id: tenantId, key: 'whatsapp_config' }
+        });
+        const existingData = (existing?.value as any) || {};
+
+        const configValue = JSON.stringify({
+            enabled: data.enabled,
+            instanceId: data.instanceId.trim(),
+            token: (data.token && data.token.trim() !== '')
+                ? data.token.trim()
+                : (existingData.token ?? ''),
+            autoSendBill: data.autoSendBill,
+            lastUpdated: new Date().toISOString()
+        });
+
+        await prisma.hms_settings.deleteMany({
+            where: { company_id: companyId, tenant_id: tenantId, key: 'whatsapp_config' }
+        });
+
+        const configId = (await prisma.$queryRaw`SELECT gen_random_uuid()` as any)[0].gen_random_uuid;
+        await prisma.$executeRaw`
+            INSERT INTO hms_settings (id, tenant_id, company_id, key, value, scope, version, is_active, created_at, updated_at, created_by, updated_by)
+            VALUES (
+                ${configId}::uuid, ${tenantId}::uuid, ${companyId}::uuid,
+                'whatsapp_config', ${configValue}::jsonb,
+                'company', 1, true, now(), now(), ${userId}::uuid, ${userId}::uuid
+            )
+        `;
+
+        revalidatePath('/settings/hms');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Failed to save WhatsApp settings:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getWhatsAppConfig(companyId: string, tenantId: string) {
+    const record = await prisma.hms_settings.findFirst({
+        where: { company_id: companyId, tenant_id: tenantId, key: 'whatsapp_config' }
+    });
+    return (record?.value as any) || null;
+}
+
+export async function getPDFSettings() {
+    const session = await auth();
+    if (!session?.user?.companyId || !session?.user?.tenantId) return { success: false, error: 'Unauthorized' };
+
+    try {
+        const record = await prisma.hms_settings.findFirst({
+            where: {
+                company_id: session.user.companyId,
+                tenant_id: session.user.tenantId,
+                key: 'pdf_print_config'
+            }
+        });
+
+        const data = (record?.value as any) || {};
+
+        return {
+            success: true,
+            settings: {
+                headerAlignment: data.headerAlignment || 'right',
+                showLogo: data.showLogo ?? true,
+                hospitalNameSize: data.hospitalNameSize || 16,
+                addressSize: data.addressSize || 10,
+                showContactInfo: data.showContactInfo ?? true,
+            }
+        };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function updatePDFSettings(data: {
+    headerAlignment: 'left' | 'center' | 'right';
+    showLogo: boolean;
+    hospitalNameSize?: number;
+    addressSize?: number;
+    showContactInfo?: boolean;
+}) {
+    const session = await auth();
+    const companyId = session?.user?.companyId;
+    const tenantId = session?.user?.tenantId;
+    const userId = session?.user?.id;
+
+    if (!companyId || !tenantId || !userId) return { success: false, error: 'Session expired.' };
+
+    const canManage = await checkPermission('hms:admin');
+    if (!canManage) return { success: false, error: 'Unauthorized: HMS Admin permission required.' };
+
+    try {
+        const configValue = JSON.stringify({
+            ...data,
+            lastUpdated: new Date().toISOString()
+        });
+
+        await prisma.hms_settings.deleteMany({
+            where: { company_id: companyId, tenant_id: tenantId, key: 'pdf_print_config' }
+        });
+
+        const configId = (await prisma.$queryRaw`SELECT gen_random_uuid()` as any)[0].gen_random_uuid;
+        await prisma.$executeRaw`
+            INSERT INTO hms_settings (id, tenant_id, company_id, key, value, scope, version, is_active, created_at, updated_at, created_by, updated_by)
+            VALUES (
+                ${configId}::uuid, ${tenantId}::uuid, ${companyId}::uuid,
+                'pdf_print_config', ${configValue}::jsonb,
+                'company', 1, true, now(), now(), ${userId}::uuid, ${userId}::uuid
+            )
+        `;
+
+        revalidatePath('/settings/hms');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Failed to save PDF settings:', error);
+        return { success: false, error: error.message };
+    }
+}
+
+export async function getPDFConfig(companyId: string, tenantId: string) {
+    try {
+        const record = await prisma.hms_settings.findFirst({
+            where: { company_id: companyId, tenant_id: tenantId, key: 'pdf_print_config' }
+        });
+        return (record?.value as any) || null;
+    } catch (err) {
+        return null;
+    }
+}

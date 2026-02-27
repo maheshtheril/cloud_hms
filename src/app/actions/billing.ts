@@ -1008,7 +1008,16 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
         // Trigger Accounting & Notification
         if (result.status === 'paid') {
             await AccountingService.postSalesInvoice(invoiceId, session.user.id);
-            NotificationService.sendInvoiceWhatsapp(invoiceId, session.user.tenantId!).catch(console.error);
+
+            // Check for Auto-send setting before firing
+            try {
+                const wsConfig = await getWhatsAppConfig(session.user.companyId!, session.user.tenantId!);
+                if (wsConfig?.autoSendBill) {
+                    NotificationService.sendInvoiceWhatsapp(invoiceId, session.user.tenantId!).catch(console.error);
+                }
+            } catch (err) {
+                console.error("[Billing-AutoSend] Failed to resolve auto-send config:", err);
+            }
         }
 
         revalidatePath(`/hms/billing/${invoiceId}`);
@@ -1096,12 +1105,19 @@ export async function settlePatientDues(patientId: string, amount: number, metho
 
         // 2. Trigger Accounting and Collect Errors
         const accountingErrors: string[] = [];
+        const autoSendConfig = await getWhatsAppConfig(companyId, session.user.tenantId!).catch(() => null);
+
         for (const res of paymentResults) {
             try {
                 const accountingRes = await AccountingService.postSalesInvoice(res.invoiceId, session.user.id);
                 if (!accountingRes.success) accountingErrors.push(`Invoice ${res.invoiceId}: ${accountingRes.error}`);
+
+                // Trigger Auto-send if enabled and invoice is now fully paid
+                if (res.status === 'paid' && autoSendConfig?.autoSendBill) {
+                    NotificationService.sendInvoiceWhatsapp(res.invoiceId, session.user.tenantId!).catch(console.error);
+                }
             } catch (err: any) {
-                console.error(`Failed to post accounting for settled invoice ${res.invoiceId}:`, err);
+                console.error(`Failed to post accounting/notification for settled invoice ${res.invoiceId}:`, err);
                 accountingErrors.push(`Invoice ${res.invoiceId}: ${err.message}`);
             }
         }
