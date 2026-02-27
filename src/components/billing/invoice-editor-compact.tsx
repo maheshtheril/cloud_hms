@@ -929,7 +929,18 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         </div>
       )}
 
+
       <div className={`relative flex flex-col bg-white dark:bg-slate-900 shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-200 dark:border-slate-800 transition-all duration-500 ease-out ${isMaximized ? 'w-full h-full' : 'w-full max-w-[98vw] h-[95vh] rounded-[2.5rem]'}`} onClick={e => e.stopPropagation()}>
+
+        {/* ✕ ALWAYS-VISIBLE CLOSE BUTTON */}
+        <button
+          onClick={() => onClose ? onClose() : router.back()}
+          className="absolute top-3 right-3 z-[500] flex items-center gap-1.5 px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-red-600/40 transition-all active:scale-95 no-print"
+          title="Close Billing Terminal"
+        >
+          <X className="h-4 w-4" />
+          CLOSE
+        </button>
 
         {/* 1. Tally-Style Header Area */}
         <div className="flex items-center justify-between px-6 py-2 border-b border-[#006666] bg-[#004d4d] z-20 no-print">
