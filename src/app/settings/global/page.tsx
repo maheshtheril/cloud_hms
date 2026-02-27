@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { GlobalSettingsForm } from "./global-settings-form"
 import { redirect } from "next/navigation"
+import { getWhatsAppSettings, getPDFSettings } from "@/app/actions/settings"
 
 export const dynamic = 'force-dynamic'
 
@@ -40,10 +41,14 @@ export default async function GlobalSettingsPage() {
 
     console.log("Global Settings: Company Fetched", company?.id);
 
-    const currencies = await prisma.currencies.findMany({
-        select: { id: true, code: true, name: true, symbol: true },
-        orderBy: { code: 'asc' }
-    })
+    const [currencies, whatsappRes, pdfRes] = await Promise.all([
+        prisma.currencies.findMany({
+            select: { id: true, code: true, name: true, symbol: true },
+            orderBy: { code: 'asc' }
+        }),
+        getWhatsAppSettings(),
+        getPDFSettings()
+    ])
 
     console.log("Global Settings: Currencies", currencies.length);
 
@@ -62,6 +67,8 @@ export default async function GlobalSettingsPage() {
                 currencies={currencies}
                 isTenantAdmin={session.user.isTenantAdmin}
                 isAdmin={session.user.isAdmin}
+                whatsappSettings={whatsappRes.success ? whatsappRes.settings : null}
+                pdfSettings={pdfRes.success ? pdfRes.settings : null}
             />
         </div>
     )
