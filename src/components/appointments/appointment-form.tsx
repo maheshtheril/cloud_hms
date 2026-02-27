@@ -158,7 +158,17 @@ export function AppointmentForm({
         checkRegFee();
     }, [selectedPatientId, selectedPatientData, hmsSettings]);
 
-    // Auto-select first doctor if none specified handled via component default now
+    // [DEFAULT DOCTOR] Load HMS settings once on mount and auto-select default doctor for new bookings
+    useEffect(() => {
+        if (editingAppointment) return; // Don't override when editing an existing appointment
+        getHMSSettings().then(res => {
+            if (res.success && res.settings?.defaultDoctorId) {
+                // Only pre-select if receptionist hasn't already picked a doctor
+                setSelectedClinicianId((prev: string) => prev || res.settings.defaultDoctorId);
+            }
+        }).catch(() => { }); // Silent fail — never break the form
+    }, []); // Run only once on mount
+
     const [appointmentsList, setAppointmentsList] = useState<any[]>(appointments);
 
     // [FIX] Fetch Appointments Dynamically when Doctor/Date changes

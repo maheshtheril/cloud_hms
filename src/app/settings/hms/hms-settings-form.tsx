@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { updateHMSSettings } from "@/app/actions/settings"
-import { Shield, CreditCard, Save, Calendar, Sparkles, AlertCircle, CheckCircle } from "lucide-react"
+import { Shield, CreditCard, Save, Calendar, Sparkles, AlertCircle, CheckCircle, Stethoscope } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 
-export function HMSSettingsForm({ settings, products }: { settings: any, products: any[] }) {
+export function HMSSettingsForm({ settings, products, doctors = [] }: { settings: any, products: any[], doctors?: any[] }) {
     const router = useRouter()
     const { toast } = useToast()
     const [loading, setLoading] = useState(false)
@@ -17,6 +17,7 @@ export function HMSSettingsForm({ settings, products }: { settings: any, product
     const [enableCardIssuance, setEnableCardIssuance] = useState(settings.enableCardIssuance)
     const [selectedProductId, setSelectedProductId] = useState(settings.registrationProductId)
     const [consultationBillingMode, setConsultationBillingMode] = useState(settings.consultationBillingMode || 'post_visit')
+    const [defaultDoctorId, setDefaultDoctorId] = useState(settings.defaultDoctorId || '')
 
     // CRITICAL: Sync local state when settings props change (after router.refresh)
     useEffect(() => {
@@ -25,6 +26,7 @@ export function HMSSettingsForm({ settings, products }: { settings: any, product
         setEnableCardIssuance(settings.enableCardIssuance);
         setSelectedProductId(settings.registrationProductId);
         setConsultationBillingMode(settings.consultationBillingMode || 'post_visit');
+        setDefaultDoctorId(settings.defaultDoctorId || '');
     }, [settings]);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -44,7 +46,8 @@ export function HMSSettingsForm({ settings, products }: { settings: any, product
                 registrationValidity: parseInt(String(registrationValidity)),
                 enableCardIssuance: !!enableCardIssuance,
                 consultationBillingMode: consultationBillingMode,
-                productId: selectedProductId
+                productId: selectedProductId,
+                defaultDoctorId: defaultDoctorId || null
             });
 
             if (loadingToast) loadingToast.dismiss();
@@ -147,6 +150,40 @@ export function HMSSettingsForm({ settings, products }: { settings: any, product
                             </p>
                         </div>
                     </div>
+                </div>
+
+                {/* DEFAULT DOCTOR CARD */}
+                <div className="md:col-span-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm group">
+                    <div className="flex items-center gap-4 mb-4">
+                        <div className="h-10 w-10 bg-teal-50 dark:bg-teal-900/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                            <Stethoscope className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2 mb-0.5">
+                                <span className="text-[10px] font-black text-teal-500 uppercase tracking-[0.2em] bg-teal-50 dark:bg-teal-900/40 px-2 py-0.5 rounded-md">OP Booking</span>
+                            </div>
+                            <h3 className="font-black text-xl text-slate-800 dark:text-slate-100 italic">Default Doctor for OP Booking</h3>
+                            <p className="text-[11px] text-slate-500 font-medium leading-relaxed mt-1">Pre-select a doctor when the OP booking form opens. Receptionist can still change it. Leave as <strong>None</strong> to keep current behaviour (manual selection).</p>
+                        </div>
+                    </div>
+                    <select
+                        value={defaultDoctorId}
+                        onChange={(e) => setDefaultDoctorId(e.target.value)}
+                        className="w-full px-4 py-4 bg-slate-50 dark:bg-slate-950 border-2 border-slate-100 dark:border-slate-800 rounded-2xl font-black text-slate-900 dark:text-white outline-none focus:border-teal-500 transition-all appearance-none cursor-pointer hover:bg-white dark:hover:bg-slate-900"
+                    >
+                        <option value="">-- None (Manual Selection - Current Behaviour) --</option>
+                        {doctors.map(d => (
+                            <option key={d.id} value={d.id}>
+                                Dr. {d.first_name} {d.last_name || ''}
+                            </option>
+                        ))}
+                    </select>
+                    {defaultDoctorId && (
+                        <p className="mt-2 text-[10px] text-teal-600 font-bold uppercase tracking-widest flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            OP booking will pre-select this doctor on load
+                        </p>
+                    )}
                 </div>
 
                 {/* 1. Registration Fee Card */}

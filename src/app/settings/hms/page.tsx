@@ -4,6 +4,7 @@ import { redirect } from "next/navigation"
 import { getHMSSettings } from "@/app/actions/settings"
 import { HMSSettingsForm } from "./hms-settings-form"
 import { Activity } from "lucide-react"
+import { prisma } from "@/lib/prisma"
 
 export const dynamic = 'force-dynamic'
 
@@ -11,7 +12,18 @@ export default async function HMSSettingsPage() {
     const session = await auth()
     if (!session?.user?.id) redirect('/login')
 
-    const res = await getHMSSettings();
+    const [res, doctors] = await Promise.all([
+        getHMSSettings(),
+        prisma.hms_clinicians.findMany({
+            where: { company_id: session.user.companyId!, is_active: true },
+            select: {
+                id: true,
+                first_name: true,
+                last_name: true,
+            },
+            orderBy: { first_name: 'asc' }
+        })
+    ]);
 
     if (!res.success) {
         return (
@@ -36,7 +48,7 @@ export default async function HMSSettingsPage() {
                 </div>
             </header>
 
-            <HMSSettingsForm settings={res.settings} products={res.availableProducts || []} />
+            <HMSSettingsForm settings={res.settings} products={res.availableProducts || []} doctors={doctors} />
         </div>
     )
 }

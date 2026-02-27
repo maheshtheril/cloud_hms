@@ -320,6 +320,7 @@ export async function getHMSSettings() {
                 registrationValidity: activeFee?.validity_days || configData.validity || 7,
                 enableCardIssuance: configData.enableCardIssuance ?? true,
                 consultationBillingMode: configData.consultationBillingMode || 'post_visit',
+                defaultDoctorId: configData.defaultDoctorId || null,
                 feeHistory: feeHistory.map(f => ({
                     id: f.id,
                     amount: Number(f.fee_amount),
@@ -442,6 +443,7 @@ export async function updateHMSSettings(data: any) {
                 consultationBillingMode: data.consultationBillingMode || 'post_visit',
                 fee: feeAmount,
                 productId: regProduct.id,
+                defaultDoctorId: data.defaultDoctorId || null,
                 lastUpdated: new Date().toISOString()
             });
 
