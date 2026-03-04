@@ -315,7 +315,7 @@ export async function updateAppointmentDetails(formData: FormData) {
     if (source === 'dashboard' || source === 'terminal') {
         revalidatePath("/hms/reception/dashboard")
         revalidatePath("/hms/dashboard")
-        return { success: true, data: { ...editingAppointment, id } }
+        return { success: true, data: { id } } // editingAppointment was undefined here
     }
 
     redirect("/hms/appointments")

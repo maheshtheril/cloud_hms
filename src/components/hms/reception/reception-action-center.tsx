@@ -217,7 +217,7 @@ export function ReceptionActionCenter({
 
         setVoidingId(paymentId);
         try {
-            const res = await voidPayment(paymentId, "Voided from Reception Dashboard");
+            const res: any = await voidPayment(paymentId, "Voided from Reception Dashboard");
             if (res.success) {
                 toast({ title: "Payment Voided", description: "Invoice reopened and patient status updated." });
                 router.refresh();

@@ -9,6 +9,7 @@ import { AccountingService } from "@/lib/services/accounting"
 import { NotificationService } from "@/lib/services/notification";
 import { SYSTEM_DEFAULT_CURRENCY_CODE } from "@/lib/currency-constants";
 import { isUUID, safeNum } from "@/lib/utils/is-uuid";
+import { getWhatsAppConfig } from "./settings";
 
 
 export async function getUoms() {

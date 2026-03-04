@@ -301,7 +301,7 @@ export async function getUOMs() {
         });
 
         // Serialization fix: convert Decimals to numbers
-        uoms = uoms.map(u => ({
+        let serializedUoms: any[] = uoms.map(u => ({
             ...u,
             ratio: Number(u.ratio),
             rounding: Number(u.rounding || 0)
@@ -387,19 +387,19 @@ export async function getUOMs() {
             }
 
             // Re-fetch
-            uoms = await prisma.hms_uom.findMany({
+            const newUoms = await prisma.hms_uom.findMany({
                 where: { company_id: session.user.companyId, is_active: true },
                 orderBy: { name: 'asc' },
                 select: { id: true, name: true, category_id: true, ratio: true, uom_type: true }
             });
 
             // Serialization fix: convert Decimals to numbers
-            uoms = uoms.map(u => ({
+            return newUoms.map(u => ({
                 ...u,
                 ratio: Number(u.ratio)
             }));
         }
-        return uoms;
+        return serializedUoms;
     } catch (error) {
         logDebug(`getUOMs Error: ${error}`);
         console.error("Failed to fetch UOMs:", error);

@@ -18,7 +18,7 @@ const prismaClientSingleton = () => {
       : { rejectUnauthorized: false }
   });
 
-  pool.on('error', (err) => console.error('\x1b[31m[PRISMA] Pool Event Error:\x1b[0m', err));
+  pool.on('error', (err: any) => console.error('\x1b[31m[PRISMA] Pool Event Error:\x1b[0m', err));
   pool.on('connect', () => console.log('\x1b[32m[PRISMA] New client connected to pool\x1b[0m'));
 
   const adapter = new PrismaPg(pool);

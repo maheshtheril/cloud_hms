@@ -447,11 +447,11 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
             res = await createInvoice(payload);
         }
 
-        if (res.success) {
+        if ((res as any).success) {
             router.push('/hms/billing')
             router.refresh()
         } else {
-            alert(res.error || 'Failed to save')
+            alert((res as any).error || 'Failed to save')
         }
         setLoading(false)
     }
