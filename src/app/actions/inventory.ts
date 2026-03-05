@@ -307,98 +307,9 @@ export async function getUOMs() {
             rounding: Number(u.rounding || 0)
         }));
 
-        // Enrich if we have very few UOMs (e.g. only 'Each')
-        if (uoms.length < 10) {
-            logDebug('getUOMs: Count is low (<10), ensuring comprehensive defaults exist');
+        // Removed heavy auto-seeding to prevent Serverless/Vercel timeout.
+        // UOMs should only be seeded manually or via dedicated migration scripts.
 
-            const standardCategories = [
-                {
-                    name: 'Unit',
-                    uoms: [
-                        { name: 'Each', type: 'reference', ratio: 1 },
-                        { name: 'Dozen', type: 'bigger', ratio: 12 },
-                        { name: 'Box', type: 'bigger', ratio: 10 }
-                    ]
-                },
-                {
-                    name: 'Weight',
-                    uoms: [
-                        { name: 'kg', type: 'reference', ratio: 1 },
-                        { name: 'g', type: 'smaller', ratio: 0.001 },
-                        { name: 'mg', type: 'smaller', ratio: 0.000001 },
-                        { name: 'lb', type: 'smaller', ratio: 0.453592 }
-                    ]
-                },
-                {
-                    name: 'Volume',
-                    uoms: [
-                        { name: 'L', type: 'reference', ratio: 1 },
-                        { name: 'ml', type: 'smaller', ratio: 0.001 }
-                    ]
-                },
-                {
-                    name: 'Length',
-                    uoms: [
-                        { name: 'm', type: 'reference', ratio: 1 },
-                        { name: 'cm', type: 'smaller', ratio: 0.01 },
-                        { name: 'mm', type: 'smaller', ratio: 0.001 }
-                    ]
-                }
-            ];
-
-            for (const catDef of standardCategories) {
-                // Find or Create Category
-                let category = await prisma.hms_uom_category.findFirst({
-                    where: { company_id: session.user.companyId, name: catDef.name }
-                });
-
-                if (!category) {
-                    category = await prisma.hms_uom_category.create({
-                        data: {
-                            tenant_id: session.user.tenantId,
-                            company_id: session.user.companyId,
-                            name: catDef.name
-                        }
-                    });
-                }
-
-                // Create UOMs
-                if (category) {
-                    for (const u of catDef.uoms) {
-                        // Check if UOM exists
-                        const existing = await prisma.hms_uom.findFirst({
-                            where: { company_id: session.user.companyId, category_id: category.id, name: u.name }
-                        });
-
-                        if (!existing) {
-                            await prisma.hms_uom.create({
-                                data: {
-                                    tenant_id: session.user.tenantId,
-                                    company_id: session.user.companyId,
-                                    category_id: category.id,
-                                    name: u.name,
-                                    uom_type: u.type,
-                                    ratio: u.ratio
-                                }
-                            });
-                        }
-                    }
-                }
-            }
-
-            // Re-fetch
-            const newUoms = await prisma.hms_uom.findMany({
-                where: { company_id: session.user.companyId, is_active: true },
-                orderBy: { name: 'asc' },
-                select: { id: true, name: true, category_id: true, ratio: true, uom_type: true }
-            });
-
-            // Serialization fix: convert Decimals to numbers
-            return newUoms.map(u => ({
-                ...u,
-                ratio: Number(u.ratio)
-            }));
-        }
         return serializedUoms;
     } catch (error) {
         logDebug(`getUOMs Error: ${error}`);
@@ -426,31 +337,7 @@ export async function getUOMCategories() {
             }))
         }));
 
-        if (categories.length === 0 && session.user.tenantId) {
-            // Seed defaults
-            const defaults = ['Unit', 'Weight', 'Working Time', 'Volume', 'Length'];
-            await prisma.hms_uom_category.createMany({
-                data: defaults.map(name => ({
-                    tenant_id: session.user.tenantId!,
-                    company_id: session.user.companyId!,
-                    name
-                }))
-            });
-            // Re-fetch
-            const cats = await prisma.hms_uom_category.findMany({
-                where: { company_id: session.user.companyId },
-                include: { hms_uom: true }
-            });
-
-            return cats.map(cat => ({
-                ...cat,
-                hms_uom: cat.hms_uom.map(u => ({
-                    ...u,
-                    ratio: Number(u.ratio),
-                    rounding: Number(u.rounding || 0)
-                }))
-            }));
-        }
+        // Removed heavy auto-seeding to prevent Serverless/Vercel timeout.
 
         return serialized;
     } catch (error) {
