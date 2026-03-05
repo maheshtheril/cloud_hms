@@ -479,7 +479,7 @@ export async function createUOMCategory(prevState: any, formData: FormData) {
     }
 }
 
-export async function createUOM(prevState: any, formData: FormData): Promise<{ error: string } | { success: boolean }> {
+export async function createUOM(prevState: any, formData: FormData): Promise<{ error?: string, success?: boolean }> {
     const session = await auth();
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
 
@@ -510,6 +510,56 @@ export async function createUOM(prevState: any, formData: FormData): Promise<{ e
     } catch (error) {
         console.error("Failed to create UOM:", error);
         return { error: "Failed to create UOM: " + (error as Error).message };
+    }
+}
+
+export async function updateUOM(prevState: any, formData: FormData): Promise<{ error?: string, success?: boolean }> {
+    const session = await auth();
+    if (!session?.user?.companyId) return { error: "Unauthorized" };
+
+    const id = formData.get("id") as string;
+    const name = formData.get("name") as string;
+    const categoryId = formData.get("categoryId") as string;
+    const type = formData.get("type") as string || 'reference';
+    const ratio = Number(formData.get("ratio") || 1);
+
+    if (!id || !name || !categoryId) return { error: "ID, Name, and Category are required" };
+
+    try {
+        const uomRatio = type === 'reference' ? 1 : ratio;
+
+        await prisma.hms_uom.update({
+            where: { id, company_id: session.user.companyId },
+            data: {
+                name,
+                category_id: categoryId,
+                uom_type: type,
+                ratio: uomRatio
+            }
+        });
+        revalidatePath('/hms/inventory/uom');
+        revalidatePath('/hms/inventory/products/new');
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to update UOM:", error);
+        return { error: "Failed to update UOM" };
+    }
+}
+
+export async function deleteUOM(id: string) {
+    const session = await auth();
+    if (!session?.user?.companyId) return { error: "Unauthorized" };
+
+    try {
+        await prisma.hms_uom.update({
+            where: { id, company_id: session.user.companyId },
+            data: { is_active: false }
+        });
+        revalidatePath('/hms/inventory/uom');
+        return { success: true };
+    } catch (error) {
+        console.error("Failed to delete UOM:", error);
+        return { error: "Failed to delete UOM. It might be in use." };
     }
 }
 
