@@ -2,6 +2,7 @@ import { getUOMs, getUOMCategories, deleteUOM } from "@/app/actions/inventory"
 import { Scale, X, Ruler, Trash2, Box, Layers, Edit2 } from "lucide-react"
 import Link from "next/link"
 import { CreateUOMForm } from "@/components/inventory/create-uom-form"
+import { CreateUOMCategoryForm } from "@/components/inventory/create-uom-category-form"
 
 export default async function UOMMasterPage({
     searchParams
@@ -48,22 +49,35 @@ export default async function UOMMasterPage({
                     {/* Left Column: Create Form */}
                     <div className="lg:col-span-4 space-y-6">
                         <div className="sticky top-8">
-                            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-1 overflow-hidden">
-                                <div className="p-5 border-b border-gray-100 bg-gray-50/50">
-                                    <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-                                        <div className="h-2 w-2 rounded-full bg-purple-500" />
-                                        {editInitialData ? 'Edit Unit' : 'Add New Unit'}
-                                    </h3>
-                                    {editInitialData && (
-                                        <Link href="/hms/inventory/uom" className="text-xs text-blue-600 hover:text-blue-800 ml-auto font-medium">
-                                            Cancel
-                                        </Link>
-                                    )}
+                            {categories.length === 0 ? (
+                                <div className="bg-yellow-50 rounded-2xl border border-yellow-200 p-5 mb-6">
+                                    <h3 className="font-semibold text-yellow-800 mb-2">Create a Category First</h3>
+                                    <p className="text-yellow-700 text-sm mb-4 leading-relaxed">
+                                        You must create a Unit Category (like "Count", "Weight", or "Volume") before creating your first Unit of Measure.
+                                    </p>
+                                    <CreateUOMCategoryForm />
                                 </div>
-                                <div className="p-2">
-                                    <CreateUOMForm categories={categories} initialData={editInitialData} />
+                            ) : (
+                                <div className="space-y-6">
+                                    <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-1 overflow-hidden">
+                                        <div className="p-5 border-b border-gray-100 bg-gray-50/50">
+                                            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+                                                <div className="h-2 w-2 rounded-full bg-purple-500" />
+                                                {editInitialData ? 'Edit Unit' : 'Add New Unit'}
+                                                {editInitialData && (
+                                                    <Link href="/hms/inventory/uom" className="text-xs text-blue-600 hover:text-blue-800 ml-auto font-medium">
+                                                        Cancel
+                                                    </Link>
+                                                )}
+                                            </h3>
+                                        </div>
+                                        <div className="p-2">
+                                            <CreateUOMForm categories={categories} initialData={editInitialData} />
+                                        </div>
+                                    </div>
+                                    <CreateUOMCategoryForm />
                                 </div>
-                            </div>
+                            )}
 
                             <div className="mt-6 p-5 bg-purple-50 rounded-2xl border border-purple-100 text-purple-800 text-sm leading-relaxed">
                                 <h4 className="font-semibold mb-2 flex items-center gap-2">
