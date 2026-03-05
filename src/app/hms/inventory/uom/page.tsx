@@ -1,11 +1,18 @@
 import { getUOMs, getUOMCategories, deleteUOM } from "@/app/actions/inventory"
-import { Scale, X, Ruler, Trash2, Box, Layers } from "lucide-react"
+import { Scale, X, Ruler, Trash2, Box, Layers, Edit2 } from "lucide-react"
 import Link from "next/link"
 import { CreateUOMForm } from "@/components/inventory/create-uom-form"
 
-export default async function UOMMasterPage() {
+export default async function UOMMasterPage({
+    searchParams
+}: {
+    searchParams: Promise<{ edit?: string }>
+}) {
+    const { edit } = await searchParams;
     const uoms = await getUOMs();
     const categories = await getUOMCategories();
+
+    const editInitialData = edit ? uoms.find(u => u.id === edit) : undefined;
 
     return (
         <div className="min-h-screen bg-gray-50/50 pb-20">
@@ -45,11 +52,16 @@ export default async function UOMMasterPage() {
                                 <div className="p-5 border-b border-gray-100 bg-gray-50/50">
                                     <h3 className="font-semibold text-gray-900 flex items-center gap-2">
                                         <div className="h-2 w-2 rounded-full bg-purple-500" />
-                                        Add New Unit
+                                        {editInitialData ? 'Edit Unit' : 'Add New Unit'}
                                     </h3>
+                                    {editInitialData && (
+                                        <Link href="/hms/inventory/uom" className="text-xs text-blue-600 hover:text-blue-800 ml-auto font-medium">
+                                            Cancel
+                                        </Link>
+                                    )}
                                 </div>
                                 <div className="p-2">
-                                    <CreateUOMForm categories={categories} />
+                                    <CreateUOMForm categories={categories} initialData={editInitialData} />
                                 </div>
                             </div>
 
@@ -102,18 +114,27 @@ export default async function UOMMasterPage() {
                                                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 group-hover:text-purple-600 group-hover:bg-purple-50 group-hover:border-purple-100 transition-colors">
                                                     <Ruler className="h-5 w-5" />
                                                 </div>
-                                                <form action={async () => {
-                                                    'use server'
-                                                    await deleteUOM(u.id)
-                                                }}>
-                                                    <button
-                                                        type="submit"
-                                                        className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all transform scale-90 group-hover:scale-100"
-                                                        title="Delete Unit"
+                                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                                                    <Link
+                                                        href={`/hms/inventory/uom?edit=${u.id}`}
+                                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transform scale-90 group-hover:scale-100"
+                                                        title="Edit Unit"
                                                     >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </button>
-                                                </form>
+                                                        <Edit2 className="h-4 w-4" />
+                                                    </Link>
+                                                    <form action={async () => {
+                                                        'use server'
+                                                        await deleteUOM(u.id)
+                                                    }}>
+                                                        <button
+                                                            type="submit"
+                                                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transform scale-90 group-hover:scale-100"
+                                                            title="Delete Unit"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </div>
 
                                             <div>

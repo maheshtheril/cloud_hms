@@ -897,7 +897,8 @@ export async function getProductsPremium(query?: string, page: number = 1, suppl
                     },
                     hms_product_category_rel: {
                         include: { hms_product_category: true }
-                    }
+                    },
+                    hms_uom: true
                 }
             }),
             prisma.hms_product.count({ where }),
@@ -923,7 +924,7 @@ export async function getProductsPremium(query?: string, page: number = 1, suppl
                 stockStatus: status,
                 category: p.hms_product_category_rel[0]?.hms_product_category?.name || 'Uncategorized',
                 brand: metadata.brand || '',
-                uom: p.uom,
+                uom: p.hms_uom?.name || p.uom,
                 default_cost: Number(metadata.cost_price || p.default_cost || 0),
                 mrp: Number(metadata.mrp || p.price || 0)
             };
@@ -994,6 +995,12 @@ export async function createProduct(formData: FormData) {
             mrp: mrp
         };
 
+        let uomName = 'each';
+        if (uomId) {
+            const uomData = await prisma.hms_uom.findUnique({ where: { id: uomId }, select: { name: true } });
+            if (uomData) uomName = uomData.name;
+        }
+
         const newProduct = await prisma.hms_product.create({
             data: {
                 tenant_id: session.user.tenantId,
@@ -1004,6 +1011,7 @@ export async function createProduct(formData: FormData) {
                 is_service: type === 'service',
                 price,
                 description,
+                uom: uomName,
                 uom_id: uomId || null,
                 manufacturer_id: manufacturerId || null,
                 default_barcode: barcode || null,
@@ -1189,6 +1197,12 @@ export async function updateProduct(formData: FormData) {
             mrp: mrp
         };
 
+        let uomName = 'each';
+        if (uomId) {
+            const uomData = await prisma.hms_uom.findUnique({ where: { id: uomId }, select: { name: true } });
+            if (uomData) uomName = uomData.name;
+        }
+
         await prisma.hms_product.update({
             where: {
                 id,
@@ -1199,6 +1213,7 @@ export async function updateProduct(formData: FormData) {
                 sku,
                 price,
                 description,
+                uom: uomName,
                 uom_id: uomId || null,
                 manufacturer_id: manufacturerId || null,
                 default_barcode: barcode || null,
