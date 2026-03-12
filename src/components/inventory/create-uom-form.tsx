@@ -24,7 +24,7 @@ function SubmitButton({ isEdit }: { isEdit: boolean }) {
     )
 }
 
-export function CreateUOMForm({ initialData }: { initialData?: any }) {
+export function CreateUOMForm({ initialData, uoms = [] }: { initialData?: any, uoms?: any[] }) {
     const [state, formAction] = useActionState(initialData ? updateUOM : createUOM, { error: "", success: false })
     const formRef = useRef<HTMLFormElement>(null)
     const router = useRouter()
@@ -33,12 +33,19 @@ export function CreateUOMForm({ initialData }: { initialData?: any }) {
     const [isAlternative, setIsAlternative] = useState(initialData?.uom_type === 'derived' || false);
     const [ratio, setRatio] = useState(initialData?.ratio || "");
 
+    const initialBaseUnit = initialData?.uom_type === 'derived' 
+        ? uoms.find((u: any) => u.category_id === initialData.category_id && u.uom_type === 'reference')?.id 
+        : "";
+    const [baseUnitId, setBaseUnitId] = useState(initialBaseUnit || "");
+    const baseUnits = uoms.filter((u: any) => u.uom_type === 'reference');
+
     useEffect(() => {
         if (state.success && !initialData) {
             formRef.current?.reset();
             setName("");
             setIsAlternative(false);
             setRatio("");
+            setBaseUnitId("");
         }
     }, [state.success, initialData])
 
@@ -87,21 +94,40 @@ export function CreateUOMForm({ initialData }: { initialData?: any }) {
                 </div>
 
                 {isAlternative && (
-                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-                        <label className="text-xs font-bold text-blue-600 uppercase tracking-wider">
-                            Conversion Ratio (How many base units in 1 {name || "unit"}?)
-                        </label>
-                        <input
-                            name="ratio"
-                            type="number"
-                            step="0.01"
-                            min="0.01"
-                            required={isAlternative}
-                            value={ratio}
-                            onChange={(e) => setRatio(e.target.value)}
-                            placeholder="e.g. 50"
-                            className="w-full px-4 py-3 bg-blue-50/50 border border-blue-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-blue-300 font-semibold text-blue-900 shadow-sm"
-                        />
+                    <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                Base Unit
+                            </label>
+                            <select
+                                name="baseUnitId"
+                                required={isAlternative}
+                                value={baseUnitId}
+                                onChange={(e) => setBaseUnitId(e.target.value)}
+                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition-all font-semibold text-gray-900 shadow-sm"
+                            >
+                                <option value="" disabled>Select a base unit...</option>
+                                {baseUnits.map((u: any) => (
+                                    <option key={u.id} value={u.id}>{u.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+                                Conversion Ratio (How many base units in 1 {name || "unit"}?)
+                            </label>
+                            <input
+                                name="ratio"
+                                type="number"
+                                step="0.01"
+                                min="0.01"
+                                required={isAlternative}
+                                value={ratio}
+                                onChange={(e) => setRatio(e.target.value)}
+                                placeholder="e.g. 50"
+                                className="w-full px-4 py-3 bg-blue-50/50 border border-blue-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-blue-300 font-semibold text-blue-900 shadow-sm"
+                            />
+                        </div>
                     </div>
                 )}
 

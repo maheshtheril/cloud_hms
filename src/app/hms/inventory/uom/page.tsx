@@ -75,7 +75,7 @@ export default async function UOMMasterPage({
                                         </Link>
                                     )}
                                 </div>
-                                <CreateUOMForm initialData={editInitialData} />
+                                <CreateUOMForm initialData={editInitialData} uoms={uoms} />
                             </div>
 
                             {/* Info Card */}
@@ -172,9 +172,15 @@ export default async function UOMMasterPage({
                                                             Base Unit
                                                         </span>
                                                     ) : (
-                                                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 uppercase tracking-widest shadow-sm border border-blue-200">
-                                                            {`1 ${u.name} = ${Number(u.ratio)} Base Units`}
-                                                        </span>
+                                                        (() => {
+                                                            const baseUnit = uoms.find((bu: any) => bu.category_id === u.category_id && bu.uom_type === 'reference');
+                                                            const baseName = baseUnit ? baseUnit.name : 'Base Units';
+                                                            return (
+                                                                <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 uppercase tracking-widest shadow-sm border border-blue-200">
+                                                                    {`1 ${u.name} = ${Number(u.ratio)} ${baseName}`}
+                                                                </span>
+                                                            );
+                                                        })()
                                                     )}
                                                 </div>
                                             </div>

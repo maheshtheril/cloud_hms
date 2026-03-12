@@ -376,25 +376,34 @@ export async function createUOM(prevState: any, formData: FormData): Promise<{ e
     let categoryId = formData.get("categoryId") as string;
     const type = formData.get("type") as string || 'reference';
     const ratio = Number(formData.get("ratio") || 1);
+    const baseUnitId = formData.get("baseUnitId") as string;
 
     if (!name) return { error: "Name is required" };
 
     try {
-        if (!categoryId) {
-            let generalCat = await prisma.hms_uom_category.findFirst({
-                where: { company_id: session.user.companyId }
+        if (type === 'derived') {
+            if (!baseUnitId) return { error: "Base Unit is required for alternative units." };
+            const baseUnit = await prisma.hms_uom.findUnique({
+                where: { id: baseUnitId, company_id: session.user.companyId }
             });
-            if (!generalCat) {
-                generalCat = await prisma.hms_uom_category.create({
+            if (!baseUnit) return { error: "Selected Base Unit not found." };
+            categoryId = baseUnit.category_id;
+        } else {
+            let catName = `${name} Category`;
+            let newCategory = await prisma.hms_uom_category.findFirst({
+                where: { company_id: session.user.companyId, name: catName }
+            });
+            if (!newCategory) {
+                newCategory = await prisma.hms_uom_category.create({
                     data: {
                         id: crypto.randomUUID(),
                         tenant_id: session.user.tenantId,
                         company_id: session.user.companyId,
-                        name: 'General'
+                        name: catName
                     }
                 });
             }
-            categoryId = generalCat.id;
+            categoryId = newCategory.id;
         }
 
         const uomRatio = type === 'reference' ? 1 : ratio;
@@ -421,13 +430,14 @@ export async function createUOM(prevState: any, formData: FormData): Promise<{ e
 
 export async function updateUOM(prevState: any, formData: FormData): Promise<{ error?: string, success?: boolean }> {
     const session = await auth();
-    if (!session?.user?.companyId) return { error: "Unauthorized" };
+    if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
 
     const id = formData.get("id") as string;
     const name = formData.get("name") as string;
     let categoryId = formData.get("categoryId") as string;
     const type = formData.get("type") as string || 'reference';
     const ratio = Number(formData.get("ratio") || 1);
+    const baseUnitId = formData.get("baseUnitId") as string;
 
     if (!id || !name) return { error: "ID and Name are required" };
 
@@ -439,7 +449,38 @@ export async function updateUOM(prevState: any, formData: FormData): Promise<{ e
             uom_type: type,
             ratio: new Prisma.Decimal(uomRatio)
         };
-        if (categoryId) {
+
+        const currentUom = await prisma.hms_uom.findUnique({
+             where: { id, company_id: session.user.companyId }
+        });
+
+        if (type === 'derived') {
+             if (!baseUnitId) return { error: "Base Unit is required for alternative units." };
+             const baseUnit = await prisma.hms_uom.findUnique({
+                 where: { id: baseUnitId, company_id: session.user.companyId }
+             });
+             if (!baseUnit) return { error: "Selected Base Unit not found." };
+             updateData.category_id = baseUnit.category_id;
+        } else if (currentUom?.uom_type === 'derived') {
+             // Type changed from derived to reference. Needs its own category.
+             let catName = `${name} Category`;
+             let newCategory = await prisma.hms_uom_category.findFirst({
+                 where: { company_id: session.user.companyId, name: catName }
+             });
+             if (!newCategory) {
+                 newCategory = await prisma.hms_uom_category.create({
+                     data: {
+                         id: crypto.randomUUID(),
+                         tenant_id: session.user.tenantId,
+                         company_id: session.user.companyId,
+                         name: catName
+                     }
+                 });
+             }
+             updateData.category_id = newCategory.id;
+        }
+
+        if (categoryId && !updateData.category_id) {
             updateData.category_id = categoryId;
         }
 
