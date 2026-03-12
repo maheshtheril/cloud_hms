@@ -12,6 +12,9 @@ export async function GET() {
             countryId: company.country_id,
         };
 
+        const { ensureGlobalTaxes } = await import("@/lib/services/tax-seed");
+        const seedResult = await ensureGlobalTaxes();
+
         const [
             taxRatesCount,
             activeTaxRatesCount,
@@ -26,6 +29,7 @@ export async function GET() {
             prisma.tax_rates.findMany({ take: 5 })
         ]);
 
+        results.seedResult = seedResult;
         results.counts = {
             taxRatesCount,
             activeTaxRatesCount,
