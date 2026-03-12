@@ -7,10 +7,6 @@ export async function GET() {
         if (!company) return NextResponse.json({ error: "No company found" });
         const companyId = company.id;
 
-        const company = await prisma.company.findFirst();
-        if (!company) return NextResponse.json({ error: "No company found" });
-        const companyId = company.id;
-
         const results: any = {
             companyId,
             countryId: company.country_id,
