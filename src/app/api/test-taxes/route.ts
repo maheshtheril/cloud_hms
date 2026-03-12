@@ -7,67 +7,45 @@ export async function GET() {
         if (!company) return NextResponse.json({ error: "No company found" });
         const companyId = company.id;
 
-        const customTaxes = await prisma.company_taxes.findMany({
-            where: { company_id: companyId, is_active: true },
-            select: { id: true, name: true, rate: true }
-        });
+        const company = await prisma.company.findFirst();
+        if (!company) return NextResponse.json({ error: "No company found" });
+        const companyId = company.id;
 
-        const taxMaps = await prisma.company_tax_maps.findMany({
-            where: { company_id: companyId, is_active: true },
-            include: { tax_rates: { select: { id: true, name: true, rate: true } } }
-        });
-        const mappedTaxes = taxMaps.map(tm => ({
-            id: tm.tax_rates.id,
-            name: tm.tax_rates.name,
-            rate: Number(tm.tax_rates.rate)
-        }));
+        const results: any = {
+            companyId,
+            countryId: company.country_id,
+        };
 
-        const compSettings = await prisma.company_settings.findUnique({
-            where: { company_id: companyId }
-        });
+        const [
+            taxRatesCount,
+            activeTaxRatesCount,
+            countryTaxMappingsCount,
+            activeCountryTaxMappingsCount,
+            sampleTaxRates
+        ] = await Promise.all([
+            prisma.tax_rates.count(),
+            prisma.tax_rates.count({ where: { is_active: true } }),
+            prisma.country_tax_mappings.count(),
+            prisma.country_tax_mappings.count({ where: { is_active: true } }),
+            prisma.tax_rates.findMany({ take: 5 })
+        ]);
 
-        const allTaxesMap = new Map();
-        [...customTaxes.map(t => ({ ...t, rate: Number(t.rate) })), ...mappedTaxes].forEach(t => {
-            allTaxesMap.set(t.id, t);
-        });
+        results.counts = {
+            taxRatesCount,
+            activeTaxRatesCount,
+            countryTaxMappingsCount,
+            activeCountryTaxMappingsCount
+        };
+        results.sampleTaxRates = sampleTaxRates;
 
-        let countryTaxesFound = 0;
-        let cId = company.country_id;
-
-        if (allTaxesMap.size === 0 || compSettings?.auto_load_taxes_from_country !== false) {
-            
-            if (cId) {
-                const countryTaxes = await prisma.country_tax_mappings.findMany({
-                    where: { country_id: cId, is_active: true },
-                    include: { tax_rates: true }
-                });
-                
-                countryTaxesFound = countryTaxes.length;
-                countryTaxes.forEach(ct => {
-                    if (!allTaxesMap.has(ct.tax_rates.id)) {
-                        allTaxesMap.set(ct.tax_rates.id, {
-                            id: ct.tax_rates.id,
-                            name: ct.tax_rates.name,
-                            rate: Number(ct.tax_rates.rate)
-                        });
-                    }
-                });
-            }
+        if (company.country_id) {
+            results.companyCountryMappings = await prisma.country_tax_mappings.findMany({
+                where: { country_id: company.country_id },
+                include: { tax_rates: true }
+            });
         }
 
-        let allTaxes = Array.from(allTaxesMap.values());
-
-        return NextResponse.json({ 
-            success: true, 
-            companyId, 
-            countryId: cId,
-            autoLoad: compSettings?.auto_load_taxes_from_country,
-            customTaxesCount: customTaxes.length,
-            mappedTaxesCount: mappedTaxes.length,
-            countryTaxesFound,
-            finalTaxesCount: allTaxes.length,
-            taxes: allTaxes
-        });
+        return NextResponse.json({ success: true, results });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message, stack: error.stack });
     }
