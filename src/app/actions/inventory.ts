@@ -355,6 +355,7 @@ export async function createUOMCategory(prevState: any, formData: FormData) {
     try {
         await prisma.hms_uom_category.create({
             data: {
+                id: crypto.randomUUID(),
                 tenant_id: session.user.tenantId,
                 company_id: session.user.companyId,
                 name
@@ -386,6 +387,7 @@ export async function createUOM(prevState: any, formData: FormData): Promise<{ e
             if (!generalCat) {
                 generalCat = await prisma.hms_uom_category.create({
                     data: {
+                        id: crypto.randomUUID(),
                         tenant_id: session.user.tenantId,
                         company_id: session.user.companyId,
                         name: 'General'
@@ -399,6 +401,7 @@ export async function createUOM(prevState: any, formData: FormData): Promise<{ e
 
         await prisma.hms_uom.create({
             data: {
+                id: crypto.randomUUID(),
                 tenant_id: session.user.tenantId,
                 company_id: session.user.companyId,
                 category_id: categoryId,
