@@ -61,6 +61,7 @@ export async function ensureGlobalTaxes(tx?: any) {
                     data: {
                         id: crypto.randomUUID(),
                         country_id: country.id,
+                        tax_type_id: rate.tax_type_id,
                         tax_rate_id: rate.id,
                         is_active: true
                     }
