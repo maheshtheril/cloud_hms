@@ -167,6 +167,15 @@ export default async function UOMMasterPage({
                                                     <h3 className="font-extrabold text-gray-900 text-xl tracking-tight">
                                                         {u.name}
                                                     </h3>
+                                                    {u.uom_type === 'reference' ? (
+                                                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-purple-100 text-purple-700 uppercase tracking-widest shadow-sm border border-purple-200">
+                                                            Base Unit
+                                                        </span>
+                                                    ) : (
+                                                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700 uppercase tracking-widest shadow-sm border border-blue-200">
+                                                            {`1 ${u.name} = ${Number(u.ratio)} Base Units`}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>

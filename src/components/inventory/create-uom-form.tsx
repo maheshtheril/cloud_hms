@@ -30,17 +30,22 @@ export function CreateUOMForm({ initialData }: { initialData?: any }) {
     const router = useRouter()
 
     const [name, setName] = useState(initialData?.name || "");
+    const [isAlternative, setIsAlternative] = useState(initialData?.uom_type === 'derived' || false);
+    const [ratio, setRatio] = useState(initialData?.ratio || "");
 
     useEffect(() => {
         if (state.success && !initialData) {
             formRef.current?.reset();
             setName("");
+            setIsAlternative(false);
+            setRatio("");
         }
     }, [state.success, initialData])
 
     return (
         <form ref={formRef} action={formAction} className="bg-white/80 backdrop-blur-md rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-md transition-all duration-300">
             {initialData && <input type="hidden" name="id" value={initialData.id} />}
+            <input type="hidden" name="type" value={isAlternative ? "derived" : "reference"} />
 
             {/* Error & Success States */}
             {state?.error && (
@@ -56,7 +61,7 @@ export function CreateUOMForm({ initialData }: { initialData?: any }) {
                 </div>
             )}
 
-            <div className="space-y-4">
+            <div className="space-y-6">
                 <div className="space-y-2">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                         Unit Name
@@ -66,10 +71,39 @@ export function CreateUOMForm({ initialData }: { initialData?: any }) {
                         required
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="e.g. Dozen, Pack, Palette, Piece"
+                        placeholder="e.g. Dozen, Pack, Palette, PCS"
                         className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 outline-none transition-all placeholder:text-gray-400 font-semibold text-gray-900 shadow-sm"
                     />
                 </div>
+
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between gap-4 cursor-pointer" onClick={() => setIsAlternative(!isAlternative)}>
+                    <div>
+                        <h4 className="font-bold text-gray-900 text-sm">Alternative Unit?</h4>
+                        <p className="text-xs text-gray-500 font-medium leading-relaxed mt-0.5">Check this if the unit contains multiple items (like a Box of 50 PCS).</p>
+                    </div>
+                    <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none shrink-0 ${isAlternative ? 'bg-purple-600' : 'bg-gray-200'}`}>
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition duration-200 ease-in-out ${isAlternative ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </div>
+                </div>
+
+                {isAlternative && (
+                    <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                        <label className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+                            Conversion Ratio (How many base units in 1 {name || "unit"}?)
+                        </label>
+                        <input
+                            name="ratio"
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            required={isAlternative}
+                            value={ratio}
+                            onChange={(e) => setRatio(e.target.value)}
+                            placeholder="e.g. 50"
+                            className="w-full px-4 py-3 bg-blue-50/50 border border-blue-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder:text-blue-300 font-semibold text-blue-900 shadow-sm"
+                        />
+                    </div>
+                )}
 
                 <SubmitButton isEdit={!!initialData} />
             </div>
