@@ -308,8 +308,64 @@ export async function getUOMs() {
             rounding: Number(u.rounding || 0)
         }));
 
-        // Removed heavy auto-seeding to prevent Serverless/Vercel timeout.
-        // UOMs should only be seeded manually or via dedicated migration scripts.
+        // --- AUTO-HEAL LEGACY CATEGORIES ---
+        // If there are multiple 'reference' units in the same category, extract them into their own categories
+        // to comply with Odoo's 1-reference-per-category rule.
+        const refUoms = serializedUoms.filter(u => u.uom_type === 'reference');
+        const refsByCategory = refUoms.reduce((acc, u) => {
+            acc[u.category_id] = acc[u.category_id] || [];
+            acc[u.category_id].push(u);
+            return acc;
+        }, {} as Record<string, any[]>);
+
+        let needsRefetch = false;
+
+        for (const [catId, refsArray] of Object.entries(refsByCategory)) {
+            const refs = refsArray as any[];
+            if (refs.length > 1) {
+                logDebug(`getUOMs: Auto-healing category ${catId}. Found ${refs.length} reference units.`);
+                // Keep the first one in the category, move the rest to new categories
+                for (let i = 1; i < refs.length; i++) {
+                    const refToMove = refs[i];
+                    let catName = `${refToMove.name} Category`;
+                    
+                    let newCategory = await prisma.hms_uom_category.findFirst({
+                        where: { company_id: session.user.companyId, name: catName }
+                    });
+
+                    if (!newCategory) {
+                        newCategory = await prisma.hms_uom_category.create({
+                            data: {
+                                id: crypto.randomUUID(),
+                                tenant_id: session.user.tenantId,
+                                company_id: session.user.companyId,
+                                name: catName
+                            }
+                        });
+                    }
+
+                    await prisma.hms_uom.update({
+                        where: { id: refToMove.id },
+                        data: { category_id: newCategory.id }
+                    });
+                    needsRefetch = true;
+                }
+            }
+        }
+
+        if (needsRefetch) {
+            uoms = await prisma.hms_uom.findMany({
+                where: { company_id: session.user.companyId, is_active: true },
+                orderBy: { name: 'asc' },
+                select: { id: true, name: true, category_id: true, ratio: true, rounding: true, uom_type: true }
+            });
+            serializedUoms = uoms.map(u => ({
+                ...u,
+                ratio: Number(u.ratio),
+                rounding: Number(u.rounding || 0)
+            }));
+        }
+        // --- END AUTO-HEAL ---
 
         return serializedUoms;
     } catch (error) {
