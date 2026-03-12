@@ -221,7 +221,6 @@ export async function getTaxRates() {
                 select: { country_id: true }
             });
             
-            console.log(`[getTaxRates] Fallback Step 4: Country Search. CountryID: ${company?.country_id}`);
             const countryTaxesWhere: any = {};
             if (company?.country_id) {
                 countryTaxesWhere.country_id = company.country_id;
@@ -232,7 +231,6 @@ export async function getTaxRates() {
                 include: { tax_rates: true }
             });
             
-            console.log(`[getTaxRates] Found ${countryTaxes.length} country mappings`);
             countryTaxes.forEach(ct => {
                 if (ct.tax_rates && !allTaxesMap.has(ct.tax_rates.id)) {
                     allTaxesMap.set(ct.tax_rates.id, {
@@ -244,13 +242,14 @@ export async function getTaxRates() {
             });
         }
 
-        // 5. Final Data-Driven Fallback: If still nothing, just give them all available tax rates
+        // 5. Final Data-Driven Fallback: If still nothing, seed global rates if empty and try again
         if (allTaxesMap.size === 0) {
-            console.log(`[getTaxRates] Fallback Step 5: Global Search`);
+            const { ensureGlobalTaxes } = await import("@/lib/services/tax-seed");
+            await ensureGlobalTaxes();
+            
             const globalTaxes = await prisma.tax_rates.findMany({
                 take: 50
             });
-            console.log(`[getTaxRates] Found ${globalTaxes.length} global rates`);
             globalTaxes.forEach(t => {
                 allTaxesMap.set(t.id, {
                     id: t.id,
@@ -261,7 +260,6 @@ export async function getTaxRates() {
         }
 
         let allTaxes = Array.from(allTaxesMap.values());
-        console.log(`[getTaxRates] Returning ${allTaxes.length} tax rates`);
         return allTaxes;
     } catch (error) {
         logDebug(`getTaxRates Error: ${error}`);

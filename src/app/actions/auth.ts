@@ -252,6 +252,8 @@ export async function signup(prevState: any, formData: FormData) {
 
             // 10. Master Seeding
             await initializeTenantMasters(tenantId, companyId, prisma);
+            const { seedCompanyTaxes } = await import("@/lib/services/tax-seed");
+            await seedCompanyTaxes(companyId, prisma);
         } catch (initError) {
             console.error("[AUTH] Domain Initialization failed, but User exists:", initError);
         }
