@@ -8,6 +8,7 @@ import { QuickCategoryForm, QuickManufacturerForm } from "@/components/inventory
 import {
     Box, Tag, DollarSign, Layers, Image as ImageIcon, Barcode, Factory, Check, Zap, Info, Plus, X, Cpu, History, ArrowUpDown, TrendingUp, TrendingDown
 } from "lucide-react"
+import { toast } from "sonner"
 
 interface ProductFormProps {
     suppliers: { id: string, name: string }[];
@@ -75,9 +76,10 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
         const res = await uploadProductImage(formData);
 
         if (res.error) {
-            alert(res.error);
+            toast.error(res.error);
         } else if (res.url) {
             setImageUrl(res.url);
+            toast.success("Image uploaded successfully");
         }
         setUploading(false);
     }
@@ -93,9 +95,10 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
         const res = await action(formData);
 
         if (res?.error) {
-            alert(res.error);
+            toast.error(res.error);
             setIsSubmitting(false);
         } else {
+            toast.success(isEditing ? "Product updated successfully" : "Product created successfully");
             if (onSuccess) {
                 onSuccess();
             } else {

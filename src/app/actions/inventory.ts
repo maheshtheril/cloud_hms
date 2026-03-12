@@ -7,6 +7,7 @@ import { SYSTEM_DEFAULT_CURRENCY_SYMBOL } from "@/lib/currency"
 import { redirect } from "next/navigation"
 import crypto from 'crypto';
 import { receiveStock } from "@/app/actions/inventory-operations";
+import { Prisma } from "@prisma/client";
 
 // --- Dashboard Stats ---
 
@@ -371,14 +372,29 @@ export async function createUOM(prevState: any, formData: FormData): Promise<{ e
     if (!session?.user?.companyId || !session?.user?.tenantId) return { error: "Unauthorized" };
 
     const name = formData.get("name") as string;
-    const categoryId = formData.get("categoryId") as string;
+    let categoryId = formData.get("categoryId") as string;
     const type = formData.get("type") as string || 'reference';
     const ratio = Number(formData.get("ratio") || 1);
 
-    if (!name || !categoryId) return { error: "Name and Category are required" };
+    if (!name) return { error: "Name is required" };
 
     try {
-        // If type is reference, force ratio to 1
+        if (!categoryId) {
+            let generalCat = await prisma.hms_uom_category.findFirst({
+                where: { company_id: session.user.companyId }
+            });
+            if (!generalCat) {
+                generalCat = await prisma.hms_uom_category.create({
+                    data: {
+                        tenant_id: session.user.tenantId,
+                        company_id: session.user.companyId,
+                        name: 'General'
+                    }
+                });
+            }
+            categoryId = generalCat.id;
+        }
+
         const uomRatio = type === 'reference' ? 1 : ratio;
 
         await prisma.hms_uom.create({
@@ -388,7 +404,7 @@ export async function createUOM(prevState: any, formData: FormData): Promise<{ e
                 category_id: categoryId,
                 name,
                 uom_type: type,
-                ratio: uomRatio
+                ratio: new Prisma.Decimal(uomRatio)
             }
         });
         revalidatePath('/hms/inventory/uom');
@@ -406,23 +422,27 @@ export async function updateUOM(prevState: any, formData: FormData): Promise<{ e
 
     const id = formData.get("id") as string;
     const name = formData.get("name") as string;
-    const categoryId = formData.get("categoryId") as string;
+    let categoryId = formData.get("categoryId") as string;
     const type = formData.get("type") as string || 'reference';
     const ratio = Number(formData.get("ratio") || 1);
 
-    if (!id || !name || !categoryId) return { error: "ID, Name, and Category are required" };
+    if (!id || !name) return { error: "ID and Name are required" };
 
     try {
         const uomRatio = type === 'reference' ? 1 : ratio;
 
+        let updateData: any = {
+            name,
+            uom_type: type,
+            ratio: new Prisma.Decimal(uomRatio)
+        };
+        if (categoryId) {
+            updateData.category_id = categoryId;
+        }
+
         await prisma.hms_uom.update({
             where: { id, company_id: session.user.companyId },
-            data: {
-                name,
-                category_id: categoryId,
-                uom_type: type,
-                ratio: uomRatio
-            }
+            data: updateData
         });
         revalidatePath('/hms/inventory/uom');
         revalidatePath('/hms/inventory/products/new');

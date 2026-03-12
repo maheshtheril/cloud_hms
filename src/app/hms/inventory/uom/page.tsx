@@ -1,8 +1,7 @@
-import { getUOMs, getUOMCategories, deleteUOM } from "@/app/actions/inventory"
-import { Scale, X, Ruler, Trash2, Box, Edit2, PackageOpen, HelpCircle, AlertTriangle } from "lucide-react"
+import { getUOMs, deleteUOM } from "@/app/actions/inventory"
+import { Scale, X, Ruler, Trash2, Box, Edit2, PackageOpen, HelpCircle } from "lucide-react"
 import Link from "next/link"
 import { CreateUOMForm } from "@/components/inventory/create-uom-form"
-import { CreateUOMCategoryForm } from "@/components/inventory/create-uom-category-form"
 import { seedPharmacyUOMs } from "@/app/actions/uom"
 import { revalidatePath } from "next/cache"
 
@@ -13,7 +12,6 @@ export default async function UOMMasterPage({
 }) {
     const { edit } = await searchParams;
     const uoms = await getUOMs();
-    const categories = await getUOMCategories();
 
     const editInitialData = edit ? uoms.find(u => u.id === edit) : undefined;
 
@@ -34,7 +32,7 @@ export default async function UOMMasterPage({
                                 </h1>
                             </div>
                             <p className="text-gray-500 text-lg font-medium leading-relaxed pl-[3.25rem]">
-                                Define standard packaging dimensions and conversion ratios to effortlessly scale your inventory tracking.
+                                Define standard packaging dimensions and units for your inventory tracking.
                             </p>
                         </div>
                         <div className="flex items-center gap-3 w-full md:w-auto pl-[3.25rem] md:pl-0">
@@ -66,36 +64,19 @@ export default async function UOMMasterPage({
                     {/* Left Column: Create Form */}
                     <div className="lg:col-span-5 space-y-6">
                         <div className="sticky top-8">
-                            {categories.length === 0 ? (
-                                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-3xl border border-amber-200/60 p-8 mb-6 shadow-sm">
-                                    <div className="h-12 w-12 bg-amber-100 rounded-2xl flex items-center justify-center mb-5 text-amber-600">
-                                        <AlertTriangle className="h-6 w-6" />
-                                    </div>
-                                    <h3 className="text-xl font-bold text-amber-900 mb-3 tracking-tight">Create a Category First</h3>
-                                    <p className="text-amber-700/80 text-sm mb-8 leading-relaxed font-medium">
-                                        Units are grouped into categories like "Weight", "Volume", or "Packaging". Create a core category to get started.
-                                    </p>
-                                    <CreateUOMCategoryForm />
+                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
+                                        {editInitialData ? 'Edit Unit' : 'New Unit'}
+                                    </h3>
+                                    {editInitialData && (
+                                        <Link href="/hms/inventory/uom" className="text-sm text-blue-600 hover:text-blue-800 font-bold px-3 py-1.5 bg-blue-50 rounded-lg transition-colors">
+                                            Cancel Edit
+                                        </Link>
+                                    )}
                                 </div>
-                            ) : (
-                                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="text-2xl font-bold text-gray-900 tracking-tight">
-                                            {editInitialData ? 'Edit Unit' : 'New Unit'}
-                                        </h3>
-                                        {editInitialData && (
-                                            <Link href="/hms/inventory/uom" className="text-sm text-blue-600 hover:text-blue-800 font-bold px-3 py-1.5 bg-blue-50 rounded-lg transition-colors">
-                                                Cancel Edit
-                                            </Link>
-                                        )}
-                                    </div>
-                                    <CreateUOMForm categories={categories} initialData={editInitialData} />
-
-                                    <div className="pt-4 border-t border-gray-200/60">
-                                        <CreateUOMCategoryForm />
-                                    </div>
-                                </div>
-                            )}
+                                <CreateUOMForm initialData={editInitialData} />
+                            </div>
 
                             {/* Info Card */}
                             <div className="mt-8 p-6 bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl border border-gray-700 text-gray-300 shadow-xl">
@@ -139,15 +120,12 @@ export default async function UOMMasterPage({
                                 </div>
                                 <h3 className="text-2xl font-bold text-gray-900 mb-2 tracking-tight">No Units Found</h3>
                                 <p className="text-gray-500 text-lg max-w-md mx-auto font-medium">
-                                    Configuration is empty. You can build your own hierarchy on the left or seed defaults.
+                                    Configuration is empty. You can build your own units on the left or seed defaults.
                                 </p>
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                 {uoms.map((u: any, i: number) => {
-                                    const category = categories.find((c: any) => c.id === u.category_id);
-                                    const isRef = u.uom_type === 'reference';
-
                                     return (
                                         <div
                                             key={u.id}
@@ -158,7 +136,7 @@ export default async function UOMMasterPage({
                                             <div className="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-gray-50 to-gray-100 rounded-full opacity-50 group-hover:scale-150 group-hover:from-purple-50 group-hover:to-purple-100/50 transition-transform duration-700 ease-out z-0" />
 
                                             <div className="relative z-10 flex items-start justify-between mb-8">
-                                                <div className={`h-12 w-12 rounded-2xl flex items-center justify-center transition-colors shadow-sm ${isRef ? 'bg-purple-100 text-purple-600 border border-purple-200' : 'bg-blue-50 text-blue-600 border border-blue-100 group-hover:bg-blue-100'}`}>
+                                                <div className="h-12 w-12 rounded-2xl flex items-center justify-center transition-colors shadow-sm bg-purple-100 text-purple-600 border border-purple-200">
                                                     <Ruler className="h-6 w-6" />
                                                 </div>
                                                 <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-all translate-x-2 group-hover:translate-x-0">
@@ -189,29 +167,6 @@ export default async function UOMMasterPage({
                                                     <h3 className="font-extrabold text-gray-900 text-xl tracking-tight">
                                                         {u.name}
                                                     </h3>
-                                                    {isRef && (
-                                                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold bg-purple-100 text-purple-700 uppercase tracking-widest shadow-sm border border-purple-200">
-                                                            Base Unit
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                <div className="space-y-2 mt-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xs font-bold text-gray-400 uppercase">Category</span>
-                                                        <span className="text-sm font-semibold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
-                                                            {category?.name || "Unknown"}
-                                                        </span>
-                                                    </div>
-
-                                                    {!isRef && (
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="text-xs font-bold text-blue-400 uppercase">Conversion</span>
-                                                            <span className="text-sm font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100 font-mono">
-                                                                1 = {Number(u.ratio)} BASE
-                                                            </span>
-                                                        </div>
-                                                    )}
                                                 </div>
                                             </div>
                                         </div>
