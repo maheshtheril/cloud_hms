@@ -25,7 +25,6 @@ interface ProductFormProps {
 
 export function ProductForm({ suppliers, taxRates, uoms, categories, manufacturers, uomCategories, initialData, batches: initialBatches = [], onSuccess, onCancel }: ProductFormProps) {
     const router = useRouter();
-    const [activeSection, setActiveSection] = useState<'details' | 'logistics' | 'financials'>('details');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Modal State
@@ -37,7 +36,8 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Form State for dynamic behavior
-    const [selectedCategoryId, setSelectedCategoryId] = useState(initialData?.categoryId || "");
+    const generalCategory = categories.find(c => c.name === "General");
+    const [selectedCategoryId, setSelectedCategoryId] = useState(initialData?.categoryId || generalCategory?.id || "");
     const [selectedTaxId, setSelectedTaxId] = useState(initialData?.taxRateId || "");
     const [trackingType, setTrackingType] = useState(initialData?.tracking || "none");
     const [batches, setBatches] = useState(initialBatches);
@@ -154,485 +154,220 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                     </div>
                 </div>
 
-                <div className="flex flex-col lg:flex-row gap-8">
-                    {/* Navigation Sidebar */}
-                    <div className="w-full lg:w-64 flex-shrink-0 space-y-6">
-                        {/* Image Uploader */}
-                        <div className="bg-white rounded-2xl border border-gray-100 p-1 shadow-sm overflow-hidden group relative">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-2">
+                    {/* Left Column: Identity & Categorization (Span 3) */}
+                    <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {/* Name - Span 2 */}
+                        <div className="md:col-span-2 space-y-1">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase">Product Name <span className="text-red-500">*</span></label>
                             <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                ref={fileInputRef}
-                                onChange={handleImageUpload}
-                                disabled={uploading}
+                                name="name"
+                                required
+                                defaultValue={initialData?.name}
+                                placeholder="Product Name"
+                                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-black outline-none transition-all text-sm font-medium"
                             />
-                            <input type="hidden" name="image_url" value={imageUrl || ''} />
-
-                            <div
-                                onClick={() => fileInputRef.current?.click()}
-                                className={`aspect-square rounded-xl bg-gray-50 cursor-pointer overflow-hidden relative transition-all ${!imageUrl ? 'hover:bg-gray-100' : ''}`}
-                            >
-                                {uploading ? (
-                                    <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10">
-                                        <div className="h-8 w-8 border-4 border-black border-t-transparent rounded-full animate-spin"></div>
-                                    </div>
-                                ) : null}
-
-                                {imageUrl ? (
-                                    <>
-                                        <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                            <p className="text-white text-xs font-medium bg-black/50 px-3 py-1.5 rounded-full backdrop-blur-md">Change Photo</p>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center text-gray-400 gap-2">
-                                        <ImageIcon className="h-8 w-8 opacity-50" />
-                                        <span className="text-xs font-medium">Upload Image</span>
-                                    </div>
-                                )}
-                            </div>
                         </div>
 
-                        {/* Navigation Menu */}
-                        <nav className="space-y-1">
-                            {[
-                                { id: 'details', label: 'Core Details', icon: Cpu },
-                                { id: 'logistics', label: 'Logistics', icon: Layers },
-                                { id: 'financials', label: 'Financials', icon: DollarSign }
-                            ].map((item) => (
-                                <button
-                                    key={item.id}
-                                    type="button"
-                                    onClick={() => setActiveSection(item.id as any)}
-                                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-3 ${activeSection === item.id
-                                        ? 'bg-black text-white shadow-md shadow-gray-200'
-                                        : 'text-gray-600 hover:bg-gray-100'
-                                        }`}
+                        {/* SKU */}
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase">SKU / Code <span className="text-red-500">*</span></label>
+                            <input
+                                name="sku"
+                                required
+                                defaultValue={initialData?.sku}
+                                placeholder="SKU"
+                                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-black outline-none transition-all font-mono text-sm"
+                            />
+                        </div>
+
+                        {/* Category */}
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase">Category</label>
+                            <div className="flex gap-1">
+                                <select
+                                    name="categoryId"
+                                    value={selectedCategoryId}
+                                    onChange={(e) => setSelectedCategoryId(e.target.value)}
+                                    className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-black outline-none transition-all text-sm"
                                 >
-                                    <item.icon className="h-4 w-4" />
-                                    {item.label}
-                                </button>
-                            ))}
-                        </nav>
-
-                        {/* Quick Stats Helper */}
-                        <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl text-xs text-blue-800 space-y-2">
-                            <div className="font-bold flex items-center gap-2">
-                                <Info className="h-4 w-4" />
-                                Pro Tip
-                            </div>
-                            <p className="leading-relaxed opacity-80">
-                                Categories automate tax rates and reporting.
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Main Content Area */}
-                    <div className="flex-1 space-y-6 pb-24">
-                        {/* CORE DETAILS */}
-                        <div className={activeSection === 'details' ? 'block' : 'hidden'}>
-                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 lg:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-2">
-                                <div>
-                                    <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                                        Product Identity
-                                        <span className="h-px flex-1 bg-gray-100 ml-4"></span>
-                                    </h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="md:col-span-2 space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Product Name <span className="text-red-500">*</span></label>
-                                            <input
-                                                name="name"
-                                                required
-                                                defaultValue={initialData?.name}
-                                                placeholder="e.g. Tesla Model S Plaid"
-                                                className="w-full px-5 py-3 bg-gray-50 border-0 rounded-xl focus:ring-2 focus:ring-blue-500 transition-all font-medium text-lg placeholder:text-gray-400"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                                <Tag className="h-3 w-3" /> SKU / Code <span className="text-red-500">*</span>
-                                            </label>
-                                            <input
-                                                name="sku"
-                                                required
-                                                defaultValue={initialData?.sku}
-                                                placeholder="e.g. PROD-001"
-                                                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all font-mono text-sm"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                                <Factory className="h-3 w-3" /> Brand / Manufacturer
-                                            </label>
-                                            <div className="flex gap-2">
-                                                <div className="relative flex-1">
-                                                    <select
-                                                        name="manufacturerId"
-                                                        defaultValue={initialData?.manufacturerId}
-                                                        className="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all appearance-none"
-                                                    >
-                                                        <option value="">Select Manufacturer...</option>
-                                                        {manufacturers.map(m => (
-                                                            <option key={m.id} value={m.id}>{m.name}</option>
-                                                        ))}
-                                                    </select>
-                                                </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setModalOpen('manufacturer')}
-                                                    className="px-3 py-2 bg-gray-50 hover:bg-green-50 text-gray-600 hover:text-green-600 border border-gray-200 hover:border-green-200 rounded-lg transition-colors"
-                                                >
-                                                    <Plus className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <div className="md:col-span-2 space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Description</label>
-                                            <textarea
-                                                name="description"
-                                                rows={4}
-                                                defaultValue={initialData?.description}
-                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all resize-none"
-                                                placeholder="Enter detailed product specifications..."
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                                        Categorization
-                                        <span className="h-px flex-1 bg-gray-100 ml-4"></span>
-                                    </h2>
-                                    <div className="p-1 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-bold text-gray-900">Category Master</label>
-                                                <div className="flex gap-2">
-                                                    <div className="relative flex-1">
-                                                        <select
-                                                            name="categoryId"
-                                                            value={selectedCategoryId}
-                                                            onChange={(e) => setSelectedCategoryId(e.target.value)}
-                                                            className="w-full pl-4 pr-10 py-3 bg-white border border-gray-200 rounded-xl focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all appearance-none font-medium"
-                                                        >
-                                                            <option value="">Select Category...</option>
-                                                            {categories.map(c => (
-                                                                <option key={c.id} value={c.id}>{c.name}</option>
-                                                            ))}
-                                                        </select>
-                                                        <Box className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-                                                    </div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setModalOpen('category')}
-                                                        className="px-4 bg-white border border-gray-200 hover:border-green-500 hover:bg-green-50 text-gray-500 hover:text-green-600 rounded-xl transition-all shadow-sm"
-                                                    >
-                                                        <Plus className="h-5 w-5" />
-                                                    </button>
-                                                </div>
-                                                {category && (
-                                                    <div className="flex items-center gap-2 text-xs text-green-600 mt-2 bg-green-50 px-3 py-1.5 rounded-lg w-fit">
-                                                        <Check className="h-3 w-3" />
-                                                        Category applied: {category.name}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                                    <option value="">Select Category...</option>
+                                    {categories.map(c => (
+                                        <option key={c.id} value={c.id}>{c.name}</option>
+                                    ))}
+                                </select>
+                                <button type="button" onClick={() => setModalOpen('category')} className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50"><Plus className="h-4 w-4" /></button>
                             </div>
                         </div>
 
-                        {/* LOGISTICS */}
-                        <div className={activeSection === 'logistics' ? 'block' : 'hidden'}>
-                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 lg:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-2">
-                                <div>
-                                    <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                                        Stock & Warehouse
-                                        <span className="h-px flex-1 bg-gray-100 ml-4"></span>
-                                    </h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2 border border-blue-100 bg-blue-50/30 p-4 rounded-xl">
-                                            <label className="flex items-start gap-3 cursor-pointer">
-                                                <input
-                                                    type="checkbox"
-                                                    name="is_service"
-                                                    defaultChecked={initialData?.is_service}
-                                                    className="mt-1 w-5 h-5 rounded border-gray-300 text-black focus:ring-black"
-                                                />
-                                                <div>
-                                                    <span className="block text-sm font-bold text-gray-900">Is this a Service?</span>
-                                                    <span className="block text-xs text-gray-500 mt-0.5 max-w-xs">
-                                                        Services (e.g. Consultation, Delivery) do not track physical stock quantities.
-                                                    </span>
-                                                </div>
-                                            </label>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Barcode / UPC</label>
-                                            <div className="relative">
-                                                <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                                <input
-                                                    name="barcode"
-                                                    defaultValue={initialData?.default_barcode}
-                                                    placeholder="Scan barcode..."
-                                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all font-mono text-sm"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Unit of Measure</label>
-                                            <div className="flex gap-2">
-                                                <select
-                                                    name="uomId"
-                                                    defaultValue={initialData?.uom_id}
-                                                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all flex-1"
-                                                >
-                                                    {uoms.map(u => (
-                                                        <option key={u.id} value={u.id}>{u.name}</option>
-                                                    ))}
-                                                </select>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setModalOpen('uom')}
-                                                    className="px-3 py-2 bg-gray-50 hover:bg-green-50 text-gray-600 hover:text-green-600 border border-gray-200 hover:border-green-200 rounded-lg transition-colors"
-                                                >
-                                                    <Plus className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {!isEditing && (
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium text-gray-700">Opening Stock</label>
-                                                <input
-                                                    name="openingStock"
-                                                    type="number"
-                                                    defaultValue={0}
-                                                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-                                                />
-                                            </div>
-                                        )}
-
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between items-center">
-                                                <label className="text-sm font-medium text-gray-700">Reorder Level (Alert Threshold)</label>
-                                                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 rounded-full uppercase tracking-tighter">Auto-Alert</span>
-                                            </div>
-                                            <input
-                                                name="reorderLevel"
-                                                type="number"
-                                                step="0.01"
-                                                defaultValue={Number(initialData?.reorder_level || 0)}
-                                                placeholder="Alert when stock falls below..."
-                                                className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all font-semibold"
-                                            />
-                                            <p className="text-[10px] text-slate-400">System will trigger "Low Stock" alert when inventory dips below this value.</p>
-                                        </div>
-
-                                        <div className="space-y-4">
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-medium text-gray-700">Tracking Method</label>
-                                                <select
-                                                    name="tracking"
-                                                    defaultValue={trackingType}
-                                                    onChange={(e) => setTrackingType(e.target.value)}
-                                                    className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-                                                >
-                                                    <option value="none">No Tracking (Standard)</option>
-                                                    <option value="batch">Batch / Lot Tracking (Expiry)</option>
-                                                    <option value="serial">Serial Number Tracking (Unique)</option>
-                                                </select>
-                                            </div>
-
-                                            {!isEditing && trackingType === 'batch' && (
-                                                <div className="grid grid-cols-2 gap-4 border-l-2 border-blue-100 pl-4 py-2 bg-blue-50/30 rounded-r-lg">
-                                                    <div className="space-y-2">
-                                                        <label className="text-xs font-bold text-blue-700 uppercase">Opening Batch No</label>
-                                                        <input
-                                                            name="openingStockBatch"
-                                                            placeholder="B-001"
-                                                            className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm outline-none"
-                                                        />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <label className="text-xs font-bold text-blue-700 uppercase">Expiry Date</label>
-                                                        <input
-                                                            name="openingStockExpiry"
-                                                            type="date"
-                                                            className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm outline-none"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
+                        {/* Manufacturer */}
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase">Brand / Mfr</label>
+                            <div className="flex gap-1">
+                                <select
+                                    name="manufacturerId"
+                                    defaultValue={initialData?.manufacturerId}
+                                    className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-black outline-none transition-all text-sm"
+                                >
+                                    <option value="">Select Brand...</option>
+                                    {manufacturers.map(m => (
+                                        <option key={m.id} value={m.id}>{m.name}</option>
+                                    ))}
+                                </select>
+                                <button type="button" onClick={() => setModalOpen('manufacturer')} className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50"><Plus className="h-4 w-4" /></button>
                             </div>
                         </div>
 
-                        {/* FINANCIALS */}
-                        <div className={activeSection === 'financials' ? 'block' : 'hidden'}>
-                            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 lg:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-2">
-                                <div>
-                                    <h2 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                                        Pricing & Taxation
-                                        <span className="h-px flex-1 bg-gray-100 ml-4"></span>
-                                    </h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Selling Price</label>
-                                            <div className="relative">
-                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-serif italic">₹</span>
-                                                <input
-                                                    name="price"
-                                                    type="number"
-                                                    step="0.01"
-                                                    required
-                                                    defaultValue={initialData?.price}
-                                                    placeholder="0.00"
-                                                    className="w-full pl-8 pr-4 py-3 text-lg font-bold text-gray-900 bg-white border border-gray-200 rounded-lg focus:border-green-500 focus:ring-2 focus:ring-green-100 outline-none transition-all"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Cost Price</label>
-                                            <div className="relative">
-                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-serif italic">₹</span>
-                                                <input
-                                                    name="costPrice"
-                                                    type="number"
-                                                    step="0.01"
-                                                    defaultValue={initialData?.default_cost}
-                                                    placeholder="0.00"
-                                                    className="w-full pl-8 pr-4 py-3 text-lg font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">MRP</label>
-                                            <div className="relative">
-                                                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-serif italic">₹</span>
-                                                <input
-                                                    name="mrp"
-                                                    type="number"
-                                                    step="0.01"
-                                                    defaultValue={initialData?.mrp}
-                                                    placeholder="0.00"
-                                                    className="w-full pl-8 pr-4 py-3 text-lg font-bold text-gray-600 bg-gray-50 border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium text-gray-700">Tax Rate</label>
-                                            <select
-                                                name="taxRateId"
-                                                value={selectedTaxId}
-                                                onChange={(e) => setSelectedTaxId(e.target.value)}
-                                                className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none transition-all"
-                                            >
-                                                <option value="">Select Tax...</option>
-                                                {taxRates.map(t => (
-                                                    <option key={t.id} value={t.id}>{t.name} ({Number(t.rate)}%)</option>
-                                                ))}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
+                        {/* UOM */}
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase">UOM</label>
+                            <div className="flex gap-1">
+                                <select
+                                    name="uomId"
+                                    defaultValue={initialData?.uom_id}
+                                    className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-black outline-none transition-all text-sm"
+                                >
+                                    {uoms.map(u => (
+                                        <option key={u.id} value={u.id}>{u.name}</option>
+                                    ))}
+                                </select>
+                                <button type="button" onClick={() => setModalOpen('uom')} className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50"><Plus className="h-4 w-4" /></button>
                             </div>
                         </div>
 
-                        {/* BATCHES & STOCK DETAIL (Only for existing tracked products) */}
-                        {isEditing && trackingType === 'batch' && (
-                            <div className={activeSection === 'logistics' ? 'block' : 'hidden'}>
-                                <div className="mt-8 bg-white rounded-2xl border border-gray-100 shadow-sm p-6 lg:p-8 animate-in fade-in slide-in-from-bottom-2">
-                                    <div className="flex items-center justify-between mb-6">
-                                        <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                            Active Batches
-                                            <span className="text-xs font-normal text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full ml-2">{batches.length} found</span>
-                                        </h2>
-                                    </div>
+                        {/* Pricing Row */}
+                        <div className="md:col-span-3 grid grid-cols-4 gap-4 bg-gray-50/50 p-3 rounded-xl border border-gray-100">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Sale Price</label>
+                                <div className="relative">
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">₹</span>
+                                    <input name="price" type="number" step="0.01" required defaultValue={initialData?.price} className="w-full pl-5 pr-2 py-2 bg-white border border-gray-200 rounded-lg font-bold text-sm" />
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Cost Price</label>
+                                <div className="relative">
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">₹</span>
+                                    <input name="costPrice" type="number" step="0.01" defaultValue={initialData?.default_cost} className="w-full pl-5 pr-2 py-2 bg-white border border-gray-200 rounded-lg text-sm" />
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">MRP</label>
+                                <div className="relative">
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">₹</span>
+                                    <input name="mrp" type="number" step="0.01" defaultValue={initialData?.mrp} className="w-full pl-5 pr-2 py-2 bg-white border border-gray-200 rounded-lg text-sm" />
+                                </div>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Tax Rate</label>
+                                <select name="taxRateId" value={selectedTaxId} onChange={e => setSelectedTaxId(e.target.value)} className="w-full px-2 py-2 bg-white border border-gray-200 rounded-lg text-xs">
+                                    <option value="">No Tax</option>
+                                    {taxRates.map(t => <option key={t.id} value={t.id}>{t.name} ({Number(t.rate)}%)</option>)}
+                                </select>
+                            </div>
+                        </div>
 
-                                    {batches.length === 0 ? (
-                                        <div className="text-center py-12 border-2 border-dashed border-gray-100 rounded-xl">
-                                            <p className="text-gray-400">No active batches for this product.</p>
-                                            <p className="text-xs text-gray-400 mt-1">Receive stock to create new batches.</p>
-                                        </div>
-                                    ) : (
-                                        <div className="overflow-x-auto rounded-xl border border-gray-100">
-                                            <table className="w-full text-left">
-                                                <thead>
-                                                    <tr className="bg-gray-50 text-[10px] font-bold uppercase text-gray-500 tracking-wider">
-                                                        <th className="px-4 py-3">Batch No</th>
-                                                        <th className="px-4 py-3">Expiry</th>
-                                                        <th className="px-4 py-3">MRP (₹)</th>
-                                                        <th className="px-4 py-3">Stock</th>
-                                                        <th className="px-4 py-3 text-right">Actions</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-gray-50 text-sm">
-                                                    {batches.map((batch: any) => (
-                                                        <tr key={batch.id}>
-                                                            <td className="px-4 py-3 font-mono text-xs">{batch.batch_no}</td>
-                                                            <td className="px-4 py-3">
-                                                                {batch.expiry_date ? new Date(batch.expiry_date).toLocaleDateString() : 'No Expiry'}
-                                                            </td>
-                                                            <td className="px-4 py-3 font-medium">{Number(batch.mrp || 0).toFixed(2)}</td>
-                                                            <td className="px-4 py-3">
-                                                                <span className="px-2 py-0.5 bg-green-50 text-green-700 rounded-full font-bold">
-                                                                    {Number(batch.qty_on_hand)}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-4 py-3 text-right">
-                                                                <div className="flex items-center justify-end gap-2">
-                                                                    <button
-                                                                        type="button"
-                                                                        className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                                                                        title="View History"
-                                                                        onClick={() => {
-                                                                            setHistoryBatch(batch);
-                                                                            getBatchHistory(batch.id).then(setBatchLedger);
-                                                                        }}
-                                                                    >
-                                                                        <History className="h-4 w-4" />
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-md transition-colors"
-                                                                        title="Adjust Stock"
-                                                                        onClick={() => setAdjustingBatch(batch)}
-                                                                    >
-                                                                        <ArrowUpDown className="h-4 w-4" />
-                                                                    </button>
-                                                                    <button
-                                                                        type="button"
-                                                                        className="text-blue-600 hover:text-blue-800 text-xs font-semibold bg-blue-50 px-2 py-1 rounded-md transition-colors ml-1"
-                                                                        onClick={() => setEditingBatch(batch)}
-                                                                    >
-                                                                        Edit
-                                                                    </button>
-                                                                </div>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    )}
+                        {/* Logistics Row */}
+                        <div className="md:col-span-3 grid grid-cols-4 gap-4">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Barcode</label>
+                                <input name="barcode" defaultValue={initialData?.default_barcode} placeholder="Scan..." className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-mono" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Opening Stock</label>
+                                <input name="openingStock" type="number" defaultValue={0} disabled={isEditing} className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm disabled:bg-gray-50" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Reorder Lvl</label>
+                                <input name="reorderLevel" type="number" step="0.01" defaultValue={Number(initialData?.reorder_level || 0)} className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm" />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Tracking</label>
+                                <select name="tracking" value={trackingType} onChange={e => setTrackingType(e.target.value)} className="w-full px-2 py-2 bg-white border border-gray-200 rounded-lg text-xs">
+                                    <option value="none">None</option>
+                                    <option value="batch">Batch</option>
+                                    <option value="serial">Serial</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        {trackingType === 'batch' && !isEditing && (
+                            <div className="md:col-span-3 grid grid-cols-2 gap-4 border-l-2 border-blue-500 pl-4 bg-blue-50/50 p-2 rounded-lg">
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-blue-700 uppercase">Opening Batch</label>
+                                    <input name="openingStockBatch" placeholder="B-001" className="w-full px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-sm" />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[10px] font-bold text-blue-700 uppercase">Expiry Date</label>
+                                    <input name="openingStockExpiry" type="date" className="w-full px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-sm" />
                                 </div>
                             </div>
                         )}
+
+                        <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="flex items-center gap-3 p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl">
+                                <input type="checkbox" name="is_service" id="is_service" defaultChecked={initialData?.is_service} className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer" />
+                                <label htmlFor="is_service" className="cursor-pointer">
+                                    <span className="block text-xs font-bold text-indigo-900 uppercase">Service Item</span>
+                                    <span className="block text-[10px] text-indigo-600 leading-tight">Consultations, fees etc. No stock tracking.</span>
+                                </label>
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase px-1">Short Description</label>
+                                <input name="description" defaultValue={initialData?.description} placeholder="A brief note about this product" className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Column: Image & Actions (Span 1) */}
+                    <div className="space-y-4">
+                        <div className="aspect-square bg-gray-50 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center relative overflow-hidden group cursor-pointer hover:border-black transition-all" onClick={() => fileInputRef.current?.click()}>
+                            <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageUpload} disabled={uploading} />
+                            <input type="hidden" name="image_url" value={imageUrl || ''} />
+                            
+                            {uploading && (
+                                <div className="absolute inset-0 z-10 bg-white/50 backdrop-blur-sm flex items-center justify-center">
+                                    <div className="w-6 h-6 border-2 border-black border-t-transparent rounded-full animate-spin"></div>
+                                </div>
+                            )}
+
+                            {imageUrl ? (
+                                <>
+                                    <img src={imageUrl} alt="Product" className="w-full h-full object-cover" />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                                        <span className="text-[10px] font-bold text-white bg-black/50 px-2 py-1 rounded-full">Change Photo</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="flex flex-col items-center gap-1 text-gray-400">
+                                    <ImageIcon className="h-6 w-6" />
+                                    <span className="text-[10px] font-bold uppercase">Add Photo</span>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Batch History (if editing) */}
+                        {isEditing && trackingType === 'batch' && batches.length > 0 && (
+                            <div className="p-3 bg-white border border-gray-100 rounded-xl shadow-sm">
+                                <h4 className="text-[10px] font-bold text-gray-400 uppercase mb-2">Active Batches</h4>
+                                <div className="space-y-1 max-h-40 overflow-y-auto custom-scrollbar">
+                                    {batches.map((batch: any) => (
+                                        <div key={batch.id} className="text-[10px] border-b border-gray-50 py-1 flex justify-between items-center">
+                                            <span className="font-mono">{batch.batch_no}</span>
+                                            <span className="font-bold text-green-600">{Number(batch.qty_on_hand)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="bg-amber-50 rounded-xl p-3 border border-amber-100 space-y-1">
+                            <div className="flex items-center gap-1 text-amber-800">
+                                <Info className="h-3 w-3" />
+                                <span className="text-[10px] font-bold uppercase">Quick Tip</span>
+                            </div>
+                            <p className="text-[10px] text-amber-700 leading-tight">SKU must be unique. Categories help automate taxes and reporting.</p>
+                        </div>
                     </div>
                 </div>
             </form >
