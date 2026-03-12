@@ -242,81 +242,28 @@ export async function getTaxRates() {
             });
         }
 
-        let allTaxes = Array.from(allTaxesMap.values());
-
-        logDebug(`getTaxRates: Found ${allTaxes.length} taxes before seeding`);
-
-        // Seeding if Empty - IMPROVED: Only seed if NO taxes exist at all in the mapping tables
-        if (allTaxes.length === 0) {
-            const gstRates = [0, 5, 12, 18, 28];
-            const created = [];
-
-            logDebug('getTaxRates: Seeding Standard GST Rates');
-
-            for (const r of gstRates) {
-                const typeName = `GST_${r}`;
-                // Find or Create Tax Type
-                let type = await prisma.tax_types.findFirst({ where: { name: typeName } });
-                if (!type) {
-                    try {
-                        type = await prisma.tax_types.create({
-                            data: {
-                                name: typeName,
-                                description: `GST ${r}% Rate Type`,
-                                is_active: true
-                            }
-                        });
-                    } catch (e) {
-                        console.error(`Failed to create tax type ${typeName}:`, e);
-                        continue;
-                    }
-                }
-
-                if (type) {
-                    // Find or Create Rate Row in global tax_rates
-                    let rateRow = await prisma.tax_rates.findFirst({ where: { tax_type_id: type.id, rate: r } });
-                    if (!rateRow) {
-                        rateRow = await prisma.tax_rates.create({
-                            data: {
-                                tax_type_id: type.id,
-                                name: `GST ${r}%`,
-                                rate: r,
-                                is_active: true
-                            }
-                        });
-                    }
-
-                    // Map to Company
-                    try {
-                        await prisma.company_tax_maps.upsert({
-                            where: { company_id_tax_type_id: { company_id: companyId, tax_type_id: type.id } },
-                            update: { is_active: true },
-                            create: {
-                                tenant_id: session.user.tenantId,
-                                company_id: companyId,
-                                tax_type_id: type.id,
-                                tax_rate_id: rateRow.id,
-                                is_default: r === 0
-                            }
-                        });
-                    } catch (e) {
-                        console.error(`Failed to map tax rate ${r} to company:`, e);
-                    }
-
-                    created.push({ id: rateRow.id, name: rateRow.name, rate: r });
-                }
-            }
-            return created;
+        // 5. Final Data-Driven Fallback: If still nothing, just give them all active global tax rates
+        if (allTaxesMap.size === 0) {
+            const globalTaxes = await prisma.tax_rates.findMany({
+                where: { is_active: true },
+                take: 50
+            });
+            globalTaxes.forEach(t => {
+                allTaxesMap.set(t.id, {
+                    id: t.id,
+                    name: t.name,
+                    rate: Number(t.rate)
+                });
+            });
         }
 
-        return allTaxes;
+        let allTaxes = Array.from(allTaxesMap.values());
 
+        return allTaxes;
     } catch (error) {
         logDebug(`getTaxRates Error: ${error}`);
         console.error("Failed to fetch tax rates:", error);
-
-        // Return a mock fallback to prove UI works if DB fails
-        return [{ id: 'fallback-error', name: 'System Error Tax', rate: 0 }];
+        return [];
     }
 }
 
