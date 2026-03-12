@@ -1,11 +1,14 @@
 import { getCategories, getTaxRates, deleteCategory } from "@/app/actions/inventory"
-import { Trash2, Tag, X, Box, Layers } from "lucide-react"
+import { Trash2, Tag, X, Box, Layers, Edit2 } from "lucide-react"
 import Link from "next/link"
 import { CreateCategoryForm } from "@/components/inventory/create-category-form"
 
-export default async function CategoryMasterPage() {
+export default async function CategoryMasterPage(props: { searchParams: Promise<{ edit?: string }> }) {
+    const searchParams = await props.searchParams;
     const categories = await getCategories();
     const taxRates = await getTaxRates();
+
+    const categoryToEdit = searchParams.edit ? categories.find(c => c.id === searchParams.edit) || null : null;
 
     return (
         <div className="min-h-screen bg-gray-50/50 pb-20">
@@ -49,7 +52,7 @@ export default async function CategoryMasterPage() {
                                     </h3>
                                 </div>
                                 <div className="p-2">
-                                    <CreateCategoryForm taxRates={taxRates} />
+                                    <CreateCategoryForm taxRates={taxRates} categoryToEdit={categoryToEdit} />
                                 </div>
                             </div>
 
@@ -98,18 +101,27 @@ export default async function CategoryMasterPage() {
                                                 <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 group-hover:text-blue-600 group-hover:bg-blue-50 group-hover:border-blue-100 transition-colors">
                                                     <Tag className="h-5 w-5" />
                                                 </div>
-                                                <form action={async () => {
-                                                    'use server'
-                                                    await deleteCategory(category.id)
-                                                }}>
-                                                    <button
-                                                        type="submit"
-                                                        className="opacity-0 group-hover:opacity-100 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all transform scale-90 group-hover:scale-100"
-                                                        title="Delete Category"
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all transform scale-90 group-hover:scale-100">
+                                                    <Link 
+                                                        href={`/hms/inventory/categories?edit=${category.id}`}
+                                                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        title="Edit Category"
                                                     >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </button>
-                                                </form>
+                                                        <Edit2 className="h-4 w-4" />
+                                                    </Link>
+                                                    <form action={async () => {
+                                                        'use server'
+                                                        await deleteCategory(category.id)
+                                                    }}>
+                                                        <button
+                                                            type="submit"
+                                                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                            title="Delete Category"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </div>
 
                                             <div>

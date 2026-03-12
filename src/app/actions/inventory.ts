@@ -209,6 +209,36 @@ export async function getTaxRates() {
         [...customTaxes.map(t => ({ ...t, rate: Number(t.rate) })), ...mappedTaxes, ...settingTaxes].forEach(t => {
             allTaxesMap.set(t.id, t);
         });
+
+        // 4. Fallback: Fetch Country Default Taxes if auto-load is true or no taxes found
+        const compSettings = await prisma.company_settings.findUnique({
+            where: { company_id: companyId }
+        });
+
+        if (allTaxesMap.size === 0 || compSettings?.auto_load_taxes_from_country !== false) {
+            const company = await prisma.company.findUnique({
+                where: { id: companyId },
+                select: { country_id: true }
+            });
+            
+            if (company?.country_id) {
+                const countryTaxes = await prisma.country_tax_mappings.findMany({
+                    where: { country_id: company.country_id, is_active: true },
+                    include: { tax_rates: true }
+                });
+                
+                countryTaxes.forEach(ct => {
+                    if (!allTaxesMap.has(ct.tax_rates.id)) {
+                        allTaxesMap.set(ct.tax_rates.id, {
+                            id: ct.tax_rates.id,
+                            name: ct.tax_rates.name,
+                            rate: Number(ct.tax_rates.rate)
+                        });
+                    }
+                });
+            }
+        }
+
         let allTaxes = Array.from(allTaxesMap.values());
 
         logDebug(`getTaxRates: Found ${allTaxes.length} taxes before seeding`);
@@ -626,7 +656,7 @@ export async function createCategory(prevState: any, formData: FormData): Promis
     }
 }
 
-export async function updateCategory(formData: FormData) {
+export async function updateCategory(prevState: any, formData: FormData): Promise<{ error: string } | { success: boolean }> {
     const session = await auth();
     if (!session?.user?.companyId) return { error: "Unauthorized" };
 

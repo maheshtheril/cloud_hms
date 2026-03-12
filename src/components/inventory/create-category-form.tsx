@@ -1,8 +1,9 @@
 'use client'
 
 import { useActionState } from "react"
-import { createCategory } from "@/app/actions/inventory"
-import { Plus, Save } from "lucide-react"
+import { createCategory, updateCategory } from "@/app/actions/inventory"
+import { Plus, Save, X } from "lucide-react"
+import Link from 'next/link'
 
 const initialState = {
     error: ""
@@ -10,17 +11,26 @@ const initialState = {
 
 interface CreateCategoryFormProps {
     taxRates: { id: string; name: string; rate: number }[]
+    categoryToEdit?: { id: string; name: string; default_tax_rate_id: string | null } | null
 }
 
-export function CreateCategoryForm({ taxRates }: CreateCategoryFormProps) {
-    const [state, action, isPending] = useActionState(createCategory, initialState)
+export function CreateCategoryForm({ taxRates, categoryToEdit }: CreateCategoryFormProps) {
+    const actionToUse = categoryToEdit ? updateCategory : createCategory
+    const [state, action, isPending] = useActionState(actionToUse, initialState)
 
     return (
         <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-fit sticky top-6">
-            <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                New Category
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                    {categoryToEdit ? <Save className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                    {categoryToEdit ? "Edit Category" : "New Category"}
+                </h2>
+                {categoryToEdit && (
+                    <Link href="/hms/inventory/categories" className="text-gray-400 hover:text-gray-600 transition-colors">
+                        <X className="h-5 w-5" />
+                    </Link>
+                )}
+            </div>
             <form action={action} className="space-y-4">
                 {state && 'error' in state && state.error && (
                     <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100">
@@ -28,11 +38,14 @@ export function CreateCategoryForm({ taxRates }: CreateCategoryFormProps) {
                     </div>
                 )}
 
+                {categoryToEdit && <input type="hidden" name="id" value={categoryToEdit.id} />}
+
                 <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Category Name</label>
                     <input
                         name="name"
                         required
+                        defaultValue={categoryToEdit?.name || ""}
                         placeholder="e.g. Antibiotics"
                         className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                     />
@@ -41,6 +54,7 @@ export function CreateCategoryForm({ taxRates }: CreateCategoryFormProps) {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Default Tax Rate</label>
                     <select
                         name="taxRateId"
+                        defaultValue={categoryToEdit?.default_tax_rate_id || ""}
                         className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                     >
                         <option value="">No Tax</option>
@@ -60,7 +74,7 @@ export function CreateCategoryForm({ taxRates }: CreateCategoryFormProps) {
                     ) : (
                         <>
                             <Save className="h-4 w-4" />
-                            Create Category
+                            {categoryToEdit ? "Update Category" : "Create Category"}
                         </>
                     )}
                 </button>
