@@ -221,22 +221,25 @@ export async function getTaxRates() {
                 select: { country_id: true }
             });
             
+            const countryTaxesWhere: any = { is_active: true };
             if (company?.country_id) {
-                const countryTaxes = await prisma.country_tax_mappings.findMany({
-                    where: { country_id: company.country_id, is_active: true },
-                    include: { tax_rates: true }
-                });
-                
-                countryTaxes.forEach(ct => {
-                    if (!allTaxesMap.has(ct.tax_rates.id)) {
-                        allTaxesMap.set(ct.tax_rates.id, {
-                            id: ct.tax_rates.id,
-                            name: ct.tax_rates.name,
-                            rate: Number(ct.tax_rates.rate)
-                        });
-                    }
-                });
+                countryTaxesWhere.country_id = company.country_id;
             }
+
+            const countryTaxes = await prisma.country_tax_mappings.findMany({
+                where: countryTaxesWhere,
+                include: { tax_rates: true }
+            });
+            
+            countryTaxes.forEach(ct => {
+                if (ct.tax_rates && !allTaxesMap.has(ct.tax_rates.id)) {
+                    allTaxesMap.set(ct.tax_rates.id, {
+                        id: ct.tax_rates.id,
+                        name: ct.tax_rates.name,
+                        rate: Number(ct.tax_rates.rate)
+                    });
+                }
+            });
         }
 
         let allTaxes = Array.from(allTaxesMap.values());
