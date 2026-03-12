@@ -59,7 +59,9 @@ export function CreateCategoryForm({ taxRates, categoryToEdit }: CreateCategoryF
                     >
                         <option value="">No Tax</option>
                         {taxRates.map(t => (
-                            <option key={t.id} value={t.id}>{t.name} ({t.rate}%)</option>
+                            <option key={t.id} value={t.id}>
+                                {t.name.includes(t.rate.toString()) ? t.name : `${t.name} (${t.rate}%)`}
+                            </option>
                         ))}
                     </select>
                     <p className="text-xs text-gray-500 mt-1">Products in this category will default to this tax rate.</p>

@@ -1326,7 +1326,11 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                           <div className="flex flex-col gap-1">
                             <select className="w-full h-8 bg-[#003333] text-[#ffffcc] border border-[#006666] rounded-lg px-2 text-[8px] font-black outline-none focus:ring-1 focus:ring-[#64ffff]" value={line.tax_rate_id || ''} onChange={e => updateLine(line.id, 'tax_rate_id', e.target.value)} disabled={isPaymentModalOpen || loading}>
                               <option value="">0% (No Tax)</option>
-                              {extendedTaxRates.map((t: any) => <option key={t.id} value={t.id}>{t.name} ({t.rate}%)</option>)}
+                              {extendedTaxRates.map((t: any) => (
+                                <option key={t.id} value={t.id}>
+                                  {t.name.includes(t.rate.toString()) ? t.name : `${t.name} (${t.rate}%)`}
+                                </option>
+                              ))}
                             </select>
                             {line.tax_amount > 0 && (
                               <span className="text-[9px] font-bold text-emerald-600 text-right pr-1">

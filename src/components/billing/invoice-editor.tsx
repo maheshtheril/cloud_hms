@@ -691,7 +691,9 @@ export function InvoiceEditor({ patients, billableItems, taxConfig, initialPatie
                                             >
                                                 <option value="" className="text-gray-500">No Tax</option>
                                                 {taxConfig.taxRates.map(t => (
-                                                    <option key={t.id} value={t.id} className="text-gray-900 dark:text-white">{t.name} ({t.rate}%)</option>
+                                                    <option key={t.id} value={t.id} className="text-gray-900 dark:text-white">
+                                                        {t.name.includes(t.rate.toString()) ? t.name : `${t.name} (${t.rate}%)`}
+                                                    </option>
                                                 ))}
                                             </select>
                                             <div className="text-right text-xs text-gray-500 dark:text-slate-500 mt-1 font-mono">
