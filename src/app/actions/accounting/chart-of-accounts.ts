@@ -157,13 +157,43 @@ export async function deleteAccount(id: string) {
     if (!session?.user?.companyId) return { error: "Unauthorized" };
 
     try {
-        await prisma.accounts.update({
-            where: { id },
-            data: { is_active: false }
+        // 1. Check for transactions (journal entry lines)
+        const transactionsCount = await prisma.journal_entry_lines.count({
+            where: { account_id: id }
         });
-        revalidatePath('/accounting/coa');
+
+        if (transactionsCount > 0) {
+            return { error: "Cannot delete account. Transactions exist for this ledger." };
+        }
+
+        // 2. Check for child accounts if it's a group
+        const childrenCount = await prisma.accounts.count({
+            where: { parent_id: id, is_active: true }
+        });
+
+        if (childrenCount > 0) {
+            return { error: "Cannot delete group. It contains other sub-groups or ledgers." };
+        }
+
+        // 3. Perform actual deletion if no transactions/children exist
+        await prisma.accounts.delete({
+            where: { id }
+        });
+
+        revalidatePath('/hms/accounting/coa');
         return { success: true };
     } catch (error: any) {
-        return { error: error.message };
+        console.error("Error deleting account:", error);
+        // Fallback to deactivation if delete fails (e.g. foreign key constraint elsewhere)
+        try {
+            await prisma.accounts.update({
+                where: { id },
+                data: { is_active: false }
+            });
+            revalidatePath('/hms/accounting/coa');
+            return { success: true, message: "Account deactivated instead of deleted due to constraints." };
+        } catch (e) {
+            return { error: error.message };
+        }
     }
 }

@@ -1,7 +1,7 @@
 
 'use client'
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Plus, Search, Pencil, Trash2, RefreshCw, BookOpen, ArrowRightLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -140,6 +140,43 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
         });
         setIsDialogOpen(true);
     }
+
+    const handleDelete = async () => {
+        if (!editingAccount) return;
+        
+        if (!confirm(`Are you sure you want to delete ${editingAccount.name.toUpperCase()}?`)) {
+            return;
+        }
+
+        setIsLoading(true)
+        try {
+            const res = await deleteAccount(editingAccount.id);
+            if (res.error) {
+                toast.error(res.error);
+            } else {
+                toast.success("Account deleted successfully");
+                setIsDialogOpen(false);
+                window.location.reload();
+            }
+        } catch (e) {
+            toast.error("An error occurred during deletion");
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    // Handle Alt+D for deletion when dialog is open
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (isDialogOpen && editingAccount && e.altKey && e.key.toLowerCase() === 'd') {
+                e.preventDefault();
+                handleDelete();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isDialogOpen, editingAccount]);
 
     const handleSubmit = async () => {
         if (!formData.code || !formData.name) {
@@ -481,7 +518,17 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
                     </div>
 
                     <div className="h-10 bg-[#003333] border-t-2 border-[#008080] flex items-center justify-between px-6">
-                        <button onClick={() => setIsDialogOpen(false)} className="text-red-400 hover:text-white text-[10px] font-black uppercase">Quit (Esc)</button>
+                        <div className="flex items-center gap-4">
+                            <button onClick={() => setIsDialogOpen(false)} className="text-red-400 hover:text-white text-[10px] font-black uppercase">Quit (Esc)</button>
+                            {editingAccount && (
+                                <button 
+                                    onClick={handleDelete}
+                                    className="text-orange-400 hover:text-white text-[10px] font-black uppercase border-l border-[#008080] pl-4"
+                                >
+                                    Delete (Alt+D)
+                                </button>
+                            )}
+                        </div>
                         <button
                             onClick={handleSubmit}
                             disabled={isLoading}
