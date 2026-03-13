@@ -674,6 +674,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
         setIsSuccess(true)
         setLoading(false)
+        setIsPaymentModalOpen(false) // [FIX] Ensure payment modal is closed upon success
         const invoiceId = (res as any).data?.id;
         setLastSavedId(invoiceId || null)
 
@@ -968,9 +969,13 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
       setWalkInName('');
       setWalkInPhone('');
       setIsSuccess(false);
+      setIsPaymentModalOpen(false); // [FIX] Explicitly close payment terminal
       setLastSavedId(null);
-      if (onClose) onClose();
-      else router.push('/hms/billing');
+      
+      // If we are in a modal/intercepted route, stay here. Otherwise reset path.
+      if (!onClose) {
+        router.replace('/hms/billing/new'); 
+      }
     };
 
     return (
