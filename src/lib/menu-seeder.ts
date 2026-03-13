@@ -17,7 +17,7 @@ export async function ensureAccountingMenu() {
                 await prisma.menu_items.update({
                     where: { id: existing.id },
                     data: {
-                        module_key: 'system',
+                        module_key: 'configuration',
                         parent_id: null
                     }
                 });
@@ -34,7 +34,7 @@ export async function ensureAccountingMenu() {
                     label: 'Accounting Config',
                     url: '/settings/accounting',
                     key: 'accounting-settings',
-                    module_key: 'system', // Moved to Configuration to ensure visibility
+                    module_key: 'configuration', // Grouped with other settings
                     icon: 'Calculator',
                     parent_id: null,
                     sort_order: sortOrder,
