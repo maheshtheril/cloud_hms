@@ -22,7 +22,7 @@ import {
 const inventoryItems = [
     { title: "Command Center", href: "/hms/inventory", icon: LayoutDashboard },
     { title: "Products", href: "/hms/inventory/products", icon: Package },
-    { title: "Receive Stock", href: "/hms/inventory/operations/receive", icon: Download },
+    { title: "Receive Stock", href: "/hms/purchasing/receipts/new", icon: Download },
     // { title: "Stock Moves", href: "/hms/inventory/moves", icon: ArrowRightLeft }, // Hidden until impl
     // { title: "Configuration", href: "/hms/inventory/settings", icon: Settings } // Hidden until impl
 ]

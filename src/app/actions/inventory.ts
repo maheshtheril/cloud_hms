@@ -6,7 +6,6 @@ import { revalidatePath } from "next/cache"
 import { SYSTEM_DEFAULT_CURRENCY_SYMBOL } from "@/lib/currency"
 import { redirect } from "next/navigation"
 import crypto from 'crypto';
-import { receiveStock } from "@/app/actions/inventory-operations";
 import { Prisma } from "@prisma/client";
 
 // --- Dashboard Stats ---
