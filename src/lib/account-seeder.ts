@@ -29,31 +29,31 @@ export async function ensureDefaultAccounts(companyId: string, tenantId: string)
     const templates = [
         // ASSETS (1000-1999)
         { code: '1000', name: 'Fixed Assets', type: 'Asset', isGroup: true },
-        { code: '1500', name: 'Office Equipment', type: 'Asset', parentCode: '1000' },
-        { code: '1510', name: 'Medical Equipment', type: 'Asset', parentCode: '1000' },
-        { code: '1520', name: 'Furniture & Fixtures', type: 'Asset', parentCode: '1000' },
+        { code: '1010', name: 'Office Equipment', type: 'Asset', parentCode: '1000' },
+        { code: '1020', name: 'Medical Equipment', type: 'Asset', parentCode: '1000' },
+        { code: '1030', name: 'Furniture & Fixtures', type: 'Asset', parentCode: '1000' },
 
-        { code: '1100', name: 'Current Assets', type: 'Asset', isGroup: true },
-        { code: '1110', name: 'Cash on Hand', type: 'Asset', parentCode: '1100', isGroup: true },
-        { code: '1120', name: 'Bank Accounts', type: 'Asset', parentCode: '1100', isGroup: true },
-        { code: '1050', name: 'Bank Account - Primary', type: 'Asset', parentCode: '1120' },
-        { code: '1001', name: 'Cash', type: 'Asset', parentCode: '1110' }, // Standard Cash Ledger
+        { code: '1500', name: 'Current Assets', type: 'Asset', isGroup: true },
+        { code: '1600', name: 'Cash on Hand', type: 'Asset', parentCode: '1500', isGroup: true },
+        { code: '1700', name: 'Bank Accounts', type: 'Asset', parentCode: '1500', isGroup: true },
+        { code: '1710', name: 'Bank Account - Primary', type: 'Asset', parentCode: '1700' },
+        { code: '1610', name: 'Cash', type: 'Asset', parentCode: '1600' }, 
 
-        { code: '1150', name: 'Sundry Debtors', type: 'Asset', parentCode: '1100', isGroup: true },
-        { code: '1200', name: 'Accounts Receivable (Patients)', type: 'Asset', parentCode: '1150' },
-        { code: '1210', name: 'Insurance Debtors', type: 'Asset', parentCode: '1150' },
-        { code: '1220', name: 'Corporate Debtors', type: 'Asset', parentCode: '1150' },
+        { code: '1800', name: 'Sundry Debtors', type: 'Asset', parentCode: '1500', isGroup: true },
+        { code: '1810', name: 'Accounts Receivable (Patients)', type: 'Asset', parentCode: '1800' },
+        { code: '1820', name: 'Insurance Debtors', type: 'Asset', parentCode: '1800' },
+        { code: '1830', name: 'Corporate Debtors', type: 'Asset', parentCode: '1800' },
 
-        { code: '1400', name: 'Inventory / Stock', type: 'Asset', parentCode: '1100', isGroup: true },
+        { code: '1900', name: 'Inventory / Stock', type: 'Asset', parentCode: '1500', isGroup: true },
 
         // LIABILITIES (2000-2999)
         { code: '2000', name: 'Current Liabilities', type: 'Liability', isGroup: true },
         { code: '2100', name: 'Sundry Creditors', type: 'Liability', parentCode: '2000', isGroup: true },
-        { code: '2001', name: 'Accounts Payable (Vendors)', type: 'Liability', parentCode: '2100' },
-        { code: '2010', name: 'Accrued Expenses', type: 'Liability', parentCode: '2000' },
+        { code: '2110', name: 'Accounts Payable (Vendors)', type: 'Liability', parentCode: '2100' },
+        { code: '2120', name: 'Accrued Expenses', type: 'Liability', parentCode: '2000' },
         { code: '2200', name: `${taxLabel} Duties & Taxes`, type: 'Liability', parentCode: '2000', isGroup: true },
-        { code: '2201', name: `${taxLabel} Output (Collected)`, type: 'Liability', parentCode: '2200' },
-        { code: '2210', name: `${taxLabel} Input (Paid)`, type: 'Liability', parentCode: '2200' },
+        { code: '2210', name: `${taxLabel} Output (Collected)`, type: 'Liability', parentCode: '2200' },
+        { code: '2220', name: `${taxLabel} Input (Paid)`, type: 'Liability', parentCode: '2200' },
         { code: '2300', name: 'Salaries Payable', type: 'Liability', parentCode: '2000' },
 
         // EQUITY (3000-3999)
