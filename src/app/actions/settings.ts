@@ -779,6 +779,7 @@ export async function updatePaymentGatewaySettings(data: {
         `;
 
         revalidatePath('/settings/hms');
+        revalidatePath('/settings/global');
         return { success: true };
     } catch (error: any) {
         console.error('Failed to save payment gateway settings:', error);
@@ -897,13 +898,16 @@ export async function updateWhatsAppSettings(data: {
     instanceId: string;
     token?: string;
     autoSendBill: boolean;
+    companyId?: string;
 }) {
     const session = await auth();
-    const companyId = session?.user?.companyId;
+    const companyId = data.companyId || session?.user?.companyId;
     const tenantId = session?.user?.tenantId;
     const userId = session?.user?.id;
 
     if (!companyId || !tenantId || !userId) return { success: false, error: 'Session expired.' };
+
+    console.log(`[WHATSAPP SAVE] Updating config for ${companyId} (Tenant: ${tenantId})`);
 
     const canManage = await checkPermission('hms:admin');
     if (!canManage) return { success: false, error: 'Unauthorized: HMS Admin permission required.' };
@@ -939,6 +943,7 @@ export async function updateWhatsAppSettings(data: {
         `;
 
         revalidatePath('/settings/hms');
+        revalidatePath('/settings/global');
         return { success: true };
     } catch (error: any) {
         console.error('Failed to save WhatsApp settings:', error);
@@ -1023,6 +1028,7 @@ export async function updatePDFSettings(data: {
         `;
 
         revalidatePath('/settings/hms');
+        revalidatePath('/settings/global');
         return { success: true };
     } catch (error: any) {
         console.error('Failed to save PDF settings:', error);

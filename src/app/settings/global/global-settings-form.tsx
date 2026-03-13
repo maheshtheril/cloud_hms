@@ -125,7 +125,8 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                     enabled: whatsappEnabled,
                     instanceId: whatsappInstanceId,
                     token: whatsappToken || undefined,
-                    autoSendBill: whatsappAutoSendBill
+                    autoSendBill: whatsappAutoSendBill,
+                    companyId: company.id
                 }),
                 updatePDFSettings({
                     headerAlignment: pdfHeaderAlignment,
