@@ -543,10 +543,16 @@ export async function createInvoice(data: {
                 console.error(`${LOG_PREFIX} Accounting Post Exception:`, err);
             }
 
-            // WhatsApp Notification (Only if paid)
+            // WhatsApp Notification (Only if paid and auto-send enabled)
             if (status === 'paid') {
-                NotificationService.sendInvoiceWhatsapp(invoiceId, tenantId).catch(err => {
-                    console.error(`${LOG_PREFIX} WhatsApp Notification Failed:`, err);
+                getWhatsAppConfig(companyId, tenantId).then(config => {
+                    if (config?.autoSendBill) {
+                        NotificationService.sendInvoiceWhatsapp(invoiceId, tenantId).catch(err => {
+                            console.error(`${LOG_PREFIX} WhatsApp Notification Failed:`, err);
+                        });
+                    }
+                }).catch(err => {
+                    console.error(`${LOG_PREFIX} WhatsApp Config Fetch Failed:`, err);
                 });
             }
         }
@@ -830,6 +836,19 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
                 }
             } catch (err) {
                 console.error("Accounting Post Exception:", err);
+            }
+
+            // WhatsApp Notification (Only if paid and auto-send enabled)
+            if (result.status === 'paid') {
+                getWhatsAppConfig(companyId, session.user.tenantId!).then(config => {
+                    if (config?.autoSendBill) {
+                        NotificationService.sendInvoiceWhatsapp(result.id, session.user.tenantId!).catch(err => {
+                            console.error("WhatsApp Notification Failed:", err);
+                        });
+                    }
+                }).catch(err => {
+                    console.error("WhatsApp Config Fetch Failed:", err);
+                });
             }
         }
 

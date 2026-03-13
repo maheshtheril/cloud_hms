@@ -62,6 +62,7 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
     const [pdfHospitalNameSize, setPdfHospitalNameSize] = useState(pdfSettings?.hospitalNameSize || 16)
     const [pdfAddressSize, setPdfAddressSize] = useState(pdfSettings?.addressSize || 10)
     const [pdfShowContactInfo, setPdfShowContactInfo] = useState(pdfSettings?.showContactInfo ?? true)
+    const [pdfAutoPrint, setPdfAutoPrint] = useState(pdfSettings?.autoPrint ?? false)
 
     // Sync state with props when they change from server
     useEffect(() => {
@@ -98,6 +99,7 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
             setPdfHospitalNameSize(pdfSettings.hospitalNameSize || 16);
             setPdfAddressSize(pdfSettings.addressSize || 10);
             setPdfShowContactInfo(pdfSettings.showContactInfo ?? true);
+            setPdfAutoPrint(pdfSettings.autoPrint ?? false);
         }
     }, [pdfSettings]);
 
@@ -130,7 +132,8 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                     showLogo: pdfShowLogo,
                     hospitalNameSize: pdfHospitalNameSize,
                     addressSize: pdfAddressSize,
-                    showContactInfo: pdfShowContactInfo
+                    showContactInfo: pdfShowContactInfo,
+                    autoPrint: pdfAutoPrint
                 })
             ])
 
@@ -271,6 +274,13 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                             <label className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-white transition-colors">
                                 <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Show Contact info</span>
                                 <Switch checked={pdfShowContactInfo} onCheckedChange={setPdfShowContactInfo} />
+                            </label>
+                            <label className="flex items-center justify-between p-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-xl border border-indigo-200/50 dark:border-indigo-800/50 cursor-pointer hover:bg-white transition-colors">
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300">Auto-print Bill after save</span>
+                                    <span className="text-[9px] text-indigo-500 font-medium uppercase tracking-tight">Open print dialog automatically</span>
+                                </div>
+                                <Switch checked={pdfAutoPrint} onCheckedChange={setPdfAutoPrint} />
                             </label>
                         </div>
                         <div className="space-y-4">

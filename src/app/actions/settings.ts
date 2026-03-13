@@ -976,6 +976,7 @@ export async function getPDFSettings() {
                 hospitalNameSize: data.hospitalNameSize || 16,
                 addressSize: data.addressSize || 10,
                 showContactInfo: data.showContactInfo ?? true,
+                autoPrint: data.autoPrint ?? false,
             }
         };
     } catch (error: any) {
@@ -989,6 +990,7 @@ export async function updatePDFSettings(data: {
     hospitalNameSize?: number;
     addressSize?: number;
     showContactInfo?: boolean;
+    autoPrint: boolean;
 }) {
     const session = await auth();
     const companyId = session?.user?.companyId;

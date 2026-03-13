@@ -11,6 +11,7 @@ import {
 import { QRCodeSVG } from 'qrcode.react'
 import { posService } from '@/lib/services/pos-device'
 import { createInvoice, updateInvoice, cancelInvoice, createQuickPatient, getPatientOutstandingBalance, getPatientLedger, getNextVoucherNumber, shareInvoiceWhatsapp } from '@/app/actions/billing'
+import { getPDFConfig } from '@/app/actions/settings';
 import { getBestBatch, getProductBatches, getProductsPremium, getProduct } from '@/app/actions/inventory'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { useToast } from '@/components/ui/use-toast'
@@ -69,6 +70,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
   const { data: session } = useSession()
   const isAdmin = session?.user?.isAdmin
+  const tenantId = session?.user?.tenantId;
+  const companyId = session?.user?.companyId;
 
   // Active persistence state
   const [activeInvoice, setActiveInvoice] = useState<any>(initialInvoice)
@@ -92,6 +95,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const finalizeButtonRef = useRef<HTMLButtonElement>(null)
   const [isErrorDialogOpen, setIsErrorDialogOpen] = useState(false)
   const [errorDetails, setErrorDetails] = useState({ title: '', message: '' })
+
+  const [pdfConfig, setPdfConfig] = useState<any>(null);
   const [posStatus, setPosStatus] = useState<'connected' | 'offline' | 'searching'>('searching')
   const [isPOSLoading, setIsPOSLoading] = useState(false)
 
@@ -237,6 +242,20 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
     }
   }, [appointmentId, activeInvoice, initialMedicines, billableItems]);
 
+  // Fetch PDF config on mount
+  useEffect(() => {
+    const loadConfig = async () => {
+      try {
+        if (tenantId && companyId) {
+          const pdf = await getPDFConfig(companyId, tenantId);
+          if (pdf) setPdfConfig(pdf);
+        }
+      } catch (e) {
+        console.error('Failed to load PDF config', e);
+      }
+    };
+    loadConfig();
+  }, [tenantId, companyId]);
 
   const extendedTaxRates = useMemo(() => {
     const rates = [...(taxConfig.taxRates || [])];
@@ -655,8 +674,15 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
         setIsSuccess(true)
         setLoading(false)
-        const id = (res as any).data?.id;
-        setLastSavedId(id || null)
+        const invoiceId = (res as any).data?.id;
+        setLastSavedId(invoiceId || null)
+
+        // WORLD CLASS: Auto-Print Trigger
+        if (effectiveStatus === 'paid' && pdfConfig?.autoPrint && invoiceId) {
+          setTimeout(() => {
+            window.open(`/hms/billing/${invoiceId}/print`, '_blank');
+          }, 100);
+        }
 
         // [WORLD CLASS STABILITY] Delay the parent callback to allow success screen to mount first
         // and ensure the terminal doesn't unmount due to parent state updates immediately.
