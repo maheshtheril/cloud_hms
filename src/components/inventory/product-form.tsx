@@ -4,6 +4,7 @@ import { createProduct, updateProduct, createUOM, updateProductBatch, getBatchHi
 import { uploadProductImage } from "@/app/actions/upload-image"
 import { useState, useRef, useEffect, useActionState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { QuickCategoryForm, QuickManufacturerForm } from "@/components/inventory/quick-create-wrappers"
 import {
     Box, Tag, DollarSign, Layers, Image as ImageIcon, Barcode, Factory, Check, Zap, Info, Plus, X, Cpu, History, ArrowUpDown, TrendingUp, TrendingDown
@@ -235,31 +236,31 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                             </div>
                         </div>
 
-                        {/* Pricing Row */}
+                        {/* Pricing Row - Master Defaults */}
                         <div className="md:col-span-3 grid grid-cols-4 gap-4 bg-gray-50/50 p-3 rounded-xl border border-gray-100">
                             <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Sale Price</label>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Std Sale Price</label>
                                 <div className="relative">
                                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">₹</span>
                                     <input name="price" type="number" step="0.01" required defaultValue={initialData?.price} className="w-full pl-5 pr-2 py-2 bg-white border border-gray-200 rounded-lg font-bold text-sm" />
                                 </div>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Cost Price</label>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Std Cost Price</label>
                                 <div className="relative">
                                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">₹</span>
                                     <input name="costPrice" type="number" step="0.01" defaultValue={initialData?.default_cost} className="w-full pl-5 pr-2 py-2 bg-white border border-gray-200 rounded-lg text-sm" />
                                 </div>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">MRP</label>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Std MRP</label>
                                 <div className="relative">
                                     <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">₹</span>
                                     <input name="mrp" type="number" step="0.01" defaultValue={initialData?.mrp} className="w-full pl-5 pr-2 py-2 bg-white border border-gray-200 rounded-lg text-sm" />
                                 </div>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Tax Rate</label>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">Default Tax</label>
                                 <select name="taxRateId" value={selectedTaxId} onChange={e => setSelectedTaxId(e.target.value)} className="w-full px-2 py-2 bg-white border border-gray-200 rounded-lg text-xs">
                                     <option value="">No Tax</option>
                                     {taxRates.map(t => <option key={t.id} value={t.id}>{t.name} ({Number(t.rate)}%)</option>)}
@@ -267,19 +268,11 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                             </div>
                         </div>
 
-                        {/* Logistics Row */}
+                        {/* Identification & Policy Row */}
                         <div className="md:col-span-3 grid grid-cols-4 gap-4">
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-gray-500 uppercase">Barcode</label>
                                 <input name="barcode" defaultValue={initialData?.default_barcode} placeholder="Scan..." className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm font-mono" />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Opening Stock</label>
-                                <input name="openingStock" type="number" defaultValue={0} disabled={isEditing} className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm disabled:bg-gray-50" />
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase">Reorder Lvl</label>
-                                <input name="reorderLevel" type="number" step="0.01" defaultValue={Number(initialData?.reorder_level || 0)} className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm" />
                             </div>
                             <div className="space-y-1">
                                 <label className="text-[10px] font-bold text-gray-500 uppercase">Tracking</label>
@@ -289,20 +282,13 @@ export function ProductForm({ suppliers, taxRates, uoms, categories, manufacture
                                     <option value="serial">Serial</option>
                                 </select>
                             </div>
-                        </div>
-
-                        {trackingType === 'batch' && !isEditing && (
-                            <div className="md:col-span-3 grid grid-cols-2 gap-4 border-l-2 border-blue-500 pl-4 bg-blue-50/50 p-2 rounded-lg">
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-blue-700 uppercase">Opening Batch</label>
-                                    <input name="openingStockBatch" placeholder="B-001" className="w-full px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-sm" />
-                                </div>
-                                <div className="space-y-1">
-                                    <label className="text-[10px] font-bold text-blue-700 uppercase">Expiry Date</label>
-                                    <input name="openingStockExpiry" type="date" className="w-full px-3 py-1.5 bg-white border border-blue-200 rounded-lg text-sm" />
-                                </div>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Reorder Lvl</label>
+                                <input name="reorderLevel" type="number" step="0.01" defaultValue={Number(initialData?.reorder_level || 0)} className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm" />
                             </div>
-                        )}
+                            {/* Empty space to keep grid consistent */}
+                            <div className="hidden md:block"></div>
+                        </div>
 
                         <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="flex items-center gap-3 p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl">

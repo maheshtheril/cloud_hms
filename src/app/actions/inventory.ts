@@ -868,8 +868,7 @@ export async function getProductsPremium(query?: string, page: number = 1, suppl
             where.OR = [
                 { name: { contains: query, mode: 'insensitive' } },
                 { sku: { contains: query, mode: 'insensitive' } },
-                // Allow searching by brand if it was stored in metadata, but prisma doesn't support deep JSON search easily with contains. 
-                // We'll stick to name/sku for now.
+                { default_barcode: { contains: query, mode: 'insensitive' } },
             ];
         }
 
@@ -968,11 +967,6 @@ export async function createProduct(formData: FormData) {
 
     const costPrice = parseFloat(formData.get("costPrice") as string) || 0;
     const mrp = parseFloat(formData.get("mrp") as string) || 0;
-    const openingStock = parseFloat(formData.get("openingStock") as string) || 0;
-
-    // Batch/Expiry for Opening Stock
-    const batchNo = formData.get("openingStockBatch") as string;
-    const expiryDate = formData.get("openingStockExpiry") as string;
 
     try {
         // Construct Metadata
@@ -1057,24 +1051,6 @@ export async function createProduct(formData: FormData) {
                 }
             });
         }
-
-        // Handle Opening Stock
-        if (openingStock > 0) {
-            await receiveStock({
-                date: new Date(),
-                items: [{
-                    productId: newProduct.id,
-                    quantity: openingStock,
-                    unitCost: costPrice || price,
-                    batchNumber: batchNo || 'OPENING-BATCH',
-                    expiryDate: expiryDate || undefined,
-                    mrp: mrp || undefined
-                }],
-                reference: 'OPENING-STOCK',
-                notes: 'Initial Opening Stock from Product Master'
-            });
-        }
-
 
         revalidatePath('/hms/inventory/products');
         return { success: true };

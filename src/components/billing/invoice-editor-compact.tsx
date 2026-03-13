@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   MessageSquare, Plus, Trash2, Search, Save, User, DollarSign, Receipt, X,
   Loader2, CreditCard, Banknote, Smartphone, Maximize2,
@@ -11,7 +11,7 @@ import {
 import { QRCodeSVG } from 'qrcode.react'
 import { posService } from '@/lib/services/pos-device'
 import { createInvoice, updateInvoice, cancelInvoice, createQuickPatient, getPatientOutstandingBalance, getPatientLedger, getNextVoucherNumber, shareInvoiceWhatsapp } from '@/app/actions/billing'
-import { getBestBatch } from '@/app/actions/inventory'
+import { getBestBatch, getProductBatches, getProductsPremium, getProduct } from '@/app/actions/inventory'
 import { SearchableSelect } from '@/components/ui/searchable-select'
 import { useToast } from '@/components/ui/use-toast'
 import { useSession } from 'next-auth/react'
@@ -20,6 +20,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
 import { ZionaLogo } from '@/components/branding/ziona-logo'
+import { format } from "date-fns"
+import { BatchSelectorDialog } from "./batch-selector-dialog"
 
 export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxConfig, initialPatientId, initialMedicines, appointmentId, initialInvoice, onClose, onPaymentSuccess, currency = '₹',
   isRegistrationFee = false,
@@ -453,6 +455,12 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
   const [showUPIQR, setShowUPIQR] = useState<{ amount: number, vpa: string } | null>(null)
   const [activePaymentAmount, setActivePaymentAmount] = useState<string>('')
   const [globalDiscount, setGlobalDiscount] = useState(Number(initialInvoice?.total_discount || 0))
+
+  // Batch Selection State
+  const [selectedLineForBatch, setSelectedLineForBatch] = useState<number | null>(null);
+  const [activeBatches, setActiveBatches] = useState<any[]>([]);
+  const [isBatchSelectorOpen, setIsBatchSelectorOpen] = useState(false);
+  const [batchProductName, setBatchProductName] = useState('');
 
   // Totals
   const subtotal = Number(lines.reduce((sum, line) => sum + ((line.quantity * line.unit_price) - (line.discount_amount || 0)), 0).toFixed(2))
@@ -1025,13 +1033,31 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
 
             <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-400 italic">Financial Cycle Closed • Identity Node Deselected</p>
           </div>
-        </div>
-      </div>
-    )
-  }
+        </DialogContent>
+      </Dialog>
 
-  return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md transition-all ${isMaximized ? 'p-0' : 'p-4'}`} onClick={() => onClose ? onClose() : router.back()}>
+      {/* WORLD CLASS BATCH SELECTION NODE */}
+      <BatchSelectorDialog
+        isOpen={isBatchSelectorOpen}
+        onClose={() => setIsBatchSelectorOpen(false)}
+        productName={batchProductName}
+        batches={activeBatches}
+        currency={currency}
+        onSelect={(batch: any) => {
+          if (selectedLineForBatch) {
+            setLines(current => current.map(l =>
+              l.id === selectedLineForBatch ? {
+                ...l,
+                batch_id: batch.id,
+                batch_no: batch.batch_no,
+                // Update price if in MRP mode or if current price is 0
+                unit_price: (pricingMode === 'mrp' || l.unit_price === 0) && batch.mrp ? Number(batch.mrp) : l.unit_price
+              } : l
+            ));
+          }
+        }}
+      />
+
       {/* Global Sync Overlay */}
       {loading && (
         <div className="absolute inset-0 z-[200] bg-slate-900/40 backdrop-blur-sm flex flex-col items-center justify-center gap-4">
@@ -1042,7 +1068,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         </div>
       )}
 
-
+      {/* Wrapper Div Start */}
       <div className={`relative flex flex-col bg-white dark:bg-slate-900 shadow-[0_0_100px_rgba(0,0,0,0.5)] overflow-hidden border border-slate-200 dark:border-slate-800 transition-all duration-500 ease-out ${isMaximized ? 'w-full h-full' : 'w-full max-w-[98vw] h-[95vh] rounded-[2.5rem]'}`} onClick={e => e.stopPropagation()}>
 
         {/* ✕ ALWAYS-VISIBLE CLOSE BUTTON */}
@@ -1055,7 +1081,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
           CLOSE
         </button>
 
-        {/* 1. Tally-Style Header Area */}
+        {/* ... Rest of header content ... */}
         <div className="flex items-center justify-between px-6 py-2 border-b border-[#006666] bg-[#004d4d] z-20 no-print">
           <div className="flex items-center gap-4">
             <div className="bg-[#002b2b] p-1.5 rounded border border-[#008080]">
@@ -1286,9 +1312,24 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
                               {(line.item_type || 'ITEM').toUpperCase()}
                             </button>
                             {line.batch_no && (
-                              <span className="text-[8px] font-mono font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-1 rounded animate-in fade-in zoom-in-95">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (!line.product_id) return;
+                                  const batches = await getProductBatches(line.product_id);
+                                  const availableBatches = batches.filter((b: any) => Number(b.qty_on_hand) > 0);
+                                  if (availableBatches.length > 0) {
+                                    setBatchProductName(line.description || '');
+                                    setActiveBatches(availableBatches);
+                                    setSelectedLineForBatch(line.id);
+                                    setIsBatchSelectorOpen(true);
+                                  }
+                                }}
+                                className="text-[8px] font-mono font-bold text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-1 rounded animate-in fade-in zoom-in-95 hover:bg-amber-100 hover:text-amber-700 transition-colors"
+                                title="Click to Change Batch"
+                              >
                                 Lot: {line.batch_no}
-                              </span>
+                              </button>
                             )}
                           </div>
                         </td>
@@ -1774,7 +1815,7 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
               </div>
 
               <h2 className="text-2xl font-black text-slate-900 dark:text-white italic mb-2">SCAN TO PAY</h2>
-              <p className="text-xs font-medium text-slate-500 mb-8">Pay precisely {currency}{razorpayQRAmount.toFixed(2)} to avoid payment failure</p>
+              <p className="text-xs font-medium text-slate-500 mb-8">Pay precisely {currency}{(razorpayQRAmount || 0).toFixed(2)} to avoid payment failure</p>
 
               <div className="relative mb-8 flex justify-center">
                 <div className={`transition-all duration-300 ${razorpayStatus === 'loading' ? 'blur-md opacity-50' : ''}`}>
@@ -2023,6 +2064,6 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
           </DialogContent>
         </Dialog>
       </div>
-    </div >
-  )
+    </>
+  );
 }
