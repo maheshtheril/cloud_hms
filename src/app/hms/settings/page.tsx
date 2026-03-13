@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Building2, Stethoscope, Settings2, ChevronRight, Zap } from 'lucide-react'
+import { Building2, Stethoscope, Settings2, ChevronRight, Zap, Calculator } from 'lucide-react'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 
 interface LinkItem {
@@ -33,6 +33,15 @@ export default function SettingsHubPage() {
             icon: <Stethoscope className="h-6 w-6 text-emerald-600" />,
             links: [
                 { name: 'Clinical Protocols (Masters)', href: '/hms/settings/prescriptions', badge: 'New' },
+            ]
+        },
+        {
+            title: 'Finance & Accounting',
+            description: 'Configure charts of accounts, taxes, and payment mappings.',
+            icon: <Calculator className="h-6 w-6 text-indigo-600" />,
+            links: [
+                { name: 'Accounting Configuration', href: '/settings/accounting' },
+                { name: 'Payment Ledger Mapping', href: '/settings/accounting' },
             ]
         }
     ]
