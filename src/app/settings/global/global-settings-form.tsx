@@ -275,10 +275,10 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                                 <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Show Contact info</span>
                                 <Switch checked={pdfShowContactInfo} onCheckedChange={setPdfShowContactInfo} />
                             </label>
-                            <label className="flex items-center justify-between p-4 bg-indigo-50/50 dark:bg-indigo-900/10 rounded-xl border border-indigo-200/50 dark:border-indigo-800/50 cursor-pointer hover:bg-white transition-colors">
+                            <label className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-white transition-colors">
                                 <div className="flex flex-col">
-                                    <span className="text-sm font-bold text-indigo-700 dark:text-indigo-300">Auto-print Bill after save</span>
-                                    <span className="text-[9px] text-indigo-500 font-medium uppercase tracking-tight">Open print dialog automatically</span>
+                                    <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Auto-print Bill after save</span>
+                                    <span className="text-[9px] text-slate-500 font-medium uppercase tracking-tight italic">Automatically open print window</span>
                                 </div>
                                 <Switch checked={pdfAutoPrint} onCheckedChange={setPdfAutoPrint} />
                             </label>
