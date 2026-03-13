@@ -63,6 +63,7 @@ model accounts {
   name                                                  String
   type                                                  String
   is_reconcilable                                       Boolean?                      @default(false)
+  is_group                                              Boolean?                      @default(false)
   is_active                                             Boolean?                      @default(true)
   currency_id                                           String?                       @db.Uuid
   metadata                                              Json?                         @default("{}")

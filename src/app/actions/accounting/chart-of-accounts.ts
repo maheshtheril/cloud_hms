@@ -60,6 +60,7 @@ export async function upsertAccount(data: {
     name: string;
     type: string;
     parent_id?: string | null;
+    is_group?: boolean;
     is_reconcilable?: boolean;
     description?: string;
 }) {
@@ -89,6 +90,7 @@ export async function upsertAccount(data: {
                 name: data.name,
                 type: data.type,
                 parent_id: data.parent_id,
+                is_group: data.is_group || false,
                 is_reconcilable: data.is_reconcilable || false,
                 // metadata: { description: data.description } 
             },
@@ -100,6 +102,7 @@ export async function upsertAccount(data: {
                 name: data.name,
                 type: data.type,
                 parent_id: data.parent_id,
+                is_group: data.is_group || false,
                 is_reconcilable: data.is_reconcilable || false,
                 is_active: true,
                 // metadata: { description: data.description }
@@ -121,6 +124,7 @@ export async function upsertAccount(data: {
                         name: data.name,
                         type: data.type,
                         parent_id: data.parent_id,
+                        is_group: data.is_group,
                         is_reconcilable: data.is_reconcilable
                     }
                 });
@@ -133,6 +137,7 @@ export async function upsertAccount(data: {
                         name: data.name,
                         type: data.type,
                         parent_id: data.parent_id,
+                        is_group: data.is_group,
                         is_reconcilable: data.is_reconcilable,
                         is_active: true
                     }

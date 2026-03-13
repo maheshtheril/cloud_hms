@@ -28,39 +28,40 @@ export async function ensureDefaultAccounts(companyId: string, tenantId: string)
     // 3. Define Standard COA Template (1000-8999 range)
     const templates = [
         // ASSETS (1000-1999)
-        { code: '1000', name: 'Fixed Assets', type: 'Asset' },
+        { code: '1000', name: 'Fixed Assets', type: 'Asset', isGroup: true },
         { code: '1500', name: 'Office Equipment', type: 'Asset', parentCode: '1000' },
         { code: '1510', name: 'Medical Equipment', type: 'Asset', parentCode: '1000' },
         { code: '1520', name: 'Furniture & Fixtures', type: 'Asset', parentCode: '1000' },
 
-        { code: '1100', name: 'Current Assets', type: 'Asset' },
-        { code: '1110', name: 'Cash on Hand', type: 'Asset', parentCode: '1100' },
-        { code: '1120', name: 'Bank Accounts', type: 'Asset', parentCode: '1100' },
+        { code: '1100', name: 'Current Assets', type: 'Asset', isGroup: true },
+        { code: '1110', name: 'Cash on Hand', type: 'Asset', parentCode: '1100', isGroup: true },
+        { code: '1120', name: 'Bank Accounts', type: 'Asset', parentCode: '1100', isGroup: true },
         { code: '1050', name: 'Bank Account - Primary', type: 'Asset', parentCode: '1120' },
+        { code: '1001', name: 'Cash', type: 'Asset', parentCode: '1110' }, // Standard Cash Ledger
 
-        { code: '1150', name: 'Sundry Debtors', type: 'Asset', parentCode: '1100' },
+        { code: '1150', name: 'Sundry Debtors', type: 'Asset', parentCode: '1100', isGroup: true },
         { code: '1200', name: 'Accounts Receivable (Patients)', type: 'Asset', parentCode: '1150' },
         { code: '1210', name: 'Insurance Debtors', type: 'Asset', parentCode: '1150' },
         { code: '1220', name: 'Corporate Debtors', type: 'Asset', parentCode: '1150' },
 
-        { code: '1400', name: 'Inventory / Stock', type: 'Asset', parentCode: '1100' },
+        { code: '1400', name: 'Inventory / Stock', type: 'Asset', parentCode: '1100', isGroup: true },
 
         // LIABILITIES (2000-2999)
-        { code: '2000', name: 'Current Liabilities', type: 'Liability' },
-        { code: '2100', name: 'Sundry Creditors', type: 'Liability', parentCode: '2000' },
+        { code: '2000', name: 'Current Liabilities', type: 'Liability', isGroup: true },
+        { code: '2100', name: 'Sundry Creditors', type: 'Liability', parentCode: '2000', isGroup: true },
         { code: '2001', name: 'Accounts Payable (Vendors)', type: 'Liability', parentCode: '2100' },
         { code: '2010', name: 'Accrued Expenses', type: 'Liability', parentCode: '2000' },
-        { code: '2200', name: `${taxLabel} Duties & Taxes`, type: 'Liability', parentCode: '2000' },
+        { code: '2200', name: `${taxLabel} Duties & Taxes`, type: 'Liability', parentCode: '2000', isGroup: true },
         { code: '2201', name: `${taxLabel} Output (Collected)`, type: 'Liability', parentCode: '2200' },
         { code: '2210', name: `${taxLabel} Input (Paid)`, type: 'Liability', parentCode: '2200' },
         { code: '2300', name: 'Salaries Payable', type: 'Liability', parentCode: '2000' },
 
         // EQUITY (3000-3999)
-        { code: '3000', name: 'Owner Capital / Equity', type: 'Equity' },
+        { code: '3000', name: 'Owner Capital / Equity', type: 'Equity', isGroup: true },
         { code: '3200', name: 'Retained Earnings', type: 'Equity' },
 
         // REVENUE (4000-4999)
-        { code: '4000', name: 'Direct Income (Revenue)', type: 'Revenue' },
+        { code: '4000', name: 'Direct Income (Revenue)', type: 'Revenue', isGroup: true },
         { code: '4010', name: 'Patient Consultation Fees', type: 'Revenue', parentCode: '4000' },
         { code: '4100', name: 'Lab Test Revenue', type: 'Revenue', parentCode: '4000' },
         { code: '4200', name: 'Pharmacy Sales', type: 'Revenue', parentCode: '4000' },
@@ -69,17 +70,17 @@ export async function ensureDefaultAccounts(companyId: string, tenantId: string)
         { code: '4950', name: 'Purchase Discounts', type: 'Revenue' },
 
         // EXPENSES (5000-8999)
-        { code: '5000', name: 'Direct Expenses (COGS)', type: 'Expense' },
+        { code: '5000', name: 'Direct Expenses (COGS)', type: 'Expense', isGroup: true },
         { code: '5100', name: 'Cost of Goods Sold', type: 'Expense', parentCode: '5000' },
         { code: '5200', name: 'Inventory Shrinkage', type: 'Expense', parentCode: '5000' },
 
-        { code: '6000', name: 'Indirect Expenses (Admin)', type: 'Expense' },
+        { code: '6000', name: 'Indirect Expenses (Admin)', type: 'Expense', isGroup: true },
         { code: '6010', name: 'Rent', type: 'Expense', parentCode: '6000' },
         { code: '6020', name: 'Utilities (Elec/Water)', type: 'Expense', parentCode: '6000' },
         { code: '6030', name: 'Telephone & Internet', type: 'Expense', parentCode: '6000' },
         { code: '6040', name: 'Printing & Stationery', type: 'Expense', parentCode: '6000' },
 
-        { code: '6600', name: 'Personnel Expenses', type: 'Expense' },
+        { code: '6600', name: 'Personnel Expenses', type: 'Expense', isGroup: true },
         { code: '6610', name: 'Staff Salaries', type: 'Expense', parentCode: '6600' },
         { code: '6620', name: 'Staff Welfare', type: 'Expense', parentCode: '6600' },
     ];
@@ -95,6 +96,7 @@ export async function ensureDefaultAccounts(companyId: string, tenantId: string)
                 name: acc.name,
                 type: acc.type,
                 is_active: true,
+                is_group: acc.isGroup || false,
                 is_reconcilable: ['1200', '1210', '1220', '2001'].includes(acc.code)
             })),
             skipDuplicates: true
@@ -108,16 +110,24 @@ export async function ensureDefaultAccounts(companyId: string, tenantId: string)
     const accountMap = new Map(allAccounts.map(a => [a.code, a.id]));
 
     for (const t of templates as any[]) {
+        const childId = accountMap.get(t.code);
+        if (!childId) continue;
+
+        const updateData: any = {
+            is_group: t.isGroup || false
+        };
+
         if (t.parentCode) {
-            const childId = accountMap.get(t.code);
             const parentId = accountMap.get(t.parentCode);
-            if (childId && parentId) {
-                await prisma.accounts.update({
-                    where: { id: childId },
-                    data: { parent_id: parentId }
-                });
+            if (parentId) {
+                updateData.parent_id = parentId;
             }
         }
+
+        await prisma.accounts.update({
+            where: { id: childId },
+            data: updateData
+        });
     }
     // 6. Ensure Company Accounting Settings exist and are linked to default accounts
     const settings = await prisma.company_accounting_settings.findUnique({
