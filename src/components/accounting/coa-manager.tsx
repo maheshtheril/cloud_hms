@@ -114,7 +114,39 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
         setIsDialogOpen(true)
     }
 
+    const suggestNextCode = (parentId: string, type: string) => {
+        const siblings = accounts.filter(a => (parentId === 'none' ? !a.parent_id : a.parent_id === parentId) && a.type === type);
+        if (siblings.length === 0) {
+            // Suggesting based on parent code if possible
+            const parent = accounts.find(a => a.id === parentId);
+            if (parent) return `${parent.code}01`;
+            return "";
+        }
+        const codes = siblings.map(s => parseInt(s.code)).filter(c => !isNaN(c));
+        if (codes.length === 0) return "";
+        return (Math.max(...codes) + 1).toString();
+    }
+
+    const handleQuickAdd = (parent: Account) => {
+        const nextCode = suggestNextCode(parent.id, parent.type);
+        setEditingAccount(null);
+        setFormData({
+            code: nextCode,
+            name: '',
+            type: parent.type,
+            parent_id: parent.id,
+            is_group: false, // Default to ledger for quick add, can toggle
+            is_reconcilable: parent.type === 'Asset' || parent.type === 'Liability'
+        });
+        setIsDialogOpen(true);
+    }
+
     const handleSubmit = async () => {
+        if (!formData.code || !formData.name) {
+            toast.error("Please fill in the code and name.");
+            return;
+        }
+
         setIsLoading(true)
         try {
             const payload = {
@@ -143,10 +175,26 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
         }
     }
 
+    // When parent changes, inheritance logic
+    const handleParentChange = (parentId: string) => {
+        const parent = accounts.find(a => a.id === parentId);
+        if (parent) {
+            const nextCode = suggestNextCode(parentId, parent.type);
+            setFormData(prev => ({
+                ...prev,
+                parent_id: parentId,
+                type: parent.type,
+                code: nextCode || prev.code
+            }));
+        } else {
+            setFormData(prev => ({ ...prev, parent_id: parentId }));
+        }
+    }
+
     const parentOptions = accounts.filter(a =>
         a.id !== editingAccount?.id &&
         a.is_group && // Only groups can be parents
-        a.type === formData.type // Strict type hierarchy matching
+        (editingAccount ? a.type === editingAccount.type : true) // Ensure type consistency if editing
     );
 
     return (
@@ -262,6 +310,17 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            {acc.is_group && (
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-full"
+                                                                    onClick={() => handleQuickAdd(acc)}
+                                                                    title="Add Child Account"
+                                                                >
+                                                                    <Plus className="w-4 h-4" />
+                                                                </Button>
+                                                            )}
                                                             {!acc.is_group && (
                                                                 <Link href={`/hms/accounting/ledger/${acc.id}`}>
                                                                     <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full" title="View Ledger">
@@ -291,36 +350,110 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
                 ))}
             </div>
 
-            {/* Dialog */}
+            {/* Tally-Style Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[500px] rounded-[2rem] border-slate-200 dark:border-slate-800 shadow-2xl">
-                    <DialogHeader className="space-y-3">
-                        <DialogTitle className="text-2xl font-black text-slate-900 dark:text-white">
-                            {editingAccount ? "Modify Account" : "Design Account"}
-                        </DialogTitle>
-                        <DialogDescription className="font-medium text-slate-500">
-                            Configure the identity and hierarchy of this financial record.
-                        </DialogDescription>
-                    </DialogHeader>
+                <DialogContent className="sm:max-w-[500px] rounded-[1.5rem] border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden">
+                    <div className="bg-slate-900 dark:bg-slate-950 p-6 text-white">
+                        <DialogHeader className="space-y-1">
+                            <DialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
+                                <BookOpen className="w-5 h-5 text-indigo-400" />
+                                {editingAccount ? "Modify Master" : "Create Master"}
+                            </DialogTitle>
+                            <DialogDescription className="text-slate-400 font-medium text-xs uppercase tracking-widest">
+                                {formData.is_group ? "Group creation mode" : "Ledger creation mode"}
+                            </DialogDescription>
+                        </DialogHeader>
 
-                    <div className="space-y-6 py-6">
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <Label className="text-xs font-black uppercase tracking-widest text-slate-500">Account Code</Label>
+                        <div className="flex gap-2 mt-6">
+                            <Button
+                                variant="ghost"
+                                onClick={() => setFormData({ ...formData, is_group: false })}
+                                className={cn(
+                                    "flex-1 h-12 rounded-xl font-black text-xs uppercase tracking-wider transition-all border-2",
+                                    !formData.is_group 
+                                        ? "bg-white text-slate-900 border-white" 
+                                        : "bg-slate-800/50 text-slate-400 border-transparent hover:bg-slate-800"
+                                )}
+                            >
+                                Ledger
+                            </Button>
+                            <Button
+                                variant="ghost"
+                                onClick={() => setFormData({ ...formData, is_group: true })}
+                                className={cn(
+                                    "flex-1 h-12 rounded-xl font-black text-xs uppercase tracking-wider transition-all border-2",
+                                    formData.is_group 
+                                        ? "bg-indigo-600 text-white border-indigo-600" 
+                                        : "bg-slate-800/50 text-slate-400 border-transparent hover:bg-slate-800"
+                                )}
+                            >
+                                Group
+                            </Button>
+                        </div>
+                    </div>
+
+                    <div className="p-8 space-y-6 bg-white dark:bg-slate-900">
+                        {/* Primary Name Field - Always First */}
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Name of {formData.is_group ? "Group" : "Ledger"}</Label>
+                            <Input
+                                value={formData.name}
+                                onChange={e => setFormData({ ...formData, name: e.target.value })}
+                                className="h-14 rounded-xl bg-slate-50 dark:bg-slate-950 border-2 border-transparent focus:border-indigo-500 font-bold text-lg px-4 transition-all"
+                                placeholder="Enter Name..."
+                                autoFocus
+                            />
+                        </div>
+
+                        {/* Under (Group Selection) - Primary Logic Driver */}
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Under (Parent Group)</Label>
+                            <Select
+                                value={formData.parent_id}
+                                onValueChange={handleParentChange}
+                                disabled={!!editingAccount}
+                            >
+                                <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-950 border-none font-bold ring-offset-transparent focus:ring-2 focus:ring-indigo-500/20 px-4">
+                                    <SelectValue placeholder="Select Group..." />
+                                </SelectTrigger>
+                                <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800 max-h-[300px]">
+                                    <SelectItem value="none" className="rounded-xl font-bold py-3">Primary / Root</SelectItem>
+                                    {parentOptions.map(p => (
+                                        <SelectItem key={p.id} value={p.id} className="rounded-xl font-bold py-3">
+                                            <div className="flex flex-col">
+                                                <span>{p.name}</span>
+                                                <span className="text-[10px] text-slate-400 font-medium">Under {p.type}</span>
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-6 pt-2">
+                             {/* Code - Now secondary/suggested */}
+                             <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Accounting Code</Label>
                                 <Input
                                     value={formData.code}
                                     onChange={e => setFormData({ ...formData, code: e.target.value })}
-                                    className="h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none font-bold text-slate-900 dark:text-white"
-                                    placeholder="e.g. 1010"
+                                    className="h-11 rounded-xl bg-slate-50 dark:bg-slate-950 border-none font-mono font-bold text-slate-600 dark:text-slate-400"
+                                    placeholder="Auto"
                                 />
                             </div>
+
+                            {/* Type - Inherited & Semi-Hidden if Parent Set */}
                             <div className="space-y-2">
-                                <Label className="text-xs font-black uppercase tracking-widest text-slate-500">Account Type</Label>
+                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Account Nature</Label>
                                 <Select
                                     value={formData.type}
                                     onValueChange={v => setFormData({ ...formData, type: v })}
+                                    disabled={formData.parent_id !== 'none'}
                                 >
-                                    <SelectTrigger className="h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none font-bold ring-offset-transparent focus:ring-0">
+                                    <SelectTrigger className={cn(
+                                        "h-11 rounded-xl bg-slate-50 dark:bg-slate-950 border-none font-bold ring-offset-transparent focus:ring-0",
+                                        formData.parent_id !== 'none' && "opacity-50"
+                                    )}>
                                         <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
@@ -332,66 +465,35 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-xs font-black uppercase tracking-widest text-slate-500">Account Name</Label>
-                            <Input
-                                value={formData.name}
-                                onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                className="h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none font-bold text-slate-900 dark:text-white"
-                                placeholder="Enter account designation..."
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="text-xs font-black uppercase tracking-widest text-slate-500">Parent Category</Label>
-                            <Select
-                                value={formData.parent_id}
-                                onValueChange={v => setFormData({ ...formData, parent_id: v })}
-                            >
-                                <SelectTrigger className="h-11 rounded-xl bg-slate-50 dark:bg-slate-900 border-none font-bold ring-offset-transparent focus:ring-0">
-                                    <SelectValue placeholder="Root Level" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
-                                    <SelectItem value="none" className="rounded-xl font-bold py-3">Root (No Parent)</SelectItem>
-                                    {parentOptions.map(p => (
-                                        <SelectItem key={p.id} value={p.id} className="rounded-xl font-bold py-3">{p.code} - {p.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 pt-4">
-                            <div
-                                onClick={() => setFormData({ ...formData, is_group: !formData.is_group })}
-                                className={cn(
-                                    "p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-2",
-                                    formData.is_group ? "border-blue-500 bg-blue-50/50 dark:bg-blue-900/20" : "border-slate-100 dark:border-slate-800 grayscale hover:grayscale-0"
-                                )}
-                            >
-                                <BookOpen className={cn("w-6 h-6", formData.is_group ? "text-blue-500" : "text-slate-400")} />
-                                <span className={cn("text-[10px] font-black uppercase tracking-widest", formData.is_group ? "text-blue-600" : "text-slate-500")}>Header Group</span>
+                        {/* Reconciliation Option */}
+                        {!formData.is_group && (
+                            <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800">
+                                <div className="space-y-0.5">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Enable Reconciliation</Label>
+                                    <p className="text-[10px] text-slate-400 font-medium">Allow manual clearing of entries</p>
+                                </div>
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => setFormData({ ...formData, is_reconcilable: !formData.is_reconcilable })}
+                                    className={cn(
+                                        "h-8 px-3 rounded-lg font-black text-[9px] uppercase tracking-tighter transition-all",
+                                        formData.is_reconcilable ? "bg-green-500 text-white" : "bg-slate-200 text-slate-500 dark:bg-slate-800"
+                                    )}
+                                >
+                                    {formData.is_reconcilable ? "Active" : "Disabled"}
+                                </Button>
                             </div>
-
-                            <div
-                                onClick={() => setFormData({ ...formData, is_reconcilable: !formData.is_reconcilable })}
-                                className={cn(
-                                    "p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col items-center justify-center gap-2",
-                                    formData.is_reconcilable ? "border-green-500 bg-green-50/50 dark:bg-green-900/20" : "border-slate-100 dark:border-slate-800 grayscale hover:grayscale-0"
-                                )}
-                            >
-                                <RefreshCw className={cn("w-6 h-6", formData.is_reconcilable ? "text-green-500" : "text-slate-400")} />
-                                <span className={cn("text-[10px] font-black uppercase tracking-widest", formData.is_reconcilable ? "text-green-600" : "text-slate-500")}>Reconcilable</span>
-                            </div>
-                        </div>
+                        )}
                     </div>
 
-                    <DialogFooter className="pt-4 flex !justify-between gap-3">
-                        <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-full font-bold text-slate-500 h-12 flex-1 hover:bg-slate-100">
+                    <DialogFooter className="p-6 pt-0 bg-white dark:bg-slate-900 border-none flex !justify-stretch gap-3">
+                        <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-xl font-bold text-slate-400 h-14 flex-1 hover:bg-slate-50 dark:hover:bg-slate-950">
                             Cancel
                         </Button>
-                        <Button onClick={handleSubmit} disabled={isLoading} className="rounded-full font-black text-white bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 flex-1 h-12 shadow-lg">
+                        <Button onClick={handleSubmit} disabled={isLoading} className="rounded-xl font-black text-white bg-indigo-600 hover:bg-indigo-700 dark:text-white flex-[2] h-14 shadow-lg shadow-indigo-500/20">
                             {isLoading && <RefreshCw className="w-4 h-4 mr-2 animate-spin" />}
-                            {editingAccount ? "Apply Changes" : "Confirm Design"}
+                            {editingAccount ? "Update Master" : "Create Master"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
