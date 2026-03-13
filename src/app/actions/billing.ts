@@ -543,8 +543,8 @@ export async function createInvoice(data: {
                 console.error(`${LOG_PREFIX} Accounting Post Exception:`, err);
             }
 
-            // WhatsApp Notification (Only if paid and auto-send enabled)
-            if (status === 'paid') {
+            // WhatsApp Notification (Only if paid/posted and auto-send enabled)
+            if (status === 'paid' || status === 'posted') {
                 getWhatsAppConfig(companyId, tenantId).then(config => {
                     if (config?.autoSendBill) {
                         NotificationService.sendInvoiceWhatsapp(invoiceId, tenantId).catch(err => {
@@ -838,8 +838,8 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
                 console.error("Accounting Post Exception:", err);
             }
 
-            // WhatsApp Notification (Only if paid and auto-send enabled)
-            if (result.status === 'paid') {
+            // WhatsApp Notification (Only if paid/posted and auto-send enabled)
+            if (result.status === 'paid' || result.status === 'posted') {
                 getWhatsAppConfig(companyId, session.user.tenantId!).then(config => {
                     if (config?.autoSendBill) {
                         NotificationService.sendInvoiceWhatsapp(result.id, session.user.tenantId!).catch(err => {
@@ -1026,7 +1026,7 @@ export async function recordPayment(invoiceId: string, payment: { amount: number
         });
 
         // Trigger Accounting & Notification
-        if (result.status === 'paid') {
+        if (result.status === 'paid' || result.status === 'posted') {
             await AccountingService.postSalesInvoice(invoiceId, session.user.id);
 
             // Check for Auto-send setting before firing
@@ -1132,8 +1132,8 @@ export async function settlePatientDues(patientId: string, amount: number, metho
                 const accountingRes = await AccountingService.postSalesInvoice(res.invoiceId, session.user.id);
                 if (!accountingRes.success) accountingErrors.push(`Invoice ${res.invoiceId}: ${accountingRes.error}`);
 
-                // Trigger Auto-send if enabled and invoice is now fully paid
-                if (res.status === 'paid' && autoSendConfig?.autoSendBill) {
+                // Trigger Auto-send if enabled and invoice is now finalized (paid or posted)
+                if ((res.status === 'paid' || res.status === 'posted') && autoSendConfig?.autoSendBill) {
                     NotificationService.sendInvoiceWhatsapp(res.invoiceId, session.user.tenantId!).catch(console.error);
                 }
             } catch (err: any) {

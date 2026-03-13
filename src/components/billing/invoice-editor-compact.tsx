@@ -677,8 +677,8 @@ export function CompactInvoiceEditor({ patients, billableItems, uoms = [], taxCo
         const invoiceId = (res as any).data?.id;
         setLastSavedId(invoiceId || null)
 
-        // WORLD CLASS: Auto-Print Trigger
-        if (effectiveStatus === 'paid' && pdfConfig?.autoPrint && invoiceId) {
+        // WORLD CLASS: Auto-Print Trigger (Trigger on Paid or Posted settlement)
+        if ((effectiveStatus === 'paid' || effectiveStatus === 'posted') && pdfConfig?.autoPrint && invoiceId) {
           setTimeout(() => {
             window.open(`/hms/billing/${invoiceId}/print`, '_blank');
           }, 100);
