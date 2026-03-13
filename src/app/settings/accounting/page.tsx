@@ -6,6 +6,7 @@ import { AccountingSettingsForm } from "@/components/settings/accounting-setting
 import { ensureDefaultAccounts } from "@/lib/account-seeder"
 import { ensureAccountingMenu, ensureAdminMenus } from "@/lib/menu-seeder"
 import { ensureDefaultJournals } from "@/lib/journal-seeder"
+import { getPaymentMappings } from "@/app/actions/settings"
 
 export const dynamic = 'force-dynamic'
 
@@ -83,6 +84,10 @@ export default async function AccountingSettingsPage() {
         else if (country === 'United States') taxLabel = "Sales Tax";
     }
 
+    // 6. Fetch Payment Method Mappings
+    const mappingRes = await getPaymentMappings();
+    const paymentMappings = mappingRes.success ? mappingRes.mappings : {};
+
     return (
         <AccountingSettingsForm
             settings={settings}
@@ -90,6 +95,7 @@ export default async function AccountingSettingsPage() {
             taxRates={taxRates}
             taxLabel={taxLabel}
             journals={journals}
+            paymentMappings={paymentMappings}
         />
     )
 }

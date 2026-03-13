@@ -162,12 +162,31 @@ export class AccountingService {
                     const amount = Number(payment.amount);
                     if (amount <= 0) continue;
 
-                    // Accounts
-                    const cashAccount = await prisma.accounts.findFirst({ where: { company_id: invoice.company_id, code: '1000' } }); // Cash
-                    const bankAccount = await prisma.accounts.findFirst({ where: { company_id: invoice.company_id, code: '1100' } }); // Bank
-
                     const paymentMethod = (payment.method || 'cash').toLowerCase();
-                    const debitAccount = (paymentMethod === 'cash') ? cashAccount : bankAccount;
+                    
+                    // --- DYNAMIC PAYMENT METHOD MAPPING ---
+                    const mappingRecord = await prisma.hms_settings.findFirst({
+                        where: {
+                            company_id: invoice.company_id,
+                            tenant_id: invoice.tenant_id,
+                            key: 'payment_method_mapping'
+                        }
+                    });
+                    const mapping = (mappingRecord?.value as any) || {};
+                    const mappedAccountId = mapping[paymentMethod];
+
+                    let debitAccount = null;
+                    if (mappedAccountId) {
+                        debitAccount = await prisma.accounts.findUnique({ where: { id: mappedAccountId } });
+                    }
+
+                    if (!debitAccount) {
+                        // Fallback to defaults
+                        const cashAccount = await prisma.accounts.findFirst({ where: { company_id: invoice.company_id, code: '1000' } }); // Cash
+                        const bankAccount = await prisma.accounts.findFirst({ where: { company_id: invoice.company_id, code: '1100' } }); // Bank
+                        debitAccount = (paymentMethod === 'cash') ? cashAccount : bankAccount;
+                    }
+
                     const creditAccount = settings.ar_account_id; // Credit AR to reduce debt
 
                     if (debitAccount && creditAccount) {
@@ -280,29 +299,39 @@ export class AccountingService {
 
             if (!settings) throw new Error("Accounting settings not configured.");
 
-            // 3. Determine Accounts
-            // Find Cash/Bank Accounts
-            const cashAccount = await prisma.accounts.findFirst({
-                where: { company_id: payment.company_id, code: '1000' }
-            }) || await prisma.accounts.create({
-                data: { tenant_id: payment.tenant_id!, company_id: payment.company_id, name: 'Cash on Hand', code: '1000', type: 'Asset', is_active: true }
+            // --- DYNAMIC PAYMENT METHOD MAPPING ---
+            const mappingRecord = await prisma.hms_settings.findFirst({
+                where: {
+                    company_id: payment.company_id,
+                    tenant_id: payment.tenant_id!,
+                    key: 'payment_method_mapping'
+                }
             });
+            const mapping = (mappingRecord?.value as any) || {};
+            const paymentMethod = (payment.method || 'cash').toLowerCase();
+            const mappedAccountId = mapping[paymentMethod];
 
-            const bankAccount = await prisma.accounts.findFirst({
-                where: { company_id: payment.company_id, code: '1100' }
-            }) || await prisma.accounts.create({
-                data: { tenant_id: payment.tenant_id!, company_id: payment.company_id, name: 'Bank Account', code: '1100', type: 'Asset', is_active: true }
-            });
+            let moneyAccountId = null;
+            if (mappedAccountId) {
+                const mappedAccount = await prisma.accounts.findUnique({ where: { id: mappedAccountId } });
+                moneyAccountId = mappedAccount?.id || null;
+            }
 
-            // Dynamic AR/AP Resolution
-            const patient = payment.partner_id ? await prisma.hms_patient.findUnique({ where: { id: payment.partner_id } }) : null;
-            const arAccount = await AccountingService.resolvePatientARAccount(payment.company_id, settings.ar_account_id, patient);
-            const apAccount = settings.ap_account_id || (await prisma.accounts.findFirst({ where: { company_id: payment.company_id, code: '2000' } }))?.id;
+            if (!moneyAccountId) {
+                const cashAccount = await prisma.accounts.findFirst({
+                    where: { company_id: payment.company_id, code: '1000' }
+                }) || await prisma.accounts.create({
+                    data: { tenant_id: payment.tenant_id!, company_id: payment.company_id, name: 'Cash on Hand', code: '1000', type: 'Asset', is_active: true }
+                });
 
-            if (type === 'inbound' && !arAccount) throw new Error("Accounts Receivable not found.");
-            if (type === 'outbound' && !apAccount) throw new Error("Accounts Payable (2000) not found.");
+                const bankAccount = await prisma.accounts.findFirst({
+                    where: { company_id: payment.company_id, code: '1100' }
+                }) || await prisma.accounts.create({
+                    data: { tenant_id: payment.tenant_id!, company_id: payment.company_id, name: 'Bank Account', code: '1100', type: 'Asset', is_active: true }
+                });
+                moneyAccountId = (paymentMethod === 'cash') ? cashAccount.id : bankAccount.id;
+            }
 
-            const moneyAccount = (payment.method === 'cash') ? cashAccount.id : bankAccount.id;
             const amount = Number(payment.amount);
 
             // 4. Prepare Lines
@@ -339,42 +368,52 @@ export class AccountingService {
 
                 // Credit Bank/Cash
                 journalLines.push({
-                    account_id: moneyAccount,
+                    account_id: moneyAccountId,
                     debit: 0,
                     credit: totalDebited, // Using total from lines to be precise
                     description: `Funds Disbursed - ${payment.payment_number}`
                 });
 
-            } else if (type === 'inbound') {
-                // RECEIPT: Debit Cash/Bank, Credit AR
-                journalLines.push({
-                    account_id: moneyAccount,
-                    debit: amount,
-                    credit: 0,
-                    description: `Receipt Received - ${payment.payment_number}`
-                });
-                journalLines.push({
-                    account_id: arAccount,
-                    debit: 0,
-                    credit: amount,
-                    description: `AR Cleared - ${payment.payment_number}`,
-                    partner_id: payment.partner_id
-                });
             } else {
-                // PAYMENT (Vendor Bill): Debit AP, Credit Cash/Bank
-                journalLines.push({
-                    account_id: apAccount,
-                    debit: amount,
-                    credit: 0,
-                    description: `Vendor Payment - ${payment.payment_number}`,
-                    partner_id: payment.partner_id
-                });
-                journalLines.push({
-                    account_id: moneyAccount,
-                    debit: 0,
-                    credit: amount,
-                    description: `Funds Disbursed - ${payment.payment_number}`
-                });
+                // Dynamic AR/AP Resolution
+                const patient = payment.partner_id ? await prisma.hms_patient.findUnique({ where: { id: payment.partner_id } }) : null;
+                const arAccount = await AccountingService.resolvePatientARAccount(payment.company_id, settings.ar_account_id, patient);
+                const apAccount = settings.ap_account_id || (await prisma.accounts.findFirst({ where: { company_id: payment.company_id, code: '2000' } }))?.id;
+
+                if (type === 'inbound' && !arAccount) throw new Error("Accounts Receivable not found.");
+                if (type === 'outbound' && !apAccount) throw new Error("Accounts Payable (2000) not found.");
+
+                if (type === 'inbound') {
+                    // RECEIPT: Debit Cash/Bank, Credit AR
+                    journalLines.push({
+                        account_id: moneyAccountId,
+                        debit: amount,
+                        credit: 0,
+                        description: `Receipt Received - ${payment.payment_number}`
+                    });
+                    journalLines.push({
+                        account_id: arAccount,
+                        debit: 0,
+                        credit: amount,
+                        description: `AR Cleared - ${payment.payment_number}`,
+                        partner_id: payment.partner_id
+                    });
+                } else {
+                    // PAYMENT (Vendor Bill): Debit AP, Credit Cash/Bank
+                    journalLines.push({
+                        account_id: apAccount,
+                        debit: amount,
+                        credit: 0,
+                        description: `Vendor Payment - ${payment.payment_number}`,
+                        partner_id: payment.partner_id
+                    });
+                    journalLines.push({
+                        account_id: moneyAccountId,
+                        debit: 0,
+                        credit: amount,
+                        description: `Funds Disbursed - ${payment.payment_number}`
+                    });
+                }
             }
 
             // 5. Create Transaction

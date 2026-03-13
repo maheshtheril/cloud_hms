@@ -4,14 +4,17 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Save, AlertCircle, BookOpen, Layers, DollarSign, Package, Settings, Calendar, Lock, ShieldCheck } from 'lucide-react'
 import { updateAccountingSettings, lockAccountingPeriod } from '@/app/actions/accounting-settings'
+import { updatePaymentMappings } from '@/app/actions/settings'
 import { useToast } from "@/components/ui/use-toast"
+import { CreditCard, Smartphone, Banknote, Building } from 'lucide-react'
 
-export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel, journals }: {
+export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel, journals, paymentMappings }: {
     settings: any,
     accounts: any[],
     taxRates: any[],
     taxLabel: string,
-    journals: any[]
+    journals: any[],
+    paymentMappings: any
 }) {
     const router = useRouter()
     const { toast } = useToast()
@@ -57,6 +60,13 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
         stock_adjustment_account_id: settings?.stock_adjustment_account_id || '',
 
         rounding_method: settings?.rounding_method || 'ROUND_HALF_UP',
+    })
+
+    const [paymentMap, setPaymentMap] = useState(paymentMappings || {
+        cash: '',
+        upi: '',
+        card: '',
+        bank_transfer: ''
     })
 
     const handleLock = async () => {
@@ -105,6 +115,27 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
                 description: 'An unexpected error occurred',
                 variant: "destructive"
             })
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleSaveMappings = async () => {
+        setLoading(true)
+        try {
+            const res = await updatePaymentMappings(paymentMap)
+            if (res.success) {
+                toast({
+                    title: "Mappings Saved",
+                    description: "Payment method account mappings updated.",
+                    className: "bg-blue-600 text-white border-none"
+                })
+                router.refresh()
+            } else {
+                toast({ title: "Error", description: res.error, variant: "destructive" })
+            }
+        } catch (e: any) {
+            toast({ title: "Error", description: e.message, variant: "destructive" })
         } finally {
             setLoading(false)
         }
@@ -269,6 +300,83 @@ export function AccountingSettingsForm({ settings, accounts, taxRates, taxLabel,
                         <p className={subLabelClass}>Tax collected from customers (Liability).</p>
                     </div>
                 </div>
+            </div>
+
+            {/* 2.5 PAYMENT METHOD MAPPING */}
+            <div className={sectionClass}>
+                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                    <Smartphone className="w-24 h-24" />
+                </div>
+                <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <span className="w-1 h-6 bg-indigo-500 rounded-full"></span>
+                        Payment Method Ledger Mapping
+                    </h2>
+                    <button
+                        onClick={handleSaveMappings}
+                        disabled={loading}
+                        className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-all"
+                    >
+                        Save Mappings Only
+                    </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="space-y-1">
+                        <label className={labelClass + " flex items-center gap-2"}>
+                            <Banknote className="w-4 h-4 text-emerald-500" /> Cash
+                        </label>
+                        <select
+                            value={paymentMap.cash}
+                            onChange={e => setPaymentMap({ ...paymentMap, cash: e.target.value })}
+                            className={inputClass}
+                        >
+                            <option value="">Default (1000)</option>
+                            {accounts.filter(a => a.type === 'Asset' || a.type === 'Receivable').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                    </div>
+                    <div className="space-y-1">
+                        <label className={labelClass + " flex items-center gap-2"}>
+                            <Smartphone className="w-4 h-4 text-purple-500" /> UPI / QR
+                        </label>
+                        <select
+                            value={paymentMap.upi}
+                            onChange={e => setPaymentMap({ ...paymentMap, upi: e.target.value })}
+                            className={inputClass}
+                        >
+                            <option value="">Default (1100)</option>
+                            {accounts.filter(a => a.type === 'Asset' || a.type === 'Receivable').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                    </div>
+                    <div className="space-y-1">
+                        <label className={labelClass + " flex items-center gap-2"}>
+                            <CreditCard className="w-4 h-4 text-blue-500" /> Card
+                        </label>
+                        <select
+                            value={paymentMap.card}
+                            onChange={e => setPaymentMap({ ...paymentMap, card: e.target.value })}
+                            className={inputClass}
+                        >
+                            <option value="">Default (1100)</option>
+                            {accounts.filter(a => a.type === 'Asset' || a.type === 'Receivable').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                    </div>
+                    <div className="space-y-1">
+                        <label className={labelClass + " flex items-center gap-2"}>
+                            <Building className="w-4 h-4 text-slate-500" /> Bank Transfer
+                        </label>
+                        <select
+                            value={paymentMap.bank_transfer}
+                            onChange={e => setPaymentMap({ ...paymentMap, bank_transfer: e.target.value })}
+                            className={inputClass}
+                        >
+                            <option value="">Default (1100)</option>
+                            {accounts.filter(a => a.type === 'Asset' || a.type === 'Receivable').map(a => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                        </select>
+                    </div>
+                </div>
+                <p className="mt-4 text-xs text-slate-500 italic">
+                    Mapping a payment method to a specific ledger account ensures that payments of that type (e.g., UPI) are posted to the correct bank or cash account. If not set, the system defaults to Account 1000 (Cash) or 1100 (Bank).
+                </p>
             </div>
 
             {/* 3. PURCHASES */}

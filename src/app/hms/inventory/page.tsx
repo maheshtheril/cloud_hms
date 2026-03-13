@@ -37,7 +37,7 @@ export default async function InventoryDashboard() {
 
                 <div className="relative z-10 flex flex-col sm:flex-row sm:items-center gap-6">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Inventory Command Center</h1>
+                        <h1 className="text-3xl font-bold tracking-tight">Inventory Overview</h1>
                         <p className="text-gray-400 mt-2 text-lg">Real-time stock intelligence and control.</p>
                     </div>
                     <SyncHealthIndicator />

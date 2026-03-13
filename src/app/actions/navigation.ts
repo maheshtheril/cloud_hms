@@ -342,7 +342,7 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
     items.push({
         module: { name: 'Health Management', module_key: 'hms' },
         items: [
-            { key: 'hms-dashboard', label: 'Command Center', icon: 'Activity', url: '/hms/dashboard', permission_code: 'hms:admin' },
+            { key: 'hms-dashboard', label: 'HMS Dashboard', icon: 'Activity', url: '/hms/dashboard', permission_code: 'hms:admin' },
             { key: 'hms-reception', label: 'Reception', icon: 'Monitor', url: '/hms/reception/dashboard', permission_code: 'hms:dashboard:reception' },
             {
                 key: 'hms-patients',
@@ -421,7 +421,7 @@ function getFallbackMenuItems(isAdmin: boolean | undefined) {
     items.push({
         module: { name: 'Pharmacy & Inventory', module_key: 'inventory' },
         items: [
-            { key: 'inv-dashboard', label: 'Command Center', icon: 'LayoutDashboard', url: '/hms/inventory' },
+            { key: 'inv-dashboard', label: 'Inventory Overview', icon: 'LayoutDashboard', url: '/hms/inventory', permission_code: 'inventory:view' },
             { key: 'inv-products', label: 'Product Master', icon: 'Package', url: '/hms/inventory/products' },
             {
                 key: 'inv-procurement',
@@ -471,8 +471,42 @@ let hasAudited = false;
  * Ensures all menu items have valid permission codes.
  */
 export async function auditAndFixMenuPermissions() {
-    // Force audit on every request for 100% data reliability
+    if (typeof window !== 'undefined') return { success: true };
+    if (hasAudited) return { success: true };
+
     try {
+        console.log("Self-healing: Auditing menu consistency...");
+
+        // 0. NUCLEAR DEDUPLICATION: Kill rogue duplicates that lead to UI ghosting
+        // This handles cases where the same key exists multiple times without a DB-level unique constraint.
+        const duplicateKeys = await prisma.$queryRaw<{ key: string }[]>`
+            SELECT key FROM "menu_items" 
+            WHERE key IS NOT NULL AND key != ''
+            GROUP BY key 
+            HAVING COUNT(*) > 1
+        `;
+
+        for (const dup of duplicateKeys) {
+            console.log(`Auto-repair: Deduplicating menu key: ${dup.key}`);
+            const items = await prisma.menu_items.findMany({
+                where: { key: dup.key },
+                orderBy: { created_at: 'asc' } // Keep the oldest one
+            });
+            
+            const canonicalId = items[0].id;
+            const idsToDelete = items.slice(1).map(i => i.id);
+
+            // Safety: Update any children to point to the canonical ID if they were pointing to ghosts
+            await prisma.menu_items.updateMany({
+                where: { parent_id: { in: idsToDelete } },
+                data: { parent_id: canonicalId }
+            });
+
+            // Delete ghost items
+            await prisma.menu_items.deleteMany({
+                where: { id: { in: idsToDelete } }
+            });
+        }
         // -1. ENSURE PERMISSIONS EXIST
         // Run seed check to register any missing permission codes
         await seedRolesAndPermissions();
@@ -704,10 +738,17 @@ export async function auditAndFixMenuPermissions() {
             { k: 'hms-lab', p: 'lab:view' },
             { k: 'hms-nursing', p: 'hms:dashboard:nurse' },
             { k: 'hms-doctors', p: 'hms:admin' },
-            { k: 'hms-dashboard', p: 'hms:admin' }
+            { k: 'hms-dashboard', p: 'hms:admin', l: 'HMS Dashboard' },
+            { k: 'inv-dashboard', p: 'inventory:view', l: 'Inventory Overview' }
         ];
         for (const f of fixes) {
-            await prisma.menu_items.updateMany({ where: { key: f.k }, data: { permission_code: f.p } });
+            await prisma.menu_items.updateMany({ 
+                where: { key: f.k }, 
+                data: { 
+                    permission_code: f.p,
+                    ...(f.l ? { label: f.l } : {})
+                } 
+            });
         }
 
         console.log("Self-healing: Menu permissions audited and fixed.");

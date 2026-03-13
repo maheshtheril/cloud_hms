@@ -597,10 +597,10 @@ export async function ensurePurchasingMenus() {
         const existingDash = await prisma.menu_items.findFirst({ where: { key: dashKey } });
         if (!existingDash) {
             await prisma.menu_items.create({
-                data: { label: 'Command Center', url: '/hms/inventory', key: dashKey, module_key: 'inventory', icon: 'LayoutDashboard', sort_order: 5, permission_code: 'inventory:view', is_global: true }
+                data: { label: 'Inventory Overview', url: '/hms/inventory', key: dashKey, module_key: 'inventory', icon: 'LayoutDashboard', sort_order: 5, permission_code: 'inventory:view', is_global: true }
             });
-        } else if (!existingDash.permission_code || existingDash.parent_id) {
-            await prisma.menu_items.update({ where: { id: existingDash.id }, data: { parent_id: null, permission_code: 'inventory:view' } });
+        } else if (!existingDash.permission_code || existingDash.parent_id || existingDash.label !== 'Inventory Overview') {
+            await prisma.menu_items.update({ where: { id: existingDash.id }, data: { parent_id: null, permission_code: 'inventory:view', label: 'Inventory Overview' } });
         }
 
         // Ensure Product Master Exists
