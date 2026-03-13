@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       {
+        source: '/dashboard/rbac/roles',
+        destination: '/settings/roles',
+        permanent: true,
+      },
+      {
         source: '/hms/inventory/operations/receive',
         destination: '/hms/purchasing/receipts/new',
         permanent: true,
