@@ -3,7 +3,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Plus, Search, Pencil, Trash2, RefreshCw, BookOpen } from "lucide-react"
+import { Plus, Search, Pencil, Trash2, RefreshCw, BookOpen, ArrowRightLeft } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -198,306 +198,302 @@ export function ChartOfAccountsManager({ initialAccounts }: { initialAccounts: A
     );
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white">
-                        Chart of Accounts
-                    </h1>
-                    <p className="text-slate-500 mt-1 font-medium">
-                        World-Standard general ledger structure for your enterprise.
-                    </p>
+        <div className="min-h-screen bg-[#002b2b] text-[#ffffcc] font-mono select-none flex flex-col overflow-hidden">
+            {/* Tally Header Bar */}
+            <div className="h-8 bg-[#004d4d] flex items-center justify-between px-4 border-b border-[#006666] text-[10px] font-bold">
+                <div className="flex items-center gap-4">
+                    <span className="text-[#64ffff]">CHART OF ACCOUNTS</span>
+                    <span className="text-[#ffffcc]">Ziona HMS v4.5</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button onClick={() => handleOpenDialog()} className="shadow-lg hover:shadow-xl transition-all h-11 px-6 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-white dark:text-slate-900 border-none group">
-                        <Plus className="w-5 h-5 mr-2 group-hover:rotate-90 transition-transform" />
-                        Create New Account
-                    </Button>
+                <div className="flex items-center gap-4">
+                    <span className="text-[#64ffff]">Financial Year: 2025-26</span>
+                    <span className="text-[#ffffcc]">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}</span>
                 </div>
             </div>
 
-            {/* Search */}
-            <div className="flex items-center gap-4">
-                <div className="relative flex-1 max-w-md group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
-                    <Input
-                        placeholder="Search by code or name..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="pl-11 h-12 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm focus:ring-2 focus:ring-blue-500/20 transition-all font-medium"
-                    />
+            {/* Gateway Container */}
+            <div className="flex-1 flex gap-1 p-1 overflow-hidden">
+                {/* Left Side: Ledger Content */}
+                <div className="flex-1 bg-[#004d4d] border border-[#006666] flex flex-col overflow-hidden">
+                    <div className="h-10 bg-[#006666] flex items-center px-4 justify-between border-b border-[#008080]">
+                        <div className="flex items-center gap-6">
+                            <span className="text-[12px] font-black">LIST OF ACCOUNTS</span>
+                            <div className="relative group">
+                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#64ffff]" />
+                                <input
+                                    type="text"
+                                    placeholder="SEARCH..."
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                    className="h-6 pl-7 pr-2 bg-[#002b2b] border border-[#008080] rounded text-[10px] text-[#ffffcc] focus:outline-none focus:border-[#64ffff] w-64 transition-all"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <span className="text-[10px] text-white">F2: PERIOD | F10: ACCOUNT INFO</span>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-auto bg-[#002b2b]/50">
+                        {groupedAccounts.map(group => (
+                            <div key={group.value} className="mb-6">
+                                <div className="bg-[#004d4d] px-4 py-1 flex items-center gap-3 border-y border-[#006666]">
+                                    <div className={cn("w-2 h-2 rounded-full", group.dot)}></div>
+                                    <span className="text-[11px] font-black text-[#64ffff] tracking-widest uppercase">
+                                        {group.label}
+                                    </span>
+                                </div>
+
+                                <table className="w-full text-left text-[11px] border-collapse">
+                                    <thead className="bg-[#003333] text-[#64ffff] text-[9px] font-black uppercase">
+                                        <tr>
+                                            <th className="px-4 py-2 w-32 border-b border-[#004d4d]">Code</th>
+                                            <th className="px-4 py-2 border-b border-[#004d4d]">Particulars</th>
+                                            <th className="px-4 py-2 w-24 text-center border-b border-[#004d4d]">Level</th>
+                                            <th className="px-4 py-2 w-32 text-right border-b border-[#004d4d]">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-[#003333]">
+                                        {group.accounts.map((acc) => {
+                                            const depth = getAccountDepth(acc, accounts);
+                                            return (
+                                                <tr key={acc.id} className={cn(
+                                                    "transition-all group border-[#003333]",
+                                                    acc.is_group ? "bg-[#004d4d]/10" : "hover:bg-[#004d4d]"
+                                                )}>
+                                                    <td className="px-4 py-1.5 font-mono text-[#64ffff]/70">
+                                                        {acc.code}
+                                                    </td>
+                                                    <td className="px-4 py-1.5">
+                                                        <div className="flex items-center gap-2" style={{ paddingLeft: `${depth * 20}px` }}>
+                                                            {depth > 0 && <span className="text-[#006666]">└─</span>}
+                                                            <span className={cn(
+                                                                "font-bold",
+                                                                acc.is_group ? "text-[#ffffcc] text-[12px]" : "text-[#ffffff]/80"
+                                                            )}>
+                                                                {acc.name.toUpperCase()}
+                                                            </span>
+                                                            {acc.is_reconcilable && (
+                                                                <span className="px-1.5 py-0.5 text-[8px] bg-[#006666] text-[#64ffff] border border-[#008080] font-black">
+                                                                    R
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-1.5 text-center">
+                                                        {acc.is_group ? (
+                                                            <span className="text-[9px] font-black text-[#ffffcc] px-2 py-0.5 border border-[#ffffcc]/20">GROUP</span>
+                                                        ) : (
+                                                            <span className="text-[9px] font-black text-[#64ffff] px-2 py-0.5 border border-[#64ffff]/20 opacity-50">LEDGER</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-4 py-1.5 text-right">
+                                                        <div className="flex items-center justify-end gap-2 pr-2">
+                                                            {acc.is_group && (
+                                                                <button
+                                                                    onClick={() => handleQuickAdd(acc)}
+                                                                    className="h-5 w-5 flex items-center justify-center text-[#64ffff] hover:bg-[#64ffff] hover:text-black border border-[#64ffff]/20 transition-all"
+                                                                >
+                                                                    <Plus className="w-3 h-3" />
+                                                                </button>
+                                                            )}
+                                                            <button
+                                                                onClick={() => handleOpenDialog(acc)}
+                                                                className="h-5 w-5 flex items-center justify-center text-[#ffffcc] hover:bg-[#ffffcc] hover:text-black border border-[#ffffcc]/20 transition-all"
+                                                            >
+                                                                <Pencil className="w-3 h-3" />
+                                                            </button>
+                                                            {!acc.is_group && (
+                                                                <Link href={`/hms/accounting/ledger/${acc.id}`}>
+                                                                    <button className="h-5 w-5 flex items-center justify-center text-[#64ffff] hover:bg-[#64ffff] hover:text-black border border-[#64ffff]/20 transition-all">
+                                                                        <ArrowRightLeft className="w-3 h-3" />
+                                                                    </button>
+                                                                </Link>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Footer Stats Bar */}
+                    <div className="h-8 bg-[#003333] border-t border-[#006666] flex items-center justify-between px-6 text-[9px] font-bold">
+                        <div className="flex gap-8 uppercase">
+                            <span className="text-[#64ffff]">TOTAL COUNTS:</span>
+                            <span>{accounts.length} NODES</span>
+                            <span className="text-[#64ffff]">GROUPS:</span>
+                            <span>{accounts.filter(a => a.is_group).length}</span>
+                            <span className="text-[#64ffff]">LEDGERS:</span>
+                            <span>{accounts.filter(a => !a.is_group).length}</span>
+                        </div>
+                        <div className="flex gap-4">
+                            <span className="text-[#64ffff] animate-pulse">SYSTEM SECURED</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Side: Gateway Simulation */}
+                <div className="w-48 bg-[#003333] border border-[#006666] flex flex-col p-1 gap-1">
+                    <div className="bg-[#004d4d] flex flex-col items-center py-4 border border-[#006666]">
+                        <span className="text-[12px] font-black text-[#ffffcc]">GATEWAY of TALLY</span>
+                        <div className="h-px w-full bg-[#006666] my-2" />
+                        <span className="text-[10px] text-[#64ffff]">Menu Options</span>
+                    </div>
+
+                    <div className="flex-1 space-y-1">
+                        {[
+                            { f: 'F1', l: 'Select Cmp', onClick: () => {} },
+                            { f: 'F2', l: 'Period', onClick: () => {} },
+                            { f: 'Alt+C', l: 'Add New', onClick: () => handleOpenDialog(), active: true },
+                            { f: 'F7', l: 'Journal', onClick: () => {} },
+                            { f: 'F5', l: 'Payment', onClick: () => {} },
+                            { f: 'F6', l: 'Receipt', onClick: () => {} },
+                        ].map(btn => (
+                            <button 
+                                key={btn.f} 
+                                onClick={btn.onClick}
+                                className={cn(
+                                    "w-full flex items-center h-8 px-2 text-[10px] transition-all",
+                                    btn.active ? "bg-[#ffffcc] text-black font-black" : "hover:bg-[#004d4d] text-white"
+                                )}
+                            >
+                                <span className="w-8 opacity-50">{btn.f}</span>
+                                <span className="flex-1 text-left uppercase">{btn.l}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="bg-[#004d4d] p-3 border border-[#006666]">
+                        <p className="text-[8px] text-[#64ffff]/60 uppercase tracking-widest leading-relaxed">
+                            Node: Accounts Master<br />
+                            Auth: Institutional Admin
+                        </p>
+                    </div>
                 </div>
             </div>
 
-            {/* Account List Grouped */}
-            <div className="grid gap-8">
-                {groupedAccounts.map(group => (
-                    <div key={group.value} className="space-y-4">
-                        <div className="flex items-center justify-between px-2">
-                            <div className="flex items-center gap-3">
-                                <div className={cn("w-3 h-3 rounded-full shadow-sm", group.dot)}></div>
-                                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
-                                    {group.label}
-                                </h2>
-                                <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold border border-slate-200 dark:border-slate-700">
-                                    {group.accounts.length} Accounts
-                                </span>
+            {/* Redesigned Tally Master Dialog */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="p-0 border-4 border-[#008080] bg-[#004d4d] max-w-[500px] gap-0 text-[#ffffcc] font-mono shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+                    {/* Header bar of the dialog */}
+                    <div className="h-8 bg-[#006666] flex items-center px-4 justify-between border-b-2 border-[#008080]">
+                        <span className="text-[11px] font-black flex items-center gap-2">
+                             {editingAccount ? "ALT" : "NEW"} : {formData.is_group ? "GROUP" : "LEDGER"} CREATION
+                        </span>
+                        <span className="text-[9px] opacity-70">ZIONA HMS ACCESS</span>
+                    </div>
+
+                    <div className="p-8 space-y-5 bg-[#002b2b]">
+                        <div className="flex gap-4">
+                            <span className="w-32 text-[#64ffff] text-[11px]">Type Select</span>
+                            <span className="w-2">:</span>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setFormData({ ...formData, is_group: false })}
+                                    className={cn(
+                                        "px-2 py-0.5 text-[10px] font-black uppercase transition-all",
+                                        !formData.is_group ? "bg-[#ffffcc] text-black" : "bg-[#004d4d] text-[#64ffff]"
+                                    )}
+                                >Ledger</button>
+                                <button
+                                    onClick={() => setFormData({ ...formData, is_group: true })}
+                                    className={cn(
+                                        "px-2 py-0.5 text-[10px] font-black uppercase transition-all",
+                                        formData.is_group ? "bg-[#ffffcc] text-black" : "bg-[#004d4d] text-[#64ffff]"
+                                    )}
+                                >Group</button>
                             </div>
                         </div>
 
-                        <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-930 backdrop-blur-md overflow-hidden shadow-sm">
-                            <Table>
-                                <TableHeader className="bg-slate-50/50 dark:bg-slate-900/50">
-                                    <TableRow className="hover:bg-transparent border-slate-200 dark:border-slate-800">
-                                        <TableHead className="w-[120px] font-bold text-slate-700 dark:text-slate-300">CODE</TableHead>
-                                        <TableHead className="font-bold text-slate-700 dark:text-slate-300">ACCOUNT NAME & HIERARCHY</TableHead>
-                                        <TableHead className="w-[120px] text-center font-bold text-slate-700 dark:text-slate-300">LEVEL</TableHead>
-                                        <TableHead className="w-[120px] text-right font-bold text-slate-700 dark:text-slate-300">ACTIONS</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {group.accounts.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={4} className="h-32 text-center text-slate-400 font-medium italic">
-                                                No accounts found in this category.
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        group.accounts.map((acc) => {
-                                            const depth = getAccountDepth(acc, accounts);
-                                            return (
-                                                <TableRow key={acc.id} className={cn(
-                                                    "transition-all group border-slate-100 dark:border-slate-900",
-                                                    acc.is_group ? "bg-slate-50/30 dark:bg-slate-900/10" : "hover:bg-blue-50/30 dark:hover:bg-blue-900/10"
-                                                )}>
-                                                    <TableCell className="font-mono font-bold text-slate-500 dark:text-slate-400">
-                                                        {acc.code}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <div className="flex items-center gap-2" style={{ paddingLeft: `${depth * 24}px` }}>
-                                                            {depth > 0 && <span className="text-slate-300 dark:text-slate-700">└─</span>}
-                                                            {acc.is_group ? (
-                                                                <BookOpen className="w-4 h-4 text-indigo-500" />
-                                                            ) : (
-                                                                <div className="w-4 h-4 border-2 border-slate-300 dark:border-slate-700 rounded-sm"></div>
-                                                            )}
-                                                            <div>
-                                                                <span className={cn(
-                                                                    "font-semibold",
-                                                                    acc.is_group ? "text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-300"
-                                                                )}>
-                                                                    {acc.name}
-                                                                </span>
-                                                                {acc.is_reconcilable && (
-                                                                    <Badge variant="outline" className="ml-2 h-4 px-1.5 text-[9px] border-green-200 bg-green-50 text-green-600 dark:bg-green-950/20 dark:border-green-900/50 uppercase font-black">
-                                                                        RECON
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-center">
-                                                        {acc.is_group ? (
-                                                            <Badge className="bg-slate-900 dark:bg-white dark:text-slate-900 hover:bg-slate-900 rounded-md text-[10px] uppercase font-black tracking-tighter px-2 h-6">
-                                                                GROUP
-                                                            </Badge>
-                                                        ) : (
-                                                            <Badge variant="outline" className="text-slate-400 border-slate-200 dark:border-slate-800 rounded-md text-[10px] uppercase font-black tracking-tighter px-2 h-6">
-                                                                LEDGER
-                                                            </Badge>
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            {acc.is_group && (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-8 w-8 text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-full"
-                                                                    onClick={() => handleQuickAdd(acc)}
-                                                                    title="Add Child Account"
-                                                                >
-                                                                    <Plus className="w-4 h-4" />
-                                                                </Button>
-                                                            )}
-                                                            {!acc.is_group && (
-                                                                <Link href={`/hms/accounting/ledger/${acc.id}`}>
-                                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full" title="View Ledger">
-                                                                        <BookOpen className="w-4 h-4" />
-                                                                    </Button>
-                                                                </Link>
-                                                            )}
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                className="h-8 w-8 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-full"
-                                                                onClick={() => handleOpenDialog(acc)}
-                                                                title="Edit Account"
-                                                            >
-                                                                <Pencil className="w-4 h-4" />
-                                                            </Button>
-                                                        </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            );
-                                        })
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </div>
-                ))}
-            </div>
-
-            {/* Tally-Style Dialog */}
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[500px] rounded-[1.5rem] border-slate-200 dark:border-slate-800 shadow-2xl p-0 overflow-hidden">
-                    <div className="bg-slate-900 dark:bg-slate-950 p-6 text-white">
-                        <DialogHeader className="space-y-1">
-                            <DialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
-                                <BookOpen className="w-5 h-5 text-indigo-400" />
-                                {editingAccount ? "Modify Master" : "Create Master"}
-                            </DialogTitle>
-                            <DialogDescription className="text-slate-400 font-medium text-xs uppercase tracking-widest">
-                                {formData.is_group ? "Group creation mode" : "Ledger creation mode"}
-                            </DialogDescription>
-                        </DialogHeader>
-
-                        <div className="flex gap-2 mt-6">
-                            <Button
-                                variant="ghost"
-                                onClick={() => setFormData({ ...formData, is_group: false })}
-                                className={cn(
-                                    "flex-1 h-12 rounded-xl font-black text-xs uppercase tracking-wider transition-all border-2",
-                                    !formData.is_group 
-                                        ? "bg-white text-slate-900 border-white" 
-                                        : "bg-slate-800/50 text-slate-400 border-transparent hover:bg-slate-800"
-                                )}
-                            >
-                                Ledger
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                onClick={() => setFormData({ ...formData, is_group: true })}
-                                className={cn(
-                                    "flex-1 h-12 rounded-xl font-black text-xs uppercase tracking-wider transition-all border-2",
-                                    formData.is_group 
-                                        ? "bg-indigo-600 text-white border-indigo-600" 
-                                        : "bg-slate-800/50 text-slate-400 border-transparent hover:bg-slate-800"
-                                )}
-                            >
-                                Group
-                            </Button>
-                        </div>
-                    </div>
-
-                    <div className="p-8 space-y-6 bg-white dark:bg-slate-900">
-                        {/* Primary Name Field - Always First */}
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Name of {formData.is_group ? "Group" : "Ledger"}</Label>
-                            <Input
+                        <div className="flex items-center gap-4">
+                            <span className="w-32 text-[#64ffff] text-[11px]">Name</span>
+                            <span className="w-2">:</span>
+                            <input
                                 value={formData.name}
                                 onChange={e => setFormData({ ...formData, name: e.target.value })}
-                                className="h-14 rounded-xl bg-slate-50 dark:bg-slate-950 border-2 border-transparent focus:border-indigo-500 font-bold text-lg px-4 transition-all"
-                                placeholder="Enter Name..."
                                 autoFocus
+                                className="flex-1 bg-[#002b2b] border-none text-[#ffffcc] focus:bg-[#ffffcc] focus:text-black px-2 py-1 uppercase font-bold text-[13px] outline-none"
                             />
                         </div>
 
-                        {/* Under (Group Selection) - Primary Logic Driver */}
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Under (Parent Group)</Label>
-                            <Select
+                        <div className="flex items-center gap-4">
+                            <span className="w-32 text-[#64ffff] text-[11px]">Under</span>
+                            <span className="w-2">:</span>
+                            <select
                                 value={formData.parent_id}
-                                onValueChange={handleParentChange}
+                                onChange={e => handleParentChange(e.target.value)}
                                 disabled={!!editingAccount}
+                                className="flex-1 bg-[#002b2b] border-none text-[11px] text-[#ffffcc] focus:bg-[#ffffcc] focus:text-black px-2 py-1 outline-none appearance-none font-bold"
                             >
-                                <SelectTrigger className="h-12 rounded-xl bg-slate-50 dark:bg-slate-950 border-none font-bold ring-offset-transparent focus:ring-2 focus:ring-indigo-500/20 px-4">
-                                    <SelectValue placeholder="Select Group..." />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800 max-h-[300px]">
-                                    <SelectItem value="none" className="rounded-xl font-bold py-3">Primary / Root</SelectItem>
-                                    {parentOptions.map(p => (
-                                        <SelectItem key={p.id} value={p.id} className="rounded-xl font-bold py-3">
-                                            <div className="flex flex-col">
-                                                <span>{p.name}</span>
-                                                <span className="text-[10px] text-slate-400 font-medium">Under {p.type}</span>
-                                            </div>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                <option value="none">Primary / Root</option>
+                                {parentOptions.map(p => (
+                                    <option key={p.id} value={p.id}>{p.name.toUpperCase()}</option>
+                                ))}
+                            </select>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-6 pt-2">
-                             {/* Code - Now secondary/suggested */}
-                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Accounting Code</Label>
-                                <Input
+                        <div className="grid grid-cols-2 gap-x-4">
+                            <div className="flex items-center gap-4">
+                                <span className="w-32 text-[#64ffff] text-[11px]">Code</span>
+                                <span className="w-2">:</span>
+                                <input
                                     value={formData.code}
                                     onChange={e => setFormData({ ...formData, code: e.target.value })}
-                                    className="h-11 rounded-xl bg-slate-50 dark:bg-slate-950 border-none font-mono font-bold text-slate-600 dark:text-slate-400"
-                                    placeholder="Auto"
+                                    className="flex-1 bg-[#002b2b] border-none text-[#64ffff] focus:bg-[#ffffcc] focus:text-black px-2 py-0.5 text-[11px] outline-none"
                                 />
                             </div>
 
-                            {/* Type - Inherited & Semi-Hidden if Parent Set */}
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Account Nature</Label>
-                                <Select
+                            <div className="flex items-center gap-4">
+                                <span className="w-32 text-[#64ffff] text-[11px]">Nature</span>
+                                <span className="w-2">:</span>
+                                <select
                                     value={formData.type}
-                                    onValueChange={v => setFormData({ ...formData, type: v })}
+                                    onChange={e => setFormData({ ...formData, type: e.target.value })}
                                     disabled={formData.parent_id !== 'none'}
+                                    className="flex-1 bg-[#002b2b] border-none text-[11px] text-[#ffffcc] focus:bg-[#ffffcc] focus:text-black px-2 py-0.5 outline-none appearance-none font-black"
                                 >
-                                    <SelectTrigger className={cn(
-                                        "h-11 rounded-xl bg-slate-50 dark:bg-slate-950 border-none font-bold ring-offset-transparent focus:ring-0",
-                                        formData.parent_id !== 'none' && "opacity-50"
-                                    )}>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-slate-200 dark:border-slate-800">
-                                        {ACCOUNT_TYPES.map(t => (
-                                            <SelectItem key={t.value} value={t.value} className="rounded-xl font-bold py-3">{t.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    {ACCOUNT_TYPES.map(t => (
+                                        <option key={t.value} value={t.value}>{t.label.toUpperCase()}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
 
-                        {/* Reconciliation Option */}
                         {!formData.is_group && (
-                            <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/50 border border-slate-100 dark:border-slate-800">
-                                <div className="space-y-0.5">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-slate-500">Enable Reconciliation</Label>
-                                    <p className="text-[10px] text-slate-400 font-medium">Allow manual clearing of entries</p>
-                                </div>
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm"
+                            <div className="flex items-center gap-4">
+                                <span className="w-32 text-[#64ffff] text-[11px]">Reconciliation</span>
+                                <span className="w-2">:</span>
+                                <button
                                     onClick={() => setFormData({ ...formData, is_reconcilable: !formData.is_reconcilable })}
                                     className={cn(
-                                        "h-8 px-3 rounded-lg font-black text-[9px] uppercase tracking-tighter transition-all",
-                                        formData.is_reconcilable ? "bg-green-500 text-white" : "bg-slate-200 text-slate-500 dark:bg-slate-800"
+                                        "px-3 py-0.5 text-[10px] font-black uppercase",
+                                        formData.is_reconcilable ? "bg-emerald-600 text-white" : "bg-[#004d4d] text-[#64ffff]"
                                     )}
                                 >
-                                    {formData.is_reconcilable ? "Active" : "Disabled"}
-                                </Button>
+                                    {formData.is_reconcilable ? "Yes" : "No"}
+                                </button>
                             </div>
                         )}
                     </div>
 
-                    <DialogFooter className="p-6 pt-0 bg-white dark:bg-slate-900 border-none flex !justify-stretch gap-3">
-                        <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-xl font-bold text-slate-400 h-14 flex-1 hover:bg-slate-50 dark:hover:bg-slate-950">
-                            Cancel
-                        </Button>
-                        <Button onClick={handleSubmit} disabled={isLoading} className="rounded-xl font-black text-white bg-indigo-600 hover:bg-indigo-700 dark:text-white flex-[2] h-14 shadow-lg shadow-indigo-500/20">
-                            {isLoading && <RefreshCw className="w-4 h-4 mr-2 animate-spin" />}
-                            {editingAccount ? "Update Master" : "Create Master"}
-                        </Button>
-                    </DialogFooter>
+                    <div className="h-10 bg-[#003333] border-t-2 border-[#008080] flex items-center justify-between px-6">
+                        <button onClick={() => setIsDialogOpen(false)} className="text-red-400 hover:text-white text-[10px] font-black uppercase">Quit (Esc)</button>
+                        <button
+                            onClick={handleSubmit}
+                            disabled={isLoading}
+                            className="bg-[#ffffcc] text-black px-6 py-1 text-[10px] font-black uppercase hover:bg-[#64ffff] transition-all flex items-center gap-2"
+                        >
+                            {isLoading && <RefreshCw className="h-3 w-3 animate-spin" />}
+                            Accept (Ctrl+A)
+                        </button>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>
-    )
+    );
 }

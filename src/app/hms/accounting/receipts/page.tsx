@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ReceiptsPage() {
+    const router = useRouter();
     const [payments, setPayments] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [search, setSearch] = useState('');
@@ -53,201 +54,147 @@ export default function ReceiptsPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-neutral-950 font-sans relative overflow-hidden">
-            {/* Background Gradients */}
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none -z-10" />
-            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none -z-10" />
-
-            {/* Header */}
-            <div className="border-b border-slate-200 dark:border-white/5 bg-white/80 dark:bg-neutral-900/50 backdrop-blur-xl sticky top-0 z-40">
-                <div className="max-w-[1600px] mx-auto px-6 h-20 flex items-center justify-between">
-                    <div>
-                        <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-lg bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 shadow-sm">
-                                <ArrowDownLeft className="h-5 w-5 text-emerald-600 dark:text-emerald-500" />
-                            </div>
-                            Receipts
-                        </h1>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <div className="hidden md:flex items-center gap-4 px-4 py-1.5 bg-slate-100 dark:bg-white/5 rounded-full border border-slate-200 dark:border-white/10 text-xs font-medium text-slate-600 dark:text-neutral-400 mr-2">
-                            <div className="flex items-center gap-2">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                <span>₹{totalReceipts.toLocaleString('en-IN', { maximumFractionDigits: 0 })} Collected</span>
-                            </div>
-                        </div>
-
-                        <div className="relative group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-neutral-500 group-focus-within:text-indigo-500 transition-colors" />
-                            <input
-                                type="text"
-                                placeholder="Search transactions..."
-                                value={search}
-                                onChange={e => setSearch(e.target.value)}
-                                className="h-10 pl-10 pr-4 bg-white dark:bg-neutral-900 border border-slate-200 dark:border-white/10 rounded-lg text-sm text-slate-900 dark:text-neutral-200 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 w-64 transition-all shadow-sm"
-                            />
-                        </div>
-
-                        <button
-                            onClick={() => setIsCreateOpen(true)}
-                            className="h-10 px-5 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-lg flex items-center gap-2 transition-all shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 active:scale-95"
-                        >
-                            <Plus className="h-4 w-4" />
-                            <span>New Receipt</span>
-                        </button>
-                    </div>
+        <div className="min-h-screen bg-[#002b2b] text-[#ffffcc] font-mono select-none flex flex-col overflow-hidden">
+            {/* Tally Header Bar */}
+            <div className="h-8 bg-[#004d4d] flex items-center justify-between px-4 border-b border-[#006666] text-[10px] font-bold">
+                <div className="flex items-center gap-4">
+                    <span className="text-[#64ffff]">RECEIPT REGISTER</span>
+                    <span className="text-[#ffffcc]">Ziona HMS v4.5</span>
+                </div>
+                <div className="flex items-center gap-4">
+                    <span className="text-[#64ffff]">Financial Year: 2025-26</span>
+                    <span className="text-[#ffffcc]">{new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }).toUpperCase()}</span>
                 </div>
             </div>
 
-            {/* Content Area */}
-            <div className="max-w-[1600px] mx-auto px-6 py-8 h-[calc(100vh-80px)] overflow-auto">
-                <AnimatePresence mode="wait">
-                    {/* Stats Grid */}
-                    {filtered.length > 0 && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-                        >
-                            <StatCard
-                                title="Total Earnings"
-                                value={`₹${totalReceipts.toLocaleString('en-IN')}`}
-                                subtext="Net collection flow"
-                                icon={TrendingUp}
-                                color="emerald"
-                            />
-                            <StatCard
-                                title="Posted Records"
-                                value={countPosted}
-                                subtext="Legally verified"
-                                icon={CheckCircle2}
-                                color="blue"
-                            />
-                            <StatCard
-                                title="Draft Entries"
-                                value={countDraft}
-                                subtext="In queue"
-                                icon={CircleDashed}
-                                color="amber"
-                            />
-                        </motion.div>
-                    )}
-
-                    {isLoading ? (
-                        <div className="flex flex-col items-center justify-center py-32 gap-6 bg-white dark:bg-neutral-900/40 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm">
-                            <div className="h-12 w-12 border-4 border-slate-200 dark:border-neutral-800 border-t-emerald-500 rounded-full animate-spin"></div>
-                            <p className="text-sm font-medium text-slate-500 dark:text-neutral-500 animate-pulse">Syncing encrypted vault...</p>
-                        </div>
-                    ) : filtered.length === 0 ? (
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            className="rounded-3xl border border-dashed border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-neutral-900/20 p-24 flex flex-col items-center text-center"
-                        >
-                            <div className="h-24 w-24 rounded-3xl bg-white dark:bg-neutral-800 flex items-center justify-center mb-6 shadow-sm ring-1 ring-slate-900/5 dark:ring-white/10">
-                                <Receipt className="h-10 w-10 text-slate-400 dark:text-neutral-500" />
+            {/* Main Content Area */}
+            <div className="flex-1 flex gap-1 p-1">
+                {/* Left Side: Receipt List */}
+                <div className="flex-1 bg-[#004d4d] border border-[#006666] flex flex-col">
+                    <div className="h-8 bg-[#006666] flex items-center px-4 justify-between border-b border-[#008080]">
+                        <span className="text-[12px] font-black">LIST OF RECEIPTS</span>
+                        <div className="flex items-center gap-4">
+                            <div className="relative group">
+                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-[#64ffff]" />
+                                <input
+                                    type="text"
+                                    placeholder="SEARCH..."
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                    className="h-5 pl-7 pr-2 bg-[#002b2b] border border-[#008080] rounded text-[10px] text-[#ffffcc] focus:outline-none focus:border-[#64ffff] w-48 transition-all"
+                                />
                             </div>
-                            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-3">Void Record Space</h3>
-                            <p className="text-slate-500 dark:text-neutral-500 max-w-sm mb-8 leading-relaxed text-sm">
-                                No financial fingerprints found. Initiate a new receipt to begin protocol.
-                            </p>
-                            <button
-                                onClick={() => setIsCreateOpen(true)}
-                                className="h-11 px-8 bg-black dark:bg-white text-white dark:text-black hover:opacity-90 transition-all font-bold rounded-xl text-sm"
-                            >
-                                Trigger New Entry
-                            </button>
-                        </motion.div>
-                    ) : (
-                        <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden backdrop-blur-3xl shadow-2xl">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="border-b border-white/5 bg-white/[0.02]">
-                                        <th className="px-6 py-5 text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em]">Transaction</th>
-                                        <th className="px-6 py-5 text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em]">Payer</th>
-                                        <th className="px-6 py-5 text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em]">Method</th>
-                                        <th className="px-6 py-5 text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em] text-right">Amount</th>
-                                        <th className="px-6 py-5 text-[10px] font-black text-neutral-500 uppercase tracking-[0.2em]">Status</th>
+                            <span className="text-[10px] text-white">F2: PERIOD | F12: CONFIGURE</span>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-auto">
+                        <table className="w-full text-left text-[11px] border-collapse">
+                            <thead>
+                                <tr className="bg-[#003333] text-[#64ffff] font-black border-b border-[#006666]">
+                                    <th className="px-4 py-2 border-r border-[#006666] w-24">Date</th>
+                                    <th className="px-4 py-2 border-r border-[#006666] w-32">Voucher No.</th>
+                                    <th className="px-4 py-2 border-r border-[#006666]">Particulars</th>
+                                    <th className="px-4 py-2 border-r border-[#006666] w-32">Method</th>
+                                    <th className="px-4 py-2 text-right w-32 pr-8">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-[#003333]">
+                                {isLoading ? (
+                                    <tr>
+                                        <td colSpan={5} className="py-20 text-center text-[#64ffff] animate-pulse uppercase tracking-[0.2em] text-[10px]">
+                                            Syncing with ledger node...
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody className="divide-y divide-white/[0.03]">
-                                    {filtered.map((p: any) => (
-                                        <motion.tr
-                                            key={p.id}
-                                            initial={{ opacity: 0 }}
-                                            animate={{ opacity: 1 }}
-                                            className="group hover:bg-white/[0.03] transition-all cursor-pointer"
-                                        >
-                                            <td className="px-6 py-5">
+                                ) : filtered.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={5} className="py-20 text-center text-[#64ffff]/40 uppercase tracking-[0.2em] text-[10px]">
+                                            No receipts found in this period
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    filtered.map((p) => (
+                                        <tr key={p.id} className="hover:bg-[#002b2b] cursor-pointer group border-b border-[#006666]">
+                                            <td className="px-4 py-2 border-r border-[#006666]">{safeFormat(p.date, 'dd-MMM-yyyy').toUpperCase()}</td>
+                                            <td className="px-4 py-2 border-r border-[#006666] font-bold">{p.payment_number}</td>
+                                            <td className="px-4 py-2 border-r border-[#006666]">
                                                 <div className="flex flex-col">
-                                                    <span className="text-white font-bold text-sm tracking-tight">{safeFormat(p.date, 'MMM dd, yyyy')}</span>
-                                                    <span className="text-neutral-500 text-[10px] font-mono mt-0.5 uppercase tracking-tighter">{p.reference || 'NO_REF'}</span>
+                                                    <span className="font-bold text-[#ffffcc]">{p.partner_name?.toUpperCase() || 'ANONYMOUS'}</span>
+                                                    {p.reference && <span className="text-[9px] text-[#64ffff]/60 uppercase tracking-tighter">{p.reference}</span>}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-5">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="h-8 w-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20 text-[10px] font-bold">
-                                                        {p.partner_name?.substring(0, 2).toUpperCase() || '??'}
-                                                    </div>
-                                                    <span className="text-neutral-300 font-medium text-sm">{p.partner_name || 'Anonymous'}</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-neutral-400 capitalize tracking-[0.1em]">{p.method}</span>
-                                            </td>
-                                            <td className="px-6 py-5 text-right">
-                                                <span className="text-emerald-400 font-black text-base tracking-tighter">₹{Number(p.amount).toLocaleString()}</span>
-                                            </td>
-                                            <td className="px-6 py-5">
-                                                <div className="flex items-center gap-2">
-                                                    <div className={cn("h-1.5 w-1.5 rounded-full", p.posted ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-amber-500 animate-pulse")} />
-                                                    <span className={cn("text-[10px] font-black uppercase tracking-widest", p.posted ? "text-emerald-500" : "text-amber-500")}>
-                                                        {p.posted ? 'Posted' : 'Draft'}
-                                                    </span>
-                                                </div>
-                                            </td>
-                                        </motion.tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                            <td className="px-4 py-2 border-r border-[#006666] uppercase text-[9px] font-bold text-[#64ffff]/80">{p.method}</td>
+                                            <td className="px-4 py-2 text-right font-black text-[#ffffcc] pr-8">₹{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Footer Stats Bar */}
+                    <div className="h-10 bg-[#003333] border-t border-[#006666] flex items-center justify-between px-6 text-[10px] font-bold">
+                        <div className="flex gap-8">
+                            <div className="flex gap-2">
+                                <span className="text-[#64ffff]">TOTAL COLLECTION:</span>
+                                <span className="text-white">₹{totalReceipts.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                            </div>
+                            <div className="flex gap-2">
+                                <span className="text-[#64ffff]">VOUCHERS:</span>
+                                <span>{filtered.length}</span>
+                            </div>
+                            <div className="flex gap-2 text-amber-500">
+                                <span className="opacity-60">DRAFT:</span>
+                                <span>{countDraft}</span>
+                            </div>
                         </div>
-                    )}
-                </AnimatePresence>
-            </div>
+                        <div className="flex gap-4 items-center">
+                            <span className="text-[#64ffff] animate-pulse">SYSTEM LIVE SYNC</span>
+                        </div>
+                    </div>
+                </div>
 
-            {/* Create Receipt Dialog */}
-            <CreateReceiptDialog
-                open={isCreateOpen}
-                onOpenChange={setIsCreateOpen}
-                onSuccess={() => loadData()}
-            />
+                {/* Right Side: Gateway Simulation */}
+                <div className="w-56 bg-[#003333] border border-[#006666] flex flex-col p-1 gap-1">
+                    <div className="bg-[#004d4d] flex flex-col items-center py-4 border border-[#006666]">
+                        <span className="text-[12px] font-black text-[#ffffcc]">GATEWAY of TALLY</span>
+                        <div className="h-px w-full bg-[#006666] my-2" />
+                        <span className="text-[10px] text-[#64ffff]">Voucher Options</span>
+                    </div>
+
+                    <div className="flex-1 space-y-1">
+                        {[
+                            { f: 'F1', l: 'Select Cmp', active: false },
+                            { f: 'F2', l: 'Period', active: false },
+                            { f: 'F4', l: 'Contra', active: false },
+                            { f: 'F5', l: 'Payment', active: false },
+                            { f: 'F6', l: 'Receipt', active: true },
+                            { f: 'F7', l: 'Journal', active: false },
+                            { f: 'F8', l: 'Sales', active: false },
+                            { f: 'F9', l: 'Purchase', active: false },
+                            { f: 'Alt+C', l: 'Create', active: false, onClick: () => router.push('/hms/accounting/receipts/new') },
+                        ].map(btn => (
+                            <button 
+                                key={btn.f} 
+                                onClick={btn.onClick}
+                                className={`w-full flex items-center h-8 px-2 text-[10px] transition-all ${btn.active ? 'bg-[#ffffcc] text-black font-black' : 'hover:bg-[#004d4d] text-white'}`}
+                            >
+                                <span className="w-12 opacity-50">{btn.f}</span>
+                                <span className="flex-1 text-left uppercase">{btn.l}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="bg-[#004d4d] p-3 border border-[#006666]">
+                        <p className="text-[8px] text-[#64ffff]/60 uppercase tracking-widest leading-relaxed">
+                            Terminal: POS-77<br />
+                            Session: Secure<br />
+                            Auth: Admin
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 }
 
-function StatCard({ title, value, subtext, icon: Icon, color }: any) {
-    const colorClasses = {
-        emerald: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-emerald-900/10",
-        blue: "bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-blue-900/10",
-        amber: "bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-amber-900/10",
-    }[color as 'emerald' | 'blue' | 'amber'] || "bg-neutral-500/10 text-neutral-400 border-neutral-500/20";
-
-    return (
-        <div className="p-6 rounded-3xl bg-neutral-900/50 border border-white/5 shadow-2xl relative overflow-hidden group hover:border-white/10 transition-all">
-            <div className="absolute right-0 top-0 w-32 h-32 bg-white/[0.02] transform translate-x-8 -translate-y-8 rounded-full pointer-events-none group-hover:scale-110 transition-transform" />
-            <div className="flex items-start justify-between mb-4">
-                <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-neutral-500 mb-1">{title}</p>
-                    <h3 className="text-2xl font-black text-white tracking-tighter">{value}</h3>
-                </div>
-                <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center border", colorClasses)}>
-                    <Icon className="h-5 w-5" />
-                </div>
-            </div>
-            <p className="text-[10px] font-bold text-neutral-600 uppercase tracking-widest flex items-center gap-1">
-                {subtext}
-            </p>
-        </div>
-    );
-}

@@ -22,12 +22,11 @@ export default async function ChartOfAccountsPage() {
         ...acc,
         is_reconcilable: acc.is_reconcilable ?? false,
         parent_id: acc.parent_id,
+        is_group: acc.is_group ?? false,
         is_active: acc.is_active ?? true
     }))
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-neutral-950 px-8 py-10 max-w-[1600px] mx-auto">
-            <ChartOfAccountsManager initialAccounts={formattedAccounts} />
-        </div>
+        <ChartOfAccountsManager initialAccounts={formattedAccounts} />
     )
 }
