@@ -337,8 +337,14 @@ export function GlobalSettingsForm({ company, tenant, currencies, isTenantAdmin,
                                     type={showWhatsappToken ? 'text' : 'password'} 
                                     value={whatsappToken} 
                                     onChange={e => setWhatsappToken(e.target.value)} 
-                                    placeholder={(hasExistingWhatsappToken && !showWhatsappToken) ? '••••••••••••••••' : 'Enter UltraMsg Token'} 
-                                    className="font-mono text-sm rounded-xl pr-10" 
+                                    placeholder={
+                                        whatsappToken 
+                                            ? 'Entering new token...' 
+                                            : hasExistingWhatsappToken 
+                                                ? (showWhatsappToken ? '[TOKEN SAVED & HIDDEN]' : '••••••••••••••••')
+                                                : 'Enter API Token'
+                                    } 
+                                    className={`font-mono text-sm rounded-xl pr-10 ${hasExistingWhatsappToken && !whatsappToken ? 'bg-emerald-50/10' : ''}`} 
                                 />
                                 <button 
                                     type="button" 

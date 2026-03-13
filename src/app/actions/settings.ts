@@ -929,13 +929,16 @@ export async function getWhatsAppSettings(providedCompanyId?: string, providedTe
         }
 
         const data = (record?.value as any) || {};
+        const hasToken = !!(data.token && data.token.length > 0);
+        
+        console.log(`[WHATSAPP FETCH] Record found: ${!!record}, Has Token: ${hasToken}, Company: ${companyId}`);
 
         return {
             success: true,
             settings: {
                 enabled: data.enabled ?? false,
                 instanceId: data.instanceId ?? '',
-                hasToken: !!(data.token && data.token.length > 0),
+                hasToken: hasToken,
                 autoSendBill: data.autoSendBill ?? false,
             }
         };

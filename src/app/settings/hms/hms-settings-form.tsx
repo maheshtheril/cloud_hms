@@ -307,8 +307,14 @@ export function HMSSettingsForm({ settings, products, doctors = [], gatewaySetti
                                 type={showWhatsappToken ? 'text' : 'password'} 
                                 value={whatsappToken} 
                                 onChange={(e) => setWhatsappToken(e.target.value)} 
-                                placeholder={(hasExistingWhatsappToken && !showWhatsappToken) ? '••••••••••••••••' : 'API Token'} 
-                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl" 
+                                placeholder={
+                                    whatsappToken 
+                                        ? 'Update token...' 
+                                        : hasExistingWhatsappToken 
+                                            ? (showWhatsappToken ? '[TOKEN SAVED & HIDDEN]' : '••••••••••••••••')
+                                            : 'API Token'
+                                } 
+                                className={`w-full px-4 py-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl font-mono ${hasExistingWhatsappToken && !whatsappToken ? 'border-emerald-500/30' : ''}`} 
                             />
                             <button type="button" onClick={() => setShowWhatsappToken(!showWhatsappToken)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-emerald-500 transition-colors">
                                 {showWhatsappToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
