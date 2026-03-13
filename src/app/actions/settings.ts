@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 import { revalidatePath } from "next/cache"
+import crypto from 'crypto'
 
 export type ProfileFormState = {
     message?: string
@@ -770,6 +771,7 @@ export async function updatePaymentGatewaySettings(data: {
             }),
             prisma.hms_settings.create({
                 data: {
+                    id: crypto.randomUUID(),
                     tenant_id: tenantId,
                     company_id: companyId,
                     key: 'payment_gateway_config',
@@ -840,15 +842,20 @@ export async function updatePaymentMappings(mappings: Record<string, string>) {
             where: { company_id: companyId, tenant_id: tenantId, key: 'payment_method_mapping' }
         });
 
-        const configId = (await prisma.$queryRaw`SELECT gen_random_uuid()` as any)[0].gen_random_uuid;
-        await prisma.$executeRaw`
-            INSERT INTO hms_settings (id, tenant_id, company_id, key, value, scope, version, is_active, created_at, updated_at, created_by, updated_by)
-            VALUES (
-                ${configId}::uuid, ${tenantId}::uuid, ${companyId}::uuid,
-                'payment_method_mapping', ${configValue}::jsonb,
-                'company', 1, true, now(), now(), ${userId}::uuid, ${userId}::uuid
-            )
-        `;
+        await prisma.hms_settings.create({
+            data: {
+                id: crypto.randomUUID(),
+                tenant_id: tenantId,
+                company_id: companyId,
+                key: 'payment_method_mapping',
+                value: mappings,
+                scope: 'company',
+                version: 1,
+                is_active: true,
+                created_by: userId,
+                updated_by: userId
+            }
+        });
 
         revalidatePath('/settings/accounting');
         return { success: true };
@@ -938,6 +945,7 @@ export async function updateWhatsAppSettings(data: {
             }),
             prisma.hms_settings.create({
                 data: {
+                    id: crypto.randomUUID(),
                     tenant_id: tenantId,
                     company_id: companyId,
                     key: 'whatsapp_config',
@@ -1027,6 +1035,7 @@ export async function updatePDFSettings(data: {
             }),
             prisma.hms_settings.create({
                 data: {
+                    id: crypto.randomUUID(),
                     tenant_id: tenantId,
                     company_id: companyId,
                     key: 'pdf_print_config',
