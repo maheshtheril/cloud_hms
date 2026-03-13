@@ -618,8 +618,10 @@ export async function cancelInvoice(invoiceId: string) {
 
 export async function updateInvoice(invoiceId: string, data: { patient_id: string, appointment_id?: string, date: string, line_items: any[], payments?: any[], status?: any, total_discount?: number, billing_metadata?: any }) {
     const session = await auth();
-    const companyId = session?.user?.companyId || session?.user?.tenantId;
-    if (!companyId) return { error: "Unauthorized" };
+    const tenantId = session?.user?.tenantId;
+    const companyId = (session?.user as any).companyId || tenantId;
+    const userId = session?.user?.id;
+    if (!companyId || !tenantId) return { error: "Unauthorized or Missing Tenant Context" };
 
     const lockCheck = await checkTransactionLock(invoiceId, companyId, session);
     if (lockCheck.locked) return { error: lockCheck.reason };
@@ -717,13 +719,14 @@ export async function updateInvoice(invoiceId: string, data: { patient_id: strin
 
             await tx.hms_invoice_lines.createMany({
                 data: resolvedLineItems.map((item: any, index: number) => ({
-                    tenant_id: session.user.tenantId,
+                    id: crypto.randomUUID(),
+                    tenant_id: tenantId,
                     company_id: companyId,
                     invoice_id: invoiceId,
                     line_idx: index + 1,
                     product_id: isUUID(item.product_id) ? item.product_id : null,
-                    description: item.description,
-                    quantity: safeNum(item.quantity),
+                    description: item.description || "Service Item",
+                    quantity: safeNum(item.quantity) || 1,
                     unit_price: safeNum(item.unit_price),
                     net_amount: (safeNum(item.quantity) * safeNum(item.unit_price)) - safeNum(item.discount_amount),
                     // Tax details
