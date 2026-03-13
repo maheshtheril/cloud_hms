@@ -699,18 +699,30 @@ export async function deleteDesignation(id: string) {
 
 // === PAYMENT GATEWAY SETTINGS ===
 
-export async function getPaymentGatewaySettings() {
+export async function getPaymentGatewaySettings(providedCompanyId?: string, providedTenantId?: string) {
     const session = await auth();
-    if (!session?.user?.companyId || !session?.user?.tenantId) return { success: false, error: 'Unauthorized' };
+    const companyId = providedCompanyId || session?.user?.companyId;
+    const tenantId = providedTenantId || session?.user?.tenantId;
+
+    if (!companyId || !tenantId) return { success: false, error: 'Unauthorized' };
 
     try {
-        const record = await prisma.hms_settings.findFirst({
+        let record = await prisma.hms_settings.findFirst({
             where: {
-                company_id: session.user.companyId,
-                tenant_id: session.user.tenantId,
+                company_id: companyId,
+                tenant_id: tenantId,
                 key: 'payment_gateway_config'
             }
         });
+
+        if (!record) {
+            record = await prisma.hms_settings.findFirst({
+                where: {
+                    tenant_id: tenantId,
+                    key: 'payment_gateway_config'
+                }
+            });
+        }
 
         const data = (record?.value as any) || {};
 
@@ -891,15 +903,18 @@ export async function getPaymentGatewayConfig(companyId: string, tenantId: strin
 
 // === WHATSAPP CONFIGURATION SETTINGS ===
 
-export async function getWhatsAppSettings() {
+export async function getWhatsAppSettings(providedCompanyId?: string, providedTenantId?: string) {
     const session = await auth();
-    if (!session?.user?.companyId || !session?.user?.tenantId) return { success: false, error: 'Unauthorized' };
+    const companyId = providedCompanyId || session?.user?.companyId;
+    const tenantId = providedTenantId || session?.user?.tenantId;
+
+    if (!companyId || !tenantId) return { success: false, error: 'Unauthorized' };
 
     try {
         let record = await prisma.hms_settings.findFirst({
             where: {
-                company_id: session.user.companyId,
-                tenant_id: session.user.tenantId,
+                company_id: companyId,
+                tenant_id: tenantId,
                 key: 'whatsapp_config'
             }
         });
@@ -907,7 +922,7 @@ export async function getWhatsAppSettings() {
         if (!record) {
             record = await prisma.hms_settings.findFirst({
                 where: {
-                    tenant_id: session.user.tenantId,
+                    tenant_id: tenantId,
                     key: 'whatsapp_config'
                 }
             });
@@ -1010,15 +1025,18 @@ export async function getWhatsAppConfig(companyId: string, tenantId: string) {
     return (record?.value as any) || null;
 }
 
-export async function getPDFSettings() {
+export async function getPDFSettings(providedCompanyId?: string, providedTenantId?: string) {
     const session = await auth();
-    if (!session?.user?.companyId || !session?.user?.tenantId) return { success: false, error: 'Unauthorized' };
+    const companyId = providedCompanyId || session?.user?.companyId;
+    const tenantId = providedTenantId || session?.user?.tenantId;
+
+    if (!companyId || !tenantId) return { success: false, error: 'Unauthorized' };
 
     try {
         let record = await prisma.hms_settings.findFirst({
             where: {
-                company_id: session.user.companyId,
-                tenant_id: session.user.tenantId,
+                company_id: companyId,
+                tenant_id: tenantId,
                 key: 'pdf_print_config'
             }
         });
@@ -1026,7 +1044,7 @@ export async function getPDFSettings() {
         if (!record) {
             record = await prisma.hms_settings.findFirst({
                 where: {
-                    tenant_id: session.user.tenantId,
+                    tenant_id: tenantId,
                     key: 'pdf_print_config'
                 }
             });

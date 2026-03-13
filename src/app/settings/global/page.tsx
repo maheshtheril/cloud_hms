@@ -46,9 +46,11 @@ export default async function GlobalSettingsPage() {
             select: { id: true, code: true, name: true, symbol: true },
             orderBy: { code: 'asc' }
         }),
-        getWhatsAppSettings(),
-        getPDFSettings()
+        getWhatsAppSettings(companyId, tenant?.id),
+        getPDFSettings(companyId, tenant?.id)
     ])
+    
+    console.log("Global Settings: WhatsApp Token Found:", whatsappRes.success && whatsappRes.settings?.hasToken);
 
     console.log("Global Settings: Currencies", currencies.length);
 

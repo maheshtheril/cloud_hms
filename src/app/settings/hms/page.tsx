@@ -23,9 +23,9 @@ export default async function HMSSettingsPage() {
             },
             orderBy: { first_name: 'asc' }
         }),
-        getPaymentGatewaySettings(),
-        getWhatsAppSettings(),
-        getPDFSettings()
+        getPaymentGatewaySettings(session.user.companyId!, session.user.tenantId),
+        getWhatsAppSettings(session.user.companyId!, session.user.tenantId),
+        getPDFSettings(session.user.companyId!, session.user.tenantId)
     ]);
 
     if (!res.success) {
