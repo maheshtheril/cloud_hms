@@ -312,8 +312,8 @@ export class NotificationService {
             if (dbConfig) {
                 return {
                     enabled: dbConfig.enabled ?? false,
-                    instanceId: dbConfig.instanceId || process.env.WHATSAPP_INSTANCE_ID || '',
-                    token: dbConfig.token || process.env.WHATSAPP_TOKEN || '',
+                    instanceId: dbConfig.instanceId || '',
+                    token: dbConfig.token || '',
                     autoSendBill: dbConfig.autoSendBill ?? false
                 };
             }
