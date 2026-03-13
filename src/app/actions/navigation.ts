@@ -574,8 +574,8 @@ export async function auditAndFixMenuPermissions() {
             { key: 'hms-settings', perm: 'hms:admin', label: 'HMS Settings' },
 
             // STRICT DASHBOARDS
-            { key: 'hms-dashboard', perm: 'hms:admin', label: 'Command Center' }, // Unified Medical Command Center
-            { key: 'crm-dashboard', perm: 'crm:view', label: 'CRM Overview' }, // Distinct CRM Overview
+            { key: 'hms-dashboard', perm: 'hms:admin', label: 'HMS Dashboard', url: '/hms/dashboard' }, 
+            { key: 'crm-dashboard', perm: 'crm:view', label: 'CRM Dashboard', url: '/crm/dashboard' }, 
             { key: 'hms-reception', perm: 'hms:dashboard:reception' }, // Strict Reception Access
             { key: 'hms-doctors', perm: 'hms:admin' }, // Only Admins should manage doctors menu
 
@@ -595,7 +595,8 @@ export async function auditAndFixMenuPermissions() {
                 where: { key: o.key },
                 data: {
                     permission_code: o.perm,
-                    ...(o.label ? { label: o.label } : {})
+                    ...(o.label ? { label: o.label } : {}),
+                    ...(o.url ? { url: o.url } : {})
                 }
             });
         }
